@@ -38,7 +38,10 @@ export function EasterEggs({ activeEasterEgg, onComplete }: EasterEggsProps) {
       {activeEasterEgg === "goose" && <GooseCrossing onComplete={onComplete} />}
       {activeEasterEgg === "party" && <PartyMode onComplete={onComplete} />}
       {activeEasterEgg === "foodRain" && <FoodRain onComplete={onComplete} />}
-      {activeEasterEgg === "matrix" && <MatrixMode onComplete={onComplete} />}
+      {activeEasterEgg === "uoft" && <UofTSpirit onComplete={onComplete} />}
+      {activeEasterEgg === "mcgill" && <McGillPride onComplete={onComplete} />}
+      {activeEasterEgg === "ubc" && <UBCRain onComplete={onComplete} />}
+      {activeEasterEgg === "mcmaster" && <McMasterMarauder onComplete={onComplete} />}
     </div>,
     document.body
   );
@@ -256,74 +259,187 @@ function FoodRain({ onComplete }: { onComplete: () => void }) {
   );
 }
 
-// 🟢 Matrix Mode Easter Egg
-function MatrixMode({ onComplete }: { onComplete: () => void }) {
-  const [columns, setColumns] = useState<Array<{
+// 🔵 UofT Spirit - Blue confetti burst
+function UofTSpirit({ onComplete }: { onComplete: () => void }) {
+  useEffect(() => {
+    const colors = ["#002a5c", "#1e3d59", "#4a90d9"]; // UofT blue tones
+
+    // Initial burst
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors,
+    });
+
+    // More bursts
+    const interval = setInterval(() => {
+      confetti({
+        particleCount: 30,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors,
+      });
+      confetti({
+        particleCount: 30,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors,
+      });
+    }, 300);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      onComplete();
+    }, 2500);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [onComplete]);
+
+  return <Toast message="🔵 Go Varsity Blues!" />;
+}
+
+// 🔴 McGill Pride - Red/white confetti
+function McGillPride({ onComplete }: { onComplete: () => void }) {
+  useEffect(() => {
+    const colors = ["#ed1b2f", "#ffffff", "#8b0000"]; // McGill red/white
+
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors,
+    });
+
+    const interval = setInterval(() => {
+      confetti({
+        particleCount: 30,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors,
+      });
+      confetti({
+        particleCount: 30,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors,
+      });
+    }, 300);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      onComplete();
+    }, 2500);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [onComplete]);
+
+  return <Toast message="🔴 Allez McGill!" />;
+}
+
+// 🌧️ UBC Rain - Vancouver rain effect
+function UBCRain({ onComplete }: { onComplete: () => void }) {
+  const [drops, setDrops] = useState<Array<{
     id: number;
     left: number;
-    chars: string;
-    duration: number;
     delay: number;
+    duration: number;
   }>>([]);
 
   useEffect(() => {
-    const matrixChars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789";
-    const cols: typeof columns = [];
-
-    // Create columns
-    for (let i = 0; i < 30; i++) {
-      let chars = "";
-      const length = 10 + Math.floor(Math.random() * 20);
-      for (let j = 0; j < length; j++) {
-        chars += matrixChars[Math.floor(Math.random() * matrixChars.length)];
-      }
-      cols.push({
+    const rainDrops: typeof drops = [];
+    for (let i = 0; i < 60; i++) {
+      rainDrops.push({
         id: i,
-        left: (i / 30) * 100 + Math.random() * 3,
-        chars,
-        duration: 2 + Math.random() * 3,
+        left: Math.random() * 100,
         delay: Math.random() * 2,
+        duration: 0.5 + Math.random() * 0.5,
       });
     }
-
-    setColumns(cols);
+    setDrops(rainDrops);
 
     const timeout = setTimeout(() => {
       onComplete();
-    }, 5000);
+    }, 4000);
 
     return () => clearTimeout(timeout);
   }, [onComplete]);
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/80 pointer-events-none" />
-      {columns.map((col) => (
+      {drops.map((drop) => (
         <div
-          key={col.id}
-          className="fixed text-green-500 font-mono text-sm whitespace-pre leading-tight"
+          key={drop.id}
+          className="fixed w-0.5 h-8 bg-gradient-to-b from-transparent to-blue-400 opacity-60"
           style={{
-            left: `${col.left}%`,
-            top: "-50%",
-            textShadow: "0 0 10px #00ff00, 0 0 20px #00ff00",
-            animation: `matrixFall ${col.duration}s linear ${col.delay}s infinite`,
-            writingMode: "vertical-rl",
+            left: `${drop.left}%`,
+            top: "-32px",
+            animation: `rainFall ${drop.duration}s linear ${drop.delay}s infinite`,
           }}
-        >
-          {col.chars}
-        </div>
+        />
       ))}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-green-500 font-mono text-xl text-center">
-        <div className="animate-pulse">Wake up, Neo...</div>
-      </div>
+      <Toast message="🌧️ Vancouver vibes! Go Thunderbirds!" />
       <style>{`
-        @keyframes matrixFall {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(200vh); }
+        @keyframes rainFall {
+          0% { transform: translateY(0); opacity: 0.6; }
+          100% { transform: translateY(100vh); opacity: 0; }
         }
       `}</style>
     </>
   );
+}
+
+// 🟤 McMaster Marauder - Maroon confetti
+function McMasterMarauder({ onComplete }: { onComplete: () => void }) {
+  useEffect(() => {
+    const colors = ["#7a003c", "#ffc72c", "#5c002e"]; // McMaster maroon/gold
+
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors,
+    });
+
+    const interval = setInterval(() => {
+      confetti({
+        particleCount: 30,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors,
+      });
+      confetti({
+        particleCount: 30,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors,
+      });
+    }, 300);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      onComplete();
+    }, 2500);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [onComplete]);
+
+  return <Toast message="🟤 Go Marauders!" />;
 }
 
 // Toast notification component

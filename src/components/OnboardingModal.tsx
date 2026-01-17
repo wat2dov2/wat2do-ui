@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Check, Sparkles, Heart } from "lucide-react";
+import { Check, Sparkles, Heart, ChevronLeft } from "lucide-react";
 import confetti from "canvas-confetti";
-import { PieMenu } from "@/components/ui/pie-menu";
-import { usePieMenu } from "@/hooks/usePieMenu";
 import {
   Dialog,
   DialogContent,
@@ -32,20 +30,22 @@ interface OnboardingModalProps {
 }
 
 interface OnboardingData {
-  school: string;
+  faculty: string;
+  isFirstYear: boolean;
   interests: string[];
   email?: string;
 }
 
 const TOTAL_STEPS = 5;
 
-const availableSchools = [
-  "University of Waterloo",
-  "University of Toronto",
-  "McGill University",
-  "University of British Columbia",
-  "McMaster University",
-  "Western University",
+const availableFaculties = [
+  "Engineering",
+  "Mathematics",
+  "Science",
+  "Arts",
+  "Environment",
+  "Health",
+  "Applied Health Sciences",
 ];
 
 const availableInterests = [
@@ -70,19 +70,19 @@ export function OnboardingModal({
   onComplete,
 }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedSchool, setSelectedSchool] = useState("");
+  const [selectedFaculty, setSelectedFaculty] = useState("");
+  const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [emailUsername, setEmailUsername] = useState("");
   const [otpValue, setOtpValue] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
-  const interestsPieMenu = usePieMenu();
 
-  // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
       setCurrentStep(0);
-      setSelectedSchool("");
+      setSelectedFaculty("");
+      setIsFirstYear(null);
       setSelectedInterests([]);
       setEmailUsername("");
       setOtpValue("");
@@ -130,7 +130,8 @@ export function OnboardingModal({
       setCurrentStep(currentStep + 1);
     } else {
       onComplete({
-        school: selectedSchool,
+        faculty: selectedFaculty,
+        isFirstYear: isFirstYear ?? false,
         interests: selectedInterests,
         email: emailUsername ? `${emailUsername}@gmail.com` : undefined,
       });
@@ -138,11 +139,15 @@ export function OnboardingModal({
     }
   };
 
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const handleSkip = () => {
-    if (currentStep < TOTAL_STEPS - 1) {
-      if (currentStep === 1) {
-        setShowOtpInput(false);
-      }
+    // Skip is only allowed for interests step (step 3)
+    if (currentStep === 3) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -237,8 +242,7 @@ export function OnboardingModal({
                       setEmailUsername("demo.user");
                       handleNext();
                     }}
-                    className="w-full h-11 flex items-center justify-center gap-3 rounded-md border transition-colors hover:bg-gray-50 mb-4"
-                    style={{ borderColor: "#e5e7eb" }}
+                    className="w-full h-11 flex items-center justify-center gap-3 rounded-md border border-gray-200 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 mb-4"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                       <path
@@ -258,21 +262,21 @@ export function OnboardingModal({
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    <span className="font-medium text-sm" style={{ color: "#374151" }}>
+                    <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
                       Continue with Google
                     </span>
                   </button>
 
                   {/* Divider */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex-1 h-px" style={{ backgroundColor: "#e5e7eb" }} />
-                    <span className="text-xs" style={{ color: "#9ca3af" }}>or</span>
-                    <div className="flex-1 h-px" style={{ backgroundColor: "#e5e7eb" }} />
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                    <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
                   </div>
 
                   {/* Email Input */}
                   <div className="space-y-2 mb-4">
-                    <label className="text-sm font-medium" style={{ color: "#111827" }}>
+                    <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       Email
                     </label>
                     <div className="flex items-center">
@@ -281,32 +285,31 @@ export function OnboardingModal({
                         value={emailUsername}
                         onChange={(e) => setEmailUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
                         placeholder="username"
-                        className="flex-1 h-10 px-3 text-sm rounded-l-md border border-r-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        style={{ borderColor: "#e5e7eb" }}
+                        className="flex-1 h-10 px-3 text-sm rounded-l-md border border-r-0 border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                       />
                       <div
-                        className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border"
-                        style={{ backgroundColor: "#f3f4f6", borderColor: "#e5e7eb", color: "#6b7280" }}
+                        className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                       >
                         @gmail.com
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={handleBack}
+                      className="flex-1 text-gray-600"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1 text-gray-600" />
+                      Back
+                    </Button>
                     <Button
                       onClick={() => setShowOtpInput(true)}
                       disabled={!emailUsername}
-                      className="w-full"
+                      className="flex-1"
                     >
-                      Continue with Email
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={handleSkip}
-                      className="w-full"
-                    >
-                      Skip for now
+                      Continue
                     </Button>
                   </div>
                 </>
@@ -345,11 +348,11 @@ export function OnboardingModal({
                   </div>
 
                   {isVerifying ? (
-                    <p className="text-center text-sm font-medium" style={{ color: "#3B82F6" }}>
+                    <p className="text-center text-sm font-medium" style={{ color: "#111827" }}>
                       Verifying...
                     </p>
                   ) : (
-                    <p className="text-center text-xs" style={{ color: "#6b7280" }}>
+                    <p className="text-center text-xs text-gray-500 dark:text-gray-400">
                       Enter any 6 digits to continue
                     </p>
                   )}
@@ -372,50 +375,83 @@ export function OnboardingModal({
             </div>
           )}
 
-          {/* Step 3: School Selection */}
+          {/* Step 3: Faculty & First Year Selection */}
           {currentStep === 2 && (
             <div className="flex flex-col">
               <DialogHeader className="space-y-2 mb-6 text-center">
                 <DialogTitle className="text-xl text-center">
-                  Select Your University
+                  Tell us about yourself
                 </DialogTitle>
                 <DialogDescription className="text-center">
-                  We'll show you events from your campus
+                  We'll personalize events based on your profile
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 mb-6">
-                <label className="text-sm font-medium" style={{ color: "#111827" }}>
-                  University
-                </label>
-                <Select value={selectedSchool} onValueChange={setSelectedSchool}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choose your university" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSchools.map((school) => (
-                      <SelectItem key={school} value={school}>
-                        {school}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-6 mb-6">
+                {/* Faculty Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Faculty
+                  </label>
+                  <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose your faculty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableFaculties.map((faculty) => (
+                        <SelectItem key={faculty} value={faculty}>
+                          {faculty}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* First Year Question */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Are you a first year student?
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setIsFirstYear(true)}
+                      className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all border ${
+                        isFirstYear === true
+                          ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                          : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      Yes, I'm a first year! 🎉
+                    </button>
+                    <button
+                      onClick={() => setIsFirstYear(false)}
+                      className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all border ${
+                        isFirstYear === false
+                          ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                          : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      No, returning student
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Button
-                  onClick={handleNext}
-                  disabled={!selectedSchool}
-                  className="w-full"
-                >
-                  Continue
-                </Button>
+              <div className="flex gap-2">
                 <Button
                   variant="ghost"
-                  onClick={handleSkip}
-                  className="w-full"
+                  onClick={handleBack}
+                  className="flex-1 text-gray-600"
                 >
-                  Skip for now
+                  <ChevronLeft className="w-4 h-4 mr-1 text-gray-600" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleNext}
+                  disabled={!selectedFaculty || isFirstYear === null}
+                  className="flex-1"
+                >
+                  Continue
                 </Button>
               </div>
             </div>
@@ -433,64 +469,45 @@ export function OnboardingModal({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="flex flex-col items-center gap-4 mb-4">
-                {/* Selected interests display */}
-                {selectedInterests.length > 0 && (
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {selectedInterests.map((interest) => (
-                      <span
+              <div className="mb-6">
+                {/* Interest Toggle Buttons - Flex wrapped */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {availableInterests.map((interest) => {
+                    const isSelected = selectedInterests.includes(interest);
+                    return (
+                      <button
                         key={interest}
-                        className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                        onClick={() => toggleInterest(interest)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${isSelected
+                          ? "bg-blue-500 text-white shadow-md"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                          }`}
                       >
-                        <Heart className="w-3 h-3" />
                         {interest}
-                        <button
-                          onClick={() => toggleInterest(interest)}
-                          className="ml-1 hover:bg-blue-600 rounded-full w-4 h-4 flex items-center justify-center text-xs"
-                        >
-                          &times;
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                {/* Pie menu trigger button */}
-                <button
-                  onClick={interestsPieMenu.open}
-                  className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group"
-                >
-                  <Heart className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                  <span className="text-sm text-gray-500 group-hover:text-blue-500 font-medium transition-colors">
-                    {selectedInterests.length === 0 ? "Tap to select" : "Add more"}
-                  </span>
-                </button>
-
-                <PieMenu
-                  items={availableInterests.map((interest) => ({
-                    id: interest,
-                    label: interest,
-                    icon: <Heart className="w-4 h-4" />,
-                  }))}
-                  isOpen={interestsPieMenu.isOpen}
-                  position={interestsPieMenu.position}
-                  onClose={interestsPieMenu.close}
-                  onSelect={(item) => toggleInterest(item.id)}
-                  selectedIds={selectedInterests}
-                  closeOnSelect={false}
-                  radius={140}
-                  innerRadius={20}
-                />
-
-                <p className="text-xs text-gray-400 text-center">
+                <p className="text-xs text-gray-400 text-center mt-4">
                   {selectedInterests.length} of {availableInterests.length} selected
                 </p>
               </div>
 
-              <div className="space-y-2 mt-6">
-                <Button onClick={handleNext} className="w-full">
-                  Continue
-                </Button>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={handleBack}
+                    className="flex-1 text-gray-600"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1 text-gray-600" />
+                    Back
+                  </Button>
+                  <Button onClick={handleNext} className="flex-1">
+                    Continue
+                  </Button>
+                </div>
                 <Button
                   variant="ghost"
                   onClick={handleSkip}
@@ -524,23 +541,29 @@ export function OnboardingModal({
               </DialogHeader>
 
               {/* Summary */}
-              {(emailUsername || selectedSchool || selectedInterests.length > 0) && (
-                <div className="w-full rounded-md p-4 mb-6 text-left text-sm" style={{ backgroundColor: "#f3f4f6" }}>
+              {(emailUsername || selectedFaculty || selectedInterests.length > 0) && (
+                <div className="w-full rounded-xl p-4 mb-6 text-left text-sm bg-gray-100 dark:bg-gray-800">
                   {emailUsername && (
-                    <p className="mb-1" style={{ color: "#111827" }}>
-                      <span style={{ color: "#6b7280" }}>Email:</span>{" "}
+                    <p className="mb-1 text-gray-900 dark:text-gray-100">
+                      <span className="text-gray-500 dark:text-gray-400">Email:</span>{" "}
                       {emailUsername}@gmail.com
                     </p>
                   )}
-                  {selectedSchool && (
-                    <p className="mb-1" style={{ color: "#111827" }}>
-                      <span style={{ color: "#6b7280" }}>School:</span>{" "}
-                      {selectedSchool}
+                  {selectedFaculty && (
+                    <p className="mb-1 text-gray-900 dark:text-gray-100">
+                      <span className="text-gray-500 dark:text-gray-400">Faculty:</span>{" "}
+                      {selectedFaculty}
+                    </p>
+                  )}
+                  {isFirstYear !== null && (
+                    <p className="mb-1 text-gray-900 dark:text-gray-100">
+                      <span className="text-gray-500 dark:text-gray-400">Year:</span>{" "}
+                      {isFirstYear ? "First Year" : "Returning Student"}
                     </p>
                   )}
                   {selectedInterests.length > 0 && (
-                    <p style={{ color: "#111827" }}>
-                      <span style={{ color: "#6b7280" }}>Interests:</span>{" "}
+                    <p className="text-gray-900 dark:text-gray-100">
+                      <span className="text-gray-500 dark:text-gray-400">Interests:</span>{" "}
                       {selectedInterests.join(", ")}
                     </p>
                   )}

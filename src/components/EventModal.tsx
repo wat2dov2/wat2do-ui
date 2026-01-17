@@ -50,29 +50,26 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
 
       {/* Modal Sheet */}
       <div
-        className="relative w-[calc(100%-48px)] rounded-t-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-[calc(100%-48px)] rounded-t-2xl shadow-2xl overflow-hidden flex flex-col bg-white dark:bg-gray-900"
         style={{
           height: "calc(100dvh - 48px)",
-          backgroundColor: "#fff",
           animation: "slideInFromBottom 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards",
         }}
       >
         {/* Top Gray Bar with Drag Handle */}
         <div
-          className="relative w-full h-6 rounded-t-2xl flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: "#4B5563" }}
+          className="relative w-full h-6 rounded-t-2xl flex items-center justify-center flex-shrink-0 bg-gray-600 dark:bg-gray-700"
         >
-          <div className="w-24 h-1 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.4)" }} />
+          <div className="w-24 h-1 rounded-full bg-white/40" />
         </div>
 
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 z-20 w-10 h-10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white transition-all shadow-lg group"
-          style={{ backgroundColor: "rgba(255,255,255,0.9)" }}
+          className="absolute top-4 right-4 z-20 w-10 h-10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-all shadow-lg group bg-white/90 dark:bg-gray-800/90"
           aria-label="Close modal"
         >
-          <X className="w-5 h-5 group-hover:text-gray-900 transition-colors" style={{ color: "#4B5563" }} strokeWidth={2.5} />
+          <X className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={2.5} />
         </button>
 
         {/* Scrollable Content */}
@@ -112,15 +109,15 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
                     <div className="flex flex-wrap gap-1.5">
                       {currentEvent.price === 0 ? (
                         <span
-                          className="text-white font-medium text-[11px] px-2.5 py-1 rounded"
-                          style={{ backgroundColor: "#10B981" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
+                          style={{ backgroundColor: "rgba(16, 185, 129, 0.2)", color: "#10B981" }}
                         >
                           Free
                         </span>
                       ) : (
                         <span
-                          className="text-white font-medium text-[11px] px-2.5 py-1 rounded"
-                          style={{ backgroundColor: "#3B82F6" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
+                          style={{ backgroundColor: "rgba(59, 130, 246, 0.2)", color: "#3B82F6" }}
                         >
                           ${currentEvent.price}
                         </span>
@@ -128,8 +125,8 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
 
                       {currentEvent.food && currentEvent.food.length > 0 && (
                         <span
-                          className="text-white font-medium text-[11px] px-2.5 py-1 rounded"
-                          style={{ backgroundColor: "#F59E0B" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
+                          style={{ backgroundColor: "rgba(245, 158, 11, 0.2)", color: "#F59E0B" }}
                         >
                           Free Food
                         </span>
@@ -137,8 +134,8 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
 
                       {currentEvent.requiresRegistration && (
                         <span
-                          className="text-white font-medium text-[11px] px-2.5 py-1 rounded"
-                          style={{ backgroundColor: "#8B5CF6" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
+                          style={{ backgroundColor: "rgba(139, 92, 246, 0.2)", color: "#8B5CF6" }}
                         >
                           Registration Required
                         </span>
@@ -233,7 +230,7 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
             {/* Similar Events Section */}
             {similarEvents.length > 0 && (
               <div className="px-6 pb-8 pt-16 w-full">
-                <h3 className="font-bold text-xl mb-6" style={{ color: "#111827" }}>Similar Events</h3>
+                <h3 className="font-bold text-xl mb-6 text-gray-900 dark:text-gray-100">Similar Events</h3>
                 <div className="grid grid-cols-4 gap-4">
                   {similarEvents.map((similarEvent) => (
                     <EventCard key={similarEvent.id} event={similarEvent} inModal onEventClick={handleEventChange} />

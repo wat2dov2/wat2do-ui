@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-export type EasterEggType = "goose" | "party" | "foodRain" | "matrix" | null;
+export type EasterEggType = "goose" | "party" | "foodRain" | "uoft" | "mcgill" | "ubc" | "mcmaster" | null;
 
 export function useEasterEggs() {
   const [activeEasterEgg, setActiveEasterEgg] = useState<EasterEggType>(null);
@@ -16,7 +16,8 @@ export function useEasterEggs() {
   const checkSearchQuery = useCallback((query: string) => {
     const lowerQuery = query.toLowerCase().trim();
 
-    if (lowerQuery === "goose" || lowerQuery === "honk") {
+    // University of Waterloo (goose is the mascot)
+    if (lowerQuery === "goose" || lowerQuery === "honk" || lowerQuery === "waterloo" || lowerQuery === "uwaterloo") {
       triggerEasterEgg("goose");
       return true;
     }
@@ -31,8 +32,27 @@ export function useEasterEggs() {
       return true;
     }
 
-    if (lowerQuery === "matrix" || lowerQuery === "neo" || lowerQuery === "red pill") {
-      triggerEasterEgg("matrix");
+    // University of Toronto
+    if (lowerQuery === "toronto" || lowerQuery === "uoft" || lowerQuery === "u of t" || lowerQuery === "varsity") {
+      triggerEasterEgg("uoft");
+      return true;
+    }
+
+    // McGill University
+    if (lowerQuery === "mcgill" || lowerQuery === "montreal" || lowerQuery === "martlets") {
+      triggerEasterEgg("mcgill");
+      return true;
+    }
+
+    // University of British Columbia
+    if (lowerQuery === "ubc" || lowerQuery === "vancouver" || lowerQuery === "thunderbirds") {
+      triggerEasterEgg("ubc");
+      return true;
+    }
+
+    // McMaster University
+    if (lowerQuery === "mcmaster" || lowerQuery === "hamilton" || lowerQuery === "marauders") {
+      triggerEasterEgg("mcmaster");
       return true;
     }
 

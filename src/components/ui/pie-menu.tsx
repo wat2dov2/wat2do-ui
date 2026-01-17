@@ -70,7 +70,21 @@ export function PieMenu({
   className,
 }: PieMenuProps) {
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
+
+  // Detect dark mode
+  React.useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    checkDarkMode();
+    
+    // Watch for changes
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // No gaps - slices touch each other
   const sliceAngle = items.length > 0 ? 360 / items.length : 0;
@@ -207,8 +221,18 @@ export function PieMenu({
                 {/* Slice background */}
                 <motion.path
                   d={path}
-                  fill={item.disabled ? "#f3f4f6" : isActive ? "#3B82F6" : "#ffffff"}
-                  stroke={isSelected ? "#2563EB" : "#e5e7eb"}
+                  fill={
+                    item.disabled 
+                      ? (isDarkMode ? "#374151" : "#f3f4f6")
+                      : isActive 
+                        ? "#3B82F6" 
+                        : (isDarkMode ? "#1f2937" : "#ffffff")
+                  }
+                  stroke={
+                    isSelected 
+                      ? (isDarkMode ? "#60a5fa" : "#2563EB")
+                      : (isDarkMode ? "#4b5563" : "#e5e7eb")
+                  }
                   strokeWidth={isSelected ? 2 : 1}
                   style={{
                     cursor: item.disabled ? "default" : "pointer",
@@ -247,7 +271,11 @@ export function PieMenu({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: isActive ? "white" : item.disabled ? "#9ca3af" : "#4b5563",
+                        color: isActive 
+                          ? "white" 
+                          : item.disabled 
+                            ? "#9ca3af" 
+                            : (isDarkMode ? "#d1d5db" : "#4b5563"),
                       }}
                     >
                       {item.icon}
@@ -264,7 +292,11 @@ export function PieMenu({
                   style={{
                     fontSize: `${fontSize}px`,
                     fontWeight: 500,
-                    fill: isActive ? "white" : item.disabled ? "#9ca3af" : "#374151",
+                    fill: isActive 
+                      ? "white" 
+                      : item.disabled 
+                        ? "#9ca3af" 
+                        : (isDarkMode ? "#e5e7eb" : "#374151"),
                     pointerEvents: "none",
                     userSelect: "none",
                   }}

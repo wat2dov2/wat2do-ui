@@ -10,9 +10,9 @@ import {
   LogIn,
   LogOut,
   Grid3x3,
-  Map as MapIcon,
+
   SlidersHorizontal,
-  Info,
+  Target,
   Mail,
   Compass,
   Plus,
@@ -32,6 +32,9 @@ import {
   Palette,
   Shield,
   HelpCircle,
+  Settings,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -194,6 +197,30 @@ export default function App() {
 
   // Profile/onboarding completion state
   const [profileCompleted, setProfileCompleted] = useState(false);
+
+  // Dark mode state (persisted to localStorage)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+    // Check system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  const toggleDarkMode = useCallback(() => {
+    setIsDarkMode((prev: boolean) => !prev);
+  }, []);
 
   // Saved and registered events state (persisted to localStorage)
   const [savedEventIds, setSavedEventIds] = useState<number[]>(() => {
@@ -572,1113 +599,1159 @@ export default function App() {
 
   return (
     <TooltipProvider delayDuration={0}>
-    <div className="bg-white h-dvh flex flex-col">
-      {/* Easter Eggs */}
-      <EasterEggs activeEasterEgg={activeEasterEgg} onComplete={clearEasterEgg} />
+      <div className="bg-white dark:bg-gray-900 h-dvh flex flex-col">
+        {/* Easter Eggs */}
+        <EasterEggs activeEasterEgg={activeEasterEgg} onComplete={clearEasterEgg} />
 
-      {/* Onboarding Modal */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
-        onComplete={(data) => {
-          console.log("Onboarding completed:", data);
-          setSelectedSchool(data.school);
-          setProfileCompleted(true);
-        }}
-      />
-
-      {/* Getting Started Checklist - only show when signed in */}
-      {profileCompleted && (
-        <GettingStartedChecklist
-          onOpenOnboarding={() => setShowOnboarding(true)}
-          onNavigateToFilters={() => setShowFilterDropdown(true)}
-          onViewEvent={() => {
-            // Auto-scroll to first event card
-            const firstCard = document.querySelector('[data-event-card]');
-            firstCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        {/* Onboarding Modal */}
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={(data) => {
+            console.log("Onboarding completed:", data);
+            // Note: faculty is now selected during onboarding, school dropdown remains for university selection
+            setProfileCompleted(true);
           }}
-          profileCompleted={profileCompleted}
         />
-      )}
 
-      {/* Submit Event Modal */}
-      <SubmitEventModal
-        isOpen={showSubmitEvent}
-        onClose={() => setShowSubmitEvent(false)}
-        onSubmit={(eventData) => {
-          // Add the event to the events list and return the ID
-          const eventId = addEvent(eventData);
-          console.log("New event created with ID:", eventId);
-          return eventId;
-        }}
-        userCredits={userCredits}
-        onPromote={promoteEvent}
-        onBuyCredits={() => setShowBuyCredits(true)}
-      />
+        {/* Getting Started Checklist - only show when signed in */}
+        {profileCompleted && (
+          <GettingStartedChecklist
+            onOpenOnboarding={() => setShowOnboarding(true)}
+            onNavigateToFilters={() => setShowFilterDropdown(true)}
+            onViewEvent={() => {
+              // Auto-scroll to first event card
+              const firstCard = document.querySelector('[data-event-card]');
+              firstCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            profileCompleted={profileCompleted}
+          />
+        )}
 
-      {/* Buy Credits Modal */}
-      <BuyCreditsModal
-        isOpen={showBuyCredits}
-        onClose={() => setShowBuyCredits(false)}
-        currentCredits={userCredits}
-        onPurchase={addCredits}
-      />
+        {/* Submit Event Modal */}
+        <SubmitEventModal
+          isOpen={showSubmitEvent}
+          onClose={() => setShowSubmitEvent(false)}
+          onSubmit={(eventData) => {
+            // Add the event to the events list and return the ID
+            const eventId = addEvent(eventData);
+            console.log("New event created with ID:", eventId);
+            return eventId;
+          }}
+          userCredits={userCredits}
+          onPromote={promoteEvent}
+          onBuyCredits={() => setShowBuyCredits(true)}
+        />
 
-      {/* Command Palette Modal */}
-      <CommandDialog
-        open={showCommandPalette}
-        onOpenChange={setShowCommandPalette}
-        title="Command Palette"
-        description="Search for commands, actions, and settings"
-      >
-        <CommandInput placeholder="Type a command or search..." />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
+        {/* Buy Credits Modal */}
+        <BuyCreditsModal
+          isOpen={showBuyCredits}
+          onClose={() => setShowBuyCredits(false)}
+          currentCredits={userCredits}
+          onPurchase={addCredits}
+        />
 
-          {/* Search Section */}
-          <CommandGroup heading="Search">
-            <CommandItem
-              onSelect={() => {
-                setShowCommandPalette(false);
-                // Focus the main search input
-                const searchInput = document.querySelector('input[placeholder="Search events, clubs, activities..."]') as HTMLInputElement;
-                searchInput?.focus();
-              }}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              <span>Search Events</span>
-              <CommandShortcut>/</CommandShortcut>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setTodayFilter(true);
-                setShowCommandPalette(false);
-              }}
-            >
-              <Clock className="mr-2 h-4 w-4" />
-              <span>Show Today's Events</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setFreeFilter(true);
-                setShowCommandPalette(false);
-              }}
-            >
-              <Tag className="mr-2 h-4 w-4" />
-              <span>Show Free Events</span>
-            </CommandItem>
-          </CommandGroup>
+        {/* Command Palette Modal */}
+        <CommandDialog
+          open={showCommandPalette}
+          onOpenChange={setShowCommandPalette}
+          title="Command Palette"
+          description="Search for commands, actions, and settings"
+        >
+          <CommandInput placeholder="Type a command or search..." />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
 
-          <CommandSeparator />
+            {/* Search Section */}
+            <CommandGroup heading="Search">
+              <CommandItem
+                onSelect={() => {
+                  setShowCommandPalette(false);
+                  // Focus the main search input
+                  const searchInput = document.querySelector('input[placeholder="Search events, clubs, activities..."]') as HTMLInputElement;
+                  searchInput?.focus();
+                }}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                <span>Search Events</span>
+                <CommandShortcut>/</CommandShortcut>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  setTodayFilter(true);
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Clock className="mr-2 h-4 w-4" />
+                <span>Show Today's Events</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  setFreeFilter(true);
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Tag className="mr-2 h-4 w-4" />
+                <span>Show Free Events</span>
+              </CommandItem>
+            </CommandGroup>
 
-          {/* Commands Section */}
-          <CommandGroup heading="Commands">
-            <CommandItem
-              onSelect={() => {
-                setShowFilterDropdown(true);
-                setShowCommandPalette(false);
-              }}
-            >
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              <span>Open Filters</span>
-              <CommandShortcut>F</CommandShortcut>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setViewMode("grid");
-                setShowCommandPalette(false);
-              }}
-            >
-              <Grid3x3 className="mr-2 h-4 w-4" />
-              <span>Grid View</span>
-              <CommandShortcut>G</CommandShortcut>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setViewMode("map");
-                setShowCommandPalette(false);
-              }}
-            >
-              <MapIcon className="mr-2 h-4 w-4" />
-              <span>Map View</span>
-              <CommandShortcut>M</CommandShortcut>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setViewMode("calendar");
-                setShowCommandPalette(false);
-              }}
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              <span>Calendar View</span>
-              <CommandShortcut>C</CommandShortcut>
-            </CommandItem>
-          </CommandGroup>
+            <CommandSeparator />
 
-          <CommandSeparator />
+            {/* Commands Section */}
+            <CommandGroup heading="Commands">
+              <CommandItem
+                onSelect={() => {
+                  setShowFilterDropdown(true);
+                  setShowCommandPalette(false);
+                }}
+              >
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                <span>Open Filters</span>
+                <CommandShortcut>F</CommandShortcut>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  setViewMode("grid");
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Grid3x3 className="mr-2 h-4 w-4" />
+                <span>Grid View</span>
+                <CommandShortcut>G</CommandShortcut>
+              </CommandItem>
 
-          {/* Actions Section */}
-          <CommandGroup heading="Actions">
-            <CommandItem
-              onSelect={() => {
-                setShowSubmitEvent(true);
-                setShowCommandPalette(false);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              <span>Create New Event</span>
-              <CommandShortcut>N</CommandShortcut>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setPageMode("myEvents");
-                setShowCommandPalette(false);
-              }}
-            >
-              <Megaphone className="mr-2 h-4 w-4" />
-              <span>View My Events</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                // Clear all filters
-                setSearchQuery("");
-                setTodayFilter(false);
-                setThisWeekFilter(false);
-                setFreeFilter(false);
-                setFreeFoodFilter(false);
-                setForYouFilter(false);
-                setSelectedCategories([]);
-                setSelectedLocations([]);
-                setSelectedFoods([]);
-                setSelectedDays([]);
-                setPriceRange({ min: "", max: "" });
-                setShowCommandPalette(false);
-              }}
-            >
-              <X className="mr-2 h-4 w-4" />
-              <span>Clear All Filters</span>
-            </CommandItem>
-          </CommandGroup>
+              <CommandItem
+                onSelect={() => {
+                  setViewMode("calendar");
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                <span>Calendar View</span>
+                <CommandShortcut>C</CommandShortcut>
+              </CommandItem>
+            </CommandGroup>
 
-          <CommandSeparator />
+            <CommandSeparator />
 
-          {/* Personal Section */}
-          <CommandGroup heading="Personal">
-            {profileCompleted ? (
-              <>
+            {/* Actions Section */}
+            <CommandGroup heading="Actions">
+              <CommandItem
+                onSelect={() => {
+                  setShowSubmitEvent(true);
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                <span>Create New Event</span>
+                <CommandShortcut>N</CommandShortcut>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  setPageMode("myEvents");
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Megaphone className="mr-2 h-4 w-4" />
+                <span>View My Events</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  // Clear all filters
+                  setSearchQuery("");
+                  setTodayFilter(false);
+                  setThisWeekFilter(false);
+                  setFreeFilter(false);
+                  setFreeFoodFilter(false);
+                  setForYouFilter(false);
+                  setSelectedCategories([]);
+                  setSelectedLocations([]);
+                  setSelectedFoods([]);
+                  setSelectedDays([]);
+                  setPriceRange({ min: "", max: "" });
+                  setShowCommandPalette(false);
+                }}
+              >
+                <X className="mr-2 h-4 w-4" />
+                <span>Clear All Filters</span>
+              </CommandItem>
+            </CommandGroup>
+
+            <CommandSeparator />
+
+            {/* Personal Section */}
+            <CommandGroup heading="Personal">
+              {profileCompleted ? (
+                <>
+                  <CommandItem
+                    onSelect={() => {
+                      setForYouFilter(true);
+                      setShowCommandPalette(false);
+                    }}
+                  >
+                    <Star className="mr-2 h-4 w-4" />
+                    <span>Show Personalized Events</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() => {
+                      setPageMode("myEvents");
+                      setShowCommandPalette(false);
+                    }}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>My Created Events</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() => {
+                      // Navigate to saved events (placeholder)
+                      setShowCommandPalette(false);
+                    }}
+                  >
+                    <Heart className="mr-2 h-4 w-4" />
+                    <span>Saved Events</span>
+                  </CommandItem>
+                </>
+              ) : (
                 <CommandItem
                   onSelect={() => {
-                    setForYouFilter(true);
+                    setShowOnboarding(true);
                     setShowCommandPalette(false);
                   }}
                 >
-                  <Star className="mr-2 h-4 w-4" />
-                  <span>Show Personalized Events</span>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  <span>Sign In to Unlock Features</span>
                 </CommandItem>
-                <CommandItem
-                  onSelect={() => {
-                    setPageMode("myEvents");
-                    setShowCommandPalette(false);
-                  }}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  <span>My Created Events</span>
-                </CommandItem>
-                <CommandItem
-                  onSelect={() => {
-                    // Navigate to saved events (placeholder)
-                    setShowCommandPalette(false);
-                  }}
-                >
-                  <Heart className="mr-2 h-4 w-4" />
-                  <span>Saved Events</span>
-                </CommandItem>
-              </>
-            ) : (
+              )}
+            </CommandGroup>
+
+            <CommandSeparator />
+
+            {/* Personal Settings Section */}
+            <CommandGroup heading="Personal Settings">
               <CommandItem
                 onSelect={() => {
                   setShowOnboarding(true);
                   setShowCommandPalette(false);
                 }}
               >
-                <LogIn className="mr-2 h-4 w-4" />
-                <span>Sign In to Unlock Features</span>
+                <User className="mr-2 h-4 w-4" />
+                <span>{profileCompleted ? "Edit Profile" : "Create Profile"}</span>
               </CommandItem>
-            )}
-          </CommandGroup>
-
-          <CommandSeparator />
-
-          {/* Personal Settings Section */}
-          <CommandGroup heading="Personal Settings">
-            <CommandItem
-              onSelect={() => {
-                setShowOnboarding(true);
-                setShowCommandPalette(false);
-              }}
-            >
-              <User className="mr-2 h-4 w-4" />
-              <span>{profileCompleted ? "Edit Profile" : "Create Profile"}</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                // Notification settings placeholder
-                setShowCommandPalette(false);
-              }}
-            >
-              <Bell className="mr-2 h-4 w-4" />
-              <span>Notification Preferences</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                // Theme settings placeholder
-                setShowCommandPalette(false);
-              }}
-            >
-              <Palette className="mr-2 h-4 w-4" />
-              <span>Theme & Appearance</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                // Privacy settings placeholder
-                setShowCommandPalette(false);
-              }}
-            >
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Privacy Settings</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setPageMode("about");
-                setShowCommandPalette(false);
-              }}
-            >
-              <HelpCircle className="mr-2 h-4 w-4" />
-              <span>Help & Support</span>
-            </CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
-
-      {/* Top Navigation */}
-      <header
-        className="flex items-center justify-between"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "48px",
-          paddingLeft: "20px",
-          paddingRight: "20px",
-          borderBottom: "1px solid #e5e7eb",
-          backgroundColor: "#fff",
-          zIndex: 50,
-        }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="h-6 w-6 flex-shrink-0">
-            <img alt="Logo" className="w-full h-full object-cover rounded" src={imgImage1} />
-          </div>
-          <span className="text-gray-300 text-lg font-light">/</span>
-          <SchoolCombobox value={selectedSchool} onChange={setSelectedSchool} />
-        </div>
-
-        {profileCompleted ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setProfileCompleted(false)}
-                className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm px-3 py-1.5 rounded transition-colors cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" strokeWidth={2.5} />
-                Log out
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Sign out of your account</p>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setShowOnboarding(true)}
-                className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm px-3 py-1.5 rounded transition-colors cursor-pointer"
-              >
-                <LogIn className="w-4 h-4" strokeWidth={2.5} />
-                Sign in
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Sign in to save preferences</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </header>
-
-      <div className="flex overflow-hidden flex-1">
-        {/* Side Navigation */}
-        <aside
-          onMouseEnter={() => setSidebarHovered(true)}
-          onMouseLeave={() => setSidebarHovered(false)}
-          className="flex flex-col transition-all duration-200 overflow-hidden"
-          style={{
-            position: "fixed",
-            left: 0,
-            top: "48px",
-            bottom: 0,
-            width: sidebarHovered ? "180px" : "48px",
-            borderRight: "1px solid #e5e7eb",
-            backgroundColor: "#fff",
-            zIndex: 40,
-          }}
-        >
-          <div className="p-2">
-            <nav className="flex flex-col gap-1">
-              {/* Command Palette Trigger - Above Events */}
-              <button
-                onClick={() => setShowCommandPalette(true)}
-                className="w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 mb-1"
-              >
-                <Search className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                <span
-                  className="flex-1 whitespace-nowrap transition-opacity duration-150"
-                  style={{ opacity: sidebarHovered ? 1 : 0 }}
-                >
-                  Search
-                </span>
-                {sidebarHovered && (
-                  <div className="flex items-center gap-0.5">
-                    <span className="flex items-center justify-center w-5 h-5 bg-gray-100 border border-gray-300 rounded shadow-sm text-[10px] text-gray-500">
-                      ⌘
-                    </span>
-                    <span className="flex items-center justify-center w-5 h-5 bg-gray-100 border border-gray-300 rounded shadow-sm text-[10px] text-gray-500">
-                      K
-                    </span>
-                  </div>
-                )}
-              </button>
-
-              {/* Events Expandable Section */}
-              <div
-                className="rounded"
-                style={{
-                  backgroundColor: pageMode === "events" ? "#f3f4f6" : "transparent",
+              <CommandItem
+                onSelect={() => {
+                  // Notification settings placeholder
+                  setShowCommandPalette(false);
                 }}
               >
-                  <button
-                  onClick={() => setEventsExpanded(!eventsExpanded)}
-                  className={`w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${
-                    pageMode === "events" ? "text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                <Bell className="mr-2 h-4 w-4" />
+                <span>Notification Preferences</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  // Theme settings placeholder
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Palette className="mr-2 h-4 w-4" />
+                <span>Theme & Appearance</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  // Privacy settings placeholder
+                  setShowCommandPalette(false);
+                }}
+              >
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Privacy Settings</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  setPageMode("about");
+                  setShowCommandPalette(false);
+                }}
+              >
+                <HelpCircle className="mr-2 h-4 w-4" />
+                <span>Help & Support</span>
+              </CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </CommandDialog>
+
+        {/* Top Navigation */}
+        <header
+          className="flex items-center justify-between"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "48px",
+            paddingLeft: "20px",
+            paddingRight: "20px",
+            borderBottom: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb",
+            backgroundColor: isDarkMode ? "#1f2937" : "#F4F3EF",
+            zIndex: 50,
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setPageMode("events")}
+              className="h-6 w-6 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              aria-label="Go to events"
+            >
+              <img alt="Logo" className="w-full h-full object-cover rounded" src={imgImage1} />
+            </button>
+            <span className="text-gray-300 text-lg font-light">/</span>
+            <SchoolCombobox value={selectedSchool} onChange={setSelectedSchool} />
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Dark Mode Toggle */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleDarkMode}
+                  className="flex items-center justify-center w-8 h-8 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors cursor-pointer"
+                  aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
                 >
-                  <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                  <span className="flex-1 whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
-                    Events
+                  {isDarkMode ? (
+                    <Sun className="w-4 h-4" strokeWidth={2} />
+                  ) : (
+                    <Moon className="w-4 h-4" strokeWidth={2} />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isDarkMode ? "Switch to light mode" : "Switch to dark mode"}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Auth Button */}
+            {profileCompleted ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setProfileCompleted(false)}
+                    className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm px-3 py-1.5 rounded transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" strokeWidth={2.5} />
+                    Log out
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sign out of your account</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setShowOnboarding(true)}
+                    className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm px-3 py-1.5 rounded transition-colors cursor-pointer"
+                  >
+                    <LogIn className="w-4 h-4" strokeWidth={2.5} />
+                    Sign in
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sign in to save preferences</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </header>
+
+        <div className="flex overflow-hidden flex-1">
+          {/* Side Navigation */}
+          <aside
+            onMouseEnter={() => setSidebarHovered(true)}
+            onMouseLeave={() => setSidebarHovered(false)}
+            className="flex flex-col transition-all duration-200 overflow-hidden"
+            style={{
+              position: "fixed",
+              left: 0,
+              top: "48px",
+              bottom: 0,
+              width: sidebarHovered ? "180px" : "48px",
+              borderRight: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb",
+              backgroundColor: isDarkMode ? "#1f2937" : "#F4F3EF",
+              zIndex: 40,
+            }}
+          >
+            <div className="p-2">
+              <nav className="flex flex-col gap-1">
+                {/* Command Palette Trigger - Above Events */}
+                <button
+                  onClick={() => setShowCommandPalette(true)}
+                  className="w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 mb-1"
+                >
+                  <Search className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                  <span
+                    className="flex-1 whitespace-nowrap transition-opacity duration-150"
+                    style={{ opacity: sidebarHovered ? 1 : 0 }}
+                  >
+                    Search
                   </span>
                   {sidebarHovered && (
-                    <ChevronDown
-                      className="w-3 h-3 flex-shrink-0 transition-transform duration-200"
-                      style={{
-                        transform: eventsExpanded ? "rotate(0deg)" : "rotate(-90deg)"
-                      }}
-                      strokeWidth={2}
-                    />
+                    <div className="flex items-center gap-0.5">
+                      <span className="flex items-center justify-center w-5 h-5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-sm text-[10px] text-gray-500 dark:text-gray-400">
+                        ⌘
+                      </span>
+                      <span className="flex items-center justify-center w-5 h-5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-sm text-[10px] text-gray-500 dark:text-gray-400">
+                        K
+                      </span>
+                    </div>
                   )}
                 </button>
 
-                {/* Sublinks */}
-                <div
-                  className="overflow-hidden transition-all duration-200"
-                  style={{
-                    maxHeight: eventsExpanded ? "120px" : "0px",
-                    opacity: eventsExpanded ? 1 : 0
-                  }}
-                >
-                  <div className="flex flex-col gap-0.5 mt-0.5" style={{ paddingLeft: sidebarHovered ? "20px" : "0px" }}>
+                {/* Events Section - Different for logged in/out */}
+                {profileCompleted ? (
+                  /* Logged In: Expandable Events with sublinks */
+                  <div
+                    className={`rounded ${pageMode === "events" ? "bg-gray-100 dark:bg-gray-700" : "bg-transparent"}`}
+                  >
                     <button
-                      onClick={() => setPageMode("events")}
-                      className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${
-                        pageMode === "events" ? "text-blue-600" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                      }`}
+                      onClick={() => setEventsExpanded(!eventsExpanded)}
+                      className={`w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "events" ? "text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                        }`}
                     >
-                      <Compass className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                      <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
-                        Explore
+                      <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                      <span className="flex-1 whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                        Events
                       </span>
-                    </button>
-                    <button
-                      onClick={() => setShowSubmitEvent(true)}
-                      className="font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                    >
-                      <Plus className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                      <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
-                        Create
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => setPageMode("myEvents")}
-                      className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${
-                        pageMode === "myEvents" ? "text-blue-600" : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                      }`}
-                    >
-                      <Megaphone className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                      <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
-                        My Events
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <NavButton icon={Users} label="Clubs" expanded={sidebarHovered} />
-              <NavButton
-                icon={Info}
-                label="About"
-                isActive={pageMode === "about"}
-                onClick={() => setPageMode("about")}
-                expanded={sidebarHovered}
-              />
-              <NavButton icon={Mail} label="Contact" expanded={sidebarHovered} />
-            </nav>
-          </div>
-
-        </aside>
-
-        {/* Main Content */}
-        <div
-          className="flex-1 overflow-auto"
-          style={{
-            marginLeft: "48px",
-            marginTop: "48px",
-            padding: "24px",
-            minHeight: "calc(100vh - 48px)",
-          }}
-        >
-          {pageMode === "about" ? (
-            <AboutPage />
-          ) : pageMode === "myEvents" ? (
-            <MyEventsView
-              profileCompleted={profileCompleted}
-              onSignIn={() => setShowOnboarding(true)}
-              events={events}
-              savedEventIds={savedEventIds}
-              registeredEventIds={registeredEventIds}
-              onToggleSave={toggleSaveEvent}
-              onToggleRegister={toggleRegisterEvent}
-            />
-          ) : (
-            <div className="space-y-5">
-              {/* Search and Quick Filters - Always Visible */}
-              <div className="space-y-5">
-                {/* Search Bar with View Mode Tabs */}
-                <div className="flex gap-3 items-stretch">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Search events, clubs, activities..."
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        checkSearchQuery(e.target.value);
-                      }}
-                      className="w-full border border-gray-200 rounded pl-9 pr-3 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* View Mode Toggle - Moved here */}
-                  <div className="bg-gray-100 flex items-stretch p-0.5 rounded gap-0.5">
-                    <ViewModeButton
-                      icon={Grid3x3}
-                      label="Grid"
-                      isActive={viewMode === "grid"}
-                      onClick={() => setViewMode("grid")}
-                    />
-                    <ViewModeButton
-                      icon={MapIcon}
-                      label="Map"
-                      isActive={viewMode === "map"}
-                      onClick={() => setViewMode("map")}
-                    />
-                    <ViewModeButton
-                      icon={Calendar}
-                      label="Calendar"
-                      isActive={viewMode === "calendar"}
-                      onClick={() => setViewMode("calendar")}
-                    />
-                  </div>
-                </div>
-
-                {/* Quick Filter Chips */}
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {/* Event Count */}
-                  <span className="font-bold text-xl text-gray-900">
-                    {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}
-                  </span>
-
-                  {/* Filters - Right aligned */}
-                  <div className="flex flex-wrap items-center gap-2">
-
-                  <QuickFilterChip
-                    icon={<Clock className="w-3.5 h-3.5" />}
-                    label="Today"
-                    active={todayFilter}
-                    onClick={() => {
-                      setTodayFilter(!todayFilter);
-                      if (!todayFilter) setThisWeekFilter(false);
-                    }}
-                  />
-                  <QuickFilterChip
-                    icon={<Utensils className="w-3.5 h-3.5" />}
-                    label="Free Food"
-                    active={freeFoodFilter}
-                    onClick={() => {
-                      setFreeFoodFilter(!freeFoodFilter);
-                      if (!freeFoodFilter) setFreeFilter(false);
-                    }}
-                  />
-                  <QuickFilterChip
-                    icon={<Sparkles className="w-3.5 h-3.5" />}
-                    label="For You"
-                    active={forYouFilter}
-                    onClick={() => setForYouFilter(!forYouFilter)}
-                    disabled={!profileCompleted}
-                    tooltip={!profileCompleted ? "Sign in to enable personalized recommendations" : undefined}
-                  />
-                  <QuickFilterChip
-                    icon={<Heart className="w-3.5 h-3.5" />}
-                    label="Saved"
-                    active={savedFilter}
-                    onClick={() => setSavedFilter(!savedFilter)}
-                    badge={savedEventIds.length > 0 ? savedEventIds.length : undefined}
-                  />
-
-                  {/* More Filters Button with Dropdown */}
-                  <div className="relative">
-                    <button
-                      data-filter-trigger
-                      onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all cursor-pointer ${
-                        showFilterDropdown || filterCount > 0
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      <SlidersHorizontal className="w-3.5 h-3.5" />
-                      More Filters
-                      {filterCount > 0 && (
-                        <span
-                          className="bg-blue-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-blue-600 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCategories([]);
-                            setSelectedLocations([]);
-                            setSelectedFoods([]);
-                            setSelectedDays([]);
-                            setPriceRange({ min: "", max: "" });
-                            setDateRange(undefined);
-                            setAddedSince(undefined);
-                            setRequiresRegistration(false);
+                      {sidebarHovered && (
+                        <ChevronDown
+                          className="w-3 h-3 flex-shrink-0 transition-transform duration-200"
+                          style={{
+                            transform: eventsExpanded ? "rotate(0deg)" : "rotate(-90deg)"
                           }}
-                        >
-                          <X className="w-2.5 h-2.5" strokeWidth={3} />
-                          {filterCount}
-                        </span>
+                          strokeWidth={2}
+                        />
                       )}
                     </button>
 
-                    {/* Filter Dropdown - Positioned below More Filters button, aligned right */}
-                    {showFilterDropdown && (
-                      <div
-                        data-filter-dropdown
-                        className="rounded overflow-y-auto absolute right-0 top-full mt-2 z-50 px-4 py-4 max-h-[calc(100vh-200px)]"
-                        style={{ width: "300px", backgroundColor: "#fff", border: "1px solid #e5e7eb" }}
-                      >
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-3">
-                          <h2 className="font-bold text-base text-gray-900">Filters</h2>
-                          <div className="flex gap-1 bg-gray-100 rounded p-0.5">
-                            <button
-                              onClick={() => setFilterViewMode("visual")}
-                              className={`${
-                                filterViewMode === "visual"
-                                  ? "bg-white text-gray-900 shadow-sm"
-                                  : "bg-transparent text-gray-500 hover:text-gray-900"
-                              } font-medium text-[11px] px-3 py-1 rounded transition-all`}
+                    {/* Sublinks */}
+                    <div
+                      className="overflow-hidden transition-all duration-200"
+                      style={{
+                        maxHeight: eventsExpanded ? "120px" : "0px",
+                        opacity: eventsExpanded ? 1 : 0
+                      }}
+                    >
+                      <div className="flex flex-col gap-0.5 mt-0.5" style={{ paddingLeft: sidebarHovered ? "20px" : "0px" }}>
+                        <button
+                          onClick={() => setPageMode("events")}
+                          className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "events" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200"
+                            }`}
+                        >
+                          <Compass className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                          <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                            Explore
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setShowSubmitEvent(true)}
+                          className="font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200"
+                        >
+                          <Plus className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                          <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                            Create
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setPageMode("myEvents")}
+                          className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "myEvents" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200"
+                            }`}
+                        >
+                          <Megaphone className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                          <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                            My Events
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Logged Out: Simple Events link */
+                  <button
+                    onClick={() => setPageMode("events")}
+                    className={`w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "events" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                      }`}
+                  >
+                    <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                    <span className="flex-1 whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                      Events
+                    </span>
+                  </button>
+                )}
+
+                <NavButton icon={Shield} label="Clubs" expanded={sidebarHovered} />
+                <NavButton
+                  icon={Target}
+                  label="Mission"
+                  isActive={pageMode === "about"}
+                  onClick={() => setPageMode("about")}
+                  expanded={sidebarHovered}
+                />
+                <NavButton icon={Mail} label="Contact" expanded={sidebarHovered} />
+              </nav>
+            </div>
+
+            {/* Settings Section - Only show when logged in */}
+            {profileCompleted && (
+              <div className="mt-auto p-2 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  className="w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                >
+                  <Settings className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                  <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                    Settings
+                  </span>
+                </button>
+              </div>
+            )}
+          </aside>
+
+          {/* Main Content */}
+          <div
+            className="flex-1 overflow-auto"
+            style={{
+              marginLeft: "48px",
+              marginTop: "48px",
+              padding: "24px",
+              minHeight: "calc(100vh - 48px)",
+              backgroundColor: isDarkMode ? "#111827" : "#FCFBFA",
+            }}
+          >
+            {pageMode === "about" ? (
+              <AboutPage />
+            ) : pageMode === "myEvents" ? (
+              <MyEventsView
+                profileCompleted={profileCompleted}
+                onSignIn={() => setShowOnboarding(true)}
+                events={events}
+                savedEventIds={savedEventIds}
+                registeredEventIds={registeredEventIds}
+                onToggleSave={toggleSaveEvent}
+                onToggleRegister={toggleRegisterEvent}
+              />
+            ) : (
+              <div className="space-y-5">
+                {/* Search and Quick Filters - Always Visible */}
+                <div className="space-y-5">
+                  {/* Search Bar with View Mode Tabs */}
+                  <div className="flex gap-3 items-stretch">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search events, clubs, activities..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          checkSearchQuery(e.target.value);
+                        }}
+                        className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-md"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* View Mode Toggle - Moved here */}
+                    <div className="bg-gray-100 dark:bg-gray-800 flex items-stretch p-0.5 rounded-xl gap-0.5">
+                      <ViewModeButton
+                        icon={Grid3x3}
+                        label="Grid"
+                        isActive={viewMode === "grid"}
+                        onClick={() => setViewMode("grid")}
+                      />
+
+                      <ViewModeButton
+                        icon={Calendar}
+                        label="Calendar"
+                        isActive={viewMode === "calendar"}
+                        onClick={() => setViewMode("calendar")}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick Filter Chips */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {/* Event Count */}
+                    <span className="font-bold text-xl text-gray-900 dark:text-gray-100">
+                      {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}
+                    </span>
+
+                    {/* Filters - Right aligned */}
+                    <div className="flex flex-wrap items-center gap-2">
+
+                      <QuickFilterChip
+                        icon={<Clock className="w-3.5 h-3.5" />}
+                        label="Today"
+                        active={todayFilter}
+                        onClick={() => {
+                          setTodayFilter(!todayFilter);
+                          if (!todayFilter) setThisWeekFilter(false);
+                        }}
+                      />
+                      <QuickFilterChip
+                        icon={<Utensils className="w-3.5 h-3.5" />}
+                        label="Free Food"
+                        active={freeFoodFilter}
+                        onClick={() => {
+                          setFreeFoodFilter(!freeFoodFilter);
+                          if (!freeFoodFilter) setFreeFilter(false);
+                        }}
+                      />
+                      {profileCompleted && (
+                        <>
+                          <QuickFilterChip
+                            icon={<Sparkles className="w-3.5 h-3.5" />}
+                            label="For You"
+                            active={forYouFilter}
+                            onClick={() => setForYouFilter(!forYouFilter)}
+                          />
+                          <QuickFilterChip
+                            icon={<Heart className="w-3.5 h-3.5" />}
+                            label="Saved"
+                            active={savedFilter}
+                            onClick={() => setSavedFilter(!savedFilter)}
+                            badge={savedEventIds.length > 0 ? savedEventIds.length : undefined}
+                          />
+                        </>
+                      )}
+
+                      {/* More Filters Button with Dropdown */}
+                      <div className="relative">
+                        <button
+                          data-filter-trigger
+                          onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all cursor-pointer ${showFilterDropdown || filterCount > 0
+                            ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                            }`}
+                        >
+                          <SlidersHorizontal className="w-3.5 h-3.5" />
+                          More Filters
+                          {filterCount > 0 && (
+                            <span
+                              className="bg-blue-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-blue-600 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCategories([]);
+                                setSelectedLocations([]);
+                                setSelectedFoods([]);
+                                setSelectedDays([]);
+                                setPriceRange({ min: "", max: "" });
+                                setDateRange(undefined);
+                                setAddedSince(undefined);
+                                setRequiresRegistration(false);
+                              }}
                             >
-                              Visual
-                            </button>
-                            <button
-                              onClick={() => setFilterViewMode("json")}
-                              className={`${
-                                filterViewMode === "json"
-                                  ? "bg-white text-gray-900 shadow-sm"
-                                  : "bg-transparent text-gray-500 hover:text-gray-900"
-                              } font-medium text-[11px] px-3 py-1 rounded transition-all`}
-                            >
-                              JSON
-                            </button>
-                          </div>
-                        </div>
+                              <X className="w-2.5 h-2.5" strokeWidth={3} />
+                              {filterCount}
+                            </span>
+                          )}
+                        </button>
 
-                        {filterViewMode === "visual" ? (
-                          <>
-                            <div className="-space-y-px">
-                              {/* Category */}
-                              <FilterSection
-                                title="Category"
-                                expanded={expandedSections.category}
-                                onToggle={() => toggleSection("category")}
-                                indicator={selectedCategories.length > 0 ? `${selectedCategories.length}` : undefined}
-                                onClear={() => setSelectedCategories([])}
-                              >
-                                <div className="relative">
-                                  <button
-                                    onClick={categoryPieMenu.open}
-                                    className="bg-gray-100 font-medium text-gray-600 text-xs px-3 py-2 rounded w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
-                                  >
-                                    <span>
-                                      {selectedCategories.length > 0
-                                        ? selectedCategories.join(", ")
-                                        : "Select Categories"}
-                                    </span>
-                                    <Tag className="w-4 h-4 text-gray-400" />
-                                  </button>
-                                  <PieMenu
-                                    items={categoryPieItems}
-                                    isOpen={categoryPieMenu.isOpen}
-                                    position={categoryPieMenu.position}
-                                    onClose={categoryPieMenu.close}
-                                    onSelect={(item) => toggleCategory(item.id)}
-                                    selectedIds={selectedCategories}
-                                    closeOnSelect={false}
-                                    radius={140}
-                                    innerRadius={20}
-                                  />
-                                </div>
-                              </FilterSection>
-
-                              {/* Date Range */}
-                              <FilterSection
-                                title="Date range"
-                                expanded={expandedSections.dateRange}
-                                onToggle={() => toggleSection("dateRange")}
-                                indicator={dateRange ? "1" : undefined}
-                                onClear={() => setDateRange(undefined)}
-                              >
-                                <div className="relative">
-                                  <button
-                                    data-calendar-trigger
-                                    onClick={() => setShowDateRangePicker(!showDateRangePicker)}
-                                    className="bg-gray-100 font-medium text-gray-600 text-xs px-3 py-2 rounded w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between"
-                                  >
-                                    <span>
-                                      {dateRange
-                                        ? dateRange.toLocaleDateString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            year: "numeric",
-                                          })
-                                        : "Select Date"}
-                                    </span>
-                                    <CalendarDays className="w-4 h-4 text-gray-400" />
-                                  </button>
-                                  {showDateRangePicker && (
-                                    <div className="absolute z-50 mt-2">
-                                      <DatePicker
-                                        selected={dateRange}
-                                        onSelect={(date) => setDateRange(date)}
-                                        onClose={() => setShowDateRangePicker(false)}
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              </FilterSection>
-
-                              {/* Location */}
-                              <FilterSection
-                                title="Location"
-                                expanded={expandedSections.location}
-                                onToggle={() => toggleSection("location")}
-                                indicator={selectedLocations.length > 0 ? `${selectedLocations.length}` : undefined}
-                                onClear={() => setSelectedLocations([])}
-                              >
-                                <div className="relative">
-                                  <button
-                                    onClick={locationPieMenu.open}
-                                    className="bg-gray-100 font-medium text-gray-600 text-xs px-3 py-2 rounded w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
-                                  >
-                                    <span>
-                                      {selectedLocations.length > 0
-                                        ? selectedLocations.join(", ")
-                                        : "Select Locations"}
-                                    </span>
-                                    <MapPin className="w-4 h-4 text-gray-400" />
-                                  </button>
-                                  <PieMenu
-                                    items={locationPieItems}
-                                    isOpen={locationPieMenu.isOpen}
-                                    position={locationPieMenu.position}
-                                    onClose={locationPieMenu.close}
-                                    onSelect={(item) => toggleLocation(item.id)}
-                                    selectedIds={selectedLocations}
-                                    closeOnSelect={false}
-                                    radius={140}
-                                    innerRadius={20}
-                                  />
-                                </div>
-                              </FilterSection>
-
-                              {/* Price Range */}
-                              <FilterSection
-                                title="Price range"
-                                expanded={expandedSections.priceRange}
-                                onToggle={() => toggleSection("priceRange")}
-                                indicator={priceRange.min || priceRange.max ? "1" : undefined}
-                                onClear={() => setPriceRange({ min: "", max: "" })}
-                              >
-                                <div className="flex gap-2 items-center w-full">
-                                  <input
-                                    type="number"
-                                    placeholder="Min"
-                                    value={priceRange.min}
-                                    onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
-                                    className="w-0 flex-1 min-w-0 border border-gray-200 rounded px-2.5 py-2 text-xs placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                  />
-                                  <span className="text-gray-400 text-[11px] flex-shrink-0">to</span>
-                                  <input
-                                    type="number"
-                                    placeholder="Max"
-                                    value={priceRange.max}
-                                    onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
-                                    className="w-0 flex-1 min-w-0 border border-gray-200 rounded px-2.5 py-2 text-xs placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                  />
-                                </div>
-                              </FilterSection>
-
-                              {/* Food */}
-                              <FilterSection
-                                title="Food"
-                                expanded={expandedSections.food}
-                                onToggle={() => toggleSection("food")}
-                                indicator={selectedFoods.length > 0 ? `${selectedFoods.length}` : undefined}
-                                onClear={() => setSelectedFoods([])}
-                              >
-                                <div className="relative">
-                                  <button
-                                    onClick={foodPieMenu.open}
-                                    className="bg-gray-100 font-medium text-gray-600 text-xs px-3 py-2 rounded w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
-                                  >
-                                    <span>
-                                      {selectedFoods.length > 0
-                                        ? selectedFoods.join(", ")
-                                        : "Select Food Options"}
-                                    </span>
-                                    <Utensils className="w-4 h-4 text-gray-400" />
-                                  </button>
-                                  <PieMenu
-                                    items={foodPieItems}
-                                    isOpen={foodPieMenu.isOpen}
-                                    position={foodPieMenu.position}
-                                    onClose={foodPieMenu.close}
-                                    onSelect={(item) => toggleFood(item.id)}
-                                    selectedIds={selectedFoods}
-                                    closeOnSelect={false}
-                                    radius={140}
-                                    innerRadius={20}
-                                  />
-                                </div>
-                              </FilterSection>
-
-                              {/* Day of the week */}
-                              <FilterSection
-                                title="Day of the week"
-                                expanded={expandedSections.dayOfWeek}
-                                onToggle={() => toggleSection("dayOfWeek")}
-                                indicator={selectedDays.length > 0 ? `${selectedDays.length}` : undefined}
-                                onClear={() => setSelectedDays([])}
-                              >
-                                <div className="relative">
-                                  <button
-                                    onClick={dayPieMenu.open}
-                                    className="bg-gray-100 font-medium text-gray-600 text-xs px-3 py-2 rounded w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
-                                  >
-                                    <span>
-                                      {selectedDays.length > 0
-                                        ? selectedDays.join(", ")
-                                        : "Select Days"}
-                                    </span>
-                                    <Calendar className="w-4 h-4 text-gray-400" />
-                                  </button>
-                                  <PieMenu
-                                    items={dayPieItems}
-                                    isOpen={dayPieMenu.isOpen}
-                                    position={dayPieMenu.position}
-                                    onClose={dayPieMenu.close}
-                                    onSelect={(item) => toggleDay(item.id)}
-                                    selectedIds={selectedDays}
-                                    closeOnSelect={false}
-                                    radius={140}
-                                    innerRadius={20}
-                                  />
-                                </div>
-                              </FilterSection>
-
-                              {/* Added since */}
-                              <FilterSection
-                                title="Added since"
-                                expanded={expandedSections.addedSince}
-                                onToggle={() => toggleSection("addedSince")}
-                                indicator={addedSince ? "1" : undefined}
-                                onClear={() => setAddedSince(undefined)}
-                              >
-                                <div className="relative">
-                                  <button
-                                    data-calendar-trigger
-                                    onClick={() => setShowAddedSincePicker(!showAddedSincePicker)}
-                                    className="bg-gray-100 font-medium text-gray-600 text-xs px-3 py-2 rounded w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between"
-                                  >
-                                    <span>
-                                      {addedSince
-                                        ? addedSince.toLocaleDateString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            year: "numeric",
-                                          })
-                                        : "Select Date"}
-                                    </span>
-                                    <CalendarDays className="w-4 h-4 text-gray-400" />
-                                  </button>
-                                  {showAddedSincePicker && (
-                                    <div className="absolute z-50 mt-2">
-                                      <DatePicker
-                                        selected={addedSince}
-                                        onSelect={(date) => setAddedSince(date)}
-                                        onClose={() => setShowAddedSincePicker(false)}
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              </FilterSection>
-
-                              {/* Registration Required */}
-                              <FilterSection
-                                title="Registration required"
-                                expanded={expandedSections.registration}
-                                onToggle={() => toggleSection("registration")}
-                                indicator={requiresRegistration ? "1" : undefined}
-                                onClear={() => setRequiresRegistration(false)}
-                              >
-                                <Checkbox
-                                  checked={requiresRegistration}
-                                  onChange={() => setRequiresRegistration(!requiresRegistration)}
-                                />
-                              </FilterSection>
-
-                              {/* Sort Section */}
-                              <div className="mt-4 mb-3">
-                                <h3 className="font-bold text-base text-gray-900">Sort</h3>
+                        {/* Filter Dropdown - Positioned below More Filters button, aligned right */}
+                        {showFilterDropdown && (
+                          <div
+                            data-filter-dropdown
+                            className="rounded-xl overflow-y-auto absolute right-0 top-full mt-2 z-50 px-4 py-4 max-h-[calc(100vh-200px)]"
+                            style={{ width: "300px", backgroundColor: isDarkMode ? "#1f2937" : "#fff", border: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb" }}
+                          >
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-3">
+                              <h2 className="font-bold text-base text-gray-900 dark:text-gray-100">Filters</h2>
+                              <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
+                                <button
+                                  onClick={() => setFilterViewMode("visual")}
+                                  className={`${filterViewMode === "visual"
+                                    ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm"
+                                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                                    } font-medium text-[11px] px-3 py-1 rounded transition-all`}
+                                >
+                                  Visual
+                                </button>
+                                <button
+                                  onClick={() => setFilterViewMode("json")}
+                                  className={`${filterViewMode === "json"
+                                    ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm"
+                                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                                    } font-medium text-[11px] px-3 py-1 rounded transition-all`}
+                                >
+                                  JSON
+                                </button>
                               </div>
-
-                              <FilterSection
-                                title="Sort By"
-                                expanded={expandedSections.sort}
-                                onToggle={() => toggleSection("sort")}
-                                indicator={
-                                  sortBy
-                                    ? `${sortBy.charAt(0).toUpperCase() + sortBy.slice(1)} ${sortOrder === "asc" ? "↑" : "↓"}`
-                                    : undefined
-                                }
-                                onClear={() => {
-                                  setSortBy("");
-                                  setSortOrder("desc");
-                                }}
-                              >
-                                <div className="space-y-2">
-                                  <div className="relative">
-                                    <button
-                                      onClick={sortPieMenu.open}
-                                      className="bg-gray-100 font-medium text-gray-600 text-xs px-3 py-2 rounded w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
-                                    >
-                                      <span>
-                                        {sortBy
-                                          ? sortBy.charAt(0).toUpperCase() + sortBy.slice(1)
-                                          : "Select Sort Field"}
-                                      </span>
-                                      <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                                    </button>
-                                    <PieMenu
-                                      items={sortPieItems}
-                                      isOpen={sortPieMenu.isOpen}
-                                      position={sortPieMenu.position}
-                                      onClose={sortPieMenu.close}
-                                      onSelect={(item) => setSortBy(item.id)}
-                                      selectedIds={sortBy ? [sortBy] : []}
-                                      closeOnSelect={true}
-                                      radius={140}
-                                      innerRadius={20}
-                                    />
-                                  </div>
-
-                                  <div className="flex gap-2">
-                                    <button
-                                      onClick={() => setSortOrder("asc")}
-                                      className={`flex-1 px-2 py-1.5 rounded text-[11px] font-medium transition-all ${
-                                        sortOrder === "asc"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                      }`}
-                                    >
-                                      Ascending
-                                    </button>
-                                    <button
-                                      onClick={() => setSortOrder("desc")}
-                                      className={`flex-1 px-2 py-1.5 rounded text-[11px] font-medium transition-all ${
-                                        sortOrder === "desc"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                      }`}
-                                    >
-                                      Descending
-                                    </button>
-                                  </div>
-                                </div>
-                              </FilterSection>
                             </div>
-                          </>
-                        ) : (
-                          <div className="space-y-4">
-                            <p className="text-gray-500 text-[11px] leading-relaxed">
-                              Use AI to generate filters or edit the JSON directly. Changes apply automatically.
-                            </p>
-                            {/* AI Prompt Input */}
-                            <div className="relative">
-                              <input
-                                type="text"
-                                placeholder={aiGenerating ? "Generating..." : "Describe filters and press Enter..."}
-                                value={aiPrompt}
-                                onChange={(e) => setAiPrompt(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && aiPrompt.trim() && !aiGenerating) {
-                                    handleAiGenerate();
-                                  }
-                                }}
-                                disabled={aiGenerating}
-                                className="w-full bg-gray-100 text-gray-700 text-xs px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 disabled:opacity-60"
-                              />
-                              {aiGenerating && (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                  <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+
+                            {/* AI Generation Input - Always Visible */}
+                            <div className="mb-4 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">AI Filter Generation</span>
+                              </div>
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  placeholder={aiGenerating ? "Generating..." : "Describe filters (e.g. 'free food events this week')..."}
+                                  value={aiPrompt}
+                                  onChange={(e) => setAiPrompt(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && aiPrompt.trim() && !aiGenerating) {
+                                      handleAiGenerate();
+                                    }
+                                  }}
+                                  disabled={aiGenerating}
+                                  className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs px-3 py-2 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:opacity-60"
+                                />
+                                {aiPrompt && !aiGenerating && (
+                                  <button
+                                    onClick={() => setAiPrompt("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                {aiGenerating && (
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full animate-spin" />
+                                  </div>
+                                )}
+                              </div>
+                              {jsonError && (
+                                <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-3 py-2 rounded-lg text-[11px]">
+                                  {jsonError}
                                 </div>
                               )}
                             </div>
-                            {jsonError && (
-                              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-[11px]">
-                                {jsonError}
+
+                            {filterViewMode === "visual" ? (
+                              <>
+                                <div className="-space-y-px">
+                                  {/* Category */}
+                                  <FilterSection
+                                    title="Category"
+                                    expanded={expandedSections.category}
+                                    onToggle={() => toggleSection("category")}
+                                    indicator={selectedCategories.length > 0 ? `${selectedCategories.length}` : undefined}
+                                    onClear={() => setSelectedCategories([])}
+                                  >
+                                    <div className="relative">
+                                      <button
+                                        onClick={categoryPieMenu.open}
+                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                      >
+                                        <span>
+                                          {selectedCategories.length > 0
+                                            ? selectedCategories.join(", ")
+                                            : "Select Categories"}
+                                        </span>
+                                        <Tag className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                      </button>
+                                      <PieMenu
+                                        items={categoryPieItems}
+                                        isOpen={categoryPieMenu.isOpen}
+                                        position={categoryPieMenu.position}
+                                        onClose={categoryPieMenu.close}
+                                        onSelect={(item) => toggleCategory(item.id)}
+                                        selectedIds={selectedCategories}
+                                        closeOnSelect={false}
+                                        radius={140}
+                                        innerRadius={20}
+                                      />
+                                    </div>
+                                  </FilterSection>
+
+                                  {/* Date Range */}
+                                  <FilterSection
+                                    title="Date range"
+                                    expanded={expandedSections.dateRange}
+                                    onToggle={() => toggleSection("dateRange")}
+                                    indicator={dateRange ? "1" : undefined}
+                                    onClear={() => setDateRange(undefined)}
+                                  >
+                                    <div className="relative">
+                                      <button
+                                        data-calendar-trigger
+                                        onClick={() => setShowDateRangePicker(!showDateRangePicker)}
+                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                                      >
+                                        <span>
+                                          {dateRange
+                                            ? dateRange.toLocaleDateString("en-US", {
+                                              month: "short",
+                                              day: "numeric",
+                                              year: "numeric",
+                                            })
+                                            : "Select Date"}
+                                        </span>
+                                        <CalendarDays className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                      </button>
+                                      {showDateRangePicker && (
+                                        <div className="absolute z-50 mt-2">
+                                          <DatePicker
+                                            selected={dateRange}
+                                            onSelect={(date) => setDateRange(date)}
+                                            onClose={() => setShowDateRangePicker(false)}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </FilterSection>
+
+                                  {/* Location */}
+                                  <FilterSection
+                                    title="Location"
+                                    expanded={expandedSections.location}
+                                    onToggle={() => toggleSection("location")}
+                                    indicator={selectedLocations.length > 0 ? `${selectedLocations.length}` : undefined}
+                                    onClear={() => setSelectedLocations([])}
+                                  >
+                                    <div className="relative">
+                                      <button
+                                        onClick={locationPieMenu.open}
+                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                      >
+                                        <span>
+                                          {selectedLocations.length > 0
+                                            ? selectedLocations.join(", ")
+                                            : "Select Locations"}
+                                        </span>
+                                        <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                      </button>
+                                      <PieMenu
+                                        items={locationPieItems}
+                                        isOpen={locationPieMenu.isOpen}
+                                        position={locationPieMenu.position}
+                                        onClose={locationPieMenu.close}
+                                        onSelect={(item) => toggleLocation(item.id)}
+                                        selectedIds={selectedLocations}
+                                        closeOnSelect={false}
+                                        radius={140}
+                                        innerRadius={20}
+                                      />
+                                    </div>
+                                  </FilterSection>
+
+                                  {/* Price Range */}
+                                  <FilterSection
+                                    title="Price range"
+                                    expanded={expandedSections.priceRange}
+                                    onToggle={() => toggleSection("priceRange")}
+                                    indicator={priceRange.min || priceRange.max ? "1" : undefined}
+                                    onClear={() => setPriceRange({ min: "", max: "" })}
+                                  >
+                                    <div className="flex gap-2 items-center w-full">
+                                      <input
+                                        type="number"
+                                        placeholder="Min"
+                                        value={priceRange.min}
+                                        onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
+                                        className="w-0 flex-1 min-w-0 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-100 rounded-xl px-2.5 py-2.5 text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                      />
+                                      <span className="text-gray-400 dark:text-gray-500 text-[11px] flex-shrink-0">to</span>
+                                      <input
+                                        type="number"
+                                        placeholder="Max"
+                                        value={priceRange.max}
+                                        onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
+                                        className="w-0 flex-1 min-w-0 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-100 rounded-xl px-2.5 py-2.5 text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                      />
+                                    </div>
+                                  </FilterSection>
+
+                                  {/* Food */}
+                                  <FilterSection
+                                    title="Food"
+                                    expanded={expandedSections.food}
+                                    onToggle={() => toggleSection("food")}
+                                    indicator={selectedFoods.length > 0 ? `${selectedFoods.length}` : undefined}
+                                    onClear={() => setSelectedFoods([])}
+                                  >
+                                    <div className="relative">
+                                      <button
+                                        onClick={foodPieMenu.open}
+                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                      >
+                                        <span>
+                                          {selectedFoods.length > 0
+                                            ? selectedFoods.join(", ")
+                                            : "Select Food Options"}
+                                        </span>
+                                        <Utensils className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                      </button>
+                                      <PieMenu
+                                        items={foodPieItems}
+                                        isOpen={foodPieMenu.isOpen}
+                                        position={foodPieMenu.position}
+                                        onClose={foodPieMenu.close}
+                                        onSelect={(item) => toggleFood(item.id)}
+                                        selectedIds={selectedFoods}
+                                        closeOnSelect={false}
+                                        radius={140}
+                                        innerRadius={20}
+                                      />
+                                    </div>
+                                  </FilterSection>
+
+                                  {/* Day of the week */}
+                                  <FilterSection
+                                    title="Day of the week"
+                                    expanded={expandedSections.dayOfWeek}
+                                    onToggle={() => toggleSection("dayOfWeek")}
+                                    indicator={selectedDays.length > 0 ? `${selectedDays.length}` : undefined}
+                                    onClear={() => setSelectedDays([])}
+                                  >
+                                    <div className="relative">
+                                      <button
+                                        onClick={dayPieMenu.open}
+                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                      >
+                                        <span>
+                                          {selectedDays.length > 0
+                                            ? selectedDays.join(", ")
+                                            : "Select Days"}
+                                        </span>
+                                        <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                      </button>
+                                      <PieMenu
+                                        items={dayPieItems}
+                                        isOpen={dayPieMenu.isOpen}
+                                        position={dayPieMenu.position}
+                                        onClose={dayPieMenu.close}
+                                        onSelect={(item) => toggleDay(item.id)}
+                                        selectedIds={selectedDays}
+                                        closeOnSelect={false}
+                                        radius={140}
+                                        innerRadius={20}
+                                      />
+                                    </div>
+                                  </FilterSection>
+
+                                  {/* Added since */}
+                                  <FilterSection
+                                    title="Added since"
+                                    expanded={expandedSections.addedSince}
+                                    onToggle={() => toggleSection("addedSince")}
+                                    indicator={addedSince ? "1" : undefined}
+                                    onClear={() => setAddedSince(undefined)}
+                                  >
+                                    <div className="relative">
+                                      <button
+                                        data-calendar-trigger
+                                        onClick={() => setShowAddedSincePicker(!showAddedSincePicker)}
+                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                                      >
+                                        <span>
+                                          {addedSince
+                                            ? addedSince.toLocaleDateString("en-US", {
+                                              month: "short",
+                                              day: "numeric",
+                                              year: "numeric",
+                                            })
+                                            : "Select Date"}
+                                        </span>
+                                        <CalendarDays className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                      </button>
+                                      {showAddedSincePicker && (
+                                        <div className="absolute z-50 mt-2">
+                                          <DatePicker
+                                            selected={addedSince}
+                                            onSelect={(date) => setAddedSince(date)}
+                                            onClose={() => setShowAddedSincePicker(false)}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </FilterSection>
+
+                                  {/* Registration Required */}
+                                  <FilterSection
+                                    title="Registration required"
+                                    expanded={expandedSections.registration}
+                                    onToggle={() => toggleSection("registration")}
+                                    indicator={requiresRegistration ? "1" : undefined}
+                                    onClear={() => setRequiresRegistration(false)}
+                                  >
+                                    <Checkbox
+                                      checked={requiresRegistration}
+                                      onChange={() => setRequiresRegistration(!requiresRegistration)}
+                                    />
+                                  </FilterSection>
+
+                                  {/* Sort Section */}
+                                  <div className="mt-4 mb-3">
+                                    <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">Sort</h3>
+                                  </div>
+
+                                  <FilterSection
+                                    title="Sort By"
+                                    expanded={expandedSections.sort}
+                                    onToggle={() => toggleSection("sort")}
+                                    indicator={
+                                      sortBy
+                                        ? `${sortBy.charAt(0).toUpperCase() + sortBy.slice(1)} ${sortOrder === "asc" ? "↑" : "↓"}`
+                                        : undefined
+                                    }
+                                    onClear={() => {
+                                      setSortBy("");
+                                      setSortOrder("desc");
+                                    }}
+                                  >
+                                    <div className="space-y-2">
+                                      <div className="relative">
+                                        <button
+                                          onClick={sortPieMenu.open}
+                                          className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                        >
+                                          <span>
+                                            {sortBy
+                                              ? sortBy.charAt(0).toUpperCase() + sortBy.slice(1)
+                                              : "Select Sort Field"}
+                                          </span>
+                                          <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        </button>
+                                        <PieMenu
+                                          items={sortPieItems}
+                                          isOpen={sortPieMenu.isOpen}
+                                          position={sortPieMenu.position}
+                                          onClose={sortPieMenu.close}
+                                          onSelect={(item) => setSortBy(item.id)}
+                                          selectedIds={sortBy ? [sortBy] : []}
+                                          closeOnSelect={true}
+                                          radius={140}
+                                          innerRadius={20}
+                                        />
+                                      </div>
+
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => setSortOrder("asc")}
+                                          className={`flex-1 px-2 py-1.5 rounded text-[11px] font-medium transition-all ${sortOrder === "asc"
+                                            ? "bg-blue-500 text-white"
+                                            : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                            }`}
+                                        >
+                                          Ascending
+                                        </button>
+                                        <button
+                                          onClick={() => setSortOrder("desc")}
+                                          className={`flex-1 px-2 py-1.5 rounded text-[11px] font-medium transition-all ${sortOrder === "desc"
+                                            ? "bg-blue-500 text-white"
+                                            : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                            }`}
+                                        >
+                                          Descending
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </FilterSection>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="space-y-2">
+                                <p className="text-gray-500 dark:text-gray-400 text-[11px] leading-relaxed">
+                                  Edit JSON directly. Changes apply automatically.
+                                </p>
+                                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                  <Suspense fallback={
+                                    <div className="flex items-center justify-center h-[250px] bg-gray-50">
+                                      <div className="text-gray-500 text-sm">Loading editor...</div>
+                                    </div>
+                                  }>
+                                    <Editor
+                                      height="250px"
+                                      defaultLanguage="json"
+                                      value={jsonValue}
+                                      onChange={handleJsonChange}
+                                      theme="vs-light"
+                                      options={{
+                                        minimap: { enabled: false },
+                                        fontSize: 12,
+                                        lineNumbers: "off",
+                                        scrollBeyondLastLine: false,
+                                        wordWrap: "on",
+                                        wrappingIndent: "indent",
+                                        automaticLayout: true,
+                                        tabSize: 2,
+                                        formatOnPaste: true,
+                                        formatOnType: true,
+                                      }}
+                                    />
+                                  </Suspense>
+                                </div>
                               </div>
                             )}
-                            <div className="border-y border-gray-200 overflow-hidden -mx-4">
-                              <Suspense fallback={
-                                <div className="flex items-center justify-center h-[250px] bg-gray-50">
-                                  <div className="text-gray-500 text-sm">Loading editor...</div>
-                                </div>
-                              }>
-                                <Editor
-                                  height="250px"
-                                  defaultLanguage="json"
-                                  value={jsonValue}
-                                  onChange={handleJsonChange}
-                                  theme="vs-light"
-                                  options={{
-                                    minimap: { enabled: false },
-                                    fontSize: 12,
-                                    lineNumbers: "off",
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: "on",
-                                    wrappingIndent: "indent",
-                                    automaticLayout: true,
-                                    tabSize: 2,
-                                    formatOnPaste: true,
-                                    formatOnType: true,
-                                  }}
-                                />
-                              </Suspense>
-                            </div>
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Main Content */}
-              <main className="w-full">
-                {viewMode === "grid" && (
-                  filteredEvents.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {/* Sort promoted events to the top */}
-                      {[...filteredEvents]
-                        .sort((a, b) => {
-                          const aPromoted = activePromotedEventIds.includes(a.id);
-                          const bPromoted = activePromotedEventIds.includes(b.id);
-                          if (aPromoted && !bPromoted) return -1;
-                          if (!aPromoted && bPromoted) return 1;
-                          return 0;
-                        })
-                        .map((event) => (
-                        <EventCard
-                          key={event.id}
-                          event={event}
-                          isSaved={savedEventIds.includes(event.id)}
-                          isRegistered={registeredEventIds.includes(event.id)}
-                          isPromoted={activePromotedEventIds.includes(event.id)}
-                          onToggleSave={toggleSaveEvent}
-                          onToggleRegister={toggleRegisterEvent}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-24 px-4">
-                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                        <Search className="w-8 h-8 text-gray-400" />
+                {/* Main Content */}
+                <main className="w-full">
+                  {viewMode === "grid" && (
+                    filteredEvents.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                        {/* Sort promoted events to the top */}
+                        {[...filteredEvents]
+                          .sort((a, b) => {
+                            const aPromoted = activePromotedEventIds.includes(a.id);
+                            const bPromoted = activePromotedEventIds.includes(b.id);
+                            if (aPromoted && !bPromoted) return -1;
+                            if (!aPromoted && bPromoted) return 1;
+                            return 0;
+                          })
+                          .map((event) => (
+                            <EventCard
+                              key={event.id}
+                              event={event}
+                              isSaved={savedEventIds.includes(event.id)}
+                              isRegistered={registeredEventIds.includes(event.id)}
+                              isPromoted={activePromotedEventIds.includes(event.id)}
+                              onToggleSave={toggleSaveEvent}
+                              onToggleRegister={toggleRegisterEvent}
+                            />
+                          ))}
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
-                      <p className="text-sm text-gray-500 text-center max-w-md mb-6">
-                        We couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.
-                      </p>
-                      <button
-                        onClick={handleClearAllFilters}
-                        className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 transition-colors"
-                      >
-                        Clear all filters
-                      </button>
-                    </div>
-                  )
-                )}
-                {viewMode === "calendar" && (
-                  <div className="text-center py-32 text-gray-500">Calendar view coming soon...</div>
-                )}
-                {viewMode === "map" && (
-                  <div className="text-center py-32 text-gray-500">Map view coming soon...</div>
-                )}
-              </main>
-            </div>
-          )}
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-24 px-4">
+                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                          <Search className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
+                        <p className="text-sm text-gray-500 text-center max-w-md mb-6">
+                          We couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.
+                        </p>
+                        <button
+                          onClick={handleClearAllFilters}
+                          className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 transition-colors"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
+                    )
+                  )}
+                  {viewMode === "calendar" && (
+                    <div className="text-center py-32 text-gray-500">Calendar view coming soon...</div>
+                  )}
+
+                </main>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </TooltipProvider>
   );
 }
@@ -1700,9 +1773,8 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 w-full cursor-pointer ${
-        isActive ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-      }`}
+      className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 w-full cursor-pointer ${isActive ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+        }`}
     >
       <Icon className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
       <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: expanded ? 1 : 0 }}>
@@ -1726,9 +1798,8 @@ function ViewModeButton({
   return (
     <button
       onClick={onClick}
-      className={`${
-        isActive ? "bg-white shadow-sm" : "bg-transparent hover:bg-white/50"
-      } font-medium text-[11px] text-gray-900 px-2.5 py-1 rounded transition-all flex items-center gap-1 cursor-pointer h-full`}
+      className={`${isActive ? "bg-white dark:bg-gray-700 shadow-sm" : "bg-transparent hover:bg-white/50 dark:hover:bg-gray-700/50"
+        } font-medium text-[11px] text-gray-900 dark:text-gray-100 px-2.5 py-1 rounded transition-all flex items-center gap-1 cursor-pointer h-full`}
     >
       <Icon className="w-3 h-3" strokeWidth={2} />
       <span className="leading-none">{label}</span>
@@ -1740,9 +1811,8 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => voi
   return (
     <button
       onClick={onChange}
-      className={`w-5 h-5 border-2 ${
-        checked ? "border-blue-500 bg-blue-500" : "border-gray-300 bg-white"
-      } rounded transition-all flex items-center justify-center hover:border-blue-500 cursor-pointer`}
+      className={`w-5 h-5 border-2 ${checked ? "border-blue-500 bg-blue-500" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+        } rounded transition-all flex items-center justify-center hover:border-blue-500 cursor-pointer`}
     >
       {checked && (
         <svg
@@ -1784,22 +1854,20 @@ function QuickFilterChip({
     <button
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all ${
-        disabled
-          ? "bg-gray-100 text-gray-400"
-          : active
-          ? "bg-blue-100 text-blue-700"
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all ${disabled
+        ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"
+        : active
+          ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
           : highlight
-          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
-          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-      }`}
+            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
+            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+        }`}
     >
       {icon}
       {label}
       {badge !== undefined && badge > 0 && (
-        <span className={`ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-          active ? "bg-blue-200 text-blue-800" : "bg-gray-200 text-gray-700"
-        }`}>
+        <span className={`ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${active ? "bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200" : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+          }`}>
           {badge}
         </span>
       )}

@@ -38,7 +38,7 @@ export const FilterSection = React.memo(function FilterSection({
   };
 
   return (
-    <div className={`space-y-2 relative -mx-4 ${expanded ? "border-y border-gray-200" : ""}`}>
+    <div className={`space-y-2 relative -mx-4 ${expanded ? "border-y border-gray-200 dark:border-gray-700" : ""}`}>
       <button
         onClick={onToggle}
         className="flex items-center justify-between w-full group hover:opacity-80 transition-opacity py-3 px-4"
@@ -48,24 +48,21 @@ export const FilterSection = React.memo(function FilterSection({
             ref={titleRef}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            className="font-medium text-xs relative"
-            style={{ color: "#111827" }}
+            className="font-medium text-xs relative text-gray-900 dark:text-gray-100"
           >
             {title}
             {showTooltip && (
               <span
-                className="fixed z-[100] text-white font-medium text-[11px] px-2.5 py-1.5 rounded shadow-lg whitespace-nowrap pointer-events-none"
+                className="fixed z-[100] text-white font-medium text-[11px] px-2.5 py-1.5 rounded shadow-lg whitespace-nowrap pointer-events-none bg-gray-700"
                 style={{
                   left: `${tooltipPosition.x}px`,
                   top: `${tooltipPosition.y}px`,
                   transform: "translate(-50%, -100%)",
-                  backgroundColor: "#374151",
                 }}
               >
                 {title}
                 <span
-                  className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45"
-                  style={{ backgroundColor: "#374151" }}
+                  className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45 bg-gray-700"
                 />
               </span>
             )}
@@ -77,8 +74,7 @@ export const FilterSection = React.memo(function FilterSection({
                 e.stopPropagation();
                 onClear?.();
               }}
-              className="text-white font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer"
-              style={{ backgroundColor: "#3B82F6" }}
+              className="text-white font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer bg-blue-500"
             >
               <X className="w-2.5 h-2.5" strokeWidth={3} />
               {indicator}
@@ -86,9 +82,9 @@ export const FilterSection = React.memo(function FilterSection({
           )}
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 transition-colors" style={{ color: "#9CA3AF" }} />
+          <ChevronUp className="w-4 h-4 transition-colors text-gray-400 dark:text-gray-500" />
         ) : (
-          <ChevronDown className="w-4 h-4 transition-colors" style={{ color: "#9CA3AF" }} />
+          <ChevronDown className="w-4 h-4 transition-colors text-gray-400 dark:text-gray-500" />
         )}
       </button>
       {expanded && <div className="animate-in fade-in duration-200 px-4 pb-3">{children}</div>}

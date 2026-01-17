@@ -13,18 +13,18 @@ export function AboutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-[680px] mx-auto px-6 py-20 pb-32">
         
         {/* Opening */}
         <div className="mb-32">
-          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-[#9ca3af] mb-3">
+          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-gray-400 dark:text-gray-500 mb-3">
             SOMEWHERE ON UW CAMPUS · JUNE 2025
           </p>
-          <h1 className="font-['Figtree:Bold',sans-serif] text-[32px] text-black mb-6 leading-tight">
+          <h1 className="font-['Figtree:Bold',sans-serif] text-[32px] text-gray-900 dark:text-gray-100 mb-6 leading-tight">
             Stumbling Upon the Underrated
           </h1>
-          <div className="font-['Figtree',sans-serif] text-[16px] text-[#374151] leading-relaxed space-y-4">
+          <div className="font-['Figtree',sans-serif] text-[16px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
             <p>
               We were the students who kept missing out.
             </p>
@@ -50,20 +50,20 @@ export function AboutPage() {
             alt="Campus events"
             className="w-full h-[360px] object-cover rounded-[12px] mb-4"
           />
-          <p className="font-['Figtree',sans-serif] text-[13px] text-[#9ca3af] italic">
+          <p className="font-['Figtree',sans-serif] text-[13px] text-gray-400 dark:text-gray-500 italic">
             One of the dozens of events we found out about too late.
           </p>
         </div>
 
         {/* Phase 2: The Build */}
         <div className="mb-32">
-          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-[#9ca3af] mb-3">
+          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-gray-400 dark:text-gray-500 mb-3">
             AUGUST 2025
           </p>
-          <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-black mb-6 leading-tight">
+          <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-gray-900 dark:text-gray-100 mb-6 leading-tight">
             Building for Ourselves
           </h2>
-          <div className="font-['Figtree',sans-serif] text-[16px] text-[#374151] leading-relaxed space-y-4">
+          <div className="font-['Figtree',sans-serif] text-[16px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
             <p>
               We were sitting in the SLC, complaining about missing <em>yet another event</em> (this time 
               it was free Chipotle at a Women in Engineering mixer), when Erica said: 
@@ -77,7 +77,7 @@ export function AboutPage() {
               the filter logic. Erica designed everything: the illustrations, the hand-drawn icons, 
               the color palette.
             </p>
-            <p className="italic text-[#6b7280]">
+            <p className="italic text-gray-500 dark:text-gray-400">
               The first version was rough. But it worked.
             </p>
           </div>
@@ -90,20 +90,20 @@ export function AboutPage() {
             alt="Building together"
             className="w-full h-[360px] object-cover rounded-[12px] mb-4"
           />
-          <p className="font-['Figtree',sans-serif] text-[13px] text-[#9ca3af] italic">
+          <p className="font-['Figtree',sans-serif] text-[13px] text-gray-400 dark:text-gray-500 italic">
             Late nights in the SLC. Tony on backend, Erica on design.
           </p>
         </div>
 
         {/* Phase 3: The Launch */}
         <div className="mb-32">
-          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-[#9ca3af] mb-3">
+          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-gray-400 dark:text-gray-500 mb-3">
             OCTOBER 2025
           </p>
-          <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-black mb-6 leading-tight">
+          <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-gray-900 dark:text-gray-100 mb-6 leading-tight">
             Sharing It With Campus
           </h2>
-          <div className="font-['Figtree',sans-serif] text-[16px] text-[#374151] leading-relaxed space-y-4">
+          <div className="font-['Figtree',sans-serif] text-[16px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
             <p>
               We posted the link in a few group chats. Then we made a poster (ironic, we know) and 
               stuck it in the SLC. Within a week, people were texting us screenshots.
@@ -130,20 +130,20 @@ export function AboutPage() {
             alt="Community discovery"
             className="w-full h-[360px] object-cover rounded-[12px] mb-4"
           />
-          <p className="font-['Figtree',sans-serif] text-[13px] text-[#9ca3af] italic">
+          <p className="font-['Figtree',sans-serif] text-[13px] text-gray-400 dark:text-gray-500 italic">
             People started discovering events they never knew existed.
           </p>
         </div>
 
         {/* Today */}
         <div className="mb-40">
-          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-[#9ca3af] mb-3">
+          <p className="font-['Figtree',sans-serif] text-[11px] tracking-wider uppercase text-gray-400 dark:text-gray-500 mb-3">
             DECEMBER 2025
           </p>
-          <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-black mb-6 leading-tight">
+          <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-gray-900 dark:text-gray-100 mb-6 leading-tight">
             You're Here Now
           </h2>
-          <div className="font-['Figtree',sans-serif] text-[16px] text-[#374151] leading-relaxed space-y-4">
+          <div className="font-['Figtree',sans-serif] text-[16px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
             <p>
               Wat2Do is used by hundreds of students to discover events they'd otherwise miss. 
               From <strong>Bloomberg networking panels</strong> to <strong>Motor Boat cruises</strong> to 
@@ -153,22 +153,22 @@ export function AboutPage() {
               We don't run ads. We don't sell your data. We just think campus life should be easier 
               to navigate.
             </p>
-            <p className="font-['Figtree:Bold',sans-serif] text-[17px] text-black">
+            <p className="font-['Figtree:Bold',sans-serif] text-[17px] text-gray-900 dark:text-gray-100">
               If you find this useful, tell a friend.
             </p>
           </div>
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-[#e5e7eb] to-transparent mb-40" />
+        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent mb-40" />
 
         {/* Guide Section */}
         <div className="mb-40">
           <div className="mb-16">
-            <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-black mb-4">
+            <h2 className="font-['Figtree:Bold',sans-serif] text-[28px] text-gray-900 dark:text-gray-100 mb-4">
               How to Actually Use This
             </h2>
-            <p className="font-['Figtree',sans-serif] text-[16px] text-[#6b7280]">
+            <p className="font-['Figtree',sans-serif] text-[16px] text-gray-500 dark:text-gray-400">
               Here's what we've learned about making the most of campus events.
             </p>
           </div>
@@ -177,14 +177,14 @@ export function AboutPage() {
             {/* Meeting People in Industry */}
             <section>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-[#0488FE]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-blue-500/10 dark:bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-[20px]">💼</span>
                 </div>
-                <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-black">
+                <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-gray-900 dark:text-gray-100">
                   Meeting People in Industry
                 </h3>
               </div>
-              <div className="font-['Figtree',sans-serif] text-[15px] text-[#374151] leading-relaxed space-y-3 ml-13">
+              <div className="font-['Figtree',sans-serif] text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-3 ml-13">
                 <p>
                   <strong>WiE × Bloomberg Panel:</strong> Real engineers who actually answer questions honestly. 
                   Plus, they usually bring snacks.
@@ -203,14 +203,14 @@ export function AboutPage() {
             {/* Random Stuff */}
             <section>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-[#10b981]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-[20px]">✨</span>
                 </div>
-                <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-black">
+                <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-gray-900 dark:text-gray-100">
                   Random Stuff Worth Checking Out
                 </h3>
               </div>
-              <div className="font-['Figtree',sans-serif] text-[15px] text-[#374151] leading-relaxed space-y-3 ml-13">
+              <div className="font-['Figtree',sans-serif] text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-3 ml-13">
                 <p>
                   <strong>Repair Club:</strong> Broke your laptop charger? These folks have tools and 
                   will teach you how to fix it yourself. Completely free.
@@ -229,14 +229,14 @@ export function AboutPage() {
             {/* Going With Friends */}
             <section>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-[#f59e0b]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-amber-500/10 dark:bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-[20px]">🍕</span>
                 </div>
-                <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-black">
+                <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-gray-900 dark:text-gray-100">
                   Going With Friends
                 </h3>
               </div>
-              <div className="font-['Figtree',sans-serif] text-[15px] text-[#374151] leading-relaxed space-y-3 ml-13">
+              <div className="font-['Figtree',sans-serif] text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-3 ml-13">
                 <p>
                   <strong>Free Food Events:</strong> Sort by "Food Provided" in the filters. 
                   Pro tip: show up 15 minutes early.
@@ -255,11 +255,11 @@ export function AboutPage() {
 
         {/* Newsletter */}
         <div className="mb-32">
-          <div className="bg-white border border-[#e5e7eb] rounded-[12px] p-10">
-            <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-black mb-3">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[12px] p-10">
+            <h3 className="font-['Figtree:Bold',sans-serif] text-[22px] text-gray-900 dark:text-gray-100 mb-3">
               Stay Updated
             </h3>
-            <p className="font-['Figtree',sans-serif] text-[15px] text-[#6b7280] mb-7">
+            <p className="font-['Figtree',sans-serif] text-[15px] text-gray-500 dark:text-gray-400 mb-7">
               Get a weekly digest of the best events. No spam, just the good stuff.
             </p>
             
@@ -280,12 +280,12 @@ export function AboutPage() {
         </div>
 
         {/* Footer */}
-        <footer className="pt-12 border-t border-[#e5e7eb] space-y-6">
-          <p className="font-['Figtree',sans-serif] text-[14px] text-[#9ca3af] leading-relaxed">
-            <strong className="text-[#6b7280]">P.S.</strong> We don't run ads. Everything runs out of our own pockets. 
+        <footer className="pt-12 border-t border-gray-200 dark:border-gray-700 space-y-6">
+          <p className="font-['Figtree',sans-serif] text-[14px] text-gray-400 dark:text-gray-500 leading-relaxed">
+            <strong className="text-gray-500 dark:text-gray-400">P.S.</strong> We don't run ads. Everything runs out of our own pockets. 
             No data selling. Just students helping students.
           </p>
-          <p className="font-['Figtree',sans-serif] text-[13px] text-[#d1d5db]">
+          <p className="font-['Figtree',sans-serif] text-[13px] text-gray-300 dark:text-gray-600">
             © 2025 Wat2Do · Built by Tony & Erica
           </p>
         </footer>

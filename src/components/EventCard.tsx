@@ -17,16 +17,16 @@ interface EventCardProps {
   onToggleRegister?: (eventId: number) => void;
 }
 
-// Category color mapping
-const categoryColors: Record<string, string> = {
-  "Events": "#2563EB",
-  "Clubs": "#16A34A",
-  "Academic": "#D97706",
-  "Religious": "#A855F7",
-  "Cultural": "#E11D48",
-  "Social & Games": "#0891B2",
-  "Sports": "#DC2626",
-  "Career": "#0369A1",
+// Category color mapping - pastel backgrounds with vibrant text
+const categoryColors: Record<string, { bg: string; text: string }> = {
+  "Events": { bg: "#DBEAFE", text: "#2563EB" },
+  "Clubs": { bg: "#DCFCE7", text: "#16A34A" },
+  "Academic": { bg: "#FEF3C7", text: "#D97706" },
+  "Religious": { bg: "#F3E8FF", text: "#A855F7" },
+  "Cultural": { bg: "#FFE4E6", text: "#E11D48" },
+  "Social & Games": { bg: "#CFFAFE", text: "#0891B2" },
+  "Sports": { bg: "#FEE2E2", text: "#DC2626" },
+  "Career": { bg: "#E0F2FE", text: "#0369A1" },
 };
 
 export const EventCard = React.memo(function EventCard({
@@ -51,7 +51,7 @@ export const EventCard = React.memo(function EventCard({
 
   // Get category color
   const getCategoryColor = (category: string) => {
-    return categoryColors[category] || "#6B7280";
+    return categoryColors[category] || { bg: "#F3F4F6", text: "#6B7280" };
   };
 
   // Generate event badges
@@ -84,24 +84,35 @@ export const EventCard = React.memo(function EventCard({
     <>
       <article
         data-event-card
-        className={`rounded overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full ${
-          isPromoted ? "ring-2 ring-amber-400 shadow-amber-100 shadow-md" : ""
-        }`}
-        style={{ backgroundColor: "#fff", border: isPromoted ? "1px solid #fbbf24" : "1px solid #e5e7eb" }}
+        className={`rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-full bg-white dark:bg-gray-800 border ${isPromoted ? "ring-2 ring-amber-400 shadow-amber-100 dark:shadow-amber-900/20 shadow-md border-amber-400" : "border-gray-200 dark:border-gray-700"
+          }`}
       >
         {/* Event Image */}
         <div
           className="relative overflow-hidden"
           style={{ height: "176px", background: isPromoted ? "linear-gradient(to bottom right, #fef3c7, #fde68a)" : "linear-gradient(to bottom right, #e5e7eb, #d1d5db)" }}
         >
-          {/* Promoted Badge */}
+          {/* Category Badge - Top Left (Pastel styling) */}
+          <BadgeMask variant="top-left">
+            <span
+              className="font-bold text-[10px] px-2 py-0.5 block rounded-full"
+              style={{
+                backgroundColor: getCategoryColor(event.category).bg,
+                color: getCategoryColor(event.category).text
+              }}
+            >
+              {event.category}
+            </span>
+          </BadgeMask>
+
+          {/* Promoted Badge - Below Category on left side */}
           {isPromoted && (
-            <BadgeMask variant="top-left">
+            <div className="absolute top-8 left-2 z-10">
               <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 PROMOTED
               </span>
-            </BadgeMask>
+            </div>
           )}
 
           {/* LIVE Badge */}
@@ -113,43 +124,41 @@ export const EventCard = React.memo(function EventCard({
             </BadgeMask>
           )}
 
-          {/* Category Badge */}
-          <BadgeMask variant="bottom-left">
-            <span
-              className="font-bold text-[10px] px-2 py-0.5 block rounded-full"
-              style={{
-                backgroundColor: getCategoryColor(event.category),
-                color: "#ffffff"
-              }}
+          {/* Club Poster Circle with Text - Bottom Left */}
+          <div className="absolute bottom-2 left-2 z-10 flex items-center gap-2">
+            <div
+              className="w-7 h-7 rounded-full border-2 border-white dark:border-gray-700 shadow-lg flex items-center justify-center flex-shrink-0 bg-white dark:bg-gray-800"
+              style={{ background: "linear-gradient(to bottom right, rgba(59,130,246,0.2), rgba(59,130,246,0.1))" }}
             >
-              {event.category}
+              <Users className="w-3.5 h-3.5 text-blue-500" strokeWidth={2} />
+            </div>
+            <span 
+              className="font-bold text-[10px] text-white truncate max-w-[120px]"
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)" }}
+            >
+              {event.organization}
             </span>
-          </BadgeMask>
+          </div>
         </div>
 
         {/* Event Content */}
         <div className="flex flex-col flex-1 p-4">
-          {/* Organization */}
-          <div className="flex gap-2.5 items-center mb-3">
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "linear-gradient(to bottom right, rgba(59,130,246,0.2), rgba(59,130,246,0.1))" }}
-            >
-              <Users className="w-3.5 h-3.5" style={{ color: "#3B82F6" }} strokeWidth={2.5} />
-            </div>
-            <span className="font-bold text-[11px] truncate" style={{ color: "#111827" }}>
-              {event.organization}
-            </span>
-          </div>
+          {/* Title - Now at top */}
+          <h3 className="font-medium text-[12px] leading-tight mb-2 line-clamp-2 text-gray-900 dark:text-gray-100">
+            {event.title}
+          </h3>
 
-          {/* Event Badges */}
+          {/* Event Badges - Light background styling */}
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
               {badges.map((badge) => (
                 <span
                   key={badge.text}
-                  className="text-white font-medium text-[10px] px-2 py-0.5 rounded"
-                  style={{ backgroundColor: badge.color }}
+                  className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
+                  style={{
+                    backgroundColor: `${badge.color}20`,
+                    color: badge.color
+                  }}
                 >
                   {badge.text}
                 </span>
@@ -157,38 +166,33 @@ export const EventCard = React.memo(function EventCard({
             </div>
           )}
 
-          {/* Title */}
-          <h3 className="font-medium text-[12px] leading-tight mb-2 line-clamp-2" style={{ color: "#4B5563" }}>
-            {event.title}
-          </h3>
-
           {/* Event Info */}
           <div className="space-y-1 mb-3 flex-1">
             {/* Date & Time */}
             <div className="flex gap-1.5 items-center">
-              <Calendar className="w-3 h-3 flex-shrink-0" style={{ color: "#9CA3AF" }} strokeWidth={2} />
-              <span className="text-[11px] truncate" style={{ color: "#4B5563" }}>
+              <Calendar className="w-3 h-3 flex-shrink-0 text-gray-400 dark:text-gray-500" strokeWidth={2} />
+              <span className="text-[11px] truncate text-gray-600 dark:text-gray-400">
                 {event.date} at {event.time}
               </span>
             </div>
 
             {/* Location */}
             <div className="flex gap-1.5 items-center">
-              <MapPin className="w-3 h-3 flex-shrink-0" style={{ color: "#9CA3AF" }} strokeWidth={2} />
-              <span className="text-[11px] truncate" style={{ color: "#4B5563" }}>
+              <MapPin className="w-3 h-3 flex-shrink-0 text-gray-400 dark:text-gray-500" strokeWidth={2} />
+              <span className="text-[11px] truncate text-gray-600 dark:text-gray-400">
                 {event.location}
               </span>
             </div>
           </div>
 
           {/* Divider */}
-          <div className="h-px mb-4" style={{ background: "linear-gradient(to right, transparent, #e5e7eb, transparent)" }} />
+          <div className="h-px mb-4 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
 
           {/* Action Buttons */}
           <div className="flex gap-2 items-center">
             {isRegistered ? (
               <button
-                className="flex-1 font-medium text-[11px] h-8 rounded transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-green-100 text-green-700 border border-green-200"
+                className="flex-1 font-medium text-[11px] h-8 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
               >
                 <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
                 Registered
@@ -196,8 +200,7 @@ export const EventCard = React.memo(function EventCard({
             ) : (
               <button
                 onClick={handleViewMore}
-                className="flex-1 text-white font-medium text-[11px] h-8 rounded hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                style={{ backgroundColor: "#3B82F6" }}
+                className="flex-1 text-white font-medium text-[11px] h-8 rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer bg-blue-500"
               >
                 View More
               </button>
@@ -205,11 +208,10 @@ export const EventCard = React.memo(function EventCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  className="w-8 h-8 rounded flex items-center justify-center hover:bg-blue-50 active:scale-95 transition-all flex-shrink-0 cursor-pointer"
-                  style={{ border: "1px solid #e5e7eb" }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-blue-50 dark:hover:bg-gray-700 active:scale-95 transition-all flex-shrink-0 cursor-pointer border border-gray-200 dark:border-gray-700"
                   aria-label="Add to calendar"
                 >
-                  <Download className="w-3.5 h-3.5" style={{ color: "#9CA3AF" }} strokeWidth={2} />
+                  <Download className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" strokeWidth={2} />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
@@ -223,17 +225,14 @@ export const EventCard = React.memo(function EventCard({
                     e.stopPropagation();
                     onToggleSave?.(event.id);
                   }}
-                  className={`w-8 h-8 rounded flex items-center justify-center active:scale-95 transition-all flex-shrink-0 cursor-pointer ${
-                    isSaved
-                      ? "bg-red-50 border-red-200 hover:bg-red-100"
-                      : "hover:bg-blue-50"
-                  }`}
-                  style={{ border: isSaved ? "1px solid #fecaca" : "1px solid #e5e7eb" }}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center active:scale-95 transition-all flex-shrink-0 cursor-pointer border ${isSaved
+                    ? "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50"
+                    : "hover:bg-blue-50 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700"
+                    }`}
                   aria-label={isSaved ? "Remove from saved" : "Save event"}
                 >
                   <Heart
-                    className={`w-3.5 h-3.5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : ""}`}
-                    style={{ color: isSaved ? "#ef4444" : "#9CA3AF" }}
+                    className={`w-3.5 h-3.5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-gray-400 dark:text-gray-500"}`}
                     strokeWidth={2}
                   />
                 </button>

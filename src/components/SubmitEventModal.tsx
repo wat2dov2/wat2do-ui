@@ -4,6 +4,8 @@ import confetti from "canvas-confetti";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +54,27 @@ interface ValidationErrors {
 }
 
 type ViewMode = "visual" | "json";
+
+// Category color mapping - matches EventCard
+const categoryColors: Record<string, { bg: string; text: string }> = {
+  "Events": { bg: "#DBEAFE", text: "#2563EB" },
+  "Clubs": { bg: "#DCFCE7", text: "#16A34A" },
+  "Academic": { bg: "#FEF3C7", text: "#D97706" },
+  "Religious": { bg: "#F3E8FF", text: "#A855F7" },
+  "Cultural": { bg: "#FFE4E6", text: "#E11D48" },
+  "Social & Games": { bg: "#CFFAFE", text: "#0891B2" },
+  "Sports & Fitness": { bg: "#FEE2E2", text: "#DC2626" },
+  "Career": { bg: "#E0F2FE", text: "#0369A1" },
+  "Technology": { bg: "#E0E7FF", text: "#4F46E5" },
+  "Arts & Crafts": { bg: "#FDF2F8", text: "#DB2777" },
+  "Health & Wellness": { bg: "#ECFDF5", text: "#059669" },
+  "Music & Performance": { bg: "#FEF9C3", text: "#CA8A04" },
+  "Entrepreneurship": { bg: "#F0FDF4", text: "#15803D" },
+};
+
+const getCategoryColor = (category: string) => {
+  return categoryColors[category] || { bg: "#F3F4F6", text: "#6B7280" };
+};
 
 export function SubmitEventModal({
   isOpen,
@@ -311,7 +334,8 @@ export function SubmitEventModal({
   if (promotionSuccess) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-md" showCloseButton={false}>
+        <DialogContent className="max-w-md" showCloseButton={false} aria-describedby={undefined}>
+          <DialogTitle className="sr-only">Event Promoted</DialogTitle>
           <div className="flex flex-col items-center text-center py-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
               <Check className="w-8 h-8 text-white" strokeWidth={3} />
@@ -345,7 +369,8 @@ export function SubmitEventModal({
 
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-md" showCloseButton={false}>
+        <DialogContent className="max-w-md" showCloseButton={false} aria-describedby={undefined}>
+          <DialogTitle className="sr-only">Boost Your Event</DialogTitle>
           <button
             onClick={handleClose}
             className="absolute top-3 right-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -389,13 +414,12 @@ export function SubmitEventModal({
                   <button
                     key={pkg.id}
                     onClick={() => setSelectedPromotion(pkg.id)}
-                    className={`w-full p-4 rounded-lg border-2 text-left transition-all relative ${
-                      isSelected
-                        ? "border-purple-500 bg-purple-50"
-                        : affordable
+                    className={`w-full p-4 rounded-lg border-2 text-left transition-all relative ${isSelected
+                      ? "border-purple-500 bg-purple-50"
+                      : affordable
                         ? "border-gray-200 hover:border-purple-300"
                         : "border-gray-200 opacity-60"
-                    }`}
+                      }`}
                     disabled={!affordable}
                   >
                     {pkg.id === "combo" && (
@@ -406,11 +430,10 @@ export function SubmitEventModal({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            isSelected
-                              ? "border-purple-500 bg-purple-500"
-                              : "border-gray-300"
-                          }`}
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected
+                            ? "border-purple-500 bg-purple-500"
+                            : "border-gray-300"
+                            }`}
                         >
                           {isSelected && (
                             <Check className="w-3 h-3 text-white" strokeWidth={3} />
@@ -471,7 +494,8 @@ export function SubmitEventModal({
   if (isSubmitted) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-md" showCloseButton={false}>
+        <DialogContent className="max-w-md" showCloseButton={false} aria-describedby={undefined}>
+          <DialogTitle className="sr-only">Event Created</DialogTitle>
           <div className="flex flex-col items-center text-center py-4">
             <div className="relative mb-4">
               <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
@@ -515,7 +539,8 @@ export function SubmitEventModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col" showCloseButton={false}>
+      <DialogContent className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col" showCloseButton={false} aria-describedby={undefined}>
+        <DialogTitle className="sr-only">Create Event</DialogTitle>
         {/* Close Button - Top Right of Modal */}
         <button
           onClick={handleClose}
@@ -530,27 +555,25 @@ export function SubmitEventModal({
             {/* Header with Tabs */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Create Event</h2>
-                <p className="text-sm text-gray-500">Fill in the details below</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Create Event</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Fill in the details below</p>
               </div>
-              <div className="flex gap-1 bg-gray-100 rounded p-0.5">
+              <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded p-0.5">
                 <button
                   onClick={() => setViewMode("visual")}
-                  className={`${
-                    viewMode === "visual"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "bg-transparent text-gray-500 hover:text-gray-900"
-                  } font-medium text-[11px] px-3 py-1 rounded transition-all`}
+                  className={`${viewMode === "visual"
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                    } font-medium text-[11px] px-3 py-1 rounded transition-all`}
                 >
                   Visual
                 </button>
                 <button
                   onClick={() => setViewMode("json")}
-                  className={`${
-                    viewMode === "json"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "bg-transparent text-gray-500 hover:text-gray-900"
-                  } font-medium text-[11px] px-3 py-1 rounded transition-all`}
+                  className={`${viewMode === "json"
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                    } font-medium text-[11px] px-3 py-1 rounded transition-all`}
                 >
                   JSON
                 </button>
@@ -559,10 +582,51 @@ export function SubmitEventModal({
 
             {viewMode === "visual" ? (
               <div className="space-y-5">
+                {/* AI Generation Input - Always Visible */}
+                <div className="space-y-2 pb-4 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">AI Event Generation</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={aiGenerating ? "Generating..." : "Describe your event (e.g. 'tech talk about AI next Friday')..."}
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && aiPrompt.trim() && !aiGenerating) {
+                          handleAiGenerate();
+                        }
+                      }}
+                      disabled={aiGenerating}
+                      className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs px-3 py-2.5 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:opacity-60"
+                    />
+                    {aiPrompt && !aiGenerating && (
+                      <button
+                        onClick={() => setAiPrompt("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {aiGenerating && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  {jsonError && (
+                    <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-3 py-2 rounded-xl text-[11px]">
+                      {jsonError}
+                    </div>
+                  )}
+                </div>
+
                 {/* Required Section */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
                       Event Title <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -571,9 +635,8 @@ export function SubmitEventModal({
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                       onBlur={() => handleBlur("title")}
                       placeholder="e.g., Tech Talk: AI in 2024"
-                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                        errors.title ? "border-red-300 bg-red-50" : "border-gray-200"
-                      }`}
+                      className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all dark:text-gray-100 dark:placeholder:text-gray-500 ${errors.title ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                        }`}
                     />
                     {errors.title && (
                       <p className="text-xs text-red-500 mt-1">{errors.title}</p>
@@ -581,7 +644,7 @@ export function SubmitEventModal({
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
                       Organization <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -590,9 +653,8 @@ export function SubmitEventModal({
                       onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
                       onBlur={() => handleBlur("organization")}
                       placeholder="e.g., Computer Science Club"
-                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                        errors.organization ? "border-red-300 bg-red-50" : "border-gray-200"
-                      }`}
+                      className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all dark:text-gray-100 dark:placeholder:text-gray-500 ${errors.organization ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                        }`}
                     />
                     {errors.organization && (
                       <p className="text-xs text-red-500 mt-1">{errors.organization}</p>
@@ -601,7 +663,7 @@ export function SubmitEventModal({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
                         <Calendar className="w-4 h-4" />
                         Date <span className="text-red-500">*</span>
                       </label>
@@ -610,9 +672,8 @@ export function SubmitEventModal({
                         value={formData.date}
                         onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                         onBlur={() => handleBlur("date")}
-                        className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.date ? "border-red-300 bg-red-50" : "border-gray-200"
-                        }`}
+                        className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-100 ${errors.date ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                          }`}
                       />
                       {errors.date && (
                         <p className="text-xs text-red-500 mt-1">{errors.date}</p>
@@ -620,7 +681,7 @@ export function SubmitEventModal({
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
                         Time <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -628,9 +689,8 @@ export function SubmitEventModal({
                         value={formData.time}
                         onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
                         onBlur={() => handleBlur("time")}
-                        className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.time ? "border-red-300 bg-red-50" : "border-gray-200"
-                        }`}
+                        className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-100 ${errors.time ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                          }`}
                       />
                       {errors.time && (
                         <p className="text-xs text-red-500 mt-1">{errors.time}</p>
@@ -639,7 +699,7 @@ export function SubmitEventModal({
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
                       <MapPin className="w-4 h-4" />
                       Location <span className="text-red-500">*</span>
                     </label>
@@ -666,14 +726,14 @@ export function SubmitEventModal({
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-gray-100 my-2" />
+                <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
 
                 {/* Optional Section */}
                 <div className="space-y-4">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">Optional Details</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-medium">Optional Details</p>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
                       Description
                     </label>
                     <textarea
@@ -681,13 +741,13 @@ export function SubmitEventModal({
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="Tell people what your event is about..."
                       rows={2}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
                         Category
                       </label>
                       <Select
@@ -706,12 +766,12 @@ export function SubmitEventModal({
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
                         <DollarSign className="w-4 h-4" />
                         Price
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">$</span>
                         <input
                           type="number"
                           min="0"
@@ -719,14 +779,14 @@ export function SubmitEventModal({
                           value={formData.price}
                           onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
                           placeholder="0"
-                          className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full pl-7 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
                         />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
                       <Utensils className="w-4 h-4" />
                       Food Provided
                     </label>
@@ -737,24 +797,28 @@ export function SubmitEventModal({
                         onChange={(e) => setFoodInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFood())}
                         placeholder="e.g., Pizza, Snacks"
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                       />
-                      <Button type="button" onClick={addFood} size="sm" variant="outline">
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                      <button
+                        type="button"
+                        onClick={addFood}
+                        className="w-[38px] h-[38px] flex items-center justify-center border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-shrink-0 bg-gray-50 dark:bg-gray-800"
+                      >
+                        <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      </button>
                     </div>
                     {formData.food.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {formData.food.map((item) => (
                           <span
                             key={item}
-                            className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full"
+                            className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 text-xs px-2 py-1 rounded-full"
                           >
                             {item}
                             <button
                               type="button"
                               onClick={() => removeFood(formData.food.indexOf(item))}
-                              className="hover:bg-amber-200 rounded-full p-0.5"
+                              className="hover:bg-amber-200 dark:hover:bg-amber-800/50 rounded-full p-0.5"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -764,22 +828,20 @@ export function SubmitEventModal({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">Requires registration</span>
+                      <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Requires registration</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, requiresRegistration: !prev.requiresRegistration }))}
-                      className={`w-10 h-6 rounded-full transition-colors relative ${
-                        formData.requiresRegistration ? "bg-blue-500" : "bg-gray-200"
-                      }`}
+                      className={`w-10 h-6 rounded-full transition-colors relative ${formData.requiresRegistration ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
+                        }`}
                     >
                       <div
-                        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                          formData.requiresRegistration ? "translate-x-5" : "translate-x-1"
-                        }`}
+                        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.requiresRegistration ? "translate-x-5" : "translate-x-1"
+                          }`}
                       />
                     </button>
                   </div>
@@ -799,30 +861,40 @@ export function SubmitEventModal({
             ) : (
               /* JSON View */
               <div className="space-y-4">
-                <p className="text-gray-500 text-[11px] leading-relaxed">
-                  Use AI to generate event details or edit the JSON directly. Changes apply automatically.
-                </p>
-
-                {/* AI Prompt Input */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder={aiGenerating ? "Generating..." : "Describe your event and press Enter..."}
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && aiPrompt.trim() && !aiGenerating) {
-                        handleAiGenerate();
-                      }
-                    }}
-                    disabled={aiGenerating}
-                    className="w-full bg-gray-100 text-gray-700 text-xs px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 disabled:opacity-60"
-                  />
-                  {aiGenerating && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-                    </div>
-                  )}
+                {/* AI Prompt Input - Same as Visual view */}
+                <div className="space-y-2 pb-4 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                    <span className="text-xs font-medium text-gray-700">AI Event Generation</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={aiGenerating ? "Generating..." : "Describe your event (e.g. 'tech talk about AI next Friday')..."}
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && aiPrompt.trim() && !aiGenerating) {
+                          handleAiGenerate();
+                        }
+                      }}
+                      disabled={aiGenerating}
+                      className="w-full bg-gray-100 text-gray-700 text-xs px-3 py-2.5 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 disabled:opacity-60"
+                    />
+                    {aiPrompt && !aiGenerating && (
+                      <button
+                        onClick={() => setAiPrompt("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {aiGenerating && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {jsonError && (
@@ -864,56 +936,113 @@ export function SubmitEventModal({
           </div>
 
           {/* Live Preview Panel */}
-          <div className="w-80 bg-gray-50 border-l border-gray-200 p-6 flex flex-col overflow-y-auto min-h-0">
+          <div className="w-80 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto min-h-0">
             <div className="flex items-center gap-2 mb-4">
               <Eye className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Live Preview</span>
             </div>
 
-            {/* Preview Card */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm flex-1 flex flex-col">
-              <div className="relative h-28 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center flex-shrink-0">
+            {/* Preview Card - Matches EventCard styling */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+              {/* Image area with category badge */}
+              <div className="relative h-32 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                 <ImagePlus className="w-6 h-6 text-gray-400" />
                 {formData.category && (
-                  <BadgeMask variant="bottom-left">
-                    <span className="font-bold text-[10px] px-2 py-0.5 block" style={{ color: "#111827" }}>
+                  <BadgeMask variant="top-left">
+                    <span 
+                      className="font-bold text-[10px] px-2 py-0.5 block rounded-full"
+                      style={{
+                        backgroundColor: getCategoryColor(formData.category).bg,
+                        color: getCategoryColor(formData.category).text
+                      }}
+                    >
                       {formData.category}
                     </span>
                   </BadgeMask>
                 )}
-              </div>
-              <div className="p-4 flex-1 flex flex-col">
-                <div className="flex items-center gap-2 mb-2">
-                  {formData.price === 0 ? (
-                    <span className="text-[10px] font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded">Free</span>
-                  ) : (
-                    <span className="text-[10px] font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded">${formData.price}</span>
-                  )}
-                  {formData.food.length > 0 && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 bg-amber-100 text-amber-700 rounded">Free Food</span>
-                  )}
+                {/* Club badge - bottom left */}
+                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-2">
+                  <div
+                    className="w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: "linear-gradient(to bottom right, rgba(59,130,246,0.2), rgba(59,130,246,0.1))", backgroundColor: "#fff" }}
+                  >
+                    <Users className="w-3.5 h-3.5" style={{ color: "#3B82F6" }} strokeWidth={2} />
+                  </div>
+                  <span 
+                    className="font-bold text-[10px] text-white truncate max-w-[100px]"
+                    style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)" }}
+                  >
+                    {formData.organization || "Organization"}
+                  </span>
                 </div>
-                <h3 className="font-bold text-gray-900 text-sm mb-0.5 line-clamp-2">
+              </div>
+              <div className="p-4">
+                {/* Title first */}
+                <h3 className="font-medium text-[12px] leading-tight mb-2 line-clamp-2" style={{ color: "#111827" }}>
                   {formData.title || "Event Title"}
                 </h3>
-                <p className="text-xs text-gray-500 mb-3">{formData.organization || "Organization"}</p>
+                
+                {/* Badges - light background styling */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {formData.price === 0 ? (
+                    <span 
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
+                      style={{ backgroundColor: "#10B98120", color: "#10B981" }}
+                    >
+                      Free
+                    </span>
+                  ) : (
+                    <span 
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
+                      style={{ backgroundColor: "#3B82F620", color: "#3B82F6" }}
+                    >
+                      ${formData.price}
+                    </span>
+                  )}
+                  {formData.food.length > 0 && (
+                    <span 
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
+                      style={{ backgroundColor: "#F59E0B20", color: "#F59E0B" }}
+                    >
+                      Free Food
+                    </span>
+                  )}
+                  {formData.requiresRegistration && (
+                    <span 
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
+                      style={{ backgroundColor: "#8B5CF620", color: "#8B5CF6" }}
+                    >
+                      Registration Required
+                    </span>
+                  )}
+                </div>
 
-                <div className="space-y-1.5 text-xs text-gray-600 mt-auto">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{formatDate(formData.date)} at {formatTime(formData.time)}</span>
+                {/* Event Info */}
+                <div className="space-y-1 mb-3">
+                  <div className="flex gap-1.5 items-center">
+                    <Calendar className="w-3 h-3 flex-shrink-0" style={{ color: "#9CA3AF" }} strokeWidth={2} />
+                    <span className="text-[11px] truncate" style={{ color: "#4B5563" }}>
+                      {formatDate(formData.date)} at {formatTime(formData.time)}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{formData.location || "Location"}</span>
+                  <div className="flex gap-1.5 items-center">
+                    <MapPin className="w-3 h-3 flex-shrink-0" style={{ color: "#9CA3AF" }} strokeWidth={2} />
+                    <span className="text-[11px] truncate" style={{ color: "#4B5563" }}>
+                      {formData.location || "Location"}
+                    </span>
                   </div>
                 </div>
 
-                {formData.description && (
-                  <p className="text-xs text-gray-500 mt-3 line-clamp-2 border-t border-gray-100 pt-3">
-                    {formData.description}
-                  </p>
-                )}
+                {/* Divider */}
+                <div className="h-px mb-3" style={{ background: "linear-gradient(to right, transparent, #e5e7eb, transparent)" }} />
+
+                {/* View More button placeholder */}
+                <div 
+                  className="w-full text-white font-medium text-[11px] h-8 rounded-lg flex items-center justify-center gap-1.5 shadow-sm"
+                  style={{ backgroundColor: "#3B82F6" }}
+                >
+                  View More
+                </div>
               </div>
             </div>
 
