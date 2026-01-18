@@ -163,17 +163,14 @@ export function GettingStartedChecklist({
   if (allCompleted) {
     return (
       <div
-        className="fixed bottom-6 right-6 z-50 rounded-xl overflow-hidden transition-all duration-500 opacity-0 translate-y-4"
+        className="fixed bottom-6 right-6 z-50 rounded-xl overflow-hidden transition-all duration-500 opacity-0 translate-y-4 bg-card"
         style={{
           width: "320px",
-          backgroundColor: "#fff",
-          border: "1px solid #e5e7eb",
           animation: "fadeOutDown 0.5s ease-out 2.5s forwards",
         }}
       >
         <div
-          className="p-4"
-          style={{ backgroundColor: "#10B981" }}
+          className="p-4 bg-success"
         >
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-white" />
@@ -186,18 +183,15 @@ export function GettingStartedChecklist({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 rounded-xl overflow-hidden transition-all duration-300"
+      className="fixed bottom-6 right-6 z-50 rounded-xl overflow-hidden transition-all duration-300 bg-card shadow-lg"
       style={{
         width: isExpanded ? "320px" : "200px",
-        backgroundColor: "#fff",
-        border: "1px solid #e5e7eb",
       }}
     >
       {/* Header */}
       <div
-        className="p-4 cursor-pointer select-none"
+        className="p-4 cursor-pointer select-none bg-primary"
         onClick={() => setIsExpanded(!isExpanded)}
-        style={{ backgroundColor: "#3B82F6" }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -231,7 +225,7 @@ export function GettingStartedChecklist({
 
       {/* Checklist items */}
       {isExpanded && (
-        <div className="p-3 space-y-1">
+        <div className="p-3 space-y-1 border-l border-r border-b border-border">
           {items.map((item) => (
             <button
               key={item.id}
@@ -239,15 +233,15 @@ export function GettingStartedChecklist({
               disabled={item.completed}
               className={`w-full text-left p-3 rounded-lg transition-all ${
                 item.completed
-                  ? "bg-gray-50 cursor-default"
-                  : "hover:bg-blue-50 cursor-pointer"
+                  ? "bg-muted cursor-default"
+                  : "hover:bg-primary/10 cursor-pointer"
               }`}
             >
               <div className="flex items-start gap-3">
                 <div
-                  className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-all ${
+                  className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${
                     item.completed
-                      ? "bg-green-500"
+                      ? "bg-success"
                       : "border-2 border-gray-300"
                   }`}
                 >
@@ -258,14 +252,14 @@ export function GettingStartedChecklist({
                 <div className="flex-1 min-w-0">
                   <p
                     className={`text-sm font-medium ${
-                      item.completed ? "text-gray-400 line-through" : "text-gray-900"
+                      item.completed ? "text-muted-foreground line-through" : "text-foreground"
                     }`}
                   >
                     {item.title}
                   </p>
                   <p
                     className={`text-xs mt-0.5 ${
-                      item.completed ? "text-gray-300" : "text-gray-500"
+                      item.completed ? "text-muted-foreground" : "text-muted-foreground"
                     }`}
                   >
                     {item.description}

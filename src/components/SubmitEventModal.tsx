@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from "react";
+import React, { useState, useEffect, useCallback, Suspense, lazy, useMemo } from "react";
 import { Calendar, MapPin, DollarSign, Users, Utensils, Plus, ImagePlus, Check, Sparkles, X, Eye, Megaphone, ChevronRight, Coins } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -55,25 +55,24 @@ interface ValidationErrors {
 
 type ViewMode = "visual" | "json";
 
-// Category color mapping - matches EventCard
-const categoryColors: Record<string, { bg: string; text: string }> = {
-  "Events": { bg: "#DBEAFE", text: "#2563EB" },
-  "Clubs": { bg: "#DCFCE7", text: "#16A34A" },
-  "Academic": { bg: "#FEF3C7", text: "#D97706" },
-  "Religious": { bg: "#F3E8FF", text: "#A855F7" },
-  "Cultural": { bg: "#FFE4E6", text: "#E11D48" },
-  "Social & Games": { bg: "#CFFAFE", text: "#0891B2" },
-  "Sports & Fitness": { bg: "#FEE2E2", text: "#DC2626" },
-  "Career": { bg: "#E0F2FE", text: "#0369A1" },
-  "Technology": { bg: "#E0E7FF", text: "#4F46E5" },
-  "Arts & Crafts": { bg: "#FDF2F8", text: "#DB2777" },
-  "Health & Wellness": { bg: "#ECFDF5", text: "#059669" },
-  "Music & Performance": { bg: "#FEF9C3", text: "#CA8A04" },
-  "Entrepreneurship": { bg: "#F0FDF4", text: "#15803D" },
-};
-
-const getCategoryColor = (category: string) => {
-  return categoryColors[category] || { bg: "#F3F4F6", text: "#6B7280" };
+// Category color mapping - returns Tailwind classes using tokens
+const getCategoryClasses = (category: string): { bg: string; text: string } => {
+  const mapping: Record<string, { bg: string; text: string }> = {
+    "Events": { bg: "bg-category-events-bg", text: "text-category-events-text" },
+    "Clubs": { bg: "bg-category-clubs-bg", text: "text-category-clubs-text" },
+    "Academic": { bg: "bg-category-academic-bg", text: "text-category-academic-text" },
+    "Religious": { bg: "bg-category-religious-bg", text: "text-category-religious-text" },
+    "Cultural": { bg: "bg-category-cultural-bg", text: "text-category-cultural-text" },
+    "Social & Games": { bg: "bg-category-social-bg", text: "text-category-social-text" },
+    "Sports & Fitness": { bg: "bg-category-sports-bg", text: "text-category-sports-text" },
+    "Career": { bg: "bg-category-career-bg", text: "text-category-career-text" },
+    "Technology": { bg: "bg-category-technology-bg", text: "text-category-technology-text" },
+    "Arts & Crafts": { bg: "bg-category-arts-bg", text: "text-category-arts-text" },
+    "Health & Wellness": { bg: "bg-category-health-bg", text: "text-category-health-text" },
+    "Music & Performance": { bg: "bg-category-music-bg", text: "text-category-music-text" },
+    "Entrepreneurship": { bg: "bg-category-entrepreneurship-bg", text: "text-category-entrepreneurship-text" },
+  };
+  return mapping[category] || { bg: "bg-category-default-bg", text: "text-category-default-text" };
 };
 
 export function SubmitEventModal({
@@ -84,6 +83,19 @@ export function SubmitEventModal({
   onPromote,
   onBuyCredits,
 }: SubmitEventModalProps) {
+  // Detect dark mode from document class
+  const [isDarkMode, setIsDarkMode] = useState(() => 
+    document.documentElement.classList.contains('dark')
+  );
+  
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>("visual");
 
@@ -341,14 +353,14 @@ export function SubmitEventModal({
               <Check className="w-8 h-8 text-white" strokeWidth={3} />
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Event Promoted!</h2>
-            <p className="text-gray-500 text-sm mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-2">Event Promoted!</h2>
+            <p className="text-muted-foreground text-sm mb-6">
               "{formData.title}" is now featured and will appear at the top of search results.
             </p>
 
-            <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-full mb-6">
-              <Coins className="w-5 h-5 text-amber-500" />
-              <span className="font-bold text-amber-700">
+            <div className="flex items-center gap-2 bg-warning/20 px-4 py-2 rounded-full mb-6">
+              <Coins className="w-5 h-5 text-warning" />
+              <span className="font-bold text-warning">
                 {userCredits} credits remaining
               </span>
             </div>
@@ -373,33 +385,33 @@ export function SubmitEventModal({
           <DialogTitle className="sr-only">Boost Your Event</DialogTitle>
           <button
             onClick={handleClose}
-            className="absolute top-3 right-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="absolute top-3 right-3 p-2 hover:bg-gray-200 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-muted-foreground" />
           </button>
 
           <div className="py-2">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                 <Megaphone className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Boost Your Event</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-xl font-bold text-foreground">Boost Your Event</h2>
+                <p className="text-sm text-muted-foreground">
                   Get more visibility for "{formData.title}"
                 </p>
               </div>
             </div>
 
             {/* Credits balance */}
-            <div className="flex items-center justify-between bg-amber-50 px-4 py-2 rounded-lg mb-4">
+            <div className="flex items-center justify-between bg-warning/20 px-4 py-2 rounded-lg mb-4">
               <div className="flex items-center gap-2">
-                <Coins className="w-5 h-5 text-amber-500" />
-                <span className="font-semibold text-amber-700">{userCredits} credits</span>
+                <Coins className="w-5 h-5 text-warning" />
+                <span className="font-semibold text-warning">{userCredits} credits</span>
               </div>
               <button
                 onClick={onBuyCredits}
-                className="text-xs font-medium text-amber-600 hover:text-amber-700"
+                className="text-xs font-medium text-warning hover:text-warning/80"
               >
                 + Buy more
               </button>
@@ -415,15 +427,15 @@ export function SubmitEventModal({
                     key={pkg.id}
                     onClick={() => setSelectedPromotion(pkg.id)}
                     className={`w-full p-4 rounded-lg border-2 text-left transition-all relative ${isSelected
-                      ? "border-purple-500 bg-purple-50"
+                      ? "border-primary bg-primary/10"
                       : affordable
-                        ? "border-gray-200 hover:border-purple-300"
-                        : "border-gray-200 opacity-60"
+                        ? "border-border hover:border-primary/50"
+                        : "border-border opacity-60"
                       }`}
                     disabled={!affordable}
                   >
                     {pkg.id === "combo" && (
-                      <div className="absolute -top-2 left-4 bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                      <div className="absolute -top-2 left-4 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded">
                         BEST VALUE
                       </div>
                     )}
@@ -431,8 +443,8 @@ export function SubmitEventModal({
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected
-                            ? "border-purple-500 bg-purple-500"
-                            : "border-gray-300"
+                            ? "border-primary bg-primary"
+                            : "border-border"
                             }`}
                         >
                           {isSelected && (
@@ -440,25 +452,25 @@ export function SubmitEventModal({
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">{pkg.name}</p>
-                          <p className="text-xs text-gray-500">{pkg.description}</p>
+                          <p className="font-semibold text-foreground">{pkg.name}</p>
+                          <p className="text-xs text-muted-foreground">{pkg.description}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1">
-                          <Coins className="w-4 h-4 text-amber-500" />
-                          <span className="font-bold text-gray-900">{pkg.credits}</span>
+                          <Coins className="w-4 h-4 text-warning" />
+                          <span className="font-bold text-foreground">{pkg.credits}</span>
                         </div>
                         {pkg.originalCredits && (
-                          <p className="text-xs text-gray-400 line-through">
+                          <p className="text-xs text-muted-foreground line-through">
                             {pkg.originalCredits} credits
                           </p>
                         )}
-                        <p className="text-xs text-gray-500">{pkg.duration} day{pkg.duration > 1 ? 's' : ''}</p>
+                        <p className="text-xs text-muted-foreground">{pkg.duration} day{pkg.duration > 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     {!affordable && (
-                      <p className="text-xs text-red-500 mt-2">Not enough credits</p>
+                      <p className="text-xs text-error mt-2">Not enough credits</p>
                     )}
                   </button>
                 );
@@ -472,7 +484,7 @@ export function SubmitEventModal({
               <Button
                 onClick={handlePromote}
                 disabled={!selectedPromotion || !canAfford}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="flex-1 bg-primary hover:bg-primary/90"
               >
                 {selectedPkg ? (
                   <span className="flex items-center gap-1.5">
@@ -498,23 +510,23 @@ export function SubmitEventModal({
           <DialogTitle className="sr-only">Event Created</DialogTitle>
           <div className="flex flex-col items-center text-center py-4">
             <div className="relative mb-4">
-              <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-success flex items-center justify-center">
                 <Check className="w-8 h-8 text-white" strokeWidth={3} />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-warning rounded-full flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-white" />
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Event Created!</h2>
-            <p className="text-gray-500 text-sm mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-2">Event Created!</h2>
+            <p className="text-muted-foreground text-sm mb-6">
               "{formData.title}" is now live and visible to students.
             </p>
 
-            <div className="w-full rounded-lg p-4 mb-6 text-left" style={{ backgroundColor: "#f3f4f6" }}>
-              <p className="font-medium text-gray-900 mb-1">{formData.title}</p>
-              <p className="text-sm text-gray-500">{formData.organization}</p>
-              <p className="text-sm text-gray-500 mt-2">
+            <div className="w-full rounded-lg p-4 mb-6 text-left bg-muted">
+              <p className="font-medium text-foreground mb-1">{formData.title}</p>
+              <p className="text-sm text-muted-foreground">{formData.organization}</p>
+              <p className="text-sm text-muted-foreground mt-2">
                 {formatDate(formData.date)} at {formatTime(formData.time)}
               </p>
             </div>
@@ -525,7 +537,7 @@ export function SubmitEventModal({
               </Button>
               <Button
                 onClick={() => setShowPromotion(true)}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="flex-1 bg-primary hover:bg-primary/90"
               >
                 <Megaphone className="w-4 h-4 mr-1.5" />
                 Promote
@@ -544,9 +556,9 @@ export function SubmitEventModal({
         {/* Close Button - Top Right of Modal */}
         <button
           onClick={handleClose}
-          className="absolute top-3 right-3 p-2 hover:bg-gray-100 rounded-lg transition-colors z-10"
+          className="absolute top-3 right-3 p-2 hover:bg-gray-200 rounded-lg transition-colors z-10"
         >
-          <X className="w-5 h-5 text-gray-500" />
+          <X className="w-5 h-5 text-muted-foreground" />
         </button>
 
         <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -555,15 +567,15 @@ export function SubmitEventModal({
             {/* Header with Tabs */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Create Event</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Fill in the details below</p>
+                <h2 className="text-xl font-bold text-foreground">Create Event</h2>
+                <p className="text-sm text-muted-foreground">Fill in the details below</p>
               </div>
-              <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded p-0.5">
+              <div className="flex gap-1 bg-muted rounded p-0.5">
                 <button
                   onClick={() => setViewMode("visual")}
                   className={`${viewMode === "visual"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "bg-transparent text-muted-foreground hover:text-foreground"
                     } font-medium text-[11px] px-3 py-1 rounded transition-all`}
                 >
                   Visual
@@ -571,8 +583,8 @@ export function SubmitEventModal({
                 <button
                   onClick={() => setViewMode("json")}
                   className={`${viewMode === "json"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "bg-transparent text-muted-foreground hover:text-foreground"
                     } font-medium text-[11px] px-3 py-1 rounded transition-all`}
                 >
                   JSON
@@ -583,10 +595,10 @@ export function SubmitEventModal({
             {viewMode === "visual" ? (
               <div className="space-y-5">
                 {/* AI Generation Input - Always Visible */}
-                <div className="space-y-2 pb-4 border-b border-gray-100 dark:border-gray-700">
+                <div className="space-y-2 pb-4 border-b border-border">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">AI Event Generation</span>
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs font-medium text-foreground">AI Event Generation</span>
                   </div>
                   <div className="relative">
                     <input
@@ -600,24 +612,24 @@ export function SubmitEventModal({
                         }
                       }}
                       disabled={aiGenerating}
-                      className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs px-3 py-2.5 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:opacity-60"
+                      className="w-full bg-muted text-foreground text-xs px-3 py-2.5 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 border border-border placeholder:text-muted-foreground disabled:opacity-60"
                     />
                     {aiPrompt && !aiGenerating && (
                       <button
                         onClick={() => setAiPrompt("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                     {aiGenerating && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                        <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />
                       </div>
                     )}
                   </div>
                   {jsonError && (
-                    <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-3 py-2 rounded-xl text-[11px]">
+                    <div className="bg-error/10 border border-error/20 text-error px-3 py-2 rounded-xl text-[11px]">
                       {jsonError}
                     </div>
                   )}
@@ -626,8 +638,8 @@ export function SubmitEventModal({
                 {/* Required Section */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
-                      Event Title <span className="text-red-500">*</span>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
+                      Event Title <span className="text-error">*</span>
                     </label>
                     <input
                       type="text"
@@ -635,17 +647,17 @@ export function SubmitEventModal({
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                       onBlur={() => handleBlur("title")}
                       placeholder="e.g., Tech Talk: AI in 2024"
-                      className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all dark:text-gray-100 dark:placeholder:text-gray-500 ${errors.title ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                      className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 transition-all text-foreground placeholder:text-muted-foreground ${errors.title ? "border-error bg-error/10" : "border-border bg-muted"
                         }`}
                     />
                     {errors.title && (
-                      <p className="text-xs text-red-500 mt-1">{errors.title}</p>
+                      <p className="text-xs text-error mt-1">{errors.title}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
-                      Organization <span className="text-red-500">*</span>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
+                      Organization <span className="text-error">*</span>
                     </label>
                     <input
                       type="text"
@@ -653,55 +665,55 @@ export function SubmitEventModal({
                       onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
                       onBlur={() => handleBlur("organization")}
                       placeholder="e.g., Computer Science Club"
-                      className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all dark:text-gray-100 dark:placeholder:text-gray-500 ${errors.organization ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                      className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 transition-all text-foreground placeholder:text-muted-foreground ${errors.organization ? "border-error bg-error/10" : "border-border bg-muted"
                         }`}
                     />
                     {errors.organization && (
-                      <p className="text-xs text-red-500 mt-1">{errors.organization}</p>
+                      <p className="text-xs text-error mt-1">{errors.organization}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                         <Calendar className="w-4 h-4" />
-                        Date <span className="text-red-500">*</span>
+                        Date <span className="text-error">*</span>
                       </label>
                       <input
                         type="date"
                         value={formData.date}
                         onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                         onBlur={() => handleBlur("date")}
-                        className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-100 ${errors.date ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                        className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 text-foreground ${errors.date ? "border-error bg-error/10" : "border-border bg-muted"
                           }`}
                       />
                       {errors.date && (
-                        <p className="text-xs text-red-500 mt-1">{errors.date}</p>
+                        <p className="text-xs text-error mt-1">{errors.date}</p>
                       )}
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
-                        Time <span className="text-red-500">*</span>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">
+                        Time <span className="text-error">*</span>
                       </label>
                       <input
                         type="time"
                         value={formData.time}
                         onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
                         onBlur={() => handleBlur("time")}
-                        className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-100 ${errors.time ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20" : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                        className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 text-foreground ${errors.time ? "border-error bg-error/10" : "border-border bg-muted"
                           }`}
                       />
                       {errors.time && (
-                        <p className="text-xs text-red-500 mt-1">{errors.time}</p>
+                        <p className="text-xs text-error mt-1">{errors.time}</p>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                       <MapPin className="w-4 h-4" />
-                      Location <span className="text-red-500">*</span>
+                      Location <span className="text-error">*</span>
                     </label>
                     <Select
                       value={formData.location}
@@ -710,7 +722,7 @@ export function SubmitEventModal({
                         setTouched(prev => ({ ...prev, location: true }));
                       }}
                     >
-                      <SelectTrigger className={`w-full ${errors.location ? "border-red-300 bg-red-50" : ""}`}>
+                      <SelectTrigger className={`w-full ${errors.location ? "border-error bg-error/10" : ""}`}>
                         <SelectValue placeholder="Select a location" />
                       </SelectTrigger>
                       <SelectContent>
@@ -720,20 +732,20 @@ export function SubmitEventModal({
                       </SelectContent>
                     </Select>
                     {errors.location && (
-                      <p className="text-xs text-red-500 mt-1">{errors.location}</p>
+                      <p className="text-xs text-error mt-1">{errors.location}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
+                <div className="border-t border-border my-2" />
 
                 {/* Optional Section */}
                 <div className="space-y-4">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-medium">Optional Details</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Optional Details</p>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
                       Description
                     </label>
                     <textarea
@@ -741,13 +753,13 @@ export function SubmitEventModal({
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="Tell people what your event is about..."
                       rows={2}
-                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                      className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 resize-none bg-muted text-foreground placeholder:text-muted-foreground"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">
                         Category
                       </label>
                       <Select
@@ -766,12 +778,12 @@ export function SubmitEventModal({
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                         <DollarSign className="w-4 h-4" />
                         Price
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
                         <input
                           type="number"
                           min="0"
@@ -779,14 +791,14 @@ export function SubmitEventModal({
                           value={formData.price}
                           onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
                           placeholder="0"
-                          className="w-full pl-7 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-800 dark:text-gray-100"
+                          className="w-full pl-7 pr-3 py-2.5 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 bg-muted text-foreground"
                         />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                       <Utensils className="w-4 h-4" />
                       Food Provided
                     </label>
@@ -797,14 +809,14 @@ export function SubmitEventModal({
                         onChange={(e) => setFoodInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFood())}
                         placeholder="e.g., Pizza, Snacks"
-                        className="flex-1 px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                        className="flex-1 px-3 py-2.5 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 bg-muted text-foreground placeholder:text-muted-foreground"
                       />
                       <button
                         type="button"
                         onClick={addFood}
-                        className="w-[38px] h-[38px] flex items-center justify-center border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-shrink-0 bg-gray-50 dark:bg-gray-800"
+                        className="w-[38px] h-[38px] flex items-center justify-center border border-border rounded-xl hover:bg-gray-200 transition-colors flex-shrink-0 bg-muted"
                       >
-                        <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <Plus className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>
                     {formData.food.length > 0 && (
@@ -812,13 +824,13 @@ export function SubmitEventModal({
                         {formData.food.map((item) => (
                           <span
                             key={item}
-                            className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 text-xs px-2 py-1 rounded-full"
+                            className="inline-flex items-center gap-1 bg-warning/20 text-warning text-xs px-2 py-1 rounded-full"
                           >
                             {item}
                             <button
                               type="button"
                               onClick={() => removeFood(formData.food.indexOf(item))}
-                              className="hover:bg-amber-200 dark:hover:bg-amber-800/50 rounded-full p-0.5"
+                              className="hover:bg-warning/30 rounded-full p-0.5"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -828,19 +840,19 @@ export function SubmitEventModal({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Requires registration</span>
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">Requires registration</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, requiresRegistration: !prev.requiresRegistration }))}
-                      className={`w-10 h-6 rounded-full transition-colors relative ${formData.requiresRegistration ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
+                      className={`w-10 h-6 rounded-full transition-colors relative ${formData.requiresRegistration ? "bg-primary" : "bg-gray-200"
                         }`}
                     >
                       <div
-                        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.requiresRegistration ? "translate-x-5" : "translate-x-1"
+                        className={`absolute top-1 w-4 h-4 bg-card rounded-full shadow transition-transform ${formData.requiresRegistration ? "translate-x-5" : "translate-x-1"
                           }`}
                       />
                     </button>
@@ -848,12 +860,12 @@ export function SubmitEventModal({
 
                   {/* Cover Image */}
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
                       Cover Image
                     </label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer">
-                      <ImagePlus className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-500">Click to upload</p>
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer">
+                      <ImagePlus className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Click to upload</p>
                     </div>
                   </div>
                 </div>
@@ -862,10 +874,10 @@ export function SubmitEventModal({
               /* JSON View */
               <div className="space-y-4">
                 {/* AI Prompt Input - Same as Visual view */}
-                <div className="space-y-2 pb-4 border-b border-gray-100">
+                <div className="space-y-2 pb-4 border-b border-border">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                    <span className="text-xs font-medium text-gray-700">AI Event Generation</span>
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs font-medium text-foreground">AI Event Generation</span>
                   </div>
                   <div className="relative">
                     <input
@@ -879,35 +891,35 @@ export function SubmitEventModal({
                         }
                       }}
                       disabled={aiGenerating}
-                      className="w-full bg-gray-100 text-gray-700 text-xs px-3 py-2.5 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 disabled:opacity-60"
+                      className="w-full bg-muted text-foreground text-xs px-3 py-2.5 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 border border-border placeholder:text-muted-foreground disabled:opacity-60"
                     />
                     {aiPrompt && !aiGenerating && (
                       <button
                         onClick={() => setAiPrompt("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                     {aiGenerating && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                        <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />
                       </div>
                     )}
                   </div>
                 </div>
 
                 {jsonError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-[11px]">
+                    <div className="bg-error/10 border border-error/20 text-error px-3 py-2 rounded text-[11px]">
                     {jsonError}
                   </div>
                 )}
 
                 {/* Monaco Editor */}
-                <div className="border border-gray-200 rounded overflow-hidden">
+                <div className="border border-border rounded overflow-hidden">
                   <Suspense fallback={
-                    <div className="flex items-center justify-center h-[350px] bg-gray-50">
-                      <div className="text-gray-500 text-sm">Loading editor...</div>
+                    <div className="flex items-center justify-center h-[350px] bg-muted">
+                      <div className="text-muted-foreground text-sm">Loading editor...</div>
                     </div>
                   }>
                     <Editor
@@ -915,7 +927,7 @@ export function SubmitEventModal({
                       defaultLanguage="json"
                       value={jsonValue}
                       onChange={handleJsonChange}
-                      theme="vs-light"
+                      theme={isDarkMode ? "vs-dark" : "vs-light"}
                       options={{
                         minimap: { enabled: false },
                         fontSize: 12,
@@ -936,25 +948,21 @@ export function SubmitEventModal({
           </div>
 
           {/* Live Preview Panel */}
-          <div className="w-80 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto min-h-0">
+          <div className="w-80 bg-muted border-l border-border p-6 overflow-y-auto min-h-0">
             <div className="flex items-center gap-2 mb-4">
-              <Eye className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Live Preview</span>
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Live Preview</span>
             </div>
 
             {/* Preview Card - Matches EventCard styling */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
               {/* Image area with category badge */}
               <div className="relative h-32 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                <ImagePlus className="w-6 h-6 text-gray-400" />
+                <ImagePlus className="w-6 h-6 text-muted-foreground" />
                 {formData.category && (
                   <BadgeMask variant="top-left">
                     <span 
-                      className="font-bold text-[10px] px-2 py-0.5 block rounded-full"
-                      style={{
-                        backgroundColor: getCategoryColor(formData.category).bg,
-                        color: getCategoryColor(formData.category).text
-                      }}
+                      className={`font-bold text-[10px] px-2 py-0.5 block rounded-full ${getCategoryClasses(formData.category).bg} ${getCategoryClasses(formData.category).text}`}
                     >
                       {formData.category}
                     </span>
@@ -963,14 +971,12 @@ export function SubmitEventModal({
                 {/* Club badge - bottom left */}
                 <div className="absolute bottom-2 left-2 z-10 flex items-center gap-2">
                   <div
-                    className="w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: "linear-gradient(to bottom right, rgba(59,130,246,0.2), rgba(59,130,246,0.1))", backgroundColor: "#fff" }}
+                    className="w-7 h-7 rounded-full border-2 border-card shadow-lg flex items-center justify-center flex-shrink-0 bg-card bg-gradient-to-br from-primary/20 to-primary/10"
                   >
-                    <Users className="w-3.5 h-3.5" style={{ color: "#3B82F6" }} strokeWidth={2} />
+                    <Users className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
                   </div>
                   <span 
-                    className="font-bold text-[10px] text-white truncate max-w-[100px]"
-                    style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)" }}
+                    className="font-bold text-[10px] text-white truncate max-w-[100px] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5),0_1px_2px_rgba(0,0,0,0.4)]"
                   >
                     {formData.organization || "Organization"}
                   </span>
@@ -978,7 +984,7 @@ export function SubmitEventModal({
               </div>
               <div className="p-4">
                 {/* Title first */}
-                <h3 className="font-medium text-[12px] leading-tight mb-2 line-clamp-2" style={{ color: "#111827" }}>
+                <h3 className="font-medium text-[12px] leading-tight mb-2 line-clamp-2 text-foreground">
                   {formData.title || "Event Title"}
                 </h3>
                 
@@ -986,31 +992,27 @@ export function SubmitEventModal({
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {formData.price === 0 ? (
                     <span 
-                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
-                      style={{ backgroundColor: "#10B98120", color: "#10B981" }}
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl bg-success/20 text-success"
                     >
                       Free
                     </span>
                   ) : (
                     <span 
-                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
-                      style={{ backgroundColor: "#3B82F620", color: "#3B82F6" }}
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl bg-primary/20 text-primary"
                     >
                       ${formData.price}
                     </span>
                   )}
                   {formData.food.length > 0 && (
                     <span 
-                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
-                      style={{ backgroundColor: "#F59E0B20", color: "#F59E0B" }}
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl bg-warning/20 text-warning"
                     >
                       Free Food
                     </span>
                   )}
                   {formData.requiresRegistration && (
                     <span 
-                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl"
-                      style={{ backgroundColor: "#8B5CF620", color: "#8B5CF6" }}
+                      className="font-medium text-[10px] px-2 py-0.5 rounded-xl bg-primary/20 text-primary"
                     >
                       Registration Required
                     </span>
@@ -1020,33 +1022,32 @@ export function SubmitEventModal({
                 {/* Event Info */}
                 <div className="space-y-1 mb-3">
                   <div className="flex gap-1.5 items-center">
-                    <Calendar className="w-3 h-3 flex-shrink-0" style={{ color: "#9CA3AF" }} strokeWidth={2} />
-                    <span className="text-[11px] truncate" style={{ color: "#4B5563" }}>
+                    <Calendar className="w-3 h-3 flex-shrink-0 text-muted-foreground" strokeWidth={2} />
+                    <span className="text-[11px] truncate text-muted-foreground">
                       {formatDate(formData.date)} at {formatTime(formData.time)}
                     </span>
                   </div>
                   <div className="flex gap-1.5 items-center">
-                    <MapPin className="w-3 h-3 flex-shrink-0" style={{ color: "#9CA3AF" }} strokeWidth={2} />
-                    <span className="text-[11px] truncate" style={{ color: "#4B5563" }}>
+                    <MapPin className="w-3 h-3 flex-shrink-0 text-muted-foreground" strokeWidth={2} />
+                    <span className="text-[11px] truncate text-muted-foreground">
                       {formData.location || "Location"}
                     </span>
                   </div>
                 </div>
 
                 {/* Divider */}
-                <div className="h-px mb-3" style={{ background: "linear-gradient(to right, transparent, #e5e7eb, transparent)" }} />
+                <div className="h-px mb-3 bg-gradient-to-r from-transparent via-border to-transparent" />
 
                 {/* View More button placeholder */}
                 <div 
-                  className="w-full text-white font-medium text-[11px] h-8 rounded-lg flex items-center justify-center gap-1.5 shadow-sm"
-                  style={{ backgroundColor: "#3B82F6" }}
+                  className="w-full text-white font-medium text-[11px] h-8 rounded-xl flex items-center justify-center gap-1.5 shadow-sm bg-primary"
                 >
                   View More
                 </div>
               </div>
             </div>
 
-            <p className="text-[10px] text-gray-400 text-center mt-3">
+            <p className="text-[10px] text-muted-foreground text-center mt-3">
               This is how your event will appear to others
             </p>
 

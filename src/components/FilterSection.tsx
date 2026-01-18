@@ -38,7 +38,7 @@ export const FilterSection = React.memo(function FilterSection({
   };
 
   return (
-    <div className={`space-y-2 relative -mx-4 ${expanded ? "border-y border-gray-200 dark:border-gray-700" : ""}`}>
+    <div className={`space-y-2 relative -mx-4 ${expanded ? "border-y border-border" : ""}`}>
       <button
         onClick={onToggle}
         className="flex items-center justify-between w-full group hover:opacity-80 transition-opacity py-3 px-4"
@@ -48,7 +48,7 @@ export const FilterSection = React.memo(function FilterSection({
             ref={titleRef}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            className="font-medium text-xs relative text-gray-900 dark:text-gray-100"
+            className="font-medium text-xs relative text-foreground"
           >
             {title}
             {showTooltip && (
@@ -74,7 +74,7 @@ export const FilterSection = React.memo(function FilterSection({
                 e.stopPropagation();
                 onClear?.();
               }}
-              className="text-white font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer bg-blue-500"
+              className="text-white font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer bg-primary"
             >
               <X className="w-2.5 h-2.5" strokeWidth={3} />
               {indicator}
@@ -82,9 +82,9 @@ export const FilterSection = React.memo(function FilterSection({
           )}
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 transition-colors text-gray-400 dark:text-gray-500" />
+          <ChevronUp className="w-4 h-4 transition-colors text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-4 h-4 transition-colors text-gray-400 dark:text-gray-500" />
+          <ChevronDown className="w-4 h-4 transition-colors text-muted-foreground" />
         )}
       </button>
       {expanded && <div className="animate-in fade-in duration-200 px-4 pb-3">{children}</div>}

@@ -223,15 +223,15 @@ export function PieMenu({
                   d={path}
                   fill={
                     item.disabled 
-                      ? (isDarkMode ? "#374151" : "#f3f4f6")
+                      ? (isDarkMode ? "var(--gray-700)" : "var(--gray-100)")
                       : isActive 
-                        ? "#3B82F6" 
-                        : (isDarkMode ? "#1f2937" : "#ffffff")
+                        ? "var(--primary)" 
+                        : (isDarkMode ? "var(--gray-800)" : "var(--background)")
                   }
                   stroke={
                     isSelected 
-                      ? (isDarkMode ? "#60a5fa" : "#2563EB")
-                      : (isDarkMode ? "#4b5563" : "#e5e7eb")
+                      ? (isDarkMode ? "var(--blue-400)" : "var(--blue-600)")
+                      : (isDarkMode ? "var(--gray-600)" : "var(--gray-200)")
                   }
                   strokeWidth={isSelected ? 2 : 1}
                   style={{
@@ -274,8 +274,8 @@ export function PieMenu({
                         color: isActive 
                           ? "white" 
                           : item.disabled 
-                            ? "#9ca3af" 
-                            : (isDarkMode ? "#d1d5db" : "#4b5563"),
+                            ? "var(--gray-400)" 
+                            : (isDarkMode ? "var(--gray-300)" : "var(--gray-600)"),
                       }}
                     >
                       {item.icon}
@@ -295,8 +295,8 @@ export function PieMenu({
                     fill: isActive 
                       ? "white" 
                       : item.disabled 
-                        ? "#9ca3af" 
-                        : (isDarkMode ? "#e5e7eb" : "#374151"),
+                        ? "var(--gray-400)" 
+                        : (isDarkMode ? "var(--gray-200)" : "var(--gray-700)"),
                     pointerEvents: "none",
                     userSelect: "none",
                   }}
@@ -311,7 +311,7 @@ export function PieMenu({
                       cx={checkX}
                       cy={checkY}
                       r={8}
-                      fill="#10B981"
+                      fill="var(--success)"
                       stroke="#fff"
                       strokeWidth={2}
                     />

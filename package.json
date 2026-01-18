@@ -27,9 +27,11 @@
     "framer-motion": "^12.23.25",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.556.0",
+    "motion": "^12.26.2",
     "openai": "^6.10.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "rough-notation": "^0.5.1",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  Suspense,
+  lazy,
+} from "react";
 import {
   Search,
   ChevronDown,
@@ -10,7 +17,6 @@ import {
   LogIn,
   LogOut,
   Grid3x3,
-
   SlidersHorizontal,
   Target,
   Mail,
@@ -46,7 +52,12 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AboutPage } from "@/components/AboutPage";
 import { OnboardingModal } from "@/components/OnboardingModal";
@@ -57,15 +68,25 @@ const Editor = lazy(() => import("@monaco-editor/react"));
 import { DatePicker } from "@/components/DatePicker";
 import { FilterSection } from "@/components/FilterSection";
 import { EventCard } from "@/components/EventCard";
+import { EventListSkeleton } from "@/components/ui/skeleton";
 import { GettingStartedChecklist } from "@/components/GettingStartedChecklist";
 import { SubmitEventModal } from "@/components/SubmitEventModal";
 import { SchoolCombobox } from "@/components/SchoolCombobox";
 import { MyEventsView } from "@/components/MyEventsView";
+import { AnimatedThemeToggler } from "@/components/AnimatedThemeToggler";
 import { PieMenu } from "@/components/ui/pie-menu";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { usePieMenu } from "@/hooks/usePieMenu";
 import { useEasterEggs } from "@/hooks/useEasterEggs";
 import { EasterEggs } from "@/components/EasterEggs";
-import type { ViewMode, FilterViewMode, PageMode, FilterState, PromotedEvent, Event } from "@/types";
+import type {
+  ViewMode,
+  FilterViewMode,
+  PageMode,
+  FilterState,
+  PromotedEvent,
+  Event,
+} from "@/types";
 import { BuyCreditsModal } from "@/components/BuyCreditsModal";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/lib/openai";
 import {
@@ -79,7 +100,15 @@ import {
 // Helper to get day of week from date string
 const getDayOfWeek = (dateStr: string): string => {
   const date = new Date(dateStr);
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
   return days[date.getDay()];
 };
 
@@ -87,72 +116,97 @@ export default function App() {
   // Page and view states
   const [pageMode, setPageMode] = useState<PageMode>("events");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [filterViewMode, setFilterViewMode] = useState<FilterViewMode>("visual");
+  const [filterViewMode, setFilterViewMode] = useState<FilterViewMode>(
+    "visual"
+  );
 
   // Events state (combines mock events with user-created events)
   const [events, setEvents] = useState<Event[]>(() => {
-    const savedEvents = localStorage.getItem('userCreatedEvents');
+    const savedEvents = localStorage.getItem("userCreatedEvents");
     const userEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
     return [...mockEvents, ...userEvents];
   });
 
   // Track user-created event IDs separately for persistence
-  const [userCreatedEventIds, setUserCreatedEventIds] = useState<number[]>(() => {
-    const saved = localStorage.getItem('userCreatedEventIds');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [userCreatedEventIds, setUserCreatedEventIds] = useState<number[]>(
+    () => {
+      const saved = localStorage.getItem("userCreatedEventIds");
+      return saved ? JSON.parse(saved) : [];
+    }
+  );
 
   // Persist user-created events to localStorage
   useEffect(() => {
-    const userEvents = events.filter(e => userCreatedEventIds.includes(e.id));
-    localStorage.setItem('userCreatedEvents', JSON.stringify(userEvents));
-    localStorage.setItem('userCreatedEventIds', JSON.stringify(userCreatedEventIds));
+    const userEvents = events.filter((e) => userCreatedEventIds.includes(e.id));
+    localStorage.setItem("userCreatedEvents", JSON.stringify(userEvents));
+    localStorage.setItem(
+      "userCreatedEventIds",
+      JSON.stringify(userCreatedEventIds)
+    );
   }, [events, userCreatedEventIds]);
 
   // Add event handler
-  const addEvent = useCallback((eventData: {
-    title: string;
-    description: string;
-    date: string;
-    time: string;
-    location: string;
-    category: string;
-    price: number;
-    food: string[];
-    requiresRegistration: boolean;
-    organization: string;
-  }): number => {
-    const newId = Date.now();
-    const newEvent: Event = {
-      id: newId,
-      title: eventData.title,
-      category: eventData.category || "Events",
-      organization: eventData.organization,
-      location: eventData.location,
-      date: eventData.date,
-      time: eventData.time,
-      isLive: false,
-      food: eventData.food,
-      price: eventData.price,
-      dayOfWeek: getDayOfWeek(eventData.date),
-      requiresRegistration: eventData.requiresRegistration,
-      addedDate: new Date(),
-      description: eventData.description,
-      eventDate: new Date(eventData.date),
-    };
+  const addEvent = useCallback(
+    (eventData: {
+      title: string;
+      description: string;
+      date: string;
+      time: string;
+      location: string;
+      category: string;
+      price: number;
+      food: string[];
+      requiresRegistration: boolean;
+      organization: string;
+    }): number => {
+      const newId = Date.now();
+      const newEvent: Event = {
+        id: newId,
+        title: eventData.title,
+        category: eventData.category || "Events",
+        organization: eventData.organization,
+        location: eventData.location,
+        date: eventData.date,
+        time: eventData.time,
+        isLive: false,
+        food: eventData.food,
+        price: eventData.price,
+        dayOfWeek: getDayOfWeek(eventData.date),
+        requiresRegistration: eventData.requiresRegistration,
+        addedDate: new Date(),
+        description: eventData.description,
+        eventDate: new Date(eventData.date),
+      };
 
-    setEvents(prev => [newEvent, ...prev]);
-    setUserCreatedEventIds(prev => [...prev, newId]);
-    return newId;
-  }, []);
+      setEvents((prev) => [newEvent, ...prev]);
+      setUserCreatedEventIds((prev) => [...prev, newId]);
+      return newId;
+    },
+    []
+  );
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["Events", "Clubs", "Academic"]);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>(["LAX", "Pollock", "TCF 1"]);
-  const [selectedFoods, setSelectedFoods] = useState<string[]>(["Snacks", "Pizza"]);
-  const [selectedDays, setSelectedDays] = useState<string[]>(["Monday", "Wednesday", "Thursday"]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([
+    "Events",
+    "Clubs",
+    "Academic",
+  ]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([
+    "LAX",
+    "Pollock",
+    "TCF 1",
+  ]);
+  const [selectedFoods, setSelectedFoods] = useState<string[]>([
+    "Snacks",
+    "Pizza",
+  ]);
+  const [selectedDays, setSelectedDays] = useState<string[]>([
+    "Monday",
+    "Wednesday",
+    "Thursday",
+  ]);
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [dateRange, setDateRange] = useState<Date | undefined>(undefined);
   const [addedSince, setAddedSince] = useState<Date | undefined>(undefined);
@@ -163,7 +217,9 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // School dropdown state
-  const [selectedSchool, setSelectedSchool] = useState("University of Waterloo");
+  const [selectedSchool, setSelectedSchool] = useState(
+    "University of Waterloo"
+  );
 
   // Food filter states
   const [includeFoods, setIncludeFoods] = useState(false);
@@ -200,60 +256,45 @@ export default function App() {
 
   // Dark mode state (persisted to localStorage)
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
+    const saved = localStorage.getItem("darkMode");
     if (saved !== null) {
       return JSON.parse(saved);
     }
     // Check system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
-  // Apply dark mode class to document
+  // Apply dark mode class to document (initial load only)
+  // The AnimatedThemeToggler handles theme changes with view transitions
   useEffect(() => {
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
+    localStorage.setItem("darkMode", JSON.stringify(isDarkMode));
+  }, []); // Only run on mount
 
-  const toggleDarkMode = useCallback(() => {
-    setIsDarkMode((prev: boolean) => !prev);
+  // Sync isDarkMode state when theme changes externally
+  const handleThemeChange = useCallback((isDark: boolean) => {
+    setIsDarkMode(isDark);
   }, []);
 
   // Saved and registered events state (persisted to localStorage)
   const [savedEventIds, setSavedEventIds] = useState<number[]>(() => {
-    const saved = localStorage.getItem('savedEventIds');
+    const saved = localStorage.getItem("savedEventIds");
     return saved ? JSON.parse(saved) : [];
   });
-  const [registeredEventIds, setRegisteredEventIds] = useState<number[]>(() => {
-    const registered = localStorage.getItem('registeredEventIds');
-    return registered ? JSON.parse(registered) : [];
-  });
-
-  // Persist saved/registered to localStorage
+  // Persist saved to localStorage
   useEffect(() => {
-    localStorage.setItem('savedEventIds', JSON.stringify(savedEventIds));
+    localStorage.setItem("savedEventIds", JSON.stringify(savedEventIds));
   }, [savedEventIds]);
 
-  useEffect(() => {
-    localStorage.setItem('registeredEventIds', JSON.stringify(registeredEventIds));
-  }, [registeredEventIds]);
-
-  // Event save/register handlers
+  // Event save handler
   const toggleSaveEvent = useCallback((eventId: number) => {
-    setSavedEventIds(prev =>
+    setSavedEventIds((prev) =>
       prev.includes(eventId)
-        ? prev.filter(id => id !== eventId)
-        : [...prev, eventId]
-    );
-  }, []);
-
-  const toggleRegisterEvent = useCallback((eventId: number) => {
-    setRegisteredEventIds(prev =>
-      prev.includes(eventId)
-        ? prev.filter(id => id !== eventId)
+        ? prev.filter((id) => id !== eventId)
         : [...prev, eventId]
     );
   }, []);
@@ -263,71 +304,77 @@ export default function App() {
 
   // Credits and promotions state (persisted to localStorage)
   const [userCredits, setUserCredits] = useState<number>(() => {
-    const saved = localStorage.getItem('userCredits');
+    const saved = localStorage.getItem("userCredits");
     return saved ? JSON.parse(saved) : 100; // Start with 100 free credits
   });
   const [promotedEvents, setPromotedEvents] = useState<PromotedEvent[]>(() => {
-    const saved = localStorage.getItem('promotedEvents');
+    const saved = localStorage.getItem("promotedEvents");
     return saved ? JSON.parse(saved) : [];
   });
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   // Persist credits and promotions to localStorage
   useEffect(() => {
-    localStorage.setItem('userCredits', JSON.stringify(userCredits));
+    localStorage.setItem("userCredits", JSON.stringify(userCredits));
   }, [userCredits]);
 
   useEffect(() => {
-    localStorage.setItem('promotedEvents', JSON.stringify(promotedEvents));
+    localStorage.setItem("promotedEvents", JSON.stringify(promotedEvents));
   }, [promotedEvents]);
 
   // Add credits handler
   const addCredits = useCallback((amount: number) => {
-    setUserCredits(prev => prev + amount);
+    setUserCredits((prev) => prev + amount);
   }, []);
 
   // Promote event handler
-  const promoteEvent = useCallback((eventId: number, packageId: string, credits: number, duration: number) => {
-    // Check if user has enough credits
-    if (userCredits < credits) {
-      setShowBuyCredits(true);
-      return false;
-    }
+  const promoteEvent = useCallback(
+    (eventId: number, packageId: string, credits: number, duration: number) => {
+      // Check if user has enough credits
+      if (userCredits < credits) {
+        setShowBuyCredits(true);
+        return false;
+      }
 
-    // Deduct credits
-    setUserCredits(prev => prev - credits);
+      // Deduct credits
+      setUserCredits((prev) => prev - credits);
 
-    // Add to promoted events
-    const startDate = new Date().toISOString();
-    const endDate = new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString();
+      // Add to promoted events
+      const startDate = new Date().toISOString();
+      const endDate = new Date(
+        Date.now() + duration * 24 * 60 * 60 * 1000
+      ).toISOString();
 
-    setPromotedEvents(prev => [
-      ...prev.filter(p => p.eventId !== eventId), // Remove existing promotion for this event
-      {
-        eventId,
-        package: packageId as PromotedEvent['package'],
-        startDate,
-        endDate,
-      },
-    ]);
+      setPromotedEvents((prev) => [
+        ...prev.filter((p) => p.eventId !== eventId), // Remove existing promotion for this event
+        {
+          eventId,
+          package: packageId as PromotedEvent["package"],
+          startDate,
+          endDate,
+        },
+      ]);
 
-    return true;
-  }, [userCredits]);
+      return true;
+    },
+    [userCredits]
+  );
 
   // Check if event is currently promoted
-  const isEventPromoted = useCallback((eventId: number) => {
-    const now = new Date().toISOString();
-    return promotedEvents.some(
-      p => p.eventId === eventId && p.endDate > now
-    );
-  }, [promotedEvents]);
+  const isEventPromoted = useCallback(
+    (eventId: number) => {
+      const now = new Date().toISOString();
+      return promotedEvents.some(
+        (p) => p.eventId === eventId && p.endDate > now
+      );
+    },
+    [promotedEvents]
+  );
 
   // Get active promoted event IDs
   const activePromotedEventIds = useMemo(() => {
     const now = new Date().toISOString();
-    return promotedEvents
-      .filter(p => p.endDate > now)
-      .map(p => p.eventId);
+    return promotedEvents.filter((p) => p.endDate > now).map((p) => p.eventId);
   }, [promotedEvents]);
 
   // Command+K keyboard shortcut
@@ -424,13 +471,25 @@ export default function App() {
       const parsed: FilterState = JSON.parse(value);
       setJsonError("");
       setSearchQuery(parsed.searchQuery || "");
-      setSelectedCategories(Array.isArray(parsed.categories) ? parsed.categories : []);
-      setSelectedLocations(Array.isArray(parsed.locations) ? parsed.locations : []);
+      setSelectedCategories(
+        Array.isArray(parsed.categories) ? parsed.categories : []
+      );
+      setSelectedLocations(
+        Array.isArray(parsed.locations) ? parsed.locations : []
+      );
       setSelectedFoods(Array.isArray(parsed.foods) ? parsed.foods : []);
       setSelectedDays(Array.isArray(parsed.days) ? parsed.days : []);
       setPriceRange(parsed.priceRange || { min: "", max: "" });
-      setDateRange(parsed.dateRange && parsed.dateRange.length > 0 ? new Date(parsed.dateRange) : undefined);
-      setAddedSince(parsed.addedSince && parsed.addedSince.length > 0 ? new Date(parsed.addedSince) : undefined);
+      setDateRange(
+        parsed.dateRange && parsed.dateRange.length > 0
+          ? new Date(parsed.dateRange)
+          : undefined
+      );
+      setAddedSince(
+        parsed.addedSince && parsed.addedSince.length > 0
+          ? new Date(parsed.addedSince)
+          : undefined
+      );
       setRequiresRegistration(parsed.requiresRegistration || false);
     } catch (e) {
       setJsonError("Invalid JSON format");
@@ -438,26 +497,45 @@ export default function App() {
   };
 
   // Section toggle - memoized with useCallback
-  const toggleSection = useCallback((section: keyof typeof expandedSections) => {
-    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  }, []);
+  const toggleSection = useCallback(
+    (section: keyof typeof expandedSections) => {
+      setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+    },
+    []
+  );
 
   // Filter toggle functions - memoized with useCallback
-  const toggleCategory = useCallback((cat: string) =>
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    ), []);
+  const toggleCategory = useCallback(
+    (cat: string) =>
+      setSelectedCategories((prev) =>
+        prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+      ),
+    []
+  );
 
-  const toggleLocation = useCallback((loc: string) =>
-    setSelectedLocations((prev) =>
-      prev.includes(loc) ? prev.filter((l) => l !== loc) : [...prev, loc]
-    ), []);
+  const toggleLocation = useCallback(
+    (loc: string) =>
+      setSelectedLocations((prev) =>
+        prev.includes(loc) ? prev.filter((l) => l !== loc) : [...prev, loc]
+      ),
+    []
+  );
 
-  const toggleDay = useCallback((day: string) =>
-    setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day])), []);
+  const toggleDay = useCallback(
+    (day: string) =>
+      setSelectedDays((prev) =>
+        prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      ),
+    []
+  );
 
-  const toggleFood = useCallback((food: string) =>
-    setSelectedFoods((prev) => (prev.includes(food) ? prev.filter((f) => f !== food) : [...prev, food])), []);
+  const toggleFood = useCallback(
+    (food: string) =>
+      setSelectedFoods((prev) =>
+        prev.includes(food) ? prev.filter((f) => f !== food) : [...prev, food]
+      ),
+    []
+  );
 
   // Clear all filters handler - memoized with useCallback
   const handleClearAllFilters = useCallback(() => {
@@ -483,7 +561,9 @@ export default function App() {
 
     // Check if API key is configured
     if (!isApiKeyConfigured()) {
-      setJsonError("OpenAI API key not configured. Add your key in src/lib/openai.ts");
+      setJsonError(
+        "OpenAI API key not configured. Add your key in src/lib/openai.ts"
+      );
       return;
     }
 
@@ -491,17 +571,24 @@ export default function App() {
     setJsonError("");
 
     try {
-      const newFilters = await generateFiltersWithAI(aiPrompt, (partialJson) => {
-        // Update the editor with partial JSON as it streams in
-        setJsonValue(partialJson);
-      });
+      const newFilters = await generateFiltersWithAI(
+        aiPrompt,
+        (partialJson) => {
+          // Update the editor with partial JSON as it streams in
+          setJsonValue(partialJson);
+        }
+      );
       // Apply the final parsed filters
       const generatedJson = JSON.stringify(newFilters, null, 2);
       setJsonValue(generatedJson);
       handleJsonChange(generatedJson);
     } catch (error) {
       console.error("AI generation error:", error);
-      setJsonError(error instanceof Error ? error.message : "Failed to generate filters. Please try again.");
+      setJsonError(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate filters. Please try again."
+      );
     } finally {
       setAiGenerating(false);
     }
@@ -518,7 +605,11 @@ export default function App() {
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
       // Search query filter
-      if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (
+        searchQuery &&
+        !event.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+        return false;
 
       // Saved filter - only show saved events
       if (savedFilter && !savedEventIds.includes(event.id)) return false;
@@ -526,82 +617,159 @@ export default function App() {
       // Quick filters (these override the advanced filters when active)
       if (todayFilter && event.date !== "Today") return false;
       if (freeFilter && event.price !== 0) return false;
-      if (freeFoodFilter && (event.food.length === 0 || event.price > 0)) return false;
-      if (forYouFilter && profileCompleted && selectedCategories.length > 0 && !selectedCategories.includes(event.category)) return false;
+      if (freeFoodFilter && (event.food.length === 0 || event.price > 0))
+        return false;
+      if (
+        forYouFilter &&
+        profileCompleted &&
+        selectedCategories.length > 0 &&
+        !selectedCategories.includes(event.category)
+      )
+        return false;
 
       // Advanced filters (only apply when quick filters are not overriding)
-      if (!todayFilter && !thisWeekFilter && selectedDays.length > 0 && !selectedDays.includes(event.dayOfWeek)) return false;
+      if (
+        !todayFilter &&
+        !thisWeekFilter &&
+        selectedDays.length > 0 &&
+        !selectedDays.includes(event.dayOfWeek)
+      )
+        return false;
       if (!freeFilter && !freeFoodFilter) {
-        if (priceRange.min && event.price < parseFloat(priceRange.min)) return false;
-        if (priceRange.max && event.price > parseFloat(priceRange.max)) return false;
+        if (priceRange.min && event.price < parseFloat(priceRange.min))
+          return false;
+        if (priceRange.max && event.price > parseFloat(priceRange.max))
+          return false;
       }
-      if (selectedLocations.length > 0 && !selectedLocations.some(loc => event.location.includes(loc))) return false;
-      if (includeFoods && selectedFoods.length > 0 && !event.food.some(f => selectedFoods.includes(f))) return false;
-      if (!forYouFilter && selectedCategories.length > 0 && !selectedCategories.includes(event.category)) return false;
+      if (
+        selectedLocations.length > 0 &&
+        !selectedLocations.some((loc) => event.location.includes(loc))
+      )
+        return false;
+      if (
+        includeFoods &&
+        selectedFoods.length > 0 &&
+        !event.food.some((f) => selectedFoods.includes(f))
+      )
+        return false;
+      if (
+        !forYouFilter &&
+        selectedCategories.length > 0 &&
+        !selectedCategories.includes(event.category)
+      )
+        return false;
       if (requiresRegistration && !event.requiresRegistration) return false;
 
       return true;
     });
   }, [
-    events, searchQuery, todayFilter, freeFilter, freeFoodFilter, forYouFilter,
-    thisWeekFilter, selectedDays, priceRange, selectedLocations,
-    includeFoods, selectedFoods, selectedCategories, requiresRegistration, profileCompleted,
-    savedFilter, savedEventIds
+    events,
+    searchQuery,
+    todayFilter,
+    freeFilter,
+    freeFoodFilter,
+    forYouFilter,
+    thisWeekFilter,
+    selectedDays,
+    priceRange,
+    selectedLocations,
+    includeFoods,
+    selectedFoods,
+    selectedCategories,
+    requiresRegistration,
+    profileCompleted,
+    savedFilter,
+    savedEventIds,
   ]);
 
   // Calculate filter count - memoized with useMemo
-  const filterCount = useMemo(() =>
-    selectedCategories.length +
-    selectedLocations.length +
-    selectedFoods.length +
-    selectedDays.length +
-    (priceRange.min || priceRange.max ? 1 : 0) +
-    (dateRange ? 1 : 0) +
-    (requiresRegistration ? 1 : 0),
-    [selectedCategories, selectedLocations, selectedFoods, selectedDays, priceRange, dateRange, requiresRegistration]
+  const filterCount = useMemo(
+    () =>
+      selectedCategories.length +
+      selectedLocations.length +
+      selectedFoods.length +
+      selectedDays.length +
+      (priceRange.min || priceRange.max ? 1 : 0) +
+      (dateRange ? 1 : 0) +
+      (requiresRegistration ? 1 : 0),
+    [
+      selectedCategories,
+      selectedLocations,
+      selectedFoods,
+      selectedDays,
+      priceRange,
+      dateRange,
+      requiresRegistration,
+    ]
   );
 
   // Memoized pie menu items to prevent recreation on every render
-  const categoryPieItems = useMemo(() =>
-    availableCategories.map((cat) => ({
-      id: cat,
-      label: cat,
-      icon: <Tag className="w-4 h-4" />,
-    })), []);
+  const categoryPieItems = useMemo(
+    () =>
+      availableCategories.map((cat) => ({
+        id: cat,
+        label: cat,
+        icon: <Tag className="w-4 h-4" />,
+      })),
+    []
+  );
 
-  const locationPieItems = useMemo(() =>
-    availableLocations.map((loc) => ({
-      id: loc,
-      label: loc,
-      icon: <MapPin className="w-4 h-4" />,
-    })), []);
+  const locationPieItems = useMemo(
+    () =>
+      availableLocations.map((loc) => ({
+        id: loc,
+        label: loc,
+        icon: <MapPin className="w-4 h-4" />,
+      })),
+    []
+  );
 
-  const foodPieItems = useMemo(() =>
-    availableFoods.map((food) => ({
-      id: food,
-      label: food,
-      icon: <Utensils className="w-4 h-4" />,
-    })), []);
+  const foodPieItems = useMemo(
+    () =>
+      availableFoods.map((food) => ({
+        id: food,
+        label: food,
+        icon: <Utensils className="w-4 h-4" />,
+      })),
+    []
+  );
 
-  const dayPieItems = useMemo(() =>
-    availableDays.map((day) => ({
-      id: day,
-      label: day,
-      icon: <Calendar className="w-4 h-4" />,
-    })), []);
+  const dayPieItems = useMemo(
+    () =>
+      availableDays.map((day) => ({
+        id: day,
+        label: day,
+        icon: <Calendar className="w-4 h-4" />,
+      })),
+    []
+  );
 
-  const sortPieItems = useMemo(() => [
-    { id: "date", label: "Date", icon: <CalendarDays className="w-4 h-4" /> },
-    { id: "title", label: "Title", icon: <Tag className="w-4 h-4" /> },
-    { id: "location", label: "Location", icon: <MapPin className="w-4 h-4" /> },
-    { id: "price", label: "Price", icon: <ArrowUpDown className="w-4 h-4" /> },
-  ], []);
+  const sortPieItems = useMemo(
+    () => [
+      { id: "date", label: "Date", icon: <CalendarDays className="w-4 h-4" /> },
+      { id: "title", label: "Title", icon: <Tag className="w-4 h-4" /> },
+      {
+        id: "location",
+        label: "Location",
+        icon: <MapPin className="w-4 h-4" />,
+      },
+      {
+        id: "price",
+        label: "Price",
+        icon: <ArrowUpDown className="w-4 h-4" />,
+      },
+    ],
+    []
+  );
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="bg-white dark:bg-gray-900 h-dvh flex flex-col">
+      <div className="h-dvh flex flex-col">
         {/* Easter Eggs */}
-        <EasterEggs activeEasterEgg={activeEasterEgg} onComplete={clearEasterEgg} />
+        <EasterEggs
+          activeEasterEgg={activeEasterEgg}
+          onComplete={clearEasterEgg}
+        />
 
         {/* Onboarding Modal */}
         <OnboardingModal
@@ -621,8 +789,11 @@ export default function App() {
             onNavigateToFilters={() => setShowFilterDropdown(true)}
             onViewEvent={() => {
               // Auto-scroll to first event card
-              const firstCard = document.querySelector('[data-event-card]');
-              firstCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              const firstCard = document.querySelector("[data-event-card]");
+              firstCard?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
             }}
             profileCompleted={profileCompleted}
           />
@@ -668,7 +839,9 @@ export default function App() {
                 onSelect={() => {
                   setShowCommandPalette(false);
                   // Focus the main search input
-                  const searchInput = document.querySelector('input[placeholder="Search events, clubs, activities..."]') as HTMLInputElement;
+                  const searchInput = document.querySelector(
+                    'input[placeholder="Search events, clubs, activities..."]'
+                  ) as HTMLInputElement;
                   searchInput?.focus();
                 }}
               >
@@ -836,7 +1009,9 @@ export default function App() {
                 }}
               >
                 <User className="mr-2 h-4 w-4" />
-                <span>{profileCompleted ? "Edit Profile" : "Create Profile"}</span>
+                <span>
+                  {profileCompleted ? "Edit Profile" : "Create Profile"}
+                </span>
               </CommandItem>
               <CommandItem
                 onSelect={() => {
@@ -879,51 +1054,35 @@ export default function App() {
         </CommandDialog>
 
         {/* Top Navigation */}
-        <header
-          className="flex items-center justify-between"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: "48px",
-            paddingLeft: "20px",
-            paddingRight: "20px",
-            borderBottom: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb",
-            backgroundColor: isDarkMode ? "#1f2937" : "#F4F3EF",
-            zIndex: 50,
-          }}
-        >
+        <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-50">
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setPageMode("events")}
               className="h-6 w-6 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
               aria-label="Go to events"
             >
-              <img alt="Logo" className="w-full h-full object-cover rounded" src={imgImage1} />
+              <img
+                alt="Logo"
+                className="w-full h-full object-cover rounded"
+                src={imgImage1}
+              />
             </button>
-            <span className="text-gray-300 text-lg font-light">/</span>
-            <SchoolCombobox value={selectedSchool} onChange={setSelectedSchool} />
+            <span className="text-muted-foreground text-lg font-light">/</span>
+            <SchoolCombobox
+              value={selectedSchool}
+              onChange={setSelectedSchool}
+            />
           </div>
 
           <div className="flex items-center gap-2">
             {/* Dark Mode Toggle */}
+            <AnimatedThemeToggler />
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={toggleDarkMode}
-                  className="flex items-center justify-center w-8 h-8 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg transition-colors cursor-pointer"
-                  aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-                >
-                  {isDarkMode ? (
-                    <Sun className="w-4 h-4" strokeWidth={2} />
-                  ) : (
-                    <Moon className="w-4 h-4" strokeWidth={2} />
-                  )}
-                </button>
-              </TooltipTrigger>
+              <TooltipTrigger asChild></TooltipTrigger>
               <TooltipContent>
-                <p>{isDarkMode ? "Switch to light mode" : "Switch to dark mode"}</p>
+                <p>
+                  {isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                </p>
               </TooltipContent>
             </Tooltip>
 
@@ -933,7 +1092,7 @@ export default function App() {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => setProfileCompleted(false)}
-                    className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm px-3 py-1.5 rounded transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 bg-muted hover:bg-gray-200 text-foreground font-medium text-sm px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" strokeWidth={2.5} />
                     Log out
@@ -946,13 +1105,13 @@ export default function App() {
             ) : (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
+                  <InteractiveHoverButton
                     onClick={() => setShowOnboarding(true)}
-                    className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm px-3 py-1.5 rounded transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 bg-primary border-primary text-white font-medium text-sm px-8 py-1.5 w-fit"
+                    hideDot
                   >
-                    <LogIn className="w-4 h-4" strokeWidth={2.5} />
                     Sign in
-                  </button>
+                  </InteractiveHoverButton>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Sign in to save preferences</p>
@@ -967,16 +1126,9 @@ export default function App() {
           <aside
             onMouseEnter={() => setSidebarHovered(true)}
             onMouseLeave={() => setSidebarHovered(false)}
-            className="flex flex-col transition-all duration-200 overflow-hidden"
+            className="flex flex-col transition-all duration-200 overflow-hidden fixed left-0 top-12 bottom-0 border-r border-border bg-sidebar z-40"
             style={{
-              position: "fixed",
-              left: 0,
-              top: "48px",
-              bottom: 0,
               width: sidebarHovered ? "180px" : "48px",
-              borderRight: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb",
-              backgroundColor: isDarkMode ? "#1f2937" : "#F4F3EF",
-              zIndex: 40,
             }}
           >
             <div className="p-2">
@@ -984,9 +1136,12 @@ export default function App() {
                 {/* Command Palette Trigger - Above Events */}
                 <button
                   onClick={() => setShowCommandPalette(true)}
-                  className="w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 mb-1"
+                  className="w-full font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 text-muted-foreground hover:bg-gray-200 hover:text-gray-800 mb-1"
                 >
-                  <Search className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                  <Search
+                    className="w-3.5 h-3.5 flex-shrink-0"
+                    strokeWidth={2}
+                  />
                   <span
                     className="flex-1 whitespace-nowrap transition-opacity duration-150"
                     style={{ opacity: sidebarHovered ? 1 : 0 }}
@@ -995,10 +1150,10 @@ export default function App() {
                   </span>
                   {sidebarHovered && (
                     <div className="flex items-center gap-0.5">
-                      <span className="flex items-center justify-center w-5 h-5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-sm text-[10px] text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center justify-center w-5 h-5 bg-muted border border-border rounded shadow-sm text-[10px] text-muted-foreground">
                         ⌘
                       </span>
-                      <span className="flex items-center justify-center w-5 h-5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-sm text-[10px] text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center justify-center w-5 h-5 bg-muted border border-border rounded shadow-sm text-[10px] text-muted-foreground">
                         K
                       </span>
                     </div>
@@ -1009,22 +1164,35 @@ export default function App() {
                 {profileCompleted ? (
                   /* Logged In: Expandable Events with sublinks */
                   <div
-                    className={`rounded ${pageMode === "events" ? "bg-gray-100 dark:bg-gray-700" : "bg-transparent"}`}
+                    className={`rounded ${
+                      pageMode === "events" ? "bg-gray-100" : "bg-transparent"
+                    }`}
                   >
                     <button
                       onClick={() => setEventsExpanded(!eventsExpanded)}
-                      className={`w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "events" ? "text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
-                        }`}
+                      className={`w-full font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 ${
+                        pageMode === "events"
+                          ? "text-gray-900"
+                          : "text-muted-foreground hover:bg-gray-200 hover:text-gray-800"
+                      }`}
                     >
-                      <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                      <span className="flex-1 whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                      <CalendarDays
+                        className="w-3.5 h-3.5 flex-shrink-0"
+                        strokeWidth={2}
+                      />
+                      <span
+                        className="flex-1 whitespace-nowrap transition-opacity duration-150"
+                        style={{ opacity: sidebarHovered ? 1 : 0 }}
+                      >
                         Events
                       </span>
                       {sidebarHovered && (
                         <ChevronDown
                           className="w-3 h-3 flex-shrink-0 transition-transform duration-200"
                           style={{
-                            transform: eventsExpanded ? "rotate(0deg)" : "rotate(-90deg)"
+                            transform: eventsExpanded
+                              ? "rotate(0deg)"
+                              : "rotate(-90deg)",
                           }}
                           strokeWidth={2}
                         />
@@ -1036,36 +1204,63 @@ export default function App() {
                       className="overflow-hidden transition-all duration-200"
                       style={{
                         maxHeight: eventsExpanded ? "120px" : "0px",
-                        opacity: eventsExpanded ? 1 : 0
+                        opacity: eventsExpanded ? 1 : 0,
                       }}
                     >
-                      <div className="flex flex-col gap-0.5 mt-0.5" style={{ paddingLeft: sidebarHovered ? "20px" : "0px" }}>
+                      <div
+                        className="flex flex-col gap-0.5 mt-0.5"
+                        style={{ paddingLeft: sidebarHovered ? "20px" : "0px" }}
+                      >
                         <button
                           onClick={() => setPageMode("events")}
-                          className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "events" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200"
-                            }`}
+                          className={`font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 ${
+                            pageMode === "events"
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-muted-foreground hover:bg-gray-200 hover:text-gray-800"
+                          }`}
                         >
-                          <Compass className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                          <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                          <Compass
+                            className="w-3.5 h-3.5 flex-shrink-0"
+                            strokeWidth={2}
+                          />
+                          <span
+                            className="whitespace-nowrap transition-opacity duration-150"
+                            style={{ opacity: sidebarHovered ? 1 : 0 }}
+                          >
                             Explore
                           </span>
                         </button>
                         <button
                           onClick={() => setShowSubmitEvent(true)}
-                          className="font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200"
+                          className="font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 text-muted-foreground hover:bg-gray-200 hover:text-gray-800"
                         >
-                          <Plus className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                          <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                          <Plus
+                            className="w-3.5 h-3.5 flex-shrink-0"
+                            strokeWidth={2}
+                          />
+                          <span
+                            className="whitespace-nowrap transition-opacity duration-150"
+                            style={{ opacity: sidebarHovered ? 1 : 0 }}
+                          >
                             Create
                           </span>
                         </button>
                         <button
                           onClick={() => setPageMode("myEvents")}
-                          className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "myEvents" ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-200"
-                            }`}
+                          className={`font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 ${
+                            pageMode === "myEvents"
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-muted-foreground hover:bg-gray-200 hover:text-gray-800"
+                          }`}
                         >
-                          <Megaphone className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                          <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                          <Megaphone
+                            className="w-3.5 h-3.5 flex-shrink-0"
+                            strokeWidth={2}
+                          />
+                          <span
+                            className="whitespace-nowrap transition-opacity duration-150"
+                            style={{ opacity: sidebarHovered ? 1 : 0 }}
+                          >
                             My Events
                           </span>
                         </button>
@@ -1076,17 +1271,30 @@ export default function App() {
                   /* Logged Out: Simple Events link */
                   <button
                     onClick={() => setPageMode("events")}
-                    className={`w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${pageMode === "events" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
-                      }`}
+                    className={`w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${
+                      pageMode === "events"
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-muted-foreground hover:bg-gray-100 hover:text-gray-800"
+                    }`}
                   >
-                    <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                    <span className="flex-1 whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+                    <CalendarDays
+                      className="w-3.5 h-3.5 flex-shrink-0"
+                      strokeWidth={2}
+                    />
+                    <span
+                      className="flex-1 whitespace-nowrap transition-opacity duration-150"
+                      style={{ opacity: sidebarHovered ? 1 : 0 }}
+                    >
                       Events
                     </span>
                   </button>
                 )}
 
-                <NavButton icon={Shield} label="Clubs" expanded={sidebarHovered} />
+                <NavButton
+                  icon={Shield}
+                  label="Clubs"
+                  expanded={sidebarHovered}
+                />
                 <NavButton
                   icon={Target}
                   label="Mission"
@@ -1094,18 +1302,26 @@ export default function App() {
                   onClick={() => setPageMode("about")}
                   expanded={sidebarHovered}
                 />
-                <NavButton icon={Mail} label="Contact" expanded={sidebarHovered} />
+                <NavButton
+                  icon={Mail}
+                  label="Contact"
+                  expanded={sidebarHovered}
+                />
               </nav>
             </div>
 
             {/* Settings Section - Only show when logged in */}
             {profileCompleted && (
-              <div className="mt-auto p-2 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  className="w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
-                >
-                  <Settings className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                  <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: sidebarHovered ? 1 : 0 }}>
+              <div className="mt-auto p-2 border-t border-border">
+                <button className="w-full font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 text-muted-foreground hover:bg-gray-200 hover:text-gray-800">
+                  <Settings
+                    className="w-3.5 h-3.5 flex-shrink-0"
+                    strokeWidth={2}
+                  />
+                  <span
+                    className="whitespace-nowrap transition-opacity duration-150"
+                    style={{ opacity: sidebarHovered ? 1 : 0 }}
+                  >
                     Settings
                   </span>
                 </button>
@@ -1115,13 +1331,9 @@ export default function App() {
 
           {/* Main Content */}
           <div
-            className="flex-1 overflow-auto"
+            className="flex-1 overflow-auto ml-12 mt-12 p-6 main-content-grid"
             style={{
-              marginLeft: "48px",
-              marginTop: "48px",
-              padding: "24px",
               minHeight: "calc(100vh - 48px)",
-              backgroundColor: isDarkMode ? "#111827" : "#FCFBFA",
             }}
           >
             {pageMode === "about" ? (
@@ -1132,9 +1344,7 @@ export default function App() {
                 onSignIn={() => setShowOnboarding(true)}
                 events={events}
                 savedEventIds={savedEventIds}
-                registeredEventIds={registeredEventIds}
                 onToggleSave={toggleSaveEvent}
-                onToggleRegister={toggleRegisterEvent}
               />
             ) : (
               <div className="space-y-5">
@@ -1143,7 +1353,7 @@ export default function App() {
                   {/* Search Bar with View Mode Tabs */}
                   <div className="flex gap-3 items-stretch">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       <input
                         type="text"
                         placeholder="Search events, clubs, activities..."
@@ -1152,12 +1362,12 @@ export default function App() {
                           setSearchQuery(e.target.value);
                           checkSearchQuery(e.target.value);
                         }}
-                        className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-md"
+                        className="w-full border border-border bg-muted text-foreground rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 transition-all shadow-md"
                       />
                       {searchQuery && (
                         <button
                           onClick={() => setSearchQuery("")}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1165,7 +1375,7 @@ export default function App() {
                     </div>
 
                     {/* View Mode Toggle - Moved here */}
-                    <div className="bg-gray-100 dark:bg-gray-800 flex items-stretch p-0.5 rounded-xl gap-0.5">
+                    <div className="bg-muted flex items-stretch p-0.5 rounded-xl gap-0.5">
                       <ViewModeButton
                         icon={Grid3x3}
                         label="Grid"
@@ -1185,13 +1395,13 @@ export default function App() {
                   {/* Quick Filter Chips */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {/* Event Count */}
-                    <span className="font-bold text-xl text-gray-900 dark:text-gray-100">
-                      {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}
+                    <span className="font-bold text-xl text-foreground">
+                      {filteredEvents.length}{" "}
+                      {filteredEvents.length === 1 ? "event" : "events"}
                     </span>
 
                     {/* Filters - Right aligned */}
                     <div className="flex flex-wrap items-center gap-2">
-
                       <QuickFilterChip
                         icon={<Clock className="w-3.5 h-3.5" />}
                         label="Today"
@@ -1223,7 +1433,11 @@ export default function App() {
                             label="Saved"
                             active={savedFilter}
                             onClick={() => setSavedFilter(!savedFilter)}
-                            badge={savedEventIds.length > 0 ? savedEventIds.length : undefined}
+                            badge={
+                              savedEventIds.length > 0
+                                ? savedEventIds.length
+                                : undefined
+                            }
                           />
                         </>
                       )}
@@ -1232,17 +1446,20 @@ export default function App() {
                       <div className="relative">
                         <button
                           data-filter-trigger
-                          onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all cursor-pointer ${showFilterDropdown || filterCount > 0
-                            ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
-                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                            }`}
+                          onClick={() =>
+                            setShowFilterDropdown(!showFilterDropdown)
+                          }
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                            showFilterDropdown || filterCount > 0
+                              ? "bg-primary/20 dark:bg-primary/40 text-primary"
+                              : "bg-muted text-muted-foreground hover:bg-gray-200"
+                          }`}
                         >
                           <SlidersHorizontal className="w-3.5 h-3.5" />
                           More Filters
                           {filterCount > 0 && (
                             <span
-                              className="bg-blue-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-blue-600 transition-colors"
+                              className="bg-primary text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/90 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedCategories([]);
@@ -1265,28 +1482,32 @@ export default function App() {
                         {showFilterDropdown && (
                           <div
                             data-filter-dropdown
-                            className="rounded-xl overflow-y-auto absolute right-0 top-full mt-2 z-50 px-4 py-4 max-h-[calc(100vh-200px)]"
-                            style={{ width: "300px", backgroundColor: isDarkMode ? "#1f2937" : "#fff", border: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb" }}
+                            className="rounded-xl overflow-y-auto absolute right-0 top-full mt-2 z-50 px-4 py-4 max-h-[calc(100vh-200px)] bg-card border border-border"
+                            style={{ width: "300px" }}
                           >
                             {/* Header */}
                             <div className="flex items-center justify-between mb-3">
-                              <h2 className="font-bold text-base text-gray-900 dark:text-gray-100">Filters</h2>
-                              <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
+                              <h2 className="font-bold text-base text-foreground">
+                                Filters
+                              </h2>
+                              <div className="flex gap-1 bg-muted rounded-lg p-0.5">
                                 <button
                                   onClick={() => setFilterViewMode("visual")}
-                                  className={`${filterViewMode === "visual"
-                                    ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm"
-                                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-                                    } font-medium text-[11px] px-3 py-1 rounded transition-all`}
+                                  className={`${
+                                    filterViewMode === "visual"
+                                      ? "bg-card text-foreground shadow-sm"
+                                      : "bg-transparent text-muted-foreground hover:text-foreground"
+                                  } font-medium text-[11px] px-3 py-1 rounded transition-all`}
                                 >
                                   Visual
                                 </button>
                                 <button
                                   onClick={() => setFilterViewMode("json")}
-                                  className={`${filterViewMode === "json"
-                                    ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm"
-                                    : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-                                    } font-medium text-[11px] px-3 py-1 rounded transition-all`}
+                                  className={`${
+                                    filterViewMode === "json"
+                                      ? "bg-card text-foreground shadow-sm"
+                                      : "bg-transparent text-muted-foreground hover:text-foreground"
+                                  } font-medium text-[11px] px-3 py-1 rounded transition-all`}
                                 >
                                   JSON
                                 </button>
@@ -1296,34 +1517,44 @@ export default function App() {
                             {/* AI Generation Input - Always Visible */}
                             <div className="mb-4 space-y-2">
                               <div className="flex items-center gap-2">
-                                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">AI Filter Generation</span>
+                                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                                <span className="text-xs font-medium text-foreground">
+                                  AI Filter Generation
+                                </span>
                               </div>
                               <div className="relative">
                                 <input
                                   type="text"
-                                  placeholder={aiGenerating ? "Generating..." : "Describe filters (e.g. 'free food events this week')..."}
+                                  placeholder={
+                                    aiGenerating
+                                      ? "Generating..."
+                                      : "Describe filters (e.g. 'free food events this week')..."
+                                  }
                                   value={aiPrompt}
                                   onChange={(e) => setAiPrompt(e.target.value)}
                                   onKeyDown={(e) => {
-                                    if (e.key === "Enter" && aiPrompt.trim() && !aiGenerating) {
+                                    if (
+                                      e.key === "Enter" &&
+                                      aiPrompt.trim() &&
+                                      !aiGenerating
+                                    ) {
                                       handleAiGenerate();
                                     }
                                   }}
                                   disabled={aiGenerating}
-                                  className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs px-3 py-2 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:opacity-60"
+                                  className="w-full bg-muted text-foreground text-xs px-3 py-2 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 border border-border placeholder:text-muted-foreground disabled:opacity-60"
                                 />
                                 {aiPrompt && !aiGenerating && (
                                   <button
                                     onClick={() => setAiPrompt("")}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                   </button>
                                 )}
                                 {aiGenerating && (
                                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                    <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full animate-spin" />
+                                    <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-primary rounded-full animate-spin" />
                                   </div>
                                 )}
                               </div>
@@ -1342,27 +1573,33 @@ export default function App() {
                                     title="Category"
                                     expanded={expandedSections.category}
                                     onToggle={() => toggleSection("category")}
-                                    indicator={selectedCategories.length > 0 ? `${selectedCategories.length}` : undefined}
+                                    indicator={
+                                      selectedCategories.length > 0
+                                        ? `${selectedCategories.length}`
+                                        : undefined
+                                    }
                                     onClear={() => setSelectedCategories([])}
                                   >
                                     <div className="relative">
                                       <button
                                         onClick={categoryPieMenu.open}
-                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                        className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
                                       >
                                         <span>
                                           {selectedCategories.length > 0
                                             ? selectedCategories.join(", ")
                                             : "Select Categories"}
                                         </span>
-                                        <Tag className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <Tag className="w-4 h-4 text-muted-foreground" />
                                       </button>
                                       <PieMenu
                                         items={categoryPieItems}
                                         isOpen={categoryPieMenu.isOpen}
                                         position={categoryPieMenu.position}
                                         onClose={categoryPieMenu.close}
-                                        onSelect={(item) => toggleCategory(item.id)}
+                                        onSelect={(item) =>
+                                          toggleCategory(item.id)
+                                        }
                                         selectedIds={selectedCategories}
                                         closeOnSelect={false}
                                         radius={140}
@@ -1382,26 +1619,37 @@ export default function App() {
                                     <div className="relative">
                                       <button
                                         data-calendar-trigger
-                                        onClick={() => setShowDateRangePicker(!showDateRangePicker)}
-                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                                        onClick={() =>
+                                          setShowDateRangePicker(
+                                            !showDateRangePicker
+                                          )
+                                        }
+                                        className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between"
                                       >
                                         <span>
                                           {dateRange
-                                            ? dateRange.toLocaleDateString("en-US", {
-                                              month: "short",
-                                              day: "numeric",
-                                              year: "numeric",
-                                            })
+                                            ? dateRange.toLocaleDateString(
+                                                "en-US",
+                                                {
+                                                  month: "short",
+                                                  day: "numeric",
+                                                  year: "numeric",
+                                                }
+                                              )
                                             : "Select Date"}
                                         </span>
-                                        <CalendarDays className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <CalendarDays className="w-4 h-4 text-muted-foreground" />
                                       </button>
                                       {showDateRangePicker && (
                                         <div className="absolute z-50 mt-2">
                                           <DatePicker
                                             selected={dateRange}
-                                            onSelect={(date) => setDateRange(date)}
-                                            onClose={() => setShowDateRangePicker(false)}
+                                            onSelect={(date) =>
+                                              setDateRange(date)
+                                            }
+                                            onClose={() =>
+                                              setShowDateRangePicker(false)
+                                            }
                                           />
                                         </div>
                                       )}
@@ -1413,27 +1661,33 @@ export default function App() {
                                     title="Location"
                                     expanded={expandedSections.location}
                                     onToggle={() => toggleSection("location")}
-                                    indicator={selectedLocations.length > 0 ? `${selectedLocations.length}` : undefined}
+                                    indicator={
+                                      selectedLocations.length > 0
+                                        ? `${selectedLocations.length}`
+                                        : undefined
+                                    }
                                     onClear={() => setSelectedLocations([])}
                                   >
                                     <div className="relative">
                                       <button
                                         onClick={locationPieMenu.open}
-                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                        className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
                                       >
                                         <span>
                                           {selectedLocations.length > 0
                                             ? selectedLocations.join(", ")
                                             : "Select Locations"}
                                         </span>
-                                        <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <MapPin className="w-4 h-4 text-muted-foreground" />
                                       </button>
                                       <PieMenu
                                         items={locationPieItems}
                                         isOpen={locationPieMenu.isOpen}
                                         position={locationPieMenu.position}
                                         onClose={locationPieMenu.close}
-                                        onSelect={(item) => toggleLocation(item.id)}
+                                        onSelect={(item) =>
+                                          toggleLocation(item.id)
+                                        }
                                         selectedIds={selectedLocations}
                                         closeOnSelect={false}
                                         radius={140}
@@ -1447,24 +1701,42 @@ export default function App() {
                                     title="Price range"
                                     expanded={expandedSections.priceRange}
                                     onToggle={() => toggleSection("priceRange")}
-                                    indicator={priceRange.min || priceRange.max ? "1" : undefined}
-                                    onClear={() => setPriceRange({ min: "", max: "" })}
+                                    indicator={
+                                      priceRange.min || priceRange.max
+                                        ? "1"
+                                        : undefined
+                                    }
+                                    onClear={() =>
+                                      setPriceRange({ min: "", max: "" })
+                                    }
                                   >
                                     <div className="flex gap-2 items-center w-full">
                                       <input
                                         type="number"
                                         placeholder="Min"
                                         value={priceRange.min}
-                                        onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
-                                        className="w-0 flex-1 min-w-0 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-100 rounded-xl px-2.5 py-2.5 text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                        onChange={(e) =>
+                                          setPriceRange((prev) => ({
+                                            ...prev,
+                                            min: e.target.value,
+                                          }))
+                                        }
+                                        className="w-0 flex-1 min-w-0 border border-border bg-card text-foreground rounded-xl px-2.5 py-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 transition-all"
                                       />
-                                      <span className="text-gray-400 dark:text-gray-500 text-[11px] flex-shrink-0">to</span>
+                                      <span className="text-muted-foreground text-[11px] flex-shrink-0">
+                                        to
+                                      </span>
                                       <input
                                         type="number"
                                         placeholder="Max"
                                         value={priceRange.max}
-                                        onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
-                                        className="w-0 flex-1 min-w-0 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-100 rounded-xl px-2.5 py-2.5 text-xs placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                        onChange={(e) =>
+                                          setPriceRange((prev) => ({
+                                            ...prev,
+                                            max: e.target.value,
+                                          }))
+                                        }
+                                        className="w-0 flex-1 min-w-0 border border-border bg-card text-foreground rounded-xl px-2.5 py-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 transition-all"
                                       />
                                     </div>
                                   </FilterSection>
@@ -1474,20 +1746,24 @@ export default function App() {
                                     title="Food"
                                     expanded={expandedSections.food}
                                     onToggle={() => toggleSection("food")}
-                                    indicator={selectedFoods.length > 0 ? `${selectedFoods.length}` : undefined}
+                                    indicator={
+                                      selectedFoods.length > 0
+                                        ? `${selectedFoods.length}`
+                                        : undefined
+                                    }
                                     onClear={() => setSelectedFoods([])}
                                   >
                                     <div className="relative">
                                       <button
                                         onClick={foodPieMenu.open}
-                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                        className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
                                       >
                                         <span>
                                           {selectedFoods.length > 0
                                             ? selectedFoods.join(", ")
                                             : "Select Food Options"}
                                         </span>
-                                        <Utensils className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <Utensils className="w-4 h-4 text-muted-foreground" />
                                       </button>
                                       <PieMenu
                                         items={foodPieItems}
@@ -1508,20 +1784,24 @@ export default function App() {
                                     title="Day of the week"
                                     expanded={expandedSections.dayOfWeek}
                                     onToggle={() => toggleSection("dayOfWeek")}
-                                    indicator={selectedDays.length > 0 ? `${selectedDays.length}` : undefined}
+                                    indicator={
+                                      selectedDays.length > 0
+                                        ? `${selectedDays.length}`
+                                        : undefined
+                                    }
                                     onClear={() => setSelectedDays([])}
                                   >
                                     <div className="relative">
                                       <button
                                         onClick={dayPieMenu.open}
-                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                        className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
                                       >
                                         <span>
                                           {selectedDays.length > 0
                                             ? selectedDays.join(", ")
                                             : "Select Days"}
                                         </span>
-                                        <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <Calendar className="w-4 h-4 text-muted-foreground" />
                                       </button>
                                       <PieMenu
                                         items={dayPieItems}
@@ -1548,26 +1828,37 @@ export default function App() {
                                     <div className="relative">
                                       <button
                                         data-calendar-trigger
-                                        onClick={() => setShowAddedSincePicker(!showAddedSincePicker)}
-                                        className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                                        onClick={() =>
+                                          setShowAddedSincePicker(
+                                            !showAddedSincePicker
+                                          )
+                                        }
+                                        className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between"
                                       >
                                         <span>
                                           {addedSince
-                                            ? addedSince.toLocaleDateString("en-US", {
-                                              month: "short",
-                                              day: "numeric",
-                                              year: "numeric",
-                                            })
+                                            ? addedSince.toLocaleDateString(
+                                                "en-US",
+                                                {
+                                                  month: "short",
+                                                  day: "numeric",
+                                                  year: "numeric",
+                                                }
+                                              )
                                             : "Select Date"}
                                         </span>
-                                        <CalendarDays className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                        <CalendarDays className="w-4 h-4 text-muted-foreground" />
                                       </button>
                                       {showAddedSincePicker && (
                                         <div className="absolute z-50 mt-2">
                                           <DatePicker
                                             selected={addedSince}
-                                            onSelect={(date) => setAddedSince(date)}
-                                            onClose={() => setShowAddedSincePicker(false)}
+                                            onSelect={(date) =>
+                                              setAddedSince(date)
+                                            }
+                                            onClose={() =>
+                                              setShowAddedSincePicker(false)
+                                            }
                                           />
                                         </div>
                                       )}
@@ -1578,28 +1869,36 @@ export default function App() {
                                   <FilterSection
                                     title="Registration required"
                                     expanded={expandedSections.registration}
-                                    onToggle={() => toggleSection("registration")}
-                                    indicator={requiresRegistration ? "1" : undefined}
-                                    onClear={() => setRequiresRegistration(false)}
+                                    onToggle={() =>
+                                      toggleSection("registration")
+                                    }
+                                    indicator={
+                                      requiresRegistration ? "1" : undefined
+                                    }
+                                    onClear={() =>
+                                      setRequiresRegistration(false)
+                                    }
                                   >
                                     <Checkbox
                                       checked={requiresRegistration}
-                                      onChange={() => setRequiresRegistration(!requiresRegistration)}
+                                      onChange={() =>
+                                        setRequiresRegistration(
+                                          !requiresRegistration
+                                        )
+                                      }
                                     />
                                   </FilterSection>
 
-                                  {/* Sort Section */}
-                                  <div className="mt-4 mb-3">
-                                    <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">Sort</h3>
-                                  </div>
-
                                   <FilterSection
-                                    title="Sort By"
+                                    title="Sort"
                                     expanded={expandedSections.sort}
                                     onToggle={() => toggleSection("sort")}
                                     indicator={
                                       sortBy
-                                        ? `${sortBy.charAt(0).toUpperCase() + sortBy.slice(1)} ${sortOrder === "asc" ? "↑" : "↓"}`
+                                        ? `${
+                                            sortBy.charAt(0).toUpperCase() +
+                                            sortBy.slice(1)
+                                          } ${sortOrder === "asc" ? "↑" : "↓"}`
                                         : undefined
                                     }
                                     onClear={() => {
@@ -1611,21 +1910,24 @@ export default function App() {
                                       <div className="relative">
                                         <button
                                           onClick={sortPieMenu.open}
-                                          className="bg-gray-100 dark:bg-gray-800 font-medium text-gray-600 dark:text-gray-300 text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between cursor-pointer"
+                                          className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
                                         >
                                           <span>
                                             {sortBy
-                                              ? sortBy.charAt(0).toUpperCase() + sortBy.slice(1)
+                                              ? sortBy.charAt(0).toUpperCase() +
+                                                sortBy.slice(1)
                                               : "Select Sort Field"}
                                           </span>
-                                          <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                          <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
                                         </button>
                                         <PieMenu
                                           items={sortPieItems}
                                           isOpen={sortPieMenu.isOpen}
                                           position={sortPieMenu.position}
                                           onClose={sortPieMenu.close}
-                                          onSelect={(item) => setSortBy(item.id)}
+                                          onSelect={(item) =>
+                                            setSortBy(item.id)
+                                          }
                                           selectedIds={sortBy ? [sortBy] : []}
                                           closeOnSelect={true}
                                           radius={140}
@@ -1636,19 +1938,21 @@ export default function App() {
                                       <div className="flex gap-2">
                                         <button
                                           onClick={() => setSortOrder("asc")}
-                                          className={`flex-1 px-2 py-1.5 rounded text-[11px] font-medium transition-all ${sortOrder === "asc"
-                                            ? "bg-blue-500 text-white"
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                                            }`}
+                                          className={`flex-1 px-2 py-1.5 rounded-xl text-[11px] font-medium transition-all ${
+                                            sortOrder === "asc"
+                                              ? "bg-primary text-white"
+                                              : "bg-muted text-muted-foreground hover:bg-gray-200"
+                                          }`}
                                         >
                                           Ascending
                                         </button>
                                         <button
                                           onClick={() => setSortOrder("desc")}
-                                          className={`flex-1 px-2 py-1.5 rounded text-[11px] font-medium transition-all ${sortOrder === "desc"
-                                            ? "bg-blue-500 text-white"
-                                            : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                                            }`}
+                                          className={`flex-1 px-2 py-1.5 rounded-xl text-[11px] font-medium transition-all ${
+                                            sortOrder === "desc"
+                                              ? "bg-primary text-white"
+                                              : "bg-muted text-muted-foreground hover:bg-gray-200"
+                                          }`}
                                         >
                                           Descending
                                         </button>
@@ -1659,21 +1963,28 @@ export default function App() {
                               </>
                             ) : (
                               <div className="space-y-2">
-                                <p className="text-gray-500 dark:text-gray-400 text-[11px] leading-relaxed">
-                                  Edit JSON directly. Changes apply automatically.
+                                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                                  Edit JSON directly. Changes apply
+                                  automatically.
                                 </p>
-                                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                                  <Suspense fallback={
-                                    <div className="flex items-center justify-center h-[250px] bg-gray-50">
-                                      <div className="text-gray-500 text-sm">Loading editor...</div>
-                                    </div>
-                                  }>
+                                <div className="border border-border rounded-lg overflow-hidden">
+                                  <Suspense
+                                    fallback={
+                                      <div className="flex items-center justify-center h-[250px] bg-muted">
+                                        <div className="text-muted-foreground text-sm">
+                                          Loading editor...
+                                        </div>
+                                      </div>
+                                    }
+                                  >
                                     <Editor
                                       height="250px"
                                       defaultLanguage="json"
                                       value={jsonValue}
                                       onChange={handleJsonChange}
-                                      theme="vs-light"
+                                      theme={
+                                        isDarkMode ? "vs-dark" : "vs-light"
+                                      }
                                       options={{
                                         minimap: { enabled: false },
                                         fontSize: 12,
@@ -1699,53 +2010,66 @@ export default function App() {
                 </div>
 
                 {/* Main Content */}
-                <main className="w-full">
-                  {viewMode === "grid" && (
-                    filteredEvents.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                <main className="w-full" role="main" aria-label="Events list">
+                  {viewMode === "grid" &&
+                    (filteredEvents.length > 0 ? (
+                      <div
+                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4"
+                        role="list"
+                        aria-label={`${filteredEvents.length} events found`}
+                      >
                         {/* Sort promoted events to the top */}
                         {[...filteredEvents]
                           .sort((a, b) => {
-                            const aPromoted = activePromotedEventIds.includes(a.id);
-                            const bPromoted = activePromotedEventIds.includes(b.id);
+                            const aPromoted = activePromotedEventIds.includes(
+                              a.id
+                            );
+                            const bPromoted = activePromotedEventIds.includes(
+                              b.id
+                            );
                             if (aPromoted && !bPromoted) return -1;
                             if (!aPromoted && bPromoted) return 1;
                             return 0;
                           })
                           .map((event) => (
-                            <EventCard
-                              key={event.id}
-                              event={event}
-                              isSaved={savedEventIds.includes(event.id)}
-                              isRegistered={registeredEventIds.includes(event.id)}
-                              isPromoted={activePromotedEventIds.includes(event.id)}
-                              onToggleSave={toggleSaveEvent}
-                              onToggleRegister={toggleRegisterEvent}
-                            />
+                            <div key={event.id} role="listitem">
+                              <EventCard
+                                event={event}
+                                isSaved={savedEventIds.includes(event.id)}
+                                isPromoted={activePromotedEventIds.includes(
+                                  event.id
+                                )}
+                                onToggleSave={toggleSaveEvent}
+                              />
+                            </div>
                           ))}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-24 px-4">
-                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                          <Search className="w-8 h-8 text-gray-400" />
+                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                          <Search className="w-8 h-8 text-muted-foreground" />
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
-                        <p className="text-sm text-gray-500 text-center max-w-md mb-6">
-                          We couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                          No events found
+                        </h3>
+                        <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+                          We couldn't find any events matching your current
+                          filters. Try adjusting your search or clearing some
+                          filters.
                         </p>
                         <button
                           onClick={handleClearAllFilters}
-                          className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 transition-colors"
+                          className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
                         >
                           Clear all filters
                         </button>
                       </div>
-                    )
-                  )}
+                    ))}
                   {viewMode === "calendar" && (
-                    <div className="text-center py-32 text-gray-500">Calendar view coming soon...</div>
+                    <div className="text-center py-32 text-muted-foreground">
+                      Calendar view coming soon...
+                    </div>
                   )}
-
                 </main>
               </div>
             )}
@@ -1764,7 +2088,10 @@ function NavButton({
   onClick,
   expanded,
 }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
+  icon: React.ComponentType<{
+    className?: string;
+    strokeWidth?: number | string;
+  }>;
   label: string;
   isActive?: boolean;
   onClick?: () => void;
@@ -1773,11 +2100,17 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 w-full cursor-pointer ${isActive ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
-        }`}
+      className={`font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 w-full cursor-pointer ${
+        isActive
+          ? "bg-gray-100 text-gray-900"
+          : "text-muted-foreground hover:bg-gray-100 hover:text-gray-800"
+      }`}
     >
       <Icon className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-      <span className="whitespace-nowrap transition-opacity duration-150" style={{ opacity: expanded ? 1 : 0 }}>
+      <span
+        className="whitespace-nowrap transition-opacity duration-150"
+        style={{ opacity: expanded ? 1 : 0 }}
+      >
         {label}
       </span>
     </button>
@@ -1790,7 +2123,10 @@ function ViewModeButton({
   isActive,
   onClick,
 }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
+  icon: React.ComponentType<{
+    className?: string;
+    strokeWidth?: number | string;
+  }>;
   label: string;
   isActive: boolean;
   onClick: () => void;
@@ -1798,8 +2134,9 @@ function ViewModeButton({
   return (
     <button
       onClick={onClick}
-      className={`${isActive ? "bg-white dark:bg-gray-700 shadow-sm" : "bg-transparent hover:bg-white/50 dark:hover:bg-gray-700/50"
-        } font-medium text-[11px] text-gray-900 dark:text-gray-100 px-2.5 py-1 rounded transition-all flex items-center gap-1 cursor-pointer h-full`}
+      className={`${
+        isActive ? "bg-card shadow-sm" : "bg-transparent hover:bg-gray-200"
+      } font-medium text-[11px] text-foreground px-2.5 py-1 rounded transition-all flex items-center gap-1 cursor-pointer h-full`}
     >
       <Icon className="w-3 h-3" strokeWidth={2} />
       <span className="leading-none">{label}</span>
@@ -1807,12 +2144,21 @@ function ViewModeButton({
   );
 }
 
-function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Checkbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
   return (
     <button
       onClick={onChange}
-      className={`w-5 h-5 border-2 ${checked ? "border-blue-500 bg-blue-500" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
-        } rounded transition-all flex items-center justify-center hover:border-blue-500 cursor-pointer`}
+      className={`w-5 h-5 border-2 ${
+        checked
+          ? "border-primary bg-primary"
+          : "border-gray-300 dark:border-gray-600 bg-card"
+      } rounded transition-all flex items-center justify-center hover:border-primary cursor-pointer`}
     >
       {checked && (
         <svg
@@ -1854,20 +2200,26 @@ function QuickFilterChip({
     <button
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all ${disabled
-        ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500"
-        : active
-          ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+        disabled
+          ? "bg-muted text-muted-foreground"
+          : active
+          ? "bg-primary/20 dark:bg-primary/40 text-primary"
           : highlight
-            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
-            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-        }`}
+          ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:opacity-90"
+          : "bg-muted text-muted-foreground hover:bg-gray-200"
+      }`}
     >
       {icon}
       {label}
       {badge !== undefined && badge > 0 && (
-        <span className={`ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${active ? "bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200" : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-          }`}>
+        <span
+          className={`ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+            active
+              ? "bg-primary/30 dark:bg-primary/50 text-primary"
+              : "bg-gray-200 dark:bg-gray-700 text-muted-foreground"
+          }`}
+        >
           {badge}
         </span>
       )}

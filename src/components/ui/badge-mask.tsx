@@ -38,39 +38,39 @@ export function BadgeMask({ variant, children }: BadgeMaskProps) {
       return (
         <div className="absolute top-0 left-0 flex flex-col">
           <div className="flex">
-            <div className="pb-1 pr-1 bg-white rounded-br-xl">{children}</div>
-            <EventBadgeMaskTopLeft className="h-2 w-2 text-white" />
+            <div className="pb-1 pr-1 bg-background rounded-br-xl">{children}</div>
+            <EventBadgeMaskTopLeft className="h-2 w-2 text-background" />
           </div>
-          <EventBadgeMaskTopLeft className="h-2 w-2 text-white" />
+          <EventBadgeMaskTopLeft className="h-2 w-2 text-background" />
         </div>
       );
     case "top-right":
       return (
         <div className="absolute top-0 right-0 flex flex-col">
           <div className="flex">
-            <EventBadgeMaskTopRight className="h-2 w-2 text-white" />
-            <div className="pb-1 pl-1 bg-white rounded-bl-xl">{children}</div>
+            <EventBadgeMaskTopRight className="h-2 w-2 text-background" />
+            <div className="pb-1 pl-1 bg-background rounded-bl-xl">{children}</div>
           </div>
-          <EventBadgeMaskTopRight className="h-2 w-2 ml-auto text-white" />
+          <EventBadgeMaskTopRight className="h-2 w-2 ml-auto text-background" />
         </div>
       );
     case "bottom-left":
       return (
         <div className="absolute bottom-0 left-0 flex flex-col">
-          <EventBadgeMaskBottomLeft className="h-2 w-2 text-white" />
+            <EventBadgeMaskBottomLeft className="h-2 w-2 text-background" />
           <div className="flex">
-            <div className="pt-1 pr-1 bg-white rounded-tr-xl">{children}</div>
-            <EventBadgeMaskBottomLeft className="h-2 w-2 mt-auto text-white" />
+            <div className="pt-1 pr-1 bg-background rounded-tr-xl">{children}</div>
+            <EventBadgeMaskBottomLeft className="h-2 w-2 mt-auto text-background" />
           </div>
         </div>
       );
     case "bottom-right":
       return (
         <div className="absolute bottom-0 right-0 flex flex-col">
-          <EventBadgeMaskBottomRight className="h-2 w-2 ml-auto text-white" />
+          <EventBadgeMaskBottomRight className="h-2 w-2 ml-auto text-background" />
           <div className="flex">
-            <EventBadgeMaskBottomRight className="h-2 w-2 mt-auto text-white" />
-            <div className="pt-1 pl-1 bg-white rounded-tl-xl">{children}</div>
+            <EventBadgeMaskBottomRight className="h-2 w-2 mt-auto text-background" />
+            <div className="pt-1 pl-1 bg-background rounded-tl-xl">{children}</div>
           </div>
         </div>
       );

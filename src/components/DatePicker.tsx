@@ -73,25 +73,24 @@ export function DatePicker({ selected, onSelect, onClose }: DatePickerProps) {
   return (
     <div
       data-calendar-picker
-      className="rounded shadow-xl p-4 w-72"
-      style={{ backgroundColor: "#fff", border: "1px solid #e5e7eb" }}
+      className="rounded shadow-xl p-4 w-72 bg-popover border border-border"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={handlePrevMonth}
-          className="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+          className="w-7 h-7 rounded hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
         >
-          <ChevronLeft className="w-4 h-4" style={{ color: "#6B7280" }} />
+          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         </button>
-        <span className="font-bold text-sm" style={{ color: "#111827" }}>
+        <span className="font-bold text-sm text-foreground">
           {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </span>
         <button
           onClick={handleNextMonth}
-          className="w-7 h-7 rounded hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+          className="w-7 h-7 rounded hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
         >
-          <ChevronRight className="w-4 h-4" style={{ color: "#6B7280" }} />
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
 
@@ -100,8 +99,7 @@ export function DatePicker({ selected, onSelect, onClose }: DatePickerProps) {
         {WEEK_DAYS.map((day) => (
           <div
             key={day}
-            className="text-center font-bold text-[10px] uppercase py-2"
-            style={{ color: "#9CA3AF" }}
+            className="text-center font-bold text-[10px] uppercase py-2 text-muted-foreground"
           >
             {day}
           </div>
@@ -120,12 +118,13 @@ export function DatePicker({ selected, onSelect, onClose }: DatePickerProps) {
             <button
               key={day}
               onClick={() => handleDateClick(day)}
-              className="w-8 h-8 rounded font-medium text-xs transition-all hover:bg-gray-100 cursor-pointer"
-              style={{
-                backgroundColor: selected ? "#3B82F6" : undefined,
-                color: selected ? "#fff" : today ? "#3B82F6" : "#4B5563",
-                fontWeight: selected || today ? 700 : 500,
-              }}
+              className={`w-8 h-8 rounded font-medium text-xs transition-all hover:bg-gray-200 cursor-pointer ${
+                selected 
+                  ? "bg-primary text-white font-bold" 
+                  : today 
+                    ? "text-primary font-bold" 
+                    : "text-muted-foreground"
+              }`}
             >
               {day}
             </button>

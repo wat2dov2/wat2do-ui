@@ -50,7 +50,7 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
 
       {/* Modal Sheet */}
       <div
-        className="relative w-[calc(100%-48px)] rounded-t-2xl shadow-2xl overflow-hidden flex flex-col bg-white dark:bg-gray-900"
+        className="relative w-[calc(100%-48px)] rounded-t-2xl shadow-2xl overflow-hidden flex flex-col bg-card"
         style={{
           height: "calc(100dvh - 48px)",
           animation: "slideInFromBottom 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards",
@@ -58,7 +58,7 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
       >
         {/* Top Gray Bar with Drag Handle */}
         <div
-          className="relative w-full h-6 rounded-t-2xl flex items-center justify-center flex-shrink-0 bg-gray-600 dark:bg-gray-700"
+          className="relative w-full h-6 rounded-t-2xl flex items-center justify-center shrink-0 bg-muted-foreground"
         >
           <div className="w-24 h-1 rounded-full bg-white/40" />
         </div>
@@ -66,19 +66,19 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 z-20 w-10 h-10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 transition-all shadow-lg group bg-white/90 dark:bg-gray-800/90"
+          className="absolute top-4 right-4 z-20 w-10 h-10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-card transition-all shadow-lg group bg-card/90"
           aria-label="Close modal"
         >
-          <X className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={2.5} />
+          <X className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" strokeWidth={2.5} />
         </button>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           <div className={`transition-opacity duration-150 ${isTransitioning ? "opacity-0" : "opacity-100"}`}>
             {/* Background Image with Overlay */}
-            <div className="relative" style={{ background: "linear-gradient(to bottom right, #e5e7eb, #d1d5db)" }}>
+            <div className="relative bg-gradient-to-br from-gray-200 to-gray-300">
               {/* Darkened Background */}
-              <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.6)" }} />
+              <div className="absolute inset-0 bg-black/60" />
 
               {/* Content Container */}
               <div className="relative w-full px-6 py-8 pb-16 space-y-8 max-w-7xl mx-auto">
@@ -87,8 +87,7 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
                   {/* Left: Event Image Square */}
                   <div className="w-[45%] flex items-center justify-center">
                     <div
-                      className="aspect-square w-full max-w-xs rounded shadow-2xl"
-                      style={{ background: "linear-gradient(to bottom right, #e5e7eb, #d1d5db)" }}
+                      className="aspect-square w-full max-w-xs rounded shadow-2xl bg-gradient-to-br from-gray-200 to-gray-300"
                     />
                   </div>
 
@@ -109,15 +108,13 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
                     <div className="flex flex-wrap gap-1.5">
                       {currentEvent.price === 0 ? (
                         <span
-                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
-                          style={{ backgroundColor: "rgba(16, 185, 129, 0.2)", color: "#10B981" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl bg-success/20 text-success"
                         >
                           Free
                         </span>
                       ) : (
                         <span
-                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
-                          style={{ backgroundColor: "rgba(59, 130, 246, 0.2)", color: "#3B82F6" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl bg-primary/20 text-primary"
                         >
                           ${currentEvent.price}
                         </span>
@@ -125,8 +122,7 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
 
                       {currentEvent.food && currentEvent.food.length > 0 && (
                         <span
-                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
-                          style={{ backgroundColor: "rgba(245, 158, 11, 0.2)", color: "#F59E0B" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl bg-warning/20 text-warning"
                         >
                           Free Food
                         </span>
@@ -134,8 +130,7 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
 
                       {currentEvent.requiresRegistration && (
                         <span
-                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl"
-                          style={{ backgroundColor: "rgba(139, 92, 246, 0.2)", color: "#8B5CF6" }}
+                          className="font-medium text-[11px] px-2.5 py-1 rounded-xl bg-purple-500/20 text-purple-500"
                         >
                           Registration Required
                         </span>
@@ -146,35 +141,33 @@ export function EventModal({ event: initialEvent, onClose }: EventModalProps) {
                     <h2 className="font-bold text-3xl leading-tight">{currentEvent.title}</h2>
 
                     {/* Description */}
-                    <p className="text-[15px] leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
+                    <p className="text-[15px] leading-relaxed text-white/90">
                       {currentEvent.description || "No description available."}
                     </p>
 
                     {/* Event Meta Info */}
                     <div className="space-y-3 pt-2">
                       <div className="flex gap-3 items-center">
-                        <Calendar className="w-5 h-5" style={{ color: "rgba(255,255,255,0.8)" }} strokeWidth={2} />
-                        <span className="text-[15px]">
+                        <Calendar className="w-5 h-5 text-white/80" strokeWidth={2} />
+                        <span className="text-[15px] text-white">
                           {currentEvent.date} at {currentEvent.time}
                         </span>
                       </div>
 
                       <div className="flex gap-3 items-center">
-                        <MapPin className="w-5 h-5" style={{ color: "rgba(255,255,255,0.8)" }} strokeWidth={2} />
-                        <span className="text-[15px]">{currentEvent.location}</span>
+                        <MapPin className="w-5 h-5 text-white/80" strokeWidth={2} />
+                        <span className="text-[15px] text-white">{currentEvent.location}</span>
                       </div>
 
                       <div className="flex gap-2 items-center pt-2">
                         <span
-                          className="backdrop-blur-md font-bold text-[11px] text-white px-4 py-1.5 rounded-full"
-                          style={{ backgroundColor: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)" }}
+                          className="backdrop-blur-md font-bold text-[11px] text-white px-4 py-1.5 rounded-full bg-white/20 border border-white/30"
                         >
                           {currentEvent.category}
                         </span>
                         {currentEvent.isLive && (
                           <span
-                            className="text-white font-bold text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5"
-                            style={{ backgroundColor: "#EF4444" }}
+                            className="text-white font-bold text-[11px] px-3 py-1.5 rounded-full flex items-center gap-1.5 bg-error"
                           >
                             <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                             LIVE

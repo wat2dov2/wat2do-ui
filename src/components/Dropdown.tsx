@@ -11,8 +11,7 @@ export function Dropdown({ options, selected, onToggle }: DropdownProps) {
   return (
     <div
       data-dropdown
-      className="absolute z-50 mt-2 rounded-lg shadow-xl w-full max-h-60 overflow-y-auto"
-      style={{ backgroundColor: "#fff", border: "1px solid #e5e7eb" }}
+      className="absolute z-50 mt-2 rounded-lg shadow-xl w-full max-h-60 overflow-y-auto bg-popover border border-border"
     >
       <div className="p-2">
         {options.map((option) => {
@@ -21,14 +20,14 @@ export function Dropdown({ options, selected, onToggle }: DropdownProps) {
             <button
               key={option}
               onClick={() => onToggle(option)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left group"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors text-left group"
             >
               <div
-                className="w-4 h-4 border-2 rounded transition-all flex items-center justify-center flex-shrink-0"
-                style={{
-                  borderColor: isSelected ? "#3B82F6" : "#D1D5DB",
-                  backgroundColor: isSelected ? "#3B82F6" : "#fff",
-                }}
+                className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center shrink-0 ${
+                  isSelected 
+                    ? "border-primary bg-primary" 
+                    : "border-gray-300 bg-card"
+                }`}
               >
                 {isSelected && (
                   <svg
@@ -44,7 +43,7 @@ export function Dropdown({ options, selected, onToggle }: DropdownProps) {
                   </svg>
                 )}
               </div>
-              <span className="font-medium text-xs transition-colors" style={{ color: "#4B5563" }}>
+              <span className="font-medium text-xs transition-colors text-foreground">
                 {option}
               </span>
             </button>
@@ -63,8 +62,7 @@ interface FilterTagProps {
 export const FilterTag = React.memo(function FilterTag({ label, onRemove }: FilterTagProps) {
   return (
     <span
-      className="text-white font-medium text-[11px] pl-2.5 pr-1.5 py-1 rounded-full inline-flex items-center gap-1.5 hover:opacity-90 transition-colors"
-      style={{ backgroundColor: "#3B82F6" }}
+      className="text-white font-medium text-[11px] pl-2.5 pr-1.5 py-1 rounded-full inline-flex items-center gap-1.5 hover:opacity-90 transition-colors bg-primary"
     >
       {label}
       <span

@@ -67,14 +67,14 @@ export function BuyCreditsModal({
               <Check className="w-8 h-8 text-white" strokeWidth={3} />
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl font-bold text-foreground mb-2">
               Credits Added!
             </h2>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-muted-foreground text-sm mb-4">
               {purchasedCredits} credits have been added to your account.
             </p>
 
-            <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-full mb-6">
+            <div className="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-full mb-6">
               <Coins className="w-5 h-5 text-amber-500" />
               <span className="font-bold text-amber-700">
                 {currentCredits + purchasedCredits} credits
@@ -95,9 +95,9 @@ export function BuyCreditsModal({
       <DialogContent className="max-w-md" showCloseButton={false}>
         <button
           onClick={handleClose}
-          className="absolute top-3 right-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="absolute top-3 right-3 p-2 hover:bg-gray-200 rounded-lg transition-colors"
         >
-          <X className="w-5 h-5 text-gray-500" />
+          <X className="w-5 h-5 text-muted-foreground" />
         </button>
 
         <div className="py-2">
@@ -106,8 +106,8 @@ export function BuyCreditsModal({
               <Coins className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Buy Credits</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-xl font-bold text-foreground">Buy Credits</h2>
+              <p className="text-sm text-muted-foreground">
                 Current balance:{" "}
                 <span className="font-semibold text-amber-600">
                   {currentCredits} credits
@@ -123,8 +123,8 @@ export function BuyCreditsModal({
                 onClick={() => setSelectedPackage(index)}
                 className={`w-full p-4 rounded-lg border-2 text-left transition-all relative ${
                   selectedPackage === index
-                    ? "border-amber-500 bg-amber-50"
-                    : "border-gray-200 hover:border-amber-300"
+                    ? "border-amber-500 bg-amber-100"
+                    : "border-border hover:border-amber-300"
                 }`}
               >
                 {pkg.popular && (
@@ -147,7 +147,7 @@ export function BuyCreditsModal({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-foreground">
                           {pkg.credits} credits
                         </span>
                         {pkg.bonus && (
@@ -157,15 +157,15 @@ export function BuyCreditsModal({
                         )}
                       </div>
                       {pkg.bonus && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {pkg.credits + pkg.bonus} total credits
                         </p>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">${pkg.price}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="font-bold text-foreground">${pkg.price}</p>
+                    <p className="text-xs text-muted-foreground">
                       ${((pkg.price / (pkg.credits + (pkg.bonus || 0))) * 100).toFixed(1)}¢/credit
                     </p>
                   </div>

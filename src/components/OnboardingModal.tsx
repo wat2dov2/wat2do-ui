@@ -183,10 +183,10 @@ export function OnboardingModal({
         {currentStep >= 1 && currentStep <= 3 && (
           <div style={{ marginRight: 24 }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs" style={{ color: "#6b7280" }}>
+              <span className="text-xs text-muted-foreground">
                 Step {displayStep} of {visibleSteps}
               </span>
-              <span className="text-xs" style={{ color: "#6b7280" }}>
+              <span className="text-xs text-muted-foreground">
                 {Math.round(progressValue)}%
               </span>
             </div>
@@ -200,7 +200,7 @@ export function OnboardingModal({
           {currentStep === 0 && (
             <div className="flex flex-col items-center text-center">
               {/* Goose Image */}
-              <div className="w-24 h-24 rounded-full overflow-hidden mb-4" style={{ backgroundColor: "#f3f4f6" }}>
+              <div className="w-24 h-24 rounded-full overflow-hidden mb-4 bg-muted">
                 <img
                   src={GOOSE_IMAGE_URL}
                   alt="Goose mascot"
@@ -242,7 +242,7 @@ export function OnboardingModal({
                       setEmailUsername("demo.user");
                       handleNext();
                     }}
-                    className="w-full h-11 flex items-center justify-center gap-3 rounded-md border border-gray-200 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 mb-4"
+                    className="w-full h-11 flex items-center justify-center gap-3 rounded-md border border-border transition-colors hover:bg-gray-200 mb-4"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                       <path
@@ -262,21 +262,21 @@ export function OnboardingModal({
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-sm text-foreground">
                       Continue with Google
                     </span>
                   </button>
 
                   {/* Divider */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                    <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
-                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground">or</span>
+                    <div className="flex-1 h-px bg-border" />
                   </div>
 
                   {/* Email Input */}
                   <div className="space-y-2 mb-4">
-                    <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <label className="text-sm font-medium text-foreground">
                       Email
                     </label>
                     <div className="flex items-center">
@@ -285,10 +285,10 @@ export function OnboardingModal({
                         value={emailUsername}
                         onChange={(e) => setEmailUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
                         placeholder="username"
-                        className="flex-1 h-10 px-3 text-sm rounded-l-md border border-r-0 border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                        className="flex-1 h-10 px-3 text-sm rounded-l-md border border-r-0 border-border focus:outline-none focus:ring-2 focus:ring-primary bg-muted text-foreground placeholder:text-muted-foreground"
                       />
                       <div
-                        className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                        className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border border-border bg-muted text-muted-foreground"
                       >
                         @gmail.com
                       </div>
@@ -299,9 +299,9 @@ export function OnboardingModal({
                     <Button
                       variant="ghost"
                       onClick={handleBack}
-                      className="flex-1 text-gray-600"
+                      className="flex-1 text-muted-foreground"
                     >
-                      <ChevronLeft className="w-4 h-4 mr-1 text-gray-600" />
+                      <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
                       Back
                     </Button>
                     <Button
@@ -348,11 +348,11 @@ export function OnboardingModal({
                   </div>
 
                   {isVerifying ? (
-                    <p className="text-center text-sm font-medium" style={{ color: "#111827" }}>
+                    <p className="text-center text-sm font-medium text-foreground">
                       Verifying...
                     </p>
                   ) : (
-                    <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-center text-xs text-muted-foreground">
                       Enter any 6 digits to continue
                     </p>
                   )}
@@ -390,7 +390,7 @@ export function OnboardingModal({
               <div className="space-y-6 mb-6">
                 {/* Faculty Selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <label className="text-sm font-medium text-foreground">
                     Faculty
                   </label>
                   <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
@@ -409,7 +409,7 @@ export function OnboardingModal({
 
                 {/* First Year Question */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <label className="text-sm font-medium text-foreground">
                     Are you a first year student?
                   </label>
                   <div className="flex gap-3">
@@ -417,8 +417,8 @@ export function OnboardingModal({
                       onClick={() => setIsFirstYear(true)}
                       className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all border ${
                         isFirstYear === true
-                          ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                          : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          ? "bg-primary text-white border-primary shadow-md"
+                          : "bg-muted text-muted-foreground border-border hover:bg-gray-200"
                       }`}
                     >
                       Yes, I'm a first year! 🎉
@@ -427,8 +427,8 @@ export function OnboardingModal({
                       onClick={() => setIsFirstYear(false)}
                       className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all border ${
                         isFirstYear === false
-                          ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                          : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          ? "bg-primary text-white border-primary shadow-md"
+                          : "bg-muted text-muted-foreground border-border hover:bg-gray-200"
                       }`}
                     >
                       No, returning student
@@ -441,9 +441,9 @@ export function OnboardingModal({
                 <Button
                   variant="ghost"
                   onClick={handleBack}
-                  className="flex-1 text-gray-600"
+                  className="flex-1 text-muted-foreground"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1 text-gray-600" />
+                  <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
                   Back
                 </Button>
                 <Button
@@ -479,8 +479,8 @@ export function OnboardingModal({
                         key={interest}
                         onClick={() => toggleInterest(interest)}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${isSelected
-                          ? "bg-blue-500 text-white shadow-md"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                          ? "bg-primary text-white shadow-md"
+                          : "bg-muted text-muted-foreground hover:bg-gray-200"
                           }`}
                       >
                         {interest}
@@ -489,7 +489,7 @@ export function OnboardingModal({
                   })}
                 </div>
 
-                <p className="text-xs text-gray-400 text-center mt-4">
+                <p className="text-xs text-muted-foreground text-center mt-4">
                   {selectedInterests.length} of {availableInterests.length} selected
                 </p>
               </div>
@@ -499,9 +499,9 @@ export function OnboardingModal({
                   <Button
                     variant="ghost"
                     onClick={handleBack}
-                    className="flex-1 text-gray-600"
+                    className="flex-1 text-muted-foreground"
                   >
-                    <ChevronLeft className="w-4 h-4 mr-1 text-gray-600" />
+                    <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
                     Back
                   </Button>
                   <Button onClick={handleNext} className="flex-1">
@@ -524,7 +524,7 @@ export function OnboardingModal({
             <div className="flex flex-col items-center text-center">
               {/* Success Icon */}
               <div className="relative mb-4">
-                <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-success flex items-center justify-center">
                   <Check className="w-8 h-8 text-white" strokeWidth={3} />
                 </div>
                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -542,28 +542,28 @@ export function OnboardingModal({
 
               {/* Summary */}
               {(emailUsername || selectedFaculty || selectedInterests.length > 0) && (
-                <div className="w-full rounded-xl p-4 mb-6 text-left text-sm bg-gray-100 dark:bg-gray-800">
+                <div className="w-full rounded-xl p-4 mb-6 text-left text-sm bg-muted">
                   {emailUsername && (
-                    <p className="mb-1 text-gray-900 dark:text-gray-100">
-                      <span className="text-gray-500 dark:text-gray-400">Email:</span>{" "}
+                    <p className="mb-1 text-foreground">
+                      <span className="text-muted-foreground">Email:</span>{" "}
                       {emailUsername}@gmail.com
                     </p>
                   )}
                   {selectedFaculty && (
-                    <p className="mb-1 text-gray-900 dark:text-gray-100">
-                      <span className="text-gray-500 dark:text-gray-400">Faculty:</span>{" "}
+                    <p className="mb-1 text-foreground">
+                      <span className="text-muted-foreground">Faculty:</span>{" "}
                       {selectedFaculty}
                     </p>
                   )}
                   {isFirstYear !== null && (
-                    <p className="mb-1 text-gray-900 dark:text-gray-100">
-                      <span className="text-gray-500 dark:text-gray-400">Year:</span>{" "}
+                    <p className="mb-1 text-foreground">
+                      <span className="text-muted-foreground">Year:</span>{" "}
                       {isFirstYear ? "First Year" : "Returning Student"}
                     </p>
                   )}
                   {selectedInterests.length > 0 && (
-                    <p className="text-gray-900 dark:text-gray-100">
-                      <span className="text-gray-500 dark:text-gray-400">Interests:</span>{" "}
+                    <p className="text-foreground">
+                      <span className="text-muted-foreground">Interests:</span>{" "}
                       {selectedInterests.join(", ")}
                     </p>
                   )}

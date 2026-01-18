@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Highlighter } from "@/components/ui/highlighter";
 import { availableSchools } from "@/data/events";
 
 interface SchoolComboboxProps {
@@ -25,35 +26,35 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="flex items-center gap-1 px-1 h-8 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          className="flex text-white items-center gap-1 px-3 h-8 bg-transparent hover:bg-gray-200 rounded-xl transition-colors"
           aria-expanded={open}
         >
-          <span className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
-            {value || "University of Waterloo"}
-          </span>
-          <ChevronsUpDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+          <Highlighter action="highlight" color="#0056D6">
+            {value ? value : "University of Waterloo"}
+          </Highlighter>
+          <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[280px] p-0 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+        className="w-[280px] p-0 bg-popover border-border"
         align="start"
       >
         {/* Search input */}
-        <div className="flex items-center border-b border-gray-200 dark:border-gray-700 px-3">
-          <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+        <div className="flex items-center border-b border-border px-3">
+          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             type="text"
             placeholder="Search schools..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none placeholder:text-gray-400 dark:text-gray-100"
+            className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
         {/* School list */}
         <div className="max-h-[200px] overflow-y-auto p-1">
           {filteredSchools.length === 0 ? (
-            <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="py-6 text-center text-sm text-muted-foreground">
               No school found.
             </div>
           ) : (
@@ -66,10 +67,10 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
                   setSearch("");
                 }}
                 className={cn(
-                  "w-full flex items-center gap-2 px-2 py-2 text-sm rounded text-left transition-colors",
+                  "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                   value === school
-                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                    : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                    ? "bg-primary/20 dark:bg-primary/30 text-primary"
+                    : "hover:bg-gray-200 text-foreground"
                 )}
               >
                 <Check

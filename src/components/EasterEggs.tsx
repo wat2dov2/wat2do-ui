@@ -97,11 +97,10 @@ function GooseCrossing({ onComplete }: { onComplete: () => void }) {
       {/* Honk bubble */}
       {honked && (
         <div
-          className="fixed bg-white rounded-full px-3 py-1 text-sm font-bold shadow-lg animate-bounce"
+          className="fixed bg-white rounded-full px-3 py-1 text-sm font-bold shadow-lg animate-bounce border-2 border-border"
           style={{
             left: position + 50,
             bottom: "140px",
-            border: "2px solid #e5e7eb",
           }}
         >
           HONK!

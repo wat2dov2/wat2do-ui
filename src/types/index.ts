@@ -15,6 +15,7 @@ export interface Event {
   description?: string;
   // For timeline sorting - actual date object
   eventDate?: Date;
+  imageUrl?: string;
 }
 
 export interface FilterState {
