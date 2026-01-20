@@ -307,6 +307,10 @@
   --pink-500: hsl(330 81% 60%);
   --orange-500: hsl(25 95% 53%);
 
+  /* Scrollbar colors */
+  --scrollbar-thumb: hsl(240 5% 65%);
+  --scrollbar-track: hsl(240 5% 95%);
+
   /* Fonts */
   --font-family-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-family-mono: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
@@ -439,6 +443,10 @@
   --amber-900: hsl(22 78% 26%);
   --pink-500: hsl(330 81% 60%);
   --orange-500: hsl(25 95% 53%);
+
+  /* Scrollbar colors - dark mode */
+  --scrollbar-thumb: hsl(240 5% 40%);
+  --scrollbar-track: hsl(240 6% 10%);
 }
 
 @layer base {
@@ -454,8 +462,32 @@
     cursor: pointer;
   }
   button:disabled,
-  [role="button"]:disabled {
+  [role="button"]:disabled,
+  button[disabled],
+  [role="button"][disabled] {
     cursor: not-allowed;
+  }
+
+  /* Scrollbar styling - Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  /* Scrollbar styling - WebKit browsers */
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 9999px;
+    border: 2px solid var(--scrollbar-track);
   }
 
   /* Theme transition lock - disables all transitions during theme change */
@@ -465,13 +497,4 @@
     transition: none !important;
   }
 
-}
-
-@keyframes slideInFromBottom {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
 }

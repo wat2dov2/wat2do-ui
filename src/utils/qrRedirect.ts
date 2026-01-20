@@ -1,0 +1,99 @@
+/**
+ * QR Code Redirect Handler
+ * Handles QR code scans and redirects to appropriate destinations
+ */
+
+import type { QRCode, QRCodeScan } from "@/types";
+import { mockQRCodes, mockQRScans } from "@/data/qrCodes";
+
+/**
+ * Track a QR code scan (no-op - scans are only from mock data)
+ */
+export function trackQRScan(qrCodeId: string, userId?: string): void {
+  // No-op: We only use mock data, no real tracking
+}
+
+/**
+ * Get all QR code scans (mock data only)
+ */
+export function getQRScans(): QRCodeScan[] {
+  return mockQRScans;
+}
+
+/**
+ * Get scans for a specific QR code
+ */
+export function getScansForQRCode(qrCodeId: string): QRCodeScan[] {
+  return getQRScans().filter((scan) => scan.qrCodeId === qrCodeId);
+}
+
+/**
+ * Add conversion action to a scan (no-op - scans are only from mock data)
+ */
+export function addConversionAction(
+  qrCodeId: string,
+  action: string,
+  sessionId?: string
+): void {
+  // No-op: We only use mock data, no real tracking
+}
+
+/**
+ * Handle QR code redirect based on destination type
+ */
+export function handleQRRedirect(qrCode: QRCode): void {
+  // Track the scan
+  const userId = localStorage.getItem("userEmail") || undefined;
+  trackQRScan(qrCode.id, userId);
+
+  // Redirect based on destination type
+  switch (qrCode.destinationType) {
+    case "event":
+      if (qrCode.destinationId) {
+        window.location.href = `/?eventId=${qrCode.destinationId}`;
+      }
+      break;
+    case "events-list":
+      if (qrCode.filters) {
+        const filtersParam = encodeURIComponent(JSON.stringify(qrCode.filters));
+        window.location.href = `/?filters=${filtersParam}`;
+      } else {
+        window.location.href = `/`;
+      }
+      break;
+    case "custom-url":
+      if (qrCode.destinationId && typeof qrCode.destinationId === "string") {
+        window.location.href = qrCode.destinationId;
+      }
+      break;
+  }
+}
+
+/**
+ * Get QR code by ID
+ */
+export function getQRCodeById(id: string): QRCode | null {
+  const qrCodes = getQRCodes();
+  return qrCodes.find((qr) => qr.id === id) || null;
+}
+
+/**
+ * Get all QR codes (mock data only)
+ */
+export function getQRCodes(): QRCode[] {
+  return mockQRCodes;
+}
+
+/**
+ * Save QR code (no-op - QR codes are only from mock data)
+ */
+export function saveQRCode(qrCode: QRCode): void {
+  // No-op: We only use mock data, no real persistence
+}
+
+/**
+ * Delete QR code (no-op - QR codes are only from mock data)
+ */
+export function deleteQRCode(id: string): void {
+  // No-op: We only use mock data, no real persistence
+}

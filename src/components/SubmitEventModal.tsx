@@ -30,6 +30,9 @@ interface SubmitEventModalProps {
   userCredits?: number;
   onPromote?: (eventId: number, packageId: string, credits: number, duration: number) => boolean;
   onBuyCredits?: () => void;
+  editEventId?: number; // Event ID being edited
+  initialData?: EventFormData; // Initial data for edit mode
+  onUpdate?: (eventId: number, event: EventFormData) => void; // Update handler for edit mode
 }
 
 interface EventFormData {
@@ -82,7 +85,11 @@ export function SubmitEventModal({
   userCredits = 0,
   onPromote,
   onBuyCredits,
+  editEventId,
+  initialData,
+  onUpdate,
 }: SubmitEventModalProps) {
+  const isEditMode = !!editEventId && !!initialData;
   // Detect dark mode from document class
   const [isDarkMode, setIsDarkMode] = useState(() => 
     document.documentElement.classList.contains('dark')
@@ -158,25 +165,32 @@ export function SubmitEventModal({
       setPromotionSuccess(false);
       setCreatedEventId(null);
       const defaults = getSmartDefaults();
-      setFormData({
-        title: "",
-        description: "",
-        date: defaults.date,
-        time: defaults.time,
-        location: "",
-        category: "",
-        price: 0,
-        food: [],
-        requiresRegistration: false,
-        organization: "",
-      });
+      
+      // Pre-fill form if in edit mode
+      if (isEditMode && initialData) {
+        setFormData(initialData);
+      } else {
+        setFormData({
+          title: "",
+          description: "",
+          date: defaults.date,
+          time: defaults.time,
+          location: "",
+          category: "",
+          price: 0,
+          food: [],
+          requiresRegistration: false,
+          organization: "",
+        });
+      }
+      
       setErrors({});
       setTouched({});
       setJsonValue("");
       setJsonError("");
       setAiPrompt("");
     }
-  }, [isOpen]);
+  }, [isOpen, isEditMode, initialData]);
 
   // Fire confetti on success
   useEffect(() => {
@@ -230,7 +244,14 @@ export function SubmitEventModal({
       return;
     }
 
-    // Submit the event and get the created ID back
+    // If in edit mode, update the event
+    if (isEditMode && editEventId && onUpdate) {
+      onUpdate(editEventId, formData);
+      onClose();
+      return;
+    }
+
+    // Otherwise, create new event
     const eventId = onSubmit(formData);
     setCreatedEventId(eventId);
     setIsSubmitted(true);
@@ -346,7 +367,7 @@ export function SubmitEventModal({
   if (promotionSuccess) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-md" showCloseButton={false} aria-describedby={undefined}>
+        <DialogContent className="max-w-md" showCloseButton={false}>
           <DialogTitle className="sr-only">Event Promoted</DialogTitle>
           <div className="flex flex-col items-center text-center py-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
@@ -381,7 +402,7 @@ export function SubmitEventModal({
 
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-md" showCloseButton={false} aria-describedby={undefined}>
+        <DialogContent className="max-w-md" showCloseButton={false}>
           <DialogTitle className="sr-only">Boost Your Event</DialogTitle>
           <button
             onClick={handleClose}
@@ -502,11 +523,11 @@ export function SubmitEventModal({
     );
   }
 
-  // Success screen
-  if (isSubmitted) {
+  // Success screen (skip for edit mode)
+  if (isSubmitted && !isEditMode) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-md" showCloseButton={false} aria-describedby={undefined}>
+        <DialogContent className="max-w-md" showCloseButton={false}>
           <DialogTitle className="sr-only">Event Created</DialogTitle>
           <div className="flex flex-col items-center text-center py-4">
             <div className="relative mb-4">
@@ -518,9 +539,11 @@ export function SubmitEventModal({
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-foreground mb-2">Event Created!</h2>
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              {isEditMode ? "Event Updated!" : "Event Created!"}
+            </h2>
             <p className="text-muted-foreground text-sm mb-6">
-              "{formData.title}" is now live and visible to students.
+              "{formData.title}" {isEditMode ? "has been updated." : "is now live and visible to students."}
             </p>
 
             <div className="w-full rounded-lg p-4 mb-6 text-left bg-muted">
@@ -552,7 +575,7 @@ export function SubmitEventModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col" showCloseButton={false} aria-describedby={undefined}>
-        <DialogTitle className="sr-only">Create Event</DialogTitle>
+        <DialogTitle className="sr-only">{isEditMode ? "Edit Event" : "Create Event"}</DialogTitle>
         {/* Close Button - Top Right of Modal */}
         <button
           onClick={handleClose}
@@ -567,8 +590,8 @@ export function SubmitEventModal({
             {/* Header with Tabs */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-foreground">Create Event</h2>
-                <p className="text-sm text-muted-foreground">Fill in the details below</p>
+                <h2 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Event" : "Create Event"}</h2>
+                <p className="text-sm text-muted-foreground">{isEditMode ? "Update the event details below" : "Fill in the details below"}</p>
               </div>
               <div className="flex gap-1 bg-muted rounded p-0.5">
                 <button
@@ -1058,7 +1081,7 @@ export function SubmitEventModal({
               className="w-full mt-4"
               size="lg"
             >
-              Create Event
+              {isEditMode ? "Update Event" : "Create Event"}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>

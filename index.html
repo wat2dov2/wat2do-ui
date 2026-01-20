@@ -8,6 +8,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title>app</title>
+    <script>
+      // Apply dark mode immediately before React loads to prevent flash
+      (function() {
+        const saved = localStorage.getItem('darkMode');
+        const isDark = saved !== null 
+          ? JSON.parse(saved) 
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -38,8 +38,19 @@ export interface UserEventState {
 
 export type ViewMode = "grid" | "calendar" | "map";
 export type FilterViewMode = "visual" | "json";
-export type PageMode = "events" | "about" | "myEvents";
+export type PageMode = "events" | "about" | "myEvents" | "clubs" | "admin" | "marketing" | "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters";
 export type MyEventsTab = "upcoming" | "past";
+
+// Club interface
+export interface Club {
+  id: number;
+  club_name: string;
+  categories: string[];
+  club_page: string;
+  ig: string | null;
+  discord: string | null;
+  club_type: string;
+}
 
 // Promotion types
 export interface PromotedEvent {
@@ -90,3 +101,75 @@ export const CREDIT_PACKAGES = [
   { credits: 250, price: 10, popular: true, bonus: 50 },
   { credits: 500, price: 18, popular: false, bonus: 100 },
 ];
+
+// QR Code Marketing types
+export interface QRCode {
+  id: string;
+  name: string;
+  description?: string;
+  destinationType: "event" | "events-list" | "custom-url";
+  destinationId?: number | string; // event ID or custom URL
+  filters?: FilterState; // if events-list
+  createdAt: string;
+  createdBy: string;
+  isActive: boolean;
+  imageUrl?: string; // Optional image/poster image (stored as data URL)
+  latitude: number; // Poster location latitude
+  longitude: number; // Poster location longitude
+}
+
+export interface QRCodeScan {
+  id: string;
+  qrCodeId: string;
+  scannedAt: string;
+  userId?: string;
+  sessionId: string;
+  conversionActions: string[];
+  userAgent?: string;
+}
+
+// Event submission data (matches EventFormData from SubmitEventModal)
+export interface EventFormData {
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  category: string;
+  price: number;
+  food: string[];
+  requiresRegistration: boolean;
+  organization: string;
+}
+
+// Admin panel types
+export interface EventSubmission {
+  id: string;
+  eventData: EventFormData;
+  submittedBy: string; // user email
+  submittedAt: string; // ISO timestamp
+  status: "pending" | "approved" | "rejected";
+  rejectionReason?: string; // Reason provided when rejecting
+}
+
+export interface ReportedEvent {
+  id: string;
+  eventId: number;
+  reportedBy: string;
+  reportedAt: string;
+  reason: string;
+  status: "pending" | "resolved" | "dismissed";
+}
+
+export interface ScrappedEvent {
+  id: string;
+  eventId: number;
+  scrappedAt: string;
+  source: string; // e.g., "web-scraper"
+}
+
+// Union type for activity feed
+export type AdminActivity = 
+  | { type: "submission"; data: EventSubmission }
+  | { type: "scrapped"; data: ScrappedEvent }
+  | { type: "reported"; data: ReportedEvent };

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Check, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useOnClickOutside } from "../hooks/use-on-click-outside";
 
 interface ChecklistItem {
   id: string;
@@ -24,6 +25,7 @@ export function GettingStartedChecklist({
   onViewEvent,
   profileCompleted = false,
 }: GettingStartedChecklistProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [items, setItems] = useState<ChecklistItem[]>([
     {
@@ -115,6 +117,12 @@ export function GettingStartedChecklist({
     }
   }, [allCompleted]);
 
+  useOnClickOutside(containerRef, () => {
+    if (isExpanded) {
+      setIsExpanded(false);
+    }
+  });
+
   const completeItem = (id: string) => {
     setItems((prev) => {
       const newItems = prev.map((item) =>
@@ -183,6 +191,7 @@ export function GettingStartedChecklist({
 
   return (
     <div
+      ref={containerRef}
       className="fixed bottom-6 right-6 z-50 rounded-xl overflow-hidden transition-all duration-300 bg-card shadow-lg"
       style={{
         width: isExpanded ? "320px" : "200px",

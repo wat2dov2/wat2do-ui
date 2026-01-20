@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Users,
   Calendar,
@@ -10,8 +11,9 @@ import {
   MoreHorizontal,
   Share2,
   Flag,
+  Edit,
+  Trash2,
 } from "lucide-react";
-import { EventModal } from "./EventModal";
 import { Badge } from "./ui/badge";
 import { InteractiveHoverButton } from "./ui/interactive-hover-button";
 import { BadgeMask } from "./ui/badge-mask";
@@ -19,15 +21,29 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { LightRays } from "./ui/light-rays";
 import { LazyImage } from "./LazyImage";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { EventDetailsModal } from "./EventDetailsModal";
+import { shareEvent } from "@/utils/shareEvent";
 import type { Event } from "@/types";
 
 interface EventCardProps {
   event: Event;
-  inModal?: boolean;
-  onEventClick?: (event: Event) => void;
   isSaved?: boolean;
   isPromoted?: boolean;
   onToggleSave?: (eventId: number) => void;
+  isAdmin?: boolean;
+  onEdit?: (event: Event) => void;
+  onDelete?: (eventId: number) => void;
+  allEvents?: Event[]; // For similar events in modal
+  onEventClick?: (event: Event) => void; // Optional: custom click handler instead of opening modal
+  disableModal?: boolean; // If true, don't open modal on click
 }
 
 // Category color mapping - returns Tailwind classes using tokens
@@ -64,21 +80,23 @@ const getCategoryClasses = (category: string): { bg: string; text: string } => {
 
 export const EventCard = React.memo(function EventCard({
   event,
-  inModal = false,
-  onEventClick,
   isSaved = false,
   isPromoted = false,
   onToggleSave,
+  isAdmin = false,
+  onEdit,
+  onDelete,
+  allEvents,
+  onEventClick,
+  disableModal = false,
 }: EventCardProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleViewMore = () => {
-    if (inModal && onEventClick) {
-      onEventClick(event);
-    } else {
-      setIsModalOpen(true);
-    }
-  };
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // Check if this event should be shown in modal based on URL
+  const eventIdParam = searchParams.get("eventId");
+  const showDetailsModal = !disableModal && eventIdParam === event.id.toString();
 
   // Generate event badges with token classes
   const getBadges = () => {
@@ -126,8 +144,18 @@ export const EventCard = React.memo(function EventCard({
     <>
       <article
         data-event-card
+        data-event-id={event.id}
         role="article"
         aria-label={`Event: ${event.title}`}
+        onClick={() => {
+          if (onEventClick) {
+            onEventClick(event);
+          } else if (!disableModal) {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set("eventId", event.id.toString());
+            navigate(`/?${newParams.toString()}`, { replace: false });
+          }
+        }}
         className={`rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
           isPromoted
             ? "ring-2 ring-amber-400 shadow-amber-100 dark:shadow-amber-900/20 shadow-md"
@@ -202,9 +230,14 @@ export const EventCard = React.memo(function EventCard({
                 <div className="flex flex-col gap-0.5">
                   <button
                     className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-gray-200 text-foreground transition-colors text-left"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      // Handle share
+                      try {
+                        await shareEvent(event);
+                      } catch (error) {
+                        console.error("Failed to share event:", error);
+                        // You could show a toast notification here
+                      }
                     }}
                   >
                     <Share2 className="w-3.5 h-3.5" />
@@ -240,6 +273,31 @@ export const EventCard = React.memo(function EventCard({
                     <Flag className="w-3.5 h-3.5" />
                     Report
                   </button>
+                  {isAdmin && (
+                    <>
+                      <div className="h-px bg-border my-0.5" />
+                      <button
+                        className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-primary/10 text-primary transition-colors text-left"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit?.(event);
+                        }}
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-error/10 text-error transition-colors text-left"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteConfirm(true);
+                        }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>
@@ -304,9 +362,50 @@ export const EventCard = React.memo(function EventCard({
       </article>
 
       {/* Event Details Modal */}
-      {!inModal && isModalOpen && (
-        <EventModal event={event} onClose={() => setIsModalOpen(false)} />
+      {showDetailsModal && (
+        <EventDetailsModal
+          event={event}
+          onClose={() => {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete("eventId");
+            navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
+          }}
+          allEvents={allEvents}
+        />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => !open && setShowDeleteConfirm(false)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{event.title}"? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onDelete?.(event.id);
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 });

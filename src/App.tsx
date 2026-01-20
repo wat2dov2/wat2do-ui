@@ -7,6 +7,13 @@ import React, {
   lazy,
 } from "react";
 import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
+import {
   Search,
   ChevronDown,
   ChevronUp,
@@ -59,20 +66,31 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
-import { AboutPage } from "@/components/AboutPage";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { FilterTag } from "@/components/Dropdown";
+import { QRCodeDetailsModal } from "@/components/QRCodeDetailsModal";
+
+// Lazy load pages for code splitting
+const AboutPage = lazy(() => import("@/components/AboutPage").then(module => ({ default: module.AboutPage })));
+const ClubsPage = lazy(() => import("@/components/ClubsPage").then(module => ({ default: module.ClubsPage })));
+const AdminPanel = lazy(() => import("@/components/AdminPanel").then(module => ({ default: module.AdminPanel })));
+const AdminEventsPage = lazy(() => import("@/components/AdminEventsPage").then(module => ({ default: module.AdminEventsPage })));
+const AdminClubsPage = lazy(() => import("@/components/AdminClubsPage").then(module => ({ default: module.AdminClubsPage })));
+const AdminSubmissionsPage = lazy(() => import("@/components/AdminSubmissionsPage").then(module => ({ default: module.AdminSubmissionsPage })));
+const AdminPostersPage = lazy(() => import("@/components/AdminPostersPage").then(module => ({ default: module.AdminPostersPage })));
+const MarketingPage = lazy(() => import("@/components/MarketingPage").then(module => ({ default: module.MarketingPage })));
+const MyEventsView = lazy(() => import("@/components/MyEventsView").then(module => ({ default: module.MyEventsView })));
 
 // Lazy load Monaco Editor (3.6MB) - only needed for JSON filter view
 const Editor = lazy(() => import("@monaco-editor/react"));
 import { DatePicker } from "@/components/DatePicker";
 import { FilterSection } from "@/components/FilterSection";
 import { EventCard } from "@/components/EventCard";
+import { EventList } from "@/components/EventList";
 import { EventListSkeleton } from "@/components/ui/skeleton";
 import { GettingStartedChecklist } from "@/components/GettingStartedChecklist";
 import { SubmitEventModal } from "@/components/SubmitEventModal";
 import { SchoolCombobox } from "@/components/SchoolCombobox";
-import { MyEventsView } from "@/components/MyEventsView";
 import { AnimatedThemeToggler } from "@/components/AnimatedThemeToggler";
 import { PieMenu } from "@/components/ui/pie-menu";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
@@ -96,6 +114,8 @@ import {
   availableDays,
   availableFoods,
 } from "@/data/events";
+import { getQRCodeById, handleQRRedirect } from "@/utils/qrRedirect";
+import { addConversionAction } from "@/utils/qrRedirect";
 
 // Helper to get day of week from date string
 const getDayOfWeek = (dateStr: string): string => {
@@ -113,8 +133,24 @@ const getDayOfWeek = (dateStr: string): string => {
 };
 
 export default function App() {
-  // Page and view states
-  const [pageMode, setPageMode] = useState<PageMode>("events");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Determine current page from route
+  const currentPath = location.pathname;
+  const pageMode: PageMode = 
+    currentPath === "/clubs" ? "clubs" :
+    currentPath === "/about" ? "about" :
+    currentPath === "/my-events" ? "myEvents" :
+    currentPath.startsWith("/admin/events") ? "admin-events" :
+    currentPath.startsWith("/admin/clubs") ? "admin-clubs" :
+    currentPath.startsWith("/admin/submissions") ? "admin-submissions" :
+    currentPath.startsWith("/admin/posters") ? "admin-posters" :
+    currentPath.startsWith("/admin") ? "admin" :
+    currentPath === "/marketing" ? "marketing" :
+    "events";
+  
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filterViewMode, setFilterViewMode] = useState<FilterViewMode>(
     "visual"
@@ -185,6 +221,92 @@ export default function App() {
     []
   );
 
+  // Update event handler
+  const updateEvent = useCallback(
+    (eventId: number, eventData: {
+      title: string;
+      description: string;
+      date: string;
+      time: string;
+      location: string;
+      category: string;
+      price: number;
+      food: string[];
+      requiresRegistration: boolean;
+      organization: string;
+    }) => {
+      setEvents((prev) =>
+        prev.map((event) =>
+          event.id === eventId
+            ? {
+                ...event,
+                title: eventData.title,
+                description: eventData.description,
+                date: eventData.date,
+                time: eventData.time,
+                location: eventData.location,
+                category: eventData.category,
+                price: eventData.price,
+                food: eventData.food,
+                requiresRegistration: eventData.requiresRegistration,
+                organization: eventData.organization,
+                dayOfWeek: getDayOfWeek(eventData.date),
+                eventDate: new Date(eventData.date),
+              }
+            : event
+        )
+      );
+      // Update localStorage if it's a user-created event
+      if (userCreatedEventIds.includes(eventId)) {
+        const updatedEvents = events
+          .filter((e) => userCreatedEventIds.includes(e.id))
+          .map((e) => (e.id === eventId ? { ...e, ...eventData } : e));
+        localStorage.setItem("userCreatedEvents", JSON.stringify(updatedEvents));
+      }
+    },
+    [events, userCreatedEventIds]
+  );
+
+  // Delete event handler
+  const deleteEvent = useCallback(
+    (eventId: number) => {
+      setEvents((prev) => prev.filter((event) => event.id !== eventId));
+      // Remove from user-created events if applicable
+      if (userCreatedEventIds.includes(eventId)) {
+        setUserCreatedEventIds((prev) => prev.filter((id) => id !== eventId));
+        const updatedEvents = events.filter((e) => e.id !== eventId && userCreatedEventIds.includes(e.id));
+        localStorage.setItem("userCreatedEvents", JSON.stringify(updatedEvents));
+        localStorage.setItem(
+          "userCreatedEventIds",
+          JSON.stringify(userCreatedEventIds.filter((id) => id !== eventId))
+        );
+      }
+    },
+    [events, userCreatedEventIds]
+  );
+
+  // Handle edit event
+  const handleEditEvent = useCallback((event: Event) => {
+    setEditingEvent(event);
+    setShowSubmitEvent(true);
+  }, []);
+
+  // Convert Event to EventFormData for edit mode
+  const eventToFormData = useCallback((event: Event) => {
+    return {
+      title: event.title,
+      description: event.description || "",
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      price: event.price,
+      food: event.food,
+      requiresRegistration: event.requiresRegistration,
+      organization: event.organization,
+    };
+  }, []);
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -247,12 +369,94 @@ export default function App() {
 
   // Submit event modal state
   const [showSubmitEvent, setShowSubmitEvent] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   // Command palette state
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   // Profile/onboarding completion state
   const [profileCompleted, setProfileCompleted] = useState(false);
+  
+  // User email state (persisted to localStorage)
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    const saved = localStorage.getItem("userEmail");
+    return saved ? saved : null;
+  });
+  
+  // Admin check - everyone is admin by default for now
+  const isAdmin = true;
+  
+  // Persist email to localStorage
+  useEffect(() => {
+    if (userEmail) {
+      localStorage.setItem("userEmail", userEmail);
+    } else {
+      localStorage.removeItem("userEmail");
+    }
+  }, [userEmail]);
+
+  // Handle QR code scans from URL
+  useEffect(() => {
+    const path = window.location.pathname;
+    const qrMatch = path.match(/^\/qr\/(.+)$/);
+    if (qrMatch) {
+      const qrCodeId = qrMatch[1];
+      const qrCode = getQRCodeById(qrCodeId);
+      if (qrCode) {
+        handleQRRedirect(qrCode);
+      } else {
+        // QR code not found, redirect to events page
+        navigate("/", { replace: true });
+      }
+    }
+  }, []);
+
+  // Handle URL parameters for eventId and filters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const eventId = params.get("eventId");
+    const filtersParam = params.get("filters");
+    const pageModeParam = params.get("pageMode");
+
+    if (pageModeParam) {
+      if (pageModeParam === "marketing") {
+        navigate("/marketing", { replace: true });
+      } else if (pageModeParam === "events") {
+        navigate("/", { replace: true });
+      }
+    }
+
+    if (filtersParam) {
+      try {
+        const filters = JSON.parse(decodeURIComponent(filtersParam));
+        if (filters.categories) setSelectedCategories(filters.categories);
+        if (filters.locations) setSelectedLocations(filters.locations);
+        if (filters.foods) setSelectedFoods(filters.foods);
+        if (filters.days) setSelectedDays(filters.days);
+        if (filters.priceRange) setPriceRange(filters.priceRange);
+        if (filters.dateRange) setDateRange(new Date(filters.dateRange));
+        if (filters.addedSince) setAddedSince(new Date(filters.addedSince));
+        if (filters.requiresRegistration !== undefined)
+          setRequiresRegistration(filters.requiresRegistration);
+        if (filters.searchQuery) setSearchQuery(filters.searchQuery);
+      } catch (e) {
+        console.error("Failed to parse filters from URL", e);
+      }
+    }
+
+    if (eventId) {
+      // Scroll to event if found
+      const event = events.find((e) => e.id === parseInt(eventId));
+      if (event) {
+        setTimeout(() => {
+          const eventCard = document.querySelector(
+            `[data-event-id="${eventId}"]`
+          );
+          eventCard?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
+    }
+  }, [events]);
 
   // Dark mode state (persisted to localStorage)
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -292,11 +496,31 @@ export default function App() {
 
   // Event save handler
   const toggleSaveEvent = useCallback((eventId: number) => {
-    setSavedEventIds((prev) =>
-      prev.includes(eventId)
+    setSavedEventIds((prev) => {
+      const wasSaved = prev.includes(eventId);
+      const newIds = prev.includes(eventId)
         ? prev.filter((id) => id !== eventId)
-        : [...prev, eventId]
-    );
+        : [...prev, eventId];
+      
+      // Track conversion if user came from QR code
+      if (!wasSaved) {
+        const sessionId = sessionStorage.getItem("qrSessionId");
+        if (sessionId) {
+          // Find the most recent QR scan for this session
+          import("@/utils/qrRedirect").then(({ getQRScans, addConversionAction }) => {
+            const scans = getQRScans();
+            const recentScan = scans
+              .filter((s) => s.sessionId === sessionId)
+              .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime())[0];
+            if (recentScan) {
+              addConversionAction(recentScan.qrCodeId, "event_saved", sessionId);
+            }
+          });
+        }
+      }
+      
+      return newIds;
+    });
   }, []);
 
   // Saved filter for quick filter
@@ -539,6 +763,7 @@ export default function App() {
 
   // Clear all filters handler - memoized with useCallback
   const handleClearAllFilters = useCallback(() => {
+    setSearchQuery("");
     setSelectedCategories([]);
     setSelectedLocations([]);
     setSelectedFoods([]);
@@ -547,6 +772,11 @@ export default function App() {
     setDateRange(undefined);
     setAddedSince(undefined);
     setRequiresRegistration(false);
+    setTodayFilter(false);
+    setFreeFilter(false);
+    setFreeFoodFilter(false);
+    setForYouFilter(false);
+    setSavedFilter(false);
   }, []);
 
   // AI filter generation handler
@@ -776,9 +1006,11 @@ export default function App() {
           isOpen={showOnboarding}
           onClose={() => setShowOnboarding(false)}
           onComplete={(data) => {
-            console.log("Onboarding completed:", data);
             // Note: faculty is now selected during onboarding, school dropdown remains for university selection
             setProfileCompleted(true);
+            if (data.email) {
+              setUserEmail(data.email);
+            }
           }}
         />
 
@@ -802,16 +1034,25 @@ export default function App() {
         {/* Submit Event Modal */}
         <SubmitEventModal
           isOpen={showSubmitEvent}
-          onClose={() => setShowSubmitEvent(false)}
+          onClose={() => {
+            setShowSubmitEvent(false);
+            setEditingEvent(null);
+          }}
           onSubmit={(eventData) => {
             // Add the event to the events list and return the ID
             const eventId = addEvent(eventData);
-            console.log("New event created with ID:", eventId);
             return eventId;
           }}
           userCredits={userCredits}
           onPromote={promoteEvent}
           onBuyCredits={() => setShowBuyCredits(true)}
+          editEventId={editingEvent?.id}
+          initialData={editingEvent ? eventToFormData(editingEvent) : undefined}
+          onUpdate={(eventId, eventData) => {
+            updateEvent(eventId, eventData);
+            setEditingEvent(null);
+            setShowSubmitEvent(false);
+          }}
         />
 
         {/* Buy Credits Modal */}
@@ -922,7 +1163,7 @@ export default function App() {
               </CommandItem>
               <CommandItem
                 onSelect={() => {
-                  setPageMode("myEvents");
+                  navigate("/my-events");
                   setShowCommandPalette(false);
                 }}
               >
@@ -968,7 +1209,7 @@ export default function App() {
                   </CommandItem>
                   <CommandItem
                     onSelect={() => {
-                      setPageMode("myEvents");
+                      navigate("/my-events");
                       setShowCommandPalette(false);
                     }}
                   >
@@ -1042,7 +1283,7 @@ export default function App() {
               </CommandItem>
               <CommandItem
                 onSelect={() => {
-                  setPageMode("about");
+                  navigate("/about");
                   setShowCommandPalette(false);
                 }}
               >
@@ -1057,7 +1298,7 @@ export default function App() {
         <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-50">
           <div className="flex items-center gap-2.5">
             <button
-              onClick={() => setPageMode("events")}
+              onClick={() => navigate("/")}
               className="h-6 w-6 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
               aria-label="Go to events"
             >
@@ -1086,12 +1327,31 @@ export default function App() {
               </TooltipContent>
             </Tooltip>
 
+            {/* Admin Button - Always visible */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate("/admin")}
+                  className="flex items-center gap-1.5 bg-muted hover:bg-gray-200 text-foreground font-medium text-sm px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                >
+                  <Shield className="w-4 h-4" strokeWidth={2.5} />
+                  Admin
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Admin Panel</p>
+              </TooltipContent>
+            </Tooltip>
+
             {/* Auth Button */}
             {profileCompleted ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => setProfileCompleted(false)}
+                    onClick={() => {
+                      setProfileCompleted(false);
+                      setUserEmail(null);
+                    }}
                     className="flex items-center gap-1.5 bg-muted hover:bg-gray-200 text-foreground font-medium text-sm px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" strokeWidth={2.5} />
@@ -1139,7 +1399,7 @@ export default function App() {
                   className="w-full font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 text-muted-foreground hover:bg-gray-200 hover:text-gray-800 mb-1"
                 >
                   <Search
-                    className="w-3.5 h-3.5 flex-shrink-0"
+                    className="w-4 h-4 flex-shrink-0"
                     strokeWidth={2}
                   />
                   <span
@@ -1150,10 +1410,10 @@ export default function App() {
                   </span>
                   {sidebarHovered && (
                     <div className="flex items-center gap-0.5">
-                      <span className="flex items-center justify-center w-5 h-5 bg-muted border border-border rounded shadow-sm text-[10px] text-muted-foreground">
+                      <span className="flex items-center justify-center w-[18px] h-[18px] bg-muted border border-border rounded shadow-sm text-[9px] text-muted-foreground">
                         ⌘
                       </span>
-                      <span className="flex items-center justify-center w-5 h-5 bg-muted border border-border rounded shadow-sm text-[10px] text-muted-foreground">
+                      <span className="flex items-center justify-center w-[18px] h-[18px] bg-muted border border-border rounded shadow-sm text-[9px] text-muted-foreground">
                         K
                       </span>
                     </div>
@@ -1177,7 +1437,7 @@ export default function App() {
                       }`}
                     >
                       <CalendarDays
-                        className="w-3.5 h-3.5 flex-shrink-0"
+                        className="w-4 h-4 flex-shrink-0"
                         strokeWidth={2}
                       />
                       <span
@@ -1212,7 +1472,7 @@ export default function App() {
                         style={{ paddingLeft: sidebarHovered ? "20px" : "0px" }}
                       >
                         <button
-                          onClick={() => setPageMode("events")}
+                          onClick={() => navigate("/")}
                           className={`font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 ${
                             pageMode === "events"
                               ? "bg-gray-100 text-gray-900"
@@ -1220,7 +1480,7 @@ export default function App() {
                           }`}
                         >
                           <Compass
-                            className="w-3.5 h-3.5 flex-shrink-0"
+                            className="w-4 h-4 flex-shrink-0"
                             strokeWidth={2}
                           />
                           <span
@@ -1235,7 +1495,7 @@ export default function App() {
                           className="font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 text-muted-foreground hover:bg-gray-200 hover:text-gray-800"
                         >
                           <Plus
-                            className="w-3.5 h-3.5 flex-shrink-0"
+                            className="w-4 h-4 flex-shrink-0"
                             strokeWidth={2}
                           />
                           <span
@@ -1246,7 +1506,7 @@ export default function App() {
                           </span>
                         </button>
                         <button
-                          onClick={() => setPageMode("myEvents")}
+                          onClick={() => navigate("/my-events")}
                           className={`font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 ${
                             pageMode === "myEvents"
                               ? "bg-gray-100 text-gray-900"
@@ -1254,7 +1514,7 @@ export default function App() {
                           }`}
                         >
                           <Megaphone
-                            className="w-3.5 h-3.5 flex-shrink-0"
+                            className="w-4 h-4 flex-shrink-0"
                             strokeWidth={2}
                           />
                           <span
@@ -1270,7 +1530,7 @@ export default function App() {
                 ) : (
                   /* Logged Out: Simple Events link */
                   <button
-                    onClick={() => setPageMode("events")}
+                    onClick={() => navigate("/")}
                     className={`w-full font-medium text-[11px] rounded text-left flex items-center px-2 py-1.5 gap-2 ${
                       pageMode === "events"
                         ? "bg-gray-100 text-gray-900"
@@ -1278,7 +1538,7 @@ export default function App() {
                     }`}
                   >
                     <CalendarDays
-                      className="w-3.5 h-3.5 flex-shrink-0"
+                      className="w-4 h-4 flex-shrink-0"
                       strokeWidth={2}
                     />
                     <span
@@ -1293,13 +1553,15 @@ export default function App() {
                 <NavButton
                   icon={Shield}
                   label="Clubs"
+                  isActive={pageMode === "clubs"}
+                  onClick={() => navigate("/clubs")}
                   expanded={sidebarHovered}
                 />
                 <NavButton
                   icon={Target}
                   label="Mission"
                   isActive={pageMode === "about"}
-                  onClick={() => setPageMode("about")}
+                  onClick={() => navigate("/about")}
                   expanded={sidebarHovered}
                 />
                 <NavButton
@@ -1315,7 +1577,7 @@ export default function App() {
               <div className="mt-auto p-2 border-t border-border">
                 <button className="w-full font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 text-muted-foreground hover:bg-gray-200 hover:text-gray-800">
                   <Settings
-                    className="w-3.5 h-3.5 flex-shrink-0"
+                    className="w-4 h-4 flex-shrink-0"
                     strokeWidth={2}
                   />
                   <span
@@ -1336,17 +1598,123 @@ export default function App() {
               minHeight: "calc(100vh - 48px)",
             }}
           >
-            {pageMode === "about" ? (
-              <AboutPage />
-            ) : pageMode === "myEvents" ? (
-              <MyEventsView
-                profileCompleted={profileCompleted}
-                onSignIn={() => setShowOnboarding(true)}
-                events={events}
-                savedEventIds={savedEventIds}
-                onToggleSave={toggleSaveEvent}
-              />
-            ) : (
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center min-h-[400px]">
+                  <div className="text-center space-y-4">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    <p className="text-sm text-muted-foreground">Loading page...</p>
+                  </div>
+                </div>
+              }
+            >
+              <Routes>
+                <Route path="/about" element={<AboutPage />} />
+                <Route
+                  path="/my-events"
+                  element={
+                    <MyEventsView
+                      profileCompleted={profileCompleted}
+                      onSignIn={() => setShowOnboarding(true)}
+                      events={events}
+                      savedEventIds={savedEventIds}
+                      onToggleSave={toggleSaveEvent}
+                    />
+                  }
+                />
+                <Route path="/clubs" element={<ClubsPage />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminPanel
+                      events={events}
+                      onNavigate={(page) => {
+                        if (page === "admin-events") navigate("/admin/events");
+                        else if (page === "admin-clubs") navigate("/admin/clubs");
+                        else if (page === "admin-submissions") navigate("/admin/submissions");
+                        else if (page === "admin-posters") navigate("/admin/posters");
+                        else navigate("/admin");
+                      }}
+                    />
+                  }
+                />
+                <Route
+                  path="/admin/events"
+                  element={
+                    <AdminEventsPage
+                      events={events}
+                      onEditEvent={handleEditEvent}
+                      onDeleteEvent={deleteEvent}
+                      onBack={() => navigate("/admin")}
+                      onCreateEvent={() => setShowSubmitEvent(true)}
+                    />
+                  }
+                />
+                <Route
+                  path="/admin/clubs"
+                  element={
+                    <AdminClubsPage
+                      onBack={() => navigate("/admin")}
+                      onAddClub={(club) => {
+                        // TODO: Implement add club functionality
+                      }}
+                      onEditClub={(club) => {
+                        // TODO: Implement edit club functionality
+                      }}
+                      onDeleteClub={(clubId) => {
+                        // TODO: Implement delete club functionality
+                      }}
+                    />
+                  }
+                />
+                <Route
+                  path="/admin/submissions"
+                  element={
+                    <AdminSubmissionsPage
+                      onBack={() => navigate("/admin")}
+                      onApprove={(submission) => {
+                        // Convert submission to event and add it
+                        const eventData = submission.eventData;
+                        const newId = Date.now();
+                        const newEvent: Event = {
+                          id: newId,
+                          title: eventData.title,
+                          category: eventData.category || "Events",
+                          organization: eventData.organization,
+                          location: eventData.location,
+                          date: eventData.date,
+                          time: eventData.time,
+                          isLive: true,
+                          food: eventData.food,
+                          price: eventData.price,
+                          dayOfWeek: getDayOfWeek(eventData.date),
+                          requiresRegistration: eventData.requiresRegistration,
+                          addedDate: new Date(),
+                          description: eventData.description,
+                        };
+                        setEvents((prev) => [...prev, newEvent]);
+                        setUserCreatedEventIds((prev) => [...prev, newId]);
+                      }}
+                    />
+                  }
+                />
+                <Route
+                  path="/admin/posters"
+                  element={
+                    <AdminPostersPage
+                      onBack={() => navigate("/admin")}
+                      events={events}
+                      userEmail={userEmail || ""}
+                    />
+                  }
+                />
+                <Route
+                  path="/marketing"
+                  element={<MarketingPage events={events} userEmail={userEmail || ""} />}
+                />
+              <Route
+                path="/"
+                element={
               <div className="space-y-5">
                 {/* Search and Quick Filters - Always Visible */}
                 <div className="space-y-5">
@@ -2011,68 +2379,24 @@ export default function App() {
 
                 {/* Main Content */}
                 <main className="w-full" role="main" aria-label="Events list">
-                  {viewMode === "grid" &&
-                    (filteredEvents.length > 0 ? (
-                      <div
-                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4"
-                        role="list"
-                        aria-label={`${filteredEvents.length} events found`}
-                      >
-                        {/* Sort promoted events to the top */}
-                        {[...filteredEvents]
-                          .sort((a, b) => {
-                            const aPromoted = activePromotedEventIds.includes(
-                              a.id
-                            );
-                            const bPromoted = activePromotedEventIds.includes(
-                              b.id
-                            );
-                            if (aPromoted && !bPromoted) return -1;
-                            if (!aPromoted && bPromoted) return 1;
-                            return 0;
-                          })
-                          .map((event) => (
-                            <div key={event.id} role="listitem">
-                              <EventCard
-                                event={event}
-                                isSaved={savedEventIds.includes(event.id)}
-                                isPromoted={activePromotedEventIds.includes(
-                                  event.id
-                                )}
-                                onToggleSave={toggleSaveEvent}
-                              />
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-24 px-4">
-                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                          <Search className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-foreground mb-2">
-                          No events found
-                        </h3>
-                        <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-                          We couldn't find any events matching your current
-                          filters. Try adjusting your search or clearing some
-                          filters.
-                        </p>
-                        <button
-                          onClick={handleClearAllFilters}
-                          className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
-                        >
-                          Clear all filters
-                        </button>
-                      </div>
-                    ))}
-                  {viewMode === "calendar" && (
-                    <div className="text-center py-32 text-muted-foreground">
-                      Calendar view coming soon...
-                    </div>
-                  )}
+                  <EventList
+                    events={filteredEvents}
+                    savedEventIds={savedEventIds}
+                    activePromotedEventIds={activePromotedEventIds}
+                    onToggleSave={toggleSaveEvent}
+                    viewMode={viewMode}
+                    allEvents={events}
+                    isAdmin={isAdmin}
+                    onEdit={handleEditEvent}
+                    onDelete={deleteEvent}
+                    onClearFilters={handleClearAllFilters}
+                  />
                 </main>
               </div>
-            )}
+                }
+              />
+              </Routes>
+            </Suspense>
           </div>
         </div>
       </div>
@@ -2102,11 +2426,11 @@ function NavButton({
       onClick={onClick}
       className={`font-medium text-[11px] rounded-xl text-left flex items-center px-2 py-1.5 gap-2 w-full cursor-pointer ${
         isActive
-          ? "bg-gray-100 text-gray-900"
-          : "text-muted-foreground hover:bg-gray-100 hover:text-gray-800"
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       }`}
     >
-      <Icon className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+      <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
       <span
         className="whitespace-nowrap transition-opacity duration-150"
         style={{ opacity: expanded ? 1 : 0 }}
@@ -2135,7 +2459,7 @@ function ViewModeButton({
     <button
       onClick={onClick}
       className={`${
-        isActive ? "bg-card shadow-sm" : "bg-transparent hover:bg-gray-200"
+        isActive ? "bg-card shadow-sm" : "bg-transparent hover:bg-muted"
       } font-medium text-[11px] text-foreground px-2.5 py-1 rounded transition-all flex items-center gap-1 cursor-pointer h-full`}
     >
       <Icon className="w-3 h-3" strokeWidth={2} />
@@ -2207,7 +2531,7 @@ function QuickFilterChip({
           ? "bg-primary/20 dark:bg-primary/40 text-primary"
           : highlight
           ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:opacity-90"
-          : "bg-muted text-muted-foreground hover:bg-gray-200"
+          : "bg-muted text-muted-foreground hover:bg-muted/80 dark:hover:bg-muted/60"
       }`}
     >
       {icon}

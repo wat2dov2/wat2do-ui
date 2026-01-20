@@ -13,7 +13,7 @@ export function InteractiveHoverButton({
   return (
     <button
       className={cn(
-        "interactive-hover-button bg-background relative w-auto cursor-pointer overflow-hidden rounded-xl border p-2 px-10 text-center font-semibold flex items-center justify-center",
+        "interactive-hover-button bg-background relative w-auto cursor-pointer overflow-hidden rounded-xl border p-2 px-10 text-center font-semibold flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       {...props}

@@ -8,7 +8,7 @@ export function AboutPage() {
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Subscribe:", email);
+    // TODO: Implement newsletter subscription
     setEmail("");
   };
 
