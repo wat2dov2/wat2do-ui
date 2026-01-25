@@ -391,12 +391,12 @@ export const mockEvents: Event[] = [
     display_handle: "wloo.dboat",
   },
 ].map((eventRaw): Event => {
-  const event = eventRaw as any;
+  const event = eventRaw as Record<string, unknown>;
   // Transform new format to include computed fields for backward compatibility
   if (event.dtstart_utc) {
-    const dateInfo = getDateFromUTC(event.dtstart_utc);
+    const dateInfo = getDateFromUTC(event.dtstart_utc as string);
     const timeRange = event.dtend_utc 
-      ? getTimeRange(event.dtstart_utc, event.dtend_utc)
+      ? getTimeRange(event.dtstart_utc as string, event.dtend_utc as string)
       : dateInfo.time;
     
     return {
@@ -407,17 +407,17 @@ export const mockEvents: Event[] = [
       dayOfWeek: dateInfo.dayOfWeek,
       eventDate: dateInfo.eventDate,
       // Map fields
-      category: event.category || getCategoryFromClubType(event.club_type),
-      organization: event.organization || event.display_handle || '',
+      category: (event.category as string | undefined) || getCategoryFromClubType(event.club_type as string | undefined),
+      organization: (event.organization as string | undefined) || (event.display_handle as string | undefined) || '',
       requiresRegistration: event.requiresRegistration ?? event.registration ?? false,
       isLive: event.isLive ?? true,
       food: event.food || [],
       price: event.price ?? 0,
       imageUrl: event.imageUrl || event.source_image_url,
-      addedDate: event.addedDate || (event.added_at ? new Date(event.added_at) : new Date()),
+      addedDate: event.addedDate || (event.added_at ? new Date(event.added_at as string) : new Date()),
     } as Event;
   }
-  return event as Event;
+  return event as unknown as Event;
 });
 
 // Filter options

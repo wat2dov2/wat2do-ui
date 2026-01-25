@@ -3,8 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Users,
-  Calendar,
-  MapPin,
   Download,
   Heart,
   Sparkles,
@@ -15,10 +13,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
-import { Badge } from "./ui/badge";
-import { InteractiveHoverButton } from "./ui/interactive-hover-button";
 import { BadgeMask } from "./ui/badge-mask";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { LightRays } from "./ui/light-rays";
 import { LazyImage } from "./LazyImage";
@@ -48,6 +43,7 @@ interface EventCardProps {
 }
 
 // Helper function to translate category names
+// eslint-disable-next-line react-refresh/only-export-components
 export const translateCategory = (category: string, t: (key: string) => string): string => {
   if (!category) return t("categories.events");
   

@@ -14,6 +14,7 @@ function notifyListeners() {
   toastListeners.forEach((listener) => listener([...toasts]));
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function showToast(message: string, type: "success" | "error" | "info" = "success") {
   const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const newToast: Toast = { id, message, type };
@@ -31,6 +32,7 @@ function removeToast(id: string) {
   notifyListeners();
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   const [toastList, setToastList] = useState<Toast[]>(toasts);
 

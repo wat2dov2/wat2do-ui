@@ -152,13 +152,13 @@ export function getScrapedEvents(): ScrapedEvent[] {
     try {
       const oldData = JSON.parse(oldStored);
       // Convert old format to new format
-      const migrated: ScrapedEvent[] = oldData.map((item: any) => ({
+      const migrated: ScrapedEvent[] = oldData.map((item: Record<string, unknown>) => ({
         ...item,
-        scrapedAt: item.scrappedAt || item.scrapedAt,
-      }));
+        scrapedAt: (item.scrappedAt || item.scrapedAt) as string,
+      })) as ScrapedEvent[];
       localStorage.setItem("scrapedEvents", JSON.stringify(migrated));
       localStorage.removeItem("scrappedEvents");
-    } catch (e) {
+    } catch {
       // If migration fails, just remove old data
       localStorage.removeItem("scrappedEvents");
     }

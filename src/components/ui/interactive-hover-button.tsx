@@ -42,16 +42,20 @@ export interface InteractiveHoverButtonProps
   hideDot?: boolean;
 }
 
-export function InteractiveHoverButton({
+export const InteractiveHoverButton = React.forwardRef<
+  HTMLButtonElement,
+  InteractiveHoverButtonProps
+>(({
   children,
   className,
   variant,
   size,
   hideDot = false,
   ...props
-}: InteractiveHoverButtonProps) {
+}, ref) => {
   return (
     <button
+      ref={ref}
       className={cn("interactive-hover-button", interactiveHoverButtonVariants({ variant, size, className }))}
       {...props}
     >
@@ -70,4 +74,6 @@ export function InteractiveHoverButton({
       </span>
     </button>
   )
-}
+})
+
+InteractiveHoverButton.displayName = "InteractiveHoverButton"

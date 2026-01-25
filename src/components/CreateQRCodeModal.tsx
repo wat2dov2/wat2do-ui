@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
-import { X, Download, Check, Circle, ImagePlus, Image as ImageIcon } from "lucide-react";
+import { X, Download, Check, Circle, ImagePlus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
   DialogHeader,
-  DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -31,8 +29,9 @@ import {
   FieldSeparator,
   FieldSet,
 } from "@/components/ui/field";
-import { SuccessAlert } from "@/components/ui/success-alert";
 import type { QRCode, Event, FilterState } from "@/types";
+import { useSuccessAlert } from "@/hooks/useSuccessAlert";
+import { useModalReset } from "@/hooks/useModalReset";
 import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/utils/qrGenerator";
 import { saveQRCode } from "@/utils/qrRedirect";
 
@@ -64,13 +63,13 @@ export function CreateQRCodeModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUrl, setImageUrl] = useState<string>("");
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [createdQRCodeName, setCreatedQRCodeName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
 
-  useEffect(() => {
-    if (!isOpen) {
-      // Reset form when modal closes
+  // Reset form when modal closes
+  useModalReset({
+    isOpen,
+    resetFn: () => {
       setName("");
       setDescription("");
       setDestinationType("event");
@@ -81,8 +80,13 @@ export function CreateQRCodeModal({
       setErrors({});
       setImageUrl("");
       setImagePreview("");
-    }
-  }, [isOpen]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    resetOnOpen: false,
+    resetOnClose: true,
+  });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -173,13 +177,17 @@ export function CreateQRCodeModal({
       createdBy: userEmail,
       isActive: true,
       imageUrl: imageUrl || undefined,
+      latitude: 0,
+      longitude: 0,
     };
 
     saveQRCode(newQRCode);
     setQrCodeId(newQRCode.id);
     onCreate(newQRCode);
-    setCreatedQRCodeName(newQRCode.name);
-    setShowSuccessAlert(true);
+    showSuccessAlert(
+      t("qrCode.posterCreated"),
+      t("qrCode.posterCreatedMessage", { name: newQRCode.name })
+    );
   };
 
   const handleDownload = () => {
@@ -408,7 +416,7 @@ export function CreateQRCodeModal({
                 <FieldSeparator />
 
                 <FieldSet>
-                  <FieldLegend>Optional Details</FieldLegend>
+                  <FieldLegend>{t("forms.optionalDetails")}</FieldLegend>
                   <FieldGroup>
                     <Field>
                       <FieldLabel htmlFor="poster-description" className="text-sm font-medium text-foreground">
@@ -509,15 +517,7 @@ export function CreateQRCodeModal({
         </div>
       </DialogContent>
     </Dialog>
-    <SuccessAlert
-      isOpen={showSuccessAlert}
-      onClose={() => {
-        setShowSuccessAlert(false);
-        onClose();
-      }}
-      title={t("qrCode.posterCreated")}
-      message={t("qrCode.posterCreatedMessage", { name: createdQRCodeName })}
-    />
+    <SuccessAlertComponent />
     </>
   );
 }

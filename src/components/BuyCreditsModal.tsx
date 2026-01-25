@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Coins, Check, Sparkles, X, CreditCard } from "lucide-react";
-import confetti from "canvas-confetti";
+import { Coins, Check, CreditCard } from "lucide-react";
+import { useConfetti } from "@/hooks/useConfetti";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ export function BuyCreditsModal({
   currentCredits,
   onPurchase,
 }: BuyCreditsModalProps) {
+  const { trigger } = useConfetti();
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseComplete, setPurchaseComplete] = useState(false);
@@ -46,7 +47,7 @@ export function BuyCreditsModal({
     setIsPurchasing(false);
 
     // Fire confetti
-    confetti({
+    trigger({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },

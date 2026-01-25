@@ -26,10 +26,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import {
-  getEventSubmissions,
-  updateEventSubmission,
-} from "@/data/adminData";
+import { useAdminSubmissionsFilters } from "@/hooks/useAdminSubmissionsFilters";
+import { useAdminSubmissionsPagination } from "@/hooks/useAdminSubmissionsPagination";
+import { useAdminSubmissionsActions } from "@/hooks/useAdminSubmissionsActions";
 import type { EventSubmission } from "@/types";
 
 interface AdminSubmissionsPageProps {
@@ -43,28 +42,36 @@ export function AdminSubmissionsPage({
 }: AdminSubmissionsPageProps) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
-  const [rejectSubmissionId, setRejectSubmissionId] = useState<string | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
+
+  // Use hooks for business logic
+  const filters = useAdminSubmissionsFilters({ refreshKey });
+  const pagination = useAdminSubmissionsPagination({
+    itemsPerPage: ITEMS_PER_PAGE,
+    filteredSubmissions: filters.filteredSubmissions,
+    searchQuery: filters.searchQuery,
+    statusFilter: filters.statusFilter,
+  });
+  const actions = useAdminSubmissionsActions({
+    onApprove,
+    searchParams,
+    setSearchParams,
+    setRefreshKey,
+  });
 
   // Get submissionId from URL
   const submissionIdParam = searchParams.get("submissionId");
   const selectedSubmission = useMemo(() => {
     if (submissionIdParam) {
-      const allSubmissions = getEventSubmissions();
-      return allSubmissions.find((s) => s.id === submissionIdParam) || null;
+      return filters.allSubmissions.find((s) => s.id === submissionIdParam) || null;
     }
     return null;
-  }, [submissionIdParam, refreshKey]);
+  }, [submissionIdParam, filters.allSubmissions]);
 
   // Check URL parameters on mount for highlighting
   useEffect(() => {
     if (submissionIdParam) {
-      // Scroll to the submission after a short delay
       setTimeout(() => {
         const element = document.getElementById(`submission-${submissionIdParam}`);
         if (element) {
@@ -73,80 +80,6 @@ export function AdminSubmissionsPage({
       }, 100);
     }
   }, [submissionIdParam]);
-
-  // Get all submissions
-  const allSubmissions = useMemo(() => {
-    return getEventSubmissions();
-  }, [refreshKey]);
-
-  // Filter submissions
-  const filteredSubmissions = useMemo(() => {
-    let filtered = allSubmissions;
-
-    // Filter by status
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((s) => s.status === statusFilter);
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (s) =>
-          s.eventData.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.eventData.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.submittedBy.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Sort by submittedAt (newest first)
-    return filtered.sort(
-      (a, b) =>
-        new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-    );
-  }, [allSubmissions, statusFilter, searchQuery]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE);
-  const paginatedSubmissions = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredSubmissions.slice(startIndex, endIndex);
-  }, [filteredSubmissions, currentPage]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
-
-  const handleApprove = (submission: EventSubmission) => {
-    updateEventSubmission(submission.id, "approved");
-    if (onApprove) {
-      onApprove(submission);
-    }
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete("submissionId");
-    setSearchParams(newParams);
-  };
-
-  const handleRejectClick = (submission: EventSubmission) => {
-    setRejectSubmissionId(submission.id);
-    setRejectionReason("");
-  };
-
-  const handleRejectConfirm = () => {
-    if (rejectSubmissionId && rejectionReason.trim()) {
-      updateEventSubmission(rejectSubmissionId, "rejected", rejectionReason.trim());
-      setRejectSubmissionId(null);
-      setRejectionReason("");
-      setRefreshKey((prev) => prev + 1);
-      // Close modal if the rejected submission was open
-      if (submissionIdParam === rejectSubmissionId) {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete("submissionId");
-        setSearchParams(newParams);
-      }
-    }
-  };
 
 
   const formatRelativeTime = (dateStr: string) => {
@@ -189,13 +122,13 @@ export function AdminSubmissionsPage({
           <Input
             type="text"
             placeholder={t("admin.searchSubmissions")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={filters.searchQuery}
+            onChange={(e) => filters.setSearchQuery(e.target.value)}
             className="pl-9 pr-9"
           />
-          {searchQuery && (
+          {filters.searchQuery && (
             <button
-              onClick={() => setSearchQuery("")}
+              onClick={() => filters.setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
             >
               <XIcon className="w-4 h-4" />
@@ -203,9 +136,9 @@ export function AdminSubmissionsPage({
           )}
         </div>
         <Select
-          value={statusFilter}
+          value={filters.statusFilter}
           onValueChange={(value) =>
-            setStatusFilter(
+            filters.setStatusFilter(
               value as "all" | "pending" | "approved" | "rejected"
             )
           }
@@ -225,13 +158,13 @@ export function AdminSubmissionsPage({
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <span className="font-bold text-xl text-gray-900">
-          {filteredSubmissions.length}{" "}
-          {filteredSubmissions.length === 1 ? t("admin.submission") : t("admin.submissions")}
+          {filters.filteredSubmissions.length}{" "}
+          {filters.filteredSubmissions.length === 1 ? t("admin.submission") : t("admin.submissions")}
         </span>
       </div>
 
       {/* Submissions Table */}
-      {filteredSubmissions.length > 0 ? (
+      {filters.filteredSubmissions.length > 0 ? (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <Table>
             <TableHeader>
@@ -257,8 +190,7 @@ export function AdminSubmissionsPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedSubmissions.map((submission) => {
-                const isHighlighted = submissionIdParam === submission.id;
+              {pagination.paginatedSubmissions.map((submission) => {
                 return (
                   <TableRow
                     key={submission.id}
@@ -314,7 +246,7 @@ export function AdminSubmissionsPage({
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleApprove(submission);
+                                actions.handleApprove(submission);
                               }}
                               className="text-success hover:text-success hover:bg-success/10"
                             >
@@ -325,7 +257,7 @@ export function AdminSubmissionsPage({
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleRejectClick(submission);
+                                actions.handleRejectClick(submission);
                               }}
                               className="text-error hover:text-error hover:bg-error/10"
                             >
@@ -344,41 +276,41 @@ export function AdminSubmissionsPage({
       ) : null}
 
       {/* Pagination */}
-      {filteredSubmissions.length > 0 && totalPages > 1 && (
+      {filters.filteredSubmissions.length > 0 && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredSubmissions.length)} of{" "}
-            {filteredSubmissions.length} submissions
+            {t("admin.showing")} {(pagination.currentPage - 1) * ITEMS_PER_PAGE + 1} {t("admin.to")}{" "}
+            {Math.min(pagination.currentPage * ITEMS_PER_PAGE, filters.filteredSubmissions.length)} {t("admin.of")}{" "}
+            {filters.filteredSubmissions.length} {t("admin.submissions")}
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
+              onClick={() => pagination.setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={pagination.currentPage === 1}
             >
               <ChevronLeft className="w-4 h-4" />
-              Previous
+              {t("admin.previous")}
             </Button>
             <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                 let pageNum: number;
-                if (totalPages <= 5) {
+                if (pagination.totalPages <= 5) {
                   pageNum = i + 1;
-                } else if (currentPage <= 3) {
+                } else if (pagination.currentPage <= 3) {
                   pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
+                } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
                 } else {
-                  pageNum = currentPage - 2 + i;
+                  pageNum = pagination.currentPage - 2 + i;
                 }
                 return (
                   <Button
                     key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
+                    variant={pagination.currentPage === pageNum ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
+                    onClick={() => pagination.setCurrentPage(pageNum)}
                     className="w-9"
                   >
                     {pageNum}
@@ -389,17 +321,17 @@ export function AdminSubmissionsPage({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => pagination.setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))}
+              disabled={pagination.currentPage === pagination.totalPages}
             >
-              Next
+              {t("admin.next")}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {filteredSubmissions.length === 0 && (
+      {filters.filteredSubmissions.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 px-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <FileText className="w-8 h-8 text-muted-foreground" />
@@ -562,13 +494,13 @@ export function AdminSubmissionsPage({
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => handleRejectClick(selectedSubmission)}
+                    onClick={() => actions.handleRejectClick(selectedSubmission)}
                     className="text-error hover:text-error hover:bg-error/10"
                   >
-                    Reject
+                    {t("admin.reject")}
                   </Button>
-                  <Button onClick={() => handleApprove(selectedSubmission)}>
-                    Approve
+                  <Button onClick={() => actions.handleApprove(selectedSubmission)}>
+                    {t("admin.approve")}
                   </Button>
                 </div>
               )}
@@ -580,30 +512,30 @@ export function AdminSubmissionsPage({
 
       {/* Reject Confirmation Dialog */}
       <Dialog
-        open={rejectSubmissionId !== null}
+        open={actions.rejectSubmissionId !== null}
         onOpenChange={(open) => {
           if (!open) {
-            setRejectSubmissionId(null);
-            setRejectionReason("");
+            actions.setRejectSubmissionId(null);
+            actions.setRejectionReason("");
           }
         }}
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Reject Event Submission</DialogTitle>
+            <DialogTitle>{t("admin.rejectEventSubmission")}</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting this event submission. This will help the submitter understand why their submission was not approved.
+              {t("admin.rejectSubmissionDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
-                Rejection Reason <span className="text-error">*</span>
+                {t("admin.rejectionReason")} <span className="text-error">*</span>
               </label>
               <textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Enter the reason for rejection..."
+                value={actions.rejectionReason}
+                onChange={(e) => actions.setRejectionReason(e.target.value)}
+                placeholder={t("admin.enterRejectionReason")}
                 className="w-full min-h-[100px] px-3 py-2 text-sm border border-border bg-muted text-foreground rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                 required
               />
@@ -612,18 +544,21 @@ export function AdminSubmissionsPage({
               <Button
                 variant="outline"
                 onClick={() => {
-                  setRejectSubmissionId(null);
-                  setRejectionReason("");
+                  actions.setRejectSubmissionId(null);
+                  actions.setRejectionReason("");
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="destructive"
-                onClick={handleRejectConfirm}
-                disabled={!rejectionReason.trim()}
+                onClick={() => {
+                  actions.handleRejectConfirm(submissionIdParam);
+                  setRefreshKey((prev) => prev + 1);
+                }}
+                disabled={!actions.rejectionReason.trim()}
               >
-                Confirm Rejection
+                {t("admin.confirmRejection")}
               </Button>
             </div>
           </div>

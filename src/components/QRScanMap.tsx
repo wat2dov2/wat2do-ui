@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import Map from "react-map-gl/mapbox";
 import { Marker } from "@vis.gl/react-mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { QRCodeScan, QRCode } from "@/types";
+import type { QRCodeScan } from "@/types";
 import { MapPin, Zap } from "lucide-react";
 import { getQRCodes } from "@/utils/qrRedirect";
 
@@ -39,21 +39,6 @@ function getColorForScanCount(count: number, maxCount: number): string {
   } else {
     // High scans: Red
     return "hsl(0, 84%, 60%)";
-  }
-}
-
-// Get color class for Tailwind (for use in className)
-function getColorClassForScanCount(count: number, maxCount: number): string {
-  if (maxCount === 0) return "bg-primary";
-  
-  const ratio = count / maxCount;
-  
-  if (ratio < 0.33) {
-    return "bg-green-500";
-  } else if (ratio < 0.67) {
-    return "bg-warning";
-  } else {
-    return "bg-error";
   }
 }
 

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar, MapPin, DollarSign, Users, Utensils, Tag, ImageOff, ExternalLink } from "lucide-react";
+import { ImageOff, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,8 +37,14 @@ export function EventDetailsModal({
     if (!currentEvent) return [];
     const eventsList = allEvents || mockEvents;
     const otherEvents = eventsList.filter((e) => e.id !== currentEvent.id);
-    // Shuffle and take 4
-    const shuffled = [...otherEvents].sort(() => Math.random() - 0.5);
+    // Shuffle using a stable seed based on current event ID
+    const seed = currentEvent.id;
+    const shuffled = [...otherEvents].sort((a, b) => {
+      // Simple seeded hash function
+      const hashA = ((seed * a.id) % 1000) / 1000;
+      const hashB = ((seed * b.id) % 1000) / 1000;
+      return hashA - hashB;
+    });
     return shuffled.slice(0, 4);
   }, [currentEvent, allEvents]);
 

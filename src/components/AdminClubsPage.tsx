@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef, startTransition } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, Edit, Trash2, Users, Tag, X, ArrowLeft, Plus, Instagram, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Edit, Trash2, Users, X, ArrowLeft, Plus, Instagram, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -50,6 +50,7 @@ export function AdminClubsPage({
   const [editingClub, setEditingClub] = useState<Club | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
+  const prevFiltersRef = useRef({ searchQuery, selectedClubType });
 
   // Get unique club types
   const clubTypes = useMemo(() => {
@@ -73,6 +74,19 @@ export function AdminClubsPage({
     });
   }, [searchQuery, selectedClubType]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (
+      prevFiltersRef.current.searchQuery !== searchQuery ||
+      prevFiltersRef.current.selectedClubType !== selectedClubType
+    ) {
+      prevFiltersRef.current = { searchQuery, selectedClubType };
+      startTransition(() => {
+        setCurrentPage(1);
+      });
+    }
+  }, [searchQuery, selectedClubType]);
+
   // Pagination
   const totalPages = Math.ceil(filteredClubs.length / ITEMS_PER_PAGE);
   const paginatedClubs = useMemo(() => {
@@ -80,11 +94,6 @@ export function AdminClubsPage({
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return filteredClubs.slice(startIndex, endIndex);
   }, [filteredClubs, currentPage]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedClubType]);
 
   const handleDelete = (clubId: number) => {
     if (onDeleteClub) {
@@ -280,9 +289,9 @@ export function AdminClubsPage({
       {filteredClubs.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredClubs.length)} of{" "}
-            {filteredClubs.length} clubs
+            {t("admin.showing")} {(currentPage - 1) * ITEMS_PER_PAGE + 1} {t("admin.to")}{" "}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredClubs.length)} {t("admin.of")}{" "}
+            {filteredClubs.length} {filteredClubs.length === 1 ? t("admin.club") : t("admin.clubs")}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -292,7 +301,7 @@ export function AdminClubsPage({
               disabled={currentPage === 1}
             >
               <ChevronLeft className="w-4 h-4" />
-              Previous
+              {t("admin.previous")}
             </Button>
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -325,7 +334,7 @@ export function AdminClubsPage({
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              {t("admin.next")}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

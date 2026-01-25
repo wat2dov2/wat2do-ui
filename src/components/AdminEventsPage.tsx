@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef, startTransition } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Search, Edit, Trash2, Calendar, MapPin, Tag, X, ArrowLeft, AlertTriangle, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -47,7 +47,6 @@ export function AdminEventsPage({
 }: AdminEventsPageProps) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showReportedOnly, setShowReportedOnly] = useState(false);
@@ -55,6 +54,7 @@ export function AdminEventsPage({
   const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
+  const prevFiltersRef = useRef({ searchQuery, selectedCategory, showReportedOnly });
 
   // Get eventId from URL
   const eventIdParam = searchParams.get("eventId");
@@ -78,14 +78,17 @@ export function AdminEventsPage({
     if (eventIdParam) {
       const eventId = parseInt(eventIdParam, 10);
       if (!isNaN(eventId)) {
-        setHighlightedEventId(eventId);
-        // Scroll to the event after a short delay
-        setTimeout(() => {
-          const element = document.getElementById(`event-${eventId}`);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        }, 100);
+        // Use requestAnimationFrame to avoid setState in effect warning
+        requestAnimationFrame(() => {
+          setHighlightedEventId(eventId);
+          // Scroll to the event after a short delay
+          setTimeout(() => {
+            const element = document.getElementById(`event-${eventId}`);
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 100);
+        });
       }
     }
   }, [eventIdParam]);
@@ -124,6 +127,20 @@ export function AdminEventsPage({
     return filtered;
   }, [events, searchQuery, selectedCategory, showReportedOnly, reportedEvents]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (
+      prevFiltersRef.current.searchQuery !== searchQuery ||
+      prevFiltersRef.current.selectedCategory !== selectedCategory ||
+      prevFiltersRef.current.showReportedOnly !== showReportedOnly
+    ) {
+      prevFiltersRef.current = { searchQuery, selectedCategory, showReportedOnly };
+      startTransition(() => {
+        setCurrentPage(1);
+      });
+    }
+  }, [searchQuery, selectedCategory, showReportedOnly]);
+
   // Pagination
   const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
   const paginatedEvents = useMemo(() => {
@@ -131,11 +148,6 @@ export function AdminEventsPage({
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return filteredEvents.slice(startIndex, endIndex);
   }, [filteredEvents, currentPage]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCategory, showReportedOnly]);
 
   const handleDelete = (eventId: number) => {
     onDeleteEvent(eventId);
@@ -167,7 +179,7 @@ export function AdminEventsPage({
         {onCreateEvent && (
           <Button onClick={onCreateEvent}>
             <Plus className="w-4 h-4 mr-2" />
-            Create Event
+            {t("events.createEvent")}
           </Button>
         )}
       </div>
@@ -197,7 +209,7 @@ export function AdminEventsPage({
           onValueChange={(value) => setSelectedCategory(value || "")}
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Categories" />
+            <SelectValue placeholder={t("admin.allCategories")} />
           </SelectTrigger>
           <SelectContent>
             {categories.map((cat) => (
@@ -250,7 +262,7 @@ export function AdminEventsPage({
                   {t("events.status")}
                 </TableHead>
                 <TableHead className="text-right text-xs font-semibold text-gray-900">
-                  Actions
+                  {t("admin.actions")}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -365,9 +377,9 @@ export function AdminEventsPage({
       {filteredEvents.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredEvents.length)} of{" "}
-            {filteredEvents.length} events
+            {t("admin.showing")} {(currentPage - 1) * ITEMS_PER_PAGE + 1} {t("admin.to")}{" "}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredEvents.length)} {t("admin.of")}{" "}
+            {filteredEvents.length} {filteredEvents.length === 1 ? t("common.event") : t("common.events")}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -377,7 +389,7 @@ export function AdminEventsPage({
               disabled={currentPage === 1}
             >
               <ChevronLeft className="w-4 h-4" />
-              Previous
+              {t("admin.previous")}
             </Button>
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -410,7 +422,7 @@ export function AdminEventsPage({
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              {t("admin.next")}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

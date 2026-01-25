@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import type { EasterEggType } from "@/hooks/useEasterEggs";
@@ -7,28 +7,6 @@ interface EasterEggsProps {
   activeEasterEgg: EasterEggType;
   onComplete: () => void;
 }
-
-// Goose sprite frames (simple pixel art representation)
-const GooseFrames = [
-  // Frame 1 - walking
-  `
-    ▄▄▄
-   ▄████▄
-  ▐██████▌
-   ▀████▀
-    ████
-   ▐█  █▌
-  `,
-  // Frame 2 - walking
-  `
-    ▄▄▄
-   ▄████▄
-  ▐██████▌
-   ▀████▀
-    ████
-   █▌  ▐█
-  `,
-];
 
 export function EasterEggs({ activeEasterEgg, onComplete }: EasterEggsProps) {
   if (!activeEasterEgg) return null;
@@ -50,7 +28,6 @@ export function EasterEggs({ activeEasterEgg, onComplete }: EasterEggsProps) {
 // 🪿 Goose Crossing Easter Egg
 function GooseCrossing({ onComplete }: { onComplete: () => void }) {
   const [position, setPosition] = useState(-100);
-  const [frame, setFrame] = useState(0);
   const [honked, setHonked] = useState(false);
 
   useEffect(() => {
@@ -68,7 +45,6 @@ function GooseCrossing({ onComplete }: { onComplete: () => void }) {
         }
         return prev + 4;
       });
-      setFrame((prev) => (prev + 1) % 2);
     }, 50);
 
     return () => {
@@ -115,8 +91,6 @@ function GooseCrossing({ onComplete }: { onComplete: () => void }) {
 
 // 🎉 Party Mode Easter Egg
 function PartyMode({ onComplete }: { onComplete: () => void }) {
-  const [showBounce, setShowBounce] = useState(true);
-
   useEffect(() => {
     // Fire confetti
     const duration = 3000;
@@ -164,7 +138,6 @@ function PartyMode({ onComplete }: { onComplete: () => void }) {
 
     // Cleanup
     const timeout = setTimeout(() => {
-      setShowBounce(false);
       cards.forEach((card) => {
         const el = card as HTMLElement;
         el.style.animation = "";
@@ -217,7 +190,9 @@ function FoodRain({ onComplete }: { onComplete: () => void }) {
       });
     }
 
-    setFoodItems(items);
+    requestAnimationFrame(() => {
+      setFoodItems(items);
+    });
 
     const timeout = setTimeout(() => {
       onComplete();
@@ -365,7 +340,9 @@ function UBCRain({ onComplete }: { onComplete: () => void }) {
         duration: 0.5 + Math.random() * 0.5,
       });
     }
-    setDrops(rainDrops);
+    requestAnimationFrame(() => {
+      setDrops(rainDrops);
+    });
 
     const timeout = setTimeout(() => {
       onComplete();

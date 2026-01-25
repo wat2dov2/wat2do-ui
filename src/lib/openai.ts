@@ -137,7 +137,7 @@ export async function generateFiltersWithAI(
       fullContent += delta;
       onChunk(fullContent);
     }
-  } catch (error) {
+  } catch {
     throw new Error("Stream interrupted. Please try again.");
   }
 
@@ -304,7 +304,7 @@ export async function generateEventWithAI(
       fullContent += delta;
       onChunk(fullContent);
     }
-  } catch (error) {
+  } catch {
     throw new Error("Stream interrupted. Please try again.");
   }
 

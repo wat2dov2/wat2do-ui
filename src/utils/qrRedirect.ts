@@ -9,7 +9,8 @@ import { mockQRCodes, mockQRScans } from "@/data/qrCodes";
 /**
  * Track a QR code scan (no-op - scans are only from mock data)
  */
-export function trackQRScan(qrCodeId: string, userId?: string): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function trackQRScan(_qrCodeId: string, _userId?: string): void {
   // No-op: We only use mock data, no real tracking
 }
 
@@ -31,9 +32,12 @@ export function getScansForQRCode(qrCodeId: string): QRCodeScan[] {
  * Add conversion action to a scan (no-op - scans are only from mock data)
  */
 export function addConversionAction(
-  qrCodeId: string,
-  action: string,
-  sessionId?: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _qrCodeId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _action: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _sessionId?: string
 ): void {
   // No-op: We only use mock data, no real tracking
 }
@@ -87,13 +91,15 @@ export function getQRCodes(): QRCode[] {
 /**
  * Save QR code (no-op - QR codes are only from mock data)
  */
-export function saveQRCode(qrCode: QRCode): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function saveQRCode(_qrCode: QRCode): void {
   // No-op: We only use mock data, no real persistence
 }
 
 /**
  * Delete QR code (no-op - QR codes are only from mock data)
  */
-export function deleteQRCode(id: string): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function deleteQRCode(_id: string): void {
   // No-op: We only use mock data, no real persistence
 }

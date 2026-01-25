@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Users, Tag, Link, Instagram, MessageCircle } from "lucide-react";
+import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,6 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
 import {
   Select,
   SelectContent,
@@ -30,8 +29,19 @@ import {
   FieldSeparator,
   FieldSet,
 } from "./ui/field";
-import { SuccessAlert } from "./ui/success-alert";
 import type { Club } from "@/types";
+import { useSuccessAlert } from "@/hooks/useSuccessAlert";
+import { useForm } from "@/hooks/useForm";
+import { TagInput } from "./ui/tag-input";
+
+interface ClubFormData {
+  club_name: string;
+  categories: string[];
+  club_page: string;
+  ig: string;
+  discord: string;
+  club_type: string;
+}
 
 interface AddClubModalProps {
   isOpen: boolean;
@@ -48,96 +58,92 @@ export function AddClubModal({
 }: AddClubModalProps) {
   const { t } = useTranslation();
   const isEditMode = !!initialData;
-  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-
-  const [formData, setFormData] = useState({
-    club_name: "",
-    categories: [] as string[],
-    club_page: "",
-    ig: "",
-    discord: "",
-    club_type: "WUSA",
-  });
+  const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
 
   const [categoryInput, setCategoryInput] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Pre-fill form if editing
+  const form = useForm<ClubFormData>({
+    initialData: initialData
+      ? {
+          club_name: initialData.club_name,
+          categories: initialData.categories,
+          club_page: initialData.club_page,
+          ig: initialData.ig || "",
+          discord: initialData.discord || "",
+          club_type: initialData.club_type,
+        }
+      : undefined,
+    isEditMode,
+    isOpen,
+    getDefaults: () => ({
+      club_name: "",
+      categories: [],
+      club_page: "",
+      ig: "",
+      discord: "",
+      club_type: "WUSA",
+    }),
+    validate: (data, touched) => {
+      const newErrors: Record<string, string> = {};
+      if (touched.club_name && !data.club_name.trim()) {
+        newErrors.club_name = t("forms.clubNameRequired");
+      }
+      if (touched.categories && data.categories.length === 0) {
+        newErrors.categories = t("forms.categoryRequired");
+      }
+      return newErrors;
+    },
+  });
+
+  // Reset category input when modal opens
   useEffect(() => {
-    if (isEditMode && initialData) {
-      setFormData({
-        club_name: initialData.club_name,
-        categories: initialData.categories,
-        club_page: initialData.club_page,
-        ig: initialData.ig || "",
-        discord: initialData.discord || "",
-        club_type: initialData.club_type,
-      });
-    } else {
-      setFormData({
-        club_name: "",
-        categories: [],
-        club_page: "",
-        ig: "",
-        discord: "",
-        club_type: "WUSA",
-      });
+    if (isOpen) {
+      setCategoryInput("");
     }
-    setCategoryInput("");
-    setErrors({});
-  }, [isOpen, isEditMode, initialData]);
+  }, [isOpen]);
 
   const addCategory = () => {
-    if (categoryInput.trim() && !formData.categories.includes(categoryInput.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        categories: [...prev.categories, categoryInput.trim()],
-      }));
+    if (categoryInput.trim() && !form.formData.categories.includes(categoryInput.trim())) {
+      form.updateField("categories", [...form.formData.categories, categoryInput.trim()]);
       setCategoryInput("");
+      form.handleBlur("categories");
     }
   };
 
-  const removeCategory = (category: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      categories: prev.categories.filter((c) => c !== category),
-    }));
+  const removeCategory = (index: number) => {
+    form.updateField(
+      "categories",
+      form.formData.categories.filter((_, i) => i !== index)
+    );
   };
 
   const handleSubmit = () => {
-    const newErrors: Record<string, string> = {};
+    // Mark all fields as touched
+    Object.keys(form.formData).forEach((key) => {
+      form.handleBlur(key);
+    });
 
-    if (!formData.club_name.trim()) {
-      newErrors.club_name = "Club name is required";
-    }
-
-    if (formData.categories.length === 0) {
-      newErrors.categories = "At least one category is required";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (!form.isValid) {
       return;
     }
 
     const club: Club = {
       id: initialData?.id || Date.now(),
-      club_name: formData.club_name.trim(),
-      categories: formData.categories,
-      club_page: formData.club_page.trim(),
-      ig: formData.ig.trim() || null,
-      discord: formData.discord.trim() || null,
-      club_type: formData.club_type,
+      club_name: form.formData.club_name.trim(),
+      categories: form.formData.categories,
+      club_page: form.formData.club_page.trim(),
+      ig: form.formData.ig.trim() || null,
+      discord: form.formData.discord.trim() || null,
+      club_type: form.formData.club_type,
     };
 
     onSave(club);
-    setSuccessMessage(
+    showSuccessAlert(
+      isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated"),
       isEditMode
-        ? `Club "${club.club_name}" has been updated.`
-        : `Club "${club.club_name}" has been created successfully!`
+        ? t("clubs.clubUpdatedMessage", { name: club.club_name })
+        : t("clubs.clubCreatedMessage", { name: club.club_name })
     );
-    setShowSuccessAlert(true);
   };
 
   return (
@@ -145,107 +151,69 @@ export function AddClubModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit Club" : "Add Club"}</DialogTitle>
+          <DialogTitle>{isEditMode ? t("clubs.editClub") : t("clubs.addClub")}</DialogTitle>
           <DialogDescription>
             {isEditMode
-              ? "Update the club information below"
-              : "Fill in the details to add a new club"}
+              ? t("clubs.editClubDescription")
+              : t("clubs.addClubDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <form>
           <FieldGroup>
             <FieldSet>
-              <FieldLegend>Required Information</FieldLegend>
+              <FieldLegend>{t("forms.requiredInformation")}</FieldLegend>
               <FieldDescription>
-                All fields marked with * are required
+                {t("forms.requiredFieldsNote")}
               </FieldDescription>
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
-                    Club Name <span className="text-error">*</span>
+                    {t("forms.clubName")} <span className="text-error">*</span>
                   </FieldLabel>
                   <Input
                     id="club-name"
                     type="text"
-                    value={formData.club_name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, club_name: e.target.value }))
-                    }
-                    placeholder="e.g., Computer Science Club"
-                    className={errors.club_name ? "border-error" : ""}
+                    value={form.formData.club_name}
+                    onChange={(e) => form.updateField("club_name", e.target.value)}
+                    onBlur={() => form.handleBlur("club_name")}
+                    placeholder={t("forms.clubNamePlaceholder")}
+                    className={form.errors.club_name ? "border-error" : ""}
                   />
-                  {errors.club_name && (
-                    <FieldError className="text-xs">{errors.club_name}</FieldError>
+                  {form.errors.club_name && (
+                    <FieldError className="text-xs">{form.errors.club_name}</FieldError>
                   )}
                 </Field>
 
-                <Field>
-                  <FieldLabel htmlFor="category-input" className="text-sm font-medium text-foreground">
-                    Categories <span className="text-error">*</span>
-                  </FieldLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      id="category-input"
-                      type="text"
-                      value={categoryInput}
-                      onChange={(e) => setCategoryInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addCategory();
-                        }
-                      }}
-                      placeholder={t("forms.addCategoryPlaceholder")}
-                      className={errors.categories ? "border-error" : ""}
-                    />
-                    <Button type="button" onClick={addCategory}>
-                      Add
-                    </Button>
-                  </div>
-                  {formData.categories.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {formData.categories.map((cat) => (
-                        <span
-                          key={cat}
-                          className="inline-flex items-center gap-1 bg-primary/20 text-primary text-xs px-2 py-1 rounded-full"
-                        >
-                          {cat}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => removeCategory(cat)}
-                            className="hover:bg-primary/30 rounded-full p-0.5 h-auto w-auto"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {errors.categories && (
-                    <FieldError className="text-xs">{errors.categories}</FieldError>
-                  )}
-                </Field>
+                <TagInput
+                  label={t("forms.categories")}
+                  value={form.formData.categories}
+                  inputValue={categoryInput}
+                  onInputChange={setCategoryInput}
+                  onAdd={addCategory}
+                  onRemove={removeCategory}
+                  placeholder={t("forms.addCategoryPlaceholder")}
+                  error={form.errors.categories}
+                  touched={!!form.touched.categories}
+                  tagColor="primary"
+                  required
+                />
               </FieldGroup>
             </FieldSet>
 
             <FieldSeparator />
 
             <FieldSet>
-              <FieldLegend>Optional Details</FieldLegend>
+              <FieldLegend>{t("forms.optionalDetails")}</FieldLegend>
               <FieldGroup>
 
           <Field>
             <FieldLabel htmlFor="club-type" className="text-sm font-medium text-foreground">
-              Club Type
+              {t("forms.clubType")}
             </FieldLabel>
             <Select
-              value={formData.club_type}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, club_type: value }))
-              }
+              value={form.formData.club_type}
+              onValueChange={(value) => form.updateField("club_type", value)}
             >
               <SelectTrigger id="club-type" className="w-full">
                 <SelectValue />
@@ -260,22 +228,20 @@ export function AddClubModal({
 
           <Field>
             <FieldLabel htmlFor="club-page" className="text-sm font-medium text-foreground">
-              Club Page URL
+              {t("forms.clubPageUrl")}
             </FieldLabel>
-            <Input
-              id="club-page"
-              type="text"
-              value={formData.club_page}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, club_page: e.target.value }))
-              }
-              placeholder="e.g., https://example.com or 123"
-            />
+              <Input
+                id="club-page"
+                type="text"
+                value={form.formData.club_page}
+                onChange={(e) => form.updateField("club_page", e.target.value)}
+                placeholder={t("forms.clubPageUrlPlaceholder")}
+              />
           </Field>
 
           <Field>
             <FieldLabel htmlFor="instagram-handle" className="text-sm font-medium text-foreground">
-              Instagram Handle
+              {t("forms.instagramHandle")}
             </FieldLabel>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -284,10 +250,8 @@ export function AddClubModal({
               <Input
                 id="instagram-handle"
                 type="text"
-                value={formData.ig}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, ig: e.target.value }))
-                }
+                value={form.formData.ig}
+                onChange={(e) => form.updateField("ig", e.target.value)}
                 placeholder={t("modals.signIn.username")}
                 className="pl-7"
               />
@@ -296,15 +260,13 @@ export function AddClubModal({
 
                 <Field>
                   <FieldLabel htmlFor="discord-link" className="text-sm font-medium text-foreground">
-                    Discord Link
+                    {t("forms.discordLink")}
                   </FieldLabel>
                   <Input
                     id="discord-link"
                     type="text"
-                    value={formData.discord}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, discord: e.target.value }))
-                    }
+                    value={form.formData.discord}
+                    onChange={(e) => form.updateField("discord", e.target.value)}
                     placeholder={t("forms.discordPlaceholder")}
                   />
                 </Field>
@@ -314,11 +276,11 @@ export function AddClubModal({
             <Field orientation="horizontal">
               <DialogClose asChild>
                 <Button variant="outline" type="button">
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <Button type="button" onClick={handleSubmit}>
-                {isEditMode ? "Update Club" : "Add Club"}
+                {isEditMode ? t("clubs.updateClub") : t("clubs.addClub")}
               </Button>
             </Field>
           </FieldGroup>
@@ -327,24 +289,16 @@ export function AddClubModal({
         <DialogFooter className="sr-only">
           <DialogClose asChild>
             <Button variant="outline">
-              Cancel
+              {t("common.cancel")}
             </Button>
           </DialogClose>
           <Button onClick={handleSubmit}>
-            {isEditMode ? "Update Club" : "Add Club"}
+            {isEditMode ? t("clubs.updateClub") : t("clubs.addClub")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    <SuccessAlert
-      isOpen={showSuccessAlert}
-      onClose={() => {
-        setShowSuccessAlert(false);
-        onClose();
-      }}
-      title={isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated")}
-      message={successMessage}
-    />
+    <SuccessAlertComponent />
     </>
   );
 }

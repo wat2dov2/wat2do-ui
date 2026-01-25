@@ -1,47 +1,41 @@
 import { useState, useEffect, useCallback } from "react";
+import {
+  loadSavedEventIds,
+  saveSavedEventIds,
+} from "@/repositories/userRepository";
 
 /**
  * Custom hook for managing saved events
- * Persists to localStorage following Vercel React best practices
  */
 export function useSavedEvents() {
   const [savedEventIds, setSavedEventIds] = useState<number[]>(() => {
-    const saved = localStorage.getItem("savedEventIds");
-    return saved ? JSON.parse(saved) : [];
+    return loadSavedEventIds();
   });
 
-  // Persist to localStorage
+  // Persist saved events to localStorage
   useEffect(() => {
-    localStorage.setItem("savedEventIds", JSON.stringify(savedEventIds));
+    saveSavedEventIds(savedEventIds);
   }, [savedEventIds]);
 
-  const toggleSaveEvent = useCallback((eventId: number) => {
-    setSavedEventIds((prev) => {
-      const wasSaved = prev.includes(eventId);
-      const newIds = prev.includes(eventId)
-        ? prev.filter((id) => id !== eventId)
-        : [...prev, eventId];
-      
-      // Track conversion if user came from QR code
-      if (!wasSaved) {
-        const sessionId = sessionStorage.getItem("qrSessionId");
-        if (sessionId) {
-          // Find the most recent QR scan for this session
-          import("@/utils/qrRedirect").then(({ getQRScans, addConversionAction }) => {
-            const scans = getQRScans();
-            const recentScan = scans
-              .filter((s) => s.sessionId === sessionId)
-              .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime())[0];
-            if (recentScan) {
-              addConversionAction(recentScan.qrCodeId, "event_saved", sessionId);
-            }
-          });
+  // Toggle save event handler
+  const toggleSaveEvent = useCallback(
+    (eventId: number, onConversionAction?: (eventId: number) => void) => {
+      setSavedEventIds((prev) => {
+        const wasSaved = prev.includes(eventId);
+        const newIds = prev.includes(eventId)
+          ? prev.filter((id) => id !== eventId)
+          : [...prev, eventId];
+
+        // Track conversion if user came from QR code
+        if (!wasSaved && onConversionAction) {
+          onConversionAction(eventId);
         }
-      }
-      
-      return newIds;
-    });
-  }, []);
+
+        return newIds;
+      });
+    },
+    []
+  );
 
   return {
     savedEventIds,

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Sparkles, Heart, ChevronLeft } from "lucide-react";
-import confetti from "canvas-confetti";
+import { Check, Sparkles, ChevronLeft } from "lucide-react";
+import { useConfetti } from "@/hooks/useConfetti";
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -28,6 +26,9 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { useOnboardingSteps } from "@/hooks/useOnboardingSteps";
+import { useOnboardingOTP } from "@/hooks/useOnboardingOTP";
+import { useOnboardingForm } from "@/hooks/useOnboardingForm";
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -76,118 +77,56 @@ export function OnboardingModal({
   onComplete,
 }: OnboardingModalProps) {
   const { t } = useTranslation();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedFaculty, setSelectedFaculty] = useState("");
-  const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [emailUsername, setEmailUsername] = useState("");
-  const [otpValue, setOtpValue] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [showOtpInput, setShowOtpInput] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentStep(0);
-      setSelectedFaculty("");
-      setIsFirstYear(null);
-      setSelectedInterests([]);
-      setEmailUsername("");
-      setOtpValue("");
-      setIsVerifying(false);
-      setShowOtpInput(false);
-    }
-  }, [isOpen]);
+  // Use hooks for business logic
+  const steps = useOnboardingSteps({ isOpen });
+  const form = useOnboardingForm({ isOpen });
+  const otp = useOnboardingOTP({
+    onComplete: () => {
+      steps.goToStep(2);
+    },
+  });
+  const { triggerBurst } = useConfetti();
 
   // Fire confetti when reaching the final step
-  const fireConfetti = useCallback(() => {
-    const duration = 500;
-    const end = Date.now() + duration;
-
-    const frame = () => {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.6 },
-        colors: ['#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE'],
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.6 },
-        colors: ['#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE'],
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    };
-    frame();
-  }, []);
-
   useEffect(() => {
-    if (currentStep === 4 && isOpen) {
-      fireConfetti();
+    if (steps.currentStep === 4 && isOpen) {
+      triggerBurst(1);
     }
-  }, [currentStep, isOpen, fireConfetti]);
+  }, [steps.currentStep, isOpen, triggerBurst]);
 
   const handleNext = () => {
-    if (currentStep < TOTAL_STEPS - 1) {
-      setCurrentStep(currentStep + 1);
+    if (steps.currentStep < steps.totalSteps - 1) {
+      steps.handleNext();
     } else {
+      const onboardingData = form.getOnboardingData();
       onComplete({
-        faculty: selectedFaculty,
-        isFirstYear: isFirstYear ?? false,
-        interests: selectedInterests,
-        email: emailUsername ? `${emailUsername}@gmail.com` : undefined,
+        faculty: onboardingData.faculty,
+        isFirstYear: onboardingData.isFirstYear,
+        interests: onboardingData.interests,
+        email: onboardingData.email,
       });
       onClose();
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
   const handleSkip = () => {
     // Skip is only allowed for interests step (step 3)
-    if (currentStep === 3) {
-      setCurrentStep(currentStep + 1);
+    if (steps.currentStep === 3) {
+      steps.handleNext();
     }
-  };
-
-  const handleOtpComplete = (value: string) => {
-    if (value.length === 6) {
-      setIsVerifying(true);
-      setTimeout(() => {
-        setIsVerifying(false);
-        setShowOtpInput(false);
-        setCurrentStep(2); // Move to school selection
-      }, 800);
-    }
-  };
-
-  const toggleInterest = (interest: string) => {
-    setSelectedInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((i) => i !== interest)
-        : [...prev, interest]
-    );
   };
 
   // Progress for steps 1-3 (Sign in, School, Interests) - excludes Welcome and All Set
   const visibleSteps = 3;
-  const displayStep = currentStep >= 1 && currentStep <= 3 ? currentStep : 0;
-  const progressValue = currentStep === 0 ? 0 : currentStep >= 4 ? 100 : (displayStep / visibleSteps) * 100;
+  const displayStep = steps.currentStep >= 1 && steps.currentStep <= 3 ? steps.currentStep : 0;
+  const progressValue = steps.currentStep === 0 ? 0 : steps.currentStep >= 4 ? 100 : (displayStep / visibleSteps) * 100;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-[calc(100vw-24px)] max-w-2xl">
         {/* Progress bar - only show for steps 1-3 */}
-        {currentStep >= 1 && currentStep <= 3 && (
+        {steps.currentStep >= 1 && steps.currentStep <= 3 && (
           <div style={{ marginRight: 24 }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-muted-foreground">
@@ -204,7 +143,7 @@ export function OnboardingModal({
         {/* Content */}
         <div>
           {/* Step 1: Welcome */}
-          {currentStep === 0 && (
+          {steps.currentStep === 0 && (
             <div className="flex flex-col items-center text-center">
               {/* Goose Image */}
               <div className="w-24 h-24 rounded-full overflow-hidden mb-4 bg-muted">
@@ -231,9 +170,9 @@ export function OnboardingModal({
           )}
 
           {/* Step 2: Sign In (includes OTP on same step) */}
-          {currentStep === 1 && (
+          {steps.currentStep === 1 && (
             <div className="flex flex-col">
-              {!showOtpInput ? (
+              {!otp.showOtpInput ? (
                 <>
                   <DialogHeader className="space-y-2 mb-6 text-center">
                     <DialogTitle className="text-xl text-center">
@@ -247,7 +186,7 @@ export function OnboardingModal({
                   {/* Google Sign In Button */}
                   <button
                     onClick={() => {
-                      setEmailUsername("demo.user");
+                      form.setEmailUsername("demo.user");
                       handleNext();
                     }}
                     className="w-full h-11 flex items-center justify-center gap-3 rounded-md border border-border transition-colors hover:bg-gray-200 mb-4"
@@ -291,8 +230,8 @@ export function OnboardingModal({
                       <Input
                         id="email-username"
                         type="text"
-                        value={emailUsername}
-                        onChange={(e) => setEmailUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                        value={form.emailUsername}
+                        onChange={(e) => form.setEmailUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
                         placeholder={t("modals.signIn.username")}
                         className="flex-1 h-10 text-sm rounded-l-md rounded-r-none border-r-0"
                       />
@@ -307,18 +246,18 @@ export function OnboardingModal({
                   <DialogFooter>
                     <Button
                       variant="ghost"
-                      onClick={handleBack}
+                      onClick={steps.handlePrevious}
                       className="flex-1 text-muted-foreground"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
-                      Back
+                      {t("common.back")}
                     </Button>
                     <Button
-                      onClick={() => setShowOtpInput(true)}
-                      disabled={!emailUsername}
+                      onClick={() => otp.setShowOtpInput(true)}
+                      disabled={!form.emailUsername}
                       className="flex-1"
                     >
-                      Continue
+                      {t("common.continue")}
                     </Button>
                   </DialogFooter>
                 </>
@@ -329,21 +268,21 @@ export function OnboardingModal({
                       Verify your email
                     </DialogTitle>
                     <DialogDescription className="text-center">
-                      We sent a 6-digit code to {emailUsername}@gmail.com
+                      {t("modals.otp.description", { email: `${form.emailUsername}@gmail.com` })}
                     </DialogDescription>
                   </DialogHeader>
 
                   <div className="flex justify-center mb-6">
                     <InputOTP
                       maxLength={6}
-                      value={otpValue}
+                      value={otp.otpValue}
                       onChange={(value) => {
-                        setOtpValue(value);
+                        otp.setOtpValue(value);
                         if (value.length === 6) {
-                          handleOtpComplete(value);
+                          otp.handleOtpComplete(value);
                         }
                       }}
-                      disabled={isVerifying}
+                      disabled={otp.isVerifying}
                     >
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
@@ -356,13 +295,13 @@ export function OnboardingModal({
                     </InputOTP>
                   </div>
 
-                  {isVerifying ? (
+                  {otp.isVerifying ? (
                     <p className="text-center text-sm font-medium text-foreground">
-                      Verifying...
+                      {t("modals.otp.verifying")}
                     </p>
                   ) : (
                     <p className="text-center text-xs text-muted-foreground">
-                      Enter any 6 digits to continue
+                      {t("modals.otp.enterCode")}
                     </p>
                   )}
 
@@ -370,13 +309,13 @@ export function OnboardingModal({
                     <Button
                       variant="ghost"
                       onClick={() => {
-                        setOtpValue("");
-                        setShowOtpInput(false);
+                        otp.resetOtp();
+                        otp.setShowOtpInput(false);
                       }}
                       className="w-full"
-                      disabled={isVerifying}
+                      disabled={otp.isVerifying}
                     >
-                      Change email
+                      {t("modals.otp.changeEmail")}
                     </Button>
                   </DialogFooter>
                 </>
@@ -385,14 +324,14 @@ export function OnboardingModal({
           )}
 
           {/* Step 3: Faculty & First Year Selection */}
-          {currentStep === 2 && (
+          {steps.currentStep === 2 && (
             <div className="flex flex-col">
               <DialogHeader className="space-y-2 mb-6 text-center">
                 <DialogTitle className="text-xl text-center">
-                  Tell us about yourself
+                  {t("modals.profile.title")}
                 </DialogTitle>
                 <DialogDescription className="text-center">
-                  We'll personalize events based on your profile
+                  {t("modals.profile.description")}
                 </DialogDescription>
               </DialogHeader>
 
@@ -400,9 +339,9 @@ export function OnboardingModal({
                 {/* Faculty Selection */}
                 <Field>
                   <FieldLabel htmlFor="faculty-select" className="text-sm font-medium text-foreground">
-                    Faculty
+                    {t("modals.profile.faculty")}
                   </FieldLabel>
-                  <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
+                  <Select value={form.selectedFaculty} onValueChange={form.setSelectedFaculty}>
                     <SelectTrigger id="faculty-select" className="w-full">
                       <SelectValue placeholder={t("forms.chooseFaculty")} />
                     </SelectTrigger>
@@ -423,28 +362,28 @@ export function OnboardingModal({
                 {/* First Year Question */}
                 <Field>
                   <FieldLabel className="text-sm font-medium text-foreground">
-                    Are you a first year student?
+                    {t("modals.profile.firstYearQuestion")}
                   </FieldLabel>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setIsFirstYear(true)}
+                      onClick={() => form.setIsFirstYear(true)}
                       className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all border ${
-                        isFirstYear === true
+                        form.isFirstYear === true
                           ? "bg-primary text-white border-primary shadow-md"
                           : "bg-muted text-muted-foreground border-border hover:bg-gray-200"
                       }`}
                     >
-                      Yes, I'm a first year! 🎉
+                      {t("modals.profile.firstYearYes")}
                     </button>
                     <button
-                      onClick={() => setIsFirstYear(false)}
+                      onClick={() => form.setIsFirstYear(false)}
                       className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all border ${
-                        isFirstYear === false
+                        form.isFirstYear === false
                           ? "bg-primary text-white border-primary shadow-md"
                           : "bg-muted text-muted-foreground border-border hover:bg-gray-200"
                       }`}
                     >
-                      No, returning student
+                      {t("modals.profile.firstYearNo")}
                     </button>
                   </div>
                 </Field>
@@ -453,49 +392,49 @@ export function OnboardingModal({
               <DialogFooter>
                 <Button
                   variant="ghost"
-                  onClick={handleBack}
+                  onClick={steps.handlePrevious}
                   className="flex-1 text-muted-foreground"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
-                  Back
+                  {t("common.back")}
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!selectedFaculty || isFirstYear === null}
+                  disabled={!form.selectedFaculty || form.isFirstYear === null}
                   className="flex-1"
                 >
-                  Continue
+                  {t("common.continue")}
                 </Button>
               </DialogFooter>
             </div>
           )}
 
           {/* Step 4: Interests */}
-          {currentStep === 3 && (
+          {steps.currentStep === 3 && (
             <div className="flex flex-col">
               <DialogHeader className="space-y-2 mb-6 text-center">
                 <DialogTitle className="text-xl text-center">
-                  What are you into?
+                  {t("modals.interests.title")}
                 </DialogTitle>
                 <DialogDescription className="text-center">
-                  Select topics to personalize your feed
+                  {t("modals.interests.description")}
                 </DialogDescription>
               </DialogHeader>
 
               <Field className="mb-6">
                 <FieldLabel className="text-sm font-medium text-foreground sr-only">
-                  Interests
+                  {t("modals.interests.label")}
                 </FieldLabel>
                 {/* Interest Toggle Buttons - Flex wrapped */}
                 <div className="flex flex-wrap gap-2 justify-center">
                   {availableInterests.map((interest) => {
-                    const isSelected = selectedInterests.includes(interest);
+                    const isSelected = form.selectedInterests.includes(interest);
                     const interestKey = interest.toLowerCase();
                     const translationKey = `onboarding.interests.${interestKey}`;
                     return (
                       <button
                         key={interest}
-                        onClick={() => toggleInterest(interest)}
+                        onClick={() => form.toggleInterest(interest)}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${isSelected
                           ? "bg-primary text-white shadow-md"
                           : "bg-muted text-muted-foreground hover:bg-gray-200"
@@ -508,7 +447,7 @@ export function OnboardingModal({
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center mt-4">
-                  {selectedInterests.length} of {availableInterests.length} selected
+                  {form.selectedInterests.length} {t("modals.interests.of")} {availableInterests.length} {t("modals.interests.selected")}
                 </p>
               </Field>
 
@@ -516,14 +455,14 @@ export function OnboardingModal({
                 <div className="flex flex-row gap-2 w-full">
                   <Button
                     variant="ghost"
-                    onClick={handleBack}
+                    onClick={steps.handlePrevious}
                     className="flex-1 text-muted-foreground"
                   >
                     <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
-                    Back
+                    {t("common.back")}
                   </Button>
                   <Button onClick={handleNext} className="flex-1">
-                    Continue
+                    {t("common.continue")}
                   </Button>
                 </div>
                 <Button
@@ -531,14 +470,14 @@ export function OnboardingModal({
                   onClick={handleSkip}
                   className="w-full"
                 >
-                  Skip for now
+                  {t("modals.interests.skip")}
                 </Button>
               </DialogFooter>
             </div>
           )}
 
           {/* Step 5: All Set */}
-          {currentStep === 4 && (
+          {steps.currentStep === 4 && (
             <div className="flex flex-col items-center text-center">
               {/* Success Icon */}
               <div className="relative mb-4">
@@ -551,38 +490,37 @@ export function OnboardingModal({
               </div>
 
               <DialogHeader className="space-y-2 mb-6 text-center">
-                <DialogTitle className="text-xl text-center">You're all set!</DialogTitle>
+                <DialogTitle className="text-xl text-center">{t("modals.allSet.title")}</DialogTitle>
                 <DialogDescription className="text-center">
-                  Your personalized feed is ready. Let's discover some amazing
-                  events!
+                  {t("modals.allSet.description")}
                 </DialogDescription>
               </DialogHeader>
 
               {/* Summary */}
-              {(emailUsername || selectedFaculty || selectedInterests.length > 0) && (
+              {(form.emailUsername || form.selectedFaculty || form.selectedInterests.length > 0) && (
                 <div className="w-full rounded-xl p-4 mb-6 text-left text-sm bg-muted">
-                  {emailUsername && (
+                  {form.emailUsername && (
                     <p className="mb-1 text-foreground">
-                      <span className="text-muted-foreground">Email:</span>{" "}
-                      {emailUsername}@gmail.com
+                      <span className="text-muted-foreground">{t("modals.allSet.email")}:</span>{" "}
+                      {form.emailUsername}@gmail.com
                     </p>
                   )}
-                  {selectedFaculty && (
+                  {form.selectedFaculty && (
                     <p className="mb-1 text-foreground">
-                      <span className="text-muted-foreground">Faculty:</span>{" "}
-                      {selectedFaculty}
+                      <span className="text-muted-foreground">{t("modals.allSet.faculty")}:</span>{" "}
+                      {form.selectedFaculty}
                     </p>
                   )}
-                  {isFirstYear !== null && (
+                  {form.isFirstYear !== null && (
                     <p className="mb-1 text-foreground">
-                      <span className="text-muted-foreground">Year:</span>{" "}
-                      {isFirstYear ? "First Year" : "Returning Student"}
+                      <span className="text-muted-foreground">{t("modals.allSet.year")}:</span>{" "}
+                      {form.isFirstYear ? t("modals.allSet.firstYear") : t("modals.allSet.returningStudent")}
                     </p>
                   )}
-                  {selectedInterests.length > 0 && (
+                  {form.selectedInterests.length > 0 && (
                     <p className="text-foreground">
-                      <span className="text-muted-foreground">Interests:</span>{" "}
-                      {selectedInterests.join(", ")}
+                      <span className="text-muted-foreground">{t("modals.allSet.interests")}:</span>{" "}
+                      {form.selectedInterests.join(", ")}
                     </p>
                   )}
                 </div>
@@ -590,7 +528,7 @@ export function OnboardingModal({
 
               <DialogFooter>
                 <Button onClick={handleNext} className="w-full">
-                  Start Exploring
+                  {t("modals.allSet.startExploring")}
                 </Button>
               </DialogFooter>
             </div>

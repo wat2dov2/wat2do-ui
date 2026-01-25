@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { Search, Instagram, MessageCircle, ExternalLink, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Search, Instagram, MessageCircle, Tag, ExternalLink } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { mockClubs } from "@/data/clubs";
 import type { Club } from "@/types";
 
 export function ClubsPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
@@ -50,9 +52,9 @@ export function ClubsPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Clubs</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("clubs.title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Discover student clubs and organizations at University of Waterloo
+          {t("clubs.description")}
         </p>
       </div>
 
@@ -63,7 +65,7 @@ export function ClubsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
-            placeholder="Search clubs..."
+            placeholder={t("clubs.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full border border-border bg-muted text-foreground rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 transition-all shadow-md"
@@ -103,7 +105,7 @@ export function ClubsPage() {
                   : "bg-muted text-muted-foreground hover:bg-gray-200"
               }`}
             >
-              {category}
+              {t(`clubs.categories.${category}`) || category}
             </button>
           ))}
         </div>
@@ -111,14 +113,14 @@ export function ClubsPage() {
         {/* Active Filters */}
         {selectedCategories.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground">Active filters:</span>
+            <span className="text-xs text-muted-foreground">{t("clubs.activeFilters")}:</span>
             {selectedCategories.map((cat) => (
               <Badge
                 key={cat}
                 variant="secondary"
                 className="text-xs px-2 py-0.5 rounded-xl"
               >
-                {cat}
+                {t(`clubs.categories.${cat}`) || cat}
                 <button
                   onClick={() => toggleCategory(cat)}
                   className="ml-1.5 hover:text-foreground"
@@ -134,7 +136,7 @@ export function ClubsPage() {
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <span className="font-bold text-xl text-gray-900">
-          {filteredClubs.length} {filteredClubs.length === 1 ? "club" : "clubs"}
+          {filteredClubs.length} {filteredClubs.length === 1 ? t("clubs.club") : t("clubs.clubs")}
         </span>
       </div>
 
@@ -151,11 +153,10 @@ export function ClubsPage() {
             <Search className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            No clubs found
+            {t("clubs.noClubsFound")}
           </h3>
           <p className="text-sm text-muted-foreground text-center max-w-md">
-            We couldn't find any clubs matching your current filters. Try
-            adjusting your search or clearing some filters.
+            {t("clubs.noClubsFoundDesc")}
           </p>
         </div>
       )}
@@ -164,6 +165,7 @@ export function ClubsPage() {
 }
 
 function ClubCard({ club }: { club: Club }) {
+  const { t } = useTranslation();
   const getCategoryColor = (category: string): { bg: string; text: string } => {
     // Map categories to existing category colors where possible
     const mapping: Record<string, { bg: string; text: string }> = {
@@ -218,12 +220,13 @@ function ClubCard({ club }: { club: Club }) {
         <div className="flex flex-wrap gap-1.5">
           {club.categories.slice(0, 2).map((category) => {
             const colors = getCategoryColor(category);
+            const translatedCategory = t(`clubs.categories.${category}`) || category;
             return (
               <Badge
                 key={category}
                 className={`${colors.bg} ${colors.text} text-[10px] px-2 py-0.5 rounded-full font-medium`}
               >
-                {category.length > 20 ? category.substring(0, 20) + "..." : category}
+                {translatedCategory.length > 20 ? translatedCategory.substring(0, 20) + "..." : translatedCategory}
               </Badge>
             );
           })}
@@ -273,7 +276,7 @@ function ClubCard({ club }: { club: Club }) {
           onClick={handleClubPageClick}
           className="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-muted hover:bg-gray-200 text-foreground text-xs font-medium rounded-xl transition-colors mt-2"
         >
-          <span>View Club Page</span>
+          <span>{t("clubs.viewClubPage")}</span>
           <ExternalLink className="w-3 h-3" />
         </button>
       </div>

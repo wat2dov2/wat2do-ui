@@ -2,10 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  User,
-  Bell,
-  Palette,
-  Shield,
   Grid3x3,
   Calendar,
   MapPin,
@@ -39,8 +35,6 @@ interface SettingsPageProps {
   setViewMode: (mode: ViewMode) => void;
   filterViewMode: FilterViewMode;
   setFilterViewMode: (mode: FilterViewMode) => void;
-  isDarkMode: boolean;
-  setIsDarkMode: (isDark: boolean) => void;
 }
 
 interface NotificationPreferences {
@@ -65,8 +59,6 @@ export function SettingsPage({
   setViewMode,
   filterViewMode,
   setFilterViewMode,
-  isDarkMode,
-  setIsDarkMode,
 }: SettingsPageProps) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();

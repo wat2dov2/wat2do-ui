@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, startTransition } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Megaphone,
@@ -34,16 +34,18 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadQRCodes();
-  }, []);
-
   const loadQRCodes = () => {
     const loaded = getQRCodes();
     setQRCodes(loaded);
   };
 
-  const handleCreate = (newQRCode: QRCode) => {
+  useEffect(() => {
+    startTransition(() => {
+      loadQRCodes();
+    });
+  }, []);
+
+  const handleCreate = () => {
     loadQRCodes();
     setShowCreateModal(false);
   };
@@ -193,7 +195,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
           }}
           qrCode={selectedQRCode}
           events={events}
-          userEmail={userEmail}
           onUpdate={loadQRCodes}
         />
       )}

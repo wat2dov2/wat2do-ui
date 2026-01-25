@@ -1,10 +1,11 @@
 import {
-  ComponentPropsWithoutRef,
+  type ComponentPropsWithoutRef,
   useCallback,
   useEffect,
   useId,
   useRef,
   useState,
+  startTransition,
 } from "react"
 import { motion } from "motion/react"
 
@@ -83,11 +84,21 @@ export function AnimatedGridPattern({
     [getPos]
   )
 
+  const prevDimensionsRef = useRef(dimensions);
   useEffect(() => {
-    if (dimensions.width && dimensions.height) {
-      setSquares(generateSquares(numSquares))
+    if (
+      dimensions.width &&
+      dimensions.height &&
+      (prevDimensionsRef.current.width !== dimensions.width ||
+        prevDimensionsRef.current.height !== dimensions.height ||
+        prevDimensionsRef.current.width === 0)
+    ) {
+      prevDimensionsRef.current = dimensions;
+      startTransition(() => {
+        setSquares(generateSquares(numSquares));
+      });
     }
-  }, [dimensions.width, dimensions.height, numSquares, generateSquares])
+  }, [dimensions, numSquares, generateSquares])
 
   useEffect(() => {
     const element = containerRef.current

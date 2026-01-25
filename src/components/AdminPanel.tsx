@@ -1,9 +1,12 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "lucide-react";
 import { Button } from "./ui/button";
-import { getEventSubmissions, getScrapedEvents, type AdminActivity } from "@/data/adminData";
+import { getEventSubmissions, getScrapedEvents } from "@/data/adminData";
 import { getQRCodes } from "@/utils/qrRedirect";
+import type { Event } from "@/types";
+import type { EventSubmission, ScrapedEvent } from "@/types";
+import type { QRCode } from "@/types";
 // Format relative time helper
 function formatRelativeTime(date: Date): string {
   const now = new Date();
@@ -20,7 +23,7 @@ function formatRelativeTime(date: Date): string {
 }
 
 interface AdminPanelProps {
-  events: any[];
+  events: Event[];
   onNavigate: (page: "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters") => void;
 }
 
@@ -54,11 +57,12 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       }));
 
     // Combine and sort by timestamp (newest first)
-    const all: Array<{
-      type: "submission" | "scraped" | "poster";
-      data: any;
-      timestamp: Date;
-    }> = [...submissions, ...scraped, ...createdPosters];
+    type ActivityItem =
+      | { type: "submission"; data: EventSubmission; timestamp: Date }
+      | { type: "scraped"; data: ScrapedEvent; timestamp: Date }
+      | { type: "poster"; data: QRCode; timestamp: Date };
+    
+    const all: ActivityItem[] = [...submissions, ...scraped, ...createdPosters];
 
     return all
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -66,7 +70,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
   }, []);
 
 
-  const handleActivityClick = (activity: typeof recentActivities[0]) => {
+  const handleActivityClick = (activity: (typeof recentActivities)[0]) => {
     if (activity.type === "submission") {
       onNavigate("admin-submissions");
       // URL param will be handled by AdminSubmissionsPage via useSearchParams
@@ -256,7 +260,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                             handleActivityClick(activity);
                           }}
                         >
-                          View
+                          {t("admin.view")}
                           <ArrowRight className="w-3 h-3 ml-1" />
                         </Button>
                       </div>

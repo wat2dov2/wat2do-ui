@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, startTransition } from "react";
 import { Check, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import confetti from "canvas-confetti";
+import { useConfetti } from "@/hooks/useConfetti";
 import { useTranslation } from "react-i18next";
 import { useOnClickOutside } from "../hooks/use-on-click-outside";
 
@@ -27,6 +27,7 @@ export function GettingStartedChecklist({
   profileCompleted = false,
 }: GettingStartedChecklistProps) {
   const { t } = useTranslation();
+  const { trigger } = useConfetti();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   
@@ -58,9 +59,14 @@ export function GettingStartedChecklist({
   ], [t]);
   
   const [items, setItems] = useState<ChecklistItem[]>(defaultItems);
+  const hasLoadedRef = useRef(false);
+  const prevProfileCompletedRef = useRef(profileCompleted);
 
   // Load state from localStorage
   useEffect(() => {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+    
     const saved = localStorage.getItem(CHECKLIST_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
@@ -70,33 +76,40 @@ export function GettingStartedChecklist({
           const savedItem = parsed.items.find((item: ChecklistItem) => item.id === defaultItem.id);
           return savedItem ? { ...defaultItem, completed: savedItem.completed } : defaultItem;
         });
-        setItems(mergedItems);
+        startTransition(() => {
+          setItems(mergedItems);
+        });
       }
     } else {
-      setItems(defaultItems);
+      startTransition(() => {
+        setItems(defaultItems);
+      });
     }
   }, [defaultItems]);
 
   // Update profile completion when prop changes
   useEffect(() => {
-    if (profileCompleted) {
-      setItems((prev) => {
-        const wasAlreadyComplete = prev.find((i) => i.id === "profile")?.completed;
-        if (wasAlreadyComplete) return prev;
+    if (profileCompleted && !prevProfileCompletedRef.current) {
+      prevProfileCompletedRef.current = profileCompleted;
+      startTransition(() => {
+        setItems((prev) => {
+          const wasAlreadyComplete = prev.find((i) => i.id === "profile")?.completed;
+          if (wasAlreadyComplete) return prev;
 
-        const newItems = prev.map((item) =>
-          item.id === "profile" ? { ...item, completed: true } : item
-        );
+          const newItems = prev.map((item) =>
+            item.id === "profile" ? { ...item, completed: true } : item
+          );
 
-        // Fire confetti for completing profile
-        confetti({
-          particleCount: 15,
-          spread: 50,
-          origin: { y: 0.8, x: 0.9 },
-          colors: ['#3B82F6', '#60A5FA'],
+          // Fire confetti for completing profile
+          trigger({
+            particleCount: 15,
+            spread: 50,
+            origin: { y: 0.8, x: 0.9 },
+            colors: ['#3B82F6', '#60A5FA'],
+          });
+
+          return newItems;
         });
-
-        return newItems;
       });
     }
   }, [profileCompleted]);
@@ -114,7 +127,7 @@ export function GettingStartedChecklist({
   // Auto-hide 3 seconds after all completed
   useEffect(() => {
     if (allCompleted) {
-      confetti({
+      trigger({
         particleCount: 50,
         spread: 70,
         origin: { y: 0.8, x: 0.9 },
@@ -127,7 +140,7 @@ export function GettingStartedChecklist({
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [allCompleted]);
+  }, [allCompleted, trigger]);
 
   useOnClickOutside(containerRef, () => {
     if (isExpanded) {
@@ -142,7 +155,7 @@ export function GettingStartedChecklist({
       );
 
       // Small confetti burst for individual item
-      confetti({
+      trigger({
         particleCount: 15,
         spread: 50,
         origin: { y: 0.8, x: 0.9 },

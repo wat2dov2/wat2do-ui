@@ -113,15 +113,6 @@ export function PieMenu({
     };
   }, [isOpen, onClose]);
 
-  const handleItemClick = (item: PieMenuItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (item.disabled) return;
-    item.onClick?.();
-    onSelect?.(item);
-    if (closeOnSelect) onClose();
-  };
-
   // Clamp position to viewport
   const getAdjustedPosition = () => {
     const pad = 10;
