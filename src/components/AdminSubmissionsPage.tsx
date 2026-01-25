@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Search, Check, X as XIcon, ArrowLeft, FileText, Clock, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
@@ -40,6 +41,7 @@ export function AdminSubmissionsPage({
   onBack,
   onApprove,
 }: AdminSubmissionsPageProps) {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
@@ -155,7 +157,7 @@ export function AdminSubmissionsPage({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "just now";
+    if (diffMins < 1) return t("common.justNow");
     if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
@@ -173,9 +175,9 @@ export function AdminSubmissionsPage({
           <FileText className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Event Submissions</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.eventSubmissions")}</h1>
           <p className="text-sm text-muted-foreground">
-            Review and approve event submissions
+            {t("admin.reviewSubmissionsDesc")}
           </p>
         </div>
       </div>
@@ -186,7 +188,7 @@ export function AdminSubmissionsPage({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
           <Input
             type="text"
-            placeholder="Search submissions..."
+            placeholder={t("admin.searchSubmissions")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-9"
@@ -209,13 +211,13 @@ export function AdminSubmissionsPage({
           }
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Status" />
+            <SelectValue placeholder={t("admin.allStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="all">{t("admin.allStatus")}</SelectItem>
+            <SelectItem value="pending">{t("admin.pending")}</SelectItem>
+            <SelectItem value="approved">{t("admin.approved")}</SelectItem>
+            <SelectItem value="rejected">{t("admin.rejected")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -224,7 +226,7 @@ export function AdminSubmissionsPage({
       <div className="flex items-center justify-between">
         <span className="font-bold text-xl text-gray-900">
           {filteredSubmissions.length}{" "}
-          {filteredSubmissions.length === 1 ? "submission" : "submissions"}
+          {filteredSubmissions.length === 1 ? t("admin.submission") : t("admin.submissions")}
         </span>
       </div>
 
@@ -235,22 +237,22 @@ export function AdminSubmissionsPage({
             <TableHeader>
               <TableRow className="bg-muted">
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Title
+                  {t("events.eventTitle")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Organization
+                  {t("events.organization")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Submitted By
+                  {t("admin.submittedBy")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Submitted At
+                  {t("admin.submittedAt")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Status
+                  {t("events.status")}
                 </TableHead>
                 <TableHead className="text-right text-xs font-semibold text-gray-900">
-                  Actions
+                  {t("admin.actions")}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -455,7 +457,7 @@ export function AdminSubmissionsPage({
                   Description
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {selectedSubmission.eventData.description || "No description"}
+                  {selectedSubmission.eventData.description || t("common.noDescription")}
                 </p>
               </div>
 
@@ -492,7 +494,7 @@ export function AdminSubmissionsPage({
                   Category
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {selectedSubmission.eventData.category || "None"}
+                  {selectedSubmission.eventData.category || t("common.none")}
                 </p>
               </div>
 
@@ -529,8 +531,8 @@ export function AdminSubmissionsPage({
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {selectedSubmission.eventData.requiresRegistration
-                    ? "Yes"
-                    : "No"}
+                    ? t("common.yes")
+                    : t("common.no")}
                 </p>
               </div>
 

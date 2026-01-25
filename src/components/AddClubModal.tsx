@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Users, Tag, Link, Instagram, MessageCircle } from "lucide-react";
 import {
   Dialog,
@@ -6,9 +7,30 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogClose,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+} from "./ui/field";
+import { SuccessAlert } from "./ui/success-alert";
 import type { Club } from "@/types";
 
 interface AddClubModalProps {
@@ -24,7 +46,10 @@ export function AddClubModal({
   onSave,
   initialData,
 }: AddClubModalProps) {
+  const { t } = useTranslation();
   const isEditMode = !!initialData;
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [formData, setFormData] = useState({
     club_name: "",
@@ -107,9 +132,16 @@ export function AddClubModal({
     };
 
     onSave(club);
+    setSuccessMessage(
+      isEditMode
+        ? `Club "${club.club_name}" has been updated.`
+        : `Club "${club.club_name}" has been created successfully!`
+    );
+    setShowSuccessAlert(true);
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -121,97 +153,117 @@ export function AddClubModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Club Name */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
-              Club Name <span className="text-error">*</span>
-            </label>
-            <Input
-              type="text"
-              value={formData.club_name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, club_name: e.target.value }))
-              }
-              placeholder="e.g., Computer Science Club"
-              className={errors.club_name ? "border-error" : ""}
-            />
-            {errors.club_name && (
-              <p className="text-xs text-error mt-1">{errors.club_name}</p>
-            )}
-          </div>
+        <form>
+          <FieldGroup>
+            <FieldSet>
+              <FieldLegend>Required Information</FieldLegend>
+              <FieldDescription>
+                All fields marked with * are required
+              </FieldDescription>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
+                    Club Name <span className="text-error">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="club-name"
+                    type="text"
+                    value={formData.club_name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, club_name: e.target.value }))
+                    }
+                    placeholder="e.g., Computer Science Club"
+                    className={errors.club_name ? "border-error" : ""}
+                  />
+                  {errors.club_name && (
+                    <FieldError className="text-xs">{errors.club_name}</FieldError>
+                  )}
+                </Field>
 
-          {/* Categories */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
-              Categories <span className="text-error">*</span>
-            </label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={categoryInput}
-                onChange={(e) => setCategoryInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addCategory();
-                  }
-                }}
-                placeholder="Add category..."
-                className={errors.categories ? "border-error" : ""}
-              />
-              <Button type="button" onClick={addCategory}>
-                Add
-              </Button>
-            </div>
-            {formData.categories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.categories.map((cat) => (
-                  <span
-                    key={cat}
-                    className="inline-flex items-center gap-1 bg-primary/20 text-primary text-xs px-2 py-1 rounded-full"
-                  >
-                    {cat}
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(cat)}
-                      className="hover:bg-primary/30 rounded-full p-0.5"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            {errors.categories && (
-              <p className="text-xs text-error mt-1">{errors.categories}</p>
-            )}
-          </div>
+                <Field>
+                  <FieldLabel htmlFor="category-input" className="text-sm font-medium text-foreground">
+                    Categories <span className="text-error">*</span>
+                  </FieldLabel>
+                  <div className="flex gap-2">
+                    <Input
+                      id="category-input"
+                      type="text"
+                      value={categoryInput}
+                      onChange={(e) => setCategoryInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addCategory();
+                        }
+                      }}
+                      placeholder={t("forms.addCategoryPlaceholder")}
+                      className={errors.categories ? "border-error" : ""}
+                    />
+                    <Button type="button" onClick={addCategory}>
+                      Add
+                    </Button>
+                  </div>
+                  {formData.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.categories.map((cat) => (
+                        <span
+                          key={cat}
+                          className="inline-flex items-center gap-1 bg-primary/20 text-primary text-xs px-2 py-1 rounded-full"
+                        >
+                          {cat}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => removeCategory(cat)}
+                            className="hover:bg-primary/30 rounded-full p-0.5 h-auto w-auto"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {errors.categories && (
+                    <FieldError className="text-xs">{errors.categories}</FieldError>
+                  )}
+                </Field>
+              </FieldGroup>
+            </FieldSet>
 
-          {/* Club Type */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+            <FieldSeparator />
+
+            <FieldSet>
+              <FieldLegend>Optional Details</FieldLegend>
+              <FieldGroup>
+
+          <Field>
+            <FieldLabel htmlFor="club-type" className="text-sm font-medium text-foreground">
               Club Type
-            </label>
-            <select
+            </FieldLabel>
+            <Select
               value={formData.club_type}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, club_type: e.target.value }))
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, club_type: value }))
               }
-              className="w-full px-3 py-2 border border-border rounded-lg bg-muted text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="WUSA">WUSA</option>
-              <option value="Independent">Independent</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+              <SelectTrigger id="club-type" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="WUSA">WUSA</SelectItem>
+                <SelectItem value="Independent">{t("forms.independent")}</SelectItem>
+                <SelectItem value="Other">{t("forms.other")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
 
-          {/* Club Page URL */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+          <Field>
+            <FieldLabel htmlFor="club-page" className="text-sm font-medium text-foreground">
               Club Page URL
-            </label>
+            </FieldLabel>
             <Input
+              id="club-page"
               type="text"
               value={formData.club_page}
               onChange={(e) =>
@@ -219,54 +271,80 @@ export function AddClubModal({
               }
               placeholder="e.g., https://example.com or 123"
             />
-          </div>
+          </Field>
 
-          {/* Instagram */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
+          <Field>
+            <FieldLabel htmlFor="instagram-handle" className="text-sm font-medium text-foreground">
               Instagram Handle
-            </label>
+            </FieldLabel>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 @
               </span>
               <Input
+                id="instagram-handle"
                 type="text"
                 value={formData.ig}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, ig: e.target.value }))
                 }
-                placeholder="username"
+                placeholder={t("modals.signIn.username")}
                 className="pl-7"
               />
             </div>
-          </div>
+          </Field>
 
-          {/* Discord */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
-              Discord Link
-            </label>
-            <Input
-              type="text"
-              value={formData.discord}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, discord: e.target.value }))
-              }
-              placeholder="https://discord.gg/..."
-            />
-          </div>
-        </div>
+                <Field>
+                  <FieldLabel htmlFor="discord-link" className="text-sm font-medium text-foreground">
+                    Discord Link
+                  </FieldLabel>
+                  <Input
+                    id="discord-link"
+                    type="text"
+                    value={formData.discord}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, discord: e.target.value }))
+                    }
+                    placeholder={t("forms.discordPlaceholder")}
+                  />
+                </Field>
+              </FieldGroup>
+            </FieldSet>
 
-        <div className="flex gap-2 justify-end mt-6">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+            <Field orientation="horizontal">
+              <DialogClose asChild>
+                <Button variant="outline" type="button">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="button" onClick={handleSubmit}>
+                {isEditMode ? "Update Club" : "Add Club"}
+              </Button>
+            </Field>
+          </FieldGroup>
+        </form>
+
+        <DialogFooter className="sr-only">
+          <DialogClose asChild>
+            <Button variant="outline">
+              Cancel
+            </Button>
+          </DialogClose>
           <Button onClick={handleSubmit}>
             {isEditMode ? "Update Club" : "Add Club"}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
+    <SuccessAlert
+      isOpen={showSuccessAlert}
+      onClose={() => {
+        setShowSuccessAlert(false);
+        onClose();
+      }}
+      title={isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated")}
+      message={successMessage}
+    />
+    </>
   );
 }

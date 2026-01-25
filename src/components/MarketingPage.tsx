@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Megaphone,
   Plus,
@@ -26,6 +27,7 @@ interface MarketingPageProps {
 }
 
 export function MarketingPage({ events, userEmail }: MarketingPageProps) {
+  const { t } = useTranslation();
   const [qrCodes, setQRCodes] = useState<QRCode[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedQRCode, setSelectedQRCode] = useState<QRCode | null>(null);
@@ -132,7 +134,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
                           : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                       }`}
                     >
-                      {qr.isActive ? "Active" : "Inactive"}
+                      {qr.isActive ? t("common.active") : t("common.inactive")}
                     </span>
                   </div>
                 </div>

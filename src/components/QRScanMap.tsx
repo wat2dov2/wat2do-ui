@@ -51,9 +51,9 @@ function getColorClassForScanCount(count: number, maxCount: number): string {
   if (ratio < 0.33) {
     return "bg-green-500";
   } else if (ratio < 0.67) {
-    return "bg-yellow-500";
+    return "bg-warning";
   } else {
-    return "bg-red-500";
+    return "bg-error";
   }
 }
 
@@ -345,12 +345,12 @@ export function QRScanMap({ scans, height = "500px", onMarkerClick }: QRScanMapP
               </div>
               <span className="text-muted-foreground/50">→</span>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                <div className="w-2 h-2 rounded-full bg-warning" />
                 <span>Medium</span>
               </div>
               <span className="text-muted-foreground/50">→</span>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-red-500" />
+                <div className="w-2 h-2 rounded-full bg-error" />
                 <span>High</span>
               </div>
             </div>

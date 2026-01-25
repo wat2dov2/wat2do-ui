@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Sparkles, Heart, ChevronLeft } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -7,8 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -16,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Progress } from "@/components/ui/progress";
 import {
   InputOTP,
@@ -69,6 +75,7 @@ export function OnboardingModal({
   onClose,
   onComplete,
 }: OnboardingModalProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedFaculty, setSelectedFaculty] = useState("");
   const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
@@ -209,16 +216,17 @@ export function OnboardingModal({
               </div>
 
               <DialogHeader className="space-y-2 mb-6 text-center">
-                <DialogTitle className="text-xl text-center">Welcome to wat2do</DialogTitle>
+                <DialogTitle className="text-xl text-center">{t("modals.welcome.title")}</DialogTitle>
                 <DialogDescription className="text-center">
-                  Discover campus events, connect with clubs, and never miss out
-                  on what's happening.
+                  {t("modals.welcome.description")}
                 </DialogDescription>
               </DialogHeader>
 
-              <Button onClick={handleNext} className="w-full">
-                Get Started
-              </Button>
+              <DialogFooter>
+                <Button onClick={handleNext} className="w-full">
+                  {t("modals.getStarted")}
+                </Button>
+              </DialogFooter>
             </div>
           )}
 
@@ -229,10 +237,10 @@ export function OnboardingModal({
                 <>
                   <DialogHeader className="space-y-2 mb-6 text-center">
                     <DialogTitle className="text-xl text-center">
-                      Sign in
+                      {t("modals.signIn.title")}
                     </DialogTitle>
                     <DialogDescription className="text-center">
-                      Choose how you'd like to continue
+                      {t("modals.signIn.description")}
                     </DialogDescription>
                   </DialogHeader>
 
@@ -270,32 +278,33 @@ export function OnboardingModal({
                   {/* Divider */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-border" />
-                    <span className="text-xs text-muted-foreground">or</span>
+                    <span className="text-xs text-muted-foreground">{t("common.or")}</span>
                     <div className="flex-1 h-px bg-border" />
                   </div>
 
                   {/* Email Input */}
-                  <div className="space-y-2 mb-4">
-                    <label className="text-sm font-medium text-foreground">
-                      Email
-                    </label>
+                  <Field className="mb-4">
+                    <FieldLabel htmlFor="email-username" className="text-sm font-medium text-foreground">
+                      {t("modals.signIn.email")}
+                    </FieldLabel>
                     <div className="flex items-center">
-                      <input
+                      <Input
+                        id="email-username"
                         type="text"
                         value={emailUsername}
                         onChange={(e) => setEmailUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
-                        placeholder="username"
-                        className="flex-1 h-10 px-3 text-sm rounded-l-md border border-r-0 border-border focus:outline-none focus:ring-2 focus:ring-primary bg-muted text-foreground placeholder:text-muted-foreground"
+                        placeholder={t("modals.signIn.username")}
+                        className="flex-1 h-10 text-sm rounded-l-md rounded-r-none border-r-0"
                       />
                       <div
-                        className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border border-border bg-muted text-muted-foreground"
+                        className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border border-l-0 border-border bg-muted text-muted-foreground"
                       >
                         @gmail.com
                       </div>
                     </div>
-                  </div>
+                  </Field>
 
-                  <div className="flex gap-2">
+                  <DialogFooter>
                     <Button
                       variant="ghost"
                       onClick={handleBack}
@@ -311,7 +320,7 @@ export function OnboardingModal({
                     >
                       Continue
                     </Button>
-                  </div>
+                  </DialogFooter>
                 </>
               ) : (
                 <>
@@ -357,7 +366,7 @@ export function OnboardingModal({
                     </p>
                   )}
 
-                  <div className="mt-6">
+                  <DialogFooter>
                     <Button
                       variant="ghost"
                       onClick={() => {
@@ -369,7 +378,7 @@ export function OnboardingModal({
                     >
                       Change email
                     </Button>
-                  </div>
+                  </DialogFooter>
                 </>
               )}
             </div>
@@ -387,31 +396,35 @@ export function OnboardingModal({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-6 mb-6">
+              <FieldGroup className="mb-6">
                 {/* Faculty Selection */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
+                <Field>
+                  <FieldLabel htmlFor="faculty-select" className="text-sm font-medium text-foreground">
                     Faculty
-                  </label>
+                  </FieldLabel>
                   <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose your faculty" />
+                    <SelectTrigger id="faculty-select" className="w-full">
+                      <SelectValue placeholder={t("forms.chooseFaculty")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableFaculties.map((faculty) => (
-                        <SelectItem key={faculty} value={faculty}>
-                          {faculty}
-                        </SelectItem>
-                      ))}
+                      {availableFaculties.map((faculty) => {
+                        const facultyKey = faculty.toLowerCase().replace(/\s+/g, '');
+                        const translationKey = `onboarding.faculties.${facultyKey === 'appliedhealthsciences' ? 'appliedHealthSciences' : facultyKey}`;
+                        return (
+                          <SelectItem key={faculty} value={faculty}>
+                            {t(translationKey) || faculty}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
-                </div>
+                </Field>
 
                 {/* First Year Question */}
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-foreground">
+                <Field>
+                  <FieldLabel className="text-sm font-medium text-foreground">
                     Are you a first year student?
-                  </label>
+                  </FieldLabel>
                   <div className="flex gap-3">
                     <button
                       onClick={() => setIsFirstYear(true)}
@@ -434,10 +447,10 @@ export function OnboardingModal({
                       No, returning student
                     </button>
                   </div>
-                </div>
-              </div>
+                </Field>
+              </FieldGroup>
 
-              <div className="flex gap-2">
+              <DialogFooter>
                 <Button
                   variant="ghost"
                   onClick={handleBack}
@@ -453,7 +466,7 @@ export function OnboardingModal({
                 >
                   Continue
                 </Button>
-              </div>
+              </DialogFooter>
             </div>
           )}
 
@@ -469,11 +482,16 @@ export function OnboardingModal({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="mb-6">
+              <Field className="mb-6">
+                <FieldLabel className="text-sm font-medium text-foreground sr-only">
+                  Interests
+                </FieldLabel>
                 {/* Interest Toggle Buttons - Flex wrapped */}
                 <div className="flex flex-wrap gap-2 justify-center">
                   {availableInterests.map((interest) => {
                     const isSelected = selectedInterests.includes(interest);
+                    const interestKey = interest.toLowerCase();
+                    const translationKey = `onboarding.interests.${interestKey}`;
                     return (
                       <button
                         key={interest}
@@ -483,7 +501,7 @@ export function OnboardingModal({
                           : "bg-muted text-muted-foreground hover:bg-gray-200"
                           }`}
                       >
-                        {interest}
+                        {t(translationKey) || interest}
                       </button>
                     );
                   })}
@@ -492,10 +510,10 @@ export function OnboardingModal({
                 <p className="text-xs text-muted-foreground text-center mt-4">
                   {selectedInterests.length} of {availableInterests.length} selected
                 </p>
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <div className="flex gap-2">
+              <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+                <div className="flex flex-row gap-2 w-full">
                   <Button
                     variant="ghost"
                     onClick={handleBack}
@@ -515,7 +533,7 @@ export function OnboardingModal({
                 >
                   Skip for now
                 </Button>
-              </div>
+              </DialogFooter>
             </div>
           )}
 
@@ -570,9 +588,11 @@ export function OnboardingModal({
                 </div>
               )}
 
-              <Button onClick={handleNext} className="w-full">
-                Start Exploring
-              </Button>
+              <DialogFooter>
+                <Button onClick={handleNext} className="w-full">
+                  Start Exploring
+                </Button>
+              </DialogFooter>
             </div>
           )}
         </div>

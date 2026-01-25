@@ -1,5 +1,10 @@
 import React, { useState, useRef } from "react";
 import { ChevronUp, ChevronDown, X } from "lucide-react";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface FilterSectionProps {
   title: string;
@@ -18,24 +23,6 @@ export const FilterSection = React.memo(function FilterSection({
   indicator,
   onClear,
 }: FilterSectionProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const titleRef = useRef<HTMLSpanElement>(null);
-
-  const handleMouseEnter = () => {
-    if (titleRef.current) {
-      const rect = titleRef.current.getBoundingClientRect();
-      setTooltipPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top - 8,
-      });
-      setShowTooltip(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setShowTooltip(false);
-  };
 
   return (
     <div className={`space-y-2 relative -mx-4 ${expanded ? "border-y border-border" : ""}`}>
@@ -44,29 +31,16 @@ export const FilterSection = React.memo(function FilterSection({
         className="flex items-center justify-between w-full group hover:opacity-80 transition-opacity py-3 px-4"
       >
         <div className="flex items-center gap-2">
-          <span
-            ref={titleRef}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            className="font-medium text-xs relative text-foreground"
-          >
-            {title}
-            {showTooltip && (
-              <span
-                className="fixed z-[100] text-white font-medium text-[11px] px-2.5 py-1.5 rounded shadow-lg whitespace-nowrap pointer-events-none bg-gray-700"
-                style={{
-                  left: `${tooltipPosition.x}px`,
-                  top: `${tooltipPosition.y}px`,
-                  transform: "translate(-50%, -100%)",
-                }}
-              >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-medium text-xs relative text-foreground cursor-default">
                 {title}
-                <span
-                  className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45 bg-gray-700"
-                />
               </span>
-            )}
-          </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>{title}</p>
+            </TooltipContent>
+          </Tooltip>
           {indicator && (
             <span
               role="button"

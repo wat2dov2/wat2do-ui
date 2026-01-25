@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "lucide-react";
 import { Button } from "./ui/button";
-import { getEventSubmissions, getScrappedEvents, type AdminActivity } from "@/data/adminData";
+import { getEventSubmissions, getScrapedEvents, type AdminActivity } from "@/data/adminData";
 import { getQRCodes } from "@/utils/qrRedirect";
 // Format relative time helper
 function formatRelativeTime(date: Date): string {
@@ -24,6 +25,7 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
+  const { t } = useTranslation();
   // Get recent activities
   const recentActivities = useMemo(() => {
     const submissions = getEventSubmissions()
@@ -34,10 +36,10 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
         timestamp: new Date(s.submittedAt),
       }));
 
-    const scrapped = getScrappedEvents().map((s) => ({
-      type: "scrapped" as const,
+    const scraped = getScrapedEvents().map((s) => ({
+      type: "scraped" as const,
       data: s,
-      timestamp: new Date(s.scrappedAt),
+      timestamp: new Date(s.scrapedAt),
     }));
 
     // Get created posters (QR codes)
@@ -53,10 +55,10 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
 
     // Combine and sort by timestamp (newest first)
     const all: Array<{
-      type: "submission" | "scrapped" | "poster";
+      type: "submission" | "scraped" | "poster";
       data: any;
       timestamp: Date;
-    }> = [...submissions, ...scrapped, ...createdPosters];
+    }> = [...submissions, ...scraped, ...createdPosters];
 
     return all
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -74,7 +76,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
         window.history.pushState({}, "", url.toString());
         window.dispatchEvent(new PopStateEvent("popstate"));
       }, 0);
-    } else if (activity.type === "scrapped") {
+    } else if (activity.type === "scraped") {
       onNavigate("admin-events");
       // URL param will be handled by AdminEventsPage via useSearchParams
       setTimeout(() => {
@@ -103,9 +105,9 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
           <Shield className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.panel")}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage events, clubs, submissions, and marketing
+            {t("admin.panelDescription")}
           </p>
         </div>
       </div>
@@ -120,9 +122,9 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
             <Calendar className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 mb-1">Events</h3>
+            <h3 className="font-semibold text-gray-900 mb-1">{t("navigation.events")}</h3>
             <p className="text-xs text-muted-foreground">
-              Manage and edit all events
+              {t("admin.manageEventsDesc")}
             </p>
           </div>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
@@ -136,9 +138,9 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
             <FileText className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 mb-1">Clubs</h3>
+            <h3 className="font-semibold text-gray-900 mb-1">{t("navigation.clubs")}</h3>
             <p className="text-xs text-muted-foreground">
-              Manage student clubs
+              {t("admin.manageClubsDescAlt")}
             </p>
           </div>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
@@ -152,9 +154,9 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
             <FileText className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 mb-1">Submissions</h3>
+            <h3 className="font-semibold text-gray-900 mb-1">{t("admin.submissions")}</h3>
             <p className="text-xs text-muted-foreground">
-              Review event submissions
+              {t("admin.reviewSubmissionsDescAlt")}
             </p>
           </div>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
@@ -168,9 +170,9 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
             <Megaphone className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 mb-1">Posters</h3>
+            <h3 className="font-semibold text-gray-900 mb-1">{t("admin.posters")}</h3>
             <p className="text-xs text-muted-foreground">
-              Manage QR code posters
+              {t("admin.managePostersDescAlt")}
             </p>
           </div>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
@@ -180,9 +182,9 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       {/* Recent Activity Feed */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Recent Activity</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">{t("admin.recentActivity")}</h2>
           <p className="text-sm text-muted-foreground">
-            Recent submissions and scrapped events requiring attention
+            {t("admin.recentActivityDesc")}
           </p>
         </div>
 
@@ -211,14 +213,22 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                           <p className="text-sm text-gray-900 mb-1">
                             {activity.type === "submission" ? (
                               <>
-                                <span className="font-bold">New event submission</span>
+                                <span className="font-bold">{t("admin.newEventSubmission")}</span>
                                 <span className="font-normal text-gray-600">: {activity.data.eventData.title}</span>
                               </>
-                            ) : activity.type === "scrapped" ? (
-                              <>
-                                <span className="font-semibold">Event scrapped</span>
-                                <span className="font-normal text-gray-600">: Event ID {activity.data.eventId}</span>
-                              </>
+                            ) : activity.type === "scraped" ? (
+                              (() => {
+                                const event = events.find((e) => e.id === Number(activity.data.eventId));
+                                const clubName = event?.organization || event?.display_handle || 'Unknown';
+                                return (
+                                  <>
+                                    <span className="font-semibold">{t("admin.eventScraped")}</span>
+                                    <span className="font-normal text-gray-600">
+                                      : {event ? `${event.title} (${clubName})` : `Event ID ${activity.data.eventId}`}
+                                    </span>
+                                  </>
+                                );
+                              })()
                             ) : (
                               <>
                                 <span className="font-bold">Created poster</span>
@@ -232,7 +242,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                             {activity.type === "submission" && (
                               <>
                                 <span>•</span>
-                                <span>By {activity.data.submittedBy}</span>
+                                <span>{t("admin.by", { name: activity.data.submittedBy })}</span>
                               </>
                             )}
                           </div>
@@ -258,7 +268,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
           </div>
         ) : (
           <div className="bg-card border border-border rounded-xl p-8 text-center">
-            <p className="text-sm text-muted-foreground">No recent activity</p>
+            <p className="text-sm text-muted-foreground">{t("admin.noRecentActivity")}</p>
           </div>
         )}
       </div>

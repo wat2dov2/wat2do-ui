@@ -223,7 +223,7 @@ export function PieMenu({
                   d={path}
                   fill={
                     item.disabled 
-                      ? (isDarkMode ? "var(--gray-700)" : "var(--gray-100)")
+                      ? (isDarkMode ? "var(--gray-700)" : "var(--muted)")
                       : isActive 
                         ? "var(--primary)" 
                         : (isDarkMode ? "var(--gray-800)" : "var(--background)")

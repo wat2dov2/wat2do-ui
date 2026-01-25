@@ -1,4 +1,4 @@
-import type { EventSubmission, ReportedEvent, ScrappedEvent } from "@/types";
+import type { EventSubmission, ReportedEvent, ScrapedEvent } from "@/types";
 
 // Mock event submissions
 export const mockEventSubmissions: EventSubmission[] = [
@@ -104,30 +104,30 @@ export const mockReportedEvents: ReportedEvent[] = [
   },
 ];
 
-// Mock scrapped events
-export const mockScrappedEvents: ScrappedEvent[] = [
+// Mock scraped events - using actual event IDs from mockEvents
+export const mockScrapedEvents: ScrapedEvent[] = [
   {
     id: "scrap-1",
-    eventId: 10,
-    scrappedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
+    eventId: 3733,
+    scrapedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
     source: "web-scraper",
   },
   {
     id: "scrap-2",
-    eventId: 15,
-    scrappedAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago
+    eventId: 3531,
+    scrapedAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago
     source: "web-scraper",
   },
   {
     id: "scrap-3",
-    eventId: 22,
-    scrappedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+    eventId: 3683,
+    scrapedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
     source: "web-scraper",
   },
   {
     id: "scrap-4",
-    eventId: 8,
-    scrappedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+    eventId: 3568,
+    scrapedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
     source: "web-scraper",
   },
 ];
@@ -145,10 +145,28 @@ export function getReportedEvents(): ReportedEvent[] {
   return [...mockReportedEvents, ...userReports];
 }
 
-export function getScrappedEvents(): ScrappedEvent[] {
-  const stored = localStorage.getItem("scrappedEvents");
-  const userScrapped: ScrappedEvent[] = stored ? JSON.parse(stored) : [];
-  return [...mockScrappedEvents, ...userScrapped];
+export function getScrapedEvents(): ScrapedEvent[] {
+  // Migrate old "scrappedEvents" to "scrapedEvents"
+  const oldStored = localStorage.getItem("scrappedEvents");
+  if (oldStored) {
+    try {
+      const oldData = JSON.parse(oldStored);
+      // Convert old format to new format
+      const migrated: ScrapedEvent[] = oldData.map((item: any) => ({
+        ...item,
+        scrapedAt: item.scrappedAt || item.scrapedAt,
+      }));
+      localStorage.setItem("scrapedEvents", JSON.stringify(migrated));
+      localStorage.removeItem("scrappedEvents");
+    } catch (e) {
+      // If migration fails, just remove old data
+      localStorage.removeItem("scrappedEvents");
+    }
+  }
+  
+  const stored = localStorage.getItem("scrapedEvents");
+  const userScraped: ScrapedEvent[] = stored ? JSON.parse(stored) : [];
+  return [...mockScrapedEvents, ...userScraped];
 }
 
 export function saveEventSubmission(submission: EventSubmission): void {
@@ -213,9 +231,9 @@ export function updateReportedEvent(id: string, status: "pending" | "resolved" |
   }
 }
 
-export function saveScrappedEvent(scrapped: ScrappedEvent): void {
-  const stored = localStorage.getItem("scrappedEvents");
-  const scrappedEvents: ScrappedEvent[] = stored ? JSON.parse(stored) : [];
-  scrappedEvents.push(scrapped);
-  localStorage.setItem("scrappedEvents", JSON.stringify(scrappedEvents));
+export function saveScrapedEvent(scraped: ScrapedEvent): void {
+  const stored = localStorage.getItem("scrapedEvents");
+  const scrapedEvents: ScrapedEvent[] = stored ? JSON.parse(stored) : [];
+  scrapedEvents.push(scraped);
+  localStorage.setItem("scrapedEvents", JSON.stringify(scrapedEvents));
 }

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Check, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useTranslation } from "react-i18next";
 import { useOnClickOutside } from "../hooks/use-on-click-outside";
 
 interface ChecklistItem {
@@ -25,34 +26,38 @@ export function GettingStartedChecklist({
   onViewEvent,
   profileCompleted = false,
 }: GettingStartedChecklistProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [items, setItems] = useState<ChecklistItem[]>([
+  
+  const defaultItems = useMemo<ChecklistItem[]>(() => [
     {
       id: "profile",
-      title: "Set up your profile",
-      description: "Tell us about your school and interests",
+      title: t("checklist.setUpProfile"),
+      description: t("checklist.setUpProfileDesc"),
       completed: false,
     },
     {
       id: "browse",
-      title: "Browse events",
-      description: "Explore what's happening on campus",
+      title: t("checklist.browseEvents"),
+      description: t("checklist.browseEventsDesc"),
       completed: false,
     },
     {
       id: "filter",
-      title: "Try filtering",
-      description: "Find events that match your interests",
+      title: t("checklist.tryFiltering"),
+      description: t("checklist.tryFilteringDesc"),
       completed: false,
     },
     {
       id: "view",
-      title: "View an event",
-      description: "Check out event details",
+      title: t("checklist.viewEvent"),
+      description: t("checklist.viewEventDesc"),
       completed: false,
     },
-  ]);
+  ], [t]);
+  
+  const [items, setItems] = useState<ChecklistItem[]>(defaultItems);
 
   // Load state from localStorage
   useEffect(() => {
@@ -60,10 +65,17 @@ export function GettingStartedChecklist({
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.items) {
-        setItems(parsed.items);
+        // Merge saved completion state with current translations
+        const mergedItems = defaultItems.map((defaultItem) => {
+          const savedItem = parsed.items.find((item: ChecklistItem) => item.id === defaultItem.id);
+          return savedItem ? { ...defaultItem, completed: savedItem.completed } : defaultItem;
+        });
+        setItems(mergedItems);
       }
+    } else {
+      setItems(defaultItems);
     }
-  }, []);
+  }, [defaultItems]);
 
   // Update profile completion when prop changes
   useEffect(() => {
@@ -207,7 +219,7 @@ export function GettingStartedChecklist({
             <div className="w-5 h-5 rounded-full border-2 border-white/50 flex items-center justify-center">
               <span className="text-white text-xs font-bold">{completedCount}</span>
             </div>
-            <span className="text-white font-semibold text-sm">Getting Started</span>
+            <span className="text-white font-semibold text-sm">{t("checklist.gettingStarted")}</span>
           </div>
           <div className="flex items-center gap-1">
             {isExpanded ? (

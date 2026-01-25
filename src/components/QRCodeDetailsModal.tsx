@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Download,
@@ -20,6 +21,9 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
 import {
   Select,
   SelectContent,
@@ -27,6 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "./ui/field";
 import {
   Card,
   CardContent,
@@ -70,6 +81,7 @@ export function QRCodeDetailsModal({
   userEmail,
   onUpdate,
 }: QRCodeDetailsModalProps) {
+  const { t } = useTranslation();
   const [scans, setScans] = useState<QRCodeScan[]>([]);
   const [timeRange, setTimeRange] = useState<string>("30"); // days
   const [isEditing, setIsEditing] = useState(false);
@@ -252,12 +264,12 @@ export function QRCodeDetailsModal({
   const destinationInfo = useMemo(() => {
     if (qrCode.destinationType === "event") {
       const event = events.find((e) => e.id === qrCode.destinationId);
-      return event ? { type: "Event", name: event.title } : null;
+      return event ? { type: t("qrCode.event"), name: event.title } : null;
     } else if (qrCode.destinationType === "events-list") {
-      return { type: "Events List", name: "Filtered Events" };
+      return { type: t("qrCode.eventsList"), name: t("admin.filteredEvents") };
     } else {
       return {
-        type: "Custom URL",
+        type: t("qrCode.customUrlType"),
         name: qrCode.destinationId as string,
       };
     }
@@ -310,15 +322,16 @@ export function QRCodeDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>QR Code Analytics</DialogTitle>
+      <DialogContent className="p-0 max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle>{t("admin.qrCodeAnalytics")}</DialogTitle>
           <DialogDescription>
-            {qrCode.name} - Performance metrics and trends
+            {qrCode.name} - {t("admin.performanceMetrics")}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="px-6 pb-6">
+          <div className="space-y-6">
           {/* QR Code Info Section */}
           <div className="flex items-start gap-6">
             {/* QR Code */}
@@ -334,7 +347,7 @@ export function QRCodeDetailsModal({
                   className="w-full"
                 >
                   <Download className="w-3.5 h-3.5 mr-1.5" />
-                  Download QR Code
+                  {t("admin.downloadQrCode")}
                 </Button>
               </div>
             </div>
@@ -357,89 +370,99 @@ export function QRCodeDetailsModal({
             </div>
 
             {/* Info and Edit Section */}
-            <div className="flex-1 space-y-4">
+            <div className="flex-1">
               {isEditing ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      className="w-full border border-border bg-card text-foreground rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      Description
-                    </label>
-                    <textarea
-                      value={editedDescription}
-                      onChange={(e) => setEditedDescription(e.target.value)}
-                      className="w-full border border-border bg-card text-foreground rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      Poster Image
-                    </label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    {imagePreview ? (
-                      <div className="relative">
-                        <div className="relative w-full h-48 rounded-xl overflow-hidden border border-border">
-                          <img
-                            src={imagePreview}
-                            alt="Poster preview"
-                            className="w-full h-full object-cover"
+                <form>
+                  <FieldGroup>
+                    <FieldSet>
+                      <FieldLegend>Edit QR Code</FieldLegend>
+                      <FieldGroup>
+                        <Field>
+                          <FieldLabel htmlFor="edit-name" className="text-sm font-medium text-foreground">
+                            {t("forms.name")}
+                          </FieldLabel>
+                          <Input
+                            id="edit-name"
+                            type="text"
+                            value={editedName}
+                            onChange={(e) => setEditedName(e.target.value)}
+                            className="w-full text-sm"
                           />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRemoveImage}
-                          className="absolute top-2 right-2"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors cursor-pointer bg-muted/50 hover:bg-muted"
-                      >
-                        <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm font-medium text-foreground mb-1">
-                          Click to upload image
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG up to 5MB
-                        </p>
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleSave}>
-                      Save Changes
-                    </Button>
-                  </div>
-                </>
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="edit-description" className="text-sm font-medium text-foreground">
+                            {t("forms.description")}
+                          </FieldLabel>
+                          <Textarea
+                            id="edit-description"
+                            value={editedDescription}
+                            onChange={(e) => setEditedDescription(e.target.value)}
+                            className="w-full text-sm min-h-[80px]"
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel className="text-sm font-medium text-foreground">
+                            {t("qrCode.posterImage")}
+                          </FieldLabel>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          {imagePreview ? (
+                            <div className="relative">
+                              <div className="relative w-full h-48 rounded-xl overflow-hidden border border-border">
+                                <img
+                                  src={imagePreview}
+                                  alt={t("qrCode.posterPreview")}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRemoveImage}
+                                className="absolute top-2 right-2"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-full border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors cursor-pointer bg-muted/50 hover:bg-muted"
+                            >
+                              <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                              <p className="text-sm font-medium text-foreground mb-1">
+                                {t("forms.clickToUploadImage")}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("qrCode.imageFormat")}
+                              </p>
+                            </button>
+                          )}
+                        </Field>
+                        <Field orientation="horizontal">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsEditing(false)}
+                          >
+                            {t("common.cancel")}
+                          </Button>
+                          <Button type="button" size="sm" onClick={handleSave}>
+                            {t("forms.saveChanges")}
+                          </Button>
+                        </Field>
+                      </FieldGroup>
+                    </FieldSet>
+                  </FieldGroup>
+                </form>
               ) : (
                 <>
                   <div className="flex items-start justify-between">
@@ -459,7 +482,7 @@ export function QRCodeDetailsModal({
                       onClick={() => setIsEditing(true)}
                     >
                       <Edit className="w-3.5 h-3.5 mr-1.5" />
-                      Edit
+                      {t("common.edit")}
                     </Button>
                   </div>
                   <div className="flex items-center gap-4">
@@ -470,7 +493,7 @@ export function QRCodeDetailsModal({
                           : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                       }`}
                     >
-                      {qrCode.isActive ? "Active" : "Inactive"}
+                      {qrCode.isActive ? t("common.active") : t("common.inactive")}
                     </span>
                     {destinationInfo && (
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -488,7 +511,7 @@ export function QRCodeDetailsModal({
             <div className="bg-muted rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <Eye className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Total Scans</span>
+                <span className="text-xs text-muted-foreground">{t("admin.totalScans")}</span>
               </div>
               <div className="text-2xl font-bold text-foreground">
                 {stats.totalScans}
@@ -497,7 +520,7 @@ export function QRCodeDetailsModal({
             <div className="bg-muted rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Unique Scans</span>
+                <span className="text-xs text-muted-foreground">{t("admin.uniqueScans")}</span>
               </div>
               <div className="text-2xl font-bold text-foreground">
                 {stats.uniqueScans}
@@ -506,7 +529,7 @@ export function QRCodeDetailsModal({
             <div className="bg-muted rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Conversions</span>
+                <span className="text-xs text-muted-foreground">{t("admin.conversions")}</span>
               </div>
               <div className="text-2xl font-bold text-foreground">
                 {stats.conversions}
@@ -515,7 +538,7 @@ export function QRCodeDetailsModal({
             <div className="bg-muted rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Conversion Rate</span>
+                <span className="text-xs text-muted-foreground">{t("admin.conversionRate")}</span>
               </div>
               <div className="text-2xl font-bold text-foreground">
                 {stats.conversionRate}%
@@ -528,17 +551,17 @@ export function QRCodeDetailsModal({
             <div className="space-y-6">
               {/* Time Range Selector */}
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">Performance Trends</h3>
+                <h3 className="font-semibold text-foreground">{t("admin.performanceTrends")}</h3>
                 <Select value={timeRange} onValueChange={setTimeRange}>
                   <SelectTrigger className="w-[180px]">
                     <Calendar className="w-3.5 h-3.5 mr-2" />
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="7">Last 7 days</SelectItem>
-                    <SelectItem value="14">Last 14 days</SelectItem>
-                    <SelectItem value="30">Last 30 days</SelectItem>
-                    <SelectItem value="all">All time</SelectItem>
+                    <SelectItem value="7">{t("qrCode.last7Days")}</SelectItem>
+                    <SelectItem value="14">{t("qrCode.last14Days")}</SelectItem>
+                    <SelectItem value="30">{t("admin.last30Days")}</SelectItem>
+                    <SelectItem value="all">{t("admin.allTime")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -546,7 +569,7 @@ export function QRCodeDetailsModal({
               {/* Total Scans Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Total Scans Over Time</CardTitle>
+                  <CardTitle>{t("admin.totalScansOverTime")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={totalScansConfig} className="h-[250px] w-full">
@@ -584,7 +607,7 @@ export function QRCodeDetailsModal({
               {/* Unique Scans Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Unique Scans Over Time</CardTitle>
+                  <CardTitle>{t("admin.uniqueScansOverTime")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={uniqueScansConfig} className="h-[250px] w-full">
@@ -622,7 +645,7 @@ export function QRCodeDetailsModal({
               {/* Conversions Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Conversions Over Time</CardTitle>
+                  <CardTitle>{t("admin.conversions")} Over Time</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={conversionsConfig} className="h-[250px] w-full">
@@ -660,7 +683,7 @@ export function QRCodeDetailsModal({
               {/* Conversion Rate Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Conversion Rate Over Time</CardTitle>
+                  <CardTitle>{t("admin.conversionRateOverTime")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={conversionRateConfig} className="h-[250px] w-full">
@@ -701,10 +724,11 @@ export function QRCodeDetailsModal({
           {stats.totalScansData.length === 0 && (
             <div className="text-center py-12 text-muted-foreground border border-border rounded-xl">
               <Eye className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="font-medium mb-1">No scan data yet</p>
-              <p className="text-sm">Share your QR code to start tracking performance</p>
+              <p className="font-medium mb-1">{t("qrCode.noScanData")}</p>
+              <p className="text-sm">{t("qrCode.noScanDataDesc")}</p>
             </div>
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

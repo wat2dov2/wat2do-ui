@@ -1,5 +1,6 @@
 import React from "react";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { EventCard } from "./EventCard";
 import type { Event } from "@/types";
 
@@ -33,10 +34,11 @@ export function EventList({
   onDelete,
   onClearFilters,
 }: EventListProps) {
+  const { t } = useTranslation();
   if (viewMode === "calendar") {
     return (
       <div className="text-center py-32 text-muted-foreground">
-        Calendar view coming soon...
+        {t("events.calendarViewComingSoon")}
       </div>
     );
   }
@@ -44,7 +46,7 @@ export function EventList({
   if (viewMode === "map") {
     return (
       <div className="text-center py-32 text-muted-foreground">
-        Map view coming soon...
+        {t("events.mapViewComingSoon")}
       </div>
     );
   }
@@ -56,17 +58,17 @@ export function EventList({
           <Search className="w-8 h-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">
-          No events found
+          {t("events.noEventsFound")}
         </h3>
         <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-          We couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.
+          {t("events.noEventsFoundDesc")}
         </p>
         {onClearFilters && (
           <button
             onClick={onClearFilters}
             className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
           >
-            Clear all filters
+            {t("events.clearAllFilters")}
           </button>
         )}
       </div>

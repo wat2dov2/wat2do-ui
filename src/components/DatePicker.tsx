@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DatePickerProps {
@@ -7,15 +8,20 @@ interface DatePickerProps {
   onClose: () => void;
 }
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-const WEEK_DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
 export function DatePicker({ selected, onSelect, onClose }: DatePickerProps) {
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(selected || new Date());
+
+  const MONTH_NAMES = [
+    t("datePicker.months.january"), t("datePicker.months.february"), t("datePicker.months.march"), t("datePicker.months.april"),
+    t("datePicker.months.may"), t("datePicker.months.june"), t("datePicker.months.july"), t("datePicker.months.august"),
+    t("datePicker.months.september"), t("datePicker.months.october"), t("datePicker.months.november"), t("datePicker.months.december"),
+  ];
+
+  const WEEK_DAYS = [
+    t("datePicker.days.su"), t("datePicker.days.mo"), t("datePicker.days.tu"), t("datePicker.days.we"),
+    t("datePicker.days.th"), t("datePicker.days.fr"), t("datePicker.days.sa")
+  ];
 
   const daysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();

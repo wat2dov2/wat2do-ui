@@ -1,6 +1,7 @@
-import React, { useState, useMemo, Suspense, lazy, useEffect } from "react";
+import React, { useState, useMemo, Suspense, lazy, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { Search, Trash2, Megaphone, ArrowLeft, QrCode, Users, X, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Trash2, Megaphone, ArrowLeft, QrCode, Users, X, MapPin, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -27,6 +28,7 @@ import {
 } from "./ui/dialog";
 import { getQRCodes, deleteQRCode, getScansForQRCode, getQRScans } from "@/utils/qrRedirect";
 import { QRCodeDetailsModal } from "./QRCodeDetailsModal";
+import { CreateQRCodeModal } from "./CreateQRCodeModal";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import type { QRCode, Event, QRCodeScan } from "@/types";
 
@@ -46,6 +48,7 @@ export function AdminPostersPage({
   events,
   userEmail,
 }: AdminPostersPageProps) {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -53,7 +56,9 @@ export function AdminPostersPage({
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("alltime");
   const [postersPage, setPostersPage] = useState(1);
   const [scansPage, setScansPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const POSTERS_PER_PAGE = 6;
+  const SCANS_PER_PAGE = 14;
   
   // Intersection observer to only load map when it's about to be visible
   const { ref: mapContainerRef, hasIntersected } = useIntersectionObserver<HTMLDivElement>({
@@ -133,7 +138,7 @@ export function AdminPostersPage({
   }, [qrCodes]);
 
   // Format timestamp for display
-  const formatScanTimestamp = (timestamp: string): string => {
+  const formatScanTimestamp = useCallback((timestamp: string): string => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -141,12 +146,12 @@ export function AdminPostersPage({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Just now";
+    if (diffMins < 1) return t ? t("common.justNow") : "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
-  };
+  }, [t]);
 
   // Calculate stats for each QR code
   const qrCodesWithStats = useMemo(() => {
@@ -191,19 +196,19 @@ export function AdminPostersPage({
       .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
   }, [scansMatchingPosterSearch]);
 
-  // Pagination for posters
-  const postersTotalPages = Math.ceil(filteredQRCodes.length / ITEMS_PER_PAGE);
+  // Pagination for posters (capped at 6 rows per page)
+  const postersTotalPages = Math.ceil(filteredQRCodes.length / POSTERS_PER_PAGE);
   const paginatedPosters = useMemo(() => {
-    const startIndex = (postersPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const startIndex = (postersPage - 1) * POSTERS_PER_PAGE;
+    const endIndex = startIndex + POSTERS_PER_PAGE;
     return filteredQRCodes.slice(startIndex, endIndex);
   }, [filteredQRCodes, postersPage]);
 
-  // Pagination for scans
-  const scansTotalPages = Math.ceil(sortedScans.length / ITEMS_PER_PAGE);
+  // Pagination for scans (capped at 15 rows per page)
+  const scansTotalPages = Math.ceil(sortedScans.length / SCANS_PER_PAGE);
   const paginatedScans = useMemo(() => {
-    const startIndex = (scansPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const startIndex = (scansPage - 1) * SCANS_PER_PAGE;
+    const endIndex = startIndex + SCANS_PER_PAGE;
     return sortedScans.slice(startIndex, endIndex);
   }, [sortedScans, scansPage]);
 
@@ -243,9 +248,9 @@ export function AdminPostersPage({
           <Megaphone className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manage QR Code Posters</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.managePosters")}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage QR code posters and track their performance
+            {t("admin.managePostersDesc")}
           </p>
         </div>
       </div>
@@ -255,7 +260,7 @@ export function AdminPostersPage({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
         <Input
           type="text"
-          placeholder="Search posters..."
+          placeholder={t("admin.searchPosters")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 pr-9"
@@ -270,10 +275,10 @@ export function AdminPostersPage({
         )}
       </div>
 
-      {/* Map Section - Lazy loaded only when visible */}
-      <div ref={mapContainerRef} className="space-y-3">
+      {/* Map and QR Code Scans Table Side by Side */}
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Scan Locations</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("admin.scanLocations")}</h2>
           <Select
             value={timeFilter}
             onValueChange={(value) => setTimeFilter(value as TimeFilter)}
@@ -282,296 +287,300 @@ export function AdminPostersPage({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="yesterday">Yesterday</SelectItem>
-              <SelectItem value="last7days">Last 7 Days</SelectItem>
-              <SelectItem value="last30days">Last 30 Days</SelectItem>
-              <SelectItem value="alltime">All Time</SelectItem>
+              <SelectItem value="today">{t("admin.today")}</SelectItem>
+              <SelectItem value="yesterday">{t("admin.yesterday")}</SelectItem>
+              <SelectItem value="last7days">{t("admin.last7Days")}</SelectItem>
+              <SelectItem value="last30days">{t("admin.last30Days")}</SelectItem>
+              <SelectItem value="alltime">{t("admin.allTime")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        {hasIntersected ? (
-          <Suspense
-            fallback={
+        <div className="grid grid-cols-2 gap-5">
+          {/* Map Section - Left Side */}
+          <div ref={mapContainerRef} className="space-y-3">
+            {hasIntersected ? (
+              <Suspense
+                fallback={
+                  <div
+                    className="w-full rounded-lg border border-border bg-muted flex items-center justify-center"
+                    style={{ height: "600px" }}
+                  >
+                    <div className="text-center p-8">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Loading map...</p>
+                    </div>
+                  </div>
+                }
+              >
+                <QRScanMap
+                  scans={scansMatchingPosterSearch}
+                  height="600px"
+                  onMarkerClick={(qrCodeId) => {
+                    const qrCode = qrCodes.find(qr => qr.id === qrCodeId);
+                    if (qrCode) {
+                      handleViewDetails(qrCode);
+                    }
+                  }}
+                />
+              </Suspense>
+            ) : (
               <div
                 className="w-full rounded-lg border border-border bg-muted flex items-center justify-center"
-                style={{ height: "500px" }}
+                style={{ height: "600px" }}
               >
                 <div className="text-center p-8">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Loading map...</p>
+                  <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Map will load when visible</p>
                 </div>
               </div>
-            }
-          >
-            <QRScanMap
-              scans={scansMatchingPosterSearch}
-              height="500px"
-              onMarkerClick={(qrCodeId) => {
-                const qrCode = qrCodes.find(qr => qr.id === qrCodeId);
-                if (qrCode) {
-                  handleViewDetails(qrCode);
-                }
-              }}
-            />
-          </Suspense>
-        ) : (
-          <div
-            className="w-full rounded-lg border border-border bg-muted flex items-center justify-center"
-            style={{ height: "500px" }}
-          >
-            <div className="text-center p-8">
-              <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Map will load when visible</p>
+            )}
+          </div>
+
+          {/* QR Code Scans Table - Right Side */}
+          <div className="space-y-3">
+            <div className="border border-border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("admin.timestamp")}</TableHead>
+                    <TableHead>{t("admin.qrCode")}</TableHead>
+                    <TableHead>{t("admin.userId")}</TableHead>
+                    <TableHead>{t("admin.sessionId")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedScans.length > 0 ? (
+                    paginatedScans.map((scan) => (
+                      <TableRow key={scan.id}>
+                        <TableCell className="text-sm">
+                          {formatScanTimestamp(scan.scannedAt)}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {qrCodeMap.get(scan.qrCodeId) || "Unknown"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {scan.userId || (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {scan.sessionId.substring(0, 20)}...
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        {t("admin.noScansFound")}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Results Count */}
-      <div className="flex items-center justify-between">
-        <span className="font-bold text-xl text-gray-900">
-          {filteredQRCodes.length}{" "}
-          {filteredQRCodes.length === 1 ? "poster" : "posters"}
-        </span>
-      </div>
-
-      {/* QR Codes Table */}
-      {filteredQRCodes.length > 0 ? (
-        <div className="border border-border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Picture</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total Scans</TableHead>
-                <TableHead>Unique Scans</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedPosters.map((qr) => (
-                <TableRow
-                  key={qr.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleViewDetails(qr)}
-                >
-                  <TableCell>
-                    {qr.imageUrl ? (
-                      <img
-                        src={qr.imageUrl}
-                        alt={qr.name}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/5 rounded flex items-center justify-center">
-                        <Megaphone className="w-8 h-8 text-muted-foreground/30" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-semibold">{qr.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {qr.description || "—"}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        qr.isActive
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                      }`}
-                    >
-                      {qr.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-sm">
-                      <QrCode className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{qr.totalScans}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-sm">
-                      <Users className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{qr.uniqueScans}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirmId(qr.id);
-                        }}
-                        className="text-error hover:text-error"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : null}
-
-      {/* Pagination for Posters */}
-      {filteredQRCodes.length > 0 && postersTotalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {(postersPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-            {Math.min(postersPage * ITEMS_PER_PAGE, filteredQRCodes.length)} of{" "}
-            {filteredQRCodes.length} posters
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPostersPage((prev) => Math.max(1, prev - 1))}
-              disabled={postersPage === 1}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, postersTotalPages) }, (_, i) => {
-                let pageNum: number;
-                if (postersTotalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (postersPage <= 3) {
-                  pageNum = i + 1;
-                } else if (postersPage >= postersTotalPages - 2) {
-                  pageNum = postersTotalPages - 4 + i;
-                } else {
-                  pageNum = postersPage - 2 + i;
-                }
-                return (
+            {/* Pagination for Scans */}
+            {sortedScans.length > 0 && scansTotalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  {t("admin.showing")} {(scansPage - 1) * SCANS_PER_PAGE + 1} {t("admin.to")}{" "}
+                  {Math.min(scansPage * SCANS_PER_PAGE, sortedScans.length)} {t("admin.of")}{" "}
+                  {sortedScans.length} {t("admin.scans")}
+                </div>
+                <div className="flex items-center gap-2">
                   <Button
-                    key={pageNum}
-                    variant={postersPage === pageNum ? "default" : "outline"}
+                    variant="outline"
                     size="sm"
-                    onClick={() => setPostersPage(pageNum)}
-                    className="w-9"
+                    onClick={() => setScansPage((prev) => Math.max(1, prev - 1))}
+                    disabled={scansPage === 1}
                   >
-                    {pageNum}
+                    <ChevronLeft className="w-4 h-4" />
+                    {t("admin.previous")}
                   </Button>
-                );
-              })}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPostersPage((prev) => Math.min(postersTotalPages, prev + 1))}
-              disabled={postersPage === postersTotalPages}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, scansTotalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (scansTotalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (scansPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (scansPage >= scansTotalPages - 2) {
+                        pageNum = scansTotalPages - 4 + i;
+                      } else {
+                        pageNum = scansPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={scansPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setScansPage(pageNum)}
+                          className="w-9"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setScansPage((prev) => Math.min(scansTotalPages, prev + 1))}
+                    disabled={scansPage === scansTotalPages}
+                  >
+                    {t("admin.next")}
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {filteredQRCodes.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <QrCode className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">
-            No posters found
-          </h3>
-          <p className="text-sm text-muted-foreground text-center max-w-md">
-            No QR code posters match your current search.
-          </p>
-        </div>
-      )}
-
-      {/* Latest Scans Table */}
+      {/* Posters Table - Below */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Latest QR Code Scans</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {filteredQRCodes.length}{" "}
+            {filteredQRCodes.length === 1 ? t("admin.poster") : t("admin.posters")}
+          </h2>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            {t("admin.createPoster")}
+          </Button>
         </div>
-        <div className="border border-border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>QR Code</TableHead>
-                <TableHead>User ID</TableHead>
-                <TableHead>Session ID</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedScans.length > 0 ? (
-                paginatedScans.map((scan) => (
-                  <TableRow key={scan.id}>
-                    <TableCell className="text-sm">
-                      {formatScanTimestamp(scan.scannedAt)}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {qrCodeMap.get(scan.qrCodeId) || "Unknown"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {scan.userId || (
-                        <span className="text-muted-foreground">—</span>
+        {filteredQRCodes.length > 0 ? (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("admin.picture")}</TableHead>
+                  <TableHead>{t("admin.name")}</TableHead>
+                  <TableHead>{t("events.description")}</TableHead>
+                  <TableHead>{t("events.status")}</TableHead>
+                  <TableHead>{t("admin.totalScans")}</TableHead>
+                  <TableHead>{t("admin.uniqueScans")}</TableHead>
+                  <TableHead>{t("admin.actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedPosters.map((qr) => (
+                  <TableRow
+                    key={qr.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleViewDetails(qr)}
+                  >
+                    <TableCell>
+                      {qr.imageUrl ? (
+                        <img
+                          src={qr.imageUrl}
+                          alt={qr.name}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/5 rounded flex items-center justify-center">
+                          <Megaphone className="w-8 h-8 text-muted-foreground/30" />
+                        </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {scan.sessionId.substring(0, 20)}...
+                    <TableCell className="font-semibold">{qr.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {qr.description || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          qr.isActive
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                        }`}
+                      >
+                        {qr.isActive ? t("common.active") : t("common.inactive")}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <QrCode className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">{qr.totalScans}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">{qr.uniqueScans}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(qr.id);
+                          }}
+                          className="text-error hover:text-error"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    No scans found for the selected time period
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-24 px-4 border border-border rounded-lg">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <QrCode className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              {t("admin.noPostersFound")}
+            </h3>
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              {t("admin.noPostersMatchSearch")}
+            </p>
+          </div>
+        )}
 
-        {/* Pagination for Scans */}
-        {sortedScans.length > 0 && scansTotalPages > 1 && (
+        {/* Pagination for Posters */}
+        {filteredQRCodes.length > 0 && postersTotalPages > 1 && (
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Showing {(scansPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-              {Math.min(scansPage * ITEMS_PER_PAGE, sortedScans.length)} of{" "}
-              {sortedScans.length} scans
+              {t("admin.showing")} {(postersPage - 1) * POSTERS_PER_PAGE + 1} {t("admin.to")}{" "}
+              {Math.min(postersPage * POSTERS_PER_PAGE, filteredQRCodes.length)} {t("admin.of")}{" "}
+              {filteredQRCodes.length} {filteredQRCodes.length === 1 ? t("admin.poster") : t("admin.posters")}
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setScansPage((prev) => Math.max(1, prev - 1))}
-                disabled={scansPage === 1}
+                onClick={() => setPostersPage((prev) => Math.max(1, prev - 1))}
+                disabled={postersPage === 1}
               >
                 <ChevronLeft className="w-4 h-4" />
-                Previous
+                {t("admin.previous")}
               </Button>
               <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, scansTotalPages) }, (_, i) => {
+                {Array.from({ length: Math.min(5, postersTotalPages) }, (_, i) => {
                   let pageNum: number;
-                  if (scansTotalPages <= 5) {
+                  if (postersTotalPages <= 5) {
                     pageNum = i + 1;
-                  } else if (scansPage <= 3) {
+                  } else if (postersPage <= 3) {
                     pageNum = i + 1;
-                  } else if (scansPage >= scansTotalPages - 2) {
-                    pageNum = scansTotalPages - 4 + i;
+                  } else if (postersPage >= postersTotalPages - 2) {
+                    pageNum = postersTotalPages - 4 + i;
                   } else {
-                    pageNum = scansPage - 2 + i;
+                    pageNum = postersPage - 2 + i;
                   }
                   return (
                     <Button
                       key={pageNum}
-                      variant={scansPage === pageNum ? "default" : "outline"}
+                      variant={postersPage === pageNum ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setScansPage(pageNum)}
+                      onClick={() => setPostersPage(pageNum)}
                       className="w-9"
                     >
                       {pageNum}
@@ -582,10 +591,10 @@ export function AdminPostersPage({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setScansPage((prev) => Math.min(scansTotalPages, prev + 1))}
-                disabled={scansPage === scansTotalPages}
+                onClick={() => setPostersPage((prev) => Math.min(postersTotalPages, prev + 1))}
+                disabled={postersPage === postersTotalPages}
               >
-                Next
+                {t("admin.next")}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -600,10 +609,9 @@ export function AdminPostersPage({
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Poster</DialogTitle>
+            <DialogTitle>{t("admin.deletePoster")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this QR code poster? This action
-              cannot be undone.
+              {t("admin.deletePosterConfirm")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end mt-4">
@@ -611,13 +619,13 @@ export function AdminPostersPage({
               variant="outline"
               onClick={() => setDeleteConfirmId(null)}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
             >
-              Delete
+              {t("common.delete")}
             </Button>
           </div>
         </DialogContent>
@@ -638,6 +646,19 @@ export function AdminPostersPage({
           onUpdate={loadQRCodes}
         />
       )}
+
+      {/* Create QR Code Modal */}
+      <CreateQRCodeModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={(qrCode) => {
+          // Refresh the QR codes list
+          loadQRCodes();
+          setShowCreateModal(false);
+        }}
+        events={events}
+        userEmail={userEmail}
+      />
     </div>
   );
 }

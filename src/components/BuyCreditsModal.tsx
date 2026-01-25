@@ -4,6 +4,9 @@ import confetti from "canvas-confetti";
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CREDIT_PACKAGES } from "@/types";
@@ -62,20 +65,19 @@ export function BuyCreditsModal({
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-md" showCloseButton={false}>
-          <div className="flex flex-col items-center text-center py-6">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center mb-4">
+          <DialogHeader className="text-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center mb-4 mx-auto">
               <Check className="w-8 h-8 text-white" strokeWidth={3} />
             </div>
-
-            <h2 className="text-xl font-bold text-foreground mb-2">
-              Credits Added!
-            </h2>
-            <p className="text-muted-foreground text-sm mb-4">
+            <DialogTitle>Credits Added!</DialogTitle>
+            <DialogDescription>
               {purchasedCredits} credits have been added to your account.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center text-center py-6">
 
             <div className="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-full mb-6">
-              <Coins className="w-5 h-5 text-amber-500" />
+              <Coins className="w-5 h-5 text-warning" />
               <span className="font-bold text-amber-700">
                 {currentCredits + purchasedCredits} credits
               </span>
@@ -92,29 +94,25 @@ export function BuyCreditsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md" showCloseButton={false}>
-        <button
-          onClick={handleClose}
-          className="absolute top-3 right-3 p-2 hover:bg-gray-200 rounded-lg transition-colors"
-        >
-          <X className="w-5 h-5 text-muted-foreground" />
-        </button>
-
-        <div className="py-2">
-          <div className="flex items-center gap-3 mb-6">
+      <DialogContent className="max-w-md" showCloseButton={true}>
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center">
               <Coins className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">Buy Credits</h2>
-              <p className="text-sm text-muted-foreground">
+              <DialogTitle>Buy Credits</DialogTitle>
+              <DialogDescription>
                 Current balance:{" "}
                 <span className="font-semibold text-amber-600">
                   {currentCredits} credits
                 </span>
-              </p>
+              </DialogDescription>
             </div>
           </div>
+        </DialogHeader>
+
+        <div className="py-2">
 
           <div className="space-y-3 mb-6">
             {CREDIT_PACKAGES.map((pkg, index) => (
@@ -123,12 +121,12 @@ export function BuyCreditsModal({
                 onClick={() => setSelectedPackage(index)}
                 className={`w-full p-4 rounded-lg border-2 text-left transition-all relative ${
                   selectedPackage === index
-                    ? "border-amber-500 bg-amber-100"
+                    ? "border-warning bg-amber-100"
                     : "border-border hover:border-amber-300"
                 }`}
               >
                 {pkg.popular && (
-                  <div className="absolute -top-2 left-4 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                  <div className="absolute -top-2 left-4 bg-warning text-white text-[10px] font-bold px-2 py-0.5 rounded">
                     BEST VALUE
                   </div>
                 )}
@@ -137,7 +135,7 @@ export function BuyCreditsModal({
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                         selectedPackage === index
-                          ? "border-amber-500 bg-amber-500"
+                          ? "border-warning bg-warning"
                           : "border-gray-300"
                       }`}
                     >

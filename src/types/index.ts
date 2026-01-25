@@ -1,21 +1,38 @@
 export interface Event {
   id: number;
   title: string;
-  category: string;
-  organization: string;
+  category?: string; // Can be derived from club_type
+  organization?: string; // Can use display_handle
   location: string;
-  date: string;
-  time: string;
-  isLive: boolean;
-  food: string[];
-  price: number;
-  dayOfWeek: string;
-  requiresRegistration: boolean;
-  addedDate: Date;
+  // Old format (for backward compatibility)
+  date?: string;
+  time?: string;
+  dayOfWeek?: string;
+  // New format
+  dtstart_utc?: string; // ISO 8601 UTC datetime string
+  dtend_utc?: string; // ISO 8601 UTC datetime string
+  isLive?: boolean;
+  food?: string[] | null;
+  price?: number | null;
+  requiresRegistration?: boolean; // Old format
+  registration?: boolean; // New format
+  addedDate?: Date; // Old format
+  added_at?: string; // New format (ISO 8601)
   description?: string;
   // For timeline sorting - actual date object
   eventDate?: Date;
-  imageUrl?: string;
+  imageUrl?: string; // Old format
+  source_image_url?: string; // New format
+  club_type?: string; // New format (WUSA, Athletics, etc.)
+  school?: string;
+  source_url?: string;
+  ig_handle?: string | null;
+  discord_handle?: string | null;
+  x_handle?: string | null;
+  tiktok_handle?: string | null;
+  fb_handle?: string | null;
+  other_handle?: string | null;
+  display_handle?: string;
 }
 
 export interface FilterState {
@@ -38,7 +55,7 @@ export interface UserEventState {
 
 export type ViewMode = "grid" | "calendar" | "map";
 export type FilterViewMode = "visual" | "json";
-export type PageMode = "events" | "about" | "myEvents" | "clubs" | "admin" | "marketing" | "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters";
+export type PageMode = "events" | "about" | "myEvents" | "clubs" | "admin" | "marketing" | "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters" | "settings";
 export type MyEventsTab = "upcoming" | "past";
 
 // Club interface
@@ -113,7 +130,7 @@ export interface QRCode {
   createdAt: string;
   createdBy: string;
   isActive: boolean;
-  imageUrl?: string; // Optional image/poster image (stored as data URL)
+  imageUrl?: string; // Image/poster image (stored as data URL)
   latitude: number; // Poster location latitude
   longitude: number; // Poster location longitude
 }
@@ -161,15 +178,15 @@ export interface ReportedEvent {
   status: "pending" | "resolved" | "dismissed";
 }
 
-export interface ScrappedEvent {
+export interface ScrapedEvent {
   id: string;
   eventId: number;
-  scrappedAt: string;
+  scrapedAt: string;
   source: string; // e.g., "web-scraper"
 }
 
 // Union type for activity feed
 export type AdminActivity = 
   | { type: "submission"; data: EventSubmission }
-  | { type: "scrapped"; data: ScrappedEvent }
+  | { type: "scraped"; data: ScrapedEvent }
   | { type: "reported"; data: ReportedEvent };

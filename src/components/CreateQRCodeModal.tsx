@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import { X, Download, Check, Circle, ImagePlus, Image as ImageIcon } from "lucide-react";
 import {
@@ -7,9 +8,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogHeader,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,6 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+} from "@/components/ui/field";
+import { SuccessAlert } from "@/components/ui/success-alert";
 import type { QRCode, Event, FilterState } from "@/types";
 import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/utils/qrGenerator";
 import { saveQRCode } from "@/utils/qrRedirect";
@@ -36,6 +51,7 @@ export function CreateQRCodeModal({
   events,
   userEmail,
 }: CreateQRCodeModalProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [destinationType, setDestinationType] = useState<
@@ -48,6 +64,8 @@ export function CreateQRCodeModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUrl, setImageUrl] = useState<string>("");
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [createdQRCodeName, setCreatedQRCodeName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -72,7 +90,7 @@ export function CreateQRCodeModal({
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      setErrors((prev) => ({ ...prev, image: "Please select an image file" }));
+      setErrors((prev) => ({ ...prev, image: t("qrCode.imageFileError") }));
       return;
     }
 
@@ -80,7 +98,7 @@ export function CreateQRCodeModal({
     if (file.size > 5 * 1024 * 1024) {
       setErrors((prev) => ({
         ...prev,
-        image: "Image must be less than 5MB",
+        image: t("qrCode.imageSizeError"),
       }));
       return;
     }
@@ -100,7 +118,7 @@ export function CreateQRCodeModal({
     reader.onerror = () => {
       setErrors((prev) => ({
         ...prev,
-        image: "Failed to read image file",
+        image: t("qrCode.imageReadError"),
       }));
     };
     reader.readAsDataURL(file);
@@ -117,19 +135,19 @@ export function CreateQRCodeModal({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = t("qrCode.nameRequired");
     }
-    if (destinationType === "event" && !selectedEventId) {
-      newErrors.event = "Please select an event";
+    if (!imageUrl) {
+      newErrors.image = t("qrCode.posterImageRequired");
     }
     if (destinationType === "custom-url" && !customUrl.trim()) {
-      newErrors.url = "URL is required";
+      newErrors.url = t("qrCode.urlRequired");
     }
     if (destinationType === "custom-url" && customUrl.trim()) {
       try {
         new URL(customUrl);
       } catch {
-        newErrors.url = "Please enter a valid URL";
+        newErrors.url = t("qrCode.urlInvalid");
       }
     }
     setErrors(newErrors);
@@ -160,6 +178,8 @@ export function CreateQRCodeModal({
     saveQRCode(newQRCode);
     setQrCodeId(newQRCode.id);
     onCreate(newQRCode);
+    setCreatedQRCodeName(newQRCode.name);
+    setShowSuccessAlert(true);
   };
 
   const handleDownload = () => {
@@ -195,276 +215,309 @@ export function CreateQRCodeModal({
   const qrUrl = qrCodeId ? generateQRCodeUrl(qrCodeId) : "";
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create QR Code</DialogTitle>
+      <DialogContent className="p-0 max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle>{t("qrCode.createQRCode")}</DialogTitle>
           <DialogDescription>
-            Generate a unique QR code for your physical poster
+            {t("qrCode.createQRCodeDescription")}
           </DialogDescription>
         </DialogHeader>
 
-        {!qrCodeId ? (
-          <div className="space-y-6">
-            {/* Basic Info */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Poster Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Main Campus Poster #1"
-                className={errors.name ? "border-red-500" : ""}
-              />
-              {errors.name && (
-                <p className="text-xs text-red-500">{errors.name}</p>
-              )}
-            </div>
+        <div className="px-6 pb-6">
+          {!qrCodeId ? (
+            <>
+            <form>
+              <FieldGroup>
+                <FieldSet>
+                  <FieldGroup>
+                    <Field>
+                      <FieldLabel htmlFor="poster-name" className="text-sm font-medium text-foreground">
+                        {t("qrCode.posterName")} <span className="text-error">*</span>
+                      </FieldLabel>
+                      <Input
+                        id="poster-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={t("forms.posterNamePlaceholder")}
+                        className={errors.name ? "border-error" : ""}
+                      />
+                      {errors.name && (
+                        <FieldError className="text-xs">{errors.name}</FieldError>
+                      )}
+                    </Field>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Description (Optional)
-              </label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of where this poster will be placed"
-              />
-            </div>
+                    {/* Image Upload */}
+                    <Field>
+                      <FieldLabel className="text-sm font-medium text-foreground">
+                        {t("qrCode.posterImage")} <span className="text-error">*</span>
+                      </FieldLabel>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      {imagePreview ? (
+                        <div className="relative">
+                          <div className="relative w-full h-48 rounded-xl overflow-hidden border border-border">
+                            <img
+                              src={imagePreview}
+                              alt={t("qrCode.posterPreview")}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRemoveImage}
+                            className="absolute top-2 right-2"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors cursor-pointer bg-muted/50 hover:bg-muted"
+                        >
+                          <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm font-medium text-foreground mb-1">
+                            {t("forms.clickToUploadImage")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("qrCode.imageFormat")}
+                          </p>
+                        </button>
+                      )}
+                      {errors.image && (
+                        <FieldError className="text-xs">{errors.image}</FieldError>
+                      )}
+                    </Field>
 
-            {/* Image Upload */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Poster Image (Optional)
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              {imagePreview ? (
-                <div className="relative">
-                  <div className="relative w-full h-48 rounded-xl overflow-hidden border border-border">
-                    <img
-                      src={imagePreview}
-                      alt="Poster preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRemoveImage}
-                    className="absolute top-2 right-2"
-                  >
-                    <X className="w-4 h-4" />
+                    {/* Destination Type */}
+                    <Field>
+                      <FieldLabel className="text-sm font-medium text-foreground">
+                        {t("qrCode.destination")} <span className="text-error">*</span>
+                      </FieldLabel>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted">
+                          <div className="relative">
+                            <input
+                              type="radio"
+                              name="destinationType"
+                              value="event"
+                              checked={destinationType === "event"}
+                              onChange={() => setDestinationType("event")}
+                              className="sr-only"
+                            />
+                            <Circle
+                              className={`w-4 h-4 ${
+                                destinationType === "event" ? "text-primary fill-primary" : "text-muted-foreground"
+                              }`}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{t("qrCode.specificEvent")}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {t("qrCode.specificEventDesc")}
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted">
+                          <div className="relative">
+                            <input
+                              type="radio"
+                              name="destinationType"
+                              value="events-list"
+                              checked={destinationType === "events-list"}
+                              onChange={() => setDestinationType("events-list")}
+                              className="sr-only"
+                            />
+                            <Circle
+                              className={`w-4 h-4 ${
+                                destinationType === "events-list"
+                                  ? "text-primary fill-primary"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{t("qrCode.eventsList")}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {t("qrCode.eventsListDesc")}
+                            </div>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted">
+                          <div className="relative">
+                            <input
+                              type="radio"
+                              name="destinationType"
+                              value="custom-url"
+                              checked={destinationType === "custom-url"}
+                              onChange={() => setDestinationType("custom-url")}
+                              className="sr-only"
+                            />
+                            <Circle
+                              className={`w-4 h-4 ${
+                                destinationType === "custom-url"
+                                  ? "text-primary fill-primary"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{t("qrCode.customUrl")}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {t("qrCode.customUrlDesc")}
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+                    </Field>
+
+                    {/* Destination Configuration - Required for custom-url */}
+                    {destinationType === "custom-url" && (
+                      <Field>
+                        <FieldLabel htmlFor="custom-url" className="text-sm font-medium text-foreground">
+                          {t("qrCode.url")} <span className="text-error">*</span>
+                        </FieldLabel>
+                        <Input
+                          id="custom-url"
+                          type="url"
+                          value={customUrl}
+                          onChange={(e) => setCustomUrl(e.target.value)}
+                          placeholder={t("forms.urlPlaceholder")}
+                          className={errors.url ? "border-error" : ""}
+                        />
+                        {errors.url && (
+                          <FieldError className="text-xs">{errors.url}</FieldError>
+                        )}
+                      </Field>
+                    )}
+                  </FieldGroup>
+                </FieldSet>
+
+                <FieldSeparator />
+
+                <FieldSet>
+                  <FieldLegend>Optional Details</FieldLegend>
+                  <FieldGroup>
+                    <Field>
+                      <FieldLabel htmlFor="poster-description" className="text-sm font-medium text-foreground">
+                        {t("forms.description")}
+                      </FieldLabel>
+                      <Input
+                        id="poster-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder={t("forms.descriptionPlaceholder")}
+                      />
+                    </Field>
+
+                    {/* Destination Configuration - Optional for event and events-list */}
+                    {destinationType === "event" && (
+                      <Field>
+                        <FieldLabel className="text-sm font-medium text-foreground">
+                          {t("qrCode.selectEvent")}
+                        </FieldLabel>
+                        <Select
+                          value={selectedEventId?.toString() || undefined}
+                          onValueChange={(value) => setSelectedEventId(parseInt(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("forms.chooseEvent")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {events.map((event) => (
+                              <SelectItem key={event.id} value={event.id.toString()}>
+                                {event.title} - {event.date}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    )}
+
+                    {destinationType === "events-list" && (
+                      <Field>
+                        <FieldLabel className="text-sm font-medium text-foreground">
+                          {t("qrCode.filterEvents")}
+                        </FieldLabel>
+                        <FieldDescription>
+                          {t("qrCode.filterEventsDesc")}
+                        </FieldDescription>
+                        <div className="p-4 border border-border rounded-xl bg-muted/50">
+                          <p className="text-xs text-muted-foreground">
+                            {t("qrCode.advancedFilteringMessage")}
+                          </p>
+                        </div>
+                      </Field>
+                    )}
+                  </FieldGroup>
+                </FieldSet>
+
+                <Field orientation="horizontal">
+                  <DialogClose asChild>
+                    <Button variant="outline" type="button">
+                      {t("common.cancel")}
+                    </Button>
+                  </DialogClose>
+                  <Button type="button" onClick={handleGenerate}>
+                    {t("qrCode.generateQRCode")}
                   </Button>
+                </Field>
+              </FieldGroup>
+            </form>
+
+            </>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <Check className="w-5 h-5" />
+                <span className="font-medium">{t("qrCode.qrCodeGeneratedSuccessfully")}</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-4 p-6 border border-border rounded-xl bg-muted/50">
+                <div className="p-4 bg-white rounded-lg">
+                  <QRCodeSVG value={qrUrl} size={256} />
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors cursor-pointer bg-muted/50 hover:bg-muted"
-                >
-                  <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    Click to upload image
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG up to 5MB
-                  </p>
-                </button>
-              )}
-              {errors.image && (
-                <p className="text-xs text-red-500">{errors.image}</p>
-              )}
-            </div>
-
-            {/* Destination Type */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">
-                Destination <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted">
-                  <div className="relative">
-                    <input
-                      type="radio"
-                      name="destinationType"
-                      value="event"
-                      checked={destinationType === "event"}
-                      onChange={() => setDestinationType("event")}
-                      className="sr-only"
-                    />
-                    <Circle
-                      className={`w-4 h-4 ${
-                        destinationType === "event" ? "text-primary fill-primary" : "text-muted-foreground"
-                      }`}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">Specific Event</div>
-                    <div className="text-xs text-muted-foreground">
-                      Redirect to a specific event page
-                    </div>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted">
-                  <div className="relative">
-                    <input
-                      type="radio"
-                      name="destinationType"
-                      value="events-list"
-                      checked={destinationType === "events-list"}
-                      onChange={() => setDestinationType("events-list")}
-                      className="sr-only"
-                    />
-                    <Circle
-                      className={`w-4 h-4 ${
-                        destinationType === "events-list"
-                          ? "text-primary fill-primary"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">Events List</div>
-                    <div className="text-xs text-muted-foreground">
-                      Redirect to filtered events list
-                    </div>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted">
-                  <div className="relative">
-                    <input
-                      type="radio"
-                      name="destinationType"
-                      value="custom-url"
-                      checked={destinationType === "custom-url"}
-                      onChange={() => setDestinationType("custom-url")}
-                      className="sr-only"
-                    />
-                    <Circle
-                      className={`w-4 h-4 ${
-                        destinationType === "custom-url"
-                          ? "text-primary fill-primary"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">Custom URL</div>
-                    <div className="text-xs text-muted-foreground">
-                      Redirect to any external URL
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Destination Configuration */}
-            {destinationType === "event" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Select Event <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={selectedEventId?.toString() || undefined}
-                  onValueChange={(value) => setSelectedEventId(parseInt(value))}
-                >
-                  <SelectTrigger className={errors.event ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Choose an event" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {events.map((event) => (
-                      <SelectItem key={event.id} value={event.id.toString()}>
-                        {event.title} - {event.date}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.event && (
-                  <p className="text-xs text-red-500">{errors.event}</p>
-                )}
-              </div>
-            )}
-
-            {destinationType === "events-list" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Filter Events (Optional)
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  Users will see a filtered list of events. Leave empty to show all events.
-                </p>
-                <div className="p-4 border border-border rounded-xl bg-muted/50">
-                  <p className="text-xs text-muted-foreground">
-                    Advanced filtering will be available in a future update. For now, all events will be shown.
-                  </p>
+                <div className="text-center">
+                  <p className="font-medium text-sm mb-1">{name}</p>
+                  <p className="text-xs text-muted-foreground break-all">{qrUrl}</p>
                 </div>
               </div>
-            )}
 
-            {destinationType === "custom-url" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  URL <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="url"
-                  value={customUrl}
-                  onChange={(e) => setCustomUrl(e.target.value)}
-                  placeholder="https://example.com"
-                  className={errors.url ? "border-red-500" : ""}
-                />
-                {errors.url && (
-                  <p className="text-xs text-red-500">{errors.url}</p>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button onClick={handleGenerate}>Generate QR Code</Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-              <Check className="w-5 h-5" />
-              <span className="font-medium">QR Code Generated Successfully!</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-4 p-6 border border-border rounded-xl bg-muted/50">
-              <div className="p-4 bg-white rounded-lg">
-                <QRCodeSVG value={qrUrl} size={256} />
-              </div>
-              <div className="text-center">
-                <p className="font-medium text-sm mb-1">{name}</p>
-                <p className="text-xs text-muted-foreground break-all">{qrUrl}</p>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={onClose}>
+                  {t("qrCode.done")}
+                </Button>
+                <Button onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" />
+                  {t("admin.downloadQrCode")}
+                </Button>
               </div>
             </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={onClose}>
-                Done
-              </Button>
-              <Button onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-2" />
-                Download QR Code
-              </Button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
+    <SuccessAlert
+      isOpen={showSuccessAlert}
+      onClose={() => {
+        setShowSuccessAlert(false);
+        onClose();
+      }}
+      title={t("qrCode.posterCreated")}
+      message={t("qrCode.posterCreatedMessage", { name: createdQRCodeName })}
+    />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Calendar, MapPin, DollarSign, Users, Utensils, Tag, ImageOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Calendar, MapPin, DollarSign, Users, Utensils, Tag, ImageOff, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { EventCard } from "./EventCard";
+import { EventCard, translateCategory } from "./EventCard";
 import { LazyImage } from "./LazyImage";
 import type { Event } from "@/types";
 import { mockEvents } from "@/data/events";
@@ -15,7 +16,7 @@ import { mockEvents } from "@/data/events";
 interface EventDetailsModalProps {
   event: Event | null;
   onClose: () => void;
-  allEvents?: Event[]; // Optional: pass all events for similar events calculation
+  allEvents?: Event[]; // Pass all events for similar events calculation
 }
 
 export function EventDetailsModal({
@@ -23,6 +24,7 @@ export function EventDetailsModal({
   onClose,
   allEvents,
 }: EventDetailsModalProps) {
+  const { t } = useTranslation();
   const [currentEvent, setCurrentEvent] = useState(initialEvent);
 
   // Update current event when initialEvent changes
@@ -49,15 +51,17 @@ export function EventDetailsModal({
     }
   };
 
-  if (!currentEvent) return null;
+  const isOpen = currentEvent !== null;
 
   return (
-    <Dialog open={currentEvent !== null} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-        {/* Event Image at Top */}
-        <div className="relative w-full h-64 overflow-hidden">
-          <LazyImage
-            src={currentEvent.imageUrl}
+        {currentEvent && (
+          <>
+            {/* Event Image at Top */}
+            <div className="relative w-full h-64 overflow-hidden">
+              <LazyImage
+                src={currentEvent.imageUrl}
             alt={currentEvent.title}
             className="absolute inset-0 w-full h-full object-cover"
             fallback={
@@ -78,49 +82,66 @@ export function EventDetailsModal({
           </DialogHeader>
 
           <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-sm text-gray-900 mb-1">
+              {t("events.description")}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {currentEvent.description || t("common.noDescription")}
+            </p>
+          </div>
+
+          {currentEvent.source_url && (
             <div>
-              <h3 className="font-semibold text-sm text-gray-900 mb-1">
-                Description
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {currentEvent.description || "No description"}
-              </p>
+            <h3 className="font-semibold text-sm text-gray-900 mb-1">
+              {t("events.sourceLink")}
+            </h3>
+              <a
+                href={currentEvent.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span className="truncate">{currentEvent.source_url}</span>
+              </a>
             </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <h3 className="font-semibold text-sm text-gray-900 mb-1">Date</h3>
+              <h3 className="font-semibold text-sm text-gray-900 mb-1">{t("events.date")}</h3>
               <p className="text-sm text-muted-foreground">{currentEvent.date}</p>
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-gray-900 mb-1">Time</h3>
+              <h3 className="font-semibold text-sm text-gray-900 mb-1">{t("events.time")}</h3>
               <p className="text-sm text-muted-foreground">{currentEvent.time}</p>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-1">Location</h3>
+            <h3 className="font-semibold text-sm text-gray-900 mb-1">{t("events.location")}</h3>
             <p className="text-sm text-muted-foreground">{currentEvent.location}</p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-1">Category</h3>
+            <h3 className="font-semibold text-sm text-gray-900 mb-1">{t("events.category")}</h3>
             <p className="text-sm text-muted-foreground">
-              {currentEvent.category || "None"}
+              {currentEvent.category ? translateCategory(currentEvent.category, t) : t("common.none")}
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-1">Price</h3>
+            <h3 className="font-semibold text-sm text-gray-900 mb-1">{t("events.price")}</h3>
             <p className="text-sm text-muted-foreground">
-              {currentEvent.price === 0 ? "Free" : `$${currentEvent.price}`}
+              {currentEvent.price === 0 ? t("common.free") : `$${currentEvent.price}`}
             </p>
           </div>
 
           {currentEvent.food && currentEvent.food.length > 0 && (
             <div>
               <h3 className="font-semibold text-sm text-gray-900 mb-1">
-                Food Provided
+                {t("events.foodProvided")}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {currentEvent.food.map((food) => (
@@ -137,24 +158,24 @@ export function EventDetailsModal({
 
           <div>
             <h3 className="font-semibold text-sm text-gray-900 mb-1">
-              Requires Registration
+              {t("events.requiresRegistration")}
             </h3>
             <p className="text-sm text-muted-foreground">
-              {currentEvent.requiresRegistration ? "Yes" : "No"}
+              {currentEvent.requiresRegistration ? t("common.yes") : t("common.no")}
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-1">Status</h3>
+            <h3 className="font-semibold text-sm text-gray-900 mb-1">{t("events.status")}</h3>
             <p className="text-sm text-muted-foreground">
-              {currentEvent.isLive ? "Live" : "Not Live"}
+              {currentEvent.isLive ? t("common.live") : t("common.notLive")}
             </p>
           </div>
 
           {currentEvent.dayOfWeek && (
             <div>
               <h3 className="font-semibold text-sm text-gray-900 mb-1">
-                Day of Week
+                {t("events.dayOfWeek")}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {currentEvent.dayOfWeek}
@@ -183,6 +204,8 @@ export function EventDetailsModal({
           )}
           </div>
         </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

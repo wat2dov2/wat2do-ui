@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Moon, Sun } from "lucide-react"
 import { flushSync } from "react-dom"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"button"> {
@@ -12,6 +13,7 @@ export const AnimatedThemeToggler = ({
   duration = 400,
   ...props
 }: AnimatedThemeTogglerProps) => {
+  const { t } = useTranslation()
   const [isDark, setIsDark] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -80,13 +82,13 @@ export const AnimatedThemeToggler = ({
       ref={buttonRef}
       onClick={toggleTheme}
       className={cn(
-        "rounded-lg p-2 hover:bg-gray-200 text-gray-900 transition-colors",
+        "rounded-xl p-2 hover:bg-muted text-gray-900 transition-colors",
         className
       )}
       {...props}
     >
-      {isDark ? <Sun size={20} /> : <Moon size={20} />}
-      <span className="sr-only">Toggle theme</span>
+      {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      <span className="sr-only">{t("theme.toggleTheme")}</span>
     </button>
   )
 }

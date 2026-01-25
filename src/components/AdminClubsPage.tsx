@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, Edit, Trash2, Users, Tag, X, ArrowLeft, Plus, Instagram, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -41,6 +42,7 @@ export function AdminClubsPage({
   onEditClub,
   onDeleteClub,
 }: AdminClubsPageProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClubType, setSelectedClubType] = useState<string>("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
@@ -113,15 +115,15 @@ export function AdminClubsPage({
             <Users className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manage Clubs</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.manageClubs")}</h1>
             <p className="text-sm text-muted-foreground">
-              View, edit, and delete student clubs
+              {t("admin.manageClubsDesc")}
             </p>
           </div>
         </div>
         <Button onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Club
+          {t("admin.addClub")}
         </Button>
       </div>
 
@@ -131,7 +133,7 @@ export function AdminClubsPage({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
           <Input
             type="text"
-            placeholder="Search clubs..."
+            placeholder={t("admin.searchClubs")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-9"
@@ -150,7 +152,7 @@ export function AdminClubsPage({
           onValueChange={(value) => setSelectedClubType(value || "")}
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Club Types" />
+            <SelectValue placeholder={t("admin.allTypes")} />
           </SelectTrigger>
           <SelectContent>
             {clubTypes.map((type) => (
@@ -166,7 +168,7 @@ export function AdminClubsPage({
       <div className="flex items-center justify-between">
         <span className="font-bold text-xl text-gray-900">
           {filteredClubs.length}{" "}
-          {filteredClubs.length === 1 ? "club" : "clubs"}
+          {filteredClubs.length === 1 ? t("admin.club") : t("admin.clubs")}
         </span>
       </div>
 
@@ -176,23 +178,23 @@ export function AdminClubsPage({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="text-xs font-semibold text-gray-900">
-                  Club Name
+                  <TableHead className="text-xs font-semibold text-gray-900">
+                  {t("admin.clubName")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Categories
+                  {t("admin.categories")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Club Type
+                  {t("admin.clubType")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Instagram
+                  {t("admin.instagram")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Discord
+                  {t("admin.discord")}
                 </TableHead>
                 <TableHead className="text-right text-xs font-semibold text-gray-900">
-                  Actions
+                  {t("admin.actions")}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -252,7 +254,7 @@ export function AdminClubsPage({
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => handleEdit(club)}
-                        title="Edit club"
+                        title={t("admin.editClub")}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -260,7 +262,7 @@ export function AdminClubsPage({
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => setDeleteConfirmId(club.id)}
-                        title="Delete club"
+                        title={t("admin.deleteClub")}
                         className="hover:bg-error/10 hover:text-error"
                       >
                         <Trash2 className="w-4 h-4" />

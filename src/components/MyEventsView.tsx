@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Calendar,
   MapPin,
@@ -19,63 +20,6 @@ interface MyEventsViewProps {
 }
 
 type TabType = "upcoming" | "past";
-
-// Helper to parse event date string into Date object
-function parseEventDate(dateStr: string, timeStr: string): Date {
-  // Handle relative dates
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  if (dateStr === "Today") {
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    const date = new Date(today);
-    date.setHours(hours || 12, minutes || 0);
-    return date;
-  }
-
-  if (dateStr === "Tomorrow") {
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    const date = new Date(today);
-    date.setDate(date.getDate() + 1);
-    date.setHours(hours || 12, minutes || 0);
-    return date;
-  }
-
-  // Try to parse as date string (e.g., "Dec 15" or "December 15, 2024")
-  const parsed = new Date(dateStr + " " + timeStr);
-  if (!isNaN(parsed.getTime())) {
-    return parsed;
-  }
-
-  // Default to today if can't parse
-  return today;
-}
-
-// Helper to format date for display
-function formatEventDate(date: Date): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const eventDay = new Date(date);
-  eventDay.setHours(0, 0, 0, 0);
-
-  if (eventDay.getTime() === today.getTime()) {
-    return "Today";
-  }
-
-  if (eventDay.getTime() === tomorrow.getTime()) {
-    return "Tomorrow";
-  }
-
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 function formatTime(timeStr: string): string {
   const [hours, minutes] = timeStr.split(":").map(Number);
@@ -160,11 +104,11 @@ export function MyEventsView({
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
           <Heart className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h2 className="text-xl font-bold text-foreground mb-2">Sign in to view your events</h2>
+        <h2 className="text-xl font-bold text-foreground mb-2">{t("events.signInToView")}</h2>
         <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-          Save events you're interested in and view them all in one place.
+          {t("events.signInToViewDesc")}
         </p>
-        <Button onClick={onSignIn}>Sign In</Button>
+        <Button onClick={onSignIn}>{t("events.signIn")}</Button>
       </div>
     );
   }
@@ -179,9 +123,9 @@ export function MyEventsView({
         </div>
         <h2 className="text-xl font-bold text-foreground mb-2">No saved events yet</h2>
         <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-          Save events you're interested in and they'll appear here. Tap the heart icon on any event to save it.
+          {t("events.emptyEventsDesc")}
         </p>
-        <Button onClick={() => window.history.back()}>Discover Events</Button>
+        <Button onClick={() => window.history.back()}>{t("events.discoverEvents")}</Button>
       </div>
     );
   }
@@ -206,7 +150,7 @@ export function MyEventsView({
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Upcoming
+          {t("events.upcoming")}
           {upcomingEvents.length > 0 && (
             <span className="ml-2 text-xs bg-primary/20 dark:bg-primary/40 text-primary px-1.5 py-0.5 rounded-full">
               {upcomingEvents.length}
@@ -234,7 +178,7 @@ export function MyEventsView({
         <>
           {upcomingEvents.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground text-sm">No upcoming events</p>
+              <p className="text-muted-foreground text-sm">{t("events.noUpcomingEvents")}</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -250,7 +194,7 @@ export function MyEventsView({
               {/* This Week */}
               {groupedUpcoming.thisWeek.length > 0 && (
                 <EventGroup
-                  title="This Week"
+                  title={t("events.thisWeek")}
                   events={groupedUpcoming.thisWeek}
                   onToggleSave={onToggleSave}
                 />
@@ -259,7 +203,7 @@ export function MyEventsView({
               {/* Later */}
               {groupedUpcoming.later.length > 0 && (
                 <EventGroup
-                  title="Later"
+                  title={t("common.later")}
                   events={groupedUpcoming.later}
                   onToggleSave={onToggleSave}
                 />

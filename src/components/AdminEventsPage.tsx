@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Search, Edit, Trash2, Calendar, MapPin, Tag, X, ArrowLeft, AlertTriangle, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
@@ -44,6 +45,7 @@ export function AdminEventsPage({
   onBack,
   onCreateEvent,
 }: AdminEventsPageProps) {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,9 +158,9 @@ export function AdminEventsPage({
             <Calendar className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manage Events</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.manageEvents")}</h1>
             <p className="text-sm text-muted-foreground">
-              View, edit, and delete events
+              {t("admin.manageEventsDesc")}
             </p>
           </div>
         </div>
@@ -176,7 +178,7 @@ export function AdminEventsPage({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
           <Input
             type="text"
-            placeholder="Search events..."
+            placeholder={t("admin.searchEvents")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-9"
@@ -211,7 +213,7 @@ export function AdminEventsPage({
           className="flex items-center gap-2"
         >
           <AlertTriangle className="w-4 h-4" />
-          Reported Only
+          {t("admin.reportedOnly")}
         </Button>
       </div>
 
@@ -219,7 +221,7 @@ export function AdminEventsPage({
       <div className="flex items-center justify-between">
         <span className="font-bold text-xl text-gray-900">
           {filteredEvents.length}{" "}
-          {filteredEvents.length === 1 ? "event" : "events"}
+          {filteredEvents.length === 1 ? t("common.event") : t("common.events")}
         </span>
       </div>
 
@@ -230,22 +232,22 @@ export function AdminEventsPage({
             <TableHeader>
               <TableRow className="bg-muted">
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Title
+                  {t("events.eventTitle")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Organization
+                  {t("events.organization")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Date
+                  {t("events.date")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Location
+                  {t("events.location")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Category
+                  {t("events.category")}
                 </TableHead>
                 <TableHead className="text-xs font-semibold text-gray-900">
-                  Status
+                  {t("events.status")}
                 </TableHead>
                 <TableHead className="text-right text-xs font-semibold text-gray-900">
                   Actions
@@ -322,7 +324,7 @@ export function AdminEventsPage({
                             e.stopPropagation();
                             onEditEvent(event);
                           }}
-                          title="Edit event"
+                          title={t("admin.editEvent")}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -333,7 +335,7 @@ export function AdminEventsPage({
                             e.stopPropagation();
                             setDeleteConfirmId(event.id);
                           }}
-                          title="Delete event"
+                          title={t("admin.deleteEvent")}
                           className="hover:bg-error/10 hover:text-error"
                         >
                           <Trash2 className="w-4 h-4" />
