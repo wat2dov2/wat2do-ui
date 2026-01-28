@@ -11,4 +11,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    __DEV__: JSON.stringify(true),
+  },
+  env: {
+    VITE_EDITOR: 'cursor',
+  },
 })

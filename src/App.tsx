@@ -1,67 +1,73 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useMemo } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import type { Event } from "@/types";
-import { OnboardingModal } from "@/components/OnboardingModal";
-import { AppLayout } from "@/components/AppLayout";
-import { EventsPageContainer } from "@/components/EventsPageContainer";
-import { CommandPalette } from "@/components/CommandPalette";
-import { SubmitEventModal } from "@/components/SubmitEventModal";
-import { BuyCreditsModal } from "@/components/BuyCreditsModal";
-import { GettingStartedChecklist } from "@/components/GettingStartedChecklist";
-import { EasterEggs } from "@/components/EasterEggs";
-import { useAppEvents } from "@/hooks/useAppEvents";
-import { useAppFilters } from "@/hooks/useAppFilters";
-import { useAppPromotions } from "@/hooks/useAppPromotions";
-import { useAppUI } from "@/hooks/useAppUI";
-import { useAppNavigation } from "@/hooks/useAppNavigation";
-import { useSavedEvents } from "@/hooks/useSavedEvents";
-import { useEasterEggs } from "@/hooks/useEasterEggs";
+import { Routes, Route } from "react-router-dom";
+import { TooltipProvider } from "@/shared/ui/tooltip";
+import { OnboardingModal, GettingStartedChecklist } from "@/features/auth";
+import { AppLayout } from "@/app/AppLayout";
+import { EventsPageContainer, SubmitEventModal, useAppEvents, useSavedEvents } from "@/features/events";
+import { CommandPalette } from "@/features/commands/components/CommandPalette";
+import { CommandPaletteProvider } from "@/features/commands/context/CommandPaletteContext";
+import { BuyCreditsModal } from "@/features/credits/components/BuyCreditsModal";
+import { EasterEggs } from "@/shared/components/EasterEggs";
+import { useSearch } from "@/features/search";
+import { useAppPromotions } from "@/app/hooks/useAppPromotions";
+import { useAppUI } from "@/app/hooks/useAppUI";
+import { useAppNavigation } from "@/app/hooks/useAppNavigation";
+import { useEasterEggs } from "@/shared/components/useEasterEggs";
+import { AppProvider } from "@/contexts/AppContext";
+import { NavigationProvider } from "@/contexts/NavigationContext";
+import {
+  AdminPanelRoute,
+  AdminEventsRoute,
+  AdminClubsRoute,
+  AdminSubmissionsRoute,
+  AdminPostersRoute,
+} from "@/app/routes/adminRoutes";
 
 // Lazy load pages for code splitting
 const AboutPage = lazy(() =>
-  import("@/components/AboutPage").then((module) => ({
+  import("@/features/about").then((module) => ({
     default: module.AboutPage,
   }))
 );
 const ClubsPage = lazy(() =>
-  import("@/components/ClubsPage").then((module) => ({
+  import("@/features/clubs").then((module) => ({
     default: module.ClubsPage,
   }))
 );
 const AdminPanel = lazy(() =>
-  import("@/components/AdminPanel").then((module) => ({
+  import("@/features/admin").then((module) => ({
     default: module.AdminPanel,
   }))
 );
 const AdminEventsPage = lazy(() =>
-  import("@/components/AdminEventsPage").then((module) => ({
+  import("@/features/admin").then((module) => ({
     default: module.AdminEventsPage,
   }))
 );
 const AdminClubsPage = lazy(() =>
-  import("@/components/AdminClubsPage").then((module) => ({
+  import("@/features/admin").then((module) => ({
     default: module.AdminClubsPage,
   }))
 );
 const AdminSubmissionsPage = lazy(() =>
-  import("@/components/AdminSubmissionsPage").then((module) => ({
+  import("@/features/admin").then((module) => ({
     default: module.AdminSubmissionsPage,
   }))
 );
 const AdminPostersPage = lazy(() =>
-  import("@/components/AdminPostersPage").then((module) => ({
+  import("@/features/admin").then((module) => ({
     default: module.AdminPostersPage,
   }))
 );
 const MarketingPage = lazy(() =>
-  import("@/components/MarketingPage").then((module) => ({
+  import("@/features/marketing").then((module) => ({
     default: module.MarketingPage,
   }))
 );
 const SettingsPage = lazy(() =>
-  import("@/components/SettingsPage").then((module) => ({
+  import("@/features/settings").then((module) => ({
     default: module.SettingsPage,
   }))
 );
@@ -76,11 +82,11 @@ export default function App() {
   
   // Get events and profile completion for filters
   const { events, addEvent, updateEvent, deleteEvent, editingEvent, handleEditEvent, eventToFormData, clearEditing } = appEvents;
-  const { savedEventIds, toggleSaveEvent } = savedEvents;
+  const { savedEventIds } = savedEvents;
   
   // Initialize filters hook with events and profile
   const { profileCompleted } = appUI;
-  const filters = useAppFilters({ events, profileCompleted, savedEventIds });
+  const filters = useSearch({ events, profileCompleted, savedEventIds });
   
   // Initialize promotions hook
   const promotions = useAppPromotions();
@@ -118,8 +124,6 @@ export default function App() {
     userEmail,
     setUserEmail,
     isAdmin,
-    sidebarHovered,
-    setSidebarHovered,
     eventsExpanded,
     setEventsExpanded,
     selectedSchool,
@@ -138,67 +142,178 @@ export default function App() {
   
   // Combine profile completion from both hooks
   const isProfileCompleted = profileCompleted || uiProfileCompleted;
+
+  // Create context value - memoized to prevent unnecessary re-renders
+  const appContextValue = useMemo(() => ({
+    // Navigation
+    pageMode,
+    
+    // UI State
+    viewMode,
+    setViewMode,
+    filterViewMode,
+    setFilterViewMode,
+    
+    // Sidebar
+    eventsExpanded,
+    setEventsExpanded,
+    
+    // School
+    selectedSchool,
+    setSelectedSchool,
+    
+    // Modals
+    showOnboarding,
+    setShowOnboarding,
+    showSubmitEvent,
+    setShowSubmitEvent,
+    showCommandPalette,
+    setShowCommandPalette,
+    
+    // Profile
+    profileCompleted: isProfileCompleted,
+    setProfileCompleted: setUIProfileCompleted,
+    userEmail,
+    setUserEmail,
+    
+    // Dark mode
+    isDarkMode,
+    
+    // Admin
+    isAdmin,
+  }), [
+    pageMode,
+    viewMode,
+    setViewMode,
+    filterViewMode,
+    setFilterViewMode,
+    eventsExpanded,
+    setEventsExpanded,
+    selectedSchool,
+    setSelectedSchool,
+    showOnboarding,
+    setShowOnboarding,
+    showSubmitEvent,
+    setShowSubmitEvent,
+    showCommandPalette,
+    setShowCommandPalette,
+    isProfileCompleted,
+    setUIProfileCompleted,
+    userEmail,
+    setUserEmail,
+    isDarkMode,
+    isAdmin,
+  ]);
   
   // Handle onboarding completion
-  const handleOnboardingComplete = (data: { email?: string }) => {
+  const handleOnboardingComplete = useCallback((data: { email?: string }) => {
     setUIProfileCompleted(true);
     if (data.email) {
       setUserEmail(data.email);
     }
-  };
-  
+  }, [setUIProfileCompleted, setUserEmail]);
+
+  // Handle onboarding close
+  const handleOnboardingClose = useCallback(() => {
+    setShowOnboarding(false);
+  }, [setShowOnboarding]);
+
   // Handle submit event close
-  const handleSubmitEventClose = () => {
+  const handleSubmitEventClose = useCallback(() => {
     setShowSubmitEvent(false);
     clearEditing();
-  };
-  
+  }, [setShowSubmitEvent, clearEditing]);
+
   // Handle command palette filter actions
-  const handleSetTodayFilter = () => {
+  const handleSetTodayFilter = useCallback(() => {
     filters.setTodayFilter(true);
-  };
-  
-  const handleSetFreeFilter = () => {
+  }, [filters.setTodayFilter]);
+
+  const handleSetFreeFilter = useCallback(() => {
     filters.setFreeFilter(true);
-  };
-  
-  const handleSetForYouFilter = () => {
+  }, [filters.setFreeFilter]);
+
+  const handleSetForYouFilter = useCallback(() => {
     filters.setForYouFilter(true);
-  };
+  }, [filters.setForYouFilter]);
 
   // Get navigation helpers
-  const { navigate } = navigation;
   const { t } = useTranslation();
 
+  // Memoize admin route configuration
+  const adminConfig = useMemo(
+    () => ({
+      events,
+      onEditEvent: handleEditEvent,
+      onDeleteEvent: deleteEvent,
+      onCreateEvent: () => setShowSubmitEvent(true),
+      onAddEvent: addEvent,
+      userEmail,
+    }),
+    [events, handleEditEvent, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
+  );
+
   return (
-    <TooltipProvider delayDuration={0}>
-      <AppLayout
-        pageMode={pageMode}
-        sidebarHovered={sidebarHovered}
-        setSidebarHovered={setSidebarHovered}
-        eventsExpanded={eventsExpanded}
-        setEventsExpanded={setEventsExpanded}
-        selectedSchool={selectedSchool}
-        setSelectedSchool={setSelectedSchool}
-        profileCompleted={isProfileCompleted}
-        setProfileCompleted={setUIProfileCompleted}
-        setUserEmail={setUserEmail}
-        showCommandPalette={showCommandPalette}
-        setShowCommandPalette={setShowCommandPalette}
-        setShowOnboarding={setShowOnboarding}
-        setShowSubmitEvent={setShowSubmitEvent}
-      >
+    <AppProvider value={appContextValue}>
+      <NavigationProvider>
+        <TooltipProvider delayDuration={0}>
+        {/* Modals - rendered outside AppLayout to ensure they respond to state changes immediately */}
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={handleOnboardingClose}
+          onComplete={handleOnboardingComplete}
+        />
+        
+        <SubmitEventModal
+          isOpen={showSubmitEvent}
+          onClose={handleSubmitEventClose}
+          onSubmit={(eventData) => {
+            const eventId = addEvent(eventData);
+            return eventId;
+          }}
+          userCredits={userCredits}
+          onPromote={promoteEvent}
+          onBuyCredits={() => setShowBuyCredits(true)}
+          editEventId={editingEvent?.id}
+          initialData={editingEvent ? eventToFormData(editingEvent) : undefined}
+          onUpdate={(eventId, eventData) => {
+            updateEvent(eventId, eventData);
+            handleSubmitEventClose();
+          }}
+        />
+
+        <BuyCreditsModal
+          isOpen={showBuyCredits}
+          onClose={() => setShowBuyCredits(false)}
+          currentCredits={userCredits}
+          onPurchase={addCredits}
+        />
+
+        <CommandPaletteProvider
+          value={{
+            profileCompleted: isProfileCompleted,
+            viewMode,
+            setViewMode,
+            setShowFilterDropdown: filters.setShowFilterDropdown,
+            setShowSubmitEvent,
+            setShowOnboarding,
+            onClearAllFilters: filters.handleClearAllFilters,
+            onSetTodayFilter: handleSetTodayFilter,
+            onSetFreeFilter: handleSetFreeFilter,
+            onSetForYouFilter: handleSetForYouFilter,
+          }}
+        >
+          <CommandPalette
+            isOpen={showCommandPalette}
+            onOpenChange={setShowCommandPalette}
+          />
+        </CommandPaletteProvider>
+        
+        <AppLayout>
         {/* Easter Eggs */}
         <EasterEggs
           activeEasterEgg={activeEasterEgg}
           onComplete={clearEasterEgg}
-        />
-
-        {/* Onboarding Modal */}
-        <OnboardingModal
-          isOpen={showOnboarding}
-          onClose={() => setShowOnboarding(false)}
-          onComplete={handleOnboardingComplete}
         />
 
         {/* Getting Started Checklist - only show when signed in */}
@@ -218,49 +333,6 @@ export default function App() {
           />
         )}
 
-        {/* Submit Event Modal */}
-        <SubmitEventModal
-          isOpen={showSubmitEvent}
-          onClose={handleSubmitEventClose}
-          onSubmit={(eventData) => {
-            const eventId = addEvent(eventData);
-            return eventId;
-          }}
-          userCredits={userCredits}
-          onPromote={promoteEvent}
-          onBuyCredits={() => setShowBuyCredits(true)}
-          editEventId={editingEvent?.id}
-          initialData={editingEvent ? eventToFormData(editingEvent) : undefined}
-          onUpdate={(eventId, eventData) => {
-            updateEvent(eventId, eventData);
-            handleSubmitEventClose();
-          }}
-        />
-
-        {/* Buy Credits Modal */}
-        <BuyCreditsModal
-          isOpen={showBuyCredits}
-          onClose={() => setShowBuyCredits(false)}
-          currentCredits={userCredits}
-          onPurchase={addCredits}
-        />
-
-        {/* Command Palette */}
-        <CommandPalette
-          isOpen={showCommandPalette}
-          onOpenChange={setShowCommandPalette}
-          profileCompleted={isProfileCompleted}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          setShowFilterDropdown={filters.setShowFilterDropdown}
-          setShowSubmitEvent={setShowSubmitEvent}
-          setShowOnboarding={setShowOnboarding}
-          onClearAllFilters={filters.handleClearAllFilters}
-          onSetTodayFilter={handleSetTodayFilter}
-          onSetFreeFilter={handleSetFreeFilter}
-          onSetForYouFilter={handleSetForYouFilter}
-        />
-
         <Suspense
           fallback={
             <div className="flex items-center justify-center min-h-[400px]">
@@ -276,114 +348,30 @@ export default function App() {
           <Routes>
             <Route
               path="/"
-              element={
-                <EventsPageContainer
-                  profileCompleted={isProfileCompleted}
-                  viewMode={viewMode}
-                  setViewMode={setViewMode}
-                  filterViewMode={filterViewMode}
-                  setFilterViewMode={setFilterViewMode}
-                  isDarkMode={isDarkMode}
-                  isAdmin={isAdmin}
-                />
-              }
+              element={<EventsPageContainer />}
             />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/clubs" element={<ClubsPage />} />
-            <Route
-              path="/settings"
-              element={
-                <SettingsPage
-                  profileCompleted={isProfileCompleted}
-                  onOpenOnboarding={() => setShowOnboarding(true)}
-                  userEmail={userEmail}
-                  viewMode={viewMode}
-                  setViewMode={setViewMode}
-                  filterViewMode={filterViewMode}
-                  setFilterViewMode={setFilterViewMode}
-                />
-              }
-            />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route
               path="/admin"
-              element={
-                <AdminPanel
-                  events={events}
-                  onNavigate={(page) => {
-                    if (page === "admin-events") navigate("/admin/events");
-                    else if (page === "admin-clubs")
-                      navigate("/admin/clubs");
-                    else if (page === "admin-submissions")
-                      navigate("/admin/submissions");
-                    else if (page === "admin-posters")
-                      navigate("/admin/posters");
-                    else navigate("/admin");
-                  }}
-                />
-              }
+              element={<AdminPanelRoute config={adminConfig} />}
             />
             <Route
               path="/admin/events"
-              element={
-                <AdminEventsPage
-                  events={events}
-                  onEditEvent={handleEditEvent}
-                  onDeleteEvent={deleteEvent}
-                  onBack={() => navigate("/admin")}
-                  onCreateEvent={() => setShowSubmitEvent(true)}
-                />
-              }
+              element={<AdminEventsRoute config={adminConfig} />}
             />
             <Route
               path="/admin/clubs"
-              element={
-                <AdminClubsPage
-                  onBack={() => navigate("/admin")}
-                  onAddClub={() => {
-                    // TODO: Implement add club functionality
-                  }}
-                  onEditClub={() => {
-                    // TODO: Implement edit club functionality
-                  }}
-                  onDeleteClub={() => {
-                    // TODO: Implement delete club functionality
-                  }}
-                />
-              }
+              element={<AdminClubsRoute config={adminConfig} />}
             />
             <Route
               path="/admin/submissions"
-              element={
-                <AdminSubmissionsPage
-                  onBack={() => navigate("/admin")}
-                  onApprove={(submission) => {
-                    // Convert submission to event and add it
-                    const eventData = submission.eventData;
-                    addEvent({
-                      title: eventData.title,
-                      description: eventData.description,
-                      date: eventData.date,
-                      time: eventData.time,
-                      location: eventData.location,
-                      category: eventData.category || "Events",
-                      price: eventData.price,
-                      food: eventData.food,
-                      requiresRegistration: eventData.requiresRegistration,
-                      organization: eventData.organization,
-                    });
-                  }}
-                />
-              }
+              element={<AdminSubmissionsRoute config={adminConfig} />}
             />
             <Route
               path="/admin/posters"
-              element={
-                <AdminPostersPage
-                  onBack={() => navigate("/admin")}
-                  events={events}
-                  userEmail={userEmail || ""}
-                />
-              }
+              element={<AdminPostersRoute config={adminConfig} />}
             />
             <Route
               path="/marketing"
@@ -396,7 +384,9 @@ export default function App() {
             />
           </Routes>
         </Suspense>
-      </AppLayout>
-    </TooltipProvider>
+        </AppLayout>
+        </TooltipProvider>
+      </NavigationProvider>
+    </AppProvider>
   );
 }

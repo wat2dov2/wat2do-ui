@@ -1,0 +1,121 @@
+/**
+ * TopNav Component
+ * Refactored to use reusable TopNavButton component
+ * Reduced Tailwind class duplication
+ */
+
+import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { Shield, LogOut } from "lucide-react";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/shared/ui/tooltip";
+import { TopNavButton } from "@/shared/ui/top-nav-button";
+import { SchoolCombobox } from "@/shared/ui/school-combobox";
+import { AnimatedThemeToggler } from "@/components/AnimatedThemeToggler";
+import { LanguageSelector } from "@/shared/ui/language-selector";
+import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
+import { useAppContext } from "@/contexts/AppContext";
+import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
+
+export function TopNav() {
+  const {
+    selectedSchool,
+    setSelectedSchool,
+    profileCompleted,
+    setProfileCompleted,
+    setUserEmail,
+    setShowOnboarding,
+  } = useAppContext();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleLogoClick = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+
+  const handleAdminClick = useCallback(() => {
+    navigate("/admin");
+  }, [navigate]);
+
+  const handleSignOut = useCallback(() => {
+    setProfileCompleted(false);
+    setUserEmail(null);
+  }, [setProfileCompleted, setUserEmail]);
+
+  const handleSignIn = useCallback(() => {
+    setShowOnboarding(true);
+  }, [setShowOnboarding]);
+
+  return (
+    <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-50">
+      <div className="flex items-center gap-2.5">
+        <button
+          onClick={handleLogoClick}
+          className="h-6 w-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          aria-label="Go to events"
+        >
+          <img
+            alt="Logo"
+            className="w-full h-full object-cover rounded"
+            src={imgImage1}
+          />
+        </button>
+        <span className="text-muted-foreground text-lg font-light">/</span>
+        <SchoolCombobox value={selectedSchool} onChange={setSelectedSchool} />
+      </div>
+
+      <div className="flex items-center gap-2">
+        {/* Admin Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <TopNavButton icon={Shield} onClick={handleAdminClick}>
+              {t("navigation.admin")}
+            </TopNavButton>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t("navigation.adminPanel")}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Language Selector */}
+        <LanguageSelector />
+
+        {/* Dark Mode Toggle */}
+        <AnimatedThemeToggler />
+
+        {/* Auth Button */}
+        {profileCompleted ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TopNavButton icon={LogOut} onClick={handleSignOut}>
+                {t("modals.signOut.logOut")}
+              </TopNavButton>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t("modals.signOut.signOutOfAccount")}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <InteractiveHoverButton
+                onClick={handleSignIn}
+                className="flex items-center gap-1.5 bg-primary border-primary text-white font-medium text-sm px-6 py-1.5 min-w-[120px] justify-center"
+                hideDot
+              >
+                {t("events.signIn")}
+              </InteractiveHoverButton>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t("modals.signIn.signInToSavePreferences")}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </header>
+  );
+}

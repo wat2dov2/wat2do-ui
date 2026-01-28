@@ -1,12 +1,22 @@
+import { ClickToComponent } from 'click-to-react-component';
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
-import './lib/i18n' // Initialize i18n
-import { loadLanguage } from './lib/loadLanguage'
-import { getStoredLanguage } from './lib/i18n'
-import App from './App.tsx'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import './shared/lib/i18n' // Initialize i18n
+import { loadLanguage } from '@/shared/lib/loadLanguage'
+import { getStoredLanguage } from '@/shared/lib/i18n'
+import App from '@/App.tsx'
+import ErrorBoundary from '@/app/ErrorBoundary'
+
+if (import.meta.env.DEV) {
+  try {
+    ClickToComponent();
+  } catch (error) {
+    // ClickToComponent requires an editor environment (VS Code/Cursor)
+    // Silently fail if not available
+  }
+}
 
 // Load initial language before rendering
 async function initApp() {
