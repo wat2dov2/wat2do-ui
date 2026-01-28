@@ -21,6 +21,7 @@ import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromo
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
 import { useConfetti } from "@/shared/hooks/useConfetti";
+import { useModalState } from "@/shared/hooks/useModalState";
 import { EventSuccessScreen } from "@/features/events/components/EventForm/EventForm/EventSuccessScreen";
 import { PromotionUpsell } from "@/features/events/components/EventForm/EventForm/PromotionUpsell";
 import { PromotionSuccessScreen } from "@/features/events/components/EventForm/EventForm/PromotionSuccessScreen";
@@ -105,13 +106,20 @@ function SubmitEventModalContent() {
     onPromote,
   });
 
-  // Reset state when modal opens - handle via Dialog onOpenChange
+  // Reset state when modal opens
   const resetState = useCallback(() => {
     dispatch({ type: "RESET" });
     eventFormPromotion.setSelectedPromotion(null);
     eventFormPromotion.setPromotionSuccess(false);
     eventFormPromotion.setShowPromotion(false);
   }, [eventFormPromotion]);
+
+  // Use modal state hook for standardized open/close handling
+  const modalState = useModalState({
+    onClose: handleClose,
+    resetOnClose: true,
+    resetFn: resetState,
+  });
 
   // Sync formData to JSON when switching to JSON view
   const handleViewModeChange = useCallback(
@@ -218,20 +226,9 @@ function SubmitEventModalContent() {
     );
   }
 
-  // Handle dialog open change - reset state when opening
-  const handleDialogOpenChange = useCallback((open: boolean) => {
-    if (open) {
-      // Modal is opening - reset state
-      resetState();
-    } else {
-      // Modal is closing
-      handleClose();
-    }
-  }, [resetState, handleClose]);
-
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
+      <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
         <DialogContent
           className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col"
           showCloseButton={true}

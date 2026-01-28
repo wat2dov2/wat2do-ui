@@ -109,7 +109,7 @@ export function CommandPalette({
             }}
           >
             <SlidersHorizontal className="mr-2 h-4 w-4" />
-            <span>Open Filters</span>
+            <span>{t("commands.openFilters")}</span>
             <CommandShortcut>F</CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -130,7 +130,7 @@ export function CommandPalette({
             }}
           >
             <Calendar className="mr-2 h-4 w-4" />
-            <span>Calendar View</span>
+            <span>{t("commands.calendarView")}</span>
             <CommandShortcut>C</CommandShortcut>
           </CommandItem>
         </CommandGroup>
@@ -146,7 +146,7 @@ export function CommandPalette({
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            <span>Create New Event</span>
+            <span>{t("commands.createNewEvent")}</span>
             <CommandShortcut>N</CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -182,7 +182,7 @@ export function CommandPalette({
                 }}
               >
                 <Heart className="mr-2 h-4 w-4" />
-                <span>Saved Events</span>
+                <span>{t("commands.savedEvents")}</span>
               </CommandItem>
             </>
           ) : (
@@ -220,7 +220,7 @@ export function CommandPalette({
             }}
           >
             <Bell className="mr-2 h-4 w-4" />
-            <span>Notification Preferences</span>
+            <span>{t("commands.notificationPreferences")}</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {
@@ -229,7 +229,7 @@ export function CommandPalette({
             }}
           >
             <Palette className="mr-2 h-4 w-4" />
-            <span>Theme & Appearance</span>
+            <span>{t("commands.themeAppearance")}</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {
@@ -238,7 +238,7 @@ export function CommandPalette({
             }}
           >
             <Shield className="mr-2 h-4 w-4" />
-            <span>Privacy Settings</span>
+            <span>{t("commands.privacySettings")}</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {
@@ -247,7 +247,7 @@ export function CommandPalette({
             }}
           >
             <HelpCircle className="mr-2 h-4 w-4" />
-            <span>Help & Support</span>
+            <span>{t("commands.helpSupport")}</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

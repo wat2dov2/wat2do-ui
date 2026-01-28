@@ -207,3 +207,286 @@ export function EmptyState({
     </div>
   );
 }
+
+/**
+ * Modal Image Header - Standardized image header with gradient overlay
+ */
+export function ModalImageHeader({
+  src,
+  alt,
+  fallback,
+  className,
+  height = "h-64",
+  ...props
+}: {
+  src?: string;
+  alt: string;
+  fallback?: React.ReactNode;
+  height?: string;
+  className?: string;
+} & React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "relative w-full overflow-hidden",
+        height,
+        className
+      )}
+      {...props}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        fallback || (
+          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
+            <div className="w-12 h-12 text-muted-foreground/40" />
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+/**
+ * Info Section - Standardized info section with border separator
+ */
+export function InfoSection({
+  children,
+  className,
+  showBorder = true,
+  ...props
+}: {
+  showBorder?: boolean;
+} & React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "space-y-4",
+        showBorder && "border-t border-border pt-4 mt-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Section Title - Standardized section title
+ */
+export function SectionTitle({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"h3">) {
+  return (
+    <h3
+      className={cn(
+        "font-semibold text-sm text-gray-900 mb-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </h3>
+  );
+}
+
+/**
+ * Action Button Group - Standardized button group for modal actions
+ */
+export function ActionButtonGroup({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "flex gap-2 justify-end mt-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Centered Icon Container - Standardized icon container for success/status states
+ */
+export function CenteredIconContainer({
+  icon: Icon,
+  size = "md",
+  className,
+  ...props
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+} & React.ComponentProps<"div">) {
+  const sizeClasses = {
+    sm: "w-12 h-12",
+    md: "w-16 h-16",
+    lg: "w-20 h-20",
+  };
+
+  const iconSizeClasses = {
+    sm: "w-6 h-6",
+    md: "w-8 h-8",
+    lg: "w-10 h-10",
+  };
+
+  return (
+    <div
+      className={cn(
+        "rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center mb-4 mx-auto",
+        sizeClasses[size],
+        className
+      )}
+      {...props}
+    >
+      <Icon className={cn("text-white", iconSizeClasses[size])} strokeWidth={3} />
+    </div>
+  );
+}
+
+/**
+ * Food Tags Container - Standardized food tags display
+ */
+export function FoodTagsContainer({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap gap-2",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Food Tag - Individual food tag
+ */
+export function FoodTag({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      className={cn(
+        "text-xs px-2 py-1 bg-warning/20 text-warning rounded-full",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * QR Code Container - Standardized QR code display container
+ */
+export function QRCodeContainer({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "p-4 bg-white rounded-lg border border-border",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Modal Stats Grid - Standardized stats grid layout
+ */
+export function ModalStatsGrid({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-2 sm:grid-cols-4 gap-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Flex Row - Standardized flex row with gap
+ */
+export function FlexRow({
+  children,
+  className,
+  gap = "gap-4",
+  ...props
+}: {
+  gap?: string;
+} & React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "flex items-center",
+        gap,
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Flex Col - Standardized flex column with gap
+ */
+export function FlexCol({
+  children,
+  className,
+  gap = "gap-4",
+  ...props
+}: {
+  gap?: string;
+} & React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col",
+        gap,
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}

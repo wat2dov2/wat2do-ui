@@ -29,6 +29,7 @@ import {
 import { useOnboardingSteps } from "@/features/auth/hooks/useOnboardingSteps";
 import { useOnboardingOTP } from "@/features/auth/hooks/useOnboardingOTP";
 import { useOnboardingForm, type OnboardingData } from "@/features/auth/hooks/useOnboardingForm";
+import { useModalState } from "@/shared/hooks/useModalState";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { availableInterests } from "@/shared/data/interests";
 import { updateUserProfile } from "@/features/auth/api/auth.api";
@@ -119,14 +120,10 @@ export function OnboardingModal({
   const displayStep = steps.currentStep >= 1 && steps.currentStep <= 3 ? steps.currentStep : 0;
   const progressValue = steps.currentStep === 0 ? 0 : steps.currentStep >= 4 ? 100 : (displayStep / visibleSteps) * 100;
 
-  const handleOpenChange = React.useCallback((open: boolean) => {
-    if (!open) {
-      onClose();
-    }
-  }, [onClose]);
+  const modalState = useModalState({ onClose });
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent className="w-[calc(100vw-24px)] max-w-2xl">
         {/* Progress bar - only show for steps 1-3 */}
         {steps.currentStep >= 1 && steps.currentStep <= 3 && (

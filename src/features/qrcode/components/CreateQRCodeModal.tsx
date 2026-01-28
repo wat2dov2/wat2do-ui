@@ -32,8 +32,10 @@ import {
   FieldSeparator,
   FieldSet,
 } from "@/shared/ui/field";
+import { ModalContentWrapper, ModalHeaderWrapper } from "@/shared/ui/modal-components";
 import type { QRCode, Event } from "@/shared/types";
 import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
+import { useModalState } from "@/shared/hooks/useModalState";
 import { useCreateQRCodeForm } from "@/features/qrcode/hooks/useCreateQRCodeForm";
 import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/shared/utils/qrGenerator";
 import { saveQRCode } from "@/features/qrcode/api/qrcode.api";
@@ -56,13 +58,12 @@ function CreateQRCodeModalContent() {
   const form = useCreateQRCodeForm(events, userEmail);
   const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
 
-  // Handle dialog open change - reset form when closing
-  const handleDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      form.reset();
-      onClose();
-    }
-  };
+  // Use modal state hook for standardized open/close handling
+  const modalState = useModalState({
+    onClose,
+    resetOnClose: true,
+    resetFn: form.reset,
+  });
 
   const handleGenerate = () => {
     if (!form.validate()) return;
@@ -118,16 +119,18 @@ function CreateQRCodeModalContent() {
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
+    <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent className="p-0 max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle>{t("qrCode.createQRCode")}</DialogTitle>
-          <DialogDescription>
-            {t("qrCode.createQRCodeDescription")}
-          </DialogDescription>
-        </DialogHeader>
+        <ModalHeaderWrapper>
+          <DialogHeader>
+            <DialogTitle>{t("qrCode.createQRCode")}</DialogTitle>
+            <DialogDescription>
+              {t("qrCode.createQRCodeDescription")}
+            </DialogDescription>
+          </DialogHeader>
+        </ModalHeaderWrapper>
 
-        <div className="px-6 pb-6">
+        <ModalContentWrapper>
           {!form.state.qrCodeId ? (
             <>
             <form>
@@ -283,7 +286,7 @@ function CreateQRCodeModalContent() {
               successMessage={t("qrCode.qrCodeGeneratedSuccessfully")}
             />
           )}
-        </div>
+        </ModalContentWrapper>
       </DialogContent>
     </Dialog>
     <SuccessAlertComponent />

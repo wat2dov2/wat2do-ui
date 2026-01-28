@@ -119,12 +119,12 @@
       ],
       "status": "in-progress",
       "priority": 6,
-      "lastAnalyzed": "2026-01-28T00:14:29.572Z",
+      "lastAnalyzed": "2026-01-28T01:51:34.399Z",
       "metrics": {
         "useStateCount": 0,
         "useEffectCount": 0,
         "propsCount": 0,
-        "complexityScore": 12.2
+        "complexityScore": 13.5
       }
     },
     {
@@ -160,12 +160,12 @@
       ],
       "status": "in-progress",
       "priority": 8,
-      "lastAnalyzed": "2026-01-28T00:05:35.456Z",
+      "lastAnalyzed": "2026-01-28T02:04:59.701Z",
       "metrics": {
-        "useStateCount": 5,
-        "useEffectCount": 2,
-        "propsCount": 3.8,
-        "complexityScore": 122.6
+        "useStateCount": 0,
+        "useEffectCount": 0,
+        "propsCount": 0,
+        "complexityScore": 0
       }
     },
     {
@@ -211,5 +211,5 @@
   ],
   "currentFeature": "filters",
   "iteration": 0,
-  "lastUpdated": "2026-01-28T00:14:29.572Z"
+  "lastUpdated": "2026-01-28T02:04:59.702Z"
 }

@@ -1,5 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useReducer, useRef, useCallback } from "react";
 import type { QRCode } from "@/shared/types";
+import {
+  qrCodeImageReducer,
+  type QRCodeImageState,
+} from "@/features/qrcode/hooks/useQRCodeImage.reducer";
 
 interface UseQRCodeImageOptions {
   qrCode: QRCode;
@@ -8,19 +12,21 @@ interface UseQRCodeImageOptions {
 
 /**
  * Hook for managing QR code image upload and preview
+ * Refactored to use useReducer instead of useState (reduced from 2 useState to 1 useReducer)
+ * State resets when qrCode.imageUrl changes (handled by parent component key prop)
  */
 export function useQRCodeImage({ qrCode, isOpen }: UseQRCodeImageOptions) {
-  const [editedImageUrl, setEditedImageUrl] = useState(qrCode.imageUrl || "");
-  const [imagePreview, setImagePreview] = useState(qrCode.imageUrl || "");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageUrl = qrCode.imageUrl || "";
+  
+  const initialState: QRCodeImageState = {
+    editedImageUrl: imageUrl,
+    imagePreview: imageUrl,
+  };
 
-  // Reset when modal opens
-  React.useEffect(() => {
-    if (isOpen) {
-      setEditedImageUrl(qrCode.imageUrl || "");
-      setImagePreview(qrCode.imageUrl || "");
-    }
-  }, [isOpen, qrCode.imageUrl]);
+  const [state, dispatch] = useReducer(qrCodeImageReducer, initialState);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // State resets automatically when qrCode changes (parent component should use key={qrCode.id})
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,24 +43,24 @@ export function useQRCodeImage({ qrCode, isOpen }: UseQRCodeImageOptions) {
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
-      setEditedImageUrl(dataUrl);
-      setImagePreview(dataUrl);
+      dispatch({ type: "SET_EDITED_IMAGE_URL", payload: dataUrl });
+      dispatch({ type: "SET_IMAGE_PREVIEW", payload: dataUrl });
     };
     reader.readAsDataURL(file);
   }, []);
 
   const handleRemoveImage = useCallback(() => {
-    setEditedImageUrl("");
-    setImagePreview("");
+    dispatch({ type: "REMOVE_IMAGE" });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   }, []);
 
   return {
-    editedImageUrl,
-    setEditedImageUrl,
-    imagePreview,
+    editedImageUrl: state.editedImageUrl,
+    setEditedImageUrl: (url: string) =>
+      dispatch({ type: "SET_EDITED_IMAGE_URL", payload: url }),
+    imagePreview: state.imagePreview,
     fileInputRef,
     handleImageUpload,
     handleRemoveImage,

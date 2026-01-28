@@ -230,6 +230,14 @@
     "showFreeEvents": "Show Free Events",
     "showPersonalizedEvents": "Show Personalized Events",
     "gridView": "Grid View",
+    "calendarView": "Calendar View",
+    "openFilters": "Open Filters",
+    "createNewEvent": "Create New Event",
+    "savedEvents": "Saved Events",
+    "notificationPreferences": "Notification Preferences",
+    "themeAppearance": "Theme & Appearance",
+    "privacySettings": "Privacy Settings",
+    "helpSupport": "Help & Support",
     "signInToUnlockFeatures": "Sign in to unlock features",
     "editProfile": "Edit Profile",
     "createProfile": "Create Profile"
@@ -284,7 +292,8 @@
     "mapViewComingSoon": "Map view coming soon...",
     "promoted": "PROMOTED",
     "deleteEventTitle": "Delete Event",
-    "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone."
+    "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
+    "similarEvents": "Similar Events"
   },
   "forms": {
     "selectCategory": "Select category",

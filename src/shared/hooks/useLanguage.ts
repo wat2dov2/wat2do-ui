@@ -1,31 +1,31 @@
 /**
  * Language Management Hook
  * Provides language state and change handler
- * Reduces props by encapsulating language logic
+ * Optimized to reduce unnecessary re-renders and memoization
  */
 
-import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { loadLanguage } from '@/shared/lib/loadLanguage';
-import { getLanguageByCode, getDefaultLanguage, type Language } from '@/shared/constants/languages';
+import { getLanguageByCode, getDefaultLanguage } from '@/shared/constants/languages';
 
 /**
  * Hook for managing language selection
- * Encapsulates language state and change logic
+ * Simplified to avoid unnecessary memoization - i18n already handles reactivity
  */
 export function useLanguage() {
   const { i18n } = useTranslation();
   
+  // Direct access - i18n.language is reactive, no need for memoization
   const currentLanguageCode = i18n.language;
   
-  const currentLanguage = useMemo(() => {
-    return getLanguageByCode(currentLanguageCode) || getDefaultLanguage();
-  }, [currentLanguageCode]);
+  // Simple lookup - fast enough without memoization for small array
+  const currentLanguage = getLanguageByCode(currentLanguageCode) || getDefaultLanguage();
   
-  const changeLanguage = useCallback(async (languageCode: string) => {
+  // Direct function - no need for useCallback, called infrequently
+  const changeLanguage = async (languageCode: string) => {
     await loadLanguage(languageCode);
     i18n.changeLanguage(languageCode);
-  }, [i18n]);
+  };
   
   return {
     currentLanguage,

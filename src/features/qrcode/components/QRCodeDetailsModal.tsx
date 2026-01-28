@@ -43,6 +43,17 @@ import {
   QRCodeDetailsModalProvider,
   useQRCodeDetailsModalContext,
 } from "@/features/qrcode/contexts/QRCodeDetailsModal.context";
+import {
+  ModalContentWrapper,
+  ModalHeaderWrapper,
+  QRCodeContainer,
+  ModalImageContainer,
+  FlexRow,
+  FlexCol,
+  EmptyState,
+  StatusBadge,
+} from "@/shared/ui/modal-components";
+import { useModalState } from "@/shared/hooks/useModalState";
 
 interface QRCodeDetailsModalProps {
   isOpen: boolean;
@@ -65,14 +76,12 @@ function QRCodeDetailsModalContent() {
   });
   const qrCodeImage = useQRCodeImage({ qrCode, isOpen });
 
-  // Handle dialog open change - reset form when opening
-  const handleDialogOpenChange = useCallback((open: boolean) => {
-    if (open) {
-      editForm.reset();
-    } else {
-      onClose();
-    }
-  }, [editForm, onClose]);
+  // Use modal state hook for standardized open/close handling
+  const modalState = useModalState({
+    onClose,
+    resetOnClose: true,
+    resetFn: editForm.reset,
+  });
 
   const handleSave = () => {
     const updated: QRCode = {
@@ -119,24 +128,26 @@ function QRCodeDetailsModalContent() {
   const qrUrl = generateQRCodeUrl(qrCode.id);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
+    <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent className="p-0 max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle>{t("admin.qrCodeAnalytics")}</DialogTitle>
-          <DialogDescription>
-            {qrCode.name} - {t("admin.performanceMetrics")}
-          </DialogDescription>
-        </DialogHeader>
+        <ModalHeaderWrapper>
+          <DialogHeader>
+            <DialogTitle>{t("admin.qrCodeAnalytics")}</DialogTitle>
+            <DialogDescription>
+              {qrCode.name} - {t("admin.performanceMetrics")}
+            </DialogDescription>
+          </DialogHeader>
+        </ModalHeaderWrapper>
 
-        <div className="px-6 pb-6">
+        <ModalContentWrapper>
           <div className="space-y-6">
           {/* QR Code Info Section */}
-          <div className="flex items-start gap-6">
+          <FlexRow className="items-start" gap="gap-6">
             {/* QR Code */}
             <div className="flex-shrink-0">
-              <div className="p-4 bg-white rounded-lg border border-border">
+              <QRCodeContainer>
                 <QRCodeSVG value={qrUrl} size={200} />
-              </div>
+              </QRCodeContainer>
               <div className="mt-3">
                 <Button
                   variant="outline"
@@ -152,19 +163,15 @@ function QRCodeDetailsModalContent() {
 
             {/* Poster Image */}
             <div className="flex-shrink-0">
-              <div className="w-64 h-64 rounded-lg overflow-hidden border border-border bg-gradient-to-br from-primary/20 to-primary/5">
-                {qrCodeImage.imagePreview ? (
-                  <img
-                    src={qrCodeImage.imagePreview}
-                    alt={qrCode.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
+              <ModalImageContainer
+                src={qrCodeImage.imagePreview || undefined}
+                alt={qrCode.name}
+                fallback={
                   <div className="w-full h-full flex items-center justify-center">
                     <Megaphone className="w-16 h-16 text-muted-foreground/30" />
                   </div>
-                )}
-              </div>
+                }
+              />
             </div>
 
             {/* Info and Edit Section */}
@@ -224,7 +231,7 @@ function QRCodeDetailsModalContent() {
                 </form>
               ) : (
                 <>
-                  <div className="flex items-start justify-between">
+                  <FlexRow className="items-start justify-between">
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg text-gray-900 mb-1">
                         {qrCode.name}
@@ -243,27 +250,23 @@ function QRCodeDetailsModalContent() {
                       <Edit className="w-3.5 h-3.5 mr-1.5" />
                       {t("common.edit")}
                     </Button>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        qrCode.isActive
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                      }`}
-                    >
-                      {qrCode.isActive ? t("common.active") : t("common.inactive")}
-                    </span>
+                  </FlexRow>
+                  <FlexRow gap="gap-4">
+                    <StatusBadge
+                      isActive={qrCode.isActive}
+                      activeLabel={t("common.active")}
+                      inactiveLabel={t("common.inactive")}
+                    />
                     {destinationInfo && (
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <FlexRow gap="gap-1.5" className="text-sm text-muted-foreground">
                         <span>{destinationInfo.type}: {destinationInfo.name}</span>
-                      </div>
+                      </FlexRow>
                     )}
-                  </div>
+                  </FlexRow>
                 </>
               )}
             </div>
-          </div>
+          </FlexRow>
 
           {/* Stats Grid */}
           <QRCodeStatsDisplay
@@ -284,14 +287,14 @@ function QRCodeDetailsModalContent() {
               conversionRateData={qrCodeStats.stats.conversionRateData}
             />
           ) : (
-            <div className="text-center py-12 text-muted-foreground border border-border rounded-xl">
-              <Eye className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="font-medium mb-1">{t("qrCode.noScanData")}</p>
-              <p className="text-sm">{t("qrCode.scanQRCodeToSeeData")}</p>
-            </div>
+            <EmptyState
+              icon={Eye}
+              title={t("qrCode.noScanData")}
+              description={t("qrCode.noScanDataDesc")}
+            />
           )}
           </div>
-        </div>
+        </ModalContentWrapper>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,10 @@
-import { useState, useCallback, useEffect } from "react";
+import { useReducer, useCallback } from "react";
 import { getScansForQRCode } from "@/features/qrcode/api/qrcode.api";
 import type { QRCode } from "@/shared/types";
+import {
+  qrCodeScansReducer,
+  initialState,
+} from "@/features/qrcode/hooks/useQRCodeScans.reducer";
 
 interface UseQRCodeScansOptions {
   qrCode: QRCode;
@@ -9,28 +13,28 @@ interface UseQRCodeScansOptions {
 
 /**
  * Hook for managing QR code scans
+ * Refactored to use useReducer instead of useState
+ * Scans loaded synchronously when isOpen is true (derived from props)
  */
 export function useQRCodeScans({ qrCode, isOpen }: UseQRCodeScansOptions) {
-  const [scans, setScans] = useState<QRCodeScan[]>([]);
-  const [timeRange, setTimeRange] = useState<string>("30");
+  // Load scans synchronously when modal is open (derived state, no useEffect)
+  const initialScans = isOpen ? getScansForQRCode(qrCode.id) : [];
+  
+  const [state, dispatch] = useReducer(qrCodeScansReducer, {
+    ...initialState,
+    scans: initialScans,
+  });
 
   const loadScans = useCallback(() => {
     const loadedScans = getScansForQRCode(qrCode.id);
-    setScans(loadedScans);
+    dispatch({ type: "SET_SCANS", payload: loadedScans });
   }, [qrCode.id]);
 
-  useEffect(() => {
-    if (isOpen) {
-      requestAnimationFrame(() => {
-        loadScans();
-      });
-    }
-  }, [isOpen, loadScans]);
-
   return {
-    scans,
-    timeRange,
-    setTimeRange,
+    scans: state.scans,
+    timeRange: state.timeRange,
+    setTimeRange: (range: string) =>
+      dispatch({ type: "SET_TIME_RANGE", payload: range }),
     loadScans,
   };
 }

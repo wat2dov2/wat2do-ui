@@ -1,6 +1,5 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +31,8 @@ import {
 import type { Club } from "@/shared/types";
 import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
 import { useForm } from "@/shared/hooks/useForm";
+import { useTagInput } from "@/shared/hooks/useTagInput";
+import { useModalState } from "@/shared/hooks/useModalState";
 import { TagInput } from "@/shared/ui/tag-input";
 
 interface ClubFormData {
@@ -59,9 +60,6 @@ export function AddClubModal({
   const { t } = useTranslation();
   const isEditMode = !!initialData;
   const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
-
-  // Category input state - reset when modal opens (handled via key prop on TagInput)
-  const [categoryInput, setCategoryInput] = useState("");
 
   // Memoize getDefaults to prevent infinite loops
   const getDefaults = useCallback(() => ({
@@ -102,19 +100,32 @@ export function AddClubModal({
     validate,
   });
 
-  // Reset category input when modal closes
-  const handleClose = useCallback(() => {
-    setCategoryInput("");
-    onClose();
-  }, [onClose]);
+  // Use tag input hook to manage category input state
+  const categoryInput = useTagInput({
+    onAdd: (value) => {
+      if (!form.formData.categories.includes(value)) {
+        form.updateField("categories", [...form.formData.categories, value]);
+        form.handleBlur("categories");
+      }
+    },
+  });
+
+  // Use modal state hook for standardized open/close handling
+  // Combined reset function for form and category input
+  const combinedReset = useCallback(() => {
+    form.reset();
+    categoryInput.reset();
+  }, [form, categoryInput]);
+
+  const modalState = useModalState({ 
+    onClose,
+    resetOnClose: true,
+    resetFn: combinedReset,
+  });
 
   const addCategory = useCallback(() => {
-    if (categoryInput.trim() && !form.formData.categories.includes(categoryInput.trim())) {
-      form.updateField("categories", [...form.formData.categories, categoryInput.trim()]);
-      setCategoryInput("");
-      form.handleBlur("categories");
-    }
-  }, [categoryInput, form]);
+    categoryInput.handleAdd();
+  }, [categoryInput]);
 
   const removeCategory = (index: number) => {
     form.updateField(
@@ -154,7 +165,7 @@ export function AddClubModal({
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? t("clubs.editClub") : t("clubs.addClub")}</DialogTitle>
@@ -192,11 +203,10 @@ export function AddClubModal({
                 </Field>
 
                 <TagInput
-                  key={isOpen ? "open" : "closed"}
                   label={t("forms.categories")}
                   value={form.formData.categories}
-                  inputValue={categoryInput}
-                  onInputChange={setCategoryInput}
+                  inputValue={categoryInput.inputValue}
+                  onInputChange={categoryInput.setInputValue}
                   onAdd={addCategory}
                   onRemove={removeCategory}
                   placeholder={t("forms.addCategoryPlaceholder")}
