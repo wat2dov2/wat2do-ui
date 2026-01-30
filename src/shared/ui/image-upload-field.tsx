@@ -13,6 +13,7 @@ interface ImageUploadFieldProps {
   onRemoveImage: () => void;
   fileInputRef?: React.RefObject<HTMLInputElement>;
   className?: string;
+  multiple?: boolean;
 }
 
 export function ImageUploadField({
@@ -24,6 +25,7 @@ export function ImageUploadField({
   onRemoveImage,
   fileInputRef: externalRef,
   className = "",
+  multiple = false,
 }: ImageUploadFieldProps) {
   const { t } = useTranslation();
   const internalRef = useRef<HTMLInputElement>(null);
@@ -40,6 +42,7 @@ export function ImageUploadField({
         accept="image/*"
         onChange={onImageUpload}
         className="hidden"
+        multiple={multiple}
       />
       {imagePreview ? (
         <div className="relative">

@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { Search, Megaphone, ArrowLeft, X, ChevronLeft, ChevronRight, Plus, MapPin } from "lucide-react";
+import { Search, Megaphone, ArrowLeft, X, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
@@ -27,21 +27,14 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { deleteQRCode } from "@/features/qrcode/api/qrcode.api";
-import { QRCodeDetailsModal, CreateQRCodeModal } from "@/features/qrcode";
+import { QRCodeDetailsModal } from "@/features/qrcode";
+import { GenerateQRAssetsWizard } from "@/features/qrcode/components/GenerateQRAssetsWizard";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { useAdminContext } from "@/features/admin/context/AdminContext";
 import { useAdminPostersFilters } from "@/features/admin/hooks/useAdminPostersFilters";
 import { useAdminPostersPagination } from "@/features/admin/hooks/useAdminPostersPagination";
-import { useAdminPostersStats } from "@/features/admin/hooks/useAdminPostersStats";
 import { useAdminPostersPage } from "@/features/admin/hooks/useAdminPostersPage";
-import { PostersTable } from "@/features/admin/components/PostersTable";
 import type { QRCode } from "@/shared/types";
-
-interface QRCodeWithStats extends QRCode {
-  totalScans: number;
-  uniqueScans: number;
-  lastScanAt?: string;
-}
 
 // Lazy load Mapbox map component - it's heavy and only needed when visible
 const QRScanMap = lazy(() => import("@/features/qrcode/components/QRScanMap").then(module => ({ default: module.QRScanMap })));
@@ -50,17 +43,12 @@ type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime"
 
 export function AdminPostersPage() {
   const { t } = useTranslation();
-  const { events, userEmail, onBack } = useAdminContext();
+  const { events, onBack } = useAdminContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
-    deleteConfirmId,
-    setDeleteConfirmId,
     refreshKey,
     setRefreshKey,
-    showCreateModal,
-    setShowCreateModal,
   } = useAdminPostersPage();
-  const POSTERS_PER_PAGE = 6;
   const SCANS_PER_PAGE = 14;
   
   // Intersection observer to only load map when it's about to be visible
@@ -72,14 +60,13 @@ export function AdminPostersPage() {
   // Use hooks for business logic
   const filters = useAdminPostersFilters({ refreshKey });
   const pagination = useAdminPostersPagination({
-    itemsPerPage: POSTERS_PER_PAGE,
+    itemsPerPage: 10,
     scansPerPage: SCANS_PER_PAGE,
     filteredQRCodes: filters.filteredQRCodes,
     scansMatchingPosterSearch: filters.scansMatchingPosterSearch,
     searchQuery: filters.searchQuery,
     timeFilter: filters.timeFilter,
   });
-  const stats = useAdminPostersStats({ qrCodes: filters.qrCodes });
 
   // Get qrCodeId from URL
   const qrCodeIdParam = searchParams.get("qrCodeId");
@@ -104,20 +91,10 @@ export function AdminPostersPage() {
     return date.toLocaleDateString();
   };
 
-  const handleDelete = (id: string) => {
-    deleteQRCode(id);
-    setDeleteConfirmId(null);
-    setRefreshKey((prev) => prev + 1);
-  };
-
-  const handleViewDetails = (qrCode: QRCodeWithStats) => {
+  const handleViewDetails = (qrCode: QRCode) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set("qrCodeId", qrCode.id);
     setSearchParams(newParams);
-  };
-
-  const loadQRCodes = () => {
-    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -131,9 +108,9 @@ export function AdminPostersPage() {
           <Megaphone className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("admin.managePosters")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.qrAssets.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("admin.managePostersDesc")}
+            {t("admin.qrAssets.description")}
           </p>
         </div>
       </div>
@@ -213,7 +190,7 @@ export function AdminPostersPage() {
               >
                 <div className="text-center p-8">
                   <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Map will load when visible</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.mapWillLoadWhenVisible")}</p>
                 </div>
               </div>
             )}
@@ -239,7 +216,7 @@ export function AdminPostersPage() {
                           {formatScanTimestamp(scan.scannedAt)}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {filters.qrCodeMap.get(scan.qrCodeId) || "Unknown"}
+                          {filters.qrCodeMap.get(scan.qrCodeId) || t("admin.unknown")}
                         </TableCell>
                         <TableCell className="text-sm">
                           {scan.userId || (
@@ -321,118 +298,10 @@ export function AdminPostersPage() {
         </div>
       </div>
 
-      {/* Posters Table - Below */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {filters.filteredQRCodes.length}{" "}
-            {filters.filteredQRCodes.length === 1 ? t("admin.poster") : t("admin.posters")}
-          </h2>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t("admin.createPoster")}
-          </Button>
-        </div>
-        {filters.filteredQRCodes.length > 0 ? (
-          <PostersTable
-            qrCodes={pagination.paginatedQRCodes}
-            onViewDetails={handleViewDetails}
-            onDelete={handleDelete}
-            deleteConfirmId={deleteConfirmId}
-            onDeleteClick={setDeleteConfirmId}
-            formatScanTimestamp={formatScanTimestamp}
-          />
-        ) : (
-          <div className="text-center py-12 text-muted-foreground border border-border rounded-xl">
-            <p>{t("admin.noPostersFound")}</p>
-          </div>
-        )}
+      {/* Generate QR Assets Wizard */}
+      <div className="border border-border rounded-xl p-4 bg-card">
+        <GenerateQRAssetsWizard />
       </div>
-
-      {/* Pagination for Posters */}
-      {filters.filteredQRCodes.length > 0 && pagination.totalPostersPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {t("admin.showing")} {(pagination.postersPage - 1) * POSTERS_PER_PAGE + 1} {t("admin.to")}{" "}
-            {Math.min(pagination.postersPage * POSTERS_PER_PAGE, filters.filteredQRCodes.length)} {t("common.of")}{" "}
-            {filters.filteredQRCodes.length} {filters.filteredQRCodes.length === 1 ? t("admin.poster") : t("admin.posters")}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => pagination.setPostersPage((prev) => Math.max(1, prev - 1))}
-              disabled={pagination.postersPage === 1}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              {t("admin.previous")}
-            </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, pagination.totalPostersPages) }, (_, i) => {
-                let pageNum: number;
-                if (pagination.totalPostersPages <= 5) {
-                  pageNum = i + 1;
-                } else if (pagination.postersPage <= 3) {
-                  pageNum = i + 1;
-                } else if (pagination.postersPage >= pagination.totalPostersPages - 2) {
-                  pageNum = pagination.totalPostersPages - 4 + i;
-                } else {
-                  pageNum = pagination.postersPage - 2 + i;
-                }
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={pagination.postersPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => pagination.setPostersPage(pageNum)}
-                    className="w-9"
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => pagination.setPostersPage((prev) => Math.min(pagination.totalPostersPages, prev + 1))}
-              disabled={pagination.postersPage === pagination.totalPostersPages}
-            >
-              {t("admin.next")}
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteConfirmId !== null}
-        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("admin.deletePoster")}</DialogTitle>
-            <DialogDescription>
-              {t("admin.deletePosterConfirm")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteConfirmId(null)}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
-            >
-              {t("common.delete")}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* QR Code Details Modal */}
       {selectedQRCode && (
@@ -445,22 +314,10 @@ export function AdminPostersPage() {
           }}
           qrCode={selectedQRCode}
           events={events}
-          onUpdate={loadQRCodes}
+          onUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
       )}
 
-      {/* Create QR Code Modal */}
-      <CreateQRCodeModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreate={() => {
-          // Refresh the QR codes list
-          loadQRCodes();
-          setShowCreateModal(false);
-        }}
-        events={events}
-        userEmail={userEmail}
-      />
     </div>
   );
 }

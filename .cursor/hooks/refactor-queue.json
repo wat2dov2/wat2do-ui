@@ -76,12 +76,12 @@
       ],
       "status": "in-progress",
       "priority": 4,
-      "lastAnalyzed": "2026-01-27T00:54:52.415Z",
+      "lastAnalyzed": "2026-01-28T16:53:35.480Z",
       "metrics": {
-        "useStateCount": 2,
+        "useStateCount": 0,
         "useEffectCount": 0,
-        "propsCount": 3.5,
-        "complexityScore": 83
+        "propsCount": 0,
+        "complexityScore": 0
       }
     },
     {
@@ -100,7 +100,7 @@
       ],
       "status": "in-progress",
       "priority": 5,
-      "lastAnalyzed": "2026-01-28T00:03:26.765Z",
+      "lastAnalyzed": "2026-01-28T02:15:22.867Z",
       "metrics": {
         "useStateCount": 0,
         "useEffectCount": 0,
@@ -119,12 +119,12 @@
       ],
       "status": "in-progress",
       "priority": 6,
-      "lastAnalyzed": "2026-01-28T01:51:34.399Z",
+      "lastAnalyzed": "2026-01-28T17:35:00.123Z",
       "metrics": {
         "useStateCount": 0,
         "useEffectCount": 0,
         "propsCount": 0,
-        "complexityScore": 13.5
+        "complexityScore": 7.1
       }
     },
     {
@@ -160,12 +160,12 @@
       ],
       "status": "in-progress",
       "priority": 8,
-      "lastAnalyzed": "2026-01-28T02:04:59.701Z",
+      "lastAnalyzed": "2026-01-28T14:42:42.101Z",
       "metrics": {
-        "useStateCount": 0,
-        "useEffectCount": 0,
-        "propsCount": 0,
-        "complexityScore": 0
+        "useStateCount": 5,
+        "useEffectCount": 2,
+        "propsCount": 3.8,
+        "complexityScore": 122.6
       }
     },
     {
@@ -211,5 +211,5 @@
   ],
   "currentFeature": "filters",
   "iteration": 0,
-  "lastUpdated": "2026-01-28T02:04:59.702Z"
+  "lastUpdated": "2026-01-28T17:35:00.123Z"
 }

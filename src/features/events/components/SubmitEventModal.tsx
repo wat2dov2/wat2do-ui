@@ -114,6 +114,18 @@ function SubmitEventModalContent() {
     eventFormPromotion.setShowPromotion(false);
   }, [eventFormPromotion]);
 
+  const handleClose = useCallback(() => {
+    // If we just created an event, show success alert
+    if (state.isSubmitted && !isEditMode && state.createdEventId) {
+      showSuccessAlert(
+        t("events.eventCreated"),
+        t("events.eventCreatedMessage", { title: eventForm.formData.title })
+      );
+    } else {
+      onClose();
+    }
+  }, [state.isSubmitted, state.createdEventId, isEditMode, showSuccessAlert, t, eventForm.formData.title, onClose]);
+
   // Use modal state hook for standardized open/close handling
   const modalState = useModalState({
     onClose: handleClose,
@@ -169,18 +181,6 @@ function SubmitEventModalContent() {
     eventFormPromotion.showPromotion,
     triggerConfetti,
   ]);
-
-  const handleClose = useCallback(() => {
-    // If we just created an event, show success alert
-    if (state.isSubmitted && !isEditMode && state.createdEventId) {
-      showSuccessAlert(
-        t("events.eventCreated"),
-        t("events.eventCreatedMessage", { title: eventForm.formData.title })
-      );
-    } else {
-      onClose();
-    }
-  }, [state.isSubmitted, state.createdEventId, isEditMode, showSuccessAlert, t, eventForm.formData.title, onClose]);
 
   // Promotion success screen
   if (eventFormPromotion.promotionSuccess) {

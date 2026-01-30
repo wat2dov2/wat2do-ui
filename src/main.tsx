@@ -19,17 +19,14 @@ if (import.meta.env.DEV) {
   }
 }
 
-// Simplified initialization - English is preloaded, only load if different
+// Initialize app - ensure translations are loaded before rendering
 async function initApp() {
   const initialLang = getStoredLanguage();
   
-  // Load language if not English (English is already preloaded in i18n.ts)
-  // Wait for it to load to ensure translations are available
-  if (initialLang !== 'en') {
-    await loadLanguage(initialLang);
-    // Change language after it's loaded
-    i18n.changeLanguage(initialLang);
-  }
+  // Always load the initial language (including English) to ensure translations are available
+  await loadLanguage(initialLang);
+  // Change language after it's loaded
+  i18n.changeLanguage(initialLang);
 
   // Render after language is loaded
   createRoot(document.getElementById('root')!).render(

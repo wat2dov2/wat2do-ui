@@ -177,7 +177,7 @@ export function saveTheme(theme: "dark" | "light"): void {
  * Language Preferences API
  */
 
-const SUPPORTED_LANGUAGES = ['en', 'zh', 'es', 'ja', 'ko', 'fr'] as const;
+const SUPPORTED_LANGUAGES = ['en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
 const LANGUAGE_STORAGE_KEY = "i18n-language";
