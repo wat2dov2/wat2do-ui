@@ -10,8 +10,6 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSet,
-  FieldLegend,
-  FieldDescription,
   FieldError,
 } from "@/shared/ui/field";
 
@@ -396,141 +394,11 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                     />
                   )}
                 </div>
-                <FieldGroup>
-                  <FieldSet>
-                    <FieldLegend>{t("admin.qrAssets.numericPlacementLegend")}</FieldLegend>
-                    <FieldDescription className="text-xs">
-                      {t("admin.qrAssets.numericPlacementDescription")}
-                    </FieldDescription>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <Field>
-                        <FieldLabel className="text-[11px] text-muted-foreground">
-                          X (%)
-                        </FieldLabel>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={
-                            selectedAsset.placement
-                              ? Math.round(selectedAsset.placement.x * 100)
-                              : 10
-                          }
-                          onChange={(e) => {
-                            const value = Number(e.target.value) || 0;
-                            const clamped = Math.max(0, Math.min(100, value));
-                            const existing = selectedAsset.placement ?? {
-                              x: 0.1,
-                              y: 0.1,
-                              width: 0.3,
-                              height: 0.3,
-                            };
-                            handlePlacementChange({
-                              ...existing,
-                              x: clamped / 100,
-                            });
-                          }}
-                          className="h-8 text-xs"
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel className="text-[11px] text-muted-foreground">
-                          Y (%)
-                        </FieldLabel>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={
-                            selectedAsset.placement
-                              ? Math.round(selectedAsset.placement.y * 100)
-                              : 10
-                          }
-                          onChange={(e) => {
-                            const value = Number(e.target.value) || 0;
-                            const clamped = Math.max(0, Math.min(100, value));
-                            const existing = selectedAsset.placement ?? {
-                              x: 0.1,
-                              y: 0.1,
-                              width: 0.3,
-                              height: 0.3,
-                            };
-                            handlePlacementChange({
-                              ...existing,
-                              y: clamped / 100,
-                            });
-                          }}
-                          className="h-8 text-xs"
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel className="text-[11px] text-muted-foreground">
-                          W (%)
-                        </FieldLabel>
-                        <Input
-                          type="number"
-                          min={5}
-                          max={100}
-                          value={
-                            selectedAsset.placement
-                              ? Math.round(selectedAsset.placement.width * 100)
-                              : 30
-                          }
-                          onChange={(e) => {
-                            const value = Number(e.target.value) || 0;
-                            const clamped = Math.max(5, Math.min(100, value));
-                            const existing = selectedAsset.placement ?? {
-                              x: 0.1,
-                              y: 0.1,
-                              width: 0.3,
-                              height: 0.3,
-                            };
-                            handlePlacementChange({
-                              ...existing,
-                              width: clamped / 100,
-                            });
-                          }}
-                          className="h-8 text-xs"
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel className="text-[11px] text-muted-foreground">
-                          H (%)
-                        </FieldLabel>
-                        <Input
-                          type="number"
-                          min={5}
-                          max={100}
-                          value={
-                            selectedAsset.placement
-                              ? Math.round(selectedAsset.placement.height * 100)
-                              : 30
-                          }
-                          onChange={(e) => {
-                            const value = Number(e.target.value) || 0;
-                            const clamped = Math.max(5, Math.min(100, value));
-                            const existing = selectedAsset.placement ?? {
-                              x: 0.1,
-                              y: 0.1,
-                              width: 0.3,
-                              height: 0.3,
-                            };
-                            handlePlacementChange({
-                              ...existing,
-                              height: clamped / 100,
-                            });
-                          }}
-                          className="h-8 text-xs"
-                        />
-                      </Field>
-                    </div>
-                    {errors.placement && (
-                      <FieldError className="text-xs mt-2">
-                        {errors.placement}
-                      </FieldError>
-                    )}
-                  </FieldSet>
-                </FieldGroup>
+                {errors.placement && (
+                  <FieldError className="text-xs mt-2">
+                    {errors.placement}
+                  </FieldError>
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">

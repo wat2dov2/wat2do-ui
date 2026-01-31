@@ -26,7 +26,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
-import { useEventsContext } from "@/features/events/context/EventsContext";
+import { useEventsContextOptional } from "@/features/events/context/EventsContext";
 import { shareEvent } from "@/shared/utils/shareEvent";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
@@ -55,15 +55,17 @@ export const EventCard = React.memo(function EventCard({
   const { t, i18n } = useTranslation();
   
   // Get values from context (with prop overrides)
-  const {
-    toggleSaveEvent,
-    isAdmin,
-    onEdit,
-    onDelete,
-    allEvents,
-    onEventClick: contextOnEventClick,
-    disableModal: contextDisableModal,
-  } = useEventsContext();
+  // Use optional context - returns null when not inside EventsProvider
+  const context = useEventsContextOptional();
+
+  // Provide fallback defaults when context is null
+  const toggleSaveEvent = context?.toggleSaveEvent ?? (() => {});
+  const isAdmin = context?.isAdmin ?? false;
+  const onEdit = context?.onEdit;
+  const onDelete = context?.onDelete;
+  const allEvents = context?.allEvents ?? [];
+  const contextOnEventClick = context?.onEventClick;
+  const contextDisableModal = context?.disableModal;
   
   // Use prop values if provided, otherwise fall back to context
   const onEventClick = propOnEventClick ?? contextOnEventClick;

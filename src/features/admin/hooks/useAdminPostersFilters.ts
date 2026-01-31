@@ -12,7 +12,6 @@ interface UseAdminPostersFiltersOptions {
  * Hook for managing filters in AdminPostersPage
  */
 export function useAdminPostersFilters({ refreshKey }: UseAdminPostersFiltersOptions) {
-  const [searchQuery, setSearchQuery] = useState("");
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("alltime");
 
   // Get all QR codes
@@ -84,28 +83,11 @@ export function useAdminPostersFilters({ refreshKey }: UseAdminPostersFiltersOpt
     });
   }, [qrCodes]);
 
-  // Filter QR codes
-  const filteredQRCodes = useMemo(() => {
-    return qrCodesWithStats.filter((qr) => {
-      if (
-        searchQuery &&
-        !qr.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !(qr.description || "").toLowerCase().includes(searchQuery.toLowerCase())
-      )
-        return false;
-      return true;
-    });
-  }, [qrCodesWithStats, searchQuery]);
+  // Return all QR codes with stats (no search filter)
+  const filteredQRCodes = qrCodesWithStats;
 
-  // Filter scans by selected posters (search)
-  const scansMatchingPosterSearch = useMemo(() => {
-    if (!searchQuery) {
-      return filteredScans;
-    }
-
-    const allowedIds = new Set(filteredQRCodes.map((qr) => qr.id));
-    return filteredScans.filter((scan) => allowedIds.has(scan.qrCodeId));
-  }, [filteredScans, filteredQRCodes, searchQuery]);
+  // Return all filtered scans (no search filter)
+  const scansMatchingPosterSearch = filteredScans;
 
   // Get QR code names for scans table
   const qrCodeMap = useMemo(() => {
@@ -115,8 +97,6 @@ export function useAdminPostersFilters({ refreshKey }: UseAdminPostersFiltersOpt
   }, [qrCodes]);
 
   return {
-    searchQuery,
-    setSearchQuery,
     timeFilter,
     setTimeFilter,
     qrCodes,

@@ -1,9 +1,8 @@
 import React, { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { Search, Megaphone, ArrowLeft, X, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { Megaphone, ArrowLeft, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
 import {
   Select,
   SelectContent,
@@ -64,7 +63,6 @@ export function AdminPostersPage() {
     scansPerPage: SCANS_PER_PAGE,
     filteredQRCodes: filters.filteredQRCodes,
     scansMatchingPosterSearch: filters.scansMatchingPosterSearch,
-    searchQuery: filters.searchQuery,
     timeFilter: filters.timeFilter,
   });
 
@@ -113,26 +111,6 @@ export function AdminPostersPage() {
             {t("admin.qrAssets.description")}
           </p>
         </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
-        <Input
-          type="text"
-          placeholder={t("admin.searchPosters")}
-          value={filters.searchQuery}
-          onChange={(e) => filters.setSearchQuery(e.target.value)}
-          className="pl-9 pr-9"
-        />
-        {filters.searchQuery && (
-          <button
-            onClick={() => filters.setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
       </div>
 
       {/* Map and QR Code Scans Table Side by Side */}

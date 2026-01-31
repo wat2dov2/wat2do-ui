@@ -5,7 +5,6 @@ interface UseAdminPostersPaginationOptions {
   scansPerPage: number;
   filteredQRCodes: any[];
   scansMatchingPosterSearch: any[];
-  searchQuery: string;
   timeFilter: string;
 }
 
@@ -17,7 +16,6 @@ export function useAdminPostersPagination({
   scansPerPage,
   filteredQRCodes,
   scansMatchingPosterSearch,
-  searchQuery,
   timeFilter,
 }: UseAdminPostersPaginationOptions) {
   const [postersPage, setPostersPage] = useState(1);
@@ -27,7 +25,7 @@ export function useAdminPostersPagination({
   useEffect(() => {
     setPostersPage(1);
     setScansPage(1);
-  }, [searchQuery, timeFilter]);
+  }, [timeFilter]);
 
   // Paginate QR codes
   const paginatedQRCodes = useMemo(() => {

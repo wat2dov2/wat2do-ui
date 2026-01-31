@@ -7,7 +7,7 @@
 import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Shield, LogOut } from "lucide-react";
+import { Shield, LogOut, Building2 } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -39,6 +39,10 @@ export function TopNav() {
 
   const handleAdminClick = useCallback(() => {
     navigate("/admin");
+  }, [navigate]);
+
+  const handleClubPanelClick = useCallback(() => {
+    navigate("/club-panel");
   }, [navigate]);
 
   const handleSignOut = useCallback(() => {
@@ -78,6 +82,18 @@ export function TopNav() {
           </TooltipTrigger>
           <TooltipContent>
             <p>{t("navigation.adminPanel")}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Club Panel Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <TopNavButton icon={Building2} onClick={handleClubPanelClick}>
+              {t("navigation.clubPanel")}
+            </TopNavButton>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t("navigation.clubPanelTooltip")}</p>
           </TooltipContent>
         </Tooltip>
 

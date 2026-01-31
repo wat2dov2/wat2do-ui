@@ -99,3 +99,12 @@ export function useEventsContext(): EventsContextValue {
   }
   return context;
 }
+
+/**
+ * Optional version of useEventsContext that returns null instead of throwing
+ * when used outside of EventsProvider. Useful for components that can work
+ * with or without the context (e.g., EventCard in EventDetailsModal).
+ */
+export function useEventsContextOptional(): EventsContextValue | null {
+  return useContext(EventsContext);
+}

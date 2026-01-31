@@ -24,6 +24,12 @@ import {
   AdminSubmissionsRoute,
   AdminPostersRoute,
 } from "@/app/routes/adminRoutes";
+import {
+  ClubPanelRoute,
+  ClubPanelPostersRoute,
+  ClubPanelIntegrationsRoute,
+  ClubPanelMembersRoute,
+} from "@/app/routes/clubPanelRoutes";
 
 // Lazy load pages for code splitting
 const AboutPage = lazy(() =>
@@ -381,6 +387,22 @@ export default function App() {
                   userEmail={userEmail || ""}
                 />
               }
+            />
+            <Route
+              path="/club-panel"
+              element={<ClubPanelRoute config={adminConfig} />}
+            />
+            <Route
+              path="/club-panel/posters"
+              element={<ClubPanelPostersRoute config={adminConfig} />}
+            />
+            <Route
+              path="/club-panel/integrations"
+              element={<ClubPanelIntegrationsRoute />}
+            />
+            <Route
+              path="/club-panel/members"
+              element={<ClubPanelMembersRoute />}
             />
           </Routes>
         </Suspense>
