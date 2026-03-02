@@ -30,7 +30,6 @@ export * from "./multi-select";
 export * from "./language-selector";
 export * from "./nav-button";
 export * from "./sidebar-button";
-export * from "./top-nav-button";
 export * from "./lazy-image";
 export * from "./modal-components";
 export * from "./credit-package-card";

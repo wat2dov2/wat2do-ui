@@ -24,19 +24,17 @@ export function LanguageSelector({ className }: LanguageSelectorProps) {
     <Select value={currentLanguageCode} onValueChange={changeLanguage}>
       <SelectTrigger
         className={cn(
-          "h-9 w-fit min-w-[100px] rounded-xl p-2 hover:bg-muted transition-colors",
+          "h-9 w-fit min-w-[100px] rounded-xl p-2 hover:bg-secondary/80 transition-colors",
           className
         )}
         size="sm"
       >
-        <div className="flex items-center gap-2">
           <SelectValue>
             <span className="flex items-center gap-2 text-sm">
               <span>{currentLanguage.flag}</span>
               <span>{currentLanguage.label}</span>
             </span>
           </SelectValue>
-        </div>
       </SelectTrigger>
       <SelectContent>
         {SUPPORTED_LANGUAGES.map((lang) => (

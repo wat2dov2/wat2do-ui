@@ -9,4 +9,6 @@ export const availableInterests = [
   "Gaming",
   "Food",
   "Networking",
+  "Health",
+  "Cultural",
 ];

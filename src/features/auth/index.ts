@@ -7,8 +7,28 @@
  */
 
 // Components
+/** @deprecated Use `OnboardingPage` route-based flow instead. */
 export { OnboardingModal } from "./components/OnboardingModal";
 export { GettingStartedChecklist } from "./components/GettingStartedChecklist";
+export { AuthHeroPanel } from "./components/AuthHeroPanel";
+export { AuthEmailFormCard } from "./components/AuthEmailFormCard";
+export { OnboardingTopicsStep } from "./components/OnboardingTopicsStep";
+export { OnboardingFacultyStep } from "./components/OnboardingFacultyStep";
+export { OnboardingYearStep } from "./components/OnboardingYearStep";
+export { OnboardingDoneStep } from "./components/OnboardingDoneStep";
+export { GooseDialogue } from "./components/GooseDialogue";
+
+// Pages
+export { AuthEntryPage } from "./pages/AuthEntryPage";
+export { OnboardingPage } from "./pages/OnboardingPage";
+
+// Hooks
+export { useAuthEntryFlow } from "./hooks/useAuthEntryFlow";
+export {
+  useOnboardingFlow,
+  FACULTY_OPTIONS,
+  ONBOARDING_TOTAL_STEPS,
+} from "./hooks/useOnboardingFlow";
 
 // API (public interface)
 export { 

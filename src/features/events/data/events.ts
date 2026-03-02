@@ -422,7 +422,6 @@ export const mockEvents: Event[] = [
 
 // Filter options
 export const availableCategories = [
-  "Events",
   "Clubs",
   "Academic",
   "Religious",

@@ -17,7 +17,6 @@ import {
   PopoverTrigger,
 } from "@/shared/ui/popover";
 import { Calendar } from "@/shared/ui/calendar";
-import { Button } from "@/shared/ui/button";
 import {
   Field,
   FieldLabel,
@@ -237,19 +236,21 @@ export function FormDatePicker({
       </FieldLabel>
       <Popover>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
+          <button
+            type="button"
             id={id}
             data-empty={!value}
             className={cn(
-              "w-full justify-between text-left font-normal text-xs h-9 data-[empty=true]:text-muted-foreground",
+              "flex w-full items-center justify-between gap-2 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1 text-xs h-9 whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[empty=true]:text-muted-foreground",
               hasError && "border-error bg-error/10"
             )}
             onBlur={onBlur}
           >
-            {value ? format(value, "PPP") : <span>{placeholder || t("forms.pickDate")}</span>}
-            <ChevronDownIcon />
-          </Button>
+            <span className="truncate">
+              {value ? format(value, "PPP") : (placeholder || t("forms.pickDate"))}
+            </span>
+            <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar

@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  Clock,
   Tag,
   SlidersHorizontal,
   Grid3x3,
@@ -51,7 +50,6 @@ export function CommandPalette({
     setShowSubmitEvent,
     setShowOnboarding,
     onClearAllFilters,
-    onSetTodayFilter,
     onSetFreeFilter,
     onSetForYouFilter,
   } = useCommandPalette();
@@ -77,15 +75,6 @@ export function CommandPalette({
             <Search className="mr-2 h-4 w-4" />
             <span>{t("commands.searchEvents")}</span>
             <CommandShortcut>/</CommandShortcut>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              onSetTodayFilter();
-              onOpenChange(false);
-            }}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            <span>{t("commands.showTodaysEvents")}</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {

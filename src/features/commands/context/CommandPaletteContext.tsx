@@ -10,7 +10,6 @@ interface CommandPaletteContextValue {
   setShowSubmitEvent: (show: boolean) => void;
   setShowOnboarding: (show: boolean) => void;
   onClearAllFilters: () => void;
-  onSetTodayFilter: () => void;
   onSetFreeFilter: () => void;
   onSetForYouFilter?: () => void;
 }

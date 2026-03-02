@@ -59,19 +59,15 @@ export function SearchBar({
               value="grid"
               className="text-[11px] font-medium px-3 py-1"
             >
-              <span className="flex items-center gap-1.5">
-                <Grid3x3 className="w-3 h-3" strokeWidth={2} />
-                <span>{t("settings.appearance.grid")}</span>
-              </span>
+              <Grid3x3 className="w-3 h-3" strokeWidth={2} />
+              <span>{t("settings.appearance.grid")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="calendar"
               className="text-[11px] font-medium px-3 py-1"
             >
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3 h-3" strokeWidth={2} />
-                <span>{t("settings.appearance.calendar")}</span>
-              </span>
+              <Calendar className="w-3 h-3" strokeWidth={2} />
+              <span>{t("settings.appearance.calendar")}</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>

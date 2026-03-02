@@ -1,7 +1,5 @@
 /**
  * TopNav Component
- * Refactored to use reusable TopNavButton component
- * Reduced Tailwind class duplication
  */
 
 import React, { useCallback } from "react";
@@ -13,7 +11,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/shared/ui/tooltip";
-import { TopNavButton } from "@/shared/ui/top-nav-button";
+import { Button } from "@/shared/ui/button";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
@@ -51,8 +49,9 @@ export function TopNav() {
   }, [setProfileCompleted, setUserEmail]);
 
   const handleSignIn = useCallback(() => {
-    setShowOnboarding(true);
-  }, [setShowOnboarding]);
+    navigate("/auth");
+    setShowOnboarding(false);
+  }, [navigate, setShowOnboarding]);
 
   return (
     <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-50">
@@ -76,9 +75,10 @@ export function TopNav() {
         {/* Admin Button */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <TopNavButton icon={Shield} onClick={handleAdminClick}>
+            <Button variant="secondary" size="sm" onClick={handleAdminClick}>
+              <Shield className="w-4 h-4" strokeWidth={2.5} />
               {t("navigation.admin")}
-            </TopNavButton>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>{t("navigation.adminPanel")}</p>
@@ -88,9 +88,10 @@ export function TopNav() {
         {/* Club Panel Button */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <TopNavButton icon={Building2} onClick={handleClubPanelClick}>
+            <Button variant="secondary" size="sm" onClick={handleClubPanelClick}>
+              <Building2 className="w-4 h-4" strokeWidth={2.5} />
               {t("navigation.clubPanel")}
-            </TopNavButton>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>{t("navigation.clubPanelTooltip")}</p>
@@ -107,9 +108,10 @@ export function TopNav() {
         {profileCompleted ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <TopNavButton icon={LogOut} onClick={handleSignOut}>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4" strokeWidth={2.5} />
                 {t("modals.signOut.logOut")}
-              </TopNavButton>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>{t("modals.signOut.signOutOfAccount")}</p>
@@ -120,7 +122,7 @@ export function TopNav() {
             <TooltipTrigger asChild>
               <InteractiveHoverButton
                 onClick={handleSignIn}
-                className="flex items-center gap-1.5 bg-primary border-primary text-white font-medium text-sm px-6 py-1.5 min-w-[120px] justify-center"
+                className="flex items-center gap-1.5 bg-primary border-primary text-white text-sm px-6 py-1.5 min-w-[120px] justify-center"
                 hideDot
               >
                 {t("events.signIn")}

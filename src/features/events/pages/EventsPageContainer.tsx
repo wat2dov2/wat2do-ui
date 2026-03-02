@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Clock, Utensils, Sparkles, Heart } from "lucide-react";
+import { Utensils, Sparkles, Heart } from "lucide-react";
 import { EventList, EventCount, useAppEvents, useSavedEvents } from "@/features/events";
 import { EventsProvider } from "@/features/events/context/EventsContext";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown, useSearch } from "@/features/search";
@@ -51,20 +51,6 @@ export function EventsPageContainer() {
     () =>
       [
         {
-          id: "today",
-          icon: <Clock className="w-3.5 h-3.5" />,
-          labelKey: "filters.today",
-          active: filters.todayFilter,
-          onClick: () => {
-            filters.setTodayFilter(!filters.todayFilter);
-            if (!filters.todayFilter) filters.setThisWeekFilter(false);
-          },
-          badge:
-            filters.todayEventsCount > 0
-              ? filters.todayEventsCount
-              : undefined,
-        },
-        {
           id: "freeFood",
           icon: <Utensils className="w-3.5 h-3.5" />,
           labelKey: "common.freeFood",
@@ -97,14 +83,10 @@ export function EventsPageContainer() {
         },
       ].filter((config) => config.visible !== false),
     [
-      filters.todayFilter,
-      filters.todayEventsCount,
       filters.freeFoodFilter,
       filters.freeFoodEventsCount,
       filters.forYouFilter,
       filters.savedFilter,
-      filters.setTodayFilter,
-      filters.setThisWeekFilter,
       filters.setFreeFoodFilter,
       filters.setFreeFilter,
       filters.setForYouFilter,

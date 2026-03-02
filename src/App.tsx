@@ -1,9 +1,9 @@
 import React, { Suspense, lazy, useMemo } from "react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { TooltipProvider } from "@/shared/ui/tooltip";
-import { OnboardingModal, GettingStartedChecklist } from "@/features/auth";
+import { GettingStartedChecklist } from "@/features/auth";
 import { AppLayout } from "@/app/AppLayout";
 import { EventsPageContainer, SubmitEventModal, useAppEvents, useSavedEvents } from "@/features/events";
 import { CommandPalette } from "@/features/commands/components/CommandPalette";
@@ -42,31 +42,6 @@ const ClubsPage = lazy(() =>
     default: module.ClubsPage,
   }))
 );
-const AdminPanel = lazy(() =>
-  import("@/features/admin").then((module) => ({
-    default: module.AdminPanel,
-  }))
-);
-const AdminEventsPage = lazy(() =>
-  import("@/features/admin").then((module) => ({
-    default: module.AdminEventsPage,
-  }))
-);
-const AdminClubsPage = lazy(() =>
-  import("@/features/admin").then((module) => ({
-    default: module.AdminClubsPage,
-  }))
-);
-const AdminSubmissionsPage = lazy(() =>
-  import("@/features/admin").then((module) => ({
-    default: module.AdminSubmissionsPage,
-  }))
-);
-const AdminPostersPage = lazy(() =>
-  import("@/features/admin").then((module) => ({
-    default: module.AdminPostersPage,
-  }))
-);
 const MarketingPage = lazy(() =>
   import("@/features/marketing").then((module) => ({
     default: module.MarketingPage,
@@ -77,9 +52,22 @@ const SettingsPage = lazy(() =>
     default: module.SettingsPage,
   }))
 );
+const AuthEntryPage = lazy(() =>
+  import("@/features/auth").then((module) => ({
+    default: module.AuthEntryPage,
+  }))
+);
+const OnboardingPage = lazy(() =>
+  import("@/features/auth").then((module) => ({
+    default: module.OnboardingPage,
+  }))
+);
 
 
 export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   // Initialize hooks
   const appEvents = useAppEvents();
   const appUI = useAppUI();
@@ -211,19 +199,6 @@ export default function App() {
     isAdmin,
   ]);
   
-  // Handle onboarding completion
-  const handleOnboardingComplete = useCallback((data: { email?: string }) => {
-    setUIProfileCompleted(true);
-    if (data.email) {
-      setUserEmail(data.email);
-    }
-  }, [setUIProfileCompleted, setUserEmail]);
-
-  // Handle onboarding close
-  const handleOnboardingClose = useCallback(() => {
-    setShowOnboarding(false);
-  }, [setShowOnboarding]);
-
   // Handle submit event close
   const handleSubmitEventClose = useCallback(() => {
     setShowSubmitEvent(false);
@@ -231,17 +206,18 @@ export default function App() {
   }, [setShowSubmitEvent, clearEditing]);
 
   // Handle command palette filter actions
-  const handleSetTodayFilter = useCallback(() => {
-    filters.setTodayFilter(true);
-  }, [filters.setTodayFilter]);
-
   const handleSetFreeFilter = useCallback(() => {
     filters.setFreeFilter(true);
-  }, [filters.setFreeFilter]);
+  }, [filters]);
 
   const handleSetForYouFilter = useCallback(() => {
     filters.setForYouFilter(true);
-  }, [filters.setForYouFilter]);
+  }, [filters]);
+
+  const handleOpenOnboardingRoute = useCallback(() => {
+    setShowOnboarding(false);
+    navigate("/onboarding");
+  }, [navigate, setShowOnboarding]);
 
   // Get navigation helpers
   const { t } = useTranslation();
@@ -259,17 +235,72 @@ export default function App() {
     [events, handleEditEvent, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
   );
 
+  const isAuthFlowRoute = location.pathname === "/auth" || location.pathname === "/onboarding";
+
+  const appRoutes = (
+    <Routes>
+      <Route path="/auth" element={<AuthEntryPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route
+        path="/"
+        element={<EventsPageContainer />}
+      />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/clubs" element={<ClubsPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      <Route
+        path="/admin"
+        element={<AdminPanelRoute config={adminConfig} />}
+      />
+      <Route
+        path="/admin/events"
+        element={<AdminEventsRoute config={adminConfig} />}
+      />
+      <Route
+        path="/admin/clubs"
+        element={<AdminClubsRoute config={adminConfig} />}
+      />
+      <Route
+        path="/admin/submissions"
+        element={<AdminSubmissionsRoute config={adminConfig} />}
+      />
+      <Route
+        path="/admin/posters"
+        element={<AdminPostersRoute config={adminConfig} />}
+      />
+      <Route
+        path="/marketing"
+        element={
+          <MarketingPage
+            events={events}
+            userEmail={userEmail || ""}
+          />
+        }
+      />
+      <Route
+        path="/club-panel"
+        element={<ClubPanelRoute config={adminConfig} />}
+      />
+      <Route
+        path="/club-panel/posters"
+        element={<ClubPanelPostersRoute config={adminConfig} />}
+      />
+      <Route
+        path="/club-panel/integrations"
+        element={<ClubPanelIntegrationsRoute />}
+      />
+      <Route
+        path="/club-panel/members"
+        element={<ClubPanelMembersRoute />}
+      />
+    </Routes>
+  );
+
   return (
     <AppProvider value={appContextValue}>
       <NavigationProvider>
         <TooltipProvider delayDuration={0}>
         {/* Modals - rendered outside AppLayout to ensure they respond to state changes immediately */}
-        <OnboardingModal
-          isOpen={showOnboarding}
-          onClose={handleOnboardingClose}
-          onComplete={handleOnboardingComplete}
-        />
-        
         <SubmitEventModal
           isOpen={showSubmitEvent}
           onClose={handleSubmitEventClose}
@@ -302,9 +333,14 @@ export default function App() {
             setViewMode,
             setShowFilterDropdown: filters.setShowFilterDropdown,
             setShowSubmitEvent,
-            setShowOnboarding,
+            setShowOnboarding: (show) => {
+              if (show) {
+                handleOpenOnboardingRoute();
+                return;
+              }
+              setShowOnboarding(false);
+            },
             onClearAllFilters: filters.handleClearAllFilters,
-            onSetTodayFilter: handleSetTodayFilter,
             onSetFreeFilter: handleSetFreeFilter,
             onSetForYouFilter: handleSetForYouFilter,
           }}
@@ -314,30 +350,6 @@ export default function App() {
             onOpenChange={setShowCommandPalette}
           />
         </CommandPaletteProvider>
-        
-        <AppLayout>
-        {/* Easter Eggs */}
-        <EasterEggs
-          activeEasterEgg={activeEasterEgg}
-          onComplete={clearEasterEgg}
-        />
-
-        {/* Getting Started Checklist - only show when signed in */}
-        {isProfileCompleted && (
-          <GettingStartedChecklist
-            onOpenOnboarding={() => setShowOnboarding(true)}
-            onNavigateToFilters={() => filters.setShowFilterDropdown(true)}
-            onViewEvent={() => {
-              // Auto-scroll to first event card
-              const firstCard = document.querySelector("[data-event-card]");
-              firstCard?.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-              });
-            }}
-            profileCompleted={isProfileCompleted}
-          />
-        )}
 
         <Suspense
           fallback={
@@ -351,62 +363,36 @@ export default function App() {
             </div>
           }
         >
-          <Routes>
-            <Route
-              path="/"
-              element={<EventsPageContainer />}
-            />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/clubs" element={<ClubsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route
-              path="/admin"
-              element={<AdminPanelRoute config={adminConfig} />}
-            />
-            <Route
-              path="/admin/events"
-              element={<AdminEventsRoute config={adminConfig} />}
-            />
-            <Route
-              path="/admin/clubs"
-              element={<AdminClubsRoute config={adminConfig} />}
-            />
-            <Route
-              path="/admin/submissions"
-              element={<AdminSubmissionsRoute config={adminConfig} />}
-            />
-            <Route
-              path="/admin/posters"
-              element={<AdminPostersRoute config={adminConfig} />}
-            />
-            <Route
-              path="/marketing"
-              element={
-                <MarketingPage
-                  events={events}
-                  userEmail={userEmail || ""}
+          {isAuthFlowRoute ? (
+            appRoutes
+          ) : (
+            <AppLayout>
+              {/* Easter Eggs */}
+              <EasterEggs
+                activeEasterEgg={activeEasterEgg}
+                onComplete={clearEasterEgg}
+              />
+
+              {/* Getting Started Checklist - only show when signed in */}
+              {isProfileCompleted && (
+                <GettingStartedChecklist
+                  onOpenOnboarding={handleOpenOnboardingRoute}
+                  onNavigateToFilters={() => filters.setShowFilterDropdown(true)}
+                  onViewEvent={() => {
+                    // Auto-scroll to first event card
+                    const firstCard = document.querySelector("[data-event-card]");
+                    firstCard?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  }}
+                  profileCompleted={isProfileCompleted}
                 />
-              }
-            />
-            <Route
-              path="/club-panel"
-              element={<ClubPanelRoute config={adminConfig} />}
-            />
-            <Route
-              path="/club-panel/posters"
-              element={<ClubPanelPostersRoute config={adminConfig} />}
-            />
-            <Route
-              path="/club-panel/integrations"
-              element={<ClubPanelIntegrationsRoute />}
-            />
-            <Route
-              path="/club-panel/members"
-              element={<ClubPanelMembersRoute />}
-            />
-          </Routes>
+              )}
+              {appRoutes}
+            </AppLayout>
+          )}
         </Suspense>
-        </AppLayout>
         </TooltipProvider>
       </NavigationProvider>
     </AppProvider>

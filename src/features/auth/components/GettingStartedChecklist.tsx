@@ -66,21 +66,26 @@ export function GettingStartedChecklist({
     hasLoadedRef.current = true;
     
     const saved = loadChecklist();
+    let mergedItems: ChecklistItem[];
     if (saved && saved.items) {
-      // Merge saved completion state with current translations
-      const mergedItems = defaultItems.map((defaultItem) => {
+      mergedItems = defaultItems.map((defaultItem) => {
         const savedItem = saved.items.find((item: ChecklistItem) => item.id === defaultItem.id);
         return savedItem ? { ...defaultItem, completed: savedItem.completed } : defaultItem;
       });
-      startTransition(() => {
-        setItems(mergedItems);
-      });
     } else {
-      startTransition(() => {
-        setItems(defaultItems);
-      });
+      mergedItems = defaultItems;
     }
-  }, [defaultItems]);
+
+    if (profileCompleted) {
+      mergedItems = mergedItems.map((item) =>
+        item.id === "profile" ? { ...item, completed: true } : item
+      );
+    }
+
+    startTransition(() => {
+      setItems(mergedItems);
+    });
+  }, [defaultItems, profileCompleted]);
 
   // Update profile completion when prop changes
   useEffect(() => {
