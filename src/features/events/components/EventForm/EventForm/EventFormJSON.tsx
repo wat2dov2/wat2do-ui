@@ -49,7 +49,6 @@ export function EventFormJSON({
           placeholder={t("forms.aiPromptPlaceholder")}
           generatingText={t("common.generating")}
           className="space-y-2"
-          inputClassName="w-full bg-muted text-xs px-3 py-2 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 border border-border placeholder:text-muted-foreground disabled:opacity-60"
         />
       </Field>
 

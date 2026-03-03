@@ -152,7 +152,7 @@ export function ModalContentWrapper({
 }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("px-6 pb-6", className)}
+      className={cn("px-6 pt-5 pb-6 space-y-5", className)}
       {...props}
     >
       {children}

@@ -129,21 +129,18 @@ export function EventsPageContainer() {
                 />
               ))}
             <MoreFiltersButton
-              isOpen={filters.showFilterDropdown}
+              open={filters.showFilterDropdown}
+              onOpenChange={filters.setShowFilterDropdown}
               filterCount={filters.filterCount}
-              onToggle={() =>
-                filters.setShowFilterDropdown(!filters.showFilterDropdown)
-              }
-            />
-            {/* Filter Dropdown */}
-            {filters.showFilterDropdown && (
+              onClearFilters={filters.handleClearAllFilters}
+            >
               <FilterDropdown
                 filterViewMode={filterViewMode}
                 onFilterViewModeChange={setFilterViewMode}
                 filters={filters}
                 isDarkMode={isDarkMode}
               />
-            )}
+            </MoreFiltersButton>
           </div>
         </div>
       </div>

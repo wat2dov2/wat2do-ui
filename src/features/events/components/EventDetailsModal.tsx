@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { ImageOff, ExternalLink } from "lucide-react";
 import {
@@ -16,7 +16,6 @@ import {
   ModalSection,
   InfoRow,
   InfoGrid,
-  ModalImageHeader,
   InfoSection,
   SectionTitle,
   FoodTagsContainer,
@@ -29,7 +28,7 @@ import { mockEvents } from "@/features/events/data/events";
 interface EventDetailsModalProps {
   event: Event | null;
   onClose: () => void;
-  allEvents?: Event[]; // Pass all events for similar events calculation
+  allEvents?: Event[];
 }
 
 export function EventDetailsModal({
@@ -38,43 +37,43 @@ export function EventDetailsModal({
   allEvents,
 }: EventDetailsModalProps) {
   const { t } = useTranslation();
+  const [displayedEvent, setDisplayedEvent] = useState<Event | null>(event);
 
-  // Derive isOpen from event presence
+  useEffect(() => {
+    setDisplayedEvent(event);
+  }, [event]);
+
   const isOpen = event !== null;
 
-  // Get similar events (4 random events excluding the current one)
   const similarEvents = useMemo(() => {
-    if (!event) return [];
+    if (!displayedEvent) return [];
     const eventsList = allEvents || mockEvents;
-    const otherEvents = eventsList.filter((e) => e.id !== event.id);
-    // Shuffle using a stable seed based on current event ID
-    const seed = event.id;
+    const otherEvents = eventsList.filter((e) => e.id !== displayedEvent.id);
+    const seed = displayedEvent.id;
     const shuffled = [...otherEvents].sort((a, b) => {
-      // Simple seeded hash function
       const hashA = ((seed * a.id) % 1000) / 1000;
       const hashB = ((seed * b.id) % 1000) / 1000;
       return hashA - hashB;
     });
     return shuffled.slice(0, 4);
-  }, [event, allEvents]);
+  }, [displayedEvent, allEvents]);
 
-  const handleSimilarEventClick = (clickedEvent: Event) => {
-    // Note: Parent component should handle event change via onEventChange callback
-    // Scroll handled by Dialog component automatically
-  };
+  const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
+    setDisplayedEvent(clickedEvent);
+    document.querySelector("[data-slot='dialog-content']")?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
-  // Use modal state hook for standardized open/close handling
   const modalState = useModalState({ onClose });
 
   return (
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-        {event && (
+        {displayedEvent && (
           <>
             <div className="relative w-full h-64 overflow-hidden">
               <LazyImage
-                src={event.imageUrl}
-                alt={event.title}
+                src={displayedEvent.imageUrl}
+                alt={displayedEvent.title}
                 className="absolute inset-0 w-full h-full object-cover"
                 fallback={
                   <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
@@ -89,55 +88,55 @@ export function EventDetailsModal({
 
             <ModalContentWrapper>
               <DialogHeader>
-                <DialogTitle>{event.title}</DialogTitle>
-                <DialogDescription>{event.organization}</DialogDescription>
+                <DialogTitle>{displayedEvent.title}</DialogTitle>
+                <DialogDescription>{displayedEvent.organization}</DialogDescription>
               </DialogHeader>
 
               <ModalSection>
                 <InfoRow
                   label={t("forms.description")}
-                  value={event.description || t("common.noDescription")}
+                  value={displayedEvent.description || t("common.noDescription")}
                 />
 
-                {event.source_url && (
+                {displayedEvent.source_url && (
                   <div>
                     <h3 className="font-semibold text-sm text-gray-900 mb-1">
                       {t("events.sourceLink")}
                     </h3>
                     <a
-                      href={event.source_url}
+                      href={displayedEvent.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline flex items-center gap-1.5"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      <span className="truncate">{event.source_url}</span>
+                      <span className="truncate">{displayedEvent.source_url}</span>
                     </a>
                   </div>
                 )}
 
                 <InfoGrid>
-                  <InfoRow label={t("filters.date")} value={event.date} />
-                  <InfoRow label={t("forms.time")} value={event.time} />
+                  <InfoRow label={t("filters.date")} value={displayedEvent.date} />
+                  <InfoRow label={t("forms.time")} value={displayedEvent.time} />
                 </InfoGrid>
 
-                <InfoRow label={t("filters.location")} value={event.location} />
+                <InfoRow label={t("filters.location")} value={displayedEvent.location} />
                 <InfoRow
                   label={t("filters.category")}
-                  value={event.category ? translateCategory(event.category, t) : t("common.none")}
+                  value={displayedEvent.category ? translateCategory(displayedEvent.category, t) : t("common.none")}
                 />
                 <InfoRow
                   label={t("filters.price")}
-                  value={event.price === 0 ? t("common.free") : `$${event.price}`}
+                  value={displayedEvent.price === 0 ? t("common.free") : `$${displayedEvent.price}`}
                 />
 
-                {event.food && event.food.length > 0 && (
+                {displayedEvent.food && displayedEvent.food.length > 0 && (
                   <div>
                     <h3 className="font-semibold text-sm text-gray-900 mb-1">
                       {t("forms.foodProvided")}
                     </h3>
                     <FoodTagsContainer>
-                      {event.food.map((food) => (
+                      {displayedEvent.food.map((food) => (
                         <FoodTag key={food}>{food}</FoodTag>
                       ))}
                     </FoodTagsContainer>
@@ -146,15 +145,15 @@ export function EventDetailsModal({
 
                 <InfoRow
                   label={t("filters.requiresRegistration")}
-                  value={event.requiresRegistration ? t("common.yes") : t("common.no")}
+                  value={displayedEvent.requiresRegistration ? t("common.yes") : t("common.no")}
                 />
                 <InfoRow
                   label={t("events.status")}
-                  value={event.isLive ? t("common.live") : t("common.notLive")}
+                  value={displayedEvent.isLive ? t("common.live") : t("common.notLive")}
                 />
 
-                {event.dayOfWeek && (
-                  <InfoRow label={t("events.dayOfWeek")} value={event.dayOfWeek} />
+                {displayedEvent.dayOfWeek && (
+                  <InfoRow label={t("events.dayOfWeek")} value={displayedEvent.dayOfWeek} />
                 )}
 
                 {similarEvents.length > 0 && (
@@ -162,9 +161,9 @@ export function EventDetailsModal({
                     <SectionTitle>{t("events.similarEvents")}</SectionTitle>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {similarEvents.map((similarEvent) => (
-                        <EventCard 
-                          key={similarEvent.id} 
-                          event={similarEvent} 
+                        <EventCard
+                          key={similarEvent.id}
+                          event={similarEvent}
                           allEvents={allEvents}
                           onEventClick={handleSimilarEventClick}
                           disableModal={true}

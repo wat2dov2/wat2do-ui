@@ -27,15 +27,16 @@ export function OnboardingTopicsStep({
           const catClasses = getCategoryClasses(category);
 
           return (
+            <div key={category} className={cn(
+              "rounded-2xl p-1 transition-all duration-300",
+              isSelected ? "border-2 border-primary" : "border-2 border-transparent",
+            )}>
             <button
-              key={category}
               type="button"
               onClick={() => onToggleTopic(category)}
               className={cn(
-                "rounded-xl overflow-hidden text-left transition-all duration-300 flex flex-col bg-card cursor-pointer",
-                isSelected
-                  ? "ring-2 ring-primary shadow-md"
-                  : "hover:shadow-lg hover:opacity-80",
+                "rounded-xl overflow-hidden text-left transition-all duration-300 flex flex-col bg-card cursor-pointer w-full",
+                !isSelected && "hover:shadow-lg hover:opacity-80",
               )}
             >
               {/* Image */}
@@ -75,9 +76,6 @@ export function OnboardingTopicsStep({
                   </span>
                 </BadgeMask>
 
-                {isSelected && (
-                  <div className="absolute inset-0 bg-primary/10" />
-                )}
               </div>
 
               {/* Content */}
@@ -91,6 +89,7 @@ export function OnboardingTopicsStep({
                 </p>
               </div>
             </button>
+            </div>
           );
         })}
       </div>

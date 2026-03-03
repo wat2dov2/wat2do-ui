@@ -1,4 +1,6 @@
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { useTypewriter } from "@/shared/hooks/useTypewriter";
 
 interface GooseDialogueProps {
   message: string;
@@ -17,6 +19,8 @@ export function GooseDialogue({
   nextDisabled = false,
   showBack = true,
 }: GooseDialogueProps) {
+  const { displayed, done, skip } = useTypewriter(message);
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -28,8 +32,14 @@ export function GooseDialogue({
 
         <div className="flex-1 min-w-0 space-y-3">
           <div>
-            <p className="text-base font-bold text-primary tracking-wide">Mr. Goose</p>
-            <p className="text-lg text-foreground leading-relaxed mt-1">{message}</p>
+            <Badge variant="new" className="w-fit text-xs font-medium px-2 py-0.5 mb-2">Mr. Goose</Badge>
+            <p
+              className="text-lg text-foreground leading-relaxed mt-1 cursor-pointer"
+              onClick={!done ? skip : undefined}
+            >
+              {displayed}
+              {!done && <span className="inline-block w-[2px] h-[1em] bg-foreground align-text-bottom ml-px animate-pulse" />}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">

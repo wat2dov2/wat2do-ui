@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles } from "lucide-react";
+import { Input } from "@/shared/ui/input";
 
 interface AIGenerationInputProps {
   aiPrompt: string;
@@ -13,7 +14,6 @@ interface AIGenerationInputProps {
   placeholder?: string;
   generatingText?: string;
   className?: string;
-  inputClassName?: string;
   showTitle?: boolean;
 }
 
@@ -28,7 +28,6 @@ export function AIGenerationInput({
   placeholder,
   generatingText,
   className = "mb-4 space-y-2",
-  inputClassName = "w-full bg-muted text-foreground text-xs px-3 py-2 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 border border-border placeholder:text-muted-foreground disabled:opacity-60",
   showTitle = true,
 }: AIGenerationInputProps) {
   const { t } = useTranslation();
@@ -50,7 +49,7 @@ export function AIGenerationInput({
         </div>
       )}
       <div className="relative">
-        <input
+        <Input
           type="text"
           placeholder={displayPlaceholder}
           value={aiPrompt}
@@ -61,7 +60,7 @@ export function AIGenerationInput({
             }
           }}
           disabled={aiGenerating}
-          className={inputClassName}
+          className="bg-muted text-xs pr-8"
         />
         {aiPrompt && !aiGenerating && (
           <button
@@ -86,5 +85,4 @@ export function AIGenerationInput({
   );
 }
 
-// Keep the old name for backward compatibility
 export const AIFilterInput = AIGenerationInput;

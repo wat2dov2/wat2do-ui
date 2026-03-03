@@ -108,7 +108,7 @@ export function TopNav() {
         {profileCompleted ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <Button variant="secondary" size="sm" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" strokeWidth={2.5} />
                 {t("modals.signOut.logOut")}
               </Button>

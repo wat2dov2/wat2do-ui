@@ -9,7 +9,7 @@ import type { FilterViewMode } from "@/shared/types";
 interface FilterDropdownProps {
   filterViewMode: FilterViewMode;
   onFilterViewModeChange: (mode: FilterViewMode) => void;
-  filters: any; // Type from useAppFilters
+  filters: any;
   isDarkMode: boolean;
 }
 
@@ -22,12 +22,7 @@ export function FilterDropdown({
   const { t } = useTranslation();
 
   return (
-    <div
-      data-filter-dropdown
-      className="rounded-xl overflow-y-auto absolute right-0 top-full mt-2 z-50 px-4 py-4 max-h-[calc(100vh-200px)] bg-card border border-border"
-      style={{ width: "300px" }}
-    >
-      {/* Header */}
+    <>
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-bold text-base text-foreground">{t("filters.filtersHeader")}</h2>
         <div className="shrink-0">
@@ -56,7 +51,6 @@ export function FilterDropdown({
         </div>
       </div>
 
-      {/* AI Generation Input */}
       <AIGenerationInput
         aiPrompt={filters.aiPrompt}
         onAiPromptChange={filters.setAiPrompt}
@@ -69,7 +63,6 @@ export function FilterDropdown({
         generatingText={t("common.generating")}
       />
 
-      {/* Filter Content */}
       {filterViewMode === "visual" ? (
         <VisualFilters filters={filters} />
       ) : (
@@ -79,6 +72,6 @@ export function FilterDropdown({
           isDarkMode={isDarkMode}
         />
       )}
-    </div>
+    </>
   );
 }

@@ -1,40 +1,59 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { SlidersHorizontal, X } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/shared/ui/popover";
 
 interface MoreFiltersButtonProps {
-  isOpen: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   filterCount: number;
-  onToggle: () => void;
+  onClearFilters?: () => void;
+  children: React.ReactNode;
 }
 
 export function MoreFiltersButton({
-  isOpen,
+  open,
+  onOpenChange,
   filterCount,
-  onToggle,
+  onClearFilters,
+  children,
 }: MoreFiltersButtonProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="relative">
-      <button
-        data-filter-trigger
-        onClick={onToggle}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-          isOpen || filterCount > 0
-            ? "bg-primary/80 text-white"
-            : "bg-muted text-muted-foreground hover:bg-muted/80 dark:hover:bg-muted/60"
-        }`}
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+            open || filterCount > 0
+              ? "bg-primary/80 text-white"
+              : "bg-muted text-muted-foreground hover:bg-muted/80 dark:hover:bg-muted/60"
+          }`}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          {t("common.moreFilters")}
+          {filterCount > 0 && (
+            <span
+              role="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClearFilters?.();
+              }}
+              className="bg-primary text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/70 transition-colors cursor-pointer"
+            >
+              <X className="w-2.5 h-2.5" strokeWidth={3} />
+              {filterCount}
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-[300px] max-h-[calc(100vh-200px)] overflow-y-auto p-4"
       >
-        <SlidersHorizontal className="w-3.5 h-3.5" />
-        {t("common.moreFilters")}
-        {filterCount > 0 && (
-          <span className="bg-primary text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1">
-            <X className="w-2.5 h-2.5" strokeWidth={3} />
-            {filterCount}
-          </span>
-        )}
-      </button>
-    </div>
+        {children}
+      </PopoverContent>
+    </Popover>
   );
 }
