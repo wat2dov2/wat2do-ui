@@ -92,7 +92,7 @@ export function EventFormFields() {
               onBlur={() => handleBlur("time")}
               error={errors.time}
               touched={touched.time}
-              inputClassName="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              inputClassName="text-secondary-foreground appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
             />
           </FieldGroup>
 
@@ -147,6 +147,7 @@ export function EventFormFields() {
               min="0"
               prefix="$"
               labelIcon={<DollarSign className="w-4 h-4" />}
+              inputClassName="text-secondary-foreground"
             />
           </FieldGroup>
 
