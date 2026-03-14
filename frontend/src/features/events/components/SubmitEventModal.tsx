@@ -1,4 +1,4 @@
-import React, { useReducer, useMemo, useCallback } from "react";
+import React, { useReducer, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Field,
@@ -43,7 +44,7 @@ import type { EventFormData } from "@/shared/types";
 interface SubmitEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (event: EventFormData) => number;
+  onSubmit: (event: EventFormData) => number | Promise<number>;
   userCredits?: number;
   onPromote?: (
     eventId: number,
@@ -54,7 +55,7 @@ interface SubmitEventModalProps {
   onBuyCredits?: () => void;
   editEventId?: number;
   initialData?: EventFormData;
-  onUpdate?: (eventId: number, event: EventFormData) => void;
+  onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
 }
 
 function SubmitEventModalContent() {
@@ -79,6 +80,7 @@ function SubmitEventModalContent() {
     submitEventModalReducer,
     initialSubmitEventModalState
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Success alert hook
   const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
@@ -144,31 +146,43 @@ function SubmitEventModalContent() {
     [eventForm]
   );
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     eventForm.markAllFieldsTouched();
 
     if (!eventForm.isValid) {
       return;
     }
 
-    // If in edit mode, update the event
-    if (isEditMode && editEventId && onUpdate) {
-      onUpdate(editEventId, eventForm.formData);
-      showSuccessAlert(
-        t("events.eventUpdated"),
-        t("events.eventUpdatedMessage", { title: eventForm.formData.title })
-      );
-      return;
-    }
+    setIsSubmitting(true);
+    try {
+      // If in edit mode, update the event
+      if (isEditMode && editEventId && onUpdate) {
+        await onUpdate(editEventId, eventForm.formData);
+        showSuccessAlert(
+          t("events.eventUpdated"),
+          t("events.eventUpdatedMessage", { title: eventForm.formData.title })
+        );
+        return;
+      }
 
-    // Otherwise, create new event
-    const eventId = onSubmit(eventForm.formData);
-    dispatch({ type: "SET_CREATED_EVENT_ID", payload: eventId });
-    dispatch({ type: "SET_IS_SUBMITTED", payload: true });
-    
-    // Trigger confetti immediately after successful submission (if not showing promotion)
-    if (!eventFormPromotion.showPromotion) {
-      triggerConfetti();
+      // Otherwise, create new event
+      const eventId = await onSubmit(eventForm.formData);
+      dispatch({ type: "SET_CREATED_EVENT_ID", payload: eventId });
+      dispatch({ type: "SET_IS_SUBMITTED", payload: true });
+
+      // Upload image if one was selected
+      if (eventForm.imageFile && eventId) {
+        import("@/shared/services/uploadService").then(({ uploadEventImage }) => {
+          uploadEventImage(eventId, eventForm.imageFile!).catch(() => {});
+        });
+      }
+      
+      // Trigger confetti immediately after successful submission (if not showing promotion)
+      if (!eventFormPromotion.showPromotion) {
+        triggerConfetti();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   }, [
     eventForm,
@@ -230,7 +244,7 @@ function SubmitEventModalContent() {
     <>
       <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
         <DialogContent
-          className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col"
+          className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col outline-none focus:outline-none focus-visible:outline-none"
           showCloseButton={true}
           aria-describedby={undefined}
         >
@@ -256,6 +270,10 @@ function SubmitEventModalContent() {
               jsonError: eventForm.jsonError,
               handleJsonChange: eventForm.handleJsonChange,
               syncToJSON: eventForm.syncToJSON,
+              imagePreview: eventForm.imagePreview,
+              imageFile: eventForm.imageFile,
+              onImageUpload: eventForm.onImageUpload,
+              onRemoveImage: eventForm.onRemoveImage,
               aiPrompt: eventFormAI.aiPrompt,
               setAiPrompt: eventFormAI.setAiPrompt,
               aiGenerating: eventFormAI.aiGenerating,
@@ -325,15 +343,17 @@ function SubmitEventModalContent() {
                             {t("common.cancel")}
                           </Button>
                         </DialogClose>
-                        <Button
+                        <LoadingButton
                           type="button"
                           onClick={handleSubmit}
                           disabled={!eventForm.isValid}
+                          isLoading={isSubmitting}
+                          loadingText={t("common.pleaseWait") || "Please wait..."}
                         >
                           {isEditMode
                             ? t("events.updateEvent")
                             : t("events.createEvent")}
-                        </Button>
+                        </LoadingButton>
                       </Field>
                     </form>
                   </FieldGroup>

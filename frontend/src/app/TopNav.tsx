@@ -27,6 +27,7 @@ export function TopNav() {
     setProfileCompleted,
     setUserEmail,
     setShowOnboarding,
+    isAdmin,
   } = useAppContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -43,7 +44,13 @@ export function TopNav() {
     navigate("/club-panel");
   }, [navigate]);
 
-  const handleSignOut = useCallback(() => {
+  const handleSignOut = useCallback(async () => {
+    try {
+      const { logoutAPI } = await import("@/features/auth/api/auth.api");
+      await logoutAPI();
+    } catch {
+      // Clear local state even if backend call fails
+    }
     setProfileCompleted(false);
     setUserEmail(null);
   }, [setProfileCompleted, setUserEmail]);
@@ -72,31 +79,35 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Admin Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="secondary" size="sm" onClick={handleAdminClick}>
-              <Shield className="w-4 h-4" strokeWidth={2.5} />
-              {t("navigation.admin")}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{t("navigation.adminPanel")}</p>
-          </TooltipContent>
-        </Tooltip>
+        {/* Admin Button – only visible to admins */}
+        {profileCompleted && isAdmin && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="secondary" size="sm" onClick={handleAdminClick}>
+                <Shield className="w-4 h-4" strokeWidth={2.5} />
+                {t("navigation.admin")}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t("navigation.adminPanel")}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-        {/* Club Panel Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="secondary" size="sm" onClick={handleClubPanelClick}>
-              <Building2 className="w-4 h-4" strokeWidth={2.5} />
-              {t("navigation.clubPanel")}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{t("navigation.clubPanelTooltip")}</p>
-          </TooltipContent>
-        </Tooltip>
+        {/* Club Panel Button – only visible to signed-in users */}
+        {profileCompleted && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="secondary" size="sm" onClick={handleClubPanelClick}>
+                <Building2 className="w-4 h-4" strokeWidth={2.5} />
+                {t("navigation.clubPanel")}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t("navigation.clubPanelTooltip")}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         {/* Language Selector */}
         <LanguageSelector />

@@ -13,15 +13,17 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import type { EventSubmission } from "@/shared/types";
 
 interface SubmissionDetailsDialogProps {
   submission: EventSubmission | null;
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (submission: EventSubmission) => void;
+  onApprove: (submission: EventSubmission) => void | Promise<void>;
   onRejectClick: (submission: EventSubmission) => void;
   formatRelativeTime: (dateStr: string) => string;
+  isApproving?: boolean;
 }
 
 export function SubmissionDetailsDialog({
@@ -31,6 +33,7 @@ export function SubmissionDetailsDialog({
   onApprove,
   onRejectClick,
   formatRelativeTime,
+  isApproving = false,
 }: SubmissionDetailsDialogProps) {
   const { t } = useTranslation();
 
@@ -96,19 +99,24 @@ export function SubmissionDetailsDialog({
 
           {submission.status === "pending" && (
             <div className="flex gap-2 justify-end pt-4 border-t border-border">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={onClose} disabled={isApproving}>
                 {t("common.cancel")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => onRejectClick(submission)}
                 className="text-error hover:text-error hover:bg-error/10"
+                disabled={isApproving}
               >
                 {t("admin.reject")}
               </Button>
-              <Button onClick={() => onApprove(submission)}>
+              <LoadingButton
+                onClick={() => onApprove(submission)}
+                isLoading={isApproving}
+                loadingText={t("common.pleaseWait") || "Please wait..."}
+              >
                 {t("admin.approve")}
-              </Button>
+              </LoadingButton>
             </div>
           )}
         </div>

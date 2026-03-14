@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, startTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "lucide-react";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
@@ -46,19 +46,29 @@ export function useSearch({
   // Filter dropdown state (UI state - but needed for command palette integration)
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  // Clear all filters handler
+  // Clear all filters handler (use startTransition to keep UI responsive)
   const handleClearAllFilters = useCallback(() => {
-    filterState.clearAllFilters();
-    setSavedFilter(false);
+    startTransition(() => {
+      filterState.clearAllFilters();
+      setSavedFilter(false);
+    });
   }, [filterState]);
 
-  // Calculate counts for quick filters
   const todayEventsCount = useMemo(() => {
-    return events.filter((event) => event.date === "Today").length;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return events.filter((event) => {
+      const raw = event.dtstart_utc || event.eventDate || event.date;
+      if (!raw) return false;
+      const d = new Date(raw);
+      return !isNaN(d.getTime()) && d >= today && d < tomorrow;
+    }).length;
   }, [events]);
 
   const freeFoodEventsCount = useMemo(() => {
-    return events.filter((event) => (event.food?.length || 0) > 0 && (event.price || 0) === 0)
+    return events.filter((event) => ((event.food ?? []).length > 0) && (event.price ?? 0) === 0)
       .length;
   }, [events]);
 

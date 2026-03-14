@@ -8,14 +8,9 @@ export function AuthEntryPage() {
   const navigate = useNavigate();
 
   const authEntry = useAuthEntryFlow({
-    onContinueToOnboarding: () => {
-      navigate("/onboarding");
-    },
+    onContinueToOnboarding: () => navigate("/onboarding"),
+    onContinueToHome: () => navigate("/"),
   });
-
-  const handleContinueFromEmail = useCallback(() => {
-    authEntry.onContinueFromEmail();
-  }, [authEntry]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -30,16 +25,23 @@ export function AuthEntryPage() {
                 Discover what's happening on campus.
               </h1>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Sign in or create your account to save events, personalize your feed,
-                and get recommendations for your school.
+                {authEntry.authMode === "signup"
+                  ? "Create your account to save events, personalize your feed, and get recommendations for your school."
+                  : "Sign in to access your saved events and personalized feed."}
               </p>
             </div>
 
             <AuthEmailFormCard
               email={authEntry.email}
+              password={authEntry.password}
+              authMode={authEntry.authMode}
               onEmailChange={authEntry.onEmailChange}
-              onContinue={handleContinueFromEmail}
-              canContinue={authEntry.isEmailValid}
+              onPasswordChange={authEntry.onPasswordChange}
+              onContinue={authEntry.onContinue}
+              onToggleMode={authEntry.toggleAuthMode}
+              canContinue={authEntry.isFormValid}
+              isLoading={authEntry.isLoading}
+              error={authEntry.error}
             />
           </div>
         </section>

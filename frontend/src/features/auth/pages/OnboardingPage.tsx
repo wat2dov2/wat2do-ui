@@ -46,19 +46,26 @@ export function OnboardingPage() {
 
   const handleComplete = useCallback(
     (data: { school: string; selectedTopics: string[]; faculty: string; isFirstYear: boolean }) => {
-      updateUserProfile({
+      const profile = {
         faculty: data.faculty,
         interests: data.selectedTopics,
         isFirstYear: data.isFirstYear,
         school: data.school,
-      });
+      };
 
-      removeChecklist();
+      // Redirect to events immediately so the user isn't stuck on a slow transition
+      navigate("/");
+      setProfileCompleted(true);
 
       const session = getSession();
       setUserEmail(session.email);
-      setProfileCompleted(true);
-      navigate("/");
+      updateUserProfile(profile);
+      removeChecklist();
+
+      // Persist to backend in background (fire-and-forget)
+      import("@/features/auth/api/auth.api").then(({ updateProfileAPI }) =>
+        updateProfileAPI(profile).catch(() => {})
+      );
     },
     [navigate, setProfileCompleted, setUserEmail]
   );

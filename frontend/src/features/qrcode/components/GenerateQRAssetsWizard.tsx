@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { QrCode, Info, ArrowLeft, ArrowRight, Download } from "lucide-react";
+import { QrCode, ArrowLeft, ArrowRight, Download } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
@@ -12,8 +12,89 @@ import {
   FieldSet,
   FieldError,
 } from "@/shared/ui/field";
+import { useAdminContext } from "@/features/admin/context/AdminContext";
+import { createPosterToBackend } from "@/features/qrcode/api/qrcode.api";
+import { generateAssetPdf, sanitizeFilename } from "@/features/qrcode/utils/generateAssetPdf";
+import { getSession } from "@/features/auth/api/auth.api";
+import { Spinner } from "@/shared/ui/spinner";
 
 type WizardStep = 1 | 2 | 3;
+
+interface PlacementRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Image rect inside a container when using object-fit: contain (same aspect-fit as PDF). */
+function getImageRectInContainer(
+  containerW: number,
+  containerH: number,
+  imageW: number,
+  imageH: number
+): { x: number; y: number; width: number; height: number } {
+  if (containerW <= 0 || containerH <= 0 || imageW <= 0 || imageH <= 0) {
+    return { x: 0, y: 0, width: containerW, height: containerH };
+  }
+  const containerRatio = containerW / containerH;
+  const imgRatio = imageW / imageH;
+  let drawW: number;
+  let drawH: number;
+  if (imgRatio > containerRatio) {
+    drawW = containerW;
+    drawH = containerW / imgRatio;
+  } else {
+    drawH = containerH;
+    drawW = containerH * imgRatio;
+  }
+  const x = (containerW - drawW) / 2;
+  const y = (containerH - drawH) / 2;
+  return { x, y, width: drawW, height: drawH };
+}
+
+/** Convert placement from image-relative (0–1 of image) to container-relative (0–1 of container) for overlay display. */
+function placementImageToContainer(
+  p: PlacementRect,
+  imageRect: { x: number; y: number; width: number; height: number },
+  containerW: number,
+  containerH: number
+): PlacementRect {
+  if (containerW <= 0 || containerH <= 0) return p;
+  return {
+    x: (imageRect.x + p.x * imageRect.width) / containerW,
+    y: (imageRect.y + p.y * imageRect.height) / containerH,
+    width: (p.width * imageRect.width) / containerW,
+    height: (p.height * imageRect.height) / containerH,
+  };
+}
+
+/** Convert placement from container-relative (0–1 of container) to image-relative (0–1 of image) for storage and PDF. */
+function placementContainerToImage(
+  p: PlacementRect,
+  imageRect: { x: number; y: number; width: number; height: number },
+  containerW: number,
+  containerH: number
+): PlacementRect {
+  if (imageRect.width <= 0 || imageRect.height <= 0) return p;
+  const left = p.x * containerW;
+  const top = p.y * containerH;
+  const w = p.width * containerW;
+  const h = p.height * containerH;
+  const boxLeft = Math.max(left, imageRect.x);
+  const boxTop = Math.max(top, imageRect.y);
+  const boxRight = Math.min(left + w, imageRect.x + imageRect.width);
+  const boxBottom = Math.min(top + h, imageRect.y + imageRect.height);
+  return {
+    x: (boxLeft - imageRect.x) / imageRect.width,
+    y: (boxTop - imageRect.y) / imageRect.height,
+    width: (boxRight - boxLeft) / imageRect.width,
+    height: (boxBottom - boxTop) / imageRect.height,
+  };
+}
+
+/** Default placement in image-relative space (same for all aspect ratios). */
+const DEFAULT_IMAGE_PLACEMENT: PlacementRect = { x: 0.1, y: 0.1, width: 0.3, height: 0.3 };
 
 interface QRAsset {
   id: string;
@@ -21,12 +102,7 @@ interface QRAsset {
   imagePreview: string;
   name: string;
   quantity: number;
-  placement?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+  placement?: PlacementRect;
 }
 
 interface GenerateQRAssetsWizardProps {
@@ -35,30 +111,36 @@ interface GenerateQRAssetsWizardProps {
 
 export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps) {
   const { t } = useTranslation();
+  const { userEmail: contextUserEmail } = useAdminContext();
+  const userEmail = contextUserEmail ?? getSession().email ?? "";
   const [step, setStep] = useState<WizardStep>(1);
   const [assets, setAssets] = useState<QRAsset[]>([]);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ assets?: string; placement?: string }>({});
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
 
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === selectedAssetId) ?? assets[0],
     [assets, selectedAssetId]
   );
 
-  const defaultPlacement = useMemo(() => {
-    // Create a pixel-square default (works even if container isn't square)
-    const { width, height } = containerDimensions;
-    if (width <= 0 || height <= 0) {
-      return { x: 0.1, y: 0.1, width: 0.3, height: 0.3 };
-    }
+  const imageRectInContainer = useMemo(() => {
+    const { width: cw, height: ch } = containerDimensions;
+    const img = imageNaturalSize;
+    if (!img) return { x: 0, y: 0, width: cw, height: ch };
+    return getImageRectInContainer(cw, ch, img.width, img.height);
+  }, [containerDimensions, imageNaturalSize]);
 
-    const sizePx = 0.3 * Math.min(width, height);
-    const placementWidth = sizePx / width;
-    const placementHeight = sizePx / height;
-    return { x: 0.1, y: 0.1, width: placementWidth, height: placementHeight };
-  }, [containerDimensions]);
+  const displayPlacement = useMemo(() => {
+    const stored = selectedAsset?.placement ?? DEFAULT_IMAGE_PLACEMENT;
+    const { width: cw, height: ch } = containerDimensions;
+    if (cw <= 0 || ch <= 0) return stored;
+    return placementImageToContainer(stored, imageRectInContainer, cw, ch);
+  }, [selectedAsset?.placement, imageRectInContainer, containerDimensions]);
 
   const setPlacementForAsset = useCallback(
     (assetId: string, placement: QRAsset["placement"]) => {
@@ -101,29 +183,28 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
     };
   }, [step, selectedAsset]);
 
-  // Ensure every asset has a placement once we can measure the container.
-  // This avoids "continue" being blocked while still showing no square.
+  // Ensure every asset has a placement (image-relative default).
   useEffect(() => {
     if (step !== 2) return;
-    if (containerDimensions.width <= 0 || containerDimensions.height <= 0) return;
-
     setAssets((prev) => {
       if (prev.every((a) => !!a.placement)) return prev;
       return prev.map((asset) =>
-        asset.placement ? asset : { ...asset, placement: defaultPlacement }
+        asset.placement ? asset : { ...asset, placement: DEFAULT_IMAGE_PLACEMENT }
       );
     });
-  }, [step, containerDimensions, defaultPlacement]);
+  }, [step]);
 
-  // Initialize default placement when asset is selected (guarantee selected shows a square)
+  // Initialize default placement when asset is selected and has none.
   useEffect(() => {
     if (step !== 2) return;
     if (!selectedAsset || selectedAsset.placement) return;
-    if (containerDimensions.width <= 0 || containerDimensions.height <= 0) return;
+    setPlacementForAsset(selectedAsset.id, DEFAULT_IMAGE_PLACEMENT);
+  }, [step, selectedAsset?.id, setPlacementForAsset]);
 
-    setPlacementForAsset(selectedAsset.id, defaultPlacement);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, selectedAsset?.id, containerDimensions, defaultPlacement, setPlacementForAsset]);
+  // Reset image dimensions when switching assets so the new image's onLoad sets them.
+  useEffect(() => {
+    setImageNaturalSize(null);
+  }, [selectedAssetId]);
 
   const addAssetFromFile = useCallback((file: File, preview: string) => {
     setAssets((prev) => {
@@ -203,9 +284,17 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
     }
   };
 
-  const handlePlacementChange = (placement: QRAsset["placement"]) => {
+  const handlePlacementChange = (containerRelativePlacement: PlacementRect) => {
     if (!selectedAsset) return;
-    setPlacementForAsset(selectedAsset.id, placement);
+    const { width: cw, height: ch } = containerDimensions;
+    if (cw <= 0 || ch <= 0) return;
+    const imageRelative = placementContainerToImage(
+      containerRelativePlacement,
+      imageRectInContainer,
+      cw,
+      ch
+    );
+    setPlacementForAsset(selectedAsset.id, imageRelative);
   };
 
   const allAssetsHavePlacement = useMemo(
@@ -226,10 +315,58 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
   };
 
   const handleGenerateAndDownload = async () => {
-    // This will be implemented using a dedicated PDF utility.
-    // For now, we only show a placeholder so the UI is wired.
-    // eslint-disable-next-line no-alert
-    alert(t("admin.qrAssets.pdfGenerationComingSoon"));
+    if (!userEmail) {
+      setPdfError(t("admin.qrAssets.errors.loginRequired") || "Please log in to generate PDFs.");
+      return;
+    }
+    setPdfError(null);
+    setPdfGenerating(true);
+    const baseUrl = window.location.origin;
+    try {
+      for (const asset of assets) {
+        if (!asset.placement) continue;
+        // Create one poster per page (unique QR per page)
+        const posterIds: string[] = [];
+        for (let i = 0; i < asset.quantity; i++) {
+          const name = asset.quantity > 1
+            ? `${asset.name.replace(/\.[^.]+$/, "")} - Page ${i + 1}`
+            : asset.name.replace(/\.[^.]+$/, "");
+          const poster = await createPosterToBackend({
+            id: crypto.randomUUID(),
+            name,
+            description: null,
+            destination_type: "events-list",
+            destination_id: null,
+            filters: null,
+            created_by: userEmail,
+            is_active: true,
+            image_url: null,
+          });
+          posterIds.push(poster.id);
+        }
+        const blob = await generateAssetPdf(
+          {
+            imagePreview: asset.imagePreview,
+            name: asset.name,
+            quantity: asset.quantity,
+            placement: asset.placement,
+          },
+          posterIds,
+          baseUrl
+        );
+        const filename = `${sanitizeFilename(asset.name)}.pdf`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPdfGenerating(false);
+    }
   };
 
   const headerTitle =
@@ -381,13 +518,18 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                     alt={selectedAsset.name}
                     className="w-full h-full object-contain"
                     draggable={false}
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      setImageNaturalSize({
+                        width: img.naturalWidth,
+                        height: img.naturalHeight,
+                      });
+                    }}
                   />
                   {containerDimensions.width > 0 && containerDimensions.height > 0 && (
                     <QRPlacementOverlay
-                      placement={selectedAsset.placement ?? defaultPlacement}
-                      onPlacementChange={(placement) =>
-                        setPlacementForAsset(selectedAsset.id, placement)
-                      }
+                      placement={displayPlacement}
+                      onPlacementChange={handlePlacementChange}
                       containerRef={imageContainerRef}
                       imageWidth={containerDimensions.width}
                       imageHeight={containerDimensions.height}
@@ -491,14 +633,29 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
             </Button>
           )}
           {step === 3 && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleGenerateAndDownload}
-            >
-              <Download className="w-3 h-3 mr-1" />
-              {t("admin.qrAssets.downloadAllPdfs")}
-            </Button>
+            <>
+              {pdfError && (
+                <FieldError className="text-xs mr-2">{pdfError}</FieldError>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleGenerateAndDownload}
+                disabled={pdfGenerating}
+              >
+                {pdfGenerating ? (
+                  <>
+                    <Spinner className="w-3 h-3 mr-1" />
+                    {t("common.pleaseWait")}
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3 h-3 mr-1" />
+                    {t("admin.qrAssets.downloadAllPdfs")}
+                  </>
+                )}
+              </Button>
+            </>
           )}
         </div>
       </div>

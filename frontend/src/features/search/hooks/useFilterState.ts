@@ -215,6 +215,21 @@ export function useFilterState(profileCompleted: boolean) {
 
     // Utilities
     clearAllFilters: () => dispatch({ type: "CLEAR_ALL_FILTERS" }),
+    setFilterStateFromURL: (filters: FilterState) =>
+      dispatch({
+        type: "SET_FILTER_STATE",
+        payload: {
+          searchQuery: filters.searchQuery || "",
+          selectedCategories: filters.categories || [],
+          selectedLocations: filters.locations || [],
+          selectedFoods: filters.foods || [],
+          selectedDays: filters.days || [],
+          priceRange: filters.priceRange || { min: "", max: "" },
+          dateRange: filters.dateRange ? new Date(filters.dateRange) : undefined,
+          addedSince: filters.addedSince ? new Date(filters.addedSince) : undefined,
+          requiresRegistration: filters.requiresRegistration || false,
+        },
+      }),
     filterState,
   };
 }

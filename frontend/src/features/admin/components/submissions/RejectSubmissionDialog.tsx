@@ -13,13 +13,15 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 
 interface RejectSubmissionDialogProps {
   isOpen: boolean;
   rejectionReason: string;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onRejectionReasonChange: (reason: string) => void;
+  isRejecting?: boolean;
 }
 
 export function RejectSubmissionDialog({
@@ -28,6 +30,7 @@ export function RejectSubmissionDialog({
   onClose,
   onConfirm,
   onRejectionReasonChange,
+  isRejecting = false,
 }: RejectSubmissionDialogProps) {
   const { t } = useTranslation();
 
@@ -54,16 +57,18 @@ export function RejectSubmissionDialog({
             />
           </div>
           <div className="flex gap-2 justify-end pt-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={isRejecting}>
               {t("common.cancel")}
             </Button>
-            <Button
+            <LoadingButton
               variant="destructive"
               onClick={onConfirm}
               disabled={!rejectionReason.trim()}
+              isLoading={isRejecting}
+              loadingText={t("common.pleaseWait") || "Please wait..."}
             >
               {t("admin.confirmRejection")}
-            </Button>
+            </LoadingButton>
           </div>
         </div>
       </DialogContent>

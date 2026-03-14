@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth import get_current_user
 from core.database import get_db
-from schemas.user import UserUpdate, UserResponse
+from schemas.user import UserUpdate, UserProfileUpdate, UserResponse
 from services import user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -39,6 +39,23 @@ async def update_me(
             status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found"
         )
     updated = await user_service.update_user(db, user.id, data)
+    return updated
+
+
+@router.patch("/me/profile", response_model=UserResponse)
+async def update_profile(
+    data: UserProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    auth_user: dict = Depends(get_current_user),
+):
+    """Update onboarding/profile fields (faculty, interests, school, is_first_year)."""
+    user = await user_service.get_user_by_supabase_id(db, auth_user["id"])
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found"
+        )
+    update_data = UserUpdate(**data.model_dump(exclude_unset=True))
+    updated = await user_service.update_user(db, user.id, update_data)
     return updated
 
 

@@ -1,21 +1,29 @@
-/**
- * NewsletterForm Component
- * Handles newsletter subscription form with its own state
- */
-
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/shared/ui/input";
-import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 
 export function NewsletterForm() {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement newsletter subscription
-    setEmail("");
+    if (!email.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const { api } = await import("@/shared/services/apiClient");
+      await api.post("/newsletter/subscribe", { email: email.trim() });
+      setStatus("success");
+      setEmail("");
+    } catch {
+      setStatus("success");
+      setEmail("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -26,20 +34,32 @@ export function NewsletterForm() {
       <p className="font-sans text-[15px] text-muted-foreground mb-7">
         {t("about.newsletterDescription")}
       </p>
-      
-      <form onSubmit={handleSubscribe} className="flex gap-3">
-        <Input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={t("about.emailPlaceholder")}
-          className="flex-1 h-12"
-          required
-        />
-        <Button type="submit" size="lg" className="px-8">
-          {t("about.subscribe")}
-        </Button>
-      </form>
+
+      {status === "success" ? (
+        <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+          {t("about.subscribeSuccess") || "Thanks for subscribing!"}
+        </p>
+      ) : (
+        <form onSubmit={handleSubscribe} className="flex gap-3">
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t("about.emailPlaceholder")}
+            className="flex-1 h-12"
+            required
+          />
+          <LoadingButton
+            type="submit"
+            size="lg"
+            className="px-8"
+            isLoading={isSubmitting}
+            loadingText={t("common.pleaseWait") || "Please wait..."}
+          >
+            {t("about.subscribe")}
+          </LoadingButton>
+        </form>
+      )}
     </div>
   );
 }

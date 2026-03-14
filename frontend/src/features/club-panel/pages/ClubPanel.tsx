@@ -2,6 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Building2, Megaphone, Link, Users } from "lucide-react";
 import { AdminCard } from "@/features/admin/components/shared/AdminCard";
+import { useBackendPosters } from "@/features/qrcode";
+import { LoadingPage } from "@/shared/ui/loading-page";
 
 interface ClubPanelProps {
   onNavigate: (page: "club-panel-posters" | "club-panel-integrations" | "club-panel-members") => void;
@@ -9,6 +11,7 @@ interface ClubPanelProps {
 
 export function ClubPanel({ onNavigate }: ClubPanelProps) {
   const { t } = useTranslation();
+  const { loading: recentActivityLoading } = useBackendPosters();
 
   return (
     <div className="space-y-5">
@@ -56,9 +59,15 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-8 text-center">
-          <p className="text-sm text-muted-foreground">{t("clubPanel.noRecentActivity")}</p>
-        </div>
+        {recentActivityLoading ? (
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <LoadingPage />
+          </div>
+        ) : (
+          <div className="bg-card border border-border rounded-xl p-8 text-center">
+            <p className="text-sm text-muted-foreground">{t("clubPanel.noRecentActivity")}</p>
+          </div>
+        )}
       </div>
     </div>
   );

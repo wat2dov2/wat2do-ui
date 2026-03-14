@@ -14,7 +14,4 @@ export default defineConfig({
   define: {
     __DEV__: JSON.stringify(true),
   },
-  env: {
-    VITE_EDITOR: 'cursor',
-  },
 })

@@ -12,15 +12,17 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 
 interface AdminDeleteDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  isLoading?: boolean;
 }
 
 export function AdminDeleteDialog({
@@ -31,6 +33,7 @@ export function AdminDeleteDialog({
   description,
   confirmLabel,
   cancelLabel,
+  isLoading = false,
 }: AdminDeleteDialogProps) {
   const { t } = useTranslation();
 
@@ -42,12 +45,17 @@ export function AdminDeleteDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex gap-2 justify-end mt-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             {cancelLabel || t("common.cancel")}
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
+          <LoadingButton
+            variant="destructive"
+            onClick={onConfirm}
+            isLoading={isLoading}
+            loadingText={t("common.pleaseWait") || "Please wait..."}
+          >
             {confirmLabel || t("common.delete")}
-          </Button>
+          </LoadingButton>
         </div>
       </DialogContent>
     </Dialog>

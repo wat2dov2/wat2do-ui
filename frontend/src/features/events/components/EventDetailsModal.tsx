@@ -23,18 +23,43 @@ import {
 } from "@/shared/ui/modal-components";
 import { useModalState } from "@/shared/hooks/useModalState";
 import type { Event } from "@/shared/types";
-import { mockEvents } from "@/features/events/data/events";
+
+function formatDisplayDate(event: Event): string {
+  if (event.date) return event.date;
+  const raw = event.dtstart_utc || event.eventDate;
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatDisplayTime(event: Event): string {
+  if (event.time) return event.time;
+  const raw = event.dtstart_utc || event.eventDate;
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  const end = event.dtend_utc ? new Date(event.dtend_utc) : null;
+  const start = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (end && !isNaN(end.getTime())) {
+    return `${start} – ${end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+  }
+  return start;
+}
 
 interface EventDetailsModalProps {
   event: Event | null;
   onClose: () => void;
   allEvents?: Event[];
+  /** When true, the Similar Events section is hidden (e.g. in admin panel). */
+  hideSimilarEvents?: boolean;
 }
 
 export function EventDetailsModal({
   event,
   onClose,
   allEvents,
+  hideSimilarEvents = false,
 }: EventDetailsModalProps) {
   const { t } = useTranslation();
   const [displayedEvent, setDisplayedEvent] = useState<Event | null>(event);
@@ -47,7 +72,7 @@ export function EventDetailsModal({
 
   const similarEvents = useMemo(() => {
     if (!displayedEvent) return [];
-    const eventsList = allEvents || mockEvents;
+    const eventsList = allEvents || [];
     const otherEvents = eventsList.filter((e) => e.id !== displayedEvent.id);
     const seed = displayedEvent.id;
     const shuffled = [...otherEvents].sort((a, b) => {
@@ -72,7 +97,7 @@ export function EventDetailsModal({
           <>
             <div className="relative w-full h-64 overflow-hidden">
               <LazyImage
-                src={displayedEvent.imageUrl}
+                src={displayedEvent.imageUrl || displayedEvent.source_image_url}
                 alt={displayedEvent.title}
                 className="absolute inset-0 w-full h-full object-cover"
                 fallback={
@@ -116,8 +141,8 @@ export function EventDetailsModal({
                 )}
 
                 <InfoGrid>
-                  <InfoRow label={t("filters.date")} value={displayedEvent.date} />
-                  <InfoRow label={t("forms.time")} value={displayedEvent.time} />
+                  <InfoRow label={t("filters.date")} value={formatDisplayDate(displayedEvent)} />
+                  <InfoRow label={t("forms.time")} value={formatDisplayTime(displayedEvent)} />
                 </InfoGrid>
 
                 <InfoRow label={t("filters.location")} value={displayedEvent.location} />
@@ -156,7 +181,7 @@ export function EventDetailsModal({
                   <InfoRow label={t("events.dayOfWeek")} value={displayedEvent.dayOfWeek} />
                 )}
 
-                {similarEvents.length > 0 && (
+                {!hideSimilarEvents && similarEvents.length > 0 && (
                   <InfoSection>
                     <SectionTitle>{t("events.similarEvents")}</SectionTitle>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -164,7 +189,6 @@ export function EventDetailsModal({
                         <EventCard
                           key={similarEvent.id}
                           event={similarEvent}
-                          allEvents={allEvents}
                           onEventClick={handleSimilarEventClick}
                           disableModal={true}
                         />

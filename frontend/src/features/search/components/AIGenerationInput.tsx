@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles } from "lucide-react";
 import { Input } from "@/shared/ui/input";
+import { Spinner } from "@/shared/ui/spinner";
 
 interface AIGenerationInputProps {
   aiPrompt: string;
@@ -55,15 +56,18 @@ export function AIGenerationInput({
           value={aiPrompt}
           onChange={(e) => onAiPromptChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && aiPrompt.trim() && !aiGenerating) {
-              onAiGenerate();
-            }
+            if (e.key !== "Enter") return;
+            // Prevent parent <form> submit (fixes dialog focus outline flash)
+            e.preventDefault();
+            e.stopPropagation();
+            if (aiPrompt.trim() && !aiGenerating) onAiGenerate();
           }}
           disabled={aiGenerating}
           className="bg-muted text-xs pr-8"
         />
         {aiPrompt && !aiGenerating && (
           <button
+            type="button"
             onClick={onAiPromptClear}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
@@ -72,7 +76,7 @@ export function AIGenerationInput({
         )}
         {aiGenerating && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-primary rounded-full animate-spin" />
+            <Spinner className="size-3" />
           </div>
         )}
       </div>

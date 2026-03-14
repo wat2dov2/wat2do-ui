@@ -30,6 +30,9 @@ export {
   ONBOARDING_TOTAL_STEPS,
 } from "./hooks/useOnboardingFlow";
 
+// Hooks (auth)
+export { useAuth } from "./hooks/useAuth";
+
 // API (public interface)
 export { 
   login, 
@@ -39,6 +42,11 @@ export {
   updateUserProfile,
   isAuthenticated,
   isProfileCompleted,
+  loginAPI,
+  signupAPI,
+  logoutAPI,
+  fetchProfileAPI,
+  updateProfileAPI,
   type UserProfile,
 } from "./api/auth.api";
 

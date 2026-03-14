@@ -22,13 +22,13 @@ export function useEventBadges(event: Event): EventBadge[] {
   return useMemo(() => {
     const badges: EventBadge[] = [];
 
-    // Price badge
+    // Price badge - grey bg, primary text
     const price = event.price ?? 0;
     if (price === 0) {
       badges.push({
         text: t("common.free"),
-        bgClass: "bg-success/20",
-        textClass: "text-success",
+        bgClass: "bg-muted",
+        textClass: "text-primary",
       });
     } else if (price !== null) {
       badges.push({
@@ -38,13 +38,13 @@ export function useEventBadges(event: Event): EventBadge[] {
       });
     }
 
-    // Food badge
+    // Food badge - grey bg, primary text
     const food = event.food || [];
     if (food.length > 0) {
       badges.push({
         text: t("common.freeFood"),
-        bgClass: "bg-warning/20",
-        textClass: "text-warning",
+        bgClass: "bg-muted",
+        textClass: "text-primary",
       });
     }
 

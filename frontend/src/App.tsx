@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { TooltipProvider } from "@/shared/ui/tooltip";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { GettingStartedChecklist } from "@/features/auth";
 import { AppLayout } from "@/app/AppLayout";
 import { EventsPageContainer, SubmitEventModal, useAppEvents, useSavedEvents } from "@/features/events";
@@ -24,6 +25,8 @@ import {
   AdminSubmissionsRoute,
   AdminPostersRoute,
 } from "@/app/routes/adminRoutes";
+import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
+import { ProtectedRoute } from "@/shared/components/ProtectedRoute";
 import {
   ClubPanelRoute,
   ClubPanelPostersRoute,
@@ -98,6 +101,7 @@ export default function App() {
       setDateRange: filters.setDateRange,
       setAddedSince: filters.setAddedSince,
       setRequiresRegistration: filters.setRequiresRegistration,
+      setFilterStateFromURL: filters.setFilterStateFromURL,
     },
   });
   
@@ -205,13 +209,18 @@ export default function App() {
     clearEditing();
   }, [setShowSubmitEvent, clearEditing]);
 
+  // Open submit modal in edit mode (used by admin and anywhere that has an Edit button)
+  const handleEditEventAndOpenModal = useCallback(
+    (event: Parameters<typeof handleEditEvent>[0]) => {
+      handleEditEvent(event);
+      setShowSubmitEvent(true);
+    },
+    [handleEditEvent, setShowSubmitEvent]
+  );
+
   // Handle command palette filter actions
   const handleSetFreeFilter = useCallback(() => {
     filters.setFreeFilter(true);
-  }, [filters]);
-
-  const handleSetForYouFilter = useCallback(() => {
-    filters.setForYouFilter(true);
   }, [filters]);
 
   const handleOpenOnboardingRoute = useCallback(() => {
@@ -226,16 +235,30 @@ export default function App() {
   const adminConfig = useMemo(
     () => ({
       events,
-      onEditEvent: handleEditEvent,
+      onEditEvent: handleEditEventAndOpenModal,
       onDeleteEvent: deleteEvent,
       onCreateEvent: () => setShowSubmitEvent(true),
       onAddEvent: addEvent,
       userEmail,
     }),
-    [events, handleEditEvent, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
+    [events, handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
   );
 
   const isAuthFlowRoute = location.pathname === "/auth" || location.pathname === "/onboarding";
+  const isQRRedirectRoute = /^\/qr\/[^/]+$/.test(location.pathname);
+
+  // Full-page QR redirect: no app chrome, only loading then redirect (avoids events page flash)
+  if (isQRRedirectRoute) {
+    return (
+      <AppProvider value={appContextValue}>
+        <NavigationProvider>
+          <TooltipProvider delayDuration={0}>
+            <QRRedirectPage />
+          </TooltipProvider>
+        </NavigationProvider>
+      </AppProvider>
+    );
+  }
 
   const appRoutes = (
     <Routes>
@@ -247,51 +270,53 @@ export default function App() {
       />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/clubs" element={<ClubsPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route
         path="/admin"
-        element={<AdminPanelRoute config={adminConfig} />}
+        element={<ProtectedRoute requiredRole="admin"><AdminPanelRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
         path="/admin/events"
-        element={<AdminEventsRoute config={adminConfig} />}
+        element={<ProtectedRoute requiredRole="admin"><AdminEventsRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
         path="/admin/clubs"
-        element={<AdminClubsRoute config={adminConfig} />}
+        element={<ProtectedRoute requiredRole="admin"><AdminClubsRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
         path="/admin/submissions"
-        element={<AdminSubmissionsRoute config={adminConfig} />}
+        element={<ProtectedRoute requiredRole="admin"><AdminSubmissionsRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
         path="/admin/posters"
-        element={<AdminPostersRoute config={adminConfig} />}
+        element={<ProtectedRoute requiredRole="admin"><AdminPostersRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
         path="/marketing"
         element={
-          <MarketingPage
-            events={events}
-            userEmail={userEmail || ""}
-          />
+          <ProtectedRoute requiredRole="admin">
+            <MarketingPage
+              events={events}
+              userEmail={userEmail || ""}
+            />
+          </ProtectedRoute>
         }
       />
       <Route
         path="/club-panel"
-        element={<ClubPanelRoute config={adminConfig} />}
+        element={<ProtectedRoute requiredRole="club"><ClubPanelRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
         path="/club-panel/posters"
-        element={<ClubPanelPostersRoute config={adminConfig} />}
+        element={<ProtectedRoute requiredRole="club"><ClubPanelPostersRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
         path="/club-panel/integrations"
-        element={<ClubPanelIntegrationsRoute />}
+        element={<ProtectedRoute requiredRole="club"><ClubPanelIntegrationsRoute /></ProtectedRoute>}
       />
       <Route
         path="/club-panel/members"
-        element={<ClubPanelMembersRoute />}
+        element={<ProtectedRoute requiredRole="club"><ClubPanelMembersRoute /></ProtectedRoute>}
       />
     </Routes>
   );
@@ -304,17 +329,14 @@ export default function App() {
         <SubmitEventModal
           isOpen={showSubmitEvent}
           onClose={handleSubmitEventClose}
-          onSubmit={(eventData) => {
-            const eventId = addEvent(eventData);
-            return eventId;
-          }}
+          onSubmit={async (eventData) => addEvent(eventData)}
           userCredits={userCredits}
           onPromote={promoteEvent}
           onBuyCredits={() => setShowBuyCredits(true)}
           editEventId={editingEvent?.id}
           initialData={editingEvent ? eventToFormData(editingEvent) : undefined}
-          onUpdate={(eventId, eventData) => {
-            updateEvent(eventId, eventData);
+          onUpdate={async (eventId, eventData) => {
+            await updateEvent(eventId, eventData);
             handleSubmitEventClose();
           }}
         />
@@ -342,7 +364,6 @@ export default function App() {
             },
             onClearAllFilters: filters.handleClearAllFilters,
             onSetFreeFilter: handleSetFreeFilter,
-            onSetForYouFilter: handleSetForYouFilter,
           }}
         >
           <CommandPalette
@@ -354,12 +375,7 @@ export default function App() {
         <Suspense
           fallback={
             <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center space-y-4">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
-                <p className="text-sm text-muted-foreground">
-                  {t("common.loadingPage")}
-                </p>
-              </div>
+              <LoadingPage className="min-h-[400px]" />
             </div>
           }
         >

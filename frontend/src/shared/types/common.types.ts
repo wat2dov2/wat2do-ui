@@ -26,4 +26,5 @@ export interface Club {
   ig: string | null;
   discord: string | null;
   club_type: string;
+  logo_url?: string | null;
 }

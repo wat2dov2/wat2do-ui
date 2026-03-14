@@ -67,13 +67,13 @@ export function ImageUploadField({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-full border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors cursor-pointer bg-muted/50 hover:bg-muted"
+          className="flex w-full flex-col items-center justify-center gap-2 rounded-xl bg-secondary px-3 py-6 text-center text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 cursor-pointer"
         >
-          <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm font-medium text-foreground mb-1">
+          <ImagePlus className="w-8 h-8 text-muted-foreground" />
+          <p className="text-base font-medium md:text-sm">
             {t("forms.clickToUploadImage")}
           </p>
-          <p className="text-xs text-muted-foreground">{t("qrCode.imageFormat")}</p>
+          <p className="text-sm text-muted-foreground">{t("qrCode.imageFormat")}</p>
         </button>
       )}
       {error && <FieldError className="text-xs">{error}</FieldError>}

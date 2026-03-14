@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogClose,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
 import {
   Select,
@@ -47,7 +48,7 @@ interface ClubFormData {
 interface AddClubModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (club: Club) => void;
+  onSave: (club: Club) => void | Promise<void>;
   initialData?: Club;
 }
 
@@ -134,15 +135,14 @@ export function AddClubModal({
     );
   };
 
-  const handleSubmit = () => {
-    // Mark all fields as touched
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
     Object.keys(form.formData).forEach((key) => {
       form.handleBlur(key);
     });
 
-    if (!form.isValid) {
-      return;
-    }
+    if (!form.isValid) return;
 
     const club: Club = {
       id: initialData?.id || Date.now(),
@@ -154,13 +154,18 @@ export function AddClubModal({
       club_type: form.formData.club_type,
     };
 
-    onSave(club);
-    showSuccessAlert(
-      isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated"),
-      isEditMode
-        ? t("clubs.clubUpdatedMessage", { name: club.club_name })
-        : t("clubs.clubCreatedMessage", { name: club.club_name })
-    );
+    setIsSubmitting(true);
+    try {
+      await Promise.resolve(onSave(club));
+      showSuccessAlert(
+        isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated"),
+        isEditMode
+          ? t("clubs.clubUpdatedMessage", { name: club.club_name })
+          : t("clubs.clubCreatedMessage", { name: club.club_name })
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -296,9 +301,14 @@ export function AddClubModal({
                   {t("common.cancel")}
                 </Button>
               </DialogClose>
-              <Button type="button" onClick={handleSubmit}>
+              <LoadingButton
+                type="button"
+                onClick={handleSubmit}
+                isLoading={isSubmitting}
+                loadingText={t("common.pleaseWait") || "Please wait..."}
+              >
                 {isEditMode ? t("clubs.updateClub") : t("clubs.addClub")}
-              </Button>
+              </LoadingButton>
             </Field>
           </FieldGroup>
         </form>
@@ -309,9 +319,13 @@ export function AddClubModal({
               {t("common.cancel")}
             </Button>
           </DialogClose>
-          <Button onClick={handleSubmit}>
+          <LoadingButton
+            onClick={handleSubmit}
+            isLoading={isSubmitting}
+            loadingText={t("common.pleaseWait") || "Please wait..."}
+          >
             {isEditMode ? t("clubs.updateClub") : t("clubs.addClub")}
-          </Button>
+          </LoadingButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

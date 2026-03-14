@@ -2,7 +2,9 @@ import React, { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Field,
+  FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/shared/ui/field";
 import { AIGenerationInput } from "@/features/search";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
@@ -25,8 +27,7 @@ export function EventFormJSON() {
   } = useEventFormContext();
 
   return (
-    <Field>
-      {/* AI Generation Input */}
+    <FieldGroup>
       <Field>
         <AIGenerationInput
           aiPrompt={aiPrompt}
@@ -41,6 +42,8 @@ export function EventFormJSON() {
           className="space-y-2"
         />
       </Field>
+
+      <FieldSeparator />
 
       <Field>
         <FieldLabel className="text-xs font-medium text-foreground">
@@ -79,6 +82,6 @@ export function EventFormJSON() {
           </Suspense>
         </div>
       </Field>
-    </Field>
+    </FieldGroup>
   );
 }

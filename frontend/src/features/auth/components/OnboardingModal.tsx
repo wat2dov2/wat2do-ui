@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Sparkles, ChevronLeft } from "lucide-react";
 import { useConfetti } from "@/shared/hooks/useConfetti";
@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
 import {
   Select,
@@ -81,37 +82,47 @@ export function OnboardingModal({
       steps.goToStep(2);
     },
   });
+  const [isNextLoading, setIsNextLoading] = useState(false);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (steps.currentStep < steps.totalSteps - 1) {
-      // If we're on the interests step (step 3), mark user as logged in and save profile
       if (steps.currentStep === 3) {
+        setIsNextLoading(true);
+        try {
+          const onboardingData = form.getOnboardingData();
+          updateUserProfile({
+            faculty: onboardingData.faculty,
+            interests: onboardingData.interests,
+            isFirstYear: onboardingData.isFirstYear,
+            school: availableSchools[0] || "University of Waterloo",
+          });
+          onComplete({
+            faculty: onboardingData.faculty,
+            isFirstYear: onboardingData.isFirstYear,
+            interests: onboardingData.interests,
+            email: onboardingData.email,
+          });
+          steps.handleNext();
+        } finally {
+          setIsNextLoading(false);
+        }
+      } else {
+        steps.handleNext();
+      }
+    } else {
+      setIsNextLoading(true);
+      try {
         const onboardingData = form.getOnboardingData();
-        // Save profile data
-        updateUserProfile({
-          faculty: onboardingData.faculty,
-          interests: onboardingData.interests,
-          isFirstYear: onboardingData.isFirstYear,
-          school: availableSchools[0] || "University of Waterloo",
-        });
-        // Mark user as logged in
         onComplete({
           faculty: onboardingData.faculty,
           isFirstYear: onboardingData.isFirstYear,
           interests: onboardingData.interests,
           email: onboardingData.email,
         });
+        onClose();
+      } finally {
+        setIsNextLoading(false);
       }
-      steps.handleNext();
-    } else {
-      const onboardingData = form.getOnboardingData();
-      onComplete({
-        faculty: onboardingData.faculty,
-        isFirstYear: onboardingData.isFirstYear,
-        interests: onboardingData.interests,
-        email: onboardingData.email,
-      });
-      onClose();
     }
   };
 
@@ -162,9 +173,9 @@ export function OnboardingModal({
               </DialogHeader>
 
               <DialogFooter>
-                <Button onClick={handleNext} className="w-full">
+                <LoadingButton onClick={handleNext} className="w-full" isLoading={isNextLoading} loadingText={t("common.pleaseWait") || "Please wait..."}>
                   {t("modals.getStarted")}
-                </Button>
+                </LoadingButton>
               </DialogFooter>
             </div>
           )}
@@ -392,13 +403,15 @@ export function OnboardingModal({
                   <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
                   {t("common.back")}
                 </Button>
-                <Button
+                <LoadingButton
                   onClick={handleNext}
                   disabled={!form.selectedFaculty || form.isFirstYear === null}
                   className="flex-1"
+                  isLoading={isNextLoading}
+                  loadingText={t("common.pleaseWait") || "Please wait..."}
                 >
                   {t("common.continue")}
-                </Button>
+                </LoadingButton>
               </DialogFooter>
             </div>
           )}
@@ -437,13 +450,15 @@ export function OnboardingModal({
                     <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
                     {t("common.back")}
                   </Button>
-                  <Button 
-                    onClick={handleNext} 
+                  <LoadingButton
+                    onClick={handleNext}
                     className="flex-1"
                     disabled={form.selectedInterests.length === 0}
+                    isLoading={isNextLoading}
+                    loadingText={t("common.pleaseWait") || "Please wait..."}
                   >
                     {t("common.continue")}
-                  </Button>
+                  </LoadingButton>
                 </div>
               </DialogFooter>
             </div>
@@ -500,9 +515,9 @@ export function OnboardingModal({
               )}
 
               <DialogFooter>
-                <Button onClick={handleNext} className="w-full">
+                <LoadingButton onClick={handleNext} className="w-full" isLoading={isNextLoading} loadingText={t("common.pleaseWait") || "Please wait..."}>
                   {t("modals.allSet.startExploring")}
-                </Button>
+                </LoadingButton>
               </DialogFooter>
             </div>
           )}

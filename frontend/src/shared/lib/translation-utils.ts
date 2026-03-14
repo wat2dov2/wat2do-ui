@@ -11,7 +11,7 @@ import i18n from '@/shared/lib/i18n';
  * Use for one-off translations or in non-React contexts
  */
 export function translate(key: string, options?: Record<string, any>): string {
-  return i18n.t(key, options);
+  return i18n.t(key, options) as string;
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   DialogClose,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
 import {
   Select,
@@ -38,7 +39,7 @@ import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { useCreateQRCodeForm } from "@/features/qrcode/hooks/useCreateQRCodeForm";
 import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/shared/utils/qrGenerator";
-import { saveQRCode } from "@/features/qrcode/api/qrcode.api";
+import { createPosterToBackend } from "@/features/qrcode/api/qrcode.api";
 import {
   CreateQRCodeModalProvider,
   useCreateQRCodeModalContext,
@@ -65,17 +66,43 @@ function CreateQRCodeModalContent() {
     resetFn: form.reset,
   });
 
-  const handleGenerate = () => {
-    if (!form.validate()) return;
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [createError, setCreateError] = React.useState<string | null>(null);
 
-    const newQRCode = form.createQRCode();
-    saveQRCode(newQRCode);
-    form.dispatch({ type: "SET_QR_CODE_ID", payload: newQRCode.id });
-    onCreate(newQRCode);
-    showSuccessAlert(
-      t("qrCode.posterCreated"),
-      t("qrCode.posterCreatedMessage", { name: newQRCode.name })
-    );
+  const handleGenerate = async () => {
+    if (!form.validate()) return;
+    setCreateError(null);
+    setIsGenerating(true);
+    try {
+      const id = crypto.randomUUID();
+      const destId =
+        form.state.destinationType === "event"
+          ? form.state.selectedEventId
+          : form.state.destinationType === "custom-url"
+            ? form.state.customUrl.trim()
+            : null;
+      const qrCode = await createPosterToBackend({
+        id,
+        name: form.state.name.trim(),
+        description: form.state.description.trim() || null,
+        destination_type: form.state.destinationType,
+        destination_id: destId ?? undefined,
+        filters: form.state.destinationType === "events-list" ? form.state.filters : undefined,
+        created_by: userEmail,
+        is_active: true,
+        image_url: form.state.imageUrl || null,
+      });
+      form.dispatch({ type: "SET_QR_CODE_ID", payload: qrCode.id });
+      onCreate(qrCode);
+      showSuccessAlert(
+        t("qrCode.posterCreated"),
+        t("qrCode.posterCreatedMessage", { name: qrCode.name })
+      );
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : t("common.error"));
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleDownload = () => {
@@ -267,10 +294,18 @@ function CreateQRCodeModalContent() {
                       {t("common.cancel")}
                     </Button>
                   </DialogClose>
-                  <Button type="button" onClick={handleGenerate}>
+                  <LoadingButton
+                    type="button"
+                    onClick={handleGenerate}
+                    isLoading={isGenerating}
+                    loadingText={t("common.pleaseWait") || "Please wait..."}
+                  >
                     {t("qrCode.generateQRCode")}
-                  </Button>
+                  </LoadingButton>
                 </Field>
+                {createError && (
+                  <FieldError className="text-xs text-error">{createError}</FieldError>
+                )}
               </FieldGroup>
             </form>
 
@@ -279,9 +314,7 @@ function CreateQRCodeModalContent() {
             <QRCodePreview
               qrUrl={qrUrl}
               name={form.state.name}
-              onDownload={handleDownload}
               onDone={onClose}
-              downloadLabel={t("admin.downloadQrCode")}
               doneLabel={t("qrCode.done")}
               successMessage={t("qrCode.qrCodeGeneratedSuccessfully")}
             />

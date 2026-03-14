@@ -43,10 +43,10 @@ export type FilterStateAction =
 
 const initialState: FilterStateReducerState = {
   searchQuery: "",
-  selectedCategories: ["Events", "Clubs", "Academic"],
-  selectedLocations: ["LAX", "Pollock", "TCF 1"],
-  selectedFoods: ["Snacks", "Pizza"],
-  selectedDays: ["Monday", "Wednesday", "Thursday"],
+  selectedCategories: [],
+  selectedLocations: [],
+  selectedFoods: [],
+  selectedDays: [],
   priceRange: { min: "", max: "" },
   dateRange: undefined,
   addedSince: undefined,

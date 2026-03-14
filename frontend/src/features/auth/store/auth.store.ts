@@ -1,8 +1,7 @@
 /**
  * Auth Store
  * State management for authentication
- * 
- * Uses local state boundaries - only auth-related state lives here
+ * Syncs with localStorage and backend tokens
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -11,11 +10,10 @@ import {
   getUserProfile,
   isAuthenticated,
   isProfileCompleted,
-  login,
-  logout,
   updateUserProfile,
   type UserProfile,
 } from "@/features/auth/api/auth.api";
+import { clearAllAuthData } from "@/features/auth/api/userRepository";
 
 interface AuthState {
   email: string | null;
@@ -24,12 +22,7 @@ interface AuthState {
   profileCompleted: boolean;
 }
 
-/**
- * Auth Store Hook
- * Manages authentication state with localStorage sync
- */
 export function useAuthStore() {
-  // Initialize state from localStorage
   const [state, setState] = useState<AuthState>(() => {
     const session = getSession();
     const profile = getUserProfile();
@@ -41,7 +34,6 @@ export function useAuthStore() {
     };
   });
 
-  // Sync with localStorage on mount and when storage changes
   useEffect(() => {
     const handleStorageChange = () => {
       const session = getSession();
@@ -54,10 +46,7 @@ export function useAuthStore() {
       });
     };
 
-    // Listen for storage changes (e.g., from other tabs)
     window.addEventListener("storage", handleStorageChange);
-    
-    // Initial sync
     handleStorageChange();
 
     return () => {
@@ -66,36 +55,44 @@ export function useAuthStore() {
   }, []);
 
   const setEmail = useCallback((email: string | null) => {
-    // Update localStorage via API
-    if (email) {
-      login(email);
-    } else {
-      logout();
-    }
-    // Update local state
     setState((prev) => ({
       ...prev,
       email,
-      isAuthenticated: email !== null,
+      isAuthenticated: email !== null && isAuthenticated(),
     }));
   }, []);
 
   const setProfile = useCallback((profile: UserProfile | null) => {
-    // Update localStorage via API
     if (profile) {
       updateUserProfile(profile);
     }
-    // Update local state
     setState((prev) => ({
       ...prev,
       profile,
-      profileCompleted: profile !== null && profile.faculty !== "" && profile.interests.length > 0,
+      profileCompleted:
+        profile !== null && profile.faculty !== "" && profile.interests.length > 0,
     }));
+  }, []);
+
+  const setAuthenticated = useCallback((authed: boolean) => {
+    setState((prev) => ({ ...prev, isAuthenticated: authed }));
+  }, []);
+
+  const clearAuth = useCallback(() => {
+    clearAllAuthData();
+    setState({
+      email: null,
+      profile: null,
+      isAuthenticated: false,
+      profileCompleted: false,
+    });
   }, []);
 
   return {
     ...state,
     setEmail,
     setProfile,
+    setAuthenticated,
+    clearAuth,
   };
 }

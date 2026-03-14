@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, MapPin, Tag, AlertTriangle, Edit, Trash2, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -24,6 +24,7 @@ import { AdminPagination } from "@/features/admin/components/shared/AdminPaginat
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
+import { cn } from "@/shared/lib/utils";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -52,9 +53,16 @@ export function AdminEventsPage() {
     isEventReported,
   } = useAdminEventsPage({ events, itemsPerPage: ITEMS_PER_PAGE });
 
-  const handleDelete = (eventId: number) => {
-    onDeleteEvent(eventId);
-    setDeleteConfirmId(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async (eventId: number) => {
+    setIsDeleting(true);
+    try {
+      await Promise.resolve(onDeleteEvent(eventId));
+      setDeleteConfirmId(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -97,14 +105,20 @@ export function AdminEventsPage() {
             ))}
           </SelectContent>
         </Select>
-        <Button
-          variant={showReportedOnly ? "default" : "outline"}
+        <button
+          type="button"
           onClick={toggleReportedOnly}
-          className="flex items-center gap-2"
+          aria-pressed={showReportedOnly}
+          className={cn(
+            "flex w-fit items-center justify-center gap-2 rounded-xl px-3 py-1 text-base md:text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 h-9 cursor-pointer [&_svg]:shrink-0 [&_svg]:size-4",
+            showReportedOnly
+              ? "bg-primary/15 text-primary ring-2 ring-primary/50 [&_svg]:text-primary"
+              : "bg-secondary text-muted-foreground hover:bg-secondary/80 [&_svg]:text-muted-foreground"
+          )}
         >
-          <AlertTriangle className="w-4 h-4" />
+          <AlertTriangle className="size-4" />
           {t("admin.reportedOnly")}
-        </Button>
+        </button>
       </div>
 
       <AdminResultsCount
@@ -234,6 +248,7 @@ export function AdminEventsPage() {
           setSearchParams(newParams);
         }}
         allEvents={events}
+        hideSimilarEvents
       />
 
       {filteredEvents.length > 0 && (
@@ -251,13 +266,14 @@ export function AdminEventsPage() {
       <AdminDeleteDialog
         isOpen={deleteConfirmId !== null}
         onClose={() => setDeleteConfirmId(null)}
-        onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+        onConfirm={() => deleteConfirmId != null && handleDelete(deleteConfirmId)}
         title={t("events.deleteEventTitle")}
         description={t("events.deleteEventConfirm", {
           title: deleteConfirmId
             ? events.find((e) => e.id === deleteConfirmId)?.title || ""
             : "",
         })}
+        isLoading={isDeleting}
       />
     </div>
   );

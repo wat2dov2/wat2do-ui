@@ -2,8 +2,10 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { getEventSubmissions, getScrapedEvents, getQRCodes } from "@/features/admin/api/admin.api";
+import { LoadingPage } from "@/shared/ui/loading-page";
+import { getEventSubmissions, getScrapedEvents } from "@/features/admin/api/admin.api";
 import { getSession } from "@/features/auth/api/auth.api";
+import { useBackendPosters } from "@/features/qrcode";
 import { AdminCard } from "@/features/admin/components/shared/AdminCard";
 import type { Event } from "@/shared/types";
 import type { EventSubmission, ScrapedEvent } from "@/shared/types";
@@ -30,6 +32,8 @@ interface AdminPanelProps {
 
 export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
   const { t } = useTranslation();
+  const { posters: backendPosters, loading: recentActivityLoading } = useBackendPosters();
+
   // Get recent activities
   const recentActivities = useMemo(() => {
     const submissions = getEventSubmissions()
@@ -46,11 +50,9 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       timestamp: new Date(s.scrapedAt),
     }));
 
-    // Get created posters (QR codes)
     const session = getSession();
     const userEmail = session.email || "";
-    const allQRCodes = getQRCodes();
-    const createdPosters = allQRCodes
+    const createdPosters = backendPosters
       .filter((qr) => qr.createdBy === userEmail)
       .map((qr) => ({
         type: "poster" as const,
@@ -58,18 +60,16 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
         timestamp: new Date(qr.createdAt),
       }));
 
-    // Combine and sort by timestamp (newest first)
     type ActivityItem =
       | { type: "submission"; data: EventSubmission; timestamp: Date }
       | { type: "scraped"; data: ScrapedEvent; timestamp: Date }
       | { type: "poster"; data: QRCode; timestamp: Date };
-    
     const all: ActivityItem[] = [...submissions, ...scraped, ...createdPosters];
 
     return all
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, 10); // Show last 10 activities
-  }, []);
+      .slice(0, 10);
+  }, [backendPosters]);
 
 
   const handleActivityClick = (activity: (typeof recentActivities)[0]) => {
@@ -155,7 +155,11 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
           </p>
         </div>
 
-        {recentActivities.length > 0 ? (
+        {recentActivityLoading ? (
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <LoadingPage />
+          </div>
+        ) : recentActivities.length > 0 ? (
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <div className="divide-y divide-border">
               {recentActivities.map((activity) => (

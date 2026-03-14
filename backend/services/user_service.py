@@ -20,7 +20,9 @@ async def get_user_by_supabase_id(db: AsyncSession, supabase_auth_id: str) -> Us
 
 
 async def list_users(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[User]:
-    result = await db.execute(select(User).offset(skip).limit(limit))
+    result = await db.execute(
+        select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
+    )
     return list(result.scalars().all())
 
 

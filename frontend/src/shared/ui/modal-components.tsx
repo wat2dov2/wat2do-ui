@@ -327,7 +327,7 @@ export function CenteredIconContainer({
   className,
   ...props
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<Record<string, unknown>>;
   size?: "sm" | "md" | "lg";
   className?: string;
 } & React.ComponentProps<"div">) {

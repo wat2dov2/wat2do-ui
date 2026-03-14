@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import { CreditPackageCard } from "@/shared/ui/credit-package-card";
 import { ModalContentWrapper, CenteredIconContainer, FlexCol, FlexRow } from "@/shared/ui/modal-components";
 import { useModalState } from "@/shared/hooks/useModalState";
@@ -125,26 +126,21 @@ export function BuyCreditsModal({
             ))}
           </div>
 
-          <Button
+          <LoadingButton
             onClick={handlePurchase}
-            disabled={form.selectedPackage === null || form.isPurchasing}
+            disabled={form.selectedPackage === null}
+            isLoading={form.isPurchasing}
+            loadingText={t("credits.processing")}
             className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
             size="lg"
           >
-            {form.isPurchasing ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                {t("credits.processing")}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
-                {form.selectedPackage !== null
-                  ? `Pay $${CREDIT_PACKAGES[form.selectedPackage].price}`
-                  : t("forms.selectPackage")}
-              </div>
-            )}
-          </Button>
+            <span className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              {form.selectedPackage !== null
+                ? `Pay $${CREDIT_PACKAGES[form.selectedPackage].price}`
+                : t("forms.selectPackage")}
+            </span>
+          </LoadingButton>
 
           <p className="text-[10px] text-gray-400 text-center mt-3">
             {t("credits.securePayment")}

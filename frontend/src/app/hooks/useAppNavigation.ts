@@ -10,7 +10,6 @@
 
 import { useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { getQRCodeById, handleQRRedirect as handleQRRedirectUtil } from "@/features/qrcode";
 import type { PageMode, FilterState, Event } from "@/shared/types";
 
 interface FilterSetters {
@@ -23,6 +22,7 @@ interface FilterSetters {
   setDateRange: (date: Date | undefined) => void;
   setAddedSince: (date: Date | undefined) => void;
   setRequiresRegistration: (value: boolean) => void;
+  setFilterStateFromURL?: (filters: FilterState) => void;
 }
 
 interface UseAppNavigationOptions {
@@ -59,22 +59,8 @@ export function useAppNavigation({
     return "events";
   }, [location.pathname]);
 
-  // Combined effect: Handle QR redirects and URL parameters
+  // Combined effect: Handle URL parameters (QR redirect is handled by QRRedirectPage at /qr/:id)
   useEffect(() => {
-    // Handle QR code redirects
-    const path = location.pathname;
-    const qrMatch = path.match(/^\/qr\/(.+)$/);
-    if (qrMatch) {
-      const qrCodeId = qrMatch[1];
-      const qrCode = getQRCodeById(qrCodeId);
-      if (qrCode) {
-        handleQRRedirectUtil(qrCode);
-      } else {
-        navigate("/", { replace: true });
-      }
-      return; // Don't process other URL params if handling QR redirect
-    }
-
     // Handle URL parameters (only process once on initial load)
     if (!hasProcessedInitialParams.current) {
       const eventId = searchParams.get("eventId");
@@ -92,21 +78,25 @@ export function useAppNavigation({
         return;
       }
 
-      // Handle filters from URL
-      if (filtersParam) {
+      // Handle filters from URL only when explicitly present (e.g. shared link or QR redirect)
+      if (filtersParam && filtersParam.length > 2) {
         try {
           const parsedFilters: FilterState = JSON.parse(decodeURIComponent(filtersParam));
-          if (parsedFilters.categories) filters.setSelectedCategories(parsedFilters.categories);
-          if (parsedFilters.locations) filters.setSelectedLocations(parsedFilters.locations);
-          if (parsedFilters.foods) filters.setSelectedFoods(parsedFilters.foods);
-          if (parsedFilters.days) filters.setSelectedDays(parsedFilters.days);
-          if (parsedFilters.priceRange) filters.setPriceRange(parsedFilters.priceRange);
-          if (parsedFilters.dateRange) filters.setDateRange(new Date(parsedFilters.dateRange));
-          if (parsedFilters.addedSince) filters.setAddedSince(new Date(parsedFilters.addedSince));
-          if (parsedFilters.requiresRegistration !== undefined)
-            filters.setRequiresRegistration(parsedFilters.requiresRegistration);
-          if (parsedFilters.searchQuery) filters.setSearchQuery(parsedFilters.searchQuery);
-        } catch (e) {
+          if (filters.setFilterStateFromURL) {
+            filters.setFilterStateFromURL(parsedFilters);
+          } else {
+            if (parsedFilters.categories?.length) filters.setSelectedCategories(parsedFilters.categories);
+            if (parsedFilters.locations?.length) filters.setSelectedLocations(parsedFilters.locations);
+            if (parsedFilters.foods?.length) filters.setSelectedFoods(parsedFilters.foods);
+            if (parsedFilters.days?.length) filters.setSelectedDays(parsedFilters.days);
+            if (parsedFilters.priceRange) filters.setPriceRange(parsedFilters.priceRange);
+            if (parsedFilters.dateRange) filters.setDateRange(new Date(parsedFilters.dateRange));
+            if (parsedFilters.addedSince) filters.setAddedSince(new Date(parsedFilters.addedSince));
+            if (parsedFilters.requiresRegistration !== undefined)
+              filters.setRequiresRegistration(parsedFilters.requiresRegistration);
+            if (parsedFilters.searchQuery) filters.setSearchQuery(parsedFilters.searchQuery);
+          }
+        } catch {
           // Silently fail if filters can't be parsed from URL
         }
       }

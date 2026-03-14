@@ -2,12 +2,14 @@ import React, { useMemo, useState, useEffect } from "react";
 import Map from "react-map-gl/mapbox";
 import { Marker } from "@vis.gl/react-mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { QRCodeScan } from "@/shared/types";
+import type { QRCode, QRCodeScan } from "@/shared/types";
 import { MapPin, Zap } from "lucide-react";
-import { getQRCodes } from "@/features/qrcode/api/qrcode.api";
+import { listPostersFromBackend } from "@/features/qrcode/api/qrcode.api";
 
 interface QRScanMapProps {
   scans: QRCodeScan[];
+  /** When provided, used for poster names/locations; otherwise fetched from backend. */
+  posters?: QRCode[];
   height?: string;
   onMarkerClick?: (qrCodeId: string) => void;
 }
@@ -167,13 +169,21 @@ function PosterMarker({
   );
 }
 
-export function QRScanMap({ scans, height = "500px", onMarkerClick }: QRScanMapProps) {
+export function QRScanMap({ scans, posters: postersProp, height = "500px", onMarkerClick }: QRScanMapProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [fetchedPosters, setFetchedPosters] = useState<QRCode[]>([]);
 
-  // Get QR codes for poster names and locations
-  const qrCodes = useMemo(() => {
-    return getQRCodes();
-  }, []);
+  // Use provided posters or fetch from backend
+  useEffect(() => {
+    if (postersProp !== undefined) return;
+    let cancelled = false;
+    listPostersFromBackend()
+      .then((list) => { if (!cancelled) setFetchedPosters(list); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [postersProp]);
+
+  const qrCodes = useMemo(() => postersProp ?? fetchedPosters, [postersProp, fetchedPosters]);
 
   // Detect dark mode
   useEffect(() => {

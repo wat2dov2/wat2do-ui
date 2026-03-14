@@ -10,7 +10,7 @@ import { AdminEventsPage } from "@/features/admin";
 import { AdminClubsPage } from "@/features/admin";
 import { AdminSubmissionsPage } from "@/features/admin";
 import { AdminPostersPage } from "@/features/admin";
-import type { Event, EventSubmission } from "@/shared/types";
+import type { Event, EventSubmission, Club } from "@/shared/types";
 import { submissionToEventData } from "@/features/admin/utils/submissionToEvent";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useAppContext } from "@/contexts/AppContext";
@@ -18,9 +18,9 @@ import { useAppContext } from "@/contexts/AppContext";
 interface AdminRoutesConfig {
   events: Event[];
   onEditEvent: (event: Event) => void;
-  onDeleteEvent: (eventId: number) => void;
+  onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
-  onAddEvent: (eventData: any) => number;
+  onAddEvent: (eventData: any) => Promise<number>;
   userEmail: string | null;
 }
 
@@ -56,14 +56,17 @@ export function AdminRouteWrapper({
         onCreateEvent: config.onCreateEvent,
       }),
       ...(includeClubs && {
-        onAddClub: () => {
-          // TODO: Implement add club functionality
+        onAddClub: async (club: Club) => {
+          const { adminCreateClub } = await import("@/features/admin/api/admin.api");
+          await adminCreateClub(club);
         },
-        onEditClub: () => {
-          // TODO: Implement edit club functionality
+        onEditClub: async (club: Club) => {
+          const { adminUpdateClub } = await import("@/features/admin/api/admin.api");
+          await adminUpdateClub(club, club);
         },
-        onDeleteClub: () => {
-          // TODO: Implement delete club functionality
+        onDeleteClub: async (clubId: number) => {
+          const { adminDeleteClub } = await import("@/features/admin/api/admin.api");
+          await adminDeleteClub(clubId);
         },
       }),
       ...(includeSubmissions && {

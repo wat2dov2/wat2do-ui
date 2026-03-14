@@ -9,7 +9,6 @@ import {
   Calendar,
   Plus,
   X,
-  Star,
   Heart,
   LogIn,
   User,
@@ -51,7 +50,6 @@ export function CommandPalette({
     setShowOnboarding,
     onClearAllFilters,
     onSetFreeFilter,
-    onSetForYouFilter,
   } = useCommandPalette();
 
   return (
@@ -155,15 +153,6 @@ export function CommandPalette({
         <CommandGroup heading={t("commands.personal")}>
           {profileCompleted ? (
               <>
-              <CommandItem
-                onSelect={() => {
-                  onSetForYouFilter?.();
-                  onOpenChange(false);
-                }}
-              >
-                <Star className="mr-2 h-4 w-4" />
-                <span>{t("commands.showPersonalizedEvents")}</span>
-              </CommandItem>
               <CommandItem
                 onSelect={() => {
                   // Navigate to saved events (placeholder)

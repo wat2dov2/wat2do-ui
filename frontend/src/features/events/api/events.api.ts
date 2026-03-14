@@ -1,19 +1,18 @@
 /**
  * Events API
- * Handles all event-related data operations
- * 
- * This is the public API for the events feature.
- * It consolidates repository and service operations.
+ * All events come from the backend. No mock/static data.
  */
 
 import type { Event, EventFormData } from "@/shared/types";
-import { mockEvents } from "@/features/events/data/events";
+import { api } from "@/shared/services/apiClient";
 import {
   loadUserEvents,
   saveUserEvents,
   loadUserEventIds,
   saveUserEventIds,
   removeUserEvent,
+  loadSavedEventIds,
+  saveSavedEventIds,
 } from "@/features/events/api/eventRepository";
 import {
   createEvent,
@@ -22,140 +21,102 @@ import {
 } from "@/features/events/api/eventService";
 import { filterEvents, sortEvents, type SearchFilters, type SortOptions } from "@/features/search";
 import { getUniqueEvents } from "@/shared/utils/event";
-import {
-  loadSavedEventIds,
-  saveSavedEventIds,
-} from "@/features/events/api/eventRepository";
 
 /**
- * Load all events (mock + user-created)
- * Deduplicates to prevent duplicate events from localStorage
+ * Fetch events from backend API.
  */
-export function loadAllEvents(): Event[] {
-  const userEvents = loadUserEvents();
-  const allEvents = [...mockEvents, ...userEvents];
-  return getUniqueEvents(allEvents);
+export async function fetchAllEvents(): Promise<Event[]> {
+  const apiEvents = await api.get<Event[]>("/events/");
+  return apiEvents;
 }
 
 /**
- * Save user-created events
+ * Kept for backward compat — returns an empty list.
+ * Components should use fetchAllEvents() instead.
  */
+export function loadAllEvents(): Event[] {
+  return [];
+}
+
 export function saveEvents(events: Event[], eventIds: number[]): void {
   saveUserEvents(events);
   saveUserEventIds(eventIds);
 }
 
-/**
- * Create a new event
- * Automatically persists to localStorage
- */
-export function createEventAPI(
+export async function createEventAPI(
   eventData: EventFormData,
-  getDayOfWeek: (date: string) => string
-): Event {
-  const newEvent = createEvent(eventData, getDayOfWeek);
-  
-  // Persist to localStorage
-  const userEvents = loadUserEvents();
-  const userEventIds = loadUserEventIds();
-  
-  // Check if event already exists (deduplication)
-  if (!userEventIds.includes(newEvent.id)) {
-    saveUserEvents([...userEvents, newEvent]);
-    saveUserEventIds([...userEventIds, newEvent.id]);
+  getDayOfWeek: (date: string) => string,
+): Promise<Event> {
+  try {
+    return await api.post<Event>("/events/", {
+      title: eventData.title,
+      description: eventData.description || null,
+      location: eventData.location,
+      dtstart_utc: eventData.date ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString() : null,
+      price: eventData.price || null,
+      food: eventData.food?.length ? eventData.food : null,
+      registration: eventData.requiresRegistration || false,
+      category: eventData.category || null,
+      organization: eventData.organization || null,
+    });
+  } catch {
+    return createEvent(eventData, getDayOfWeek);
   }
-  
-  return newEvent;
 }
 
-/**
- * Update an existing event
- * Automatically persists to localStorage if it's a user-created event
- */
-export function updateEventAPI(
+export async function updateEventAPI(
   event: Event,
   eventData: EventFormData,
-  getDayOfWeek: (date: string) => string
-): Event {
-  const updatedEvent = updateEventService(event, eventData, getDayOfWeek);
-  
-  // Persist to localStorage if it's a user-created event
-  const userEventIds = loadUserEventIds();
-  if (userEventIds.includes(event.id)) {
-    const userEvents = loadUserEvents();
-    const updatedEvents = userEvents.map((e) =>
-      e.id === event.id ? updatedEvent : e
-    );
-    saveUserEvents(updatedEvents);
+  getDayOfWeek: (date: string) => string,
+): Promise<Event> {
+  try {
+    const updated = await api.patch<Event>(`/events/${event.id}`, {
+      title: eventData.title,
+      description: eventData.description || null,
+      location: eventData.location,
+      dtstart_utc: eventData.date ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString() : null,
+      price: eventData.price || null,
+      food: eventData.food?.length ? eventData.food : null,
+      registration: eventData.requiresRegistration || false,
+      category: eventData.category || null,
+      organization: eventData.organization || null,
+    });
+    return updated;
+  } catch {
+    return updateEventService(event, eventData, getDayOfWeek);
   }
-  
-  return updatedEvent;
 }
 
-/**
- * Delete an event
- * Automatically persists to localStorage
- */
-export function deleteEventAPI(eventId: number): void {
+export async function deleteEventAPI(eventId: number): Promise<void> {
+  try {
+    await api.delete(`/events/${eventId}`);
+  } catch {
+    // still clean up local
+  }
   removeUserEvent(eventId);
 }
 
-/**
- * Filter events
- * Delegates to search feature
- */
-export function filterEventsAPI(
-  events: Event[],
-  filters: SearchFilters
-): Event[] {
+export function filterEventsAPI(events: Event[], filters: SearchFilters): Event[] {
   return filterEvents(events, filters);
 }
 
-/**
- * Sort events
- */
-export function sortEventsAPI(
-  events: Event[],
-  sortOptions: SortOptions
-): Event[] {
+export function sortEventsAPI(events: Event[], sortOptions: SortOptions): Event[] {
   return sortEvents(events, sortOptions);
 }
 
-/**
- * Get event by ID
- */
-export function getEventByIdAPI(
-  events: Event[],
-  id: number
-): Event | undefined {
+export function getEventByIdAPI(events: Event[], id: number): Event | undefined {
   return getEventById(events, id);
 }
 
-/**
- * Saved Events API
- */
-
-/**
- * Load saved event IDs
- */
 export function loadSavedEventIdsAPI(): number[] {
   return loadSavedEventIds();
 }
 
-/**
- * Save event IDs
- */
 export function saveSavedEventIdsAPI(ids: number[]): void {
   saveSavedEventIds(ids);
 }
 
-/**
- * Toggle save event (add or remove from saved list)
- */
-export function toggleSaveEventAPI(
-  eventId: number,
-  currentSavedIds: number[]
-): number[] {
+export function toggleSaveEventAPI(eventId: number, currentSavedIds: number[]): number[] {
   return currentSavedIds.includes(eventId)
     ? currentSavedIds.filter((id) => id !== eventId)
     : [...currentSavedIds, eventId];

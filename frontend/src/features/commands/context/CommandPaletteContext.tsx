@@ -11,7 +11,6 @@ interface CommandPaletteContextValue {
   setShowOnboarding: (show: boolean) => void;
   onClearAllFilters: () => void;
   onSetFreeFilter: () => void;
-  onSetForYouFilter?: () => void;
 }
 
 const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null);

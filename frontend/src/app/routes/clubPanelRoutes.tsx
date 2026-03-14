@@ -12,9 +12,9 @@ import { useNavigation } from "@/contexts/NavigationContext";
 interface ClubPanelRoutesConfig {
   events: Event[];
   onEditEvent: (event: Event) => void;
-  onDeleteEvent: (eventId: number) => void;
+  onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
-  onAddEvent: (eventData: any) => number;
+  onAddEvent: (eventData: any) => Promise<number>;
   userEmail: string | null;
 }
 

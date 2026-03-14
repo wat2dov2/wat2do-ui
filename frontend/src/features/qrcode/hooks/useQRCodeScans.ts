@@ -1,5 +1,5 @@
-import { useReducer, useCallback } from "react";
-import { getScansForQRCode } from "@/features/qrcode/api/qrcode.api";
+import { useReducer, useCallback, useEffect } from "react";
+import { getScansFromBackend, normalizeBackendScan } from "@/features/qrcode/api/qrcode.api";
 import type { QRCode } from "@/shared/types";
 import {
   qrCodeScansReducer,
@@ -12,23 +12,20 @@ interface UseQRCodeScansOptions {
 }
 
 /**
- * Hook for managing QR code scans
- * Refactored to use useReducer instead of useState
- * Scans loaded synchronously when isOpen is true (derived from props)
+ * Hook for managing QR code scans. Loads scans from backend when modal is open.
  */
 export function useQRCodeScans({ qrCode, isOpen }: UseQRCodeScansOptions) {
-  // Load scans synchronously when modal is open (derived state, no useEffect)
-  const initialScans = isOpen ? getScansForQRCode(qrCode.id) : [];
-  
-  const [state, dispatch] = useReducer(qrCodeScansReducer, {
-    ...initialState,
-    scans: initialScans,
-  });
+  const [state, dispatch] = useReducer(qrCodeScansReducer, initialState);
 
   const loadScans = useCallback(() => {
-    const loadedScans = getScansForQRCode(qrCode.id);
-    dispatch({ type: "SET_SCANS", payload: loadedScans });
+    getScansFromBackend(qrCode.id)
+      .then((raw) => dispatch({ type: "SET_SCANS", payload: raw.map(normalizeBackendScan) }))
+      .catch(() => dispatch({ type: "SET_SCANS", payload: [] }));
   }, [qrCode.id]);
+
+  useEffect(() => {
+    if (isOpen && qrCode.id) loadScans();
+  }, [isOpen, qrCode.id, loadScans]);
 
   return {
     scans: state.scans,

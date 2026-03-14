@@ -1,30 +1,28 @@
-import { useState, useMemo, useCallback } from "react";
-import { getQRCodes, getQRScans, getScansForQRCode } from "@/features/qrcode/api/qrcode.api";
-import type { QRCode } from "@/shared/types";
+import { useState, useMemo } from "react";
+import type { QRCode, QRCodeScan } from "@/shared/types";
 
 type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime";
 
 interface UseAdminPostersFiltersOptions {
   refreshKey: number;
+  /** Posters from backend (GET /qr/). */
+  backendPosters: QRCode[];
+  /** Scans from backend (GET /qr/scans). */
+  backendScans: QRCodeScan[];
 }
 
 /**
  * Hook for managing filters in AdminPostersPage
  */
-export function useAdminPostersFilters({ refreshKey }: UseAdminPostersFiltersOptions) {
+export function useAdminPostersFilters({
+  refreshKey,
+  backendPosters,
+  backendScans,
+}: UseAdminPostersFiltersOptions) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("alltime");
 
-  // Get all QR codes
-  const qrCodes = useMemo(() => {
-    return getQRCodes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey]);
-
-  // Get all scans
-  const allScans = useMemo(() => {
-    return getQRScans();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey]);
+  const qrCodes = useMemo(() => backendPosters, [refreshKey, backendPosters]);
+  const allScans = useMemo(() => backendScans, [refreshKey, backendScans]);
 
   // Filter scans by time range
   const filteredScans = useMemo(() => {
@@ -70,10 +68,10 @@ export function useAdminPostersFilters({ refreshKey }: UseAdminPostersFiltersOpt
     });
   }, [allScans, timeFilter]);
 
-  // Calculate stats for each QR code
+  // Calculate stats for each QR code (from allScans, which may be backend or localStorage)
   const qrCodesWithStats = useMemo(() => {
     return qrCodes.map((qr) => {
-      const scans = getScansForQRCode(qr.id);
+      const scans = allScans.filter((s) => s.qrCodeId === qr.id);
       const uniqueScans = new Set(scans.map((s) => s.sessionId || s.userId || s.id)).size;
       return {
         ...qr,
@@ -81,7 +79,7 @@ export function useAdminPostersFilters({ refreshKey }: UseAdminPostersFiltersOpt
         uniqueScans,
       };
     });
-  }, [qrCodes]);
+  }, [qrCodes, allScans]);
 
   // Return all QR codes with stats (no search filter)
   const filteredQRCodes = qrCodesWithStats;

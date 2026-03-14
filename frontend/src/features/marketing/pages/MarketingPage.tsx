@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, startTransition } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Megaphone,
@@ -15,9 +15,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import type { QRCode } from "@/shared/types";
-import { getQRCodes, deleteQRCode, getScansForQRCode, CreateQRCodeModal, QRCodeDetailsModal } from "@/features/qrcode";
+import type { QRCode, QRCodeScan } from "@/shared/types";
+import {
+  listPostersFromBackend,
+  deletePosterFromBackend,
+  getScansFromBackend,
+  normalizeBackendScan,
+  CreateQRCodeModal,
+  QRCodeDetailsModal,
+} from "@/features/qrcode";
 import type { Event } from "@/shared/types";
+import { Spinner } from "@/shared/ui/spinner";
 
 interface MarketingPageProps {
   events: Event[];
@@ -27,31 +35,44 @@ interface MarketingPageProps {
 export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   const { t } = useTranslation();
   const [qrCodes, setQRCodes] = useState<QRCode[]>([]);
+  const [scans, setScans] = useState<QRCodeScan[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedQRCode, setSelectedQRCode] = useState<QRCode | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const loadQRCodes = () => {
-    const loaded = getQRCodes();
-    setQRCodes(loaded);
-  };
+  const loadQRCodes = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [posters, scansList] = await Promise.all([
+        listPostersFromBackend(),
+        getScansFromBackend().then((list) => list.map(normalizeBackendScan)),
+      ]);
+      setQRCodes(posters);
+      setScans(scansList);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    startTransition(() => {
-      loadQRCodes();
-    });
-  }, []);
+    loadQRCodes();
+  }, [loadQRCodes]);
 
   const handleCreate = () => {
     loadQRCodes();
     setShowCreateModal(false);
   };
 
-  const handleDelete = (id: string) => {
-    deleteQRCode(id);
-    loadQRCodes();
-    setDeleteConfirmId(null);
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePosterFromBackend(id);
+      await loadQRCodes();
+      setDeleteConfirmId(null);
+    } catch {
+      // keep dialog open on error
+    }
   };
 
   const handleViewDetails = (qrCode: QRCode) => {
@@ -59,18 +80,26 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
     setShowDetailsModal(true);
   };
 
-  // Calculate stats for each QR code
+  // Calculate stats from backend scans
   const qrCodesWithStats = useMemo(() => {
     return qrCodes.map((qr) => {
-      const scans = getScansForQRCode(qr.id);
-      const uniqueScans = new Set(scans.map((s) => s.sessionId || s.userId || s.id)).size;
+      const qrScans = scans.filter((s) => s.qrCodeId === qr.id);
+      const uniqueScans = new Set(qrScans.map((s) => s.sessionId || s.userId || s.id)).size;
       return {
         ...qr,
-        totalScans: scans.length,
+        totalScans: qrScans.length,
         uniqueScans,
       };
     });
-  }, [qrCodes]);
+  }, [qrCodes, scans]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Spinner className="w-8 h-8 text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -193,7 +222,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
           }}
           qrCode={selectedQRCode}
           events={events}
-          onUpdate={loadQRCodes}
         />
       )}
 

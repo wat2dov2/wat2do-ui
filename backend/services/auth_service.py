@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from supabase_auth.errors import AuthApiError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.allowed_emails import get_school_for_email, is_email_allowed
 from core.database import supabase
 from core.logging import logger
 from models.user import User
@@ -15,7 +16,14 @@ from schemas.auth import (
     TokenResponse,
 )
 
+
 async def signup(db: AsyncSession, data: SignupRequest) -> SignupResponse:
+    if not is_email_allowed(data.email):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only student emails from allowed schools can sign up. Use a valid university email (e.g. @uwaterloo.ca).",
+        )
+
     try:
         res = supabase.auth.sign_up({"email": data.email, "password": data.password})
     except AuthApiError as e:
@@ -28,11 +36,14 @@ async def signup(db: AsyncSession, data: SignupRequest) -> SignupResponse:
             detail="Signup failed — check email/password requirements",
         )
 
+    school = get_school_for_email(data.email) or ""
+
     user = User(
         supabase_auth_id=res.user.id,
         email=data.email,
         username=data.username,
         full_name=data.full_name,
+        school=school,
     )
     db.add(user)
     try:
@@ -106,7 +117,7 @@ async def refresh(data: RefreshRequest) -> TokenResponse:
 
 async def logout(access_token: str) -> None:
     try:
-        supabase.auth.sign_out(access_token)
+        supabase.auth.sign_out()
     except AuthApiError as e:
         logger.warning("Logout error: %s", e.message)
         raise HTTPException(
@@ -128,7 +139,6 @@ async def reset_password(data: ResetPasswordRequest) -> None:
     try:
         supabase.auth.update_user(
             {"password": data.new_password},
-            access_token=data.access_token,
         )
     except AuthApiError as e:
         logger.warning("Password reset failed: %s", e.message)

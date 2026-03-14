@@ -1,13 +1,7 @@
-/**
- * useProfile Hook
- * Manages user profile state and operations
- */
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { loadProfile, saveProfile, type UserProfile } from "@/features/settings/api/settings.api";
 import { availableSchools } from "@/features/events/data/events";
 
-// Re-export for convenience
 export type { UserProfile };
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -22,10 +16,32 @@ export function useProfile() {
     const saved = loadProfile();
     return saved || DEFAULT_PROFILE;
   });
+  const [syncing, setSyncing] = useState(false);
+  const initialLoad = useRef(true);
 
-  // Persist profile changes
   useEffect(() => {
+    let cancelled = false;
+    import("@/features/auth/api/auth.api").then(({ fetchProfileAPI }) => {
+      fetchProfileAPI()
+        .then((remote) => {
+          if (!cancelled && remote) setProfile(remote);
+        })
+        .catch(() => {});
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      return;
+    }
     saveProfile(profile);
+    setSyncing(true);
+    import("@/features/auth/api/auth.api")
+      .then(({ updateProfileAPI }) => updateProfileAPI(profile))
+      .catch(() => {})
+      .finally(() => setSyncing(false));
   }, [profile]);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
@@ -41,9 +57,5 @@ export function useProfile() {
     }));
   };
 
-  return {
-    profile,
-    updateProfile,
-    toggleInterest,
-  };
+  return { profile, updateProfile, toggleInterest, syncing };
 }

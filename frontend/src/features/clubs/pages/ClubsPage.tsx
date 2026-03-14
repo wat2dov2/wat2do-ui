@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { ClubCard } from "@/features/clubs/components/ClubCard";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { useClubsPage } from "@/features/clubs/hooks/useClubsPage";
 
 // Normalize club category to use consolidated event category translations where applicable
@@ -126,9 +127,7 @@ export function ClubsPage() {
 
       {/* Clubs Grid */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="text-muted-foreground">{t("common.loadingPage")}</div>
-        </div>
+        <LoadingPage />
       ) : filteredClubs.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
           {filteredClubs.map((club) => (

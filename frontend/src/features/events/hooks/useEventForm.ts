@@ -1,4 +1,4 @@
-import { useReducer, useMemo, useCallback, useRef } from "react";
+import { useState, useReducer, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { EventFormData } from "@/shared/types";
 import {
@@ -137,6 +137,24 @@ export function useEventForm(options: UseEventFormOptions) {
     dispatch({ type: "SET_SELECTED_DATE", payload: date });
   }, []);
 
+  // Image upload state
+  const [imagePreview, setImagePreview] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const onImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview((ev.target?.result as string) || "");
+    reader.readAsDataURL(file);
+  }, []);
+
+  const onRemoveImage = useCallback(() => {
+    setImagePreview("");
+    setImageFile(null);
+  }, []);
+
   // Check if form is valid
   const isValid = isEventFormValid(state.formData, errors);
 
@@ -177,6 +195,12 @@ export function useEventForm(options: UseEventFormOptions) {
     setJsonError: (error: string) => dispatch({ type: "SET_JSON_ERROR", payload: error }),
     handleJsonChange,
     syncToJSON,
+
+    // Image upload
+    imagePreview,
+    imageFile,
+    onImageUpload,
+    onRemoveImage,
 
     // AI generation
     aiPrompt: state.aiPrompt,

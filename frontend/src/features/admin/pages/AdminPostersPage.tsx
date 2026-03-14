@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Megaphone, ArrowLeft, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { Spinner } from "@/shared/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -25,8 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import { deleteQRCode } from "@/features/qrcode/api/qrcode.api";
-import { QRCodeDetailsModal } from "@/features/qrcode";
+import { QRCodeDetailsModal, useBackendScans, useBackendPosters } from "@/features/qrcode";
 import { GenerateQRAssetsWizard } from "@/features/qrcode/components/GenerateQRAssetsWizard";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { useAdminContext } from "@/features/admin/context/AdminContext";
@@ -49,15 +49,22 @@ export function AdminPostersPage() {
     setRefreshKey,
   } = useAdminPostersPage();
   const SCANS_PER_PAGE = 14;
-  
+
+  const { scans: backendScans, loading: scansLoading } = useBackendScans(refreshKey);
+  const { posters: backendPosters, loading: postersLoading } = useBackendPosters(refreshKey);
+  const isLoading = postersLoading || scansLoading;
+
   // Intersection observer to only load map when it's about to be visible
   const { ref: mapContainerRef, hasIntersected } = useIntersectionObserver<HTMLDivElement>({
     threshold: 0.1,
     rootMargin: "200px",
   });
 
-  // Use hooks for business logic
-  const filters = useAdminPostersFilters({ refreshKey });
+  const filters = useAdminPostersFilters({
+    refreshKey,
+    backendPosters,
+    backendScans,
+  });
   const pagination = useAdminPostersPagination({
     itemsPerPage: 10,
     scansPerPage: SCANS_PER_PAGE,
@@ -143,8 +150,8 @@ export function AdminPostersPage() {
                     className="w-full rounded-lg border border-border bg-muted flex items-center justify-center"
                     style={{ height: "600px" }}
                   >
-                    <div className="text-center p-8">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <div className="flex items-center justify-center gap-2 p-8">
+                      <Spinner className="size-4" />
                       <p className="text-sm text-muted-foreground">{t("common.loadingMap")}</p>
                     </div>
                   </div>
@@ -152,6 +159,7 @@ export function AdminPostersPage() {
               >
                 <QRScanMap
                   scans={filters.scansMatchingPosterSearch}
+                  posters={filters.qrCodes}
                   height="600px"
                   onMarkerClick={(qrCodeId) => {
                     const qrCode = filters.qrCodes.find(qr => qr.id === qrCodeId);
@@ -187,7 +195,16 @@ export function AdminPostersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagination.paginatedScans.length > 0 ? (
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <div className="flex items-center justify-center gap-2">
+                          <Spinner className="size-4" />
+                          <span>{t("common.loading")}</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : pagination.paginatedScans.length > 0 ? (
                     pagination.paginatedScans.map((scan) => (
                       <TableRow key={scan.id}>
                         <TableCell className="text-sm">
@@ -292,7 +309,6 @@ export function AdminPostersPage() {
           }}
           qrCode={selectedQRCode}
           events={events}
-          onUpdate={() => setRefreshKey((prev) => prev + 1)}
         />
       )}
 

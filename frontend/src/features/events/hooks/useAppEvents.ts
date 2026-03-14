@@ -15,7 +15,7 @@ export function useAppEvents() {
     [t]
   );
 
-  const { events, addEvent, updateEvent, deleteEvent } = useEvents({
+  const { events, isLoading, addEvent, updateEvent, deleteEvent } = useEvents({
     getDayOfWeek: getDayOfWeekFn,
   });
 
@@ -50,6 +50,7 @@ export function useAppEvents() {
 
   return {
     events,
+    isLoading,
     addEvent,
     updateEvent,
     deleteEvent,

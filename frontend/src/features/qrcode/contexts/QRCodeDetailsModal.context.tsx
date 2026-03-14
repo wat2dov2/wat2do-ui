@@ -6,7 +6,6 @@ interface QRCodeDetailsModalContextValue {
   onClose: () => void;
   qrCode: QRCode;
   events: Event[];
-  onUpdate: () => void;
 }
 
 const QRCodeDetailsModalContext = createContext<QRCodeDetailsModalContextValue | null>(null);

@@ -1,12 +1,12 @@
 /**
  * Events Store
- * Manages events state
+ * All events come from the backend API.
  */
 
 import { useState, useEffect, useCallback } from "react";
 import type { Event, EventFormData } from "@/shared/types";
 import {
-  loadAllEvents,
+  fetchAllEvents,
   createEventAPI,
   updateEventAPI,
   deleteEventAPI,
@@ -19,82 +19,56 @@ interface UseEventsStoreOptions {
   getDayOfWeek: GetDayOfWeekFn;
 }
 
-/**
- * Events store hook
- * Manages events state and persistence
- */
 export function useEventsStore(options: UseEventsStoreOptions) {
   const { getDayOfWeek } = options;
 
-  // Events state (combines mock events with user-created events)
-  const [events, setEvents] = useState<Event[]>(() => {
-    return loadAllEvents();
-  });
+  const [events, setEvents] = useState<Event[]>([]);
+  const [userCreatedEventIds, setUserCreatedEventIds] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Track user-created event IDs separately
-  const [userCreatedEventIds, setUserCreatedEventIds] = useState<number[]>(
-    () => {
-      const userEvents = loadAllEvents().filter((e) =>
-        e.addedDate !== undefined
-      );
-      return userEvents.map((e) => e.id);
-    }
-  );
-  
-  // Note: Persistence is now handled automatically by API functions
-
-  // Add event handler
-  const addEvent = useCallback(
-    (eventData: EventFormData): number => {
-      const newEvent = createEventAPI(eventData, getDayOfWeek);
-      const newId = newEvent.id;
-
-      setEvents((prev) => {
-        // Deduplicate to prevent adding the same event twice
-        const updated = [newEvent, ...prev];
-        return getUniqueEvents(updated);
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    fetchAllEvents()
+      .then((apiEvents) => {
+        if (!cancelled) setEvents(apiEvents);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
       });
-      setUserCreatedEventIds((prev) => [...prev, newId]);
-      return newId;
+    return () => { cancelled = true; };
+  }, []);
+
+  const addEvent = useCallback(
+    async (eventData: EventFormData): Promise<number> => {
+      const created = await createEventAPI(eventData, getDayOfWeek);
+      setEvents((prev) => getUniqueEvents([created, ...prev]));
+      setUserCreatedEventIds((prev) => [...prev, created.id]);
+      return created.id;
     },
-    [getDayOfWeek]
+    [getDayOfWeek],
   );
 
-  // Update event handler
   const updateEvent = useCallback(
-    (eventId: number, eventData: EventFormData) => {
+    async (eventId: number, eventData: EventFormData) => {
       const event = events.find((e) => e.id === eventId);
       if (!event) return;
-      
-      // API handles persistence automatically
-      const updatedEvent = updateEventAPI(event, eventData, getDayOfWeek);
-      
-      setEvents((prev) =>
-        prev.map((e) => (e.id === eventId ? updatedEvent : e))
-      );
+      const updated = await updateEventAPI(event, eventData, getDayOfWeek);
+      setEvents((prev) => prev.map((e) => (e.id === eventId ? updated : e)));
     },
-    [events, getDayOfWeek]
+    [events, getDayOfWeek],
   );
 
-  // Delete event handler
-  const deleteEvent = useCallback(
-    (eventId: number) => {
-      setEvents((prev) => prev.filter((event) => event.id !== eventId));
+  const deleteEvent = useCallback(async (eventId: number) => {
+    try {
+      await deleteEventAPI(eventId);
+      setEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setUserCreatedEventIds((prev) => prev.filter((id) => id !== eventId));
+    } catch {
+      // Keep event in list on failure
+    }
+  }, []);
 
-      // Remove from user-created events if applicable
-      if (userCreatedEventIds.includes(eventId)) {
-        setUserCreatedEventIds((prev) => prev.filter((id) => id !== eventId));
-        deleteEventAPI(eventId);
-      }
-    },
-    [userCreatedEventIds]
-  );
-
-  return {
-    events,
-    userCreatedEventIds,
-    addEvent,
-    updateEvent,
-    deleteEvent,
-  };
+  return { events, isLoading, userCreatedEventIds, addEvent, updateEvent, deleteEvent };
 }

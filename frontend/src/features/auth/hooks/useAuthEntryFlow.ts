@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAuthFlowStore } from "@/features/auth/store/authFlow.store";
-import { login } from "@/features/auth/api/auth.api";
+import { loginAPI, signupAPI, login as saveEmailLocally, ApiError } from "@/features/auth/api/auth.api";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,38 +20,93 @@ function schoolFromEmail(email: string): string {
   return DOMAIN_TO_SCHOOL[domain] ?? "";
 }
 
+export type AuthMode = "login" | "signup";
+
 interface UseAuthEntryFlowOptions {
   onContinueToOnboarding: () => void;
+  onContinueToHome: () => void;
 }
 
-export function useAuthEntryFlow({ onContinueToOnboarding }: UseAuthEntryFlowOptions) {
+export function useAuthEntryFlow({
+  onContinueToOnboarding,
+  onContinueToHome,
+}: UseAuthEntryFlowOptions) {
   const store = useAuthFlowStore();
   const { authEntry } = store.state;
 
+  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<AuthMode>("signup");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const isEmailValid = useMemo(
     () => EMAIL_PATTERN.test(authEntry.email.trim()),
-    [authEntry.email]
+    [authEntry.email],
+  );
+
+  const isFormValid = useMemo(
+    () => isEmailValid && password.length >= 6,
+    [isEmailValid, password],
   );
 
   const handleEmailChange = useCallback(
     (email: string) => {
       store.setAuthEmail(email);
+      setError(null);
     },
-    [store]
+    [store],
   );
 
-  const handleContinueFromEmail = useCallback(() => {
-    if (!isEmailValid) return;
+  const handlePasswordChange = useCallback((pw: string) => {
+    setPassword(pw);
+    setError(null);
+  }, []);
+
+  const toggleAuthMode = useCallback(() => {
+    setAuthMode((prev) => (prev === "login" ? "signup" : "login"));
+    setError(null);
+  }, []);
+
+  const handleContinue = useCallback(async () => {
+    if (!isFormValid || isLoading) return;
+
     const email = authEntry.email.trim();
-    login(email);
-    store.setSchool(schoolFromEmail(email));
-    onContinueToOnboarding();
-  }, [isEmailValid, authEntry.email, store, onContinueToOnboarding]);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (authMode === "signup") {
+        await signupAPI(email, password);
+        saveEmailLocally(email);
+        store.setSchool(schoolFromEmail(email));
+        onContinueToOnboarding();
+      } else {
+        await loginAPI(email, password);
+        saveEmailLocally(email);
+        onContinueToHome();
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isFormValid, isLoading, authEntry.email, authMode, password, store, onContinueToOnboarding, onContinueToHome]);
 
   return {
     email: authEntry.email,
+    password,
+    authMode,
     isEmailValid,
+    isFormValid,
+    isLoading,
+    error,
     onEmailChange: handleEmailChange,
-    onContinueFromEmail: handleContinueFromEmail,
+    onPasswordChange: handlePasswordChange,
+    toggleAuthMode,
+    onContinue: handleContinue,
   };
 }

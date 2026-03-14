@@ -7,7 +7,7 @@ export interface Event {
   title: string;
   category?: string; // Can be derived from club_type
   organization?: string; // Can use display_handle
-  location: string;
+  location?: string;
   // Old format (for backward compatibility)
   date?: string;
   time?: string;

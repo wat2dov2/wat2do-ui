@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Users, Edit, Trash2, Plus, Instagram, MessageCircle } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -24,6 +24,7 @@ import { AdminPagination } from "@/features/admin/components/shared/AdminPaginat
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { createClubAPI, updateClubAPI, deleteClubAPI } from "@/features/clubs/api/clubs.api";
 import { useAdminContext } from "@/features/admin/context/AdminContext";
 
@@ -54,7 +55,10 @@ export function AdminClubsPage() {
     refreshClubs,
   } = useAdminClubsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleDelete = async (clubId: number) => {
+    setIsDeleting(true);
     try {
       await deleteClubAPI(clubId);
       if (onDeleteClub) {
@@ -65,6 +69,7 @@ export function AdminClubsPage() {
       // Silently fail - error handling should be done at API level
     } finally {
       setDeleteConfirmId(null);
+      setIsDeleting(false);
     }
   };
 
@@ -134,9 +139,7 @@ export function AdminClubsPage() {
 
       {/* Clubs Table */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="text-muted-foreground">{t("common.loadingPage")}</div>
-        </div>
+        <LoadingPage />
       ) : filteredClubs.length > 0 ? (
         <AdminTable
           headers={[
@@ -244,9 +247,10 @@ export function AdminClubsPage() {
       <AdminDeleteDialog
         isOpen={deleteConfirmId !== null}
         onClose={() => setDeleteConfirmId(null)}
-        onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+        onConfirm={() => deleteConfirmId != null && handleDelete(deleteConfirmId)}
         title={t("admin.deleteClub")}
         description={t("admin.deleteClubConfirm")}
+        isLoading={isDeleting}
       />
 
       <AddClubModal

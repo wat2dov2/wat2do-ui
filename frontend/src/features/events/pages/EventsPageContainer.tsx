@@ -1,7 +1,8 @@
 import React, { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Utensils, Sparkles, Heart } from "lucide-react";
+import { Utensils, Heart } from "lucide-react";
 import { EventList, EventCount, useAppEvents, useSavedEvents } from "@/features/events";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { EventsProvider } from "@/features/events/context/EventsContext";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown, useSearch } from "@/features/search";
 import { useAppPromotions } from "@/app/hooks/useAppPromotions";
@@ -24,6 +25,7 @@ export function EventsPageContainer() {
   
   // Use hooks for business logic
   const appEvents = useAppEvents();
+  const { isLoading } = appEvents;
   const { savedEventIds, toggleSaveEvent } = useSavedEvents();
   const promotions = useAppPromotions();
   
@@ -37,8 +39,8 @@ export function EventsPageContainer() {
     appEvents.handleEditEvent(event);
   };
 
-  const handleDeleteEvent = (eventId: number) => {
-    appEvents.deleteEvent(eventId);
+  const handleDeleteEvent = async (eventId: number) => {
+    await appEvents.deleteEvent(eventId);
   };
 
   // Memoize view mode change handler to ensure stable reference
@@ -65,14 +67,6 @@ export function EventsPageContainer() {
               : undefined,
         },
         {
-          id: "forYou",
-          icon: <Sparkles className="w-3.5 h-3.5" />,
-          labelKey: "filters.forYou",
-          active: filters.forYouFilter,
-          onClick: () => filters.setForYouFilter(!filters.forYouFilter),
-          visible: profileCompleted,
-        },
-        {
           id: "saved",
           icon: <Heart className="w-3.5 h-3.5" />,
           labelKey: "filters.saved",
@@ -85,11 +79,9 @@ export function EventsPageContainer() {
     [
       filters.freeFoodFilter,
       filters.freeFoodEventsCount,
-      filters.forYouFilter,
       filters.savedFilter,
       filters.setFreeFoodFilter,
       filters.setFreeFilter,
-      filters.setForYouFilter,
       filters.setSavedFilter,
       profileCompleted,
       savedEventIds.length,
@@ -98,70 +90,75 @@ export function EventsPageContainer() {
 
   return (
     <div className="space-y-5">
-      {/* Search and Quick Filters */}
-      <div className="space-y-5">
-        {/* Search Bar with View Mode Tabs */}
-        <SearchBar
-          searchQuery={filters.searchQuery}
-          onSearchChange={(query) => {
-            filters.setSearchQuery(query);
-            checkSearchQuery(query);
-          }}
-          onSearchClear={() => filters.setSearchQuery("")}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-        />
+      {/* Search Bar - always visible */}
+      <SearchBar
+        searchQuery={filters.searchQuery}
+        onSearchChange={(query) => {
+          filters.setSearchQuery(query);
+          checkSearchQuery(query);
+        }}
+        onSearchClear={() => filters.setSearchQuery("")}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+      />
 
-        {/* Event Count and Quick Filter Chips */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <EventCount count={filters.filteredEvents.length} />
-          <div className="relative flex flex-wrap items-center gap-2">
-            {filterConfigs
-              .filter((config) => config.visible !== false)
-              .map((config) => (
-                <QuickFilterChip
-                  key={config.id}
-                  icon={config.icon}
-                  label={t(config.labelKey)}
-                  active={config.active}
-                  onClick={config.onClick}
-                  badge={config.badge}
+      {/* Filters - only show when events are loaded */}
+      {!isLoading && (
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <EventCount count={filters.filteredEvents.length} />
+            <div className="relative flex flex-wrap items-center gap-2">
+              {filterConfigs
+                .filter((config) => config.visible !== false)
+                .map((config) => (
+                  <QuickFilterChip
+                    key={config.id}
+                    icon={config.icon}
+                    label={t(config.labelKey)}
+                    active={config.active}
+                    onClick={config.onClick}
+                    badge={config.badge}
+                  />
+                ))}
+              <MoreFiltersButton
+                open={filters.showFilterDropdown}
+                onOpenChange={filters.setShowFilterDropdown}
+                filterCount={filters.filterCount}
+                onClearFilters={filters.handleClearAllFilters}
+              >
+                <FilterDropdown
+                  filterViewMode={filterViewMode}
+                  onFilterViewModeChange={setFilterViewMode}
+                  filters={filters}
+                  isDarkMode={isDarkMode}
                 />
-              ))}
-            <MoreFiltersButton
-              open={filters.showFilterDropdown}
-              onOpenChange={filters.setShowFilterDropdown}
-              filterCount={filters.filterCount}
-              onClearFilters={filters.handleClearAllFilters}
-            >
-              <FilterDropdown
-                filterViewMode={filterViewMode}
-                onFilterViewModeChange={setFilterViewMode}
-                filters={filters}
-                isDarkMode={isDarkMode}
-              />
-            </MoreFiltersButton>
+              </MoreFiltersButton>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <main className="w-full" role="main" aria-label={t("search.ariaLabel")}>
-        <EventsProvider
-          savedEventIds={savedEventIds}
-          toggleSaveEvent={toggleSaveEvent}
-          activePromotedEventIds={promotions.activePromotedEventIds}
-          isAdmin={isAdmin}
-          onEdit={handleEditEvent}
-          onDelete={handleDeleteEvent}
-          allEvents={appEvents.events}
-          onClearFilters={filters.handleClearAllFilters}
-        >
-          <EventList
-            events={filters.filteredEvents}
-            viewMode={viewMode}
-          />
-        </EventsProvider>
+        {isLoading ? (
+          <LoadingPage />
+        ) : (
+          <EventsProvider
+            savedEventIds={savedEventIds}
+            toggleSaveEvent={toggleSaveEvent}
+            activePromotedEventIds={promotions.activePromotedEventIds}
+            isAdmin={isAdmin}
+            onEdit={handleEditEvent}
+            onDelete={handleDeleteEvent}
+            allEvents={appEvents.events}
+            onClearFilters={filters.handleClearAllFilters}
+          >
+            <EventList
+              events={filters.filteredEvents}
+              viewMode={viewMode}
+            />
+          </EventsProvider>
+        )}
       </main>
     </div>
   );

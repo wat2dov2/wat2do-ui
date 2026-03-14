@@ -4,7 +4,7 @@ import type { EventFormData } from "@/shared/types";
 interface SubmitEventModalContextValue {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (event: EventFormData) => number;
+  onSubmit: (event: EventFormData) => number | Promise<number>;
   userCredits: number;
   onPromote?: (
     eventId: number,

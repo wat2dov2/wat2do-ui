@@ -21,6 +21,11 @@ interface EventFormContextValue {
   jsonError: string;
   handleJsonChange: (value: string | undefined) => void;
   syncToJSON: () => void;
+  // Image upload
+  imagePreview: string;
+  imageFile: File | null;
+  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveImage: () => void;
   // AI Generation state
   aiPrompt: string;
   setAiPrompt: (prompt: string) => void;

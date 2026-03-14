@@ -40,6 +40,12 @@ export function filterEvents(
   filters: SearchFilters
 ): Event[] {
   return events.filter((event) => {
+    const food = event.food ?? [];
+    const price = event.price ?? 0;
+    const category = event.category ?? "";
+    const dayOfWeek = event.dayOfWeek ?? "";
+    const needsRegistration = event.requiresRegistration ?? event.registration ?? false;
+
     // Search query filter
     if (
       filters.searchQuery &&
@@ -48,73 +54,73 @@ export function filterEvents(
       return false;
     }
 
-    // Saved filter - only show saved events
+    // Saved filter
     if (filters.savedFilter && !filters.savedEventIds.includes(event.id)) {
       return false;
     }
 
-    // Quick filters (these override the advanced filters when active)
-    if (filters.todayFilter && event.date !== "Today") return false;
-    if (filters.freeFilter && event.price !== 0) return false;
-    if (
-      filters.freeFoodFilter &&
-      (event.food.length === 0 || event.price > 0)
-    ) {
+    // Quick filters
+    if (filters.todayFilter) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const raw = event.dtstart_utc || event.eventDate || event.date;
+      if (!raw) return false;
+      const eventDate = new Date(raw);
+      if (isNaN(eventDate.getTime()) || eventDate < today || eventDate >= tomorrow) return false;
+    }
+    if (filters.freeFilter && price !== 0) return false;
+    if (filters.freeFoodFilter && (food.length === 0 || price > 0)) {
       return false;
     }
     if (
       filters.forYouFilter &&
       filters.profileCompleted &&
       filters.selectedCategories.length > 0 &&
-      !filters.selectedCategories.includes(event.category)
+      !filters.selectedCategories.includes(category)
     ) {
       return false;
     }
 
-    // Advanced filters (only apply when quick filters are not overriding)
+    // Advanced filters
     if (
       !filters.todayFilter &&
       !filters.thisWeekFilter &&
       filters.selectedDays.length > 0 &&
-      !filters.selectedDays.includes(event.dayOfWeek || "")
+      !filters.selectedDays.includes(dayOfWeek)
     ) {
       return false;
     }
     if (!filters.freeFilter && !filters.freeFoodFilter) {
-      if (
-        filters.priceRange.min &&
-        event.price < parseFloat(filters.priceRange.min)
-      ) {
+      if (filters.priceRange.min && price < parseFloat(filters.priceRange.min)) {
         return false;
       }
-      if (
-        filters.priceRange.max &&
-        event.price > parseFloat(filters.priceRange.max)
-      ) {
+      if (filters.priceRange.max && price > parseFloat(filters.priceRange.max)) {
         return false;
       }
     }
     if (
       filters.selectedLocations.length > 0 &&
-      !filters.selectedLocations.some((loc) => event.location.includes(loc))
+      !filters.selectedLocations.some((loc) => (event.location ?? "").includes(loc))
     ) {
       return false;
     }
     if (
       filters.includeFoods &&
       filters.selectedFoods.length > 0 &&
-      !event.food.some((f) => filters.selectedFoods.includes(f))
+      !food.some((f) => filters.selectedFoods.includes(f))
     ) {
       return false;
     }
     if (
       !filters.forYouFilter &&
       filters.selectedCategories.length > 0 &&
-      !filters.selectedCategories.includes(event.category || "")
+      !filters.selectedCategories.includes(category)
     ) {
       return false;
     }
-    if (filters.requiresRegistration && !event.requiresRegistration) {
+    if (filters.requiresRegistration && !needsRegistration) {
       return false;
     }
 
@@ -137,22 +143,23 @@ export function sortEvents(
 
     switch (sortBy) {
       case "date": {
-        // Handle eventDate - it might be a Date object, string, or undefined
         const getDateValue = (event: Event): number => {
+          if (event.dtstart_utc) {
+            const d = new Date(event.dtstart_utc);
+            if (!isNaN(d.getTime())) return d.getTime();
+          }
           if (event.eventDate) {
-            // Check if it's already a Date object
-            if (event.eventDate instanceof Date) {
-              return event.eventDate.getTime();
-            }
-            // If it's a string, convert it
+            if (event.eventDate instanceof Date) return event.eventDate.getTime();
             if (typeof event.eventDate === "string") {
-              const date = new Date(event.eventDate);
-              return isNaN(date.getTime()) ? 0 : date.getTime();
+              const d = new Date(event.eventDate);
+              if (!isNaN(d.getTime())) return d.getTime();
             }
           }
-          // Fallback to parsing the date string
-          const date = new Date(event.date);
-          return isNaN(date.getTime()) ? 0 : date.getTime();
+          if (event.date) {
+            const d = new Date(event.date);
+            if (!isNaN(d.getTime())) return d.getTime();
+          }
+          return 0;
         };
         const dateA = getDateValue(a);
         const dateB = getDateValue(b);
@@ -163,7 +170,7 @@ export function sortEvents(
         comparison = a.title.localeCompare(b.title);
         break;
       case "location":
-        comparison = a.location.localeCompare(b.location);
+        comparison = (a.location ?? "").localeCompare(b.location ?? "");
         break;
       case "price":
         comparison = (a.price || 0) - (b.price || 0);

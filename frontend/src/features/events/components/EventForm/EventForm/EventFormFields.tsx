@@ -15,6 +15,7 @@ import { Switch } from "@/shared/ui/switch";
 import { availableCategories, availableLocations } from "@/features/events/data/events";
 import { FormInput, FormSelect, FormDatePicker, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
+import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 
 export function EventFormFields() {
@@ -31,6 +32,9 @@ export function EventFormFields() {
     setFoodInput,
     addFood,
     removeFood,
+    imagePreview,
+    onImageUpload,
+    onRemoveImage,
   } = useEventFormContext();
 
   return (
@@ -88,7 +92,7 @@ export function EventFormFields() {
               onBlur={() => handleBlur("time")}
               error={errors.time}
               touched={touched.time}
-              inputClassName="h-9 bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              inputClassName="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
             />
           </FieldGroup>
 
@@ -172,6 +176,13 @@ export function EventFormFields() {
               />
             </div>
           </Field>
+
+          <ImageUploadField
+            label={t("forms.eventImage") || "Event Image"}
+            imagePreview={imagePreview}
+            onImageUpload={onImageUpload}
+            onRemoveImage={onRemoveImage}
+          />
         </FieldGroup>
       </FieldSet>
     </FieldGroup>

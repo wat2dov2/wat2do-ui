@@ -24,6 +24,8 @@
     "event": "event",
     "events": "events",
     "generating": "Generating...",
+    "pleaseWait": "Please wait...",
+    "loading": "Loading...",
     "loadingPage": "Loading page...",
     "actions": "Actions",
     "view": "View",
@@ -428,6 +430,7 @@
     "managePosters": "Manage QR Code Posters",
     "managePostersDesc": "Manage QR code posters and track their performance",
     "managePostersDescAlt": "Manage QR code posters",
+    "editPoster": "Edit poster",
     "recentActivity": "Recent Activity",
     "recentActivityDesc": "Recent submissions and scraped events requiring attention",
     "newEventSubmission": "New event submission",
@@ -536,7 +539,8 @@
       "pdfGenerationComingSoon": "We’ll generate one PDF per asset with one page per QR code. This is coming soon in your current build.",
       "errors": {
         "noAssetsOrQuantities": "Upload at least one asset and set a quantity greater than 0 before continuing.",
-        "missingPlacement": "Please set a QR placement area for every asset before continuing."
+        "missingPlacement": "Please set a QR placement area for every asset before continuing.",
+        "loginRequired": "Please log in to generate PDFs."
       }
     }
   },
@@ -613,6 +617,7 @@
     "ariaLabel": "Events list"
   },
   "qrCode": {
+    "gettingLocation": "Getting location...",
     "createQRCode": "Create QR Code",
     "createQRCodeDescription": "Generate a unique QR code for your physical poster",
     "posterName": "Poster Name",
@@ -641,6 +646,7 @@
     "posterImageRequired": "Poster image is required",
     "urlRequired": "URL is required",
     "urlInvalid": "Please enter a valid URL",
+    "descriptionOptional": "Optional",
     "imageFormat": "PNG, JPG up to 5MB",
     "noScanData": "No scan data yet",
     "noScanDataDesc": "Share your QR code to start tracking performance",

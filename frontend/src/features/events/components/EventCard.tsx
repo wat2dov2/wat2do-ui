@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { useEventsContextOptional } from "@/features/events/context/EventsContext";
 import { shareEvent } from "@/shared/utils/shareEvent";
@@ -52,6 +53,7 @@ export const EventCard = React.memo(function EventCard({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { t, i18n } = useTranslation();
   
   // Get values from context (with prop overrides)
@@ -338,18 +340,26 @@ export const EventCard = React.memo(function EventCard({
             <Button
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
             >
               {t("common.cancel")}
             </Button>
-            <Button
+            <LoadingButton
               variant="destructive"
-              onClick={() => {
-                onDelete?.(event.id);
-                setShowDeleteConfirm(false);
+              onClick={async () => {
+                setIsDeleting(true);
+                try {
+                  await Promise.resolve(onDelete?.(event.id));
+                  setShowDeleteConfirm(false);
+                } finally {
+                  setIsDeleting(false);
+                }
               }}
+              isLoading={isDeleting}
+              loadingText={t("common.pleaseWait") || "Please wait..."}
             >
               {t("common.delete")}
-            </Button>
+            </LoadingButton>
           </div>
         </DialogContent>
       </Dialog>

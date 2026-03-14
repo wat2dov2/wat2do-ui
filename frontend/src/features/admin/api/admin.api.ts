@@ -7,25 +7,16 @@
  */
 
 import type { Event, EventSubmission, ReportedEvent, ScrapedEvent, Club } from "@/shared/types";
-import { loadAllEvents } from "@/features/events/api/events.api";
+import { fetchAllEvents } from "@/features/events/api/events.api";
 import {
   getAllClubs as getAllClubsData,
   getClubTypes as getClubTypesData,
   filterClubs as filterClubsData,
+  createClubAPI,
+  updateClubAPI,
+  deleteClubAPI,
 } from "@/features/clubs/api/clubs.api";
-import {
-  getQRCodes as getQRCodesData,
-  getQRScans as getQRScansData,
-  getQRCodeById as getQRCodeByIdData,
-  deleteQRCode as deleteQRCodeData,
-} from "@/features/qrcode/api/qrcode.api";
-import type { QRCode, QRCodeScan } from "@/shared/types";
 import { StorageService } from "@/shared/services/storageService";
-import {
-  mockEventSubmissions,
-  mockReportedEvents,
-  mockScrapedEvents,
-} from "@/features/admin/data/adminData";
 
 // Re-export types for convenience
 export type { EventSubmission, ReportedEvent, ScrapedEvent };
@@ -35,19 +26,21 @@ export type { EventSubmission, ReportedEvent, ScrapedEvent };
  */
 
 /**
- * Get all events
+ * Get all events from backend
  */
-export function getAllEvents(): Event[] {
-  return loadAllEvents();
+export async function getAllEvents(): Promise<Event[]> {
+  return fetchAllEvents();
 }
 
 /**
  * Get event by ID
  */
-export function getEventById(id: number): Event | null {
-  const events = getAllEvents();
+export async function getEventById(id: number): Promise<Event | null> {
+  const events = await getAllEvents();
   return events.find((e) => e.id === id) || null;
 }
+
+export { createClubAPI as adminCreateClub, updateClubAPI as adminUpdateClub, deleteClubAPI as adminDeleteClub };
 
 /**
  * Reported Events API
@@ -62,7 +55,7 @@ export function getReportedEvents(): ReportedEvent[] {
     null
   );
   const userReports: ReportedEvent[] = stored ? JSON.parse(stored) : [];
-  return [...mockReportedEvents, ...userReports];
+  return userReports;
 }
 
 /**
@@ -105,11 +98,6 @@ export function updateReportedEventStatus(
     reports[index].status = status;
     StorageService.setItem(STORAGE_KEYS.REPORTED_EVENTS, JSON.stringify(reports));
   }
-  // Also update mock data if it exists
-  const mockIndex = mockReportedEvents.findIndex((r) => r.id === id);
-  if (mockIndex !== -1) {
-    mockReportedEvents[mockIndex].status = status;
-  }
 }
 
 /**
@@ -131,7 +119,7 @@ export function getEventSubmissions(): EventSubmission[] {
     null
   );
   const userSubmissions: EventSubmission[] = stored ? JSON.parse(stored) : [];
-  return [...mockEventSubmissions, ...userSubmissions];
+  return userSubmissions;
 }
 
 /**
@@ -186,14 +174,6 @@ export function updateEventSubmission(
     }
     StorageService.setItem(STORAGE_KEYS.EVENT_SUBMISSIONS, JSON.stringify(submissions));
   }
-  // Also update mock data if it exists
-  const mockIndex = mockEventSubmissions.findIndex((s) => s.id === id);
-  if (mockIndex !== -1) {
-    mockEventSubmissions[mockIndex].status = status;
-    if (status === "rejected" && rejectionReason) {
-      mockEventSubmissions[mockIndex].rejectionReason = rejectionReason;
-    }
-  }
 }
 
 /**
@@ -235,11 +215,6 @@ export function deleteSubmission(id: string): void {
   const submissions: EventSubmission[] = stored ? JSON.parse(stored) : [];
   const filtered = submissions.filter((s) => s.id !== id);
   StorageService.setItem(STORAGE_KEYS.EVENT_SUBMISSIONS, JSON.stringify(filtered));
-  // Also remove from mock data if it exists
-  const mockIndex = mockEventSubmissions.findIndex((s) => s.id === id);
-  if (mockIndex !== -1) {
-    mockEventSubmissions.splice(mockIndex, 1);
-  }
 }
 
 /**
@@ -273,7 +248,7 @@ export function getScrapedEvents(): ScrapedEvent[] {
     null
   );
   const userScraped: ScrapedEvent[] = stored ? JSON.parse(stored) : [];
-  return [...mockScrapedEvents, ...userScraped];
+  return userScraped;
 }
 
 /**
@@ -290,37 +265,9 @@ export function saveScrapedEvent(scraped: ScrapedEvent): void {
 }
 
 /**
- * QR Codes API (Admin)
- * Wraps QR code functions for admin use
+ * QR Codes: use listPostersFromBackend, getScansFromBackend, deletePosterFromBackend
+ * from @/features/qrcode/api/qrcode.api (or useBackendPosters / useBackendScans hooks).
  */
-
-/**
- * Get all QR codes
- */
-export function getQRCodes(): QRCode[] {
-  return getQRCodesData();
-}
-
-/**
- * Get QR code by ID
- */
-export function getQRCodeById(id: string): QRCode | null {
-  return getQRCodeByIdData(id);
-}
-
-/**
- * Get all QR code scans
- */
-export function getQRScans(): QRCodeScan[] {
-  return getQRScansData();
-}
-
-/**
- * Delete QR code
- */
-export function deleteQRCode(id: string): void {
-  deleteQRCodeData(id);
-}
 
 /**
  * Admin Clubs API
@@ -381,7 +328,7 @@ export function filterAdminEvents(
     filtered = filtered.filter(
       (event) =>
         event.title.toLowerCase().includes(query) ||
-        event.organization.toLowerCase().includes(query)
+        (event.organization ?? "").toLowerCase().includes(query)
     );
   }
 
@@ -409,7 +356,7 @@ export function filterAdminEvents(
  */
 export function getEventCategories(events: Event[]): string[] {
   const categories = new Set<string>();
-  events.forEach((event) => categories.add(event.category));
+  events.forEach((event) => { if (event.category) categories.add(event.category); });
   return Array.from(categories).sort();
 }
 

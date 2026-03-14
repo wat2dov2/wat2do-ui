@@ -1,23 +1,21 @@
 import { useMemo } from "react";
-import { getScansForQRCode } from "@/features/qrcode/api/qrcode.api";
-import type { QRCode } from "@/shared/types";
+import type { QRCode, QRCodeScan } from "@/shared/types";
 
 interface UseAdminPostersStatsOptions {
   qrCodes: QRCode[];
+  allScans: QRCodeScan[];
 }
 
 /**
- * Hook for calculating stats in AdminPostersPage
+ * Hook for calculating stats in AdminPostersPage from backend posters and scans.
  */
-export function useAdminPostersStats({ qrCodes }: UseAdminPostersStatsOptions) {
-  // Calculate overall stats
+export function useAdminPostersStats({ qrCodes, allScans }: UseAdminPostersStatsOptions) {
   const overallStats = useMemo(() => {
     let totalScans = 0;
-    let totalUniqueScans = 0;
     const uniqueScansSet = new Set<string>();
 
     qrCodes.forEach((qr) => {
-      const scans = getScansForQRCode(qr.id);
+      const scans = allScans.filter((s) => s.qrCodeId === qr.id);
       totalScans += scans.length;
       scans.forEach((scan) => {
         const id = scan.sessionId || scan.userId || scan.id;
@@ -25,14 +23,12 @@ export function useAdminPostersStats({ qrCodes }: UseAdminPostersStatsOptions) {
       });
     });
 
-    totalUniqueScans = uniqueScansSet.size;
-
     return {
       totalScans,
-      totalUniqueScans,
+      totalUniqueScans: uniqueScansSet.size,
       totalPosters: qrCodes.length,
     };
-  }, [qrCodes]);
+  }, [qrCodes, allScans]);
 
   return {
     overallStats,

@@ -1,10 +1,17 @@
 /**
  * User Repository
  * Internal data layer for auth feature
- * Handles user data persistence
+ * Handles user data persistence (localStorage + API tokens)
  */
 
 import { StorageService } from "@/shared/services/storageService";
+import {
+  getAccessToken,
+  getRefreshToken,
+  setTokens as setApiTokens,
+  clearTokens as clearApiTokens,
+  hasTokens as hasApiTokens,
+} from "@/shared/services/apiClient";
 
 const STORAGE_KEYS = {
   USER_EMAIL: "userEmail",
@@ -18,20 +25,12 @@ export interface UserProfile {
   school: string;
 }
 
-/**
- * Load user email from localStorage
- */
+// --- Email ---
+
 export function loadUserEmail(): string | null {
-  const email = StorageService.getItem<string | null>(
-    STORAGE_KEYS.USER_EMAIL,
-    null
-  );
-  return email;
+  return StorageService.getItem<string | null>(STORAGE_KEYS.USER_EMAIL, null);
 }
 
-/**
- * Save user email to localStorage
- */
 export function saveUserEmail(email: string | null): void {
   if (email) {
     StorageService.setItem(STORAGE_KEYS.USER_EMAIL, email);
@@ -40,19 +39,36 @@ export function saveUserEmail(email: string | null): void {
   }
 }
 
-/**
- * Load user profile from localStorage
- */
+// --- Profile ---
+
 export function loadUserProfile(): UserProfile | null {
-  return StorageService.getItem<UserProfile | null>(
-    STORAGE_KEYS.USER_PROFILE,
-    null
-  );
+  return StorageService.getItem<UserProfile | null>(STORAGE_KEYS.USER_PROFILE, null);
 }
 
-/**
- * Save user profile to localStorage
- */
 export function saveUserProfile(profile: UserProfile): void {
   StorageService.setItem(STORAGE_KEYS.USER_PROFILE, profile);
+}
+
+export function clearUserProfile(): void {
+  StorageService.removeItem(STORAGE_KEYS.USER_PROFILE);
+}
+
+// --- Tokens (delegated to apiClient) ---
+
+export { getAccessToken, getRefreshToken, hasApiTokens as hasTokens };
+
+export function saveTokens(accessToken: string, refreshToken: string): void {
+  setApiTokens(accessToken, refreshToken);
+}
+
+export function clearTokens(): void {
+  clearApiTokens();
+}
+
+// --- Full clear on logout ---
+
+export function clearAllAuthData(): void {
+  saveUserEmail(null);
+  clearUserProfile();
+  clearApiTokens();
 }
