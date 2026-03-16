@@ -9,7 +9,7 @@ import type { Event, Club, EventSubmission } from "@/shared/types";
 interface AdminContextValue {
   // Events
   events: Event[];
-  onEditEvent?: (event: Event) => void;
+  onEditEvent?: (event: Event) => void | Promise<void>;
   onDeleteEvent?: (eventId: number) => void;
   onCreateEvent?: () => void;
   

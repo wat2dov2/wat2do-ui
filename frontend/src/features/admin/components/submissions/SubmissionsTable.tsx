@@ -107,7 +107,7 @@ export function SubmissionsTable({
                     {submission.status === "pending" && (
                       <>
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -118,7 +118,7 @@ export function SubmissionsTable({
                           <Check className="w-4 h-4" />
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();

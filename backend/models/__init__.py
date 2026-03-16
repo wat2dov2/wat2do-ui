@@ -1,6 +1,2 @@
-from models.user import Base, User
-from models.event import Event
-from models.club import Club
-from models.qr_code import QrCode, QrCodeScan
-
-__all__ = ["Base", "User", "Event", "Club", "QrCode", "QrCodeScan"]
+# No ORM — all data via Supabase client (core.database.get_sb()).
+# Tables: users, events, clubs, qr_codes, qr_code_scans. Define schema in Supabase.

@@ -1,46 +1,45 @@
+"""Users (profile table) via Supabase. Sync."""
+
 from uuid import UUID
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from models.user import User
+from core.database import get_sb
 from schemas.user import UserUpdate
 
 
-async def get_user(db: AsyncSession, user_id: UUID) -> User | None:
-    result = await db.execute(select(User).where(User.id == user_id))
-    return result.scalar_one_or_none()
-
-
-async def get_user_by_supabase_id(db: AsyncSession, supabase_auth_id: str) -> User | None:
-    result = await db.execute(
-        select(User).where(User.supabase_auth_id == supabase_auth_id)
-    )
-    return result.scalar_one_or_none()
-
-
-async def list_users(db: AsyncSession, skip: int = 0, limit: int = 100) -> list[User]:
-    result = await db.execute(
-        select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
-    )
-    return list(result.scalars().all())
-
-
-async def update_user(db: AsyncSession, user_id: UUID, data: UserUpdate) -> User | None:
-    user = await get_user(db, user_id)
-    if not user:
+def get_user(user_id: UUID) -> dict | None:
+    r = get_sb().table("users").select("*").eq("id", str(user_id)).execute()
+    if not r.data or len(r.data) == 0:
         return None
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(user, key, value)
-    await db.commit()
-    await db.refresh(user)
-    return user
+    return r.data[0]
 
 
-async def delete_user(db: AsyncSession, user_id: UUID) -> bool:
-    user = await get_user(db, user_id)
-    if not user:
-        return False
-    await db.delete(user)
-    await db.commit()
-    return True
+def get_user_by_supabase_id(supabase_auth_id: str) -> dict | None:
+    r = get_sb().table("users").select("*").eq("supabase_auth_id", supabase_auth_id).execute()
+    if not r.data or len(r.data) == 0:
+        return None
+    return r.data[0]
+
+
+def list_users(skip: int = 0, limit: int = 100) -> list[dict]:
+    r = (
+        get_sb()
+        .table("users")
+        .select("*")
+        .order("created_at", desc=True)
+        .range(skip, skip + limit - 1)
+        .execute()
+    )
+    return r.data or []
+
+
+def update_user(user_id: UUID, data: UserUpdate) -> dict | None:
+    if get_user(user_id) is None:
+        return None
+    payload = data.model_dump(exclude_unset=True)
+    r = get_sb().table("users").update(payload).eq("id", str(user_id)).execute()
+    return r.data[0] if r.data else None
+
+
+def delete_user(user_id: UUID) -> bool:
+    r = get_sb().table("users").delete().eq("id", str(user_id)).execute()
+    return bool(r.data)

@@ -1,59 +1,43 @@
-"""QR code and scan business logic."""
+"""QR codes and scans via Supabase. Sync."""
 
 from datetime import datetime
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from models.qr_code import QrCode, QrCodeScan
+from core.database import get_sb
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect
 
 
-async def get_qr_code_by_id(db: AsyncSession, qr_code_id: str) -> QrCode | None:
-    """Return QR code by id or None."""
-    result = await db.execute(select(QrCode).where(QrCode.id == qr_code_id))
-    return result.scalar_one_or_none()
+def get_qr_code_by_id(qr_code_id: str) -> dict | None:
+    r = get_sb().table("qr_codes").select("*").eq("id", qr_code_id).execute()
+    if not r.data or len(r.data) == 0:
+        return None
+    return r.data[0]
 
 
-async def upsert_qr_code(db: AsyncSession, data: QrCodeCreate) -> QrCode:
-    """Create or replace a QR code by id (for dashboard create/update)."""
-    existing = await get_qr_code_by_id(db, data.id)
+def upsert_qr_code(data: QrCodeCreate) -> dict:
+    sb = get_sb()
+    existing = get_qr_code_by_id(data.id)
     dest_id = str(data.destination_id) if data.destination_id is not None else None
+    payload = {
+        "id": data.id,
+        "name": data.name,
+        "description": data.description,
+        "destination_type": data.destination_type,
+        "destination_id": dest_id,
+        "filters": data.filters,
+        "created_by": data.created_by,
+        "is_active": data.is_active if existing else False,
+        "image_url": data.image_url,
+        "latitude": data.latitude,
+        "longitude": data.longitude,
+    }
     if existing:
-        existing.name = data.name
-        existing.description = data.description
-        existing.destination_type = data.destination_type
-        existing.destination_id = dest_id
-        existing.filters = data.filters
-        existing.created_by = data.created_by
-        existing.is_active = data.is_active
-        existing.image_url = data.image_url
-        existing.latitude = data.latitude
-        existing.longitude = data.longitude
-        await db.commit()
-        await db.refresh(existing)
-        return existing
-    qr = QrCode(
-        id=data.id,
-        name=data.name,
-        description=data.description,
-        destination_type=data.destination_type,
-        destination_id=dest_id,
-        filters=data.filters,
-        created_by=data.created_by,
-        is_active=data.is_active if existing else False,  # new posters start inactive
-        image_url=data.image_url,
-        latitude=data.latitude,
-        longitude=data.longitude,
-    )
-    db.add(qr)
-    await db.commit()
-    await db.refresh(qr)
-    return qr
+        sb.table("qr_codes").update(payload).eq("id", data.id).execute()
+        return get_qr_code_by_id(data.id)
+    sb.table("qr_codes").insert(payload).execute()
+    return get_qr_code_by_id(data.id)
 
 
-async def activate_poster_and_record_scan(
-    db: AsyncSession,
+def activate_poster_and_record_scan(
     qr_code_id: str,
     latitude: float,
     longitude: float,
@@ -61,87 +45,72 @@ async def activate_poster_and_record_scan(
     session_id: str,
     user_agent: str | None = None,
 ) -> QrCodeRedirect | None:
-    """
-    If poster is inactive, set location from this (first) scan, set is_active=True, record the scan.
-    Returns redirect config. Returns None if poster not found or already active.
-    """
-    qr = await get_qr_code_by_id(db, qr_code_id)
-    if not qr or qr.is_active:
+    qr = get_qr_code_by_id(qr_code_id)
+    if not qr or qr.get("is_active"):
         return None
-    qr.latitude = latitude
-    qr.longitude = longitude
-    qr.is_active = True
-    scan = QrCodeScan(
-        qr_code_id=qr_code_id,
-        session_id=session_id,
-        user_agent=user_agent,
-    )
-    db.add(scan)
-    await db.commit()
-    await db.refresh(qr)
-    dest_id = qr.destination_id
-    if qr.destination_type == "event" and dest_id is not None:
+    sb = get_sb()
+    sb.table("qr_codes").update({
+        "latitude": latitude,
+        "longitude": longitude,
+        "is_active": True,
+    }).eq("id", qr_code_id).execute()
+    sb.table("qr_code_scans").insert({
+        "qr_code_id": qr_code_id,
+        "session_id": session_id,
+        "user_agent": user_agent,
+    }).execute()
+    qr = get_qr_code_by_id(qr_code_id)
+    dest_id = qr.get("destination_id")
+    if qr.get("destination_type") == "event" and dest_id is not None:
         try:
             dest_id = int(dest_id)
         except (TypeError, ValueError):
             pass
     return QrCodeRedirect(
-        destination_type=qr.destination_type,
+        destination_type=qr["destination_type"],
         destination_id=dest_id,
-        filters=qr.filters,
+        filters=qr.get("filters"),
     )
 
 
-async def record_scan(
-    db: AsyncSession,
+def record_scan(
     qr_code_id: str,
     *,
     user_id: str | None = None,
     session_id: str,
     user_agent: str | None = None,
-) -> QrCodeScan:
-    """Record a single scan for a QR code (e.g. when user opens /qr/{id})."""
-    scan = QrCodeScan(
-        qr_code_id=qr_code_id,
-        user_id=user_id,
-        session_id=session_id,
-        user_agent=user_agent,
-    )
-    db.add(scan)
-    await db.commit()
-    await db.refresh(scan)
-    return scan
+) -> dict:
+    r = get_sb().table("qr_code_scans").insert({
+        "qr_code_id": qr_code_id,
+        "user_id": user_id,
+        "session_id": session_id,
+        "user_agent": user_agent,
+    }).execute()
+    return r.data[0]
 
 
-async def delete_qr_code(db: AsyncSession, qr_code_id: str) -> None:
-    """Delete a poster (scans are deleted by CASCADE). Raises if not found."""
-    from sqlalchemy import delete
-    qr = await get_qr_code_by_id(db, qr_code_id)
-    if not qr:
+def delete_qr_code(qr_code_id: str) -> None:
+    if not get_qr_code_by_id(qr_code_id):
         raise ValueError("Poster not found")
-    await db.execute(delete(QrCode).where(QrCode.id == qr_code_id))
-    await db.commit()
+    get_sb().table("qr_codes").delete().eq("id", qr_code_id).execute()
 
 
-async def list_qr_codes(db: AsyncSession) -> list[QrCode]:
-    """List all QR codes (for dashboard)."""
-    result = await db.execute(select(QrCode).order_by(QrCode.created_at.desc()))
-    return list(result.scalars().all())
+def list_qr_codes() -> list[dict]:
+    r = get_sb().table("qr_codes").select("*").order("created_at", desc=True).execute()
+    return r.data or []
 
 
-async def list_scans(
-    db: AsyncSession,
+def list_scans(
     qr_code_id: str | None = None,
     from_time: datetime | None = None,
     to_time: datetime | None = None,
-) -> list[QrCodeScan]:
-    """List scans, optionally filtered by qr_code_id and time range."""
-    q = select(QrCodeScan).order_by(QrCodeScan.scanned_at.desc())
+) -> list[dict]:
+    q = get_sb().table("qr_code_scans").select("*").order("scanned_at", desc=True)
     if qr_code_id:
-        q = q.where(QrCodeScan.qr_code_id == qr_code_id)
+        q = q.eq("qr_code_id", qr_code_id)
     if from_time:
-        q = q.where(QrCodeScan.scanned_at >= from_time)
+        q = q.gte("scanned_at", from_time.isoformat())
     if to_time:
-        q = q.where(QrCodeScan.scanned_at <= to_time)
-    result = await db.execute(q)
-    return list(result.scalars().all())
+        q = q.lte("scanned_at", to_time.isoformat())
+    r = q.execute()
+    return r.data or []

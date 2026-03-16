@@ -493,7 +493,7 @@ export function ClubPanelIntegrationsPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button
-          variant="ghost"
+          variant="secondary"
           size="icon"
           onClick={() => navigate("/club-panel")}
           className="shrink-0"
@@ -556,8 +556,8 @@ export function ClubPanelIntegrationsPage() {
                   >
                     {t("integrations.manage")}
                   </Button>
-                  <Button
-                    variant="ghost"
+                    <Button
+                      variant="secondary"
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("whatsapp")}
@@ -617,8 +617,8 @@ export function ClubPanelIntegrationsPage() {
                   >
                     {t("integrations.manage")}
                   </Button>
-                  <Button
-                    variant="ghost"
+                    <Button
+                      variant="secondary"
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("discord")}
@@ -678,8 +678,8 @@ export function ClubPanelIntegrationsPage() {
                   >
                     {t("integrations.manage")}
                   </Button>
-                  <Button
-                    variant="ghost"
+                    <Button
+                      variant="secondary"
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("instagram")}
@@ -739,8 +739,8 @@ export function ClubPanelIntegrationsPage() {
                   >
                     {t("integrations.manage")}
                   </Button>
-                  <Button
-                    variant="ghost"
+                    <Button
+                      variant="secondary"
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("slack")}
@@ -800,8 +800,8 @@ export function ClubPanelIntegrationsPage() {
                   >
                     {t("integrations.manage")}
                   </Button>
-                  <Button
-                    variant="ghost"
+                    <Button
+                      variant="secondary"
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("telegram")}
@@ -861,8 +861,8 @@ export function ClubPanelIntegrationsPage() {
                   >
                     {t("integrations.manage")}
                   </Button>
-                  <Button
-                    variant="ghost"
+                    <Button
+                      variant="secondary"
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("linkedin")}
@@ -927,8 +927,8 @@ export function ClubPanelIntegrationsPage() {
                   >
                     {t("integrations.manage")}
                   </Button>
-                  <Button
-                    variant="ghost"
+                    <Button
+                      variant="secondary"
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("facebook")}

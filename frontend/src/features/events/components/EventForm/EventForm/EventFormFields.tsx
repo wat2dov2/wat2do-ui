@@ -12,7 +12,8 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import { Switch } from "@/shared/ui/switch";
-import { availableCategories, availableLocations } from "@/features/events/data/events";
+import { availableCategories } from "@/features/events/data/events";
+import { translateCategory } from "@/shared/utils/event";
 import { FormInput, FormSelect, FormDatePicker, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
@@ -96,15 +97,14 @@ export function EventFormFields() {
             />
           </FieldGroup>
 
-          <FormSelect
+          <FormInput
             name="location"
             label={t("filters.location")}
             required
             value={formData.location}
-            onChange={(value) => updateField("location", value)}
+            onChange={(value) => updateField("location", value as string)}
             onBlur={() => handleBlur("location")}
-            placeholder={t("forms.selectLocation")}
-            options={availableLocations.map((loc) => ({ value: loc, label: loc }))}
+            placeholder={t("forms.locationPlaceholder")}
             labelIcon={<MapPin className="w-4 h-4" />}
             error={errors.location}
             touched={touched.location}
@@ -133,7 +133,7 @@ export function EventFormFields() {
               value={formData.category}
               onChange={(value) => updateField("category", value)}
               placeholder={t("forms.selectCategory")}
-              options={availableCategories.map((cat) => ({ value: cat, label: cat }))}
+              options={availableCategories.map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
             />
 
             <FormInput

@@ -44,7 +44,7 @@ export function GooseDialogue({
 
           <div className="flex items-center gap-2">
             {showBack && onBack && (
-              <Button type="button" variant="ghost" size="sm" onClick={onBack}>
+              <Button type="button" variant="secondary" size="sm" onClick={onBack}>
                 Back
               </Button>
             )}

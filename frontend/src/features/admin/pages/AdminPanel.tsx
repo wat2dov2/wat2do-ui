@@ -219,7 +219,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                           </div>
                         </div>
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
                           className="shrink-0"
                           onClick={(e) => {

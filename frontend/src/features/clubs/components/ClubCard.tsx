@@ -84,6 +84,7 @@ export function ClubCard({ club }: ClubCardProps) {
             return (
               <Badge
                 key={category}
+                variant="outline"
                 className={`${colors.bg} ${colors.text} text-[10px] px-2 py-0.5 rounded-full font-medium`}
               >
                 {translatedCategory.length > 20 ? translatedCategory.substring(0, 20) + "..." : translatedCategory}
@@ -91,7 +92,10 @@ export function ClubCard({ club }: ClubCardProps) {
             );
           })}
           {club.categories.length > 2 && (
-            <Badge className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full font-medium">
+            <Badge
+              variant="outline"
+              className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full font-medium"
+            >
               +{club.categories.length - 2}
             </Badge>
           )}
@@ -131,14 +135,6 @@ export function ClubCard({ club }: ClubCardProps) {
           )}
         </div>
 
-        {/* Club Page Link */}
-        <button
-          onClick={handleClubPageClick}
-          className="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-muted hover:bg-gray-200 text-foreground text-xs font-medium rounded-xl transition-colors mt-2"
-        >
-          <span>{t("clubs.viewClubPage")}</span>
-          <ExternalLink className="w-3 h-3" />
-        </button>
       </div>
     </article>
   );

@@ -1,12 +1,13 @@
+"""Auth via Supabase (auth + users table). Sync."""
+
+import uuid
+
 from fastapi import HTTPException, status
-from sqlalchemy.exc import IntegrityError
 from supabase_auth.errors import AuthApiError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.allowed_emails import get_school_for_email, is_email_allowed
-from core.database import supabase
+from core.database import supabase, get_sb
 from core.logging import logger
-from models.user import User
 from schemas.auth import (
     SignupRequest,
     SignupResponse,
@@ -17,7 +18,7 @@ from schemas.auth import (
 )
 
 
-async def signup(db: AsyncSession, data: SignupRequest) -> SignupResponse:
+def signup(data: SignupRequest) -> SignupResponse:
     if not is_email_allowed(data.email):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -38,40 +39,43 @@ async def signup(db: AsyncSession, data: SignupRequest) -> SignupResponse:
 
     school = get_school_for_email(data.email) or ""
 
-    user = User(
-        supabase_auth_id=res.user.id,
-        email=data.email,
-        username=data.username,
-        full_name=data.full_name,
-        school=school,
-    )
-    db.add(user)
+    payload = {
+        "id": str(uuid.uuid4()),
+        "supabase_auth_id": res.user.id,
+        "email": data.email,
+        "username": data.username,
+        "full_name": data.full_name,
+        "school": school,
+    }
     try:
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email or username already taken",
-        )
-    await db.refresh(user)
-    logger.info("Created DB user %s for supabase uid %s", user.id, res.user.id)
+        r = get_sb().table("users").insert(payload).execute()
+        row = r.data[0]
+        user_id = row["id"]
+    except Exception as e:
+        if "duplicate" in str(e).lower() or "unique" in str(e).lower() or "23505" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email or username already taken",
+            )
+        raise
+
+    logger.info("Created DB user %s for supabase uid %s", user_id, res.user.id)
 
     if res.session:
         return SignupResponse(
-            user_id=str(user.id),
+            user_id=str(user_id),
             access_token=res.session.access_token,
             refresh_token=res.session.refresh_token,
             expires_in=res.session.expires_in,
         )
 
     return SignupResponse(
-        user_id=str(user.id),
+        user_id=str(user_id),
         confirmation_required=True,
     )
 
 
-async def login(data: LoginRequest) -> TokenResponse:
+def login(data: LoginRequest) -> TokenResponse:
     try:
         res = supabase.auth.sign_in_with_password(
             {"email": data.email, "password": data.password}
@@ -94,7 +98,7 @@ async def login(data: LoginRequest) -> TokenResponse:
     )
 
 
-async def refresh(data: RefreshRequest) -> TokenResponse:
+def refresh(data: RefreshRequest) -> TokenResponse:
     try:
         res = supabase.auth.refresh_session(data.refresh_token)
     except AuthApiError as e:
@@ -115,7 +119,7 @@ async def refresh(data: RefreshRequest) -> TokenResponse:
     )
 
 
-async def logout(access_token: str) -> None:
+def logout(access_token: str) -> None:
     try:
         supabase.auth.sign_out()
     except AuthApiError as e:
@@ -125,7 +129,7 @@ async def logout(access_token: str) -> None:
         )
 
 
-async def forgot_password(email: str) -> None:
+def forgot_password(email: str) -> None:
     try:
         supabase.auth.reset_password_email(email)
     except AuthApiError as e:
@@ -135,7 +139,7 @@ async def forgot_password(email: str) -> None:
         )
 
 
-async def reset_password(data: ResetPasswordRequest) -> None:
+def reset_password(data: ResetPasswordRequest) -> None:
     try:
         supabase.auth.update_user(
             {"password": data.new_password},

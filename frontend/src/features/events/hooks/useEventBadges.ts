@@ -52,7 +52,7 @@ export function useEventBadges(event: Event): EventBadge[] {
     const requiresRegistration = event.requiresRegistration ?? event.registration ?? false;
     if (requiresRegistration) {
       badges.push({
-        text: t("common.registration"),
+        text: t("common.registrationRequired"),
         bgClass: "bg-purple-500/20",
         textClass: "text-purple-500",
       });

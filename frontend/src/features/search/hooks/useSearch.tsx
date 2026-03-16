@@ -4,7 +4,8 @@ import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "luci
 import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
-import { availableCategories, availableLocations, availableDays, availableFoods } from "@/features/events/data/events";
+import { availableCategories, availableDays, availableFoods } from "@/features/events/data/events";
+import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 
 /**
@@ -140,37 +141,12 @@ export function useSearch({
     ]
   );
 
-  // Memoized pie menu items
-  const getCategoryTranslationKey = (cat: string): string => {
-    const categoryMap: Record<string, string> = {
-      "Events": "navigation.events",
-      "Clubs": "navigation.clubs",
-      "Academic": "categories.academic",
-      "Religious": "categories.religious",
-      "Cultural": "categories.cultural",
-      "Social & Games": "categories.socialGames",
-      "Sports": "categories.sports",
-      "Career": "categories.career",
-    };
-    return categoryMap[cat] || `categories.${cat}`;
-  };
-
   const categoryPieItems = useMemo(
     () =>
       availableCategories.map((cat) => ({
         id: cat,
-        label: t(getCategoryTranslationKey(cat)) || cat,
+        label: translateCategory(cat, t),
         icon: <Tag className="w-4 h-4" />,
-      })),
-    [t]
-  );
-
-  const locationPieItems = useMemo(
-    () =>
-      availableLocations.map((loc) => ({
-        id: loc,
-        label: t(`locations.${loc}`) || loc,
-        icon: <MapPin className="w-4 h-4" />,
       })),
     [t]
   );
@@ -246,14 +222,12 @@ export function useSearch({
 
     // Pie menus (UI state - but needed for pie menu functionality)
     categoryPieMenu: usePieMenu(),
-    locationPieMenu: usePieMenu(),
     foodPieMenu: usePieMenu(),
     dayPieMenu: usePieMenu(),
     sortPieMenu: usePieMenu(),
 
     // Pie menu items
     categoryPieItems,
-    locationPieItems,
     foodPieItems,
     dayPieItems,
     sortPieItems,

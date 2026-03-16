@@ -67,7 +67,7 @@ export function PromotionUpsell({
             </div>
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               size="sm"
               onClick={onBuyCredits}
               className="text-xs font-medium text-warning hover:text-warning/80 h-auto p-0"

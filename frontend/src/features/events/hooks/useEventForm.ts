@@ -14,22 +14,25 @@ interface UseEventFormOptions {
   initialData?: EventFormData;
   isEditMode?: boolean;
   isOpen: boolean;
+  /** When 1, form was opened for edit and fetched data is ready; use to force reset with initialData. */
+  editDataReady?: 0 | 1;
 }
 
 /**
  * Custom hook for managing event form state and validation
  */
 export function useEventForm(options: UseEventFormOptions) {
-  const { initialData, isEditMode = false, isOpen } = options;
+  const { initialData, isEditMode = false, isOpen, editDataReady = 0 } = options;
   const { t } = useTranslation();
   const prevIsOpenRef = useRef(isOpen);
+  const prevInitialDataRef = useRef<EventFormData | undefined>(undefined);
+  const prevEditDataReadyRef = useRef(editDataReady);
 
-  const initialState = useMemo(
-    () => getInitialState(initialData, isEditMode),
-    [initialData, isEditMode]
+  const [state, dispatch] = useReducer(
+    formReducer,
+    { initialData, isEditMode },
+    (arg) => getInitialState(arg.initialData, arg.isEditMode)
   );
-
-  const [state, dispatch] = useReducer(formReducer, initialState);
 
   // Reset form when modal opens (derived from isOpen change, no useEffect needed)
   if (isOpen && !prevIsOpenRef.current) {
@@ -38,8 +41,39 @@ export function useEventForm(options: UseEventFormOptions) {
       type: "RESET",
       payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
     });
+    prevInitialDataRef.current = initialData;
+    prevEditDataReadyRef.current = editDataReady;
   }
   prevIsOpenRef.current = isOpen;
+
+  // Reset form when initialData arrives after opening (e.g. fetched in modal when editing from admin)
+  const fetchedDataJustReady =
+    isOpen &&
+    isEditMode &&
+    editDataReady === 1 &&
+    prevEditDataReadyRef.current !== 1 &&
+    initialData;
+  if (fetchedDataJustReady) {
+    const resetState = getInitialState(initialData, isEditMode);
+    dispatch({
+      type: "RESET",
+      payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
+    });
+    prevInitialDataRef.current = initialData;
+    prevEditDataReadyRef.current = 1;
+  } else if (isOpen && isEditMode && initialData && initialData !== prevInitialDataRef.current) {
+    const resetState = getInitialState(initialData, isEditMode);
+    dispatch({
+      type: "RESET",
+      payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
+    });
+    prevInitialDataRef.current = initialData;
+  }
+  if (editDataReady === 1) prevEditDataReadyRef.current = 1;
+  if (!isOpen) {
+    prevInitialDataRef.current = undefined;
+    prevEditDataReadyRef.current = 0;
+  }
 
   // Validate on change - use useMemo instead of useEffect
   const errors = useMemo(

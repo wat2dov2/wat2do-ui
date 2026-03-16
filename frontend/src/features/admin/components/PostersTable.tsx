@@ -105,7 +105,7 @@ export function PostersTable({
                     </Button>
                   ) : (
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
                       onClick={() => onDeleteClick(qr.id)}
                       aria-label={t("common.delete")}

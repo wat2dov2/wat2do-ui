@@ -69,7 +69,7 @@ async function seedQrData(
 
 test.describe("Auth Page", () => {
   test("renders signup form by default", async ({ page }) => {
-    await page.goto(`${BASE}/auth`);
+    await page.goto(`${BASE}/login`);
     await expect(page.locator("h1")).toContainText("Discover");
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
@@ -78,7 +78,7 @@ test.describe("Auth Page", () => {
   });
 
   test("toggles between signup and login modes", async ({ page }) => {
-    await page.goto(`${BASE}/auth`);
+    await page.goto(`${BASE}/login`);
     await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
 
     await page.getByRole("button", { name: /sign in$/i }).click();
@@ -90,7 +90,7 @@ test.describe("Auth Page", () => {
   });
 
   test("submit button is disabled until form is valid", async ({ page }) => {
-    await page.goto(`${BASE}/auth`);
+    await page.goto(`${BASE}/login`);
     const submit = page.getByRole("button", { name: /create account/i });
 
     await expect(submit).toBeDisabled();
@@ -106,7 +106,7 @@ test.describe("Auth Page", () => {
   });
 
   test("shows error on invalid signup attempt", async ({ page }) => {
-    await page.goto(`${BASE}/auth`);
+    await page.goto(`${BASE}/login`);
     await page.locator('input[type="email"]').fill("bad@example.com");
     await page.locator('input[type="password"]').fill("testpass123");
     await page.getByRole("button", { name: /create account/i }).click();
@@ -340,7 +340,7 @@ test.describe("Auth-protected API endpoints", () => {
 
 test.describe("Navigation", () => {
   test("main pages load without errors", async ({ page }) => {
-    const routes = ["/", "/auth", "/onboarding", "/clubs", "/about", "/settings"];
+    const routes = ["/", "/login", "/onboarding", "/clubs", "/about", "/settings"];
     for (const route of routes) {
       const res = await page.goto(`${BASE}${route}`);
       expect(res?.status()).toBe(200);

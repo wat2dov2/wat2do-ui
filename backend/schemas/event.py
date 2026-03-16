@@ -2,6 +2,17 @@ from datetime import datetime
 
 from pydantic import BaseModel, field_validator
 
+from constants import EVENT_CATEGORIES
+
+
+def _validate_category(v: str | None) -> str | None:
+    if v is None or v == "":
+        return None
+    v = v.strip()
+    if v not in EVENT_CATEGORIES:
+        raise ValueError(f"category must be one of: {', '.join(EVENT_CATEGORIES)}")
+    return v
+
 
 class EventCreate(BaseModel):
     title: str
@@ -33,6 +44,11 @@ class EventCreate(BaseModel):
         if not v:
             raise ValueError("organization is required")
         return v
+
+    @field_validator("category")
+    @classmethod
+    def _category_allowed(cls, v: str | None) -> str | None:
+        return _validate_category(v)
 
 
 class EventUpdate(BaseModel):
@@ -67,6 +83,18 @@ class EventUpdate(BaseModel):
         if not v:
             raise ValueError("organization cannot be blank")
         return v
+
+    @field_validator("category")
+    @classmethod
+    def _category_allowed(cls, v: str | None) -> str | None:
+        return _validate_category(v)
+
+
+class LatestEventResponse(BaseModel):
+    """Minimal payload for 'latest added event' (e.g. for 'X added 22 minutes ago')."""
+
+    title: str
+    added_at: datetime
 
 
 class EventResponse(BaseModel):

@@ -1,29 +1,26 @@
 #!/usr/bin/env python3
 """List poster IDs from qr_codes table. Usage: python scripts/list_posters.py"""
 
-import asyncio
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from sqlalchemy import select
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.database import async_session
-from models.qr_code import QrCode
+from core.database import get_sb
 
 
-async def main() -> None:
-    async with async_session() as db:
-        rows = (await db.execute(select(QrCode.id, QrCode.name, QrCode.is_active))).all()
+def main() -> None:
+    r = get_sb().table("qr_codes").select("id, name, is_active").execute()
+    rows = r.data or []
     if not rows:
         print("No posters in database.")
         return
-    for id_, name, is_active in rows:
-        print(f"{id_}\t{name}\tactive={is_active}")
+    for row in rows:
+        print(f"{row['id']}\t{row['name']}\tactive={row.get('is_active', False)}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

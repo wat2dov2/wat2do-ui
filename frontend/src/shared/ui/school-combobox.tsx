@@ -69,7 +69,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
                 className={cn(
                   "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                   value === school
-                    ? "bg-primary/20 dark:bg-primary/30 text-primary"
+                    ? "bg-primary text-primary-foreground"
                     : "hover:bg-gray-200 text-foreground"
                 )}
               >

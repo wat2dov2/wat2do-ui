@@ -13,7 +13,7 @@ export function ClubPanelMembersPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button
-          variant="ghost"
+          variant="secondary"
           size="icon"
           onClick={() => navigate("/club-panel")}
           className="shrink-0"

@@ -1,4 +1,5 @@
 import type { Event } from "@/shared/types";
+import { deriveCategoryFromClubType } from "@/shared/utils/event";
 
 // Helper function to derive date/time/dayOfWeek from dtstart_utc
 function getDateFromUTC(utcString: string): { date: string; time: string; dayOfWeek: string; eventDate: Date } {
@@ -36,14 +37,9 @@ function getTimeRange(dtstart_utc: string, dtend_utc: string): string {
   return `${formatTime(start)} - ${formatTime(end)}`;
 }
 
-// Helper to map club_type to category
+// Helper to map club_type to category (canonical 22 categories)
 function getCategoryFromClubType(club_type?: string): string {
-  const mapping: Record<string, string> = {
-    'WUSA': 'Social & Games',
-    'Athletics': 'Athletics',
-    'Student Society': 'Academic',
-  };
-  return club_type ? (mapping[club_type] || 'Events') : 'Events';
+  return deriveCategoryFromClubType(club_type);
 }
 
 export const mockEvents: Event[] = [
@@ -420,26 +416,8 @@ export const mockEvents: Event[] = [
   return event as unknown as Event;
 });
 
-// Filter options
-export const availableCategories = [
-  "Clubs",
-  "Academic",
-  "Religious",
-  "Cultural",
-  "Social & Games",
-  "Sports",
-  "Career",
-];
-
-export const availableLocations = [
-  "LAX",
-  "Pollock",
-  "TCF 1",
-  "SLC",
-  "Student Union",
-  "Library",
-  "Gym",
-];
+// Event categories: same as onboarding "What kind of events are you into?" (source of truth: shared/constants/eventCategories)
+export { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";
 
 export const availableFoods = [
   "Snacks",

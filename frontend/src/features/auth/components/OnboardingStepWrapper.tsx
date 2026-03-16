@@ -46,7 +46,7 @@ export function OnboardingStepWrapper({
       <DialogFooter className={footerClassName}>
         {showBack && onPrevious && (
           <Button
-            variant="ghost"
+            variant="secondary"
             onClick={onPrevious}
             className="flex-1 text-muted-foreground"
           >

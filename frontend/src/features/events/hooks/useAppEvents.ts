@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useEvents } from "@/features/events/hooks/useEvents";
 import { getDayOfWeek } from "@/shared/utils/date";
 import type { Event, EventFormData } from "@/shared/types";
+import { getEventCategory } from "@/shared/utils/event";
 
 /**
  * Hook for managing events in the App component
@@ -27,18 +28,31 @@ export function useAppEvents() {
     setEditingEvent(event);
   }, []);
 
-  // Convert Event to EventFormData for edit mode
+  // Convert Event to EventFormData for edit mode (derive date/time from dtstart_utc when missing)
   const eventToFormData = useCallback((event: Event): EventFormData => {
+    let date = event.date || "";
+    let time = event.time || "";
+    if ((!date || !time) && event.dtstart_utc) {
+      const d = new Date(event.dtstart_utc as string);
+      if (!isNaN(d.getTime())) {
+        const pad = (n: number) => String(n).padStart(2, "0");
+        date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+    }
+
+    const category = getEventCategory(event);
+
     return {
       title: event.title,
       description: event.description || "",
-      date: event.date || "",
-      time: event.time || "",
-      location: event.location,
-      category: event.category || "Events",
-      price: event.price || 0,
+      date,
+      time,
+      location: event.location ?? "",
+      category,
+      price: event.price ?? 0,
       food: event.food || [],
-      requiresRegistration: event.requiresRegistration || false,
+      requiresRegistration: event.requiresRegistration ?? event.registration ?? false,
       organization: event.organization || "",
     };
   }, []);

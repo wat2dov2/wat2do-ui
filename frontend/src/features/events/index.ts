@@ -27,4 +27,5 @@ export { SubmitEventModal } from "./components/SubmitEventModal";
 // Hooks
 export { useAppEvents } from "./hooks/useAppEvents";
 export { useSavedEvents } from "./hooks/useSavedEvents";
+export { useLatestAddedEvent } from "./hooks/useLatestAddedEvent";
 

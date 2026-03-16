@@ -30,6 +30,27 @@ export async function fetchAllEvents(): Promise<Event[]> {
   return apiEvents;
 }
 
+/** Response from GET /events/latest-added */
+export interface LatestAddedEvent {
+  title: string;
+  added_at: string;
+}
+
+/**
+ * Fetch the most recently added event (for "X added 22 minutes ago" text).
+ */
+export async function fetchLatestAddedEvent(): Promise<LatestAddedEvent | null> {
+  const data = await api.get<LatestAddedEvent | null>("/events/latest-added");
+  return data;
+}
+
+/**
+ * Fetch a single event by ID from the backend API (full details for edit form).
+ */
+export async function fetchEventById(id: number): Promise<Event> {
+  return api.get<Event>(`/events/${id}`);
+}
+
 /**
  * Kept for backward compat — returns an empty list.
  * Components should use fetchAllEvents() instead.

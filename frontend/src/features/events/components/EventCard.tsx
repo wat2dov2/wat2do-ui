@@ -28,6 +28,7 @@ import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { useEventsContextOptional } from "@/features/events/context/EventsContext";
+import { useAppContext } from "@/contexts/AppContext";
 import { shareEvent } from "@/shared/utils/shareEvent";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
@@ -59,6 +60,7 @@ export const EventCard = React.memo(function EventCard({
   // Get values from context (with prop overrides)
   // Use optional context - returns null when not inside EventsProvider
   const context = useEventsContextOptional();
+  const { profileCompleted } = useAppContext();
 
   // Provide fallback defaults when context is null
   const toggleSaveEvent = context?.toggleSaveEvent ?? (() => {});
@@ -187,11 +189,16 @@ export const EventCard = React.memo(function EventCard({
                     {t("common.share")}
                   </button>
                   <button
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-gray-200 text-foreground transition-colors text-left"
+                    className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl text-left transition-colors ${
+                      profileCompleted
+                        ? "hover:bg-gray-200 text-foreground"
+                        : "cursor-not-allowed opacity-50 text-muted-foreground"
+                    }`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleSaveEvent(event.id);
+                      if (profileCompleted) toggleSaveEvent(event.id);
                     }}
+                    disabled={!profileCompleted}
                   >
                     <Heart className={`w-3.5 h-3.5 ${isSaved ? "fill-error text-error" : ""}`} />
                     {isSaved ? t("common.unsave") : t("common.save")}
@@ -260,16 +267,17 @@ export const EventCard = React.memo(function EventCard({
         {/* Event Content */}
         <div className="relative flex flex-col flex-1 px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
           <LightRays />
-          {/* Title and Badges Row */}
-          <div className="flex items-start gap-3 h-full flex-1">
-            {/* Left side: Title, Date, Location */}
-            <div className="flex-1 min-w-0 flex flex-col h-full gap-4">
-              <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
-                {event.title}
-              </h3>
+          {/* Title, Info, and Bottom Badges */}
+          <div className="flex flex-col gap-3 h-full flex-1">
+            {/* Title */}
+            <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
+              {event.title}
+            </h3>
 
-              {/* Event Info */}
-              <div className="space-y-0.5 mb-0 mt-auto">
+            {/* Event Info + Badges Row */}
+            <div className="flex items-end justify-between gap-3 mt-auto">
+              {/* Left side: Date / Time / Location */}
+              <div className="space-y-0.5">
                 {/* Date */}
                 <div className="flex gap-1.5 items-center">
                   <span className="text-[11px] text-muted-foreground">
@@ -291,23 +299,22 @@ export const EventCard = React.memo(function EventCard({
                   </span>
                 </div>
               </div>
+
+              {/* Right side: Event Badges - Bottom right, right aligned */}
+              {badges.length > 0 && (
+                <div className="flex flex-col gap-1 items-end shrink-0">
+                  {badges.map((badge) => (
+                    <span
+                      key={badge.text}
+                      className="text-[11px] text-muted-foreground"
+                    >
+                      {badge.text}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
-
-            {/* Right side: Event Badges - Stacked vertically, right aligned */}
-            {badges.length > 0 && (
-              <div className="flex flex-col gap-1.5 items-end shrink-0">
-                {badges.map((badge) => (
-                  <span
-                    key={badge.text}
-                    className={`font-medium text-[10px] px-2 py-0.5 rounded-xl ${badge.bgClass} ${badge.textClass}`}
-                  >
-                    {badge.text}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
-
         </div>
       </article>
 

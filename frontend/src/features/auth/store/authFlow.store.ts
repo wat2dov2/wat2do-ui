@@ -8,6 +8,7 @@ export interface AuthFlowState {
     step: number;
     school: string;
     selectedTopics: string[];
+    selectedEventIds: number[];
     faculty: string;
     isFirstYear: boolean | null;
   };
@@ -21,6 +22,7 @@ const INITIAL_AUTH_FLOW_STATE: AuthFlowState = {
     step: 0,
     school: "",
     selectedTopics: [],
+    selectedEventIds: [],
     faculty: "",
     isFirstYear: null,
   },
@@ -54,6 +56,13 @@ export function useAuthFlowStore() {
     setState((prev) => ({
       ...prev,
       onboarding: { ...prev.onboarding, selectedTopics },
+    }));
+  }, []);
+
+  const setSelectedEventIds = useCallback((selectedEventIds: number[]) => {
+    setState((prev) => ({
+      ...prev,
+      onboarding: { ...prev.onboarding, selectedEventIds },
     }));
   }, []);
 
@@ -91,6 +100,7 @@ export function useAuthFlowStore() {
     setOnboardingStep,
     setSchool,
     setSelectedTopics,
+    setSelectedEventIds,
     setFaculty,
     setIsFirstYear,
     resetAuthEntry,

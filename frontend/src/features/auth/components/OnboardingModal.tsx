@@ -256,7 +256,7 @@ export function OnboardingModal({
 
                   <DialogFooter>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       onClick={steps.handlePrevious}
                       className="flex-1 text-muted-foreground"
                     >
@@ -318,7 +318,7 @@ export function OnboardingModal({
 
                   <DialogFooter>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       onClick={() => {
                         otp.resetOtp();
                         otp.setShowOtpInput(false);
@@ -396,7 +396,7 @@ export function OnboardingModal({
 
               <DialogFooter>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   onClick={steps.handlePrevious}
                   className="flex-1 text-muted-foreground"
                 >
@@ -443,7 +443,7 @@ export function OnboardingModal({
               <DialogFooter className="flex flex-col gap-2 sm:flex-col">
                 <div className="flex flex-row gap-2 w-full">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     onClick={steps.handlePrevious}
                     className="flex-1 text-muted-foreground"
                   >

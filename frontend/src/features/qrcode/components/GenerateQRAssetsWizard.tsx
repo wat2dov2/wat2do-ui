@@ -466,7 +466,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                     </div>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
                       onClick={() => handleRemoveAsset(asset.id)}
                     >
@@ -600,7 +600,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
           {step > 1 ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               size="sm"
               onClick={() => setStep((prev) => (prev === 1 ? 1 : ((prev - 1) as WizardStep)))}
             >
@@ -609,7 +609,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
             </Button>
           ) : (
             onClose && (
-              <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+              <Button type="button" variant="secondary" size="sm" onClick={onClose}>
                 {t("common.cancel")}
               </Button>
             )

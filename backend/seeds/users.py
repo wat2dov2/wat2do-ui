@@ -1,8 +1,4 @@
-from sqlalchemy import select
-
-from core.database import async_session
-from models.user import User
-
+from core.database import get_sb
 
 SEED_USERS = [
     {
@@ -35,16 +31,13 @@ SEED_USERS = [
 ]
 
 
-async def seed():
-    async with async_session() as db:
-        created = 0
-        for data in SEED_USERS:
-            existing = await db.execute(
-                select(User).where(User.email == data["email"])
-            )
-            if existing.scalar_one_or_none():
-                continue
-            db.add(User(**data))
-            created += 1
-        await db.commit()
-        print(f"Seeded {created} new users ({len(SEED_USERS)} total in seed list)")
+def seed():
+    sb = get_sb()
+    created = 0
+    for data in SEED_USERS:
+        r = sb.table("users").select("id").eq("email", data["email"]).execute()
+        if r.data and len(r.data) > 0:
+            continue
+        sb.table("users").insert(data).execute()
+        created += 1
+    print(f"Seeded {created} new users ({len(SEED_USERS)} total in seed list)")

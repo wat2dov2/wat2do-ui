@@ -203,7 +203,7 @@ export function AdminClubsPage() {
               <TableCell>
                 <div className="flex items-center justify-end gap-2">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon-sm"
                     onClick={() => openEditModal(club)}
                     title={t("admin.editClub")}
@@ -211,7 +211,7 @@ export function AdminClubsPage() {
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon-sm"
                     onClick={() => setDeleteConfirmId(club.id)}
                     title={t("admin.deleteClub")}

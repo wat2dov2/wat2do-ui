@@ -33,7 +33,7 @@ export function SearchBar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={onSearchKeyDown}
-          className="flex h-9 w-full min-w-0 items-center rounded-xl bg-secondary pl-9 pr-3 py-2 text-base text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm"
+          className="flex h-8 w-full min-w-0 items-center rounded-xl bg-secondary pl-9 pr-3 py-2 text-base text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm"
         />
         {searchQuery && (
           <button

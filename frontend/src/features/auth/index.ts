@@ -9,7 +9,6 @@
 // Components
 /** @deprecated Use `OnboardingPage` route-based flow instead. */
 export { OnboardingModal } from "./components/OnboardingModal";
-export { GettingStartedChecklist } from "./components/GettingStartedChecklist";
 export { AuthHeroPanel } from "./components/AuthHeroPanel";
 export { AuthEmailFormCard } from "./components/AuthEmailFormCard";
 export { OnboardingTopicsStep } from "./components/OnboardingTopicsStep";
@@ -49,13 +48,3 @@ export {
   updateProfileAPI,
   type UserProfile,
 } from "./api/auth.api";
-
-// Checklist API
-export {
-  loadChecklist,
-  saveChecklist,
-  removeChecklist,
-  hasChecklist,
-  type ChecklistItem,
-  type ChecklistData,
-} from "./api/checklist.api";

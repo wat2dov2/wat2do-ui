@@ -1,8 +1,10 @@
 import { useCallback, useMemo } from "react";
 import { useAuthFlowStore } from "@/features/auth/store/authFlow.store";
-import { availableCategories } from "@/features/events/data/events";
+import { EVENT_CATEGORIES, type EventCategory } from "@/shared/constants/eventCategories";
 
-export const ONBOARDING_TOTAL_STEPS = 4;
+export const ONBOARDING_TOTAL_STEPS = 6;
+export { EVENT_CATEGORIES, type EventCategory };
+
 export const ONBOARDING_EVENT_CARDS: Record<string, { title: string; org: string; image: string }> = {
   "Clubs": { title: "Club Fair 2026", org: "Student Union", image: "https://images.unsplash.com/photo-1529543544282-ea69407b3656?w=400&h=200&fit=crop" },
   "Academic": { title: "Research Symposium", org: "Graduate Studies", image: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&h=200&fit=crop" },
@@ -27,6 +29,7 @@ interface UseOnboardingFlowOptions {
   onComplete: (data: {
     school: string;
     selectedTopics: string[];
+    selectedEventIds: number[];
     faculty: string;
     isFirstYear: boolean;
   }) => void;
@@ -37,22 +40,12 @@ export function useOnboardingFlow({ onComplete }: UseOnboardingFlowOptions) {
   const { onboarding } = store.state;
 
   const validTopics = useMemo(
-    () => onboarding.selectedTopics.filter((t) => availableCategories.includes(t)),
+    () => onboarding.selectedTopics.filter((t) => EVENT_CATEGORIES.includes(t as EventCategory)),
     [onboarding.selectedTopics]
   );
 
-  const canContinue = useMemo(() => {
-    switch (onboarding.step) {
-      case 0:
-        return validTopics.length > 0;
-      case 1:
-        return onboarding.faculty.length > 0;
-      case 2:
-        return onboarding.isFirstYear !== null;
-      default:
-        return true;
-    }
-  }, [validTopics.length, onboarding.faculty, onboarding.isFirstYear, onboarding.step]);
+  // All questions optional — user can always continue
+  const canContinue = true;
 
   const toggleTopic = useCallback(
     (category: string) => {
@@ -66,6 +59,18 @@ export function useOnboardingFlow({ onComplete }: UseOnboardingFlowOptions) {
     [onboarding.selectedTopics, store]
   );
 
+  const toggleEventId = useCallback(
+    (eventId: number) => {
+      const isSelected = onboarding.selectedEventIds.includes(eventId);
+      if (isSelected) {
+        store.setSelectedEventIds(onboarding.selectedEventIds.filter((id) => id !== eventId));
+      } else {
+        store.setSelectedEventIds([...onboarding.selectedEventIds, eventId]);
+      }
+    },
+    [onboarding.selectedEventIds, store]
+  );
+
   const goNext = useCallback(() => {
     if (!canContinue) return;
 
@@ -73,6 +78,7 @@ export function useOnboardingFlow({ onComplete }: UseOnboardingFlowOptions) {
       onComplete({
         school: onboarding.school,
         selectedTopics: validTopics,
+        selectedEventIds: onboarding.selectedEventIds,
         faculty: onboarding.faculty,
         isFirstYear: onboarding.isFirstYear ?? false,
       });
@@ -87,6 +93,7 @@ export function useOnboardingFlow({ onComplete }: UseOnboardingFlowOptions) {
     onboarding.faculty,
     onboarding.isFirstYear,
     onboarding.step,
+    onboarding.selectedEventIds,
     onComplete,
     store,
   ]);
@@ -105,12 +112,14 @@ export function useOnboardingFlow({ onComplete }: UseOnboardingFlowOptions) {
     totalSteps: ONBOARDING_TOTAL_STEPS,
     school: onboarding.school,
     selectedTopics: onboarding.selectedTopics,
+    selectedEventIds: onboarding.selectedEventIds,
     faculty: onboarding.faculty,
     isFirstYear: onboarding.isFirstYear,
     canContinue,
     setFaculty: store.setFaculty,
     setIsFirstYear: store.setIsFirstYear,
     toggleTopic,
+    toggleEventId,
     goNext,
     goBack,
     resetOnboarding,

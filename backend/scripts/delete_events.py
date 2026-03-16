@@ -6,43 +6,30 @@ Usage:
   python scripts/delete_events.py "UWMUN Events" "Board Game Night" "Test Event"
 """
 
-import asyncio
 import sys
 from pathlib import Path
 
-from sqlalchemy import delete, select
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.database import async_session
-from models.event import Event
+from core.database import get_sb
 
 
-async def main(titles: list[str]) -> None:
+def main(titles: list[str]) -> None:
     titles = [t.strip() for t in titles if t.strip()]
     if not titles:
         print("Provide one or more event titles.")
         raise SystemExit(1)
 
-    async with async_session() as db:
-        existing = (
-            await db.execute(select(Event.id, Event.title, Event.organization).where(Event.title.in_(titles)))
-        ).all()
-
-        if not existing:
-            print("No matching events found.")
-            return
-
-        print("Deleting:")
-        for row in existing:
-            print(f"  id={row.id} title={row.title!r} org={(row.organization or '')!r}")
-
-        result = await db.execute(delete(Event).where(Event.title.in_(titles)))
-        await db.commit()
-        deleted = result.rowcount or 0
-        print(f"\nDeleted {deleted} event(s).")
+    sb = get_sb()
+    for title in titles:
+        r = sb.table("events").select("id, title, organization").eq("title", title).execute()
+        if not r.data:
+            continue
+        for row in r.data:
+            print(f"Deleting id={row['id']} title={row['title']!r} org={row.get('organization') or ''!r}")
+            sb.table("events").delete().eq("id", row["id"]).execute()
+    print("Done.")
 
 
 if __name__ == "__main__":
-    asyncio.run(main(sys.argv[1:]))
-
+    main(sys.argv[1:])

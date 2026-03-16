@@ -1,11 +1,14 @@
 # Backend
 
-FastAPI backend with PostgreSQL (async via asyncpg), Supabase auth, and Alembic migrations.
+FastAPI + Supabase only. No SQLAlchemy, no direct Postgres connection, no pgbouncer issues.
+
+- **Auth & storage**: Supabase client
+- **Data**: Supabase PostgREST (tables: `users`, `events`, `clubs`, `qr_codes`, `qr_code_scans`). Create these in the Supabase SQL editor or via Supabase CLI migrations.
 
 ## Prerequisites
 
 - Python 3.10+
-- PostgreSQL (e.g. via Supabase)
+- A Supabase project (dashboard.supabase.com)
 
 ## Setup
 
@@ -24,30 +27,25 @@ FastAPI backend with PostgreSQL (async via asyncpg), Supabase auth, and Alembic 
 
 3. **Configure environment**:
 
-   Copy the example env file and fill in your values:
-
    ```bash
    cp .env.example .env
    ```
 
-   Edit `.env` and set:
+   Edit `.env`:
 
-   - `SUPABASE_URL` – your Supabase project URL
-   - `SUPABASE_KEY` – your Supabase anon/publishable key
-   - `SUPABASE_SECRET_KEY` – (optional) secret key (`sb_secret_...`) for server-side operations that bypass RLS (storage uploads, admin client). Get from Dashboard → Settings → API Keys.
-   - `DATABASE_URL` – PostgreSQL connection string (async driver).
-
-     Use the Supabase **pooler** hostname from the dashboard (Project Settings → Database → Connection string):
-
-     `postgresql+asyncpg://postgres.<PROJECT_REF>:<DB_PASSWORD>@aws-0-<REGION>.pooler.supabase.com:5432/postgres`
+   - `SUPABASE_URL` – project URL (e.g. `https://xxxx.supabase.co`)
+   - `SUPABASE_KEY` – anon/public key
+   - `SUPABASE_SECRET_KEY` – **service role** key (Dashboard → Settings → API). Required for backend table access.
 
 ## Running the server
 
-From the `backend` directory:
+From the `backend` directory, use the **venv’s Python** so the reloader subprocess uses the venv too (avoids Anaconda/system Python):
 
 ```bash
-uvicorn main:app --reload
+.venv/bin/python -m uvicorn main:app --reload
 ```
+
+Use `.venv/bin/python -m uvicorn` if the reloader picks up the wrong Python.
 
 - API: **http://127.0.0.1:8000**
 - Health: **http://127.0.0.1:8000/health**
@@ -93,21 +91,21 @@ uvicorn main:app --reload
 | PATCH | `/clubs/{id}` | Update club |
 | DELETE | `/clubs/{id}` | Delete club |
 
-## Migrations (Alembic)
+## Database schema
 
-Run from the `backend` directory. The app uses `DATABASE_URL` from `.env`.
+Create tables in Supabase (SQL Editor or CLI). The app expects:
 
-```bash
-alembic upgrade head                          # Apply all pending migrations
-alembic revision --autogenerate -m "message"  # Create new migration
-alembic downgrade -1                          # Roll back one revision
-alembic current                               # Show current revision
-alembic history                               # Show migration history
-```
+- `users` (id UUID PK, supabase_auth_id, email, username, full_name, avatar_url, faculty, school, interests JSONB, is_first_year, created_at, updated_at)
+- `events` (id bigserial PK, title, description, location, dtstart_utc, dtend_utc, price, food JSONB, registration, source_image_url, club_type, school, source_url, category, organization, ig_handle, discord_handle, x_handle, tiktok_handle, fb_handle, other_handle, display_handle, added_at)
+- `clubs` (id bigserial PK, club_name, categories JSONB, club_page, ig, discord, club_type, logo_url)
+- `qr_codes` (id text PK, name, description, destination_type, destination_id, filters JSONB, created_at, created_by, is_active, image_url, latitude, longitude)
+- `qr_code_scans` (id UUID PK, qr_code_id FK, scanned_at, user_id, session_id, conversion_actions JSONB, user_agent)
+
+Use your existing Alembic migration SQL or Supabase migrations to create these.
 
 ## Seeding the database
 
-After migrations are applied:
+With venv activated and tables created:
 
 ```bash
 python seeds/run.py
@@ -117,16 +115,18 @@ Seeds users, events, and clubs.
 
 ## Tests
 
+With venv activated:
+
 ```bash
-pytest -v
+python -m pytest -v
 ```
 
 ## Quick reference
 
-| Task              | Command                    |
-|-------------------|----------------------------|
-| Start dev server  | `uvicorn main:app --reload` |
-| Run migrations    | `alembic upgrade head`      |
-| New migration     | `alembic revision --autogenerate -m "message"` |
-| Seed database     | `python seeds/run.py`       |
-| Run tests         | `pytest -v`                 |
+All commands assume the venv is activated (`source .venv/bin/activate`). Using `python -m ...` ensures the venv’s tools are used, not your system/global ones.
+
+| Task              | Command                               |
+|-------------------|---------------------------------------|
+| Start dev server  | `python -m uvicorn main:app --reload` |
+| Seed database     | `python seeds/run.py`                 |
+| Run tests         | `python -m pytest -v`                |

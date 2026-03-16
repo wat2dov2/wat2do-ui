@@ -4,7 +4,7 @@ import { CalendarIcon, MapPin, Users, ImagePlus } from "lucide-react";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import type { EventFormData } from "@/shared/types";
 import { formatEventDate, formatTime } from "@/shared/utils/date";
-import { getCategoryClasses } from "@/shared/utils/event";
+import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 
 interface EventFormPreviewProps {
   formData: EventFormData;
@@ -33,7 +33,7 @@ export function EventFormPreview({ formData }: EventFormPreviewProps) {
                   getCategoryClasses(formData.category).bg
                 } ${getCategoryClasses(formData.category).text}`}
               >
-                {formData.category}
+                {translateCategory(formData.category, t)}
               </span>
             </BadgeMask>
           )}
@@ -74,7 +74,7 @@ export function EventFormPreview({ formData }: EventFormPreviewProps) {
             )}
             {formData.requiresRegistration && (
               <span className="font-medium text-[10px] px-2 py-0.5 rounded-xl bg-primary/20 text-primary">
-                {t("common.registration")}
+                {t("common.registrationRequired")}
               </span>
             )}
           </div>

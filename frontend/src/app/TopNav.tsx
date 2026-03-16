@@ -56,7 +56,7 @@ export function TopNav() {
   }, [setProfileCompleted, setUserEmail]);
 
   const handleSignIn = useCallback(() => {
-    navigate("/auth");
+    navigate("/login");
     setShowOnboarding(false);
   }, [navigate, setShowOnboarding]);
 

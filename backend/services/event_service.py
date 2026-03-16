@@ -1,19 +1,34 @@
+"""Events via Supabase. Sync so no asyncpg/SQLAlchemy."""
+
 from datetime import datetime
 
-from sqlalchemy import select, or_, func
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from models.event import Event
+from core.database import get_sb
 from schemas.event import EventCreate, EventUpdate
 
 
-async def get_event(db: AsyncSession, event_id: int) -> Event | None:
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    return result.scalar_one_or_none()
+def get_latest_added_event() -> dict | None:
+    """Return the most recently added event (by added_at desc), or None if no events."""
+    r = (
+        get_sb()
+        .table("events")
+        .select("title,added_at")
+        .order("added_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not r.data or len(r.data) == 0:
+        return None
+    return r.data[0]
 
 
-async def list_events(
-    db: AsyncSession,
+def get_event(event_id: int) -> dict | None:
+    r = get_sb().table("events").select("*").eq("id", event_id).execute()
+    if not r.data or len(r.data) == 0:
+        return None
+    return r.data[0]
+
+
+def list_events(
     skip: int = 0,
     limit: int = 100,
     category: str | None = None,
@@ -25,64 +40,46 @@ async def list_events(
     has_food: bool | None = None,
     max_price: float | None = None,
     registration: bool | None = None,
-) -> list[Event]:
-    query = select(Event)
-
+) -> list[dict]:
+    q = get_sb().table("events").select("*")
     if category:
-        query = query.where(Event.category == category)
+        q = q.eq("category", category)
     if club_type:
-        query = query.where(Event.club_type == club_type)
+        q = q.eq("club_type", club_type)
     if school:
-        query = query.where(Event.school == school)
+        q = q.eq("school", school)
     if search:
         term = f"%{search}%"
-        query = query.where(
-            or_(
-                Event.title.ilike(term),
-                Event.description.ilike(term),
-                Event.location.ilike(term),
-                Event.organization.ilike(term),
-            )
-        )
+        q = q.or_(f"title.ilike.{term},description.ilike.{term},location.ilike.{term},organization.ilike.{term}")
     if from_date:
-        query = query.where(Event.dtstart_utc >= from_date)
+        q = q.gte("dtstart_utc", from_date.isoformat())
     if to_date:
-        query = query.where(Event.dtstart_utc <= to_date)
+        q = q.lte("dtstart_utc", to_date.isoformat())
     if has_food is True:
-        query = query.where(Event.food.isnot(None), func.jsonb_array_length(Event.food) > 0)
+        q = q.not_.is_("food", "null")
     if max_price is not None:
-        query = query.where(or_(Event.price.is_(None), Event.price <= max_price))
+        q = q.or_(f"price.is.null,price.lte.{max_price}")
     if registration is not None:
-        query = query.where(Event.registration == registration)
-
-    query = query.order_by(Event.dtstart_utc.desc().nullslast()).offset(skip).limit(limit)
-    result = await db.execute(query)
-    return list(result.scalars().all())
-
-
-async def create_event(db: AsyncSession, data: EventCreate) -> Event:
-    event = Event(**data.model_dump())
-    db.add(event)
-    await db.commit()
-    await db.refresh(event)
-    return event
+        q = q.eq("registration", registration)
+    q = q.order("dtstart_utc", desc=True).range(skip, skip + limit - 1)
+    r = q.execute()
+    return r.data or []
 
 
-async def update_event(db: AsyncSession, event_id: int, data: EventUpdate) -> Event | None:
-    event = await get_event(db, event_id)
-    if not event:
+def create_event(data: EventCreate) -> dict:
+    payload = data.model_dump()
+    r = get_sb().table("events").insert(payload).execute()
+    return r.data[0]
+
+
+def update_event(event_id: int, data: EventUpdate) -> dict | None:
+    if get_event(event_id) is None:
         return None
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(event, key, value)
-    await db.commit()
-    await db.refresh(event)
-    return event
+    payload = data.model_dump(exclude_unset=True)
+    r = get_sb().table("events").update(payload).eq("id", event_id).execute()
+    return r.data[0] if r.data else None
 
 
-async def delete_event(db: AsyncSession, event_id: int) -> bool:
-    event = await get_event(db, event_id)
-    if not event:
-        return False
-    await db.delete(event)
-    await db.commit()
-    return True
+def delete_event(event_id: int) -> bool:
+    r = get_sb().table("events").delete().eq("id", event_id).execute()
+    return bool(r.data)

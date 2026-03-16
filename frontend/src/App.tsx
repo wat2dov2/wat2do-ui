@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { GettingStartedChecklist } from "@/features/auth";
 import { AppLayout } from "@/app/AppLayout";
 import { EventsPageContainer, SubmitEventModal, useAppEvents, useSavedEvents } from "@/features/events";
 import { CommandPalette } from "@/features/commands/components/CommandPalette";
@@ -33,6 +32,7 @@ import {
   ClubPanelIntegrationsRoute,
   ClubPanelMembersRoute,
 } from "@/app/routes/clubPanelRoutes";
+import { getEventCategory } from "@/shared/utils/event";
 
 // Lazy load pages for code splitting
 const AboutPage = lazy(() =>
@@ -209,13 +209,25 @@ export default function App() {
     clearEditing();
   }, [setShowSubmitEvent, clearEditing]);
 
-  // Open submit modal in edit mode (used by admin and anywhere that has an Edit button)
+  // Open submit modal in edit mode (used by admin and anywhere that has an Edit button).
+  // Pass event id so the modal can fetch and populate the form (SubmitEventModal uses loadEventForEdit).
   const handleEditEventAndOpenModal = useCallback(
     (event: Parameters<typeof handleEditEvent>[0]) => {
-      handleEditEvent(event);
+      handleEditEvent({ id: event.id } as Parameters<typeof handleEditEvent>[0]);
       setShowSubmitEvent(true);
     },
     [handleEditEvent, setShowSubmitEvent]
+  );
+
+  const loadEventForEdit = useCallback(
+    async (eventId: number) => {
+      const { fetchEventById } = await import("@/features/events/api/events.api");
+      const fullEvent = await fetchEventById(eventId);
+      fullEvent.category = getEventCategory(fullEvent);
+
+      return eventToFormData(fullEvent);
+    },
+    [eventToFormData]
   );
 
   // Handle command palette filter actions
@@ -244,7 +256,7 @@ export default function App() {
     [events, handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
   );
 
-  const isAuthFlowRoute = location.pathname === "/auth" || location.pathname === "/onboarding";
+  const isAuthFlowRoute = location.pathname === "/login" || location.pathname === "/onboarding";
   const isQRRedirectRoute = /^\/qr\/[^/]+$/.test(location.pathname);
 
   // Full-page QR redirect: no app chrome, only loading then redirect (avoids events page flash)
@@ -262,7 +274,7 @@ export default function App() {
 
   const appRoutes = (
     <Routes>
-      <Route path="/auth" element={<AuthEntryPage />} />
+      <Route path="/login" element={<AuthEntryPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
         path="/"
@@ -334,7 +346,8 @@ export default function App() {
           onPromote={promoteEvent}
           onBuyCredits={() => setShowBuyCredits(true)}
           editEventId={editingEvent?.id}
-          initialData={editingEvent ? eventToFormData(editingEvent) : undefined}
+          initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
+          loadEventForEdit={loadEventForEdit}
           onUpdate={async (eventId, eventData) => {
             await updateEvent(eventId, eventData);
             handleSubmitEventClose();
@@ -389,22 +402,6 @@ export default function App() {
                 onComplete={clearEasterEgg}
               />
 
-              {/* Getting Started Checklist - only show when signed in */}
-              {isProfileCompleted && (
-                <GettingStartedChecklist
-                  onOpenOnboarding={handleOpenOnboardingRoute}
-                  onNavigateToFilters={() => filters.setShowFilterDropdown(true)}
-                  onViewEvent={() => {
-                    // Auto-scroll to first event card
-                    const firstCard = document.querySelector("[data-event-card]");
-                    firstCard?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "center",
-                    });
-                  }}
-                  profileCompleted={isProfileCompleted}
-                />
-              )}
               {appRoutes}
             </AppLayout>
           )}

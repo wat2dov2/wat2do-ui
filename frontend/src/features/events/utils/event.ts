@@ -121,48 +121,5 @@ export function parseEventDate(dateStr?: string, timeStr?: string): Date {
   return new Date();
 }
 
-/**
- * Translate category names to localized strings
- * Maps category names to translation keys
- */
-export function translateCategory(category: string, t: (key: string) => string): string {
-  if (!category) return t("navigation.events");
-  
-  // Map category names to translation keys
-  const categoryMap: Record<string, string> = {
-    "Events": "categories.events",
-    "Clubs": "categories.clubs",
-    "Academic": "categories.academic",
-    "Religious": "categories.religious",
-    "Cultural": "categories.cultural",
-    "Social & Games": "categories.socialGames",
-    "Sports": "categories.sportsFitness",
-    "Sports & Fitness": "categories.sportsFitness",
-    "Athletics": "categories.sportsFitness",
-    "Career": "categories.career",
-    "Career & Networking": "categories.career",
-    "Technology": "categories.technology",
-    "Creative Arts": "categories.artsCrafts",
-    "Arts & Crafts": "categories.artsCrafts",
-    "Health & Wellness": "categories.healthWellness",
-    "Music & Performance": "categories.musicPerformance",
-    "Entrepreneurship": "categories.entrepreneurship",
-  };
-  
-  const translationKey = categoryMap[category];
-  if (translationKey) {
-    return t(translationKey);
-  }
-  
-  // Fallback: try to find a matching translation key by converting the category name
-  const normalizedCategory = category.toLowerCase().replace(/[&\s]+/g, '');
-  for (const [key, value] of Object.entries(categoryMap)) {
-    const normalizedKey = key.toLowerCase().replace(/[&\s]+/g, '');
-    if (normalizedCategory.includes(normalizedKey) || normalizedKey.includes(normalizedCategory)) {
-      return t(value);
-    }
-  }
-  
-  // Final fallback
-  return category;
-}
+/** Re-export for consistency; source of truth is shared/utils/event (aligned with create event modal categories) */
+export { translateCategory } from "@/shared/utils/event";

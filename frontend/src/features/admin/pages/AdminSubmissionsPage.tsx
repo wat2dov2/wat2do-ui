@@ -101,7 +101,7 @@ export function AdminSubmissionsPage({
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="secondary" size="icon" onClick={onBack}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
@@ -242,7 +242,7 @@ export function AdminSubmissionsPage({
                         {submission.status === "pending" && (
                           <>
                             <Button
-                              variant="ghost"
+                              variant="secondary"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -253,7 +253,7 @@ export function AdminSubmissionsPage({
                               <Check className="w-4 h-4" />
                             </Button>
                             <Button
-                              variant="ghost"
+                              variant="secondary"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();

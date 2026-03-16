@@ -2,8 +2,10 @@ import React, { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Tag, MapPin, Utensils, CalendarDays, ArrowUpDown } from "lucide-react";
 import { FilterSection } from "@/features/search/components/FilterSection";
+import { translateCategory } from "@/shared/utils/event";
 import { DatePicker } from "@/features/search/components/DatePicker";
 import { PieMenu } from "@/shared/ui/pie-menu";
+import { Switch } from "@/shared/ui/switch";
 
 interface VisualFiltersProps {
   filters: {
@@ -19,14 +21,6 @@ interface VisualFiltersProps {
     toggleCategory: (id: string) => void;
     selectedLocations: string[];
     setSelectedLocations: (locations: string[]) => void;
-    locationPieMenu: {
-      isOpen: boolean;
-      position: { x: number; y: number } | null;
-      open: (e: React.MouseEvent) => void;
-      close: () => void;
-    };
-    locationPieItems: Array<{ id: string; label: string; icon: React.ReactNode }>;
-    toggleLocation: (id: string) => void;
     selectedFoods: string[];
     setSelectedFoods: (foods: string[]) => void;
     foodPieMenu: {
@@ -115,20 +109,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             <span>
               {filters.selectedCategories.length > 0
                 ? filters.selectedCategories
-                    .map((cat) => {
-                      const categoryMap: Record<string, string> = {
-                        "Events": "navigation.events",
-                        "Clubs": "navigation.clubs",
-                        "Academic": "categories.academic",
-                        "Religious": "categories.religious",
-                        "Cultural": "categories.cultural",
-                        "Social & Games": "categories.socialGames",
-                        "Sports": "categories.sports",
-                        "Career": "categories.career",
-                      };
-                      const key = categoryMap[cat] || `categories.${cat}`;
-                      return t(key) || cat;
-                    })
+                    .map((cat) => translateCategory(cat, t))
                     .join(", ")
                 : t("forms.selectCategories")}
             </span>
@@ -146,6 +127,29 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             innerRadius={20}
           />
         </div>
+      </FilterSection>
+
+      {/* Location Filter (free-text: filter events by location substring) */}
+      <FilterSection
+        title={t("filters.location")}
+        expanded={expandedSections.location}
+        onToggle={() => toggleSection("location")}
+        indicator={
+          (filters.selectedLocations[0]?.trim() ?? "") ? "1" : undefined
+        }
+        onClear={() => filters.setSelectedLocations([])}
+      >
+        <input
+          type="text"
+          placeholder={t("forms.locationPlaceholder")}
+          value={filters.selectedLocations[0] ?? ""}
+          onChange={(e) =>
+            filters.setSelectedLocations(
+              e.target.value.trim() ? [e.target.value.trim()] : []
+            )
+          }
+          className="bg-muted text-foreground text-xs px-3 py-2.5 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border placeholder:text-muted-foreground"
+        />
       </FilterSection>
 
       {/* Food Filter */}
@@ -353,17 +357,17 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         indicator={filters.requiresRegistration ? "1" : undefined}
         onClear={() => filters.setRequiresRegistration(false)}
       >
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={filters.requiresRegistration}
-            onChange={(e) => filters.setRequiresRegistration(e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary"
-          />
+        <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-foreground">
-            {t("filters.onlyShowEventsRequiringRegistration")}
+            {t("filters.requiresRegistration")}
           </span>
-        </label>
+          <Switch
+            checked={filters.requiresRegistration}
+            onCheckedChange={(checked) =>
+              filters.setRequiresRegistration(!!checked)
+            }
+          />
+        </div>
       </FilterSection>
 
       {/* Sort Filter */}

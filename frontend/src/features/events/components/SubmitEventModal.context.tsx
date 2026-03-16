@@ -15,6 +15,7 @@ interface SubmitEventModalContextValue {
   onBuyCredits?: () => void;
   editEventId?: number;
   initialData?: EventFormData;
+  loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
   onUpdate?: (eventId: number, event: EventFormData) => void;
   isEditMode: boolean;
 }

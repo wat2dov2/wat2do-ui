@@ -1,4 +1,4 @@
-import React, { useReducer, useMemo, useCallback, useState } from "react";
+import React, { useReducer, useMemo, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -55,10 +55,13 @@ interface SubmitEventModalProps {
   onBuyCredits?: () => void;
   editEventId?: number;
   initialData?: EventFormData;
+  /** When provided, modal will fetch event by id when opening for edit (ensures form is populated from server). */
+  loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
 }
 
-function SubmitEventModalContent() {
+/** Form body: mounts with formInitialData so edit form is always populated when opened from admin. */
+function SubmitEventModalFormBody({ formInitialData }: { formInitialData: EventFormData | undefined }) {
   const { t } = useTranslation();
   const context = useSubmitEventModalContext();
   const {
@@ -69,28 +72,21 @@ function SubmitEventModalContent() {
     onPromote,
     onBuyCredits,
     editEventId,
-    initialData,
     onUpdate,
     isEditMode,
   } = context;
   const { isDarkMode } = useDarkMode();
 
-  // State management with reducer
   const [state, dispatch] = useReducer(
     submitEventModalReducer,
     initialSubmitEventModalState
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Success alert hook
   const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
-  
-  // Confetti hook
   const { trigger: triggerConfetti } = useConfetti();
 
-  // Use hooks for business logic
   const eventForm = useEventForm({
-    initialData,
+    initialData: formInitialData,
     isEditMode,
     isOpen,
   });
@@ -108,7 +104,6 @@ function SubmitEventModalContent() {
     onPromote,
   });
 
-  // Reset state when modal opens
   const resetState = useCallback(() => {
     dispatch({ type: "RESET" });
     eventFormPromotion.setSelectedPromotion(null);
@@ -117,7 +112,6 @@ function SubmitEventModalContent() {
   }, [eventFormPromotion]);
 
   const handleClose = useCallback(() => {
-    // If we just created an event, show success alert
     if (state.isSubmitted && !isEditMode && state.createdEventId) {
       showSuccessAlert(
         t("events.eventCreated"),
@@ -128,14 +122,12 @@ function SubmitEventModalContent() {
     }
   }, [state.isSubmitted, state.createdEventId, isEditMode, showSuccessAlert, t, eventForm.formData.title, onClose]);
 
-  // Use modal state hook for standardized open/close handling
   const modalState = useModalState({
     onClose: handleClose,
     resetOnClose: true,
     resetFn: resetState,
   });
 
-  // Sync formData to JSON when switching to JSON view
   const handleViewModeChange = useCallback(
     (value: ViewMode) => {
       dispatch({ type: "SET_VIEW_MODE", payload: value });
@@ -148,14 +140,9 @@ function SubmitEventModalContent() {
 
   const handleSubmit = useCallback(async () => {
     eventForm.markAllFieldsTouched();
-
-    if (!eventForm.isValid) {
-      return;
-    }
-
+    if (!eventForm.isValid) return;
     setIsSubmitting(true);
     try {
-      // If in edit mode, update the event
       if (isEditMode && editEventId && onUpdate) {
         await onUpdate(editEventId, eventForm.formData);
         showSuccessAlert(
@@ -164,20 +151,14 @@ function SubmitEventModalContent() {
         );
         return;
       }
-
-      // Otherwise, create new event
       const eventId = await onSubmit(eventForm.formData);
       dispatch({ type: "SET_CREATED_EVENT_ID", payload: eventId });
       dispatch({ type: "SET_IS_SUBMITTED", payload: true });
-
-      // Upload image if one was selected
       if (eventForm.imageFile && eventId) {
         import("@/shared/services/uploadService").then(({ uploadEventImage }) => {
           uploadEventImage(eventId, eventForm.imageFile!).catch(() => {});
         });
       }
-      
-      // Trigger confetti immediately after successful submission (if not showing promotion)
       if (!eventFormPromotion.showPromotion) {
         triggerConfetti();
       }
@@ -196,7 +177,6 @@ function SubmitEventModalContent() {
     triggerConfetti,
   ]);
 
-  // Promotion success screen
   if (eventFormPromotion.promotionSuccess) {
     return (
       <PromotionSuccessScreen
@@ -206,8 +186,6 @@ function SubmitEventModalContent() {
       />
     );
   }
-
-  // Promotion upsell screen
   if (eventFormPromotion.showPromotion) {
     return (
       <PromotionUpsell
@@ -221,8 +199,6 @@ function SubmitEventModalContent() {
       />
     );
   }
-
-  // Success screen (skip for edit mode)
   if (state.isSubmitted && !isEditMode) {
     return (
       <EventSuccessScreen
@@ -374,9 +350,62 @@ function SubmitEventModalContent() {
   );
 }
 
+function SubmitEventModalContent() {
+  const { t } = useTranslation();
+  const context = useSubmitEventModalContext();
+  const {
+    isOpen,
+    onClose,
+    editEventId,
+    initialData,
+    loadEventForEdit,
+    isEditMode,
+  } = context;
+
+  const [resolvedInitialData, setResolvedInitialData] = useState<EventFormData | undefined>(undefined);
+  useEffect(() => {
+    if (!isOpen || !editEventId || !loadEventForEdit) {
+      setResolvedInitialData(undefined);
+      return;
+    }
+    setResolvedInitialData(undefined);
+    loadEventForEdit(editEventId)
+      .then((data) => setResolvedInitialData(data))
+      .catch(() => setResolvedInitialData(undefined));
+  }, [isOpen, editEventId, loadEventForEdit]);
+
+  if (isOpen && editEventId && loadEventForEdit && resolvedInitialData === undefined) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="p-0 w-[calc(100vw-48px)] max-w-[900px] max-h-[400px]" showCloseButton aria-describedby={undefined}>
+          <div className="flex items-center justify-center py-16 text-muted-foreground">
+            {t("common.loading")}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const formInitialData = (isEditMode && (resolvedInitialData ?? initialData)) ?? initialData;
+  const formBodyKey = editEventId && loadEventForEdit && resolvedInitialData != null
+    ? `edit-${editEventId}-ready`
+    : editEventId
+      ? `edit-${editEventId}`
+      : "create";
+
+  return (
+    <SubmitEventModalFormBody
+      key={formBodyKey}
+      formInitialData={formInitialData}
+    />
+  );
+}
+
 export function SubmitEventModal(props: SubmitEventModalProps) {
-  const isEditMode = !!props.editEventId && !!props.initialData;
-  
+  const isEditMode = !!props.editEventId && (!!props.initialData || !!props.loadEventForEdit);
+  // Remount form when switching to a different event so initialData is applied
+  const formKey = props.isOpen && props.editEventId ? `edit-${props.editEventId}` : "create";
+
   return (
     <SubmitEventModalProvider
       value={{
@@ -385,7 +414,7 @@ export function SubmitEventModal(props: SubmitEventModalProps) {
         isEditMode,
       }}
     >
-      <SubmitEventModalContent />
+      <SubmitEventModalContent key={formKey} />
     </SubmitEventModalProvider>
   );
 }

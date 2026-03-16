@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
@@ -32,6 +32,44 @@ export function ClubsPage() {
     filteredClubs,
     isLoading,
   } = useClubsPage();
+
+  const [animatedCount, setAnimatedCount] = useState(filteredClubs.length);
+  const prevCountRef = useRef(filteredClubs.length);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const start = prevCountRef.current;
+    const end = filteredClubs.length;
+    if (start === end) return;
+
+    const duration = 450;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(start + (end - start) * eased);
+      setAnimatedCount(value);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        prevCountRef.current = end;
+      }
+    };
+
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [filteredClubs.length]);
 
   return (
     <div className="space-y-5">
@@ -80,48 +118,29 @@ export function ClubsPage() {
         {/* Filters */}
         <div className="flex flex-wrap gap-2">
           {/* Category Chips */}
-          {!isLoading && allCategories.slice(0, 10).map((category) => (
-            <button
-              key={category}
-              onClick={() => toggleCategory(category)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedCategories.includes(category)
-                  ? "bg-primary/20 text-primary"
-                  : "bg-muted text-muted-foreground hover:bg-gray-200"
-              }`}
-            >
-              {getClubCategoryTranslation(category, t)}
-            </button>
-          ))}
+          {!isLoading &&
+            allCategories.slice(0, 10).map((category) => (
+              <button
+                key={category}
+                onClick={() => toggleCategory(category)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  selectedCategories.includes(category)
+                    ? "bg-primary/80 text-white"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {getClubCategoryTranslation(category, t)}
+              </button>
+            ))}
         </div>
 
-        {/* Active Filters */}
-        {selectedCategories.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground">{t("clubs.activeFilters")}:</span>
-            {selectedCategories.map((cat) => (
-              <Badge
-                key={cat}
-                variant="secondary"
-                className="text-xs px-2 py-0.5 rounded-xl"
-              >
-                {getClubCategoryTranslation(cat, t)}
-                <button
-                  onClick={() => toggleCategory(cat)}
-                  className="ml-1.5 hover:text-foreground"
-                >
-                  ×
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
+        {/* Active Filters removed per design – chips above are sufficient */}
       </div>
 
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <span className="font-bold text-xl text-gray-900">
-          {filteredClubs.length} {filteredClubs.length === 1 ? t("clubs.club") : t("clubs.clubs")}
+          {animatedCount} {animatedCount === 1 ? t("clubs.club") : t("clubs.clubs")}
         </span>
       </div>
 

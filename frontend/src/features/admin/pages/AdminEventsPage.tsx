@@ -105,20 +105,22 @@ export function AdminEventsPage() {
             ))}
           </SelectContent>
         </Select>
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={toggleReportedOnly}
           aria-pressed={showReportedOnly}
           className={cn(
-            "flex w-fit items-center justify-center gap-2 rounded-xl px-3 py-1 text-base md:text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 h-9 cursor-pointer [&_svg]:shrink-0 [&_svg]:size-4",
+            "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
             showReportedOnly
-              ? "bg-primary/15 text-primary ring-2 ring-primary/50 [&_svg]:text-primary"
-              : "bg-secondary text-muted-foreground hover:bg-secondary/80 [&_svg]:text-muted-foreground"
+              ? "!bg-primary/80 !text-white hover:!bg-primary/80 hover:!text-white [&_svg]:!text-white"
+              : "bg-muted text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-200"
           )}
         >
           <AlertTriangle className="size-4" />
           {t("admin.reportedOnly")}
-        </button>
+        </Button>
       </div>
 
       <AdminResultsCount
@@ -203,18 +205,18 @@ export function AdminEventsPage() {
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="icon-sm"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            onEditEvent(event);
+                            await onEditEvent?.(event);
                           }}
                           title={t("admin.editEvent")}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="icon-sm"
                           onClick={(e) => {
                             e.stopPropagation();

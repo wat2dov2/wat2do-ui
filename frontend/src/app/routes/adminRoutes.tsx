@@ -17,7 +17,7 @@ import { useAppContext } from "@/contexts/AppContext";
 
 interface AdminRoutesConfig {
   events: Event[];
-  onEditEvent: (event: Event) => void;
+  onEditEvent: (event: Event) => void | Promise<void>;
   onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
   onAddEvent: (eventData: any) => Promise<number>;

@@ -154,8 +154,8 @@
   --card-foreground: var(--foreground);
   --popover: var(--background);
   --popover-foreground: var(--foreground);
-  --primary: hsl(216 100% 42%);
-  --primary-foreground: hsl(216 50% 90%);
+  --primary: #0052FF;
+  --primary-foreground: hsl(0 0% 100%);
   --secondary: var(--muted);
   --secondary-foreground: hsl(0 0% 20%);
   --muted: hsl(0 0% 97%);
@@ -272,8 +272,8 @@
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary: hsl(216 100% 42%);
-  --primary-foreground: hsl(216 50% 90%);
+  --primary: #0052FF;
+  --primary-foreground: hsl(0 0% 100%);
   --secondary: var(--muted);
   --secondary-foreground: var(--foreground);
   --muted: hsl(0 0% 18%);

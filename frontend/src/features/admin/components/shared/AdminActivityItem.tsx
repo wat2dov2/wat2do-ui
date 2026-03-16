@@ -43,7 +43,7 @@ export function AdminActivityItem({
             </div>
             {onView && (
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 className="shrink-0"
                 onClick={(e) => {

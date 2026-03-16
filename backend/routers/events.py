@@ -1,18 +1,22 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth import get_current_user
-from core.database import get_db
-from schemas.event import EventCreate, EventUpdate, EventResponse
+from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
 from services import event_service
 
 router = APIRouter(prefix="/events", tags=["events"])
 
 
+@router.get("/latest-added", response_model=LatestEventResponse | None)
+def get_latest_added():
+    """Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'."""
+    return event_service.get_latest_added_event()
+
+
 @router.get("/", response_model=list[EventResponse])
-async def list_events(
+def list_events(
     skip: int = 0,
     limit: int = Query(default=100, le=500),
     category: str | None = None,
@@ -24,11 +28,8 @@ async def list_events(
     has_food: bool | None = None,
     max_price: float | None = None,
     registration: bool | None = None,
-    db: AsyncSession = Depends(get_db),
 ):
-    """List events with optional filters. Public endpoint."""
-    return await event_service.list_events(
-        db,
+    return event_service.list_events(
         skip=skip,
         limit=limit,
         category=category,
@@ -44,45 +45,38 @@ async def list_events(
 
 
 @router.get("/{event_id}", response_model=EventResponse)
-async def get_event(event_id: int, db: AsyncSession = Depends(get_db)):
-    """Get a single event by ID. Public endpoint."""
-    event = await event_service.get_event(db, event_id)
+def get_event(event_id: int):
+    event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return event
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
-async def create_event(
+def create_event(
     data: EventCreate,
-    db: AsyncSession = Depends(get_db),
     _=Depends(get_current_user),
 ):
-    """Create a new event. Requires authentication."""
-    return await event_service.create_event(db, data)
+    return event_service.create_event(data)
 
 
 @router.patch("/{event_id}", response_model=EventResponse)
-async def update_event(
+def update_event(
     event_id: int,
     data: EventUpdate,
-    db: AsyncSession = Depends(get_db),
     _=Depends(get_current_user),
 ):
-    """Update an event. Requires authentication."""
-    event = await event_service.update_event(db, event_id, data)
+    event = event_service.update_event(event_id, data)
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return event
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_event(
+def delete_event(
     event_id: int,
-    db: AsyncSession = Depends(get_db),
     _=Depends(get_current_user),
 ):
-    """Delete an event. Requires authentication."""
-    deleted = await event_service.delete_event(db, event_id)
+    deleted = event_service.delete_event(event_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")

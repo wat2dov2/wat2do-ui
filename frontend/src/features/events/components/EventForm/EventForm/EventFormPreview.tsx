@@ -45,7 +45,7 @@ export function EventFormPreview() {
     // Registration badge
     if (formData.requiresRegistration) {
       badgeList.push({
-        text: t("common.registration"),
+        text: t("common.registrationRequired"),
         bgClass: "bg-purple-500/20",
         textClass: "text-purple-500",
       });

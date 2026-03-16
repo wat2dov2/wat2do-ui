@@ -150,7 +150,7 @@ export function OnboardingSignInStep({
 
       <div className="mt-4">
         <Button
-          variant="ghost"
+          variant="secondary"
           onClick={() => {
             onResetOtp();
             onShowOtpInput(false);

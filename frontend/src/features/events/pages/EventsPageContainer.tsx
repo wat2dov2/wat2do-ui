@@ -1,7 +1,8 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { formatDistanceToNow } from "date-fns";
 import { Utensils, Heart } from "lucide-react";
-import { EventList, EventCount, useAppEvents, useSavedEvents } from "@/features/events";
+import { EventList, EventCount, useAppEvents, useSavedEvents, useLatestAddedEvent } from "@/features/events";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { EventsProvider } from "@/features/events/context/EventsContext";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown, useSearch } from "@/features/search";
@@ -28,7 +29,14 @@ export function EventsPageContainer() {
   const { isLoading } = appEvents;
   const { savedEventIds, toggleSaveEvent } = useSavedEvents();
   const promotions = useAppPromotions();
-  
+  const { latest: latestAddedEvent } = useLatestAddedEvent();
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!latestAddedEvent) return;
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, [latestAddedEvent]);
+
   const filters = useSearch({
     events: appEvents.events,
     profileCompleted,
@@ -106,7 +114,25 @@ export function EventsPageContainer() {
       {!isLoading && (
         <div className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <EventCount count={filters.filteredEvents.length} />
+            <div className="flex flex-wrap items-baseline gap-3">
+              <EventCount count={filters.filteredEvents.length} />
+              {latestAddedEvent && (
+                <button
+                  type="button"
+                  onClick={() => filters.setSearchQuery(latestAddedEvent.title)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left relative -top-px"
+                  aria-label={t("events.latestAdded", {
+                    title: latestAddedEvent.title,
+                    timeAgo: formatDistanceToNow(new Date(latestAddedEvent.added_at), { addSuffix: true }),
+                  })}
+                >
+                  {t("events.latestAdded", {
+                    title: latestAddedEvent.title,
+                    timeAgo: formatDistanceToNow(new Date(latestAddedEvent.added_at), { addSuffix: true }),
+                  })}
+                </button>
+              )}
+            </div>
             <div className="relative flex flex-wrap items-center gap-2">
               {filterConfigs
                 .filter((config) => config.visible !== false)

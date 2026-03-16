@@ -1,7 +1,7 @@
 import { Users, ImageOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { ONBOARDING_EVENT_CARDS } from "@/features/auth/hooks/useOnboardingFlow";
-import { availableCategories } from "@/features/events/data/events";
+import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
@@ -19,7 +19,7 @@ export function OnboardingTopicsStep({
   return (
     <div className="flex flex-col items-center space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 w-full max-w-3xl">
-        {availableCategories.map((category) => {
+        {EVENT_CATEGORIES.map((category) => {
           const card = ONBOARDING_EVENT_CARDS[category];
           if (!card) return null;
 
