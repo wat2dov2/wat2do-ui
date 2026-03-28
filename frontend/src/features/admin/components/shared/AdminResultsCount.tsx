@@ -18,7 +18,7 @@ export function AdminResultsCount({
 }: AdminResultsCountProps) {
   return (
     <div className="flex items-center justify-between">
-      <span className="font-bold text-xl text-gray-900">
+      <span className="font-bold text-xl text-foreground">
         {count} {count === 1 ? singularLabel : pluralLabel}
       </span>
     </div>

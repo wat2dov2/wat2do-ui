@@ -26,10 +26,10 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="flex text-white items-center gap-1 px-3 h-8 bg-transparent hover:bg-gray-200 rounded-xl transition-colors"
+          className="flex text-foreground items-center gap-1 px-3 h-8 bg-transparent hover:bg-secondary rounded-xl transition-colors"
           aria-expanded={open}
         >
-          <Highlighter action="highlight" color="#0056D6">
+          <Highlighter action="highlight" color="var(--primary)">
             {value ? value : "University of Waterloo"}
           </Highlighter>
           <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -70,7 +70,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
                   "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                   value === school
                     ? "bg-primary text-primary-foreground"
-                    : "hover:bg-gray-200 text-foreground"
+                    : "hover:bg-secondary text-foreground"
                 )}
               >
                 <Check

@@ -119,8 +119,8 @@ export const EventCard = React.memo(function EventCard({
               <div
                 className={`absolute inset-0 ${
                   isPromoted
-                    ? "bg-gradient-to-br from-yellow-100 to-yellow-50"
-                    : "bg-gradient-to-br from-muted to-muted/80"
+                    ? "bg-linear-to-br from-yellow-100 to-yellow-50"
+                    : "bg-linear-to-br from-muted to-muted/80"
                 } flex items-center justify-center`}
               >
                 <ImageOff className="w-8 h-8 text-muted-foreground/40" />
@@ -130,8 +130,8 @@ export const EventCard = React.memo(function EventCard({
               <div
                 className={`absolute inset-0 ${
                   isPromoted
-                    ? "bg-gradient-to-br from-yellow-100 to-yellow-50"
-                    : "bg-gradient-to-br from-muted to-muted/80"
+                    ? "bg-linear-to-br from-yellow-100 to-yellow-50"
+                    : "bg-linear-to-br from-muted to-muted/80"
                 } animate-pulse`}
               />
             }
@@ -150,7 +150,7 @@ export const EventCard = React.memo(function EventCard({
           {/* Promoted Badge - Below Category on left side */}
           {isPromoted && (
             <div className="absolute top-8 left-2 z-10">
-              <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="bg-linear-to-r from-amber-500 to-amber-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 {t("events.promoted")}
               </span>
@@ -162,7 +162,7 @@ export const EventCard = React.memo(function EventCard({
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-gray-200 transition-colors"
+                  className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="w-3.5 h-3.5" />
@@ -175,7 +175,7 @@ export const EventCard = React.memo(function EventCard({
               >
                 <div className="flex flex-col gap-0.5">
                   <button
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-gray-200 text-foreground transition-colors text-left"
+                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
                     onClick={async (e) => {
                       e.stopPropagation();
                       try {
@@ -191,7 +191,7 @@ export const EventCard = React.memo(function EventCard({
                   <button
                     className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl text-left transition-colors ${
                       profileCompleted
-                        ? "hover:bg-gray-200 text-foreground"
+                        ? "hover:bg-secondary text-foreground"
                         : "cursor-not-allowed opacity-50 text-muted-foreground"
                     }`}
                     onClick={(e) => {
@@ -204,7 +204,7 @@ export const EventCard = React.memo(function EventCard({
                     {isSaved ? t("common.unsave") : t("common.save")}
                   </button>
                   <button
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-gray-200 text-foreground transition-colors text-left"
+                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
                     onClick={(e) => {
                       e.stopPropagation();
                       // Handle add to calendar
@@ -214,7 +214,7 @@ export const EventCard = React.memo(function EventCard({
                     {t("common.addToCalendar")}
                   </button>
                   <button
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-gray-200 text-foreground transition-colors text-left"
+                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
                     onClick={(e) => {
                       e.stopPropagation();
                       // Handle report

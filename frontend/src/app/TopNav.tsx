@@ -133,7 +133,7 @@ export function TopNav() {
             <TooltipTrigger asChild>
               <InteractiveHoverButton
                 onClick={handleSignIn}
-                className="flex items-center gap-1.5 bg-primary border-primary text-white text-sm px-6 py-1.5 min-w-[120px] justify-center"
+                className="flex items-center gap-1.5 bg-primary border-primary text-primary-foreground text-sm px-6 py-1.5 min-w-[120px] justify-center"
                 hideDot
               >
                 {t("events.signIn")}

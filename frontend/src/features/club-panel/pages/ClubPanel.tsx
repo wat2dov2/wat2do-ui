@@ -21,7 +21,7 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
           <Building2 className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("clubPanel.title")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("clubPanel.title")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("clubPanel.description")}
           </p>
@@ -53,7 +53,7 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
       {/* Recent Activity Feed */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">{t("clubPanel.recentActivity")}</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-1">{t("clubPanel.recentActivity")}</h2>
           <p className="text-sm text-muted-foreground">
             {t("admin.recentActivityDesc")}
           </p>

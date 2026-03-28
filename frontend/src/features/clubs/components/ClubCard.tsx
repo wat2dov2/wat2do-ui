@@ -72,7 +72,7 @@ export function ClubCard({ club }: ClubCardProps) {
     <article className="rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card border border-border">
       <div className="p-4 flex flex-col gap-3 flex-1">
         {/* Club Name */}
-        <h3 className="font-bold text-base text-gray-900 line-clamp-2">
+        <h3 className="font-bold text-base text-foreground line-clamp-2">
           {club.club_name}
         </h3>
 

@@ -26,7 +26,7 @@ export function PhotoWithCaption({
       <ImageWithFallback
         src={src}
         alt={t(altKey)}
-        className="w-full h-[360px] object-cover rounded-[12px] mb-4"
+        className="w-full h-[360px] object-cover rounded-xl mb-4"
       />
       <p className="font-sans text-[13px] text-muted-foreground italic">
         {t(captionKey)}

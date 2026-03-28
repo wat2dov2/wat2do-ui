@@ -62,7 +62,6 @@ export function BuyCreditsModal({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ["#F59E0B", "#FBBF24", "#FCD34D", "#10B981"],
     });
   };
 
@@ -131,7 +130,7 @@ export function BuyCreditsModal({
             disabled={form.selectedPackage === null}
             isLoading={form.isPurchasing}
             loadingText={t("credits.processing")}
-            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
+            className="w-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
             size="lg"
           >
             <span className="flex items-center gap-2">
@@ -142,7 +141,7 @@ export function BuyCreditsModal({
             </span>
           </LoadingButton>
 
-          <p className="text-[10px] text-gray-400 text-center mt-3">
+          <p className="text-[10px] text-muted-foreground text-center mt-3">
             {t("credits.securePayment")}
           </p>
         </ModalContentWrapper>

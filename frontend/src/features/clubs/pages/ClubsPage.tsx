@@ -75,7 +75,7 @@ export function ClubsPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("navigation.clubs")}</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t("navigation.clubs")}</h1>
         <p className="text-sm text-muted-foreground">
           {t("clubs.description")}
         </p>
@@ -91,7 +91,7 @@ export function ClubsPage() {
             placeholder={t("clubs.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border border-border bg-muted text-foreground rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-gray-600 dark:focus:border-gray-700 transition-all shadow-md"
+            className="w-full border border-border bg-muted text-foreground rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-border transition-all shadow-md"
           />
           {searchQuery && (
             <button
@@ -125,7 +125,7 @@ export function ClubsPage() {
                 onClick={() => toggleCategory(category)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   selectedCategories.includes(category)
-                    ? "bg-primary/80 text-white"
+                    ? "bg-primary/80 text-primary-foreground"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
@@ -139,7 +139,7 @@ export function ClubsPage() {
 
       {/* Results Count */}
       <div className="flex items-center justify-between">
-        <span className="font-bold text-xl text-gray-900">
+        <span className="font-bold text-xl text-foreground">
           {animatedCount} {animatedCount === 1 ? t("clubs.club") : t("clubs.clubs")}
         </span>
       </div>

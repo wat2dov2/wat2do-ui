@@ -34,7 +34,7 @@ export function AdminActivityItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-900 mb-1">{title}</p>
+              <p className="text-sm text-foreground mb-1">{title}</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="w-3 h-3" />
                 <span>{timestamp}</span>

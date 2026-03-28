@@ -71,20 +71,20 @@ function ToastItem({ toast }: { toast: Toast }) {
     setTimeout(() => setIsVisible(true), 10);
   }, []);
 
-  const bgColor =
+  const toneClass =
     toast.type === "success"
-      ? "bg-green-500"
+      ? "bg-success text-success-foreground"
       : toast.type === "error"
-      ? "bg-error"
-      : "bg-blue-500";
+      ? "bg-error text-error-foreground"
+      : "bg-primary text-primary-foreground";
 
   return (
     <div
       className={`
-        flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white min-w-[300px] max-w-md
+        flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg min-w-[300px] max-w-md
         transition-all duration-300 ease-out
         ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"}
-        ${bgColor}
+        ${toneClass}
       `}
     >
       {toast.type === "success" && <Check className="w-5 h-5 shrink-0" />}
@@ -94,7 +94,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         onClick={() => {
           removeToast(toast.id);
         }}
-        className="shrink-0 hover:bg-white/20 rounded p-1 transition-colors"
+        className="shrink-0 hover:bg-foreground/20 rounded p-1 transition-colors"
       >
         <X className="w-4 h-4" />
       </button>

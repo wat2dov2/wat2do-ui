@@ -36,7 +36,7 @@ export function CreditPackageCard({
       )}
     >
       {pkg.popular && (
-        <div className="absolute -top-2 left-4 bg-warning text-white text-[10px] font-bold px-2 py-0.5 rounded">
+        <div className="absolute -top-2 left-4 bg-warning text-warning-foreground text-[10px] font-bold px-2 py-0.5 rounded">
           {popularLabel}
         </div>
       )}
@@ -45,11 +45,11 @@ export function CreditPackageCard({
           <div
             className={cn(
               "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-              isSelected ? "border-warning bg-warning" : "border-gray-300"
+              isSelected ? "border-warning bg-warning" : "border-border"
             )}
           >
             {isSelected && (
-              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+              <Check className="w-3 h-3 text-warning-foreground" strokeWidth={3} />
             )}
           </div>
           <div>

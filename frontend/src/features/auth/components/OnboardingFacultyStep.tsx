@@ -14,17 +14,17 @@ const SELECT_PLACEHOLDER_VALUE = "__placeholder__";
 
 /** Faculty-specific colors (from onboarding branch origin) — single color per faculty for blob splash */
 const FACULTY_COLORS: Record<string, string> = {
-  Arts: "#ED8C00",
-  Engineering: "#865DA4",
-  Environment: "#B6BF00",
-  Health: "#009CAB",
-  Mathematics: "#DF1AA0",
-  Science: "#0072DA",
-  "Applied Health Sciences": "#0d9488",
+  Arts: "var(--faculty-arts-splash)",
+  Engineering: "var(--faculty-engineering-splash)",
+  Environment: "var(--faculty-environment-splash)",
+  Health: "var(--faculty-health-splash)",
+  Mathematics: "var(--faculty-mathematics-splash)",
+  Science: "var(--faculty-science-splash)",
+  "Applied Health Sciences": "var(--faculty-applied-health-sciences-splash)",
 };
 
 function generateSplashPoints(faculty: string) {
-  const color = FACULTY_COLORS[faculty] ?? "#0072DA";
+  const color = FACULTY_COLORS[faculty] ?? "var(--faculty-science-splash)";
   return Array.from({ length: 20 }, () => {
     const angle = Math.random() * Math.PI * 2;
     const distance = 200 + Math.random() * 300;
@@ -35,7 +35,7 @@ function generateSplashPoints(faculty: string) {
       distance: distance * horizontalMultiplier,
       size: 40 + Math.random() * 80,
       borderRadius: 20 + Math.random() * 60,
-      color: color + "40",
+      color,
     };
   });
 }

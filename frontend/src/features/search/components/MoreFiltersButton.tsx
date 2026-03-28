@@ -26,8 +26,8 @@ export function MoreFiltersButton({
         <button
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             open || filterCount > 0
-              ? "bg-primary/80 text-white"
-              : "bg-muted text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-200"
+              ? "bg-primary/80 text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-accent/60 dark:hover:bg-accent/60"
           }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -39,7 +39,7 @@ export function MoreFiltersButton({
                 e.stopPropagation();
                 onClearFilters?.();
               }}
-              className="bg-primary text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/70 transition-colors cursor-pointer"
+              className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/70 transition-colors cursor-pointer"
             >
               <X className="w-2.5 h-2.5" strokeWidth={3} />
               {filterCount}

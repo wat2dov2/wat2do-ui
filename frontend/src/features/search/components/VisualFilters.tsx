@@ -104,7 +104,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="relative">
           <button
             onClick={filters.categoryPieMenu.open}
-            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.selectedCategories.length > 0
@@ -167,7 +167,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="relative">
           <button
             onClick={filters.foodPieMenu.open}
-            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.selectedFoods.length > 0
@@ -211,7 +211,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="relative">
           <button
             onClick={filters.dayPieMenu.open}
-            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.selectedDays.length > 0
@@ -248,7 +248,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           <button
             data-calendar-trigger
             onClick={() => setShowDateRangePicker(!showDateRangePicker)}
-            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.dateRange
@@ -284,7 +284,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           <button
             data-calendar-trigger
             onClick={() => setShowAddedSincePicker(!showAddedSincePicker)}
-            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.addedSince
@@ -380,7 +380,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           <div className="relative">
             <button
               onClick={filters.sortPieMenu.open}
-              className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-gray-200 transition-colors flex items-center justify-between cursor-pointer"
+              className="bg-muted font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
             >
               <span>
                 {t(`filters.${filters.sortBy}`)} (
@@ -410,7 +410,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
                   filters.sortOrder === "asc" ? "desc" : "asc"
                 )
               }
-              className="bg-muted text-foreground text-xs px-3 py-1.5 rounded-xl hover:bg-gray-200 transition-colors flex items-center gap-1.5"
+              className="bg-muted text-foreground text-xs px-3 py-1.5 rounded-xl hover:bg-accent/60 transition-colors flex items-center gap-1.5"
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
               <span>

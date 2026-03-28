@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Link, MessageCircle, Check, ExternalLink, AtSign } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -22,6 +22,17 @@ import {
 } from "@/shared/ui/select";
 import { ModalContentWrapper, ModalHeaderWrapper } from "@/shared/ui/modal-components";
 import { Field, FieldGroup, FieldLabel } from "@/shared/ui/field";
+import type { Club } from "@/shared/types";
+import { ApiError } from "@/shared/services/apiClient";
+import { getAllClubs } from "@/features/clubs/api/clubs.api";
+import {
+  connectPlatformIntegration,
+  disconnectPlatformIntegration,
+  getIntegrationOptions,
+  getPlatformIntegration,
+  type IntegrationPlatform,
+  type IntegrationServerOption,
+} from "@/features/club-panel/api/integrations.api";
 
 // Discord icon component
 function DiscordIcon({ className }: { className?: string }) {
@@ -76,81 +87,6 @@ function FacebookIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-// Mock data for Discord servers and channels
-const mockDiscordServers = [
-  { id: "1", name: "UW Tech Club" },
-  { id: "2", name: "CS Student Association" },
-  { id: "3", name: "Engineering Society" },
-];
-
-const mockDiscordChannels: Record<string, { id: string; name: string }[]> = {
-  "1": [
-    { id: "101", name: "#events" },
-    { id: "102", name: "#announcements" },
-    { id: "103", name: "#general" },
-  ],
-  "2": [
-    { id: "201", name: "#events" },
-    { id: "202", name: "#news" },
-  ],
-  "3": [
-    { id: "301", name: "#upcoming-events" },
-    { id: "302", name: "#socials" },
-  ],
-};
-
-// Mock data for Slack workspaces and channels
-const mockSlackWorkspaces = [
-  { id: "1", name: "UW Tech Club Workspace" },
-  { id: "2", name: "CS Students" },
-  { id: "3", name: "Engineering Hub" },
-];
-
-const mockSlackChannels: Record<string, { id: string; name: string }[]> = {
-  "1": [
-    { id: "101", name: "#events" },
-    { id: "102", name: "#announcements" },
-    { id: "103", name: "#general" },
-  ],
-  "2": [
-    { id: "201", name: "#club-events" },
-    { id: "202", name: "#news" },
-  ],
-  "3": [
-    { id: "301", name: "#upcoming" },
-    { id: "302", name: "#socials" },
-  ],
-};
-
-// Mock data for Telegram groups
-const mockTelegramGroups = [
-  { id: "1", name: "UW Tech Club" },
-  { id: "2", name: "CS Events" },
-  { id: "3", name: "Engineering Society" },
-];
-
-// Mock data for LinkedIn pages
-const mockLinkedinPages = [
-  { id: "1", name: "UW Tech Club" },
-  { id: "2", name: "CS Student Association" },
-  { id: "3", name: "Engineering Society" },
-];
-
-// Mock data for Facebook pages and groups
-const mockFacebookPages = [
-  { id: "1", name: "UW Tech Club" },
-  { id: "2", name: "CS Student Association" },
-  { id: "3", name: "Engineering Society" },
-];
-
-const mockFacebookGroups = [
-  { id: "1", name: "UW Tech Club Members" },
-  { id: "2", name: "CS Events & Announcements" },
-  { id: "3", name: "Engineering Student Hub" },
-];
-
-type IntegrationPlatform = "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
 
 interface Integration {
   platform: IntegrationPlatform;
@@ -221,11 +157,131 @@ export function ClubPanelIntegrationsPage() {
   const [facebookConnectionType, setFacebookConnectionType] = useState<"page" | "group">("page");
   const [selectedFacebookPageId, setSelectedFacebookPageId] = useState<string>("");
   const [selectedFacebookGroupId, setSelectedFacebookGroupId] = useState<string>("");
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [selectedClubId, setSelectedClubId] = useState<number | null>(null);
+  const [discordServers, setDiscordServers] = useState<IntegrationServerOption[]>([]);
+  const [slackServers, setSlackServers] = useState<IntegrationServerOption[]>([]);
+  const [telegramServers, setTelegramServers] = useState<IntegrationServerOption[]>([]);
+  const [linkedinServers, setLinkedinServers] = useState<IntegrationServerOption[]>([]);
+  const [facebookTargets, setFacebookTargets] = useState<IntegrationServerOption[]>([]);
+  const [discordOauthUrl, setDiscordOauthUrl] = useState<string>("");
+  const [slackOauthUrl, setSlackOauthUrl] = useState<string>("");
+  const [linkedinOauthUrl, setLinkedinOauthUrl] = useState<string>("");
+  const [facebookOauthUrl, setFacebookOauthUrl] = useState<string>("");
+  const [discordLoading, setDiscordLoading] = useState(false);
+  const [discordSaving, setDiscordSaving] = useState(false);
+  const [discordError, setDiscordError] = useState<string | null>(null);
 
   const getIntegration = (platform: IntegrationPlatform) =>
     integrations.find((i) => i.platform === platform);
 
+  const redirectIfUnauthorized = useCallback(
+    (error: unknown): boolean => {
+      if (error instanceof ApiError && error.status === 401) {
+        navigate("/login", { replace: true });
+        return true;
+      }
+      return false;
+    },
+    [navigate]
+  );
+
+  useEffect(() => {
+    const loadBootData = async () => {
+      setDiscordLoading(true);
+      setDiscordError(null);
+      try {
+        const [
+          clubsData,
+          discordOptions,
+          slackOptions,
+          telegramOptions,
+          linkedinOptions,
+          facebookOptions,
+        ] = await Promise.all([
+          getAllClubs(),
+          getIntegrationOptions("discord"),
+          getIntegrationOptions("slack"),
+          getIntegrationOptions("telegram"),
+          getIntegrationOptions("linkedin"),
+          getIntegrationOptions("facebook"),
+        ]);
+        setClubs(clubsData);
+        setDiscordServers(discordOptions.servers);
+        setSlackServers(slackOptions.servers);
+        setTelegramServers(telegramOptions.servers);
+        setLinkedinServers(linkedinOptions.servers);
+        setFacebookTargets(facebookOptions.servers);
+        setDiscordOauthUrl(discordOptions.oauth_url ?? "");
+        setSlackOauthUrl(slackOptions.oauth_url ?? "");
+        setLinkedinOauthUrl(linkedinOptions.oauth_url ?? "");
+        setFacebookOauthUrl(facebookOptions.oauth_url ?? "");
+        if (clubsData.length > 0) {
+          setSelectedClubId((prev) => prev ?? clubsData[0].id);
+        }
+      } catch (error) {
+        if (redirectIfUnauthorized(error)) return;
+        setDiscordError("Failed to load integration settings.");
+      } finally {
+        setDiscordLoading(false);
+      }
+    };
+
+    void loadBootData();
+  }, [redirectIfUnauthorized]);
+
+  useEffect(() => {
+    if (!selectedClubId) return;
+
+    const loadIntegrations = async () => {
+      setDiscordLoading(true);
+      setDiscordError(null);
+      try {
+        const platforms: IntegrationPlatform[] = [
+          "whatsapp",
+          "discord",
+          "instagram",
+          "slack",
+          "telegram",
+          "linkedin",
+          "facebook",
+        ];
+        const data = await Promise.all(
+          platforms.map((platform) => getPlatformIntegration(selectedClubId, platform))
+        );
+        const byPlatform = new Map(data.map((row) => [row.platform, row]));
+        setIntegrations(
+          platforms.map((platform) => {
+            const row = byPlatform.get(platform);
+            const metadata = row?.metadata ?? {};
+            return {
+              platform,
+              connected: Boolean(row?.connected),
+              name: row?.name || undefined,
+              lastSync: row?.last_sync || undefined,
+              serverId: metadata.server_id,
+              channelId: metadata.channel_id,
+              workspaceId: metadata.workspace_id,
+              handle: metadata.handle,
+              pageId: metadata.page_id,
+              groupId: metadata.group_id,
+              connectionType: metadata.connection_type as "page" | "group" | undefined,
+            };
+          })
+        );
+      } catch (error) {
+        if (redirectIfUnauthorized(error)) return;
+        setDiscordError("Failed to load integrations.");
+      } finally {
+        setDiscordLoading(false);
+      }
+    };
+
+    void loadIntegrations();
+  }, [selectedClubId, redirectIfUnauthorized]);
+
   const handleConnect = (platform: IntegrationPlatform) => {
+    setDiscordError(null);
     switch (platform) {
       case "discord":
         setDiscordStep("connect");
@@ -271,106 +327,148 @@ export function ClubPanelIntegrationsPage() {
     }
   };
 
-  const handleDisconnect = (platform: IntegrationPlatform) => {
-    setIntegrations((prev) =>
-      prev.map((i) =>
-        i.platform === platform
-          ? { platform, connected: false }
-          : i
-      )
-    );
+  const handleDisconnect = async (platform: IntegrationPlatform) => {
+    if (!selectedClubId) return;
+    setDiscordSaving(true);
+    setDiscordError(null);
+    try {
+      const integration = await disconnectPlatformIntegration(selectedClubId, platform);
+      setIntegrations((prev) =>
+        prev.map((i) =>
+          i.platform === platform
+            ? {
+                platform,
+                connected: integration.connected,
+                name: integration.name || undefined,
+                lastSync: integration.last_sync || undefined,
+                serverId: integration.metadata?.server_id,
+                channelId: integration.metadata?.channel_id,
+                workspaceId: integration.metadata?.workspace_id,
+                handle: integration.metadata?.handle,
+                pageId: integration.metadata?.page_id,
+                groupId: integration.metadata?.group_id,
+                connectionType: integration.metadata?.connection_type as "page" | "group" | undefined,
+              }
+            : i
+        )
+      );
+    } catch (error) {
+      if (redirectIfUnauthorized(error)) return;
+      setDiscordError(`Failed to disconnect ${platform} integration.`);
+    } finally {
+      setDiscordSaving(false);
+    }
+  };
+
+  const applyConnectedIntegration = (
+    platform: IntegrationPlatform,
+    payload: {
+      name: string;
+      metadata?: Record<string, string>;
+    }
+  ) => {
+    if (!selectedClubId) {
+      setDiscordError("Please select a club before connecting integrations.");
+      return;
+    }
+    setDiscordSaving(true);
+    setDiscordError(null);
+    connectPlatformIntegration(selectedClubId, platform, {
+      connected: true,
+      name: payload.name,
+      metadata: payload.metadata ?? {},
+    })
+      .then((integration) => {
+        setIntegrations((prev) =>
+          prev.map((i) =>
+            i.platform === platform
+              ? {
+                  platform,
+                  connected: integration.connected,
+                  name: integration.name || undefined,
+                  lastSync: integration.last_sync || undefined,
+                  serverId: integration.metadata?.server_id,
+                  channelId: integration.metadata?.channel_id,
+                  workspaceId: integration.metadata?.workspace_id,
+                  handle: integration.metadata?.handle,
+                  pageId: integration.metadata?.page_id,
+                  groupId: integration.metadata?.group_id,
+                  connectionType: integration.metadata?.connection_type as "page" | "group" | undefined,
+                }
+              : i
+          )
+        );
+      })
+      .catch((error) => {
+        if (redirectIfUnauthorized(error)) return;
+        setDiscordError(`Failed to connect ${platform} integration.`);
+      })
+      .finally(() => setDiscordSaving(false));
   };
 
   const handleAddToDiscord = () => {
-    // Simulate OAuth flow - in real implementation this would redirect to Discord OAuth
+    if (discordOauthUrl) {
+      window.open(discordOauthUrl, "_blank", "noopener,noreferrer");
+    }
     setBotAdded(true);
     setDiscordStep("select");
   };
 
-  const handleActivateDiscord = () => {
-    const server = mockDiscordServers.find((s) => s.id === selectedServerId);
-    const channel = mockDiscordChannels[selectedServerId]?.find(
-      (c) => c.id === selectedChannelId
-    );
-
-    setIntegrations((prev) =>
-      prev.map((i) =>
-        i.platform === "discord"
-          ? {
-              platform: "discord",
-              connected: true,
-              name: `${server?.name} - ${channel?.name}`,
-              lastSync: new Date().toISOString(),
-              serverId: selectedServerId,
-              channelId: selectedChannelId,
-            }
-          : i
-      )
-    );
+  const handleActivateDiscord = async () => {
+    const server = discordServers.find((s) => s.id === selectedServerId);
+    const channel = server?.channels.find((c) => c.id === selectedChannelId);
+    if (!server || !channel) return;
+    applyConnectedIntegration("discord", {
+      name: `${server.name} - ${channel.name}`,
+      metadata: {
+        server_id: server.id,
+        server_name: server.name,
+        channel_id: channel.id,
+        channel_name: channel.name,
+      },
+    });
     setDiscordModalOpen(false);
   };
 
-  const handleWhatsAppDone = () => {
-    setIntegrations((prev) =>
-      prev.map((i) =>
-        i.platform === "whatsapp"
-          ? {
-              platform: "whatsapp",
-              connected: true,
-              name: "UW Tech Club Group",
-              lastSync: new Date().toISOString(),
-            }
-          : i
-      )
-    );
+  const handleWhatsAppDone = async () => {
+    applyConnectedIntegration("whatsapp", {
+      name: "UW Tech Club Group",
+    });
     setWhatsappModalOpen(false);
   };
 
   // Instagram handlers
-  const handleInstagramConnect = () => {
+  const handleInstagramConnect = async () => {
     if (!instagramHandle) return;
-    setIntegrations((prev) =>
-      prev.map((i) =>
-        i.platform === "instagram"
-          ? {
-              platform: "instagram",
-              connected: true,
-              name: `@${instagramHandle}`,
-              handle: instagramHandle,
-              lastSync: new Date().toISOString(),
-            }
-          : i
-      )
-    );
+    applyConnectedIntegration("instagram", {
+      name: `@${instagramHandle}`,
+      metadata: { handle: instagramHandle },
+    });
     setInstagramModalOpen(false);
   };
 
   // Slack handlers
   const handleAddToSlack = () => {
+    if (slackOauthUrl) {
+      window.open(slackOauthUrl, "_blank", "noopener,noreferrer");
+    }
     setSlackAppAdded(true);
     setSlackStep("select");
   };
 
-  const handleActivateSlack = () => {
-    const workspace = mockSlackWorkspaces.find((w) => w.id === selectedWorkspaceId);
-    const channel = mockSlackChannels[selectedWorkspaceId]?.find(
-      (c) => c.id === selectedSlackChannelId
-    );
-
-    setIntegrations((prev) =>
-      prev.map((i) =>
-        i.platform === "slack"
-          ? {
-              platform: "slack",
-              connected: true,
-              name: `${workspace?.name} - ${channel?.name}`,
-              lastSync: new Date().toISOString(),
-              workspaceId: selectedWorkspaceId,
-              channelId: selectedSlackChannelId,
-            }
-          : i
-      )
-    );
+  const handleActivateSlack = async () => {
+    const workspace = slackServers.find((w) => w.id === selectedWorkspaceId);
+    const channel = workspace?.channels.find((c) => c.id === selectedSlackChannelId);
+    if (!workspace || !channel) return;
+    applyConnectedIntegration("slack", {
+      name: `${workspace.name} - ${channel.name}`,
+      metadata: {
+        workspace_id: workspace.id,
+        workspace_name: workspace.name,
+        channel_id: channel.id,
+        channel_name: channel.name,
+      },
+    });
     setSlackModalOpen(false);
   };
 
@@ -380,88 +478,65 @@ export function ClubPanelIntegrationsPage() {
     setTelegramStep("select");
   };
 
-  const handleActivateTelegram = () => {
-    const group = mockTelegramGroups.find((g) => g.id === selectedTelegramGroupId);
-
-    setIntegrations((prev) =>
-      prev.map((i) =>
-        i.platform === "telegram"
-          ? {
-              platform: "telegram",
-              connected: true,
-              name: group?.name,
-              lastSync: new Date().toISOString(),
-            }
-          : i
-      )
-    );
+  const handleActivateTelegram = async () => {
+    const group = telegramServers.find((g) => g.id === selectedTelegramGroupId);
+    if (!group) return;
+    applyConnectedIntegration("telegram", {
+      name: group.name,
+      metadata: { group_id: group.id, group_name: group.name },
+    });
     setTelegramModalOpen(false);
   };
 
   // LinkedIn handlers
   const handleLinkedinAuth = () => {
+    if (linkedinOauthUrl) {
+      window.open(linkedinOauthUrl, "_blank", "noopener,noreferrer");
+    }
     setLinkedinConnected(true);
     setLinkedinStep("select");
   };
 
-  const handleActivateLinkedin = () => {
-    const page = mockLinkedinPages.find((p) => p.id === selectedLinkedinPageId);
-
-    setIntegrations((prev) =>
-      prev.map((i) =>
-        i.platform === "linkedin"
-          ? {
-              platform: "linkedin",
-              connected: true,
-              name: page?.name,
-              pageId: selectedLinkedinPageId,
-              lastSync: new Date().toISOString(),
-            }
-          : i
-      )
-    );
+  const handleActivateLinkedin = async () => {
+    const page = linkedinServers.find((p) => p.id === selectedLinkedinPageId);
+    if (!page) return;
+    applyConnectedIntegration("linkedin", {
+      name: page.name,
+      metadata: { page_id: page.id, page_name: page.name },
+    });
     setLinkedinModalOpen(false);
   };
 
   // Facebook handlers
   const handleFacebookAuth = () => {
+    if (facebookOauthUrl) {
+      window.open(facebookOauthUrl, "_blank", "noopener,noreferrer");
+    }
     setFacebookConnected(true);
     setFacebookStep("select");
   };
 
-  const handleActivateFacebook = () => {
+  const handleActivateFacebook = async () => {
     if (facebookConnectionType === "page") {
-      const page = mockFacebookPages.find((p) => p.id === selectedFacebookPageId);
-      setIntegrations((prev) =>
-        prev.map((i) =>
-          i.platform === "facebook"
-            ? {
-                platform: "facebook",
-                connected: true,
-                name: page?.name,
-                pageId: selectedFacebookPageId,
-                connectionType: "page",
-                lastSync: new Date().toISOString(),
-              }
-            : i
-        )
-      );
+      const page = facebookTargets.find((p) => p.id === `page:${selectedFacebookPageId}`);
+      if (!page) return;
+      applyConnectedIntegration("facebook", {
+        name: page.name,
+        metadata: {
+          page_id: selectedFacebookPageId,
+          connection_type: "page",
+        },
+      });
     } else {
-      const group = mockFacebookGroups.find((g) => g.id === selectedFacebookGroupId);
-      setIntegrations((prev) =>
-        prev.map((i) =>
-          i.platform === "facebook"
-            ? {
-                platform: "facebook",
-                connected: true,
-                name: group?.name,
-                groupId: selectedFacebookGroupId,
-                connectionType: "group",
-                lastSync: new Date().toISOString(),
-              }
-            : i
-        )
-      );
+      const group = facebookTargets.find((g) => g.id === `group:${selectedFacebookGroupId}`);
+      if (!group) return;
+      applyConnectedIntegration("facebook", {
+        name: group.name,
+        metadata: {
+          group_id: selectedFacebookGroupId,
+          connection_type: "group",
+        },
+      });
     }
     setFacebookModalOpen(false);
   };
@@ -504,11 +579,34 @@ export function ClubPanelIntegrationsPage() {
           <Link className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("clubPanel.integrations")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("clubPanel.integrations")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("integrations.pageDescription")}
           </p>
         </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+        <FieldLabel className="text-sm text-muted-foreground">
+          Active club for integrations
+        </FieldLabel>
+        <Select
+          value={selectedClubId ? String(selectedClubId) : ""}
+          onValueChange={(value) => setSelectedClubId(Number(value))}
+          disabled={discordLoading || clubs.length === 0}
+        >
+          <SelectTrigger className="w-full max-w-sm">
+            <SelectValue placeholder={clubs.length === 0 ? "No clubs found" : "Select club"} />
+          </SelectTrigger>
+          <SelectContent>
+            {clubs.map((club) => (
+              <SelectItem key={club.id} value={String(club.id)}>
+                {club.club_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {discordError && <p className="text-xs text-error">{discordError}</p>}
       </div>
 
       {/* Integration Cards */}
@@ -522,7 +620,7 @@ export function ClubPanelIntegrationsPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{t("clubPanel.whatsapp")}</h3>
+                  <h3 className="font-semibold text-foreground">{t("clubPanel.whatsapp")}</h3>
                   {whatsappIntegration?.connected && (
                     <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -532,7 +630,7 @@ export function ClubPanelIntegrationsPage() {
                 </div>
                 {whatsappIntegration?.connected ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {whatsappIntegration.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -583,7 +681,7 @@ export function ClubPanelIntegrationsPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{t("clubPanel.discord")}</h3>
+                  <h3 className="font-semibold text-foreground">{t("clubPanel.discord")}</h3>
                   {discordIntegration?.connected && (
                     <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -593,7 +691,7 @@ export function ClubPanelIntegrationsPage() {
                 </div>
                 {discordIntegration?.connected ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {discordIntegration.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -614,6 +712,7 @@ export function ClubPanelIntegrationsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleConnect("discord")}
+                    disabled={discordLoading || discordSaving || !selectedClubId}
                   >
                     {t("integrations.manage")}
                   </Button>
@@ -622,12 +721,16 @@ export function ClubPanelIntegrationsPage() {
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleDisconnect("discord")}
+                    disabled={discordLoading || discordSaving || !selectedClubId}
                   >
                     {t("integrations.disconnect")}
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => handleConnect("discord")}>
+                <Button
+                  onClick={() => handleConnect("discord")}
+                  disabled={discordLoading || discordSaving || !selectedClubId}
+                >
                   {t("integrations.connect")}
                 </Button>
               )}
@@ -639,12 +742,12 @@ export function ClubPanelIntegrationsPage() {
         <div className="bg-card border border-border rounded-xl p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-lg bg-linear-to-br from-purple-100 to-pink-100 flex items-center justify-center shrink-0">
                 <InstagramIcon className="w-6 h-6 text-pink-600" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{t("integrations.instagram")}</h3>
+                  <h3 className="font-semibold text-foreground">{t("integrations.instagram")}</h3>
                   {instagramIntegration?.connected && (
                     <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -654,7 +757,7 @@ export function ClubPanelIntegrationsPage() {
                 </div>
                 {instagramIntegration?.connected ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {instagramIntegration.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -705,7 +808,7 @@ export function ClubPanelIntegrationsPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{t("integrations.slack")}</h3>
+                  <h3 className="font-semibold text-foreground">{t("integrations.slack")}</h3>
                   {slackIntegration?.connected && (
                     <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -715,7 +818,7 @@ export function ClubPanelIntegrationsPage() {
                 </div>
                 {slackIntegration?.connected ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {slackIntegration.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -766,7 +869,7 @@ export function ClubPanelIntegrationsPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{t("integrations.telegram")}</h3>
+                  <h3 className="font-semibold text-foreground">{t("integrations.telegram")}</h3>
                   {telegramIntegration?.connected && (
                     <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -776,7 +879,7 @@ export function ClubPanelIntegrationsPage() {
                 </div>
                 {telegramIntegration?.connected ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {telegramIntegration.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -827,7 +930,7 @@ export function ClubPanelIntegrationsPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{t("integrations.linkedin")}</h3>
+                  <h3 className="font-semibold text-foreground">{t("integrations.linkedin")}</h3>
                   {linkedinIntegration?.connected && (
                     <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -837,7 +940,7 @@ export function ClubPanelIntegrationsPage() {
                 </div>
                 {linkedinIntegration?.connected ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {linkedinIntegration.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -888,7 +991,7 @@ export function ClubPanelIntegrationsPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{t("integrations.facebook")}</h3>
+                  <h3 className="font-semibold text-foreground">{t("integrations.facebook")}</h3>
                   {facebookIntegration?.connected && (
                     <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -898,7 +1001,7 @@ export function ClubPanelIntegrationsPage() {
                 </div>
                 {facebookIntegration?.connected ? (
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {facebookIntegration.name}
                       {facebookIntegration.connectionType === "group" && (
                         <span className="ml-2 text-xs text-muted-foreground">
@@ -974,7 +1077,7 @@ export function ClubPanelIntegrationsPage() {
                     <Button
                       className="w-full bg-indigo-600 hover:bg-indigo-700"
                       onClick={handleAddToDiscord}
-                      disabled={botAdded}
+                      disabled={botAdded || discordSaving || !selectedClubId}
                     >
                       {botAdded ? (
                         <>
@@ -1007,7 +1110,7 @@ export function ClubPanelIntegrationsPage() {
                         <SelectValue placeholder={t("integrations.selectServer")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockDiscordServers.map((server) => (
+                        {discordServers.map((server) => (
                           <SelectItem key={server.id} value={server.id}>
                             {server.name}
                           </SelectItem>
@@ -1029,7 +1132,9 @@ export function ClubPanelIntegrationsPage() {
                           <SelectValue placeholder={t("integrations.selectChannel")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockDiscordChannels[selectedServerId]?.map((channel) => (
+                          {discordServers
+                            .find((server) => server.id === selectedServerId)
+                            ?.channels.map((channel) => (
                             <SelectItem key={channel.id} value={channel.id}>
                               {channel.name}
                             </SelectItem>
@@ -1056,7 +1161,12 @@ export function ClubPanelIntegrationsPage() {
                 {discordStep === "select" && (
                   <Button
                     onClick={handleActivateDiscord}
-                    disabled={!selectedServerId || !selectedChannelId}
+                    disabled={
+                      !selectedServerId ||
+                      !selectedChannelId ||
+                      discordSaving ||
+                      !selectedClubId
+                    }
                   >
                     {t("integrations.activate")}
                   </Button>
@@ -1082,7 +1192,7 @@ export function ClubPanelIntegrationsPage() {
           <ModalContentWrapper>
             <FieldGroup>
               <div className="flex flex-col items-center py-4">
-                <div className="p-4 bg-white rounded-lg border border-border mb-4">
+                <div className="p-4 bg-background rounded-lg border border-border mb-4">
                   <QRCodeSVG
                     value="https://wa.me/message/wat2do-bot-placeholder"
                     size={160}
@@ -1242,7 +1352,7 @@ export function ClubPanelIntegrationsPage() {
                         <SelectValue placeholder={t("integrations.selectWorkspace")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockSlackWorkspaces.map((workspace) => (
+                        {slackServers.map((workspace) => (
                           <SelectItem key={workspace.id} value={workspace.id}>
                             {workspace.name}
                           </SelectItem>
@@ -1264,7 +1374,9 @@ export function ClubPanelIntegrationsPage() {
                           <SelectValue placeholder={t("integrations.selectChannel")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockSlackChannels[selectedWorkspaceId]?.map((channel) => (
+                          {slackServers
+                            .find((workspace) => workspace.id === selectedWorkspaceId)
+                            ?.channels.map((channel) => (
                             <SelectItem key={channel.id} value={channel.id}>
                               {channel.name}
                             </SelectItem>
@@ -1363,7 +1475,7 @@ export function ClubPanelIntegrationsPage() {
                         <SelectValue placeholder={t("integrations.selectGroup")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockTelegramGroups.map((group) => (
+                        {telegramServers.map((group) => (
                           <SelectItem key={group.id} value={group.id}>
                             {group.name}
                           </SelectItem>
@@ -1461,7 +1573,7 @@ export function ClubPanelIntegrationsPage() {
                         <SelectValue placeholder={t("integrations.selectPage")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockLinkedinPages.map((page) => (
+                        {linkedinServers.map((page) => (
                           <SelectItem key={page.id} value={page.id}>
                             {page.name}
                           </SelectItem>
@@ -1590,8 +1702,10 @@ export function ClubPanelIntegrationsPage() {
                           <SelectValue placeholder={t("integrations.selectPage")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockFacebookPages.map((page) => (
-                            <SelectItem key={page.id} value={page.id}>
+                          {facebookTargets
+                            .filter((target) => target.id.startsWith("page:"))
+                            .map((page) => (
+                            <SelectItem key={page.id} value={page.id.replace("page:", "")}>
                               {page.name}
                             </SelectItem>
                           ))}
@@ -1608,8 +1722,10 @@ export function ClubPanelIntegrationsPage() {
                           <SelectValue placeholder={t("integrations.selectGroup")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockFacebookGroups.map((group) => (
-                            <SelectItem key={group.id} value={group.id}>
+                          {facebookTargets
+                            .filter((target) => target.id.startsWith("group:"))
+                            .map((group) => (
+                            <SelectItem key={group.id} value={group.id.replace("group:", "")}>
                               {group.name}
                             </SelectItem>
                           ))}

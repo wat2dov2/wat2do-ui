@@ -54,7 +54,7 @@ export const SidebarEventsSection = React.memo(function SidebarEventsSection({
       <div
         className={cn(
           "rounded-xl",
-          pageMode === "events" && "bg-gray-100"
+          pageMode === "events" && "bg-muted"
         )}
       >
         <button
@@ -64,8 +64,8 @@ export const SidebarEventsSection = React.memo(function SidebarEventsSection({
             "flex items-center px-2 py-1.5 gap-2",
             "transition-colors",
             pageMode === "events"
-              ? "text-gray-900"
-              : "text-muted-foreground hover:bg-gray-200 hover:text-gray-800"
+              ? "text-foreground"
+              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
           )}
         >
           <CalendarDays

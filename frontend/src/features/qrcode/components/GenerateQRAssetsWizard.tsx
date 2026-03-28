@@ -390,7 +390,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
           <QrCode className="w-6 h-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="text-xl font-semibold text-gray-900">{headerTitle}</h2>
+          <h2 className="text-xl font-semibold text-foreground">{headerTitle}</h2>
           <p className="text-sm text-muted-foreground">{headerDescription}</p>
         </div>
       </div>
@@ -418,7 +418,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
 
           <div className="border border-border rounded-xl p-4 bg-card space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-900">
+              <h3 className="text-sm font-medium text-foreground">
                 {t("admin.qrAssets.assetsGridTitle")}
               </h3>
               <span className="text-xs text-muted-foreground">
@@ -445,7 +445,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                       />
                     </div>
                     <div className="flex-1 min-w-0 space-y-1">
-                      <p className="text-xs font-medium text-gray-900 truncate">
+                      <p className="text-xs font-medium text-foreground truncate">
                         {asset.name}
                       </p>
                       <Field>
@@ -573,7 +573,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-900 truncate">
+                      <p className="text-xs font-medium text-foreground truncate">
                         {asset.name}
                       </p>
                       <p className="text-[11px] text-muted-foreground">

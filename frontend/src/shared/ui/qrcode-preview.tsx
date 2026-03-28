@@ -29,14 +29,14 @@ export function QRCodePreview({
   return (
     <div className={`space-y-6 ${className}`}>
       {successMessage && (
-        <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+        <div className="flex items-center gap-2 text-success">
           <Check className="w-5 h-5" />
           <span className="font-medium">{successMessage}</span>
         </div>
       )}
 
       <div className="flex flex-col items-center gap-4 p-6 border border-border rounded-xl bg-muted/50">
-        <div className="p-4 bg-white rounded-lg">
+        <div className="p-4 bg-background rounded-lg border border-border">
           <QRCodeSVG value={qrUrl} size={256} />
         </div>
         <div className="text-center">

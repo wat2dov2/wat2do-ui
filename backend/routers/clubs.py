@@ -1,7 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user
-from schemas.club import ClubCreate, ClubUpdate, ClubResponse
+from schemas.club import (
+    ClubCreate,
+    ClubUpdate,
+    ClubResponse,
+    DiscordIntegrationOptionsResponse,
+    DiscordIntegrationUpdate,
+    DiscordIntegrationResponse,
+    ClubIntegrationUpdate,
+    ClubIntegrationResponse,
+    IntegrationPlatform,
+)
 from services import club_service
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
@@ -23,6 +33,124 @@ def get_club(club_id: int):
     if not club:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
     return club
+
+
+@router.get(
+    "/integrations/discord/options",
+    response_model=DiscordIntegrationOptionsResponse,
+)
+def get_discord_options(_=Depends(get_current_user)):
+    return club_service.get_discord_options()
+
+
+@router.get(
+    "/{club_id}/integrations/discord",
+    response_model=DiscordIntegrationResponse,
+)
+def get_discord_integration(
+    club_id: int,
+    _=Depends(get_current_user),
+):
+    integration = club_service.get_discord_integration(club_id)
+    if not integration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    return integration
+
+
+@router.put(
+    "/{club_id}/integrations/discord",
+    response_model=DiscordIntegrationResponse,
+)
+def upsert_discord_integration(
+    club_id: int,
+    data: DiscordIntegrationUpdate,
+    _=Depends(get_current_user),
+):
+    integration = club_service.upsert_discord_integration(
+        club_id=club_id,
+        server_id=data.server_id,
+        server_name=data.server_name,
+        channel_id=data.channel_id,
+        channel_name=data.channel_name,
+    )
+    if not integration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    return integration
+
+
+@router.delete(
+    "/{club_id}/integrations/discord",
+    response_model=DiscordIntegrationResponse,
+)
+def disconnect_discord_integration(
+    club_id: int,
+    _=Depends(get_current_user),
+):
+    integration = club_service.disconnect_discord_integration(club_id)
+    if not integration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    return integration
+
+
+@router.get(
+    "/integrations/{platform}/options",
+)
+def get_platform_options(
+    platform: IntegrationPlatform,
+    _=Depends(get_current_user),
+):
+    return club_service.get_integration_options(platform)
+
+
+@router.get(
+    "/{club_id}/integrations/{platform}",
+    response_model=ClubIntegrationResponse,
+)
+def get_platform_integration(
+    club_id: int,
+    platform: IntegrationPlatform,
+    _=Depends(get_current_user),
+):
+    integration = club_service.get_platform_integration(club_id, platform)
+    if not integration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    return integration
+
+
+@router.put(
+    "/{club_id}/integrations/{platform}",
+    response_model=ClubIntegrationResponse,
+)
+def upsert_platform_integration(
+    club_id: int,
+    platform: IntegrationPlatform,
+    data: ClubIntegrationUpdate,
+    _=Depends(get_current_user),
+):
+    integration = club_service.upsert_platform_integration(
+        club_id=club_id,
+        platform=platform,
+        name=data.name,
+        metadata=data.metadata,
+    )
+    if not integration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    return integration
+
+
+@router.delete(
+    "/{club_id}/integrations/{platform}",
+    response_model=ClubIntegrationResponse,
+)
+def disconnect_platform_integration(
+    club_id: int,
+    platform: IntegrationPlatform,
+    _=Depends(get_current_user),
+):
+    integration = club_service.disconnect_platform_integration(club_id, platform)
+    if not integration:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    return integration
 
 
 @router.post("/", response_model=ClubResponse, status_code=status.HTTP_201_CREATED)

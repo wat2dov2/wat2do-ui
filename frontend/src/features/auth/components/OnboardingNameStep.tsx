@@ -46,7 +46,7 @@ export function OnboardingNameStep({
                   "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                   school === s
                     ? "bg-primary/20 dark:bg-primary/30 text-primary"
-                    : "hover:bg-gray-200 text-foreground"
+                    : "hover:bg-secondary text-foreground"
                 )}
               >
                 <Check

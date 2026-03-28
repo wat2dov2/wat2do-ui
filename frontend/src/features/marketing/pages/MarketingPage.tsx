@@ -110,7 +110,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
             <Megaphone className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("marketing.title")}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t("marketing.title")}</h1>
             <p className="text-sm text-muted-foreground">
               {t("marketing.description")}
             </p>
@@ -132,7 +132,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
               className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:opacity-80 transition-all cursor-pointer"
             >
               {/* Poster Image - Always show (hardcoded for now) */}
-              <div className="w-full h-64 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <div className="w-full h-64 bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                 {qr.imageUrl ? (
                   <img
                     src={qr.imageUrl}
@@ -149,7 +149,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
               
               <div className="p-5">
                 <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 mb-1">{qr.name}</h3>
+                  <h3 className="font-semibold text-foreground mb-1">{qr.name}</h3>
                   {qr.description && (
                     <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
                       {qr.description}
@@ -159,8 +159,8 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full ${
                         qr.isActive
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                          ? "bg-success/20 text-success"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {qr.isActive ? t("common.active") : t("common.inactive")}

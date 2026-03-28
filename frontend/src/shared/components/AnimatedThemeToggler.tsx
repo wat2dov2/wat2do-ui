@@ -83,7 +83,7 @@ export const AnimatedThemeToggler = ({
       ref={buttonRef}
       onClick={toggleTheme}
       className={cn(
-        "rounded-xl p-2 hover:bg-muted text-gray-900 transition-colors",
+        "rounded-xl p-2 hover:bg-muted text-foreground transition-colors",
         className
       )}
       {...props}

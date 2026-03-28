@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X, Grid3x3, Calendar } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { ViewMode } from "@/shared/types";
 
@@ -59,14 +59,12 @@ export function SearchBar({
               value="grid"
               className="text-[11px] font-medium px-3 py-1"
             >
-              <Grid3x3 className="w-3 h-3" strokeWidth={2} />
               <span>{t("settings.appearance.grid")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="calendar"
               className="text-[11px] font-medium px-3 py-1"
             >
-              <Calendar className="w-3 h-3" strokeWidth={2} />
               <span>{t("settings.appearance.calendar")}</span>
             </TabsTrigger>
           </TabsList>

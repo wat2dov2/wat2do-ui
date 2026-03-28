@@ -154,7 +154,7 @@ export function AdminClubsPage() {
           {paginatedClubs.map((club) => (
             <TableRow key={club.id}>
               <TableCell>
-                <div className="font-medium text-sm text-gray-900">
+                <div className="font-medium text-sm text-foreground">
                   {club.club_name}
                 </div>
               </TableCell>

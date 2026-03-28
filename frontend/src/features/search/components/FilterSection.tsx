@@ -48,7 +48,7 @@ export const FilterSection = React.memo(function FilterSection({
                 e.stopPropagation();
                 onClear?.();
               }}
-              className="text-white font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer bg-primary"
+              className="text-primary-foreground font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer bg-primary"
             >
               <X className="w-2.5 h-2.5" strokeWidth={3} />
               {indicator}

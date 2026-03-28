@@ -92,7 +92,7 @@ export function EventDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-0 p-0">
         {displayedEvent && (
           <>
             <div className="relative w-full h-64 overflow-hidden">
@@ -101,12 +101,12 @@ export function EventDetailsModal({
                 alt={displayedEvent.title}
                 className="absolute inset-0 w-full h-full object-cover"
                 fallback={
-                  <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 flex items-center justify-center">
                     <ImageOff className="w-12 h-12 text-muted-foreground/40" />
                   </div>
                 }
                 placeholder={
-                  <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 animate-pulse" />
+                  <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 animate-pulse" />
                 }
               />
             </div>
@@ -125,7 +125,7 @@ export function EventDetailsModal({
 
                 {displayedEvent.source_url && (
                   <div>
-                    <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                    <h3 className="font-semibold text-sm text-foreground mb-1">
                       {t("events.sourceLink")}
                     </h3>
                     <a
@@ -157,7 +157,7 @@ export function EventDetailsModal({
 
                 {displayedEvent.food && displayedEvent.food.length > 0 && (
                   <div>
-                    <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                    <h3 className="font-semibold text-sm text-foreground mb-1">
                       {t("forms.foodProvided")}
                     </h3>
                     <FoodTagsContainer>

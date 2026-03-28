@@ -85,7 +85,7 @@ export function DatePicker({ selected, onSelect, onClose }: DatePickerProps) {
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={handlePrevMonth}
-          className="w-7 h-7 rounded hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+          className="w-7 h-7 rounded hover:bg-accent/60 flex items-center justify-center transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -94,7 +94,7 @@ export function DatePicker({ selected, onSelect, onClose }: DatePickerProps) {
         </span>
         <button
           onClick={handleNextMonth}
-          className="w-7 h-7 rounded hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+          className="w-7 h-7 rounded hover:bg-accent/60 flex items-center justify-center transition-colors cursor-pointer"
         >
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -124,9 +124,9 @@ export function DatePicker({ selected, onSelect, onClose }: DatePickerProps) {
             <button
               key={day}
               onClick={() => handleDateClick(day)}
-              className={`w-8 h-8 rounded font-medium text-xs transition-all hover:bg-gray-200 cursor-pointer ${
+              className={`w-8 h-8 rounded font-medium text-xs transition-all hover:bg-accent/60 cursor-pointer ${
                 selected 
-                  ? "bg-primary text-white font-bold" 
+                  ? "bg-primary text-primary-foreground font-bold" 
                   : today 
                     ? "text-primary font-bold" 
                     : "text-muted-foreground"

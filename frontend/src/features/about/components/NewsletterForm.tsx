@@ -27,7 +27,7 @@ export function NewsletterForm() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-[12px] p-10">
+    <div className="bg-card border border-border rounded-xl p-10">
       <h3 className="font-sans font-bold text-[22px] text-foreground mb-3">
         {t("about.stayUpdated")}
       </h3>

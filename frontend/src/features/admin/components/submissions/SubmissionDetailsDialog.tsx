@@ -69,7 +69,7 @@ export function SubmissionDetailsDialog({
 
           {submission.eventData.food.length > 0 && (
             <div>
-              <h3 className="font-semibold text-sm text-gray-900 mb-1">
+              <h3 className="font-semibold text-sm text-foreground mb-1">
                 {t("events.foodProvided")}
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -128,7 +128,7 @@ export function SubmissionDetailsDialog({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <h3 className="font-semibold text-sm text-gray-900 mb-1">{label}</h3>
+      <h3 className="font-semibold text-sm text-foreground mb-1">{label}</h3>
       <p className="text-sm text-muted-foreground">{value}</p>
     </div>
   );

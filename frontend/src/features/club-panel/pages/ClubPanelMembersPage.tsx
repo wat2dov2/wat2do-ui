@@ -24,7 +24,7 @@ export function ClubPanelMembersPage() {
           <Users className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("clubPanel.members")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("clubPanel.members")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("clubPanel.membersDesc")}
           </p>
@@ -58,7 +58,7 @@ export function ClubPanelMembersPage() {
         {/* Empty State */}
         <div className="p-12 text-center">
           <Users className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-          <h3 className="font-semibold text-gray-900 mb-1">{t("clubPanel.noMembersYet")}</h3>
+          <h3 className="font-semibold text-foreground mb-1">{t("clubPanel.noMembersYet")}</h3>
           <p className="text-sm text-muted-foreground">
             {t("clubPanel.noMembersDesc")}
           </p>

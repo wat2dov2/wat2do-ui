@@ -113,7 +113,7 @@ export function AdminPostersPage() {
           <Megaphone className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("admin.qrAssets.title")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("admin.qrAssets.title")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("admin.qrAssets.description")}
           </p>
@@ -123,7 +123,7 @@ export function AdminPostersPage() {
       {/* Map and QR Code Scans Table Side by Side */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">{t("admin.scanLocations")}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t("admin.scanLocations")}</h2>
           <Select
             value={filters.timeFilter}
             onValueChange={(value) => filters.setTimeFilter(value as TimeFilter)}

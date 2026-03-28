@@ -39,7 +39,7 @@ export function AdminPageHeader({
           <Icon className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>

@@ -10,7 +10,13 @@ interface OnboardingDoneStepProps {
 export function OnboardingDoneStep({ onFinish }: OnboardingDoneStepProps) {
   useEffect(() => {
     const end = Date.now() + 1500;
-    const colors = ["#0056D6", "#22c55e", "#f59e0b", "#ec4899"];
+    const root = getComputedStyle(document.documentElement);
+    const colors = [
+      root.getPropertyValue("--primary").trim() || "rgb(0, 82, 255)",
+      root.getPropertyValue("--success").trim() || "rgb(34, 197, 94)",
+      root.getPropertyValue("--warning").trim() || "rgb(245, 158, 11)",
+      root.getPropertyValue("--accent").trim() || "rgb(236, 72, 153)",
+    ];
 
     (function frame() {
       confetti({
@@ -34,7 +40,7 @@ export function OnboardingDoneStep({ onFinish }: OnboardingDoneStepProps) {
   return (
     <div className="flex flex-col items-center text-center space-y-6 max-w-md mx-auto">
       <div className="h-16 w-16 rounded-full bg-success flex items-center justify-center">
-        <PartyPopper className="size-8 text-white" strokeWidth={2.5} />
+        <PartyPopper className="size-8 text-success-foreground" strokeWidth={2.5} />
       </div>
       <h1 className="font-sans font-bold text-[28px] leading-tight text-foreground">
         You're all set! 🎉

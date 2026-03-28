@@ -39,7 +39,7 @@ export function InfoRow({
 } & React.ComponentProps<"div">) {
   return (
     <div className={cn("space-y-1", className)} {...props}>
-      <h3 className="font-semibold text-sm text-gray-900">{label}</h3>
+      <h3 className="font-semibold text-sm text-foreground">{label}</h3>
       <p className="text-sm text-muted-foreground">{value}</p>
     </div>
   );
@@ -88,7 +88,7 @@ export function ModalImageContainer({
   return (
     <div
       className={cn(
-        "rounded-lg overflow-hidden border border-border bg-gradient-to-br from-primary/20 to-primary/5",
+        "rounded-lg overflow-hidden border border-border bg-linear-to-br from-primary/20 to-primary/5",
         sizeClasses[size],
         className
       )}
@@ -131,8 +131,8 @@ export function StatusBadge({
       className={cn(
         "text-xs px-2 py-1 rounded-full",
         isActive
-          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400",
+          ? "bg-success/20 text-success"
+          : "bg-muted text-muted-foreground",
         className
       )}
       {...props}
@@ -242,7 +242,7 @@ export function ModalImageHeader({
         />
       ) : (
         fallback || (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
+          <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 flex items-center justify-center">
             <div className="w-12 h-12 text-muted-foreground/40" />
           </div>
         )
@@ -287,7 +287,7 @@ export function SectionTitle({
   return (
     <h3
       className={cn(
-        "font-semibold text-sm text-gray-900 mb-4",
+        "font-semibold text-sm text-foreground mb-4",
         className
       )}
       {...props}
@@ -346,13 +346,13 @@ export function CenteredIconContainer({
   return (
     <div
       className={cn(
-        "rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center mb-4 mx-auto",
+        "rounded-full bg-linear-to-br from-amber-400 to-amber-500 flex items-center justify-center mb-4 mx-auto",
         sizeClasses[size],
         className
       )}
       {...props}
     >
-      <Icon className={cn("text-white", iconSizeClasses[size])} strokeWidth={3} />
+      <Icon className={cn("text-primary-foreground", iconSizeClasses[size])} strokeWidth={3} />
     </div>
   );
 }
@@ -410,7 +410,7 @@ export function QRCodeContainer({
   return (
     <div
       className={cn(
-        "p-4 bg-white rounded-lg border border-border",
+        "p-4 bg-background rounded-lg border border-border",
         className
       )}
       {...props}

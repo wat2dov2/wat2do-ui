@@ -47,22 +47,22 @@ export function SubmissionsTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-muted">
-            <TableHead className="text-xs font-semibold text-gray-900">
+            <TableHead className="text-xs font-semibold text-foreground">
               {t("events.eventTitle")}
             </TableHead>
-            <TableHead className="text-xs font-semibold text-gray-900">
+            <TableHead className="text-xs font-semibold text-foreground">
               {t("events.organization")}
             </TableHead>
-            <TableHead className="text-xs font-semibold text-gray-900">
+            <TableHead className="text-xs font-semibold text-foreground">
               {t("admin.submittedBy")}
             </TableHead>
-            <TableHead className="text-xs font-semibold text-gray-900">
+            <TableHead className="text-xs font-semibold text-foreground">
               {t("admin.submittedAt")}
             </TableHead>
-            <TableHead className="text-xs font-semibold text-gray-900">
+            <TableHead className="text-xs font-semibold text-foreground">
               {t("events.status")}
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold text-gray-900">
+            <TableHead className="text-right text-xs font-semibold text-foreground">
               {t("common.actions")}
             </TableHead>
           </TableRow>
@@ -78,7 +78,7 @@ export function SubmissionsTable({
                 onClick={() => handleRowClick(submission.id)}
               >
                 <TableCell>
-                  <div className="font-medium text-sm text-gray-900">
+                  <div className="font-medium text-sm text-foreground">
                     {submission.eventData.title}
                   </div>
                 </TableCell>

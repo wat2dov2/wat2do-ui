@@ -47,7 +47,6 @@ export function useEventFormPromotion({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ["#A855F7", "#EC4899", "#8B5CF6", "#F59E0B"],
       });
     }
   }, [state.selectedPromotion, createdEventId, onPromote, trigger]);

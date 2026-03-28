@@ -92,7 +92,7 @@ export function OnboardingInterestsCombobox({
                     "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-lg text-left transition-colors",
                     isSelected
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-gray-200 dark:hover:bg-gray-200 text-foreground"
+                      : "hover:bg-secondary text-foreground"
                   )}
                 >
                   <span className="flex-1 truncate">{option}</span>
@@ -110,13 +110,13 @@ export function OnboardingInterestsCombobox({
           {selected.map((item) => (
             <span
               key={item}
-              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl font-medium bg-primary/80 text-white"
+              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl font-medium bg-primary/80 text-primary-foreground"
             >
               {item}
               <button
                 type="button"
                 onClick={() => onToggle(item)}
-                className="rounded-full p-0.5 h-4 w-4 flex items-center justify-center hover:bg-white/20 transition-colors"
+                className="rounded-full p-0.5 h-4 w-4 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
                 aria-label={`Remove ${item}`}
               >
                 <X className="w-3 h-3" />

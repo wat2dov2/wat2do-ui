@@ -114,8 +114,8 @@ export function AdminEventsPage() {
           className={cn(
             "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
             showReportedOnly
-              ? "!bg-primary/80 !text-white hover:!bg-primary/80 hover:!text-white [&_svg]:!text-white"
-              : "bg-muted text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-200"
+              ? "bg-primary/80! text-primary-foreground! hover:bg-primary/80! hover:text-primary-foreground! [&_svg]:text-primary-foreground!"
+              : "bg-muted text-muted-foreground hover:bg-secondary"
           )}
         >
           <AlertTriangle className="size-4" />
@@ -157,7 +157,7 @@ export function AdminEventsPage() {
                     }}
                   >
                     <TableCell>
-                      <div className="font-medium text-sm text-gray-900">
+                      <div className="font-medium text-sm text-foreground">
                         {event.title}
                       </div>
                     </TableCell>

@@ -20,18 +20,18 @@ export function Dropdown({ options, selected, onToggle }: DropdownProps) {
             <button
               key={option}
               onClick={() => onToggle(option)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors text-left group"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-accent/60 transition-colors text-left group"
             >
               <div
                 className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center shrink-0 ${
                   isSelected 
                     ? "border-primary bg-primary" 
-                    : "border-gray-300 bg-card"
+                    : "border-border bg-card"
                 }`}
               >
                 {isSelected && (
                   <svg
-                    className="w-2.5 h-2.5 text-white"
+                    className="w-2.5 h-2.5 text-primary-foreground"
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -62,7 +62,7 @@ interface FilterTagProps {
 export const FilterTag = React.memo(function FilterTag({ label, onRemove }: FilterTagProps) {
   return (
     <span
-      className="text-white font-medium text-[11px] pl-2.5 pr-1.5 py-1 rounded-full inline-flex items-center gap-1.5 hover:opacity-90 transition-colors bg-primary"
+      className="text-primary-foreground font-medium text-[11px] pl-2.5 pr-1.5 py-1 rounded-full inline-flex items-center gap-1.5 hover:opacity-90 transition-colors bg-primary"
     >
       {label}
       <span
@@ -71,7 +71,7 @@ export const FilterTag = React.memo(function FilterTag({ label, onRemove }: Filt
           e.stopPropagation();
           onRemove(e);
         }}
-        className="hover:bg-white/20 rounded-full p-0.5 transition-colors cursor-pointer"
+        className="hover:bg-primary-foreground/20 rounded-full p-0.5 transition-colors cursor-pointer"
         aria-label={`Remove ${label}`}
       >
         <X className="w-2.5 h-2.5" />

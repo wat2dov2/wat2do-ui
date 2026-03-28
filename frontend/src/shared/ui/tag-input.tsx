@@ -27,9 +27,9 @@ interface TagInputProps {
 }
 
 const tagColorClasses = {
-  warning: "bg-primary/80 text-white",
-  primary: "bg-primary/80 text-white",
-  secondary: "bg-primary/80 text-white",
+  warning: "bg-primary/80 text-primary-foreground",
+  primary: "bg-primary/80 text-primary-foreground",
+  secondary: "bg-primary/80 text-primary-foreground",
 };
 
 /**
@@ -109,7 +109,7 @@ export function TagInput({
               <button
                 type="button"
                 onClick={() => onRemove(index)}
-                className="bg-foreground/30 text-white rounded-full p-0.5 h-4 w-4 flex items-center justify-center hover:bg-foreground/40 transition-colors"
+                className="bg-foreground/30 text-primary-foreground rounded-full p-0.5 h-4 w-4 flex items-center justify-center hover:bg-foreground/40 transition-colors"
               >
                 <X className="w-3 h-3" />
               </button>

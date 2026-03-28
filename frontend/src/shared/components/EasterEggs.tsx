@@ -9,11 +9,23 @@ interface EasterEggsProps {
   onComplete: () => void;
 }
 
+function readThemeColor(token: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(token)
+    .trim();
+  return value || fallback;
+}
+
+function getThemePalette(tokens: string[], fallback: string): string[] {
+  return tokens.map((token) => readThemeColor(token, fallback));
+}
+
 export function EasterEggs({ activeEasterEgg, onComplete }: EasterEggsProps) {
   if (!activeEasterEgg) return null;
 
   return createPortal(
-    <div className="fixed inset-0 pointer-events-none z-[99999]">
+    <div className="fixed inset-0 pointer-events-none z-99999">
       {activeEasterEgg === "goose" && <GooseCrossing onComplete={onComplete} />}
       {activeEasterEgg === "party" && <PartyMode onComplete={onComplete} />}
       {activeEasterEgg === "foodRain" && <FoodRain onComplete={onComplete} />}
@@ -75,7 +87,7 @@ function GooseCrossing({ onComplete }: { onComplete: () => void }) {
       {/* Honk bubble */}
       {honked && (
         <div
-          className="fixed bg-white rounded-full px-3 py-1 text-sm font-bold shadow-lg animate-bounce border-2 border-border"
+          className="fixed bg-background text-foreground rounded-full px-3 py-1 text-sm font-bold shadow-lg animate-bounce border-2 border-border"
           style={{
             left: position + 50,
             bottom: "140px",
@@ -99,7 +111,17 @@ function PartyMode({ onComplete }: { onComplete: () => void }) {
     const duration = 3000;
     const end = Date.now() + duration;
 
-    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+    const colors = getThemePalette(
+      [
+        "--easter-party-1",
+        "--easter-party-2",
+        "--easter-party-3",
+        "--easter-party-4",
+        "--easter-party-5",
+        "--easter-party-6",
+      ],
+      "rgb(0, 82, 255)"
+    );
 
     // Initial burst
     confetti({
@@ -241,7 +263,10 @@ function FoodRain({ onComplete }: { onComplete: () => void }) {
 function UofTSpirit({ onComplete }: { onComplete: () => void }) {
   const { t } = useTranslation();
   useEffect(() => {
-    const colors = ["#002a5c", "#1e3d59", "#4a90d9"]; // UofT blue tones
+    const colors = getThemePalette(
+      ["--easter-uoft-1", "--easter-uoft-2", "--easter-uoft-3"],
+      "rgb(0, 82, 255)"
+    );
 
     // Initial burst
     confetti({
@@ -287,7 +312,10 @@ function UofTSpirit({ onComplete }: { onComplete: () => void }) {
 function McGillPride({ onComplete }: { onComplete: () => void }) {
   const { t } = useTranslation();
   useEffect(() => {
-    const colors = ["#ed1b2f", "#ffffff", "#8b0000"]; // McGill red/white
+    const colors = getThemePalette(
+      ["--easter-mcgill-1", "--easter-mcgill-2", "--easter-mcgill-3"],
+      "rgb(220, 38, 38)"
+    );
 
     confetti({
       particleCount: 100,
@@ -363,7 +391,7 @@ function UBCRain({ onComplete }: { onComplete: () => void }) {
       {drops.map((drop) => (
         <div
           key={drop.id}
-          className="fixed w-0.5 h-8 bg-gradient-to-b from-transparent to-blue-400 opacity-60"
+          className="fixed w-0.5 h-8 bg-linear-to-b from-transparent to-blue-400 opacity-60"
           style={{
             left: `${drop.left}%`,
             top: "-32px",
@@ -386,7 +414,10 @@ function UBCRain({ onComplete }: { onComplete: () => void }) {
 function McMasterMarauder({ onComplete }: { onComplete: () => void }) {
   const { t } = useTranslation();
   useEffect(() => {
-    const colors = ["#7a003c", "#ffc72c", "#5c002e"]; // McMaster maroon/gold
+    const colors = getThemePalette(
+      ["--easter-mcmaster-1", "--easter-mcmaster-2", "--easter-mcmaster-3"],
+      "rgb(153, 27, 27)"
+    );
 
     confetti({
       particleCount: 100,
@@ -439,7 +470,7 @@ function Toast({ message }: { message: string }) {
 
   return (
     <div
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium z-[100000]"
+      className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2 rounded-full shadow-lg text-sm font-medium z-100000"
       style={{
         animation: "toastSlide 0.3s ease-out",
       }}

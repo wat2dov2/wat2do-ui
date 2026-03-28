@@ -32,7 +32,7 @@ export function AdminTable({ children, headers, className }: AdminTableProps) {
             {headers.map((header, index) => (
               <TableHead
                 key={index}
-                className={`text-xs font-semibold text-gray-900 ${header.align === "right" ? "text-right" : ""} ${header.className || ""}`}
+                className={`text-xs font-semibold text-foreground ${header.align === "right" ? "text-right" : ""} ${header.className || ""}`}
               >
                 {header.label}
               </TableHead>

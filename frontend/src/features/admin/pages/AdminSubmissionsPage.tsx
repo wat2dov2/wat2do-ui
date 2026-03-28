@@ -108,7 +108,7 @@ export function AdminSubmissionsPage({
           <FileText className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("admin.eventSubmissions")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("admin.eventSubmissions")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("admin.reviewSubmissionsDesc")}
           </p>
@@ -157,7 +157,7 @@ export function AdminSubmissionsPage({
 
       {/* Results Count */}
       <div className="flex items-center justify-between">
-        <span className="font-bold text-xl text-gray-900">
+        <span className="font-bold text-xl text-foreground">
           {filters.filteredSubmissions.length}{" "}
           {filters.filteredSubmissions.length === 1 ? t("admin.submission") : t("admin.submissions")}
         </span>
@@ -169,22 +169,22 @@ export function AdminSubmissionsPage({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
-                <TableHead className="text-xs font-semibold text-gray-900">
+                <TableHead className="text-xs font-semibold text-foreground">
                   {t("events.eventTitle")}
                 </TableHead>
-                <TableHead className="text-xs font-semibold text-gray-900">
+                <TableHead className="text-xs font-semibold text-foreground">
                   {t("events.organization")}
                 </TableHead>
-                <TableHead className="text-xs font-semibold text-gray-900">
+                <TableHead className="text-xs font-semibold text-foreground">
                   {t("admin.submittedBy")}
                 </TableHead>
-                <TableHead className="text-xs font-semibold text-gray-900">
+                <TableHead className="text-xs font-semibold text-foreground">
                   {t("admin.submittedAt")}
                 </TableHead>
-                <TableHead className="text-xs font-semibold text-gray-900">
+                <TableHead className="text-xs font-semibold text-foreground">
                   {t("events.status")}
                 </TableHead>
-                <TableHead className="text-right text-xs font-semibold text-gray-900">
+                <TableHead className="text-right text-xs font-semibold text-foreground">
                   {t("common.actions")}
                 </TableHead>
               </TableRow>
@@ -203,7 +203,7 @@ export function AdminSubmissionsPage({
                     }}
                   >
                     <TableCell>
-                      <div className="font-medium text-sm text-gray-900">
+                      <div className="font-medium text-sm text-foreground">
                         {submission.eventData.title}
                       </div>
                     </TableCell>
@@ -367,7 +367,7 @@ export function AdminSubmissionsPage({
           {selectedSubmission && (
             <div className="space-y-4">
               <div>
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Title
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -376,7 +376,7 @@ export function AdminSubmissionsPage({
               </div>
 
               <div>
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Organization
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -385,7 +385,7 @@ export function AdminSubmissionsPage({
               </div>
 
               <div>
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Description
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -395,7 +395,7 @@ export function AdminSubmissionsPage({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                  <h3 className="font-semibold text-sm text-foreground mb-1">
                     Date
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -403,7 +403,7 @@ export function AdminSubmissionsPage({
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                  <h3 className="font-semibold text-sm text-foreground mb-1">
                     Time
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -413,7 +413,7 @@ export function AdminSubmissionsPage({
               </div>
 
               <div>
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Location
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -422,7 +422,7 @@ export function AdminSubmissionsPage({
               </div>
 
               <div>
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Category
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -431,7 +431,7 @@ export function AdminSubmissionsPage({
               </div>
 
               <div>
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Price
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -441,7 +441,7 @@ export function AdminSubmissionsPage({
 
               {selectedSubmission.eventData.food.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                  <h3 className="font-semibold text-sm text-foreground mb-1">
                     Food Provided
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -458,7 +458,7 @@ export function AdminSubmissionsPage({
               )}
 
               <div>
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Requires Registration
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -469,7 +469,7 @@ export function AdminSubmissionsPage({
               </div>
 
               <div className="border-t border-border pt-4">
-                <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                <h3 className="font-semibold text-sm text-foreground mb-1">
                   Submitted By
                 </h3>
                 <p className="text-sm text-muted-foreground">

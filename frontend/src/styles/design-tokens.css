@@ -1,0 +1,285 @@
+/* Single source of truth for app colors/radius */
+
+:root {
+  /* Radius tokens (single source of truth, max 4 levels) */
+  --app-radius-1: 4px;
+  --app-radius-2: 6px;
+  --app-radius-3: 8px;
+  --app-radius-4: 12px;
+  --app-radius-full: 9999px;
+
+  /* Backward-compatible base token */
+  --radius: var(--app-radius-2);
+
+  /* Base colors */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 9%);
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+  --primary: #0052FF;
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: var(--muted);
+  --secondary-foreground: hsl(0 0% 20%);
+  --muted: hsl(0 0% 97%);
+  --muted-foreground: hsl(0 0% 56%);
+  --accent: hsl(210 32% 93%);
+  --accent-foreground: hsl(217 47% 62%);
+  --destructive: var(--error);
+  --destructive-foreground: var(--error-foreground);
+  --border: hsl(0 0% 92%);
+  --input: var(--border);
+  --ring: hsl(0 0% 71%);
+  --sidebar: hsl(0 0% 99%);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-accent: var(--muted);
+  --sidebar-accent-foreground: var(--secondary-foreground);
+  --sidebar-border: var(--border);
+
+  /* Status colors */
+  --success: hsl(142 71% 45%);
+  --success-foreground: var(--error-foreground);
+  --warning: hsl(38 92% 50%);
+  --warning-foreground: var(--error-foreground);
+  --info: var(--primary);
+  --info-foreground: var(--primary-foreground);
+  --error: hsl(0 84% 60%);
+  --error-foreground: hsl(0 0% 100%);
+
+  /* Gray scale */
+  --gray-50: hsl(0 0% 98%);
+  --gray-100: hsl(0 0% 96%);
+  --gray-200: hsl(0 0% 90%);
+  --gray-300: hsl(0 0% 83%);
+  --gray-400: hsl(0 0% 64%);
+  --gray-500: hsl(0 0% 45%);
+  --gray-600: hsl(0 0% 32%);
+  --gray-700: hsl(0 0% 25%);
+  --gray-800: hsl(0 0% 15%);
+  --gray-900: var(--foreground);
+
+  /* Category colors */
+  --category-events-bg: hsl(214 96% 92%);
+  --category-events-text: hsl(217 91% 60%);
+  --category-clubs-bg: hsl(142 76% 94%);
+  --category-clubs-text: hsl(142 71% 45%);
+  --category-academic-bg: hsl(48 96% 89%);
+  --category-academic-text: hsl(25 95% 53%);
+  --category-religious-bg: hsl(270 91% 95%);
+  --category-religious-text: hsl(271 81% 56%);
+  --category-cultural-bg: hsl(0 100% 95%);
+  --category-cultural-text: var(--error);
+  --category-social-bg: hsl(188 94% 96%);
+  --category-social-text: hsl(188 94% 39%);
+  --category-sports-bg: hsl(0 100% 96%);
+  --category-sports-text: hsl(0 84% 50%);
+  --category-career-bg: hsl(199 89% 96%);
+  --category-career-text: hsl(199 89% 48%);
+  --category-technology-bg: hsl(229 93% 96%);
+  --category-technology-text: hsl(243 75% 59%);
+  --category-arts-bg: hsl(330 100% 97%);
+  --category-arts-text: hsl(330 81% 60%);
+  --category-health-bg: hsl(151 81% 96%);
+  --category-health-text: hsl(151 69% 58%);
+  --category-music-bg: hsl(54 96% 88%);
+  --category-music-text: var(--warning);
+  --category-entrepreneurship-bg: hsl(142 76% 95%);
+  --category-entrepreneurship-text: hsl(142 69% 58%);
+  --category-default-bg: hsl(0 0% 96%);
+  --category-default-text: hsl(0 0% 45%);
+
+  /* Brand colors */
+  --blue-400: hsl(214 95% 65%);
+  --blue-500: hsl(217 91% 60%);
+  --blue-600: hsl(221 83% 53%);
+  --green-100: hsl(142 76% 89%);
+  --green-400: hsl(142 71% 55%);
+  --green-500: hsl(142 71% 45%);
+  --green-600: hsl(142 70% 45%);
+  --green-700: hsl(142 65% 45%);
+  --green-900: hsl(142 61% 20%);
+  --red-50: hsl(0 100% 97%);
+  --red-200: hsl(0 93% 94%);
+  --red-500: var(--error);
+  --red-800: hsl(0 70% 35%);
+  --red-900: hsl(0 63% 31%);
+  --yellow-50: hsl(48 96% 96%);
+  --yellow-100: var(--amber-100);
+  --yellow-400: var(--amber-400);
+  --yellow-500: var(--warning);
+  --purple-500: hsl(258 90% 66%);
+  --purple-600: hsl(262 83% 58%);
+  --amber-100: hsl(48 96% 89%);
+  --amber-400: hsl(43 96% 56%);
+  --amber-500: var(--warning);
+  --amber-600: hsl(32 95% 44%);
+  --amber-700: hsl(26 90% 37%);
+  --amber-900: hsl(22 78% 26%);
+  --pink-500: hsl(330 81% 60%);
+  --orange-500: hsl(25 95% 53%);
+
+  /* Faculty accent colors */
+  --faculty-arts-splash: hsl(35 85% 49% / 0.25);
+  --faculty-engineering-splash: hsl(269 31% 50% / 0.25);
+  --faculty-environment-splash: hsl(64 100% 37% / 0.25);
+  --faculty-health-splash: hsl(185 100% 34% / 0.25);
+  --faculty-mathematics-splash: hsl(319 79% 49% / 0.25);
+  --faculty-science-splash: hsl(209 100% 43% / 0.25);
+  --faculty-applied-health-sciences-splash: hsl(174 84% 32% / 0.25);
+
+  /* Easter egg palettes */
+  --easter-party-1: hsl(217 91% 60%);
+  --easter-party-2: hsl(142 71% 45%);
+  --easter-party-3: hsl(38 92% 50%);
+  --easter-party-4: hsl(0 84% 60%);
+  --easter-party-5: hsl(258 90% 66%);
+  --easter-party-6: hsl(330 81% 60%);
+  --easter-uoft-1: hsl(213 100% 18%);
+  --easter-uoft-2: hsl(206 50% 24%);
+  --easter-uoft-3: hsl(211 65% 57%);
+  --easter-mcgill-1: hsl(355 85% 52%);
+  --easter-mcgill-2: hsl(0 0% 100%);
+  --easter-mcgill-3: hsl(0 100% 27%);
+  --easter-mcmaster-1: hsl(331 100% 24%);
+  --easter-mcmaster-2: hsl(45 100% 58%);
+  --easter-mcmaster-3: hsl(331 100% 18%);
+
+  /* Scrollbar colors */
+  --scrollbar-thumb: hsl(240 5% 65%);
+  --scrollbar-track: hsl(240 5% 95%);
+
+  /* Fonts */
+  --font-family-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
+}
+
+.dark {
+  --background: hsl(0 0% 9%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 12%);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: #0052FF;
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  --muted: hsl(0 0% 18%);
+  --muted-foreground: hsl(0 0% 64%);
+  --accent: hsl(210 32% 25%);
+  --accent-foreground: hsl(217 47% 80%);
+  --destructive: var(--error);
+  --destructive-foreground: var(--error-foreground);
+  --border: hsl(0 0% 20%);
+  --input: var(--border);
+  --ring: hsl(0 0% 56%);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-accent: var(--muted);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+
+  --success: hsl(142 71% 45%);
+  --success-foreground: var(--error-foreground);
+  --warning: hsl(38 92% 50%);
+  --warning-foreground: var(--error-foreground);
+  --error: hsl(0 84% 60%);
+  --error-foreground: hsl(0 0% 100%);
+
+  --gray-50: var(--background);
+  --gray-100: hsl(0 0% 15%);
+  --gray-200: hsl(0 0% 25%);
+  --gray-300: hsl(0 0% 32%);
+  --gray-400: hsl(0 0% 45%);
+  --gray-500: hsl(0 0% 64%);
+  --gray-600: hsl(0 0% 83%);
+  --gray-700: hsl(0 0% 90%);
+  --gray-800: hsl(0 0% 96%);
+  --gray-900: var(--foreground);
+
+  --category-events-bg: hsl(214 60% 20%);
+  --category-events-text: hsl(217 91% 70%);
+  --category-clubs-bg: hsl(142 50% 18%);
+  --category-clubs-text: hsl(142 71% 55%);
+  --category-academic-bg: hsl(48 60% 18%);
+  --category-academic-text: hsl(25 95% 63%);
+  --category-religious-bg: hsl(270 50% 20%);
+  --category-religious-text: hsl(271 81% 70%);
+  --category-cultural-bg: hsl(0 60% 20%);
+  --category-cultural-text: hsl(0 84% 70%);
+  --category-social-bg: hsl(188 50% 18%);
+  --category-social-text: hsl(188 94% 55%);
+  --category-sports-bg: hsl(0 60% 18%);
+  --category-sports-text: hsl(0 84% 65%);
+  --category-career-bg: hsl(199 50% 18%);
+  --category-career-text: hsl(199 89% 60%);
+  --category-technology-bg: hsl(229 50% 20%);
+  --category-technology-text: hsl(243 75% 72%);
+  --category-arts-bg: hsl(330 50% 20%);
+  --category-arts-text: hsl(330 81% 70%);
+  --category-health-bg: hsl(151 50% 18%);
+  --category-health-text: hsl(151 69% 65%);
+  --category-music-bg: hsl(54 60% 18%);
+  --category-music-text: hsl(38 92% 60%);
+  --category-entrepreneurship-bg: hsl(142 50% 18%);
+  --category-entrepreneurship-text: hsl(142 69% 65%);
+  --category-default-bg: hsl(0 0% 18%);
+  --category-default-text: hsl(0 0% 64%);
+
+  --blue-400: hsl(214 95% 65%);
+  --blue-500: hsl(217 91% 60%);
+  --blue-600: hsl(221 83% 53%);
+  --green-100: hsl(142 76% 89%);
+  --green-400: hsl(142 71% 55%);
+  --green-500: hsl(142 71% 45%);
+  --green-600: hsl(142 70% 45%);
+  --green-700: hsl(142 65% 45%);
+  --green-900: hsl(142 61% 20%);
+  --red-50: hsl(0 100% 97%);
+  --red-200: hsl(0 93% 94%);
+  --red-500: var(--error);
+  --red-800: hsl(0 70% 35%);
+  --red-900: hsl(0 63% 31%);
+  --yellow-50: hsl(48 96% 96%);
+  --yellow-100: var(--amber-100);
+  --yellow-400: var(--amber-400);
+  --yellow-500: var(--warning);
+  --purple-500: hsl(258 90% 66%);
+  --purple-600: hsl(262 83% 58%);
+  --amber-100: hsl(48 96% 89%);
+  --amber-400: hsl(43 96% 56%);
+  --amber-500: var(--warning);
+  --amber-600: hsl(32 95% 44%);
+  --amber-700: hsl(26 90% 37%);
+  --amber-900: hsl(22 78% 26%);
+  --pink-500: hsl(330 81% 60%);
+  --orange-500: hsl(25 95% 53%);
+
+  --faculty-arts-splash: hsl(35 85% 62% / 0.25);
+  --faculty-engineering-splash: hsl(269 31% 63% / 0.25);
+  --faculty-environment-splash: hsl(64 100% 46% / 0.25);
+  --faculty-health-splash: hsl(185 100% 45% / 0.25);
+  --faculty-mathematics-splash: hsl(319 79% 62% / 0.25);
+  --faculty-science-splash: hsl(209 100% 55% / 0.25);
+  --faculty-applied-health-sciences-splash: hsl(174 84% 45% / 0.25);
+
+  --easter-party-1: hsl(217 91% 68%);
+  --easter-party-2: hsl(142 71% 52%);
+  --easter-party-3: hsl(38 92% 58%);
+  --easter-party-4: hsl(0 84% 68%);
+  --easter-party-5: hsl(258 90% 74%);
+  --easter-party-6: hsl(330 81% 68%);
+  --easter-uoft-1: hsl(213 100% 25%);
+  --easter-uoft-2: hsl(206 50% 32%);
+  --easter-uoft-3: hsl(211 65% 65%);
+  --easter-mcgill-1: hsl(355 85% 60%);
+  --easter-mcgill-2: hsl(0 0% 100%);
+  --easter-mcgill-3: hsl(0 100% 35%);
+  --easter-mcmaster-1: hsl(331 100% 32%);
+  --easter-mcmaster-2: hsl(45 100% 66%);
+  --easter-mcmaster-3: hsl(331 100% 24%);
+
+  --scrollbar-thumb: hsl(240 5% 40%);
+  --scrollbar-track: hsl(240 6% 10%);
+}
