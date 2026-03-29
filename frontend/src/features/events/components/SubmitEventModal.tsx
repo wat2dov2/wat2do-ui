@@ -1,4 +1,4 @@
-import React, { useReducer, useMemo, useCallback, useState, useEffect } from "react";
+import React, { useReducer, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -365,6 +365,7 @@ function SubmitEventModalContent() {
   const [resolvedInitialData, setResolvedInitialData] = useState<EventFormData | undefined>(undefined);
   useEffect(() => {
     if (!isOpen || !editEventId || !loadEventForEdit) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResolvedInitialData(undefined);
       return;
     }

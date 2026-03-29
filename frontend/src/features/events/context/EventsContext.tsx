@@ -92,6 +92,7 @@ export function EventsProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useEventsContext(): EventsContextValue {
   const context = useContext(EventsContext);
   if (!context) {
@@ -105,6 +106,7 @@ export function useEventsContext(): EventsContextValue {
  * when used outside of EventsProvider. Useful for components that can work
  * with or without the context (e.g., EventCard in EventDetailsModal).
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useEventsContextOptional(): EventsContextValue | null {
   return useContext(EventsContext);
 }

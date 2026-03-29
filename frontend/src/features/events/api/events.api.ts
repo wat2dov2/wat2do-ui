@@ -6,9 +6,7 @@
 import type { Event, EventFormData } from "@/shared/types";
 import { api } from "@/shared/services/apiClient";
 import {
-  loadUserEvents,
   saveUserEvents,
-  loadUserEventIds,
   saveUserEventIds,
   removeUserEvent,
   loadSavedEventIds,
@@ -20,7 +18,6 @@ import {
   getEventById,
 } from "@/features/events/api/eventService";
 import { filterEvents, sortEvents, type SearchFilters, type SortOptions } from "@/features/search";
-import { getUniqueEvents } from "@/shared/utils/event";
 
 /**
  * Fetch events from backend API.
@@ -141,4 +138,18 @@ export function toggleSaveEventAPI(eventId: number, currentSavedIds: number[]): 
   return currentSavedIds.includes(eventId)
     ? currentSavedIds.filter((id) => id !== eventId)
     : [...currentSavedIds, eventId];
+}
+
+// --- Backend-synced saved events ---
+
+export async function fetchSavedEventIdsFromBackend(): Promise<number[]> {
+  return api.get<number[]>("/saved-events/");
+}
+
+export async function saveEventToBackend(eventId: number): Promise<void> {
+  await api.put<unknown>(`/saved-events/${eventId}`);
+}
+
+export async function unsaveEventFromBackend(eventId: number): Promise<void> {
+  await api.delete(`/saved-events/${eventId}`);
 }

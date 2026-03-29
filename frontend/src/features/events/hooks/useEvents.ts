@@ -31,7 +31,7 @@ export function useEvents(options?: UseEventsOptions) {
       }
       return getDayOfWeek(dateStr, t);
     },
-    [options?.getDayOfWeek, t]
+    [options, t]
   );
 
   const store = useEventsStore({ getDayOfWeek: getDayOfWeekFn });

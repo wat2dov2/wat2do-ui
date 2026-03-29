@@ -1,6 +1,5 @@
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock
 
 from main import app
 from core.auth import get_current_user

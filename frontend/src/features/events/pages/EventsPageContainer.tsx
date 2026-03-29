@@ -1,15 +1,16 @@
-import React, { useMemo, useCallback, useState, useEffect } from "react";
+import React, { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { Utensils, Heart } from "lucide-react";
 import { EventList, EventCount, useAppEvents, useSavedEvents, useLatestAddedEvent } from "@/features/events";
+import { RecommendationSection } from "@/features/recommendations";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { EventsProvider } from "@/features/events/context/EventsContext";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown, useSearch } from "@/features/search";
 import { useAppPromotions } from "@/app/hooks/useAppPromotions";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
 import { useAppContext } from "@/contexts/AppContext";
-import type { ViewMode, QuickFilterConfig } from "@/shared/types";
+import type { Event, ViewMode, QuickFilterConfig } from "@/shared/types";
 
 export function EventsPageContainer() {
   const {
@@ -22,7 +23,7 @@ export function EventsPageContainer() {
     isAdmin,
   } = useAppContext();
   const { t } = useTranslation();
-  const { activeEasterEgg, clearEasterEgg, checkSearchQuery } = useEasterEggs();
+  const { checkSearchQuery } = useEasterEggs();
   
   // Use hooks for business logic
   const appEvents = useAppEvents();
@@ -30,20 +31,13 @@ export function EventsPageContainer() {
   const { savedEventIds, toggleSaveEvent } = useSavedEvents();
   const promotions = useAppPromotions();
   const { latest: latestAddedEvent } = useLatestAddedEvent();
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!latestAddedEvent) return;
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, [latestAddedEvent]);
-
   const filters = useSearch({
     events: appEvents.events,
     profileCompleted,
     savedEventIds,
   });
 
-  const handleEditEvent = (event: any) => {
+  const handleEditEvent = (event: Event) => {
     appEvents.handleEditEvent(event);
   };
 
@@ -84,16 +78,7 @@ export function EventsPageContainer() {
           visible: profileCompleted,
         },
       ].filter((config) => config.visible !== false),
-    [
-      filters.freeFoodFilter,
-      filters.freeFoodEventsCount,
-      filters.savedFilter,
-      filters.setFreeFoodFilter,
-      filters.setFreeFilter,
-      filters.setSavedFilter,
-      profileCompleted,
-      savedEventIds.length,
-    ]
+    [filters, profileCompleted, savedEventIds.length]
   );
 
   return (
@@ -179,6 +164,12 @@ export function EventsPageContainer() {
             allEvents={appEvents.events}
             onClearFilters={filters.handleClearAllFilters}
           >
+            {profileCompleted && (
+              <RecommendationSection
+                events={appEvents.events}
+                savedEventIds={savedEventIds}
+              />
+            )}
             <EventList
               events={filters.filteredEvents}
               viewMode={viewMode}

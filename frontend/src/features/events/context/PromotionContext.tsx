@@ -27,6 +27,7 @@ export function PromotionProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePromotionContext() {
   const context = useContext(PromotionContext);
   if (!context) {

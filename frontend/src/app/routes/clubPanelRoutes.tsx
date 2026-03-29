@@ -6,7 +6,7 @@
 import React, { useMemo } from "react";
 import { AdminProvider } from "@/features/admin";
 import { ClubPanel, ClubPanelPostersPage, ClubPanelIntegrationsPage, ClubPanelMembersPage } from "@/features/club-panel";
-import type { Event } from "@/shared/types";
+import type { Event, EventFormData } from "@/shared/types";
 import { useNavigation } from "@/contexts/NavigationContext";
 
 interface ClubPanelRoutesConfig {
@@ -14,13 +14,14 @@ interface ClubPanelRoutesConfig {
   onEditEvent: (event: Event) => void;
   onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
-  onAddEvent: (eventData: any) => Promise<number>;
+  onAddEvent: (eventData: EventFormData) => Promise<number>;
   userEmail: string | null;
 }
 
 /**
  * Club panel route mapping for navigation
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const CLUB_PANEL_ROUTE_MAP: Record<string, string> = {
   "club-panel-posters": "/club-panel/posters",
   "club-panel-integrations": "/club-panel/integrations",
@@ -30,6 +31,7 @@ export const CLUB_PANEL_ROUTE_MAP: Record<string, string> = {
 /**
  * Club panel navigation handler
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useClubPanelNavigation() {
   const { navigate } = useNavigation();
 
@@ -45,6 +47,7 @@ export function useClubPanelNavigation() {
  * Club Panel Route Component
  */
 export function ClubPanelRoute({ config }: { config: ClubPanelRoutesConfig }) {
+  void config;
   const handleNavigate = useClubPanelNavigation();
 
   return <ClubPanel onNavigate={handleNavigate} />;

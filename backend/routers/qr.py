@@ -13,7 +13,7 @@ router = APIRouter(prefix="/qr", tags=["qr"])
 
 
 @router.get("/", response_model=list[QrCodeResponse])
-def list_qr_codes(user: dict = Depends(get_current_user)):
+def list_qr_codes(_: dict = Depends(get_current_user)):
     return qr_code_service.list_qr_codes()
 
 
@@ -22,7 +22,7 @@ def list_scans(
     qr_code_id: str | None = Query(None, description="Filter by QR code id"),
     from_time: datetime | None = Query(None, description="Scans from this time (inclusive)"),
     to_time: datetime | None = Query(None, description="Scans until this time (inclusive)"),
-    user: dict = Depends(get_current_user),
+    _: dict = Depends(get_current_user),
 ):
     return qr_code_service.list_scans(
         qr_code_id=qr_code_id, from_time=from_time, to_time=to_time
@@ -75,7 +75,7 @@ def resolve_qr_and_record_scan(
 @router.post("/", response_model=QrCodeResponse, status_code=status.HTTP_201_CREATED)
 def create_poster(
     data: QrCodeCreate,
-    user: dict = Depends(get_current_user),
+    _: dict = Depends(get_current_user),
 ):
     return qr_code_service.upsert_qr_code(data)
 
@@ -84,7 +84,7 @@ def create_poster(
 def update_poster(
     qr_code_id: str,
     data: QrCodeCreate,
-    user: dict = Depends(get_current_user),
+    _: dict = Depends(get_current_user),
 ):
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID mismatch")
@@ -94,7 +94,7 @@ def update_poster(
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_poster(
     qr_code_id: str,
-    user: dict = Depends(get_current_user),
+    _: dict = Depends(get_current_user),
 ):
     try:
         qr_code_service.delete_qr_code(qr_code_id)

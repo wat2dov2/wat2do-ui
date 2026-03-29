@@ -15,14 +15,13 @@ interface UseAdminPostersFiltersOptions {
  * Hook for managing filters in AdminPostersPage
  */
 export function useAdminPostersFilters({
-  refreshKey,
   backendPosters,
   backendScans,
 }: UseAdminPostersFiltersOptions) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("alltime");
 
-  const qrCodes = useMemo(() => backendPosters, [refreshKey, backendPosters]);
-  const allScans = useMemo(() => backendScans, [refreshKey, backendScans]);
+  const qrCodes = useMemo(() => backendPosters, [backendPosters]);
+  const allScans = useMemo(() => backendScans, [backendScans]);
 
   // Filter scans by time range
   const filteredScans = useMemo(() => {

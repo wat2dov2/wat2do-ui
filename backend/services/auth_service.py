@@ -119,7 +119,7 @@ def refresh(data: RefreshRequest) -> TokenResponse:
     )
 
 
-def logout(access_token: str) -> None:
+def logout() -> None:
     try:
         supabase.auth.sign_out()
     except AuthApiError as e:

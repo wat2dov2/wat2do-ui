@@ -16,6 +16,7 @@ export function useTypewriter(text: string, intervalMs = DEFAULT_CHAR_INTERVAL_M
   const indexRef = useRef(0);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayed("");
     setDone(false);
     indexRef.current = 0;

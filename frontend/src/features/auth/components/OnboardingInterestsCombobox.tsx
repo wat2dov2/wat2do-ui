@@ -35,6 +35,7 @@ export function OnboardingInterestsCombobox({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!open) setSearch("");
   }, [open]);
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 interface Placement {
   x: number;
@@ -65,7 +65,7 @@ export function QRPlacementOverlay({
 
       return { x, y, width, height };
     },
-    [minSize, imageWidth, imageHeight]
+    [imageWidth, imageHeight]
   );
 
   // Constrain the placement prop whenever it changes to ensure it's always square
@@ -244,6 +244,8 @@ export function QRPlacementOverlay({
       startPlacement,
       getMousePos,
       toNormalized,
+      imageWidth,
+      imageHeight,
       constrainPlacement,
       onPlacementChange,
     ]

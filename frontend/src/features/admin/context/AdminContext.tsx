@@ -29,6 +29,7 @@ interface AdminContextValue {
 }
 
 // Helper hook for optional context (for pages that might not be wrapped)
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAdminContextOptional(): AdminContextValue | null {
   return useContext(AdminContext);
 }
@@ -47,6 +48,7 @@ export function AdminProvider({ children, ...value }: AdminProviderProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAdminContext() {
   const context = useContext(AdminContext);
   if (!context) {

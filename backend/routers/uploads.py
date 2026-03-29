@@ -31,7 +31,7 @@ async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
 async def upload_event_image(
     event_id: int,
     file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
+    _: dict = Depends(get_current_user),
 ):
     event = event_service.get_event(event_id)
     if not event:
@@ -71,7 +71,7 @@ async def upload_avatar(
 async def upload_club_logo(
     club_id: int,
     file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
+    _: dict = Depends(get_current_user),
 ):
     club = club_service.get_club(club_id)
     if not club:
@@ -90,7 +90,7 @@ async def upload_club_logo(
 @router.post("/qr-asset")
 async def upload_qr_asset(
     file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
+    _: dict = Depends(get_current_user),
 ):
     data, content_type = await _validated_upload(file, "qr-assets")
     url = storage_service.upload_file("qr-assets", data, file.filename or "asset", content_type)

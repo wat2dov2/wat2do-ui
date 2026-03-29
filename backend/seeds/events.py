@@ -4,7 +4,6 @@ import os
 from dotenv import load_dotenv
 
 from core.database import get_sb
-from constants import EVENT_CATEGORIES
 
 load_dotenv()
 

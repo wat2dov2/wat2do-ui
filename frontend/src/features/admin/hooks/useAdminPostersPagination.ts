@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
+import type { QRCode, QRCodeScan } from "@/shared/types";
 
 interface UseAdminPostersPaginationOptions {
   itemsPerPage: number;
   scansPerPage: number;
-  filteredQRCodes: any[];
-  scansMatchingPosterSearch: any[];
+  filteredQRCodes: QRCode[];
+  scansMatchingPosterSearch: QRCodeScan[];
   timeFilter: string;
 }
 
@@ -23,6 +24,7 @@ export function useAdminPostersPagination({
 
   // Reset to page 1 when filters change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPostersPage(1);
     setScansPage(1);
   }, [timeFilter]);

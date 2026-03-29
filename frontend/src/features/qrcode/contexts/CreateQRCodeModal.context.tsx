@@ -25,6 +25,7 @@ export function CreateQRCodeModalProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCreateQRCodeModalContext() {
   const context = useContext(CreateQRCodeModalContext);
   if (!context) {

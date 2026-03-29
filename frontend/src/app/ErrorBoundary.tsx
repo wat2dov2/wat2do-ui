@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import type { ErrorInfo, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { AlertCircle } from "lucide-react";
 import { withTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -26,7 +26,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch() {
     // Error logged to browser console automatically
   }
 
@@ -69,4 +69,5 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-export default withTranslation()(ErrorBoundary);
+const TranslatedErrorBoundary = withTranslation()(ErrorBoundary);
+export default TranslatedErrorBoundary;

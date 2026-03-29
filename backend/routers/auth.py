@@ -32,8 +32,8 @@ def refresh(data: RefreshRequest):
 
 
 @router.post("/logout", response_model=MessageResponse)
-def logout(token=Depends(bearer)):
-    auth_service.logout(token.credentials)
+def logout(_=Depends(bearer)):
+    auth_service.logout()
     return MessageResponse(message="Logged out successfully")
 
 

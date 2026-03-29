@@ -2,7 +2,7 @@ import * as React from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
-export interface SpinnerProps extends React.ComponentProps<"svg"> {}
+export type SpinnerProps = React.ComponentProps<"svg">;
 
 const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
   ({ className, ...props }, ref) => (

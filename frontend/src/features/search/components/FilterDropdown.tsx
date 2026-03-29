@@ -5,11 +5,12 @@ import { AIGenerationInput } from "@/features/search/components/AIGenerationInpu
 import { VisualFilters } from "@/features/search/components/VisualFilters";
 import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
 import type { FilterViewMode } from "@/shared/types";
+import { useSearch } from "@/features/search/hooks/useSearch";
 
 interface FilterDropdownProps {
   filterViewMode: FilterViewMode;
   onFilterViewModeChange: (mode: FilterViewMode) => void;
-  filters: any;
+  filters: ReturnType<typeof useSearch>;
   isDarkMode: boolean;
 }
 

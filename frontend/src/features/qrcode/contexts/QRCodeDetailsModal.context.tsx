@@ -24,6 +24,7 @@ export function QRCodeDetailsModalProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useQRCodeDetailsModalContext() {
   const context = useContext(QRCodeDetailsModalContext);
   if (!context) {

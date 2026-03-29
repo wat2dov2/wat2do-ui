@@ -12,7 +12,7 @@ import ErrorBoundary from '@/app/ErrorBoundary'
 
 if (import.meta.env.DEV) {
   try {
-    (ClickToComponent as any)();
+    (ClickToComponent as unknown as () => void)();
   } catch {
     // ClickToComponent requires an editor environment (VS Code/Cursor)
   }

@@ -4,7 +4,7 @@
  * Eliminates prop drilling in AppLayout, Sidebar, and TopNav
  */
 
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import type { PageMode, ViewMode, FilterViewMode } from "@/shared/types";
 
@@ -58,6 +58,7 @@ export function AppProvider({ children, value }: AppProviderProps) {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppContext() {
   const context = useContext(AppContext);
   if (context === undefined) {

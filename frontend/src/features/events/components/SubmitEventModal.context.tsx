@@ -36,6 +36,7 @@ export function SubmitEventModalProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSubmitEventModalContext() {
   const context = useContext(SubmitEventModalContext);
   if (!context) {

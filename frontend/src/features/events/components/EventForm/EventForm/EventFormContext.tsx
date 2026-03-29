@@ -52,6 +52,7 @@ export function EventFormProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useEventFormContext() {
   const context = useContext(EventFormContext);
   if (!context) {

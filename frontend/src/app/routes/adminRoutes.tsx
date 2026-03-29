@@ -10,17 +10,16 @@ import { AdminEventsPage } from "@/features/admin";
 import { AdminClubsPage } from "@/features/admin";
 import { AdminSubmissionsPage } from "@/features/admin";
 import { AdminPostersPage } from "@/features/admin";
-import type { Event, EventSubmission, Club } from "@/shared/types";
+import type { Event, EventSubmission, Club, EventFormData } from "@/shared/types";
 import { submissionToEventData } from "@/features/admin/utils/submissionToEvent";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { useAppContext } from "@/contexts/AppContext";
 
 interface AdminRoutesConfig {
   events: Event[];
   onEditEvent: (event: Event) => void | Promise<void>;
   onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
-  onAddEvent: (eventData: any) => Promise<number>;
+  onAddEvent: (eventData: EventFormData) => Promise<number>;
   userEmail: string | null;
 }
 
@@ -87,6 +86,7 @@ export function AdminRouteWrapper({
 /**
  * Admin route mapping for navigation
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const ADMIN_ROUTE_MAP: Record<string, string> = {
   "admin-events": "/admin/events",
   "admin-clubs": "/admin/clubs",
@@ -97,6 +97,7 @@ export const ADMIN_ROUTE_MAP: Record<string, string> = {
 /**
  * Admin panel navigation handler
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAdminNavigation() {
   const { navigate } = useNavigation();
 

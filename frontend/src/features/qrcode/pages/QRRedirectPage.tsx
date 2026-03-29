@@ -27,6 +27,7 @@ export function QRRedirectPage() {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMessage(t("common.loading") || "Loading...");
 
     fetchQrRedirectFromBackend(qrCodeId)

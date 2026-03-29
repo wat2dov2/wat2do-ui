@@ -199,7 +199,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
     if (step !== 2) return;
     if (!selectedAsset || selectedAsset.placement) return;
     setPlacementForAsset(selectedAsset.id, DEFAULT_IMAGE_PLACEMENT);
-  }, [step, selectedAsset?.id, setPlacementForAsset]);
+  }, [step, selectedAsset, setPlacementForAsset]);
 
   // Reset image dimensions when switching assets so the new image's onLoad sets them.
   useEffect(() => {
@@ -437,7 +437,6 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                     className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3"
                   >
                     <div className="w-20 h-20 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={asset.imagePreview}
                         alt={asset.name}
@@ -512,7 +511,6 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                   ref={imageContainerRef}
                   className="relative w-full max-w-md mx-auto aspect-3/4 rounded-lg overflow-hidden border border-border bg-muted select-none"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedAsset.imagePreview}
                     alt={selectedAsset.name}
@@ -565,7 +563,6 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-8 h-8 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={asset.imagePreview}
                         alt={asset.name}
