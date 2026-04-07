@@ -1,7 +1,10 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
+
+UserRole = Literal["user", "admin"]
 
 
 class UserBase(BaseModel):
@@ -34,7 +37,7 @@ class UserResponse(UserBase):
     school: str | None = None
     interests: list[str] | None = None
     is_first_year: bool = False
-    role: str = "user"
+    role: UserRole = "user"
     created_at: datetime
     updated_at: datetime
 

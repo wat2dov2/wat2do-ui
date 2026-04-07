@@ -11,7 +11,10 @@ interface CachedResult {
 
 let cache: CachedResult | null = null;
 
-export function useRecommendations(limit = 20) {
+/** Must match backend DEFAULT_LIMIT in services/recommender/config.py */
+const DEFAULT_RECOMMENDATION_LIMIT = 20;
+
+export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>(
     () => cache?.data ?? [],
   );

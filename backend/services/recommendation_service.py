@@ -13,6 +13,7 @@ from postgrest.exceptions import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.database import get_sb
+from core.tables import EVENTS, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
 from schemas.recommendation import RecommendationItem
 from services import user_service, interaction_service
@@ -20,6 +21,17 @@ from services.recommender.content_based import get_content_scores
 from services.recommender.collaborative import get_collaborative_scores
 from services.recommender.popularity import get_popularity_scores
 from services.recommender.reranker import mmr_rerank
+from services.recommender.config import (
+    DEFAULT_LIMIT,
+    DEFAULT_LAMBDA,
+    HOT_THRESHOLD,
+    WARM_THRESHOLD,
+    WEIGHTS_HOT,
+    WEIGHTS_WARM,
+    WEIGHTS_WARM_NO_COLLAB,
+    WEIGHTS_COLD,
+    CANDIDATE_POOL_SIZE,
+)
 
 
 log = logging.getLogger(__name__)
@@ -33,9 +45,9 @@ class RecommendationEngine:
         collab_scorer=None,
         popularity_scorer=None,
         reranker=None,
-        hot_threshold: int = 10,
-        warm_threshold: int = 3,
-        default_lambda: float = 0.7,
+        hot_threshold: int = HOT_THRESHOLD,
+        warm_threshold: int = WARM_THRESHOLD,
+        default_lambda: float = DEFAULT_LAMBDA,
     ):
         self._content_scorer = content_scorer or get_content_scores
         self._collab_scorer = collab_scorer or get_collaborative_scores
@@ -49,7 +61,7 @@ class RecommendationEngine:
     # Online: thin serving layer — reads pre-computed recs, applies real-time filters
     # ---------------------------------------------------------------------------
 
-    def get_recommendations(self, user_id: str, limit: int = 20) -> list[RecommendationItem]:
+    def get_recommendations(self, user_id: str, limit: int = DEFAULT_LIMIT) -> list[RecommendationItem]:
         """
         Read pre-computed recs from user_recommendations.
         Apply real-time filters: strip events the user has interacted with since
@@ -59,7 +71,7 @@ class RecommendationEngine:
         try:
             recs = (
                 get_sb()
-                .table("user_recommendations")
+                .table(USER_RECOMMENDATIONS)
                 .select("event_id, rank, predicted_score, reason, computed_at")
                 .eq("user_id", user_id)
                 .order("rank")
@@ -75,7 +87,7 @@ class RecommendationEngine:
             try:
                 recently_actioned = (
                     get_sb()
-                    .table("user_interactions")
+                    .table(USER_INTERACTIONS)
                     .select("event_id")
                     .eq("user_id", user_id)
                     .gt("created_at", computed_at)
@@ -90,7 +102,7 @@ class RecommendationEngine:
             try:
                 future_events = (
                     get_sb()
-                    .table("events")
+                    .table(EVENTS)
                     .select("id")
                     .gte("dtstart_utc", now)
                     .execute()
@@ -120,7 +132,7 @@ class RecommendationEngine:
 
         return self._compute_live(user_id, limit)
 
-    def get_popular_recommendations(self, limit: int = 20) -> list[RecommendationItem]:
+    def get_popular_recommendations(self, limit: int = DEFAULT_LIMIT) -> list[RecommendationItem]:
         """Return popular upcoming events for anonymous or cold-start users."""
         candidates = self._get_candidate_events()
         if not candidates:
@@ -146,7 +158,7 @@ class RecommendationEngine:
     def compute_and_store(
         self,
         user_id: str,
-        limit: int = 20,
+        limit: int = DEFAULT_LIMIT,
         lambda_param: float | None = None,
     ) -> list[RecommendationItem]:
         """Run full recommendation pipeline and store results in user_recommendations."""
@@ -179,21 +191,21 @@ class RecommendationEngine:
         """Upsert new recs then remove stale entries, so a failed insert never
         wipes existing recommendations."""
         if not rows:
-            get_sb().table("user_recommendations").delete().eq("user_id", user_id).execute()
+            get_sb().table(USER_RECOMMENDATIONS).delete().eq("user_id", user_id).execute()
             return
         computed_at = rows[0]["computed_at"]
-        get_sb().table("user_recommendations").upsert(
+        get_sb().table(USER_RECOMMENDATIONS).upsert(
             rows, on_conflict="user_id,event_id"
         ).execute()
         # Remove stale rows from previous computes
         (get_sb()
-         .table("user_recommendations")
+         .table(USER_RECOMMENDATIONS)
          .delete()
          .eq("user_id", user_id)
          .lt("computed_at", computed_at)
          .execute())
 
-    def compute_all_users(self, limit: int = 20, lambda_param: float | None = None) -> dict:
+    def compute_all_users(self, limit: int = DEFAULT_LIMIT, lambda_param: float | None = None) -> dict:
         """Run compute_and_store for every user. Returns stats dict."""
         users = self._fetch_all_user_ids()
         processed = 0
@@ -222,7 +234,7 @@ class RecommendationEngine:
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, max=4))
     def _fetch_all_user_ids(self) -> list[dict]:
         """Fetch all user IDs, with retry on transient failures."""
-        return get_sb().table("users").select("id").execute().data or []
+        return get_sb().table(USERS).select("id").execute().data or []
 
     # ---------------------------------------------------------------------------
     # Core pipeline (shared by live and offline)
@@ -231,7 +243,7 @@ class RecommendationEngine:
     def _compute_live(
         self,
         user_id: str,
-        limit: int = 20,
+        limit: int = DEFAULT_LIMIT,
         lambda_param: float | None = None,
     ) -> list[RecommendationItem]:
         """Full recommendation pipeline: score, blend, re-rank."""
@@ -273,13 +285,13 @@ class RecommendationEngine:
                 log.warning("Collaborative scoring failed for user %s: %s", user_id, e)
 
         if interaction_count >= self.hot_threshold:
-            weights = (0.3, 0.5, 0.2)
+            weights = WEIGHTS_HOT
         elif interaction_count >= self.warm_threshold:
-            weights = (0.5, 0.2, 0.3)
+            weights = WEIGHTS_WARM
         elif has_profile:
-            weights = (0.7, 0.0, 0.3)
+            weights = WEIGHTS_WARM_NO_COLLAB
         else:
-            weights = (0.0, 0.0, 1.0)
+            weights = WEIGHTS_COLD
 
         w_content, w_collab, w_pop = weights
         blended: dict[int, float] = {}
@@ -325,11 +337,11 @@ class RecommendationEngine:
         now = datetime.now(timezone.utc).isoformat()
         r = (
             get_sb()
-            .table("events")
+            .table(EVENTS)
             .select("*")
             .gte("dtstart_utc", now)
             .order("dtstart_utc", desc=False)
-            .limit(200)
+            .limit(CANDIDATE_POOL_SIZE)
             .execute()
         )
         return [EventResponse.model_validate(row) for row in (r.data or [])]

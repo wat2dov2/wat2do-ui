@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel
+
+ReportStatus = Literal["pending", "resolved", "dismissed"]
 
 
 class ReportCreate(BaseModel):
@@ -7,7 +11,7 @@ class ReportCreate(BaseModel):
 
 
 class ReportUpdate(BaseModel):
-    status: str  # "pending" | "resolved" | "dismissed"
+    status: ReportStatus
 
 
 class ReportResponse(BaseModel):
@@ -15,6 +19,6 @@ class ReportResponse(BaseModel):
     event_id: int
     user_id: str
     reason: str
-    status: str
+    status: ReportStatus
     reported_at: str
     resolved_at: str | None = None

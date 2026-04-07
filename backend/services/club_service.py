@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 log = logging.getLogger(__name__)
 
 from core.database import get_sb
+from core.tables import CLUBS, CLUB_INTEGRATIONS
 from schemas.club import (
     ClubCreate,
     ClubUpdate,
@@ -28,7 +29,7 @@ SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = (
 
 
 def get_club(club_id: int) -> ClubResponse | None:
-    r = get_sb().table("clubs").select("*").eq("id", club_id).execute()
+    r = get_sb().table(CLUBS).select("*").eq("id", club_id).execute()
     if not r.data or len(r.data) == 0:
         return None
     return ClubResponse.model_validate(r.data[0])
@@ -40,7 +41,7 @@ def list_clubs(
     club_type: str | None = None,
     search: str | None = None,
 ) -> list[ClubResponse]:
-    q = get_sb().table("clubs").select("*")
+    q = get_sb().table(CLUBS).select("*")
     if club_type:
         q = q.eq("club_type", club_type)
     if search:
@@ -53,7 +54,7 @@ def list_clubs(
 def create_club(data: ClubCreate, *, created_by: str) -> ClubResponse:
     payload = data.model_dump()
     payload["created_by"] = created_by
-    r = get_sb().table("clubs").insert(payload).execute()
+    r = get_sb().table(CLUBS).insert(payload).execute()
     return ClubResponse.model_validate(r.data[0])
 
 
@@ -61,12 +62,12 @@ def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     if get_club(club_id) is None:
         return None
     payload = data.model_dump(exclude_unset=True)
-    r = get_sb().table("clubs").update(payload).eq("id", club_id).execute()
+    r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
     return ClubResponse.model_validate(r.data[0]) if r.data else None
 
 
 def delete_club(club_id: int) -> bool:
-    r = get_sb().table("clubs").delete().eq("id", club_id).execute()
+    r = get_sb().table(CLUBS).delete().eq("id", club_id).execute()
     return bool(r.data)
 
 
@@ -264,7 +265,7 @@ def get_platform_integration(club_id: int, platform: IntegrationPlatform) -> Clu
         return None
     r = (
         get_sb()
-        .table("club_integrations")
+        .table(CLUB_INTEGRATIONS)
         .select("*")
         .eq("club_id", club_id)
         .eq("platform", platform)
@@ -297,7 +298,7 @@ def upsert_platform_integration(
     }
     r = (
         get_sb()
-        .table("club_integrations")
+        .table(CLUB_INTEGRATIONS)
         .upsert(payload, on_conflict="club_id,platform")
         .execute()
     )
@@ -315,7 +316,7 @@ def disconnect_platform_integration(club_id: int, platform: IntegrationPlatform)
     # Check if row exists; if not, just return empty.
     r = (
         get_sb()
-        .table("club_integrations")
+        .table(CLUB_INTEGRATIONS)
         .select("id")
         .eq("club_id", club_id)
         .eq("platform", platform)
@@ -343,7 +344,7 @@ def disconnect_platform_integration(club_id: int, platform: IntegrationPlatform)
     }
     r = (
         get_sb()
-        .table("club_integrations")
+        .table(CLUB_INTEGRATIONS)
         .update(update_payload)
         .eq("club_id", club_id)
         .eq("platform", platform)

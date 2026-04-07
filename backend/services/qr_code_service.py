@@ -3,11 +3,12 @@
 from datetime import datetime
 
 from core.database import get_sb
+from core.tables import QR_CODES, QR_CODE_SCANS
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
 
 
 def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
-    r = get_sb().table("qr_codes").select("*").eq("id", qr_code_id).execute()
+    r = get_sb().table(QR_CODES).select("*").eq("id", qr_code_id).execute()
     if not r.data or len(r.data) == 0:
         return None
     return QrCodeResponse.model_validate(r.data[0])
@@ -31,9 +32,9 @@ def upsert_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
         "longitude": data.longitude,
     }
     if existing:
-        sb.table("qr_codes").update(payload).eq("id", data.id).execute()
+        sb.table(QR_CODES).update(payload).eq("id", data.id).execute()
         return get_qr_code_by_id(data.id)
-    sb.table("qr_codes").insert(payload).execute()
+    sb.table(QR_CODES).insert(payload).execute()
     return get_qr_code_by_id(data.id)
 
 
@@ -49,12 +50,12 @@ def activate_poster_and_record_scan(
     if not qr or qr.is_active:
         return None
     sb = get_sb()
-    sb.table("qr_codes").update({
+    sb.table(QR_CODES).update({
         "latitude": latitude,
         "longitude": longitude,
         "is_active": True,
     }).eq("id", qr_code_id).execute()
-    sb.table("qr_code_scans").insert({
+    sb.table(QR_CODE_SCANS).insert({
         "qr_code_id": qr_code_id,
         "session_id": session_id,
         "user_agent": user_agent,
@@ -80,7 +81,7 @@ def record_scan(
     session_id: str,
     user_agent: str | None = None,
 ) -> QrCodeScanResponse:
-    r = get_sb().table("qr_code_scans").insert({
+    r = get_sb().table(QR_CODE_SCANS).insert({
         "qr_code_id": qr_code_id,
         "user_id": user_id,
         "session_id": session_id,
@@ -92,11 +93,11 @@ def record_scan(
 def delete_qr_code(qr_code_id: str) -> None:
     if not get_qr_code_by_id(qr_code_id):
         raise ValueError("Poster not found")
-    get_sb().table("qr_codes").delete().eq("id", qr_code_id).execute()
+    get_sb().table(QR_CODES).delete().eq("id", qr_code_id).execute()
 
 
 def list_qr_codes(*, created_by: str | None = None) -> list[QrCodeResponse]:
-    q = get_sb().table("qr_codes").select("*").order("created_at", desc=True)
+    q = get_sb().table(QR_CODES).select("*").order("created_at", desc=True)
     if created_by:
         q = q.eq("created_by", created_by)
     r = q.execute()
@@ -118,7 +119,7 @@ def list_scans(
         if qr_code_id and qr_code_id not in owned_ids:
             return []
 
-    q = get_sb().table("qr_code_scans").select("*").order("scanned_at", desc=True)
+    q = get_sb().table(QR_CODE_SCANS).select("*").order("scanned_at", desc=True)
     if qr_code_id:
         q = q.eq("qr_code_id", qr_code_id)
     elif owned_by is not None:

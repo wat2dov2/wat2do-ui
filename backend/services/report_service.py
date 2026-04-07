@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from core.database import get_sb
+from core.tables import REPORTED_EVENTS
 from schemas.report import ReportResponse
 
 
@@ -16,13 +17,13 @@ def create_report(user_id: str, event_id: int, reason: str) -> ReportResponse:
         "reason": reason,
         "status": "pending",
     }
-    r = get_sb().table("reported_events").insert(payload).execute()
+    r = get_sb().table(REPORTED_EVENTS).insert(payload).execute()
     return ReportResponse.model_validate(r.data[0]) if r.data else ReportResponse(**payload)
 
 
 def get_reports(status: str | None = None) -> list[ReportResponse]:
     """Return reports, optionally filtered by status."""
-    q = get_sb().table("reported_events").select("*")
+    q = get_sb().table(REPORTED_EVENTS).select("*")
     if status:
         q = q.eq("status", status)
     r = q.order("reported_at", desc=True).execute()
@@ -37,7 +38,7 @@ def update_report(report_id: str, status: str) -> ReportResponse | None:
     }
     r = (
         get_sb()
-        .table("reported_events")
+        .table(REPORTED_EVENTS)
         .update(payload)
         .eq("id", report_id)
         .execute()

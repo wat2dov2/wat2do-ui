@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel
+
+PromotionPackage = Literal["featured", "email", "combo"]
 
 
 class CreditRow(BaseModel):
@@ -18,7 +22,7 @@ class AddCreditsRequest(BaseModel):
 
 class PromotionCreate(BaseModel):
     event_id: int
-    package: str  # "featured" | "email" | "combo"
+    package: PromotionPackage
     credits: int
     duration: int  # days
 
@@ -27,7 +31,7 @@ class PromotionResponse(BaseModel):
     id: str
     user_id: str
     event_id: int
-    package: str
+    package: PromotionPackage
     credits_spent: int
     start_date: str
     end_date: str

@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from core.database import get_sb
+from core.tables import EVENT_SUBMISSIONS
 from schemas.submission import SubmissionResponse
 
 
@@ -15,13 +16,13 @@ def create_submission(user_id: str, event_data: dict) -> SubmissionResponse:
         "event_data": event_data,
         "status": "pending",
     }
-    r = get_sb().table("event_submissions").insert(payload).execute()
+    r = get_sb().table(EVENT_SUBMISSIONS).insert(payload).execute()
     return SubmissionResponse.model_validate(r.data[0]) if r.data else SubmissionResponse(**payload)
 
 
 def get_submissions(status: str | None = None) -> list[SubmissionResponse]:
     """Return submissions, optionally filtered by status."""
-    q = get_sb().table("event_submissions").select("*")
+    q = get_sb().table(EVENT_SUBMISSIONS).select("*")
     if status:
         q = q.eq("status", status)
     r = q.order("submitted_at", desc=True).execute()
@@ -32,7 +33,7 @@ def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
     """Return a single submission by ID."""
     r = (
         get_sb()
-        .table("event_submissions")
+        .table(EVENT_SUBMISSIONS)
         .select("*")
         .eq("id", submission_id)
         .execute()
@@ -55,7 +56,7 @@ def update_submission(
 
     r = (
         get_sb()
-        .table("event_submissions")
+        .table(EVENT_SUBMISSIONS)
         .update(payload)
         .eq("id", submission_id)
         .execute()
@@ -67,7 +68,7 @@ def delete_submission(submission_id: str) -> bool:
     """Delete a submission. Returns True if a row was deleted."""
     r = (
         get_sb()
-        .table("event_submissions")
+        .table(EVENT_SUBMISSIONS)
         .delete()
         .eq("id", submission_id)
         .execute()

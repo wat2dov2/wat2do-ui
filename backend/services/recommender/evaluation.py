@@ -11,7 +11,19 @@ from services.recommender.content_based import get_content_scores
 from services.recommender.collaborative import get_collaborative_scores
 from services.recommender.popularity import get_popularity_scores
 from services.recommender.reranker import mmr_rerank
+from services.recommender.config import (
+    EVAL_K,
+    HOT_THRESHOLD,
+    WARM_THRESHOLD,
+    DEFAULT_LAMBDA,
+    EVAL_MIN_INTERACTIONS,
+    WEIGHTS_HOT,
+    WEIGHTS_WARM,
+    WEIGHTS_WARM_NO_COLLAB,
+    WEIGHTS_COLD,
+)
 from core.database import get_sb
+from core.tables import EVENTS
 
 
 def precision_at_k(recommended_ids: list[int], relevant_ids: set[int], k: int) -> float:
@@ -41,10 +53,10 @@ def ndcg_at_k(recommended_ids: list[int], relevant_ids: set[int], k: int) -> flo
 
 
 def evaluate_all_users(
-    k: int = 10,
-    hot_threshold: int = 10,
-    warm_threshold: int = 3,
-    lambda_param: float = 0.7,
+    k: int = EVAL_K,
+    hot_threshold: int = HOT_THRESHOLD,
+    warm_threshold: int = WARM_THRESHOLD,
+    lambda_param: float = DEFAULT_LAMBDA,
 ) -> dict:
     """
     Leave-one-out evaluation across all users with sufficient interactions.
@@ -66,7 +78,7 @@ def evaluate_all_users(
     eligible = {
         uid: events
         for uid, events in user_events.items()
-        if len(events) >= 5
+        if len(events) >= EVAL_MIN_INTERACTIONS
     }
 
     if not eligible:
@@ -97,13 +109,13 @@ def evaluate_all_users(
             has_profile = bool(user and user.interests)
 
             if interaction_count >= hot_threshold:
-                weights = (0.3, 0.5, 0.2)
+                weights = WEIGHTS_HOT
             elif interaction_count >= warm_threshold:
-                weights = (0.5, 0.2, 0.3)
+                weights = WEIGHTS_WARM
             elif has_profile:
-                weights = (0.7, 0.0, 0.3)
+                weights = WEIGHTS_WARM_NO_COLLAB
             else:
-                weights = (0.0, 0.0, 1.0)
+                weights = WEIGHTS_COLD
 
             w_content, w_collab, w_pop = weights
 
@@ -149,11 +161,11 @@ def evaluate_all_users(
 
 def _load_all_events() -> list[EventResponse]:
     """Load all events with full metadata for evaluation."""
-    r = get_sb().table("events").select("*").execute()
+    r = get_sb().table(EVENTS).select("*").execute()
     return [EventResponse.model_validate(row) for row in (r.data or [])]
 
 
 def _load_events(event_ids: list[int]) -> list[EventResponse]:
     """Load full event data for content scoring."""
-    r = get_sb().table("events").select("*").in_("id", event_ids).execute()
+    r = get_sb().table(EVENTS).select("*").in_("id", event_ids).execute()
     return [EventResponse.model_validate(row) for row in (r.data or [])]

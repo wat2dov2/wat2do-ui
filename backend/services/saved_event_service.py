@@ -3,6 +3,7 @@
 import uuid
 
 from core.database import get_sb
+from core.tables import USER_SAVED_EVENTS
 from schemas.saved_event import SavedEventResponse, UserEventPair
 
 
@@ -10,7 +11,7 @@ def get_saved_event_ids(user_id: str) -> list[int]:
     """Return event IDs saved by this user."""
     r = (
         get_sb()
-        .table("user_saved_events")
+        .table(USER_SAVED_EVENTS)
         .select("event_id")
         .eq("user_id", user_id)
         .order("saved_at", desc=True)
@@ -28,7 +29,7 @@ def save_event(user_id: str, event_id: int) -> SavedEventResponse:
     }
     r = (
         get_sb()
-        .table("user_saved_events")
+        .table(USER_SAVED_EVENTS)
         .upsert(payload, on_conflict="user_id,event_id")
         .execute()
     )
@@ -39,7 +40,7 @@ def unsave_event(user_id: str, event_id: int) -> bool:
     """Remove a saved event. Returns True if a row was deleted."""
     r = (
         get_sb()
-        .table("user_saved_events")
+        .table(USER_SAVED_EVENTS)
         .delete()
         .eq("user_id", user_id)
         .eq("event_id", event_id)
@@ -52,7 +53,7 @@ def get_all_user_saves() -> list[UserEventPair]:
     """Return all (user_id, event_id) pairs. Used by collaborative filtering."""
     r = (
         get_sb()
-        .table("user_saved_events")
+        .table(USER_SAVED_EVENTS)
         .select("user_id, event_id")
         .execute()
     )

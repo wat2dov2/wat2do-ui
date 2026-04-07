@@ -2,24 +2,17 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from core.auth import get_current_user
+from core.auth import get_current_user, resolve_db_user
 from schemas.credit import (
     AddCreditsRequest,
     CreditBalanceResponse,
     PromotionCreate,
     PromotionResponse,
 )
-from services import credit_service, user_service
+from services import credit_service
 
 router = APIRouter(tags=["credits"])
 log = logging.getLogger(__name__)
-
-
-def _resolve_db_user(auth_user: dict):
-    db_user = user_service.get_user_by_supabase_id(auth_user["id"])
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
 
 
 # ── Credits ──────────────────────────────────────────────────────────
@@ -27,14 +20,14 @@ def _resolve_db_user(auth_user: dict):
 
 @router.get("/credits/", response_model=CreditBalanceResponse)
 def get_credits(auth_user: dict = Depends(get_current_user)):
-    user = _resolve_db_user(auth_user)
+    user = resolve_db_user(auth_user)
     balance = credit_service.get_balance(str(user.id))
     return CreditBalanceResponse(balance=balance)
 
 
 @router.post("/credits/add", response_model=CreditBalanceResponse)
 def add_credits(data: AddCreditsRequest, auth_user: dict = Depends(get_current_user)):
-    user = _resolve_db_user(auth_user)
+    user = resolve_db_user(auth_user)
     new_balance = credit_service.add_credits(str(user.id), data.amount)
     return CreditBalanceResponse(balance=new_balance)
 
@@ -44,13 +37,13 @@ def add_credits(data: AddCreditsRequest, auth_user: dict = Depends(get_current_u
 
 @router.get("/promotions/", response_model=list[PromotionResponse])
 def list_promotions(auth_user: dict = Depends(get_current_user)):
-    user = _resolve_db_user(auth_user)
+    user = resolve_db_user(auth_user)
     return credit_service.get_user_promotions(str(user.id))
 
 
 @router.post("/promotions/", response_model=PromotionResponse, status_code=201)
 def create_promotion(data: PromotionCreate, auth_user: dict = Depends(get_current_user)):
-    user = _resolve_db_user(auth_user)
+    user = resolve_db_user(auth_user)
     return credit_service.create_promotion(
         user_id=str(user.id),
         event_id=data.event_id,

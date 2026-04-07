@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from core.auth import get_current_user, is_admin, require_owner_or_admin
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
+from core.errors import POSTER_NOT_FOUND
 from services import qr_code_service
 
 router = APIRouter(prefix="/qr", tags=["qr"])
@@ -41,7 +42,7 @@ def resolve_qr_and_record_scan(
 ):
     qr = qr_code_service.get_qr_code_by_id(qr_code_id)
     if not qr:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Poster not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
 
     session_id = request.headers.get("x-session-id") or str(uuid.uuid4())
     user_agent = request.headers.get("user-agent")
@@ -93,7 +94,7 @@ def update_poster(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID mismatch")
     existing = qr_code_service.get_qr_code_by_id(qr_code_id)
     if not existing:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Poster not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
     require_owner_or_admin(user, existing.created_by)
     return qr_code_service.upsert_qr_code(data, created_by=existing.created_by)
 
@@ -105,6 +106,6 @@ def delete_poster(
 ):
     existing = qr_code_service.get_qr_code_by_id(qr_code_id)
     if not existing:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Poster not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
     require_owner_or_admin(user, existing.created_by)
     qr_code_service.delete_qr_code(qr_code_id)

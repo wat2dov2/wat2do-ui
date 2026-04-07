@@ -30,6 +30,7 @@ import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmi
 import { useAdminSubmissionsPagination } from "@/features/admin/hooks/useAdminSubmissionsPagination";
 import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
 import type { EventSubmission } from "@/shared/types";
+import { formatRelativeTime } from "@/shared/utils/relativeTime";
 
 interface AdminSubmissionsPageProps {
   onBack: () => void;
@@ -82,20 +83,7 @@ export function AdminSubmissionsPage({
   }, [submissionIdParam]);
 
 
-  const formatRelativeTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return t("common.justNow");
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-    return date.toLocaleDateString();
-  };
+  const fmtTime = (dateStr: string) => formatRelativeTime(dateStr, t);
 
   return (
     <div className="space-y-5">
@@ -221,7 +209,7 @@ export function AdminSubmissionsPage({
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Clock className="w-3.5 h-3.5" />
-                        <span>{formatRelativeTime(submission.submittedAt)}</span>
+                        <span>{fmtTime(submission.submittedAt)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -476,7 +464,7 @@ export function AdminSubmissionsPage({
                   {selectedSubmission.submittedBy}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatRelativeTime(selectedSubmission.submittedAt)}
+                  {fmtTime(selectedSubmission.submittedAt)}
                 </p>
               </div>
 

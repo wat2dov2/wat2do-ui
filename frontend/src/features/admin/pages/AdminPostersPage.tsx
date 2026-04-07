@@ -32,6 +32,7 @@ import { useAdminContext } from "@/features/admin/context/AdminContext";
 import { useAdminPostersFilters } from "@/features/admin/hooks/useAdminPostersFilters";
 import { useAdminPostersPagination } from "@/features/admin/hooks/useAdminPostersPagination";
 import { useAdminPostersPage } from "@/features/admin/hooks/useAdminPostersPage";
+import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 import type { QRCode } from "@/shared/types";
 
 // Lazy load Mapbox map component - it's heavy and only needed when visible
@@ -79,21 +80,7 @@ export function AdminPostersPage() {
     : null;
   const showDetailsModal = selectedQRCode !== null;
 
-  // Format timestamp for display
-  const formatScanTimestamp = (timestamp: string): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return t("common.justNow");
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
+  const formatScanTimestamp = (timestamp: string) => formatRelativeTimeCompact(timestamp, t);
 
   const handleViewDetails = (qrCode: QRCode) => {
     const newParams = new URLSearchParams(searchParams);

@@ -82,18 +82,8 @@ export function parseFiltersFromJSON(
   }
 }
 
-/**
- * Convert filter state to URL query string
- */
-export function buildFilterQueryString(filters: FilterState): string {
-  try {
-    const encoded = encodeURIComponent(JSON.stringify(filters));
-    return `filters=${encoded}`;
-  } catch (err) {
-    console.error("Failed to build filter query string:", err);
-    return "";
-  }
-}
+// Canonical home: shared/utils/filter.ts — re-exported for feature consumers
+export { buildFilterQueryString } from "@/shared/utils/filter";
 
 /**
  * Parse filter state from URL query string

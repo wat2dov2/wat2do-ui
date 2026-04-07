@@ -49,4 +49,4 @@ export {
   generateQRCodeUrl,
   downloadQRCodeAsPNG,
   downloadQRCodeAsSVG,
-} from "./api/qrcodeGenerator";
+} from "@/shared/utils/qrGenerator";

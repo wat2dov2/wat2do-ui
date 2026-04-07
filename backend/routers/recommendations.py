@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from core.auth import get_optional_user
 from schemas.recommendation import RecommendationItem
 from services.recommendation_service import engine as recommendation_engine
+from services.recommender.config import DEFAULT_LIMIT, MAX_LIMIT
 from services.ab_test_service import ab_test
 from services import user_service
 
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 @router.get("/", response_model=list[RecommendationItem])
 def get_recommendations(
-    limit: int = Query(default=20, le=50),
+    limit: int = Query(default=DEFAULT_LIMIT, le=MAX_LIMIT),
     auth_user: dict | None = Depends(get_optional_user),
 ):
     """Get event recommendations. Personalized if logged in, popular otherwise."""

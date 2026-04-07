@@ -3,10 +3,7 @@
 import math
 
 from services import interaction_service, saved_event_service
-
-
-# Minimum interactions required for CF to be meaningful.
-MIN_INTERACTIONS = 3
+from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT
 
 
 def get_collaborative_scores(
@@ -37,7 +34,7 @@ def get_collaborative_scores(
         user_vectors[uid][eid] = user_vectors[uid].get(eid, 0) + 5.0
 
     target_vec = user_vectors.get(user_id, {})
-    if len(target_vec) < MIN_INTERACTIONS:
+    if len(target_vec) < CF_MIN_INTERACTIONS:
         return {}
 
     candidate_set = set(candidate_event_ids)
@@ -51,13 +48,13 @@ def get_collaborative_scores(
     # Item-based CF
     item_scores = _item_based_cf(target_vec, user_vectors, unseen)
 
-    # Blend 50/50
+    # Blend user-based and item-based CF
     all_eids = set(user_scores.keys()) | set(item_scores.keys())
     blended: dict[int, float] = {}
     for eid in all_eids:
         u = user_scores.get(eid, 0)
         i = item_scores.get(eid, 0)
-        blended[eid] = 0.5 * u + 0.5 * i
+        blended[eid] = CF_BLEND_WEIGHT * u + (1 - CF_BLEND_WEIGHT) * i
 
     # Normalize to [0, 1]
     if blended:
@@ -74,7 +71,7 @@ def _user_based_cf(
     target_vec: dict[int, float],
     user_vectors: dict[str, dict[int, float]],
     unseen_eids: set[int],
-    k: int = 20,
+    k: int = CF_NEIGHBOR_K,
 ) -> dict[int, float]:
     """Find K most similar users, predict scores for unseen events."""
     similarities: list[tuple[str, float]] = []

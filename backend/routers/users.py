@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from core.auth import get_current_user, get_admin_user
 from schemas.user import UserUpdate, UserProfileUpdate, UserResponse
+from core.errors import USER_NOT_FOUND
 from services import user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -28,7 +29,7 @@ def update_me(
     user = user_service.get_user_by_supabase_id(auth_user["id"])
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
         )
     updated = user_service.update_user(user.id, data)
     return updated
@@ -42,7 +43,7 @@ def update_profile(
     user = user_service.get_user_by_supabase_id(auth_user["id"])
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
         )
     update_data = UserUpdate(**data.model_dump(exclude_unset=True))
     updated = user_service.update_user(user.id, update_data)
@@ -65,7 +66,7 @@ def get_user(
 ):
     user = user_service.get_user(user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)
     return user
 
 
@@ -76,4 +77,4 @@ def delete_user(
 ):
     deleted = user_service.delete_user(user_id)
     if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)

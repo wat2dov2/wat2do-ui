@@ -3,13 +3,17 @@
 from datetime import datetime
 from uuid import UUID
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
+
+QrDestinationType = Literal["event", "events-list", "custom-url"]
 
 
 class QrCodeRedirect(BaseModel):
     """Public response for GET /qr/{id}: redirect config only. Scan is recorded server-side."""
 
-    destination_type: str
+    destination_type: QrDestinationType
     destination_id: str | int | None = None
     filters: dict | list | None = None
 
@@ -20,7 +24,7 @@ class QrCodeCreate(BaseModel):
     id: str
     name: str
     description: str | None = None
-    destination_type: str
+    destination_type: QrDestinationType
     destination_id: str | int | None = None
     filters: dict | list | None = None
     created_by: str
@@ -38,7 +42,7 @@ class QrCodeResponse(BaseModel):
     id: str
     name: str
     description: str | None
-    destination_type: str
+    destination_type: QrDestinationType
     destination_id: str | None
     filters: dict | list | None
     created_at: datetime

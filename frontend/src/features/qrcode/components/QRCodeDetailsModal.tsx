@@ -19,6 +19,7 @@ import { QRCodeStatsDisplay } from "@/features/qrcode/components/QRCode/QRCodeSt
 import { QRCodeScansChart } from "@/features/qrcode/components/QRCode/QRCodeScansChart";
 import type { QRCode, Event } from "@/shared/types";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
+import { API_BASE_URL } from "@/shared/config/api";
 import {
   QRCodeDetailsModalProvider,
   useQRCodeDetailsModalContext,
@@ -49,7 +50,7 @@ function QRCodeDetailsModalContent() {
   });
 
   const qrUrl = generateQRCodeUrl(qrCode.id);
-  const apiBase = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+  const apiBase = API_BASE_URL;
   const posterImageSrc = qrCode.imageUrl
     ? qrCode.imageUrl.startsWith("http") || qrCode.imageUrl.startsWith("data:")
       ? qrCode.imageUrl

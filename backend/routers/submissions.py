@@ -2,24 +2,18 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from core.auth import get_current_user, get_admin_user
+from core.auth import get_current_user, get_admin_user, resolve_db_user
 from schemas.submission import SubmissionCreate, SubmissionUpdate, SubmissionResponse
-from services import submission_service, user_service
+from core.errors import SUBMISSION_NOT_FOUND
+from services import submission_service
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 log = logging.getLogger(__name__)
 
 
-def _resolve_db_user(auth_user: dict):
-    db_user = user_service.get_user_by_supabase_id(auth_user["id"])
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
-
-
 @router.post("/", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
 def create_submission(data: SubmissionCreate, auth_user: dict = Depends(get_current_user)):
-    user = _resolve_db_user(auth_user)
+    user = resolve_db_user(auth_user)
     return submission_service.create_submission(str(user.id), data.event_data)
 
 
@@ -35,7 +29,7 @@ def list_submissions(
 def get_submission(submission_id: str, _: dict = Depends(get_admin_user)):
     row = submission_service.get_submission_by_id(submission_id)
     if not row:
-        raise HTTPException(status_code=404, detail="Submission not found")
+        raise HTTPException(status_code=404, detail=SUBMISSION_NOT_FOUND)
     return row
 
 
@@ -49,11 +43,11 @@ def update_submission(
         submission_id, data.status, data.rejection_reason,
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Submission not found")
+        raise HTTPException(status_code=404, detail=SUBMISSION_NOT_FOUND)
     return row
 
 
 @router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_submission(submission_id: str, _: dict = Depends(get_admin_user)):
     if not submission_service.delete_submission(submission_id):
-        raise HTTPException(status_code=404, detail="Submission not found")
+        raise HTTPException(status_code=404, detail=SUBMISSION_NOT_FOUND)

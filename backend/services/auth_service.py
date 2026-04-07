@@ -8,6 +8,7 @@ from supabase_auth.errors import AuthApiError
 from core.allowed_emails import get_school_for_email, is_email_allowed
 from core.database import supabase, get_sb
 from core.logging import logger
+from core.tables import USERS
 from schemas.auth import (
     SignupRequest,
     SignupResponse,
@@ -60,7 +61,7 @@ class AuthService:
             "school": school,
         }
         try:
-            r = self._db.table("users").insert(payload).execute()
+            r = self._db.table(USERS).insert(payload).execute()
             row = r.data[0]
             user_id = row["id"]
         except Exception as e:

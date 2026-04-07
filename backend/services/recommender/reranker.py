@@ -4,6 +4,7 @@ import math
 
 from constants import EVENT_CATEGORIES
 from schemas.event import EventResponse
+from services.recommender.config import DEFAULT_LAMBDA, DEFAULT_LIMIT
 
 
 # One-hot dimension for categories.
@@ -17,8 +18,8 @@ TIME_BUCKETS = ("morning", "afternoon", "evening", "weekend")
 def mmr_rerank(
     scored_events: list[tuple[int, float]],
     events_metadata: dict[int, EventResponse],
-    lambda_param: float = 0.7,
-    k: int = 20,
+    lambda_param: float = DEFAULT_LAMBDA,
+    k: int = DEFAULT_LIMIT,
 ) -> list[int]:
     """
     Re-rank events using MMR to balance relevance with diversity.

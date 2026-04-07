@@ -25,12 +25,13 @@ load_dotenv()
 
 from services.recommendation_service import engine as recommendation_engine
 from services.recommender.evaluation import evaluate_all_users
+from services.recommender.config import DEFAULT_LIMIT, DEFAULT_LAMBDA, EVAL_K
 
 
 def main():
     parser = argparse.ArgumentParser(description="Compute recommendations for all users")
-    parser.add_argument("--limit", type=int, default=20, help="Max recommendations per user")
-    parser.add_argument("--lambda", type=float, default=0.7, dest="lambda_param",
+    parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="Max recommendations per user")
+    parser.add_argument("--lambda", type=float, default=DEFAULT_LAMBDA, dest="lambda_param",
                         help="MMR lambda (0=diversity, 1=relevance)")
     parser.add_argument("--skip-eval", action="store_true", help="Skip evaluation step")
     args = parser.parse_args()
@@ -60,7 +61,7 @@ def main():
         print("Running evaluation...")
         eval_start = time.time()
         try:
-            metrics = evaluate_all_users(k=10)
+            metrics = evaluate_all_users(k=EVAL_K)
             eval_elapsed = time.time() - eval_start
             print(f"  Users evaluated:  {metrics['num_users_evaluated']}")
             print(f"  Precision@{metrics['k']}:    {metrics['precision_at_k']}")

@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import {
   Dialog,
   DialogContent,
@@ -494,16 +495,7 @@ export function ClubPanelIntegrationsPage() {
 
   const formatLastSync = (isoString?: string) => {
     if (!isoString) return "";
-    const date = new Date(isoString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-
-    if (diffMins < 1) return t("common.justNow");
-    if (diffMins < 60) return t("integrations.minutesAgo", { count: diffMins });
-    if (diffHours < 24) return t("integrations.hoursAgo", { count: diffHours });
-    return date.toLocaleDateString();
+    return formatRelativeTime(isoString, t);
   };
 
   const whatsappIntegration = getIntegration("whatsapp");

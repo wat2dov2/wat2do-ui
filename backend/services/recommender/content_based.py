@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from constants import INTEREST_TO_CATEGORIES
 from core.database import get_sb
+from core.tables import EVENTS
 from schemas.event import EventResponse
 from services import user_service, interaction_service
 
@@ -135,7 +136,7 @@ def _compute_org_affinity(
     if interacted_ids:
         r = (
             get_sb()
-            .table("events")
+            .table(EVENTS)
             .select("id, organization")
             .in_("id", interacted_ids)
             .execute()

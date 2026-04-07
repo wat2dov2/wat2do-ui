@@ -3,6 +3,7 @@
 import uuid
 
 from core.database import get_sb
+from core.tables import USER_INTERACTIONS
 from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
 
 # Weights for computing interaction scores.
@@ -34,7 +35,7 @@ def record_interactions(
             "interaction_type": item.interaction_type,
             "metadata": item.metadata,
         })
-    r = get_sb().table("user_interactions").insert(rows).execute()
+    r = get_sb().table(USER_INTERACTIONS).insert(rows).execute()
     return len(r.data) if r.data else 0
 
 
@@ -42,7 +43,7 @@ def get_user_event_scores(user_id: str) -> dict[int, float]:
     """Weighted interaction scores for a single user: {event_id: score}."""
     r = (
         get_sb()
-        .table("user_interactions")
+        .table(USER_INTERACTIONS)
         .select("event_id, interaction_type")
         .eq("user_id", user_id)
         .execute()
@@ -62,7 +63,7 @@ def get_interaction_matrix() -> list[InteractionMatrixRow]:
     """
     r = (
         get_sb()
-        .table("user_interactions")
+        .table(USER_INTERACTIONS)
         .select("user_id, event_id, interaction_type")
         .not_.is_("user_id", "null")
         .execute()
@@ -87,7 +88,7 @@ def get_event_popularity(limit: int = 50) -> list[EventPopularity]:
     """
     r = (
         get_sb()
-        .table("user_interactions")
+        .table(USER_INTERACTIONS)
         .select("event_id, interaction_type")
         .execute()
     )
@@ -105,7 +106,7 @@ def get_user_interaction_count(user_id: str) -> int:
     """Count total interactions for a user. Used to determine user 'temperature'."""
     r = (
         get_sb()
-        .table("user_interactions")
+        .table(USER_INTERACTIONS)
         .select("id", count="exact")
         .eq("user_id", user_id)
         .execute()

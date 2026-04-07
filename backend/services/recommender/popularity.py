@@ -4,6 +4,7 @@ import math
 from datetime import datetime, timezone
 
 from core.database import get_sb
+from core.tables import EVENTS
 from schemas.event import EventTimeMeta
 from services import interaction_service
 
@@ -65,7 +66,7 @@ def _load_events_meta(event_ids: list[int]) -> dict[int, EventTimeMeta]:
         return {}
     r = (
         get_sb()
-        .table("events")
+        .table(EVENTS)
         .select("id, dtstart_utc, added_at")
         .in_("id", event_ids)
         .execute()

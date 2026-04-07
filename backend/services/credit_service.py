@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 
 from core.database import get_sb
+from core.tables import USER_CREDITS, EVENT_PROMOTIONS
 from schemas.credit import CreditRow, PromotionResponse
 
 DEFAULT_BALANCE = 100
@@ -15,7 +16,7 @@ def get_or_create_credits(user_id: str) -> CreditRow:
     """Return the credits row for a user, creating one if it doesn't exist."""
     r = (
         get_sb()
-        .table("user_credits")
+        .table(USER_CREDITS)
         .select("*")
         .eq("user_id", user_id)
         .execute()
@@ -30,7 +31,7 @@ def get_or_create_credits(user_id: str) -> CreditRow:
     }
     r = (
         get_sb()
-        .table("user_credits")
+        .table(USER_CREDITS)
         .insert(payload)
         .execute()
     )
@@ -47,7 +48,7 @@ def add_credits(user_id: str, amount: int) -> int:
     """Add credits to a user's balance. Returns the new balance."""
     row = get_or_create_credits(user_id)
     new_balance = row.balance + amount
-    get_sb().table("user_credits").update(
+    get_sb().table(USER_CREDITS).update(
         {"balance": new_balance, "updated_at": datetime.now(timezone.utc).isoformat()}
     ).eq("user_id", user_id).execute()
     return new_balance
@@ -62,7 +63,7 @@ def deduct_credits(user_id: str, amount: int) -> int:
             detail="Insufficient credits",
         )
     new_balance = row.balance - amount
-    get_sb().table("user_credits").update(
+    get_sb().table(USER_CREDITS).update(
         {"balance": new_balance, "updated_at": datetime.now(timezone.utc).isoformat()}
     ).eq("user_id", user_id).execute()
     return new_balance
@@ -90,7 +91,7 @@ def create_promotion(
         "start_date": now.isoformat(),
         "end_date": end.isoformat(),
     }
-    r = get_sb().table("event_promotions").insert(payload).execute()
+    r = get_sb().table(EVENT_PROMOTIONS).insert(payload).execute()
     return PromotionResponse.model_validate(r.data[0]) if r.data else PromotionResponse(**payload)
 
 
@@ -98,7 +99,7 @@ def get_user_promotions(user_id: str) -> list[PromotionResponse]:
     """Return all promotions for a user, newest first."""
     r = (
         get_sb()
-        .table("event_promotions")
+        .table(EVENT_PROMOTIONS)
         .select("*")
         .eq("user_id", user_id)
         .order("created_at", desc=True)
@@ -112,7 +113,7 @@ def get_active_promoted_event_ids() -> list[int]:
     now = datetime.now(timezone.utc).isoformat()
     r = (
         get_sb()
-        .table("event_promotions")
+        .table(EVENT_PROMOTIONS)
         .select("event_id")
         .gte("end_date", now)
         .execute()

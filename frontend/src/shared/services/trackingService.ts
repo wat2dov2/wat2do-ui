@@ -4,8 +4,9 @@
  */
 
 import { getAccessToken } from "@/shared/services/apiClient";
+import { API_BASE_URL } from "@/shared/config/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const BASE_URL = API_BASE_URL;
 const SESSION_KEY = "wat2do_session_id";
 
 interface QueuedInteraction {

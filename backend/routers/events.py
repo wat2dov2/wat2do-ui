@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user, require_owner_or_admin
 from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
+from core.errors import EVENT_NOT_FOUND
 from services import event_service
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -48,7 +49,7 @@ def list_events(
 def get_event(event_id: int):
     event = event_service.get_event(event_id)
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=EVENT_NOT_FOUND)
     return event
 
 
@@ -68,7 +69,7 @@ def update_event(
 ):
     event = event_service.get_event(event_id)
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=EVENT_NOT_FOUND)
     require_owner_or_admin(auth_user, event.created_by)
     updated = event_service.update_event(event_id, data)
     return updated
@@ -81,6 +82,6 @@ def delete_event(
 ):
     event = event_service.get_event(event_id)
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=EVENT_NOT_FOUND)
     require_owner_or_admin(auth_user, event.created_by)
     event_service.delete_event(event_id)

@@ -82,6 +82,18 @@ def is_admin(auth_user: dict) -> bool:
     return db_user is not None and db_user.role == "admin"
 
 
+def resolve_db_user(auth_user: dict):
+    """Look up the internal DB user from a Supabase auth user dict.
+
+    Raises 404 if the user has not completed signup (no row in ``users``).
+    Shared by routers that need the internal user row after auth.
+    """
+    db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+
 def require_owner_or_admin(auth_user: dict, resource_owner_id: str | None) -> None:
     """Raise 403 if the user is neither the resource owner nor an admin.
 

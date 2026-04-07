@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+import { API_BASE_URL } from "@/shared/config/api";
+
+const BASE_URL = API_BASE_URL;
 
 // In-memory access token — never stored in localStorage
 let accessToken: string | null = null;

@@ -3,6 +3,7 @@
 import hashlib
 
 from core.database import get_sb
+from core.tables import AB_TEST_EVENTS
 
 
 class ABTestService:
@@ -24,7 +25,7 @@ class ABTestService:
 
     def record_impression(self, user_id: str, event_id: int, variant: str) -> None:
         """Record that an event was shown to the user."""
-        get_sb().table("ab_test_events").insert([{
+        get_sb().table(AB_TEST_EVENTS).insert([{
             "user_id": user_id,
             "event_id": event_id,
             "variant": variant,
@@ -39,11 +40,11 @@ class ABTestService:
             {"user_id": user_id, "event_id": eid, "variant": variant, "event_type": "impression"}
             for eid in event_ids
         ]
-        get_sb().table("ab_test_events").insert(rows).execute()
+        get_sb().table(AB_TEST_EVENTS).insert(rows).execute()
 
     def record_click(self, user_id: str, event_id: int, variant: str) -> None:
         """Record that the user clicked on a recommended event."""
-        get_sb().table("ab_test_events").insert([{
+        get_sb().table(AB_TEST_EVENTS).insert([{
             "user_id": user_id,
             "event_id": event_id,
             "variant": variant,
@@ -52,7 +53,7 @@ class ABTestService:
 
     def get_ctr_by_variant(self) -> dict[str, dict]:
         """Compute click-through rate per variant."""
-        r = get_sb().table("ab_test_events").select("variant, event_type").execute()
+        r = get_sb().table(AB_TEST_EVENTS).select("variant, event_type").execute()
 
         counts: dict[str, dict[str, int]] = {
             v: {"impressions": 0, "clicks": 0} for v in self.variants

@@ -3,6 +3,7 @@
 import uuid
 
 from core.database import get_sb
+from core.tables import SCRAPED_EVENTS
 from schemas.scraped_event import ScrapedEventResponse
 
 
@@ -18,7 +19,7 @@ def create_scraped_event(
         "source": source,
         "raw_data": raw_data,
     }
-    r = get_sb().table("scraped_events").insert(payload).execute()
+    r = get_sb().table(SCRAPED_EVENTS).insert(payload).execute()
     return ScrapedEventResponse.model_validate(r.data[0]) if r.data else ScrapedEventResponse(**payload)
 
 
@@ -26,7 +27,7 @@ def get_scraped_events() -> list[ScrapedEventResponse]:
     """Return all scraped events, newest first."""
     r = (
         get_sb()
-        .table("scraped_events")
+        .table(SCRAPED_EVENTS)
         .select("*")
         .order("scraped_at", desc=True)
         .execute()
