@@ -36,6 +36,8 @@ import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
+import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
+import { QP } from "@/shared/constants/queryParams";
 
 interface EventCardProps {
   event: Event;
@@ -78,7 +80,7 @@ export const EventCard = React.memo(function EventCard({
   const disableModal = propDisableModal ?? contextDisableModal;
   
   // Check if this event should be shown in modal based on URL
-  const eventIdParam = searchParams.get("eventId");
+  const eventIdParam = searchParams.get(QP.EVENT_ID);
   const showDetailsModal = !disableModal && eventIdParam === event.id.toString();
 
   // Track card visibility (view impression)
@@ -122,7 +124,7 @@ export const EventCard = React.memo(function EventCard({
             onEventClick(event);
           } else if (!disableModal) {
             const newParams = new URLSearchParams(searchParams);
-            newParams.set("eventId", event.id.toString());
+            newParams.set(QP.EVENT_ID, event.id.toString());
             navigate(`/?${newParams.toString()}`, { replace: false });
           }
         }}
@@ -164,10 +166,10 @@ export const EventCard = React.memo(function EventCard({
           <BadgeMask variant="top-left">
             <span
               className={`font-bold text-[10px] px-2 py-0.5 block rounded-full ${
-                getCategoryClasses(event.category || 'Events').bg
-              } ${getCategoryClasses(event.category || 'Events').text}`}
+                getCategoryClasses(event.category || DEFAULT_EVENT_CATEGORY).bg
+              } ${getCategoryClasses(event.category || DEFAULT_EVENT_CATEGORY).text}`}
             >
-              {translateCategory(event.category || 'Events', t)}
+              {translateCategory(event.category || DEFAULT_EVENT_CATEGORY, t)}
             </span>
           </BadgeMask>
 
@@ -348,7 +350,7 @@ export const EventCard = React.memo(function EventCard({
           event={event}
           onClose={() => {
             const newParams = new URLSearchParams(searchParams);
-            newParams.delete("eventId");
+            newParams.delete(QP.EVENT_ID);
             navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
           }}
           allEvents={allEvents}

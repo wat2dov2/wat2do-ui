@@ -26,6 +26,7 @@ import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDelet
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { cn } from "@/shared/lib/utils";
 import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
+import { QP } from "@/shared/constants/queryParams";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
@@ -153,7 +154,7 @@ export function AdminEventsPage() {
                     className={`cursor-pointer hover:bg-muted/50 ${isHighlighted ? "bg-primary/10" : ""}`}
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams);
-                      newParams.set("eventId", event.id.toString());
+                      newParams.set(QP.EVENT_ID, event.id.toString());
                       setSearchParams(newParams);
                     }}
                   >
@@ -247,7 +248,7 @@ export function AdminEventsPage() {
         event={selectedEvent}
         onClose={() => {
           const newParams = new URLSearchParams(searchParams);
-          newParams.delete("eventId");
+          newParams.delete(QP.EVENT_ID);
           setSearchParams(newParams);
         }}
         allEvents={events}

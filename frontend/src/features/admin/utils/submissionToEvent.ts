@@ -4,6 +4,7 @@
  */
 
 import type { EventSubmission, EventFormData } from "@/shared/types";
+import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 
 /**
  * Converts an EventSubmission to EventFormData for creating a new event
@@ -25,7 +26,7 @@ export function submissionToEventData(submission: EventSubmission): EventFormDat
     date: eventData.date,
     time: eventData.time,
     location: eventData.location,
-    category: eventData.category || "Events",
+    category: eventData.category || DEFAULT_EVENT_CATEGORY,
     price: eventData.price,
     food: foodArray,
     requiresRegistration: eventData.requiresRegistration,

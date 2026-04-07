@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from core.auth import get_current_user, get_admin_user, resolve_db_user
 from schemas.report import ReportCreate, ReportUpdate, ReportResponse
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 log = logging.getLogger(__name__)
 
 
-@router.post("/", response_model=ReportResponse, status_code=201)
+@router.post("/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 def create_report(data: ReportCreate, auth_user: dict = Depends(get_current_user)):
     user = resolve_db_user(auth_user)
     return report_service.create_report(str(user.id), data.event_id, data.reason)
@@ -33,5 +33,5 @@ def update_report(
 ):
     row = report_service.update_report(report_id, data.status)
     if not row:
-        raise HTTPException(status_code=404, detail=REPORT_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=REPORT_NOT_FOUND)
     return row

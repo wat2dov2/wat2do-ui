@@ -4,10 +4,11 @@
  * `getInterestToCategoriesMap()` returns the live mapping fetched
  * from the backend at app init via /meta/constants.
  *
- * The static `INTEREST_TO_CATEGORIES` is kept for backwards compat.
+ * The single source of fallback data lives in metaApi.ts (FALLBACK);
+ * this module re-exports from there — no duplicate map here.
  */
 
-import { getAppConstants } from "@/shared/api/metaApi";
+import { getAppConstants, FALLBACK_INTEREST_TO_CATEGORIES } from "@/shared/api/metaApi";
 
 /**
  * Runtime mapping from the backend.
@@ -21,20 +22,7 @@ export function getInterestToCategoriesMap(): Record<string, string[]> {
  * Static export for existing consumers.
  * Prefer `getInterestToCategoriesMap()` in new code.
  */
-export const INTEREST_TO_CATEGORIES: Record<string, string[]> = {
-  Academic: ["Academics", "Studying"],
-  Social: ["Partying", "Games", "Dance"],
-  Career: ["Career", "Networking", "Entrepreneurship"],
-  Sports: ["Athletics", "Sports"],
-  Music: ["Music"],
-  Art: ["Art", "Design"],
-  Technology: ["Technology"],
-  Gaming: ["Games"],
-  Food: ["Food"],
-  Networking: ["Networking", "Career"],
-  Health: ["Health", "Wellness", "Mental Health"],
-  Cultural: ["Culture", "Religion", "Advocacy"],
-};
+export const INTEREST_TO_CATEGORIES = FALLBACK_INTEREST_TO_CATEGORIES;
 
 /**
  * Given a list of user interests, return the set of matching event categories.

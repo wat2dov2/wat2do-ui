@@ -6,6 +6,7 @@ from typing import get_args
 
 log = logging.getLogger(__name__)
 
+from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.tables import CLUBS, CLUB_INTEGRATIONS
 from schemas.club import (
@@ -30,7 +31,7 @@ def get_club(club_id: int) -> ClubResponse | None:
 
 def list_clubs(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = DEFAULT_LIST_LIMIT,
     club_type: str | None = None,
     search: str | None = None,
 ) -> list[ClubResponse]:

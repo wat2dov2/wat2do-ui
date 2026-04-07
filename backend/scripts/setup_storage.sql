@@ -2,6 +2,9 @@
 -- Creates buckets and RLS policies for file uploads
 
 -- Create storage buckets
+-- NOTE: file_size_limit values must stay in sync with
+--   MAX_IMAGE_SIZE_BYTES (5242880) and MAX_AVATAR_SIZE_BYTES (2097152)
+--   defined in core/constants.py.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES
   ('event-images', 'event-images', true, 5242880, ARRAY['image/jpeg','image/png','image/webp','image/gif']),

@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { updateEventSubmission } from "@/features/admin/api/admin.api";
+import { SUBMISSION_APPROVED, SUBMISSION_REJECTED } from "@/shared/constants/statuses";
 import type { EventSubmission } from "@/shared/types";
+import { QP } from "@/shared/constants/queryParams";
 
 interface UseAdminSubmissionsActionsOptions {
   onApprove?: (submission: EventSubmission) => void;
@@ -22,12 +24,12 @@ export function useAdminSubmissionsActions({
   const [rejectionReason, setRejectionReason] = useState("");
 
   const handleApprove = useCallback(async (submission: EventSubmission) => {
-    await updateEventSubmission(submission.id, "approved");
+    await updateEventSubmission(submission.id, SUBMISSION_APPROVED);
     if (onApprove) {
       onApprove(submission);
     }
     const newParams = new URLSearchParams(searchParams);
-    newParams.delete("submissionId");
+    newParams.delete(QP.SUBMISSION_ID);
     setSearchParams(newParams);
     setRefreshKey((prev) => prev + 1);
   }, [onApprove, searchParams, setSearchParams, setRefreshKey]);
@@ -39,7 +41,7 @@ export function useAdminSubmissionsActions({
 
   const handleRejectConfirm = useCallback(async (submissionIdParam: string | null) => {
     if (rejectSubmissionId && rejectionReason.trim()) {
-      await updateEventSubmission(rejectSubmissionId, "rejected", rejectionReason.trim());
+      await updateEventSubmission(rejectSubmissionId, SUBMISSION_REJECTED, rejectionReason.trim());
       setRejectSubmissionId(null);
       setRejectionReason("");
       setRefreshKey((prev) => prev + 1);
@@ -47,7 +49,7 @@ export function useAdminSubmissionsActions({
       // Close modal if the rejected submission was open
       if (submissionIdParam === rejectSubmissionId) {
         const newParams = new URLSearchParams(searchParams);
-        newParams.delete("submissionId");
+        newParams.delete(QP.SUBMISSION_ID);
         setSearchParams(newParams);
       }
     }

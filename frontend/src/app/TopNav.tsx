@@ -17,6 +17,7 @@ import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
 import { useAppContext } from "@/contexts/AppContext";
+import { ROUTES } from "@/shared/constants/routes";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 export function TopNav() {
@@ -33,15 +34,15 @@ export function TopNav() {
   const navigate = useNavigate();
 
   const handleLogoClick = useCallback(() => {
-    navigate("/");
+    navigate(ROUTES.HOME);
   }, [navigate]);
 
   const handleAdminClick = useCallback(() => {
-    navigate("/admin");
+    navigate(ROUTES.ADMIN);
   }, [navigate]);
 
   const handleClubPanelClick = useCallback(() => {
-    navigate("/club-panel");
+    navigate(ROUTES.CLUB_PANEL);
   }, [navigate]);
 
   const handleSignOut = useCallback(async () => {
@@ -56,12 +57,12 @@ export function TopNav() {
   }, [setProfileCompleted, setUserEmail]);
 
   const handleSignIn = useCallback(() => {
-    navigate("/login");
+    navigate(ROUTES.LOGIN);
     setShowOnboarding(false);
   }, [navigate, setShowOnboarding]);
 
   return (
-    <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-50">
+    <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-nav">
       <div className="flex items-center gap-2.5">
         <button
           onClick={handleLogoClick}

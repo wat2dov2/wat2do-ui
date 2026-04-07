@@ -11,6 +11,9 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { PageMode, FilterState, Event } from "@/shared/types";
+import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
+import { QP } from "@/shared/constants/queryParams";
+import { ROUTES } from "@/shared/constants/routes";
 
 interface FilterSetters {
   setSearchQuery: (query: string) => void;
@@ -47,15 +50,15 @@ export function useAppNavigation({
   // Derived state: Determine current page from route (no useEffect needed)
   const pageMode: PageMode = useMemo(() => {
     const currentPath = location.pathname;
-    if (currentPath === "/clubs") return "clubs";
-    if (currentPath === "/about") return "about";
-    if (currentPath === "/settings") return "settings";
-    if (currentPath.startsWith("/admin/events")) return "admin-events";
-    if (currentPath.startsWith("/admin/clubs")) return "admin-clubs";
-    if (currentPath.startsWith("/admin/submissions")) return "admin-submissions";
-    if (currentPath.startsWith("/admin/posters")) return "admin-posters";
-    if (currentPath.startsWith("/admin")) return "admin";
-    if (currentPath === "/marketing") return "marketing";
+    if (currentPath === ROUTES.CLUBS) return "clubs";
+    if (currentPath === ROUTES.ABOUT) return "about";
+    if (currentPath === ROUTES.SETTINGS) return "settings";
+    if (currentPath.startsWith(ROUTES.ADMIN_EVENTS)) return "admin-events";
+    if (currentPath.startsWith(ROUTES.ADMIN_CLUBS)) return "admin-clubs";
+    if (currentPath.startsWith(ROUTES.ADMIN_SUBMISSIONS)) return "admin-submissions";
+    if (currentPath.startsWith(ROUTES.ADMIN_POSTERS)) return "admin-posters";
+    if (currentPath.startsWith(ROUTES.ADMIN)) return "admin";
+    if (currentPath === ROUTES.MARKETING) return "marketing";
     return "events";
   }, [location.pathname]);
 
@@ -63,16 +66,16 @@ export function useAppNavigation({
   useEffect(() => {
     // Handle URL parameters (only process once on initial load)
     if (!hasProcessedInitialParams.current) {
-      const eventId = searchParams.get("eventId");
-      const filtersParam = searchParams.get("filters");
-      const pageModeParam = searchParams.get("pageMode");
+      const eventId = searchParams.get(QP.EVENT_ID);
+      const filtersParam = searchParams.get(QP.FILTERS);
+      const pageModeParam = searchParams.get(QP.PAGE_MODE);
 
       // Handle pageMode redirect
       if (pageModeParam) {
         if (pageModeParam === "marketing") {
-          navigate("/marketing", { replace: true });
+          navigate(ROUTES.MARKETING, { replace: true });
         } else if (pageModeParam === "events") {
-          navigate("/", { replace: true });
+          navigate(ROUTES.HOME, { replace: true });
         }
         hasProcessedInitialParams.current = true;
         return;
@@ -111,7 +114,7 @@ export function useAppNavigation({
                 `[data-event-id="${eventId}"]`
               );
               eventCard?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 100);
+            }, SCROLL_INTO_VIEW_DELAY_MS);
           });
         }
       }

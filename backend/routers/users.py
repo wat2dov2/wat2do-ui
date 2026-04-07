@@ -1,10 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user, get_admin_user
+from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from schemas.user import UserUpdate, UserProfileUpdate, UserResponse
-from core.errors import USER_NOT_FOUND
+from core.errors import USER_NOT_FOUND, USER_PROFILE_NOT_FOUND
 from services import user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -16,7 +17,7 @@ def get_me(auth_user: dict = Depends(get_current_user)):
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User profile not found — complete signup first",
+            detail=USER_PROFILE_NOT_FOUND,
         )
     return user
 
@@ -53,7 +54,7 @@ def update_profile(
 @router.get("/", response_model=list[UserResponse])
 def list_users(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = Query(default=DEFAULT_LIST_LIMIT, le=MAX_LIST_LIMIT),
     _=Depends(get_admin_user),
 ):
     return user_service.list_users(skip=skip, limit=limit)

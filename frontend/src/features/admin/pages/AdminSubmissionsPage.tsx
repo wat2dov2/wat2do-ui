@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
+import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { Search, Check, X as XIcon, ArrowLeft, FileText, Clock, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -30,8 +31,14 @@ import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmi
 import { useAdminSubmissionsPagination } from "@/features/admin/hooks/useAdminSubmissionsPagination";
 import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
 import type { EventSubmission, SubmissionStatus } from "@/shared/types";
+import {
+  SUBMISSION_PENDING,
+  SUBMISSION_APPROVED,
+  SUBMISSION_REJECTED,
+} from "@/shared/constants/statuses";
 import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
+import { QP } from "@/shared/constants/queryParams";
 
 interface AdminSubmissionsPageProps {
   onBack: () => void;
@@ -63,7 +70,7 @@ export function AdminSubmissionsPage({
   });
 
   // Get submissionId from URL
-  const submissionIdParam = searchParams.get("submissionId");
+  const submissionIdParam = searchParams.get(QP.SUBMISSION_ID);
   const selectedSubmission = useMemo(() => {
     if (submissionIdParam) {
       return filters.allSubmissions.find((s) => s.id === submissionIdParam) || null;
@@ -79,7 +86,7 @@ export function AdminSubmissionsPage({
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-      }, 100);
+      }, SCROLL_INTO_VIEW_DELAY_MS);
     }
   }, [submissionIdParam]);
 
@@ -137,9 +144,9 @@ export function AdminSubmissionsPage({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("admin.allStatus")}</SelectItem>
-            <SelectItem value="pending">{t("admin.pending")}</SelectItem>
-            <SelectItem value="approved">{t("admin.approved")}</SelectItem>
-            <SelectItem value="rejected">{t("admin.rejected")}</SelectItem>
+            <SelectItem value={SUBMISSION_PENDING}>{t("admin.pending")}</SelectItem>
+            <SelectItem value={SUBMISSION_APPROVED}>{t("admin.approved")}</SelectItem>
+            <SelectItem value={SUBMISSION_REJECTED}>{t("admin.rejected")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -187,7 +194,7 @@ export function AdminSubmissionsPage({
                     className={`cursor-pointer hover:bg-muted/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams);
-                      newParams.set("submissionId", submission.id);
+                      newParams.set(QP.SUBMISSION_ID, submission.id);
                       setSearchParams(newParams);
                     }}
                   >
@@ -216,9 +223,9 @@ export function AdminSubmissionsPage({
                     <TableCell>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          submission.status === "approved"
+                          submission.status === SUBMISSION_APPROVED
                             ? "bg-success/20 text-success"
-                            : submission.status === "rejected"
+                            : submission.status === SUBMISSION_REJECTED
                             ? "bg-error/20 text-error"
                             : "bg-warning/20 text-warning"
                         }`}
@@ -228,7 +235,7 @@ export function AdminSubmissionsPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
-                        {submission.status === "pending" && (
+                        {submission.status === SUBMISSION_PENDING && (
                           <>
                             <Button
                               variant="secondary"
@@ -340,7 +347,7 @@ export function AdminSubmissionsPage({
         onOpenChange={(open) => {
           if (!open) {
             const newParams = new URLSearchParams(searchParams);
-            newParams.delete("submissionId");
+            newParams.delete(QP.SUBMISSION_ID);
             setSearchParams(newParams);
           }
         }}
@@ -469,13 +476,13 @@ export function AdminSubmissionsPage({
                 </p>
               </div>
 
-              {selectedSubmission.status === "pending" && (
+              {selectedSubmission.status === SUBMISSION_PENDING && (
                 <div className="flex gap-2 justify-end pt-4 border-t border-border">
                   <Button
                     variant="outline"
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams);
-                      newParams.delete("submissionId");
+                      newParams.delete(QP.SUBMISSION_ID);
                       setSearchParams(newParams);
                     }}
                   >

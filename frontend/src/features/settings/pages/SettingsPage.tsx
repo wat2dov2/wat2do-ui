@@ -15,16 +15,17 @@ import { NotificationsTab } from "@/features/settings/components/NotificationsTa
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
 import { PrivacyTab } from "@/features/settings/components/PrivacyTab";
 import { useAppContext } from "@/contexts/AppContext";
+import { QP } from "@/shared/constants/queryParams";
 
 export function SettingsPage() {
   const { userEmail, viewMode, setViewMode, filterViewMode, setFilterViewMode } =
     useAppContext();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab") || "profile";
+  const tabParam = searchParams.get(QP.TAB) || "profile";
 
   const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value });
+    setSearchParams({ [QP.TAB]: value });
   };
 
   return (

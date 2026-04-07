@@ -29,6 +29,7 @@ import {
   CommandShortcut,
 } from "@/shared/ui/command";
 import { useCommandPalette } from "@/features/commands/context/CommandPaletteContext";
+import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -182,7 +183,7 @@ export function CommandPalette({
         <CommandGroup heading={t("commands.personalSettings")}>
           <CommandItem
             onSelect={() => {
-              navigate("/settings?tab=profile");
+              navigate(settingsTabPath(SETTINGS_TABS.PROFILE));
               onOpenChange(false);
             }}
           >
@@ -193,7 +194,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate("/settings?tab=notifications");
+              navigate(settingsTabPath(SETTINGS_TABS.NOTIFICATIONS));
               onOpenChange(false);
             }}
           >
@@ -202,7 +203,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate("/settings?tab=appearance");
+              navigate(settingsTabPath(SETTINGS_TABS.APPEARANCE));
               onOpenChange(false);
             }}
           >
@@ -211,7 +212,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate("/settings?tab=privacy");
+              navigate(settingsTabPath(SETTINGS_TABS.PRIVACY));
               onOpenChange(false);
             }}
           >
@@ -220,7 +221,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate("/about");
+              navigate(ROUTES.ABOUT);
               onOpenChange(false);
             }}
           >

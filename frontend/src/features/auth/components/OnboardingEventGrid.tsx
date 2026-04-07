@@ -13,6 +13,7 @@ import type { Event } from "@/shared/types";
 import type { TFunction } from "i18next";
 import { cn } from "@/shared/lib/utils";
 import { HERO_CARD_PLACEHOLDER_HEIGHT } from "@/features/auth/constants";
+import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 
 function shuffle<T>(arr: T[]): T[] {
   const out = [...arr];
@@ -47,7 +48,7 @@ function eventToPreview(event: Event, locale: string, t: TFunction): PreviewEven
   return {
     title: event.title,
     org: event.organization ?? event.display_handle ?? "",
-    category: event.category ?? "Events",
+    category: event.category ?? DEFAULT_EVENT_CATEGORY,
     image: event.imageUrl ?? event.source_image_url ?? "",
     date: formatCardDate(event, locale),
     time: formatCardTime(event),

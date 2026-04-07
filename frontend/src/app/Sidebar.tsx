@@ -40,7 +40,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "group/sidebar flex flex-col transition-all duration-200 overflow-hidden",
-        "fixed left-0 top-12 bottom-0 border-r border-border bg-sidebar z-40",
+        "fixed left-0 top-12 bottom-0 border-r border-border bg-sidebar z-sidebar",
         "w-12 hover:w-[180px]"
       )}
     >

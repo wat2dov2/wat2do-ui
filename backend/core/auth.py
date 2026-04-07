@@ -1,7 +1,15 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from core.constants import ROLE_ADMIN
 from core.database import supabase
+from core.errors import (
+    ADMIN_ACCESS_REQUIRED,
+    CREDENTIALS_INVALID,
+    INVALID_OR_EXPIRED_TOKEN,
+    NOT_AUTHORIZED,
+    USER_NOT_FOUND,
+)
 
 bearer = HTTPBearer()
 bearer_optional = HTTPBearer(auto_error=False)
@@ -25,14 +33,14 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            detail=INVALID_OR_EXPIRED_TOKEN,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not res or not res.user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail=CREDENTIALS_INVALID,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -68,10 +76,10 @@ async def get_admin_user(
 ) -> dict:
     """Require a valid Bearer token AND admin role. Returns 403 if not admin."""
     db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
-    if not db_user or db_user.role != "admin":
+    if not db_user or db_user.role != ROLE_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail=ADMIN_ACCESS_REQUIRED,
         )
     return auth_user
 
@@ -79,7 +87,7 @@ async def get_admin_user(
 def is_admin(auth_user: dict) -> bool:
     """Return True if the authenticated user has the admin role (requires DB lookup)."""
     db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
-    return db_user is not None and db_user.role == "admin"
+    return db_user is not None and db_user.role == ROLE_ADMIN
 
 
 def resolve_db_user(auth_user: dict):
@@ -90,7 +98,7 @@ def resolve_db_user(auth_user: dict):
     """
     db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
     if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)
     return db_user
 
 
@@ -106,5 +114,5 @@ def require_owner_or_admin(auth_user: dict, resource_owner_id: str | None) -> No
         return
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="Not authorized",
+        detail=NOT_AUTHORIZED,
     )

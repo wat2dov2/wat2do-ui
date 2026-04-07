@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from core.auth import get_current_user, resolve_db_user
 from schemas.credit import (
@@ -41,7 +41,7 @@ def list_promotions(auth_user: dict = Depends(get_current_user)):
     return credit_service.get_user_promotions(str(user.id))
 
 
-@router.post("/promotions/", response_model=PromotionResponse, status_code=201)
+@router.post("/promotions/", response_model=PromotionResponse, status_code=status.HTTP_201_CREATED)
 def create_promotion(data: PromotionCreate, auth_user: dict = Depends(get_current_user)):
     user = resolve_db_user(auth_user)
     return credit_service.create_promotion(

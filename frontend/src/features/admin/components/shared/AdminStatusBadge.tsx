@@ -5,27 +5,33 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
+import {
+  SUBMISSION_PENDING,
+  SUBMISSION_APPROVED,
+  SUBMISSION_REJECTED,
+} from "@/shared/constants/statuses";
+import type { SubmissionStatus } from "@/shared/types";
 
 interface AdminStatusBadgeProps {
-  status: "pending" | "approved" | "rejected" | "reported" | "live";
+  status: SubmissionStatus | "reported" | "live";
   label?: string;
 }
 
 export function AdminStatusBadge({ status, label }: AdminStatusBadgeProps) {
   const { t } = useTranslation();
   
-  const statusConfig = {
-    approved: "bg-success/20 text-success",
-    rejected: "bg-error/20 text-error",
-    pending: "bg-warning/20 text-warning",
+  const statusConfig: Record<string, string> = {
+    [SUBMISSION_APPROVED]: "bg-success/20 text-success",
+    [SUBMISSION_REJECTED]: "bg-error/20 text-error",
+    [SUBMISSION_PENDING]: "bg-warning/20 text-warning",
     reported: "bg-error/20 text-error",
     live: "text-muted-foreground",
   };
 
-  const statusTranslations = {
-    approved: t("admin.approved"),
-    rejected: t("admin.rejected"),
-    pending: t("admin.pending"),
+  const statusTranslations: Record<string, string> = {
+    [SUBMISSION_APPROVED]: t("admin.approved"),
+    [SUBMISSION_REJECTED]: t("admin.rejected"),
+    [SUBMISSION_PENDING]: t("admin.pending"),
     reported: t("admin.reported"),
     live: t("common.live"),
   };

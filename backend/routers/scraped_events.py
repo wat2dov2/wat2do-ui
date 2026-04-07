@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
 from core.auth import get_admin_user
 from schemas.scraped_event import ScrapedEventCreate, ScrapedEventResponse
@@ -15,7 +15,7 @@ def list_scraped_events(_: dict = Depends(get_admin_user)):
     return scraped_event_service.get_scraped_events()
 
 
-@router.post("/", response_model=ScrapedEventResponse, status_code=201)
+@router.post("/", response_model=ScrapedEventResponse, status_code=status.HTTP_201_CREATED)
 def create_scraped_event(
     data: ScrapedEventCreate,
     _: dict = Depends(get_admin_user),

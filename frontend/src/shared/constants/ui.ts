@@ -16,3 +16,12 @@ export const EVENT_CARD_IMAGE_HEIGHT = 176;
 
 /** Font size (px) for Monaco JSON editors across the app. */
 export const JSON_EDITOR_FONT_SIZE = 12;
+
+/** Duration (ms) before a toast notification auto-dismisses. */
+export const TOAST_AUTO_DISMISS_MS = 3000;
+
+/** Small delay (ms) to allow DOM updates before scrolling to an element. */
+export const SCROLL_INTO_VIEW_DELAY_MS = 100;
+
+/** Tiny delay (ms) to trigger CSS enter-animations on next paint. */
+export const ANIMATION_FRAME_TRIGGER_MS = 10;

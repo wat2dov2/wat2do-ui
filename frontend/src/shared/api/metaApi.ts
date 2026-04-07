@@ -9,42 +9,61 @@
  */
 
 import { api } from "@/shared/services/apiClient";
+import { SUBMISSION_STATUSES, REPORT_STATUSES } from "@/shared/constants/statuses";
 
 export interface AppConstants {
   event_categories: string[];
+  interests: string[];
   interest_to_categories: Record<string, string[]>;
   submission_statuses: string[];
   report_statuses: string[];
 }
 
 // ---------------------------------------------------------------------------
-// Static fallbacks — used only if the /meta/constants fetch fails.
+// Static fallbacks — the single frontend copy of backend constants.
 // Keep these as a safety net; the backend is the source of truth.
+//
+// Other modules (eventCategories.ts, interestCategoryMap.ts, interests.ts)
+// derive their static values from these — do NOT duplicate elsewhere.
 // ---------------------------------------------------------------------------
+
+/** Fallback event categories — exported so eventCategories.ts can derive its union type. */
+export const FALLBACK_EVENT_CATEGORIES = [
+  "Academics", "Studying", "Career", "Networking", "Games",
+  "Partying", "Athletics", "Art", "Dance", "Culture",
+  "Religion", "Advocacy", "Technology", "Design", "Entrepreneurship",
+  "Health", "Wellness", "Mental Health", "Music", "Sports",
+  "Food", "Volunteering",
+] as const;
+
+/** Fallback interest list — exported so interests.ts can derive its static list. */
+export const FALLBACK_INTERESTS = [
+  "Academic", "Social", "Career", "Sports", "Music", "Art",
+  "Technology", "Gaming", "Food", "Networking", "Health", "Cultural",
+] as const;
+
+/** Fallback interest-to-category mapping — exported so interestCategoryMap.ts can re-export. */
+export const FALLBACK_INTEREST_TO_CATEGORIES: Record<string, string[]> = {
+  Academic: ["Academics", "Studying"],
+  Social: ["Partying", "Games", "Dance"],
+  Career: ["Career", "Networking", "Entrepreneurship"],
+  Sports: ["Athletics", "Sports"],
+  Music: ["Music"],
+  Art: ["Art", "Design"],
+  Technology: ["Technology"],
+  Gaming: ["Games"],
+  Food: ["Food"],
+  Networking: ["Networking", "Career"],
+  Health: ["Health", "Wellness", "Mental Health"],
+  Cultural: ["Culture", "Religion", "Advocacy"],
+};
+
 const FALLBACK: AppConstants = {
-  event_categories: [
-    "Academics", "Studying", "Career", "Networking", "Games",
-    "Partying", "Athletics", "Art", "Dance", "Culture",
-    "Religion", "Advocacy", "Technology", "Design", "Entrepreneurship",
-    "Health", "Wellness", "Mental Health", "Music", "Sports",
-    "Food", "Volunteering",
-  ],
-  interest_to_categories: {
-    Academic: ["Academics", "Studying"],
-    Social: ["Partying", "Games", "Dance"],
-    Career: ["Career", "Networking", "Entrepreneurship"],
-    Sports: ["Athletics", "Sports"],
-    Music: ["Music"],
-    Art: ["Art", "Design"],
-    Technology: ["Technology"],
-    Gaming: ["Games"],
-    Food: ["Food"],
-    Networking: ["Networking", "Career"],
-    Health: ["Health", "Wellness", "Mental Health"],
-    Cultural: ["Culture", "Religion", "Advocacy"],
-  },
-  submission_statuses: ["pending", "approved", "rejected"],
-  report_statuses: ["pending", "resolved", "dismissed"],
+  event_categories: [...FALLBACK_EVENT_CATEGORIES],
+  interests: [...FALLBACK_INTERESTS],
+  interest_to_categories: FALLBACK_INTEREST_TO_CATEGORIES,
+  submission_statuses: [...SUBMISSION_STATUSES],
+  report_statuses: [...REPORT_STATUSES],
 };
 
 // ---------------------------------------------------------------------------

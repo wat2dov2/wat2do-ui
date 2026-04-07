@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime, timezone
 
+from constants import REPORT_PENDING
 from core.database import get_sb
 from core.tables import REPORTED_EVENTS
 from schemas.report import ReportResponse
@@ -15,7 +16,7 @@ def create_report(user_id: str, event_id: int, reason: str) -> ReportResponse:
         "event_id": event_id,
         "user_id": user_id,
         "reason": reason,
-        "status": "pending",
+        "status": REPORT_PENDING,
     }
     r = get_sb().table(REPORTED_EVENTS).insert(payload).execute()
     return ReportResponse.model_validate(r.data[0]) if r.data else ReportResponse(**payload)

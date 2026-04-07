@@ -8,6 +8,7 @@ import { AdminProvider } from "@/features/admin";
 import { ClubPanel, ClubPanelPostersPage, ClubPanelIntegrationsPage, ClubPanelMembersPage } from "@/features/club-panel";
 import type { Event, EventFormData } from "@/shared/types";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { ROUTES, CLUB_PANEL_ROUTE_MAP } from "@/shared/constants/routes";
 
 interface ClubPanelRoutesConfig {
   events: Event[];
@@ -19,15 +20,6 @@ interface ClubPanelRoutesConfig {
 }
 
 /**
- * Club panel route mapping for navigation
- */
-export const CLUB_PANEL_ROUTE_MAP: Record<string, string> = {
-  "club-panel-posters": "/club-panel/posters",
-  "club-panel-integrations": "/club-panel/integrations",
-  "club-panel-members": "/club-panel/members",
-};
-
-/**
  * Club panel navigation handler
  */
 export function useClubPanelNavigation() {
@@ -35,7 +27,7 @@ export function useClubPanelNavigation() {
 
   return useMemo(
     () => (page: string) => {
-      navigate(CLUB_PANEL_ROUTE_MAP[page] || "/club-panel");
+      navigate(CLUB_PANEL_ROUTE_MAP[page] || ROUTES.CLUB_PANEL);
     },
     [navigate]
   );
@@ -59,7 +51,7 @@ export function ClubPanelPostersRoute({ config }: { config: ClubPanelRoutesConfi
   const adminProps = useMemo(
     () => ({
       events: config.events,
-      onBack: () => navigate("/club-panel"),
+      onBack: () => navigate(ROUTES.CLUB_PANEL),
       userEmail: config.userEmail || "",
     }),
     [config.events, config.userEmail, navigate]

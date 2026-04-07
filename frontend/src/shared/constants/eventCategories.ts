@@ -5,23 +5,14 @@
  * `EVENT_CATEGORIES` and `EventCategory` are kept for backwards compat
  * with existing consumers that import them statically (filters, forms, etc.).
  *
- * The static array is only a compile-time type hint + fallback;
- * runtime code should prefer `getEventCategories()`.
+ * The single source of fallback data lives in metaApi.ts (FALLBACK);
+ * this module re-exports from there — no duplicate list here.
  */
 
-import { getAppConstants } from "@/shared/api/metaApi";
-
-// Static list kept for the EventCategory union type and as a fallback.
-const _STATIC_CATEGORIES = [
-  "Academics", "Studying", "Career", "Networking", "Games",
-  "Partying", "Athletics", "Art", "Dance", "Culture",
-  "Religion", "Advocacy", "Technology", "Design", "Entrepreneurship",
-  "Health", "Wellness", "Mental Health", "Music", "Sports",
-  "Food", "Volunteering",
-] as const;
+import { getAppConstants, FALLBACK_EVENT_CATEGORIES } from "@/shared/api/metaApi";
 
 /** Union type of all valid event categories. */
-export type EventCategory = (typeof _STATIC_CATEGORIES)[number];
+export type EventCategory = (typeof FALLBACK_EVENT_CATEGORIES)[number];
 
 /**
  * Runtime list of event categories from the backend.
@@ -35,4 +26,10 @@ export function getEventCategories(): string[] {
  * Static export for existing consumers.
  * Prefer `getEventCategories()` in new code.
  */
-export const EVENT_CATEGORIES = _STATIC_CATEGORIES;
+export const EVENT_CATEGORIES = FALLBACK_EVENT_CATEGORIES;
+
+/**
+ * Default category used as a fallback when an event has no explicit category.
+ * Used across event creation, display, and data transformation.
+ */
+export const DEFAULT_EVENT_CATEGORY = "Events";

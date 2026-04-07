@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
+import { TOAST_AUTO_DISMISS_MS, ANIMATION_FRAME_TRIGGER_MS } from "@/shared/constants/ui";
 
 interface Toast {
   id: string;
@@ -21,10 +22,10 @@ export function showToast(message: string, type: "success" | "error" | "info" = 
   toasts = [...toasts, newToast];
   notifyListeners();
 
-  // Auto remove after 3 seconds
+  // Auto remove after timeout
   setTimeout(() => {
     removeToast(id);
-  }, 3000);
+  }, TOAST_AUTO_DISMISS_MS);
 }
 
 function removeToast(id: string) {
@@ -55,7 +56,7 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+    <div className="fixed bottom-6 right-6 z-toast flex flex-col gap-2">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />
       ))}
@@ -68,7 +69,7 @@ function ToastItem({ toast }: { toast: Toast }) {
 
   useEffect(() => {
     // Trigger animation
-    setTimeout(() => setIsVisible(true), 10);
+    setTimeout(() => setIsVisible(true), ANIMATION_FRAME_TRIGGER_MS);
   }, []);
 
   const toneClass =

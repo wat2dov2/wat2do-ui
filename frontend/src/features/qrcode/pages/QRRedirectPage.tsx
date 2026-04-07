@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ROUTES } from "@/shared/constants/routes";
 import { useTranslation } from "react-i18next";
 import {
   fetchQrRedirectFromBackend,
@@ -23,7 +24,7 @@ export function QRRedirectPage() {
 
   useEffect(() => {
     if (!qrCodeId) {
-      navigate("/", { replace: true });
+      navigate(ROUTES.HOME, { replace: true });
       return;
     }
 
@@ -32,7 +33,7 @@ export function QRRedirectPage() {
     fetchQrRedirectFromBackend(qrCodeId)
       .then((result) => {
         if (result === null) {
-          navigate("/", { replace: true });
+          navigate(ROUTES.HOME, { replace: true });
           return;
         }
         if ("requires_location" in result && result.requires_location) {
@@ -56,13 +57,13 @@ export function QRRedirectPage() {
           getLocation().then(({ latitude, longitude }) =>
             fetchQrRedirectWithLocation(qrCodeId, latitude, longitude)
               .then((config) => redirectFromConfig(config))
-              .catch((err) => { console.error("QR redirect failed:", err); navigate("/", { replace: true }); })
+              .catch((err) => { console.error("QR redirect failed:", err); navigate(ROUTES.HOME, { replace: true }); })
           );
           return;
         }
         redirectFromConfig(result);
       })
-      .catch((err) => { console.error("QR redirect failed:", err); navigate("/", { replace: true }); });
+      .catch((err) => { console.error("QR redirect failed:", err); navigate(ROUTES.HOME, { replace: true }); });
   }, [qrCodeId, navigate, t]);
 
   return (

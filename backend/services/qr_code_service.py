@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from core.database import get_sb
+from core.errors import POSTER_NOT_FOUND
 from core.tables import QR_CODES, QR_CODE_SCANS
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
 
@@ -92,7 +93,7 @@ def record_scan(
 
 def delete_qr_code(qr_code_id: str) -> None:
     if not get_qr_code_by_id(qr_code_id):
-        raise ValueError("Poster not found")
+        raise ValueError(POSTER_NOT_FOUND)
     get_sb().table(QR_CODES).delete().eq("id", qr_code_id).execute()
 
 

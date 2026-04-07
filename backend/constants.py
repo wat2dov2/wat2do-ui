@@ -1,7 +1,32 @@
 """
-Canonical event categories. Must match frontend EVENT_CATEGORIES.
-Used for validation on create/update and for seeding/normalization.
+Canonical domain constants shared across backend modules.
+
+Event categories, interest mappings, and status values live here so
+that every service, router, and schema imports from one place.
+
+Constants used in ``Literal`` type annotations are marked ``Final``
+so that type-checkers (mypy / pyright) accept them inside ``Literal[]``.
 """
+
+from typing import Final
+
+# ---------------------------------------------------------------------------
+# Submission statuses (event_submissions.status column)
+# ---------------------------------------------------------------------------
+SUBMISSION_PENDING: Final = "pending"
+SUBMISSION_APPROVED: Final = "approved"
+SUBMISSION_REJECTED: Final = "rejected"
+
+SUBMISSION_STATUSES = (SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED)
+
+# ---------------------------------------------------------------------------
+# Report statuses (reported_events.status column)
+# ---------------------------------------------------------------------------
+REPORT_PENDING: Final = "pending"
+REPORT_RESOLVED: Final = "resolved"
+REPORT_DISMISSED: Final = "dismissed"
+
+REPORT_STATUSES = (REPORT_PENDING, REPORT_RESOLVED, REPORT_DISMISSED)
 
 EVENT_CATEGORIES = (
     "Academics",

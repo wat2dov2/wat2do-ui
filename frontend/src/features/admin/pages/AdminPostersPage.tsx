@@ -36,6 +36,7 @@ import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 import type { QRCode } from "@/shared/types";
 import { ADMIN_POSTERS_PER_PAGE } from "@/shared/constants/pagination";
 import { ADMIN_MAP_HEIGHT } from "@/features/admin/constants";
+import { QP } from "@/shared/constants/queryParams";
 
 // Lazy load Mapbox map component - it's heavy and only needed when visible
 const QRScanMap = lazy(() => import("@/features/qrcode/components/QRScanMap").then(module => ({ default: module.QRScanMap })));
@@ -76,7 +77,7 @@ export function AdminPostersPage() {
   });
 
   // Get qrCodeId from URL
-  const qrCodeIdParam = searchParams.get("qrCodeId");
+  const qrCodeIdParam = searchParams.get(QP.QR_CODE_ID);
   const selectedQRCode = qrCodeIdParam
     ? filters.qrCodes.find((q) => q.id === qrCodeIdParam) || null
     : null;
@@ -86,7 +87,7 @@ export function AdminPostersPage() {
 
   const handleViewDetails = (qrCode: QRCode) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set("qrCodeId", qrCode.id);
+    newParams.set(QP.QR_CODE_ID, qrCode.id);
     setSearchParams(newParams);
   };
 
@@ -292,7 +293,7 @@ export function AdminPostersPage() {
           isOpen={showDetailsModal}
           onClose={() => {
             const newParams = new URLSearchParams(searchParams);
-            newParams.delete("qrCodeId");
+            newParams.delete(QP.QR_CODE_ID);
             setSearchParams(newParams);
           }}
           qrCode={selectedQRCode}

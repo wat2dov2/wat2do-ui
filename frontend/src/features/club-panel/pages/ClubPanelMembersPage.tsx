@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Users } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { ROUTES } from "@/shared/constants/routes";
 
 export function ClubPanelMembersPage() {
   const { t } = useTranslation();
@@ -15,7 +16,7 @@ export function ClubPanelMembersPage() {
         <Button
           variant="secondary"
           size="icon"
-          onClick={() => navigate("/club-panel")}
+          onClick={() => navigate(ROUTES.CLUB_PANEL)}
           className="shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />

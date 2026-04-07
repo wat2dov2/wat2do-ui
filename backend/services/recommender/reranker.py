@@ -4,7 +4,13 @@ import math
 
 from constants import EVENT_CATEGORIES
 from schemas.event import EventResponse
-from services.recommender.config import DEFAULT_LAMBDA, DEFAULT_LIMIT
+from services.recommender.config import (
+    DEFAULT_LAMBDA,
+    DEFAULT_LIMIT,
+    PRICE_NORMALIZATION_CAP,
+    TIME_BUCKET_MORNING_END,
+    TIME_BUCKET_AFTERNOON_END,
+)
 
 
 # One-hot dimension for categories.
@@ -95,7 +101,7 @@ def _build_feature_vector(meta: EventResponse | None) -> list[float]:
 
     # Normalized price (0 = free, 1 = expensive)
     price = meta.price or 0
-    vec[NUM_CATEGORIES] = min(price / 50.0, 1.0) if price else 0.0
+    vec[NUM_CATEGORIES] = min(price / PRICE_NORMALIZATION_CAP, 1.0) if price else 0.0
 
     # Time bucket
     dtstart = meta.dtstart_utc
@@ -118,9 +124,9 @@ def _get_time_bucket(dtstart: str) -> str:
         if dt.weekday() >= 5:
             return "weekend"
         hour = dt.hour
-        if hour < 12:
+        if hour < TIME_BUCKET_MORNING_END:
             return "morning"
-        elif hour < 17:
+        elif hour < TIME_BUCKET_AFTERNOON_END:
             return "afternoon"
         else:
             return "evening"

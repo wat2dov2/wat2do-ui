@@ -4,6 +4,7 @@
  */
 
 import type { Event, EventSubmission, ReportedEvent, ScrapedEvent, Club, SubmissionStatus, ReportStatus } from "@/shared/types";
+import { SUBMISSION_APPROVED, SUBMISSION_REJECTED } from "@/shared/constants/statuses";
 import { fetchAllEvents } from "@/features/events/api/events.api";
 import {
   getAllClubs as getAllClubsData,
@@ -140,11 +141,11 @@ export async function updateEventSubmission(
 }
 
 export async function approveSubmission(id: string): Promise<void> {
-  await updateEventSubmission(id, "approved");
+  await updateEventSubmission(id, SUBMISSION_APPROVED);
 }
 
 export async function rejectSubmission(id: string, rejectionReason: string): Promise<void> {
-  await updateEventSubmission(id, "rejected", rejectionReason);
+  await updateEventSubmission(id, SUBMISSION_REJECTED, rejectionReason);
 }
 
 export async function updateSubmissionStatus(

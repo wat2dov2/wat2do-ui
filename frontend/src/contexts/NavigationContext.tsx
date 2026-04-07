@@ -6,6 +6,7 @@
 import React, { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/shared/constants/routes";
 
 interface NavigationContextValue {
   navigate: ReturnType<typeof useNavigate>;
@@ -23,9 +24,9 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
 
   const navigateToAdmin = (page?: string) => {
     if (page) {
-      navigate(`/admin/${page}`);
+      navigate(`${ROUTES.ADMIN}/${page}`);
     } else {
-      navigate("/admin");
+      navigate(ROUTES.ADMIN);
     }
   };
 

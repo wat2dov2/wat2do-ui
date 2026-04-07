@@ -29,7 +29,7 @@ def list_submissions(
 def get_submission(submission_id: str, _: dict = Depends(get_admin_user)):
     row = submission_service.get_submission_by_id(submission_id)
     if not row:
-        raise HTTPException(status_code=404, detail=SUBMISSION_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=SUBMISSION_NOT_FOUND)
     return row
 
 
@@ -43,11 +43,11 @@ def update_submission(
         submission_id, data.status, data.rejection_reason,
     )
     if not row:
-        raise HTTPException(status_code=404, detail=SUBMISSION_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=SUBMISSION_NOT_FOUND)
     return row
 
 
 @router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_submission(submission_id: str, _: dict = Depends(get_admin_user)):
     if not submission_service.delete_submission(submission_id):
-        raise HTTPException(status_code=404, detail=SUBMISSION_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=SUBMISSION_NOT_FOUND)

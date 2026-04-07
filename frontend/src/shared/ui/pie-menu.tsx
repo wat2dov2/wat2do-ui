@@ -7,6 +7,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
+import { Z_INDEX } from "@/shared/constants/zIndex";
 import { Check } from "lucide-react";
 
 export interface PieMenuItem {
@@ -131,7 +132,7 @@ export function PieMenu({
   const fontSize = items.length <= 4 ? 12 : items.length <= 6 ? 11 : items.length <= 8 ? 10 : 9;
 
   return createPortal(
-    <div data-pie-menu style={{ position: "fixed", inset: 0, zIndex: 99999 }}>
+    <div data-pie-menu style={{ position: "fixed", inset: 0, zIndex: Z_INDEX.PIE_MENU }}>
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -160,7 +161,7 @@ export function PieMenu({
           top: adjustedPos.y - svgSize / 2,
           width: svgSize,
           height: svgSize,
-          zIndex: 100000,
+          zIndex: Z_INDEX.MAX,
         }}
       >
         <motion.svg

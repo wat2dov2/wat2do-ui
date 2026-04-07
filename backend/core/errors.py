@@ -1,12 +1,74 @@
 """Shared HTTP error detail strings.
 
-Centralises the most frequently repeated 404/403 messages so routers
-stay DRY and wording stays consistent.
+Centralises user-facing error messages so routers, services, and
+handlers stay DRY and wording stays consistent.  Import individual
+constants where needed — do not duplicate literal strings.
 """
 
+from core.constants import (
+    PG_FOREIGN_KEY_VIOLATION,
+    PG_INSUFFICIENT_PRIVILEGE,
+    PG_NOT_NULL_VIOLATION,
+    PG_UNIQUE_VIOLATION,
+)
+
+# ---------------------------------------------------------------------------
+# 404 – Resource not found
+# ---------------------------------------------------------------------------
 USER_NOT_FOUND = "User not found"
+USER_PROFILE_NOT_FOUND = "User profile not found — complete signup first"
 EVENT_NOT_FOUND = "Event not found"
 CLUB_NOT_FOUND = "Club not found"
 POSTER_NOT_FOUND = "Poster not found"
 SUBMISSION_NOT_FOUND = "Submission not found"
 REPORT_NOT_FOUND = "Report not found"
+
+# ---------------------------------------------------------------------------
+# 401 – Authentication
+# ---------------------------------------------------------------------------
+INVALID_OR_EXPIRED_TOKEN = "Invalid or expired token"
+CREDENTIALS_INVALID = "Could not validate credentials"
+NO_REFRESH_TOKEN = "No refresh token"
+INVALID_EMAIL_OR_PASSWORD = "Invalid email or password"
+SESSION_REFRESH_FAILED = "Could not refresh session — please log in again"
+
+# ---------------------------------------------------------------------------
+# 403 – Authorization
+# ---------------------------------------------------------------------------
+ADMIN_ACCESS_REQUIRED = "Admin access required"
+NOT_AUTHORIZED = "Not authorized"
+EMAIL_NOT_ALLOWED = (
+    "Only student emails from allowed schools can sign up. "
+    "Use a valid university email (e.g. @uwaterloo.ca)."
+)
+
+# ---------------------------------------------------------------------------
+# 400 / 409 – Validation & conflict
+# ---------------------------------------------------------------------------
+SIGNUP_FAILED = "Signup failed — check email/password requirements"
+EMAIL_OR_USERNAME_TAKEN = "Email or username already taken"
+INSUFFICIENT_CREDITS = "Insufficient credits"
+ID_MISMATCH = "ID mismatch"
+REQUIRES_LOCATION = "requires_location"
+
+# ---------------------------------------------------------------------------
+# 502 / 503 – Upstream / AI errors
+# ---------------------------------------------------------------------------
+AI_EMPTY_RESPONSE = "Empty response from AI. Please try a different prompt."
+AI_INVALID_JSON = "AI returned invalid JSON. Please try again."
+AI_NOT_CONFIGURED = "OpenAI API key not configured on the server."
+
+# ---------------------------------------------------------------------------
+# Global error handler defaults
+# ---------------------------------------------------------------------------
+AUTHENTICATION_ERROR = "Authentication error"
+DB_OPERATION_FAILED = "Database operation failed"
+INTERNAL_SERVER_ERROR = "Internal server error"
+
+# PostgreSQL error code -> (HTTP status, safe user-facing message)
+PG_CODE_TO_HTTP: dict[str, tuple[int, str]] = {
+    PG_UNIQUE_VIOLATION: (409, "Resource already exists"),
+    PG_FOREIGN_KEY_VIOLATION: (400, "Referenced resource does not exist"),
+    PG_NOT_NULL_VIOLATION: (400, "Required field is missing"),
+    PG_INSUFFICIENT_PRIVILEGE: (403, "Insufficient permissions"),
+}

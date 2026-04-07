@@ -13,6 +13,9 @@ import {
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { CreditPackageCard } from "@/shared/ui/credit-package-card";
+
+/** Simulated delay (ms) for mock payment processing. */
+const SIMULATED_PAYMENT_DELAY_MS = 1500;
 import { ModalContentWrapper, CenteredIconContainer, FlexCol, FlexRow } from "@/shared/ui/modal-components";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { CREDIT_PACKAGES } from "@/shared/types";
@@ -47,7 +50,7 @@ export function BuyCreditsModal({
     form.setPurchasing(true);
 
     // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, SIMULATED_PAYMENT_DELAY_MS));
 
     const pkg = CREDIT_PACKAGES[form.selectedPackage];
     const totalCredits = pkg.credits + (pkg.bonus || 0);

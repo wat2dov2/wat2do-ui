@@ -4,8 +4,9 @@
  */
 
 import { useEffect } from "react";
+import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 
-export function useAdminScrollToItem(itemId: string | null, delay = 100) {
+export function useAdminScrollToItem(itemId: string | null, delay = SCROLL_INTO_VIEW_DELAY_MS) {
   useEffect(() => {
     if (itemId) {
       setTimeout(() => {

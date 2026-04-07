@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/shared/ui/popover";
 import { Highlighter } from "@/shared/ui/highlighter";
-import { availableSchools } from "@/shared/constants/schools";
+import { availableSchools, DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 interface SchoolComboboxProps {
   value: string;
@@ -30,7 +30,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
           aria-expanded={open}
         >
           <Highlighter action="highlight" color="var(--primary)">
-            {value ? value : "University of Waterloo"}
+            {value ? value : DEFAULT_SCHOOL}
           </Highlighter>
           <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         </button>

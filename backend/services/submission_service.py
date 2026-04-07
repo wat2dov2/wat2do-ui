@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime, timezone
 
+from constants import SUBMISSION_PENDING
 from core.database import get_sb
 from core.tables import EVENT_SUBMISSIONS
 from schemas.submission import SubmissionResponse
@@ -14,7 +15,7 @@ def create_submission(user_id: str, event_data: dict) -> SubmissionResponse:
         "id": str(uuid.uuid4()),
         "user_id": user_id,
         "event_data": event_data,
-        "status": "pending",
+        "status": SUBMISSION_PENDING,
     }
     r = get_sb().table(EVENT_SUBMISSIONS).insert(payload).execute()
     return SubmissionResponse.model_validate(r.data[0]) if r.data else SubmissionResponse(**payload)

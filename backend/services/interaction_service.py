@@ -2,18 +2,27 @@
 
 import uuid
 
+from core.constants import (
+    DEFAULT_INTERACTION_LIMIT,
+    INTERACTION_CLICK,
+    INTERACTION_DETAIL_VIEW,
+    INTERACTION_SAVE,
+    INTERACTION_SHARE,
+    INTERACTION_UNSAVE,
+    INTERACTION_VIEW,
+)
 from core.database import get_sb
 from core.tables import USER_INTERACTIONS
 from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
 
 # Weights for computing interaction scores.
 INTERACTION_WEIGHTS: dict[str, float] = {
-    "view": 1.0,
-    "click": 2.0,
-    "detail_view": 3.0,
-    "save": 5.0,
-    "unsave": -3.0,
-    "share": 3.0,
+    INTERACTION_VIEW: 1.0,
+    INTERACTION_CLICK: 2.0,
+    INTERACTION_DETAIL_VIEW: 3.0,
+    INTERACTION_SAVE: 5.0,
+    INTERACTION_UNSAVE: -3.0,
+    INTERACTION_SHARE: 3.0,
 }
 
 
@@ -81,7 +90,7 @@ def get_interaction_matrix() -> list[InteractionMatrixRow]:
     ]
 
 
-def get_event_popularity(limit: int = 50) -> list[EventPopularity]:
+def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPopularity]:
     """
     Return events ranked by weighted interaction count.
     Returns typed rows sorted descending.

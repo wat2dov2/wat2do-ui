@@ -9,6 +9,7 @@ import {
 } from "@/shared/ui/dialog";
 import { formatEventDate, formatTime } from "@/shared/utils/date";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
+import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 
 interface EventSuccessScreenProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export function EventSuccessScreen({
           ? t("events.eventUpdatedMessage", { title: formData.title })
           : t("events.eventCreatedMessage", { title: formData.title })
       );
-    }, 100);
+    }, SCROLL_INTO_VIEW_DELAY_MS);
   };
 
   return (

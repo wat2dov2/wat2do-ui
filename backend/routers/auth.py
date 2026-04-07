@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from core.auth import bearer
 from core.config import settings
+from core.errors import NO_REFRESH_TOKEN
 from schemas.auth import (
     SignupRequest,
     SignupResponse,
@@ -63,7 +64,7 @@ def refresh(request: Request, response: Response):
     if not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No refresh token",
+            detail=NO_REFRESH_TOKEN,
         )
     result = auth.refresh(refresh_token)
     if result.refresh_token:

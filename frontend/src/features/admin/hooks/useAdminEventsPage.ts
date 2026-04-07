@@ -11,7 +11,10 @@ import {
   getEventCategories,
   getReportedEvents,
 } from "@/features/admin/api/admin.api";
+import { REPORT_PENDING } from "@/shared/constants/statuses";
 import type { Event } from "@/shared/types";
+import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
+import { QP } from "@/shared/constants/queryParams";
 
 interface AdminEventsPageState {
   searchQuery: string;
@@ -87,7 +90,7 @@ export function useAdminEventsPage({
     getReportedEvents()
       .then((reports) => {
         const pendingIds = new Set(
-          reports.filter((r) => r.status === "pending").map((r) => r.eventId),
+          reports.filter((r) => r.status === REPORT_PENDING).map((r) => r.eventId),
         );
         setReportedEventIds(pendingIds);
       })
@@ -95,7 +98,7 @@ export function useAdminEventsPage({
   }, []);
 
   // Get eventId from URL
-  const eventIdParam = searchParams.get("eventId");
+  const eventIdParam = searchParams.get(QP.EVENT_ID);
   const selectedEvent = useMemo(() => {
     if (eventIdParam) {
       const eventId = parseInt(eventIdParam, 10);
@@ -118,7 +121,7 @@ export function useAdminEventsPage({
             if (element) {
               element.scrollIntoView({ behavior: "smooth", block: "center" });
             }
-          }, 100);
+          }, SCROLL_INTO_VIEW_DELAY_MS);
         });
       }
     }

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
+import { ROUTES } from "@/shared/constants/routes";
 
 /**
  * Hook for managing sidebar-related logic: navigation and translations
@@ -19,19 +20,19 @@ export function useSidebar() {
   }, [setShowCommandPalette]);
 
   const handleClubsClick = useCallback(() => {
-    navigate("/clubs");
+    navigate(ROUTES.CLUBS);
   }, [navigate]);
 
   const handleMissionClick = useCallback(() => {
-    navigate("/about");
+    navigate(ROUTES.ABOUT);
   }, [navigate]);
 
   const handleSettingsClick = useCallback(() => {
-    navigate("/settings");
+    navigate(ROUTES.SETTINGS);
   }, [navigate]);
 
   const handleExploreClick = useCallback(() => {
-    navigate("/");
+    navigate(ROUTES.HOME);
   }, [navigate]);
 
   const handleCreateClick = useCallback(() => {

@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.tables import EVENTS
 from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
@@ -31,7 +32,7 @@ def get_event(event_id: int) -> EventResponse | None:
 
 def list_events(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = DEFAULT_LIST_LIMIT,
     category: str | None = None,
     club_type: str | None = None,
     school: str | None = None,

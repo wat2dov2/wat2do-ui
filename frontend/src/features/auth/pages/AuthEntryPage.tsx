@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/shared/constants/routes";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { AuthEmailFormCard } from "@/features/auth/components/AuthEmailFormCard";
 import { useAuthEntryFlow } from "@/features/auth/hooks/useAuthEntryFlow";
@@ -8,8 +9,8 @@ export function AuthEntryPage() {
   const navigate = useNavigate();
 
   const authEntry = useAuthEntryFlow({
-    onContinueToOnboarding: () => navigate("/onboarding"),
-    onContinueToHome: () => navigate("/"),
+    onContinueToOnboarding: () => navigate(ROUTES.ONBOARDING),
+    onContinueToHome: () => navigate(ROUTES.HOME),
   });
 
   return (

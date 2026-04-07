@@ -2,7 +2,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-ReportStatus = Literal["pending", "resolved", "dismissed"]
+from constants import REPORT_DISMISSED, REPORT_PENDING, REPORT_RESOLVED
+
+ReportStatus = Literal[REPORT_PENDING, REPORT_RESOLVED, REPORT_DISMISSED]
 
 
 class ReportCreate(BaseModel):

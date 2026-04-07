@@ -6,6 +6,9 @@ export const availableSchools = [
   "McMaster University",
 ];
 
+/** Default school used as a fallback throughout the app. */
+export const DEFAULT_SCHOOL = availableSchools[0]; // "University of Waterloo"
+
 /**
  * Maps email domains to school names.
  *

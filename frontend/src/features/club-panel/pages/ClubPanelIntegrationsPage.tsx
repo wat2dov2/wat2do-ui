@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { ROUTES } from "@/shared/constants/routes";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import {
   Dialog,
@@ -127,7 +128,7 @@ export function ClubPanelIntegrationsPage() {
   const redirectIfUnauthorized = useCallback(
     (error: unknown): boolean => {
       if (error instanceof ApiError && error.status === 401) {
-        navigate("/login", { replace: true });
+        navigate(ROUTES.LOGIN, { replace: true });
         return true;
       }
       return false;
@@ -514,7 +515,7 @@ export function ClubPanelIntegrationsPage() {
         <Button
           variant="secondary"
           size="icon"
-          onClick={() => navigate("/club-panel")}
+          onClick={() => navigate(ROUTES.CLUB_PANEL)}
           className="shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />

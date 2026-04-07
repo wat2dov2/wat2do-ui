@@ -258,7 +258,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             <CalendarDays className="w-4 h-4 text-muted-foreground" />
           </button>
           {showDateRangePicker && (
-            <div className="absolute z-50 mt-1">
+            <div className="absolute z-dropdown mt-1">
               <DatePicker
                 selected={filters.dateRange}
                 onSelect={(date) => {
@@ -294,7 +294,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             <CalendarDays className="w-4 h-4 text-muted-foreground" />
           </button>
           {showAddedSincePicker && (
-            <div className="absolute z-50 mt-1">
+            <div className="absolute z-dropdown mt-1">
               <DatePicker
                 selected={filters.addedSince}
                 onSelect={(date) => {

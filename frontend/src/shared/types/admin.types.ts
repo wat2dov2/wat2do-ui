@@ -1,9 +1,8 @@
 /**
  * Admin-related types
  *
- * Status unions must match the backend Literal types:
- *   SubmissionStatus → schemas/submission.py
- *   ReportStatus     → schemas/report.py
+ * Status unions are derived from the constants in shared/constants/statuses.ts
+ * which mirror the backend Literal types (schemas/submission.py, schemas/report.py).
  *
  * At runtime, the canonical list is fetched via /meta/constants
  * (see shared/api/metaApi.ts). These TypeScript types exist for
@@ -11,12 +10,13 @@
  */
 
 import type { EventFormData } from "@/shared/types/event.types";
+import type { SUBMISSION_STATUSES, REPORT_STATUSES } from "@/shared/constants/statuses";
 
-/** Must match backend SubmissionStatus = Literal["pending","approved","rejected"] */
-export type SubmissionStatus = "pending" | "approved" | "rejected";
+/** Derived from SUBMISSION_STATUSES constant tuple */
+export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
-/** Must match backend ReportStatus = Literal["pending","resolved","dismissed"] */
-export type ReportStatus = "pending" | "resolved" | "dismissed";
+/** Derived from REPORT_STATUSES constant tuple */
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 // Admin panel types
 export interface EventSubmission {

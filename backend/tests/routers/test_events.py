@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+from core.constants import ROLE_ADMIN
 from schemas.event import EventResponse
 from services import event_service
 from tests.conftest import FAKE_USER, OTHER_USER, ADMIN_USER
@@ -81,7 +82,7 @@ def test_update_event_admin_allowed(admin_client, monkeypatch):
     admin_db_user = UserResponse(
         id="00000000-0000-0000-0000-000000000000",
         email=ADMIN_USER["email"],
-        role="admin",
+        role=ROLE_ADMIN,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )

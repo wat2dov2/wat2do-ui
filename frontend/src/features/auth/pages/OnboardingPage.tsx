@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/shared/constants/routes";
 import { AnimatePresence, motion } from "framer-motion";
 import { getSession, updateUserProfile } from "@/features/auth/api/auth.api";
 import { useOnboardingFlow } from "@/features/auth/hooks/useOnboardingFlow";
@@ -58,7 +59,7 @@ export function OnboardingPage() {
       };
 
       // Redirect to events immediately so the user isn't stuck on a slow transition
-      navigate("/");
+      navigate(ROUTES.HOME);
       setProfileCompleted(true);
 
       const session = getSession();

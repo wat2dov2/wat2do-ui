@@ -2,6 +2,7 @@
 
 from uuid import UUID
 
+from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.tables import USERS
 from schemas.user import UserUpdate, UserResponse
@@ -21,7 +22,7 @@ def get_user_by_supabase_id(supabase_auth_id: str) -> UserResponse | None:
     return UserResponse.model_validate(r.data[0])
 
 
-def list_users(skip: int = 0, limit: int = 100) -> list[UserResponse]:
+def list_users(skip: int = 0, limit: int = DEFAULT_LIST_LIMIT) -> list[UserResponse]:
     r = (
         get_sb()
         .table(USERS)

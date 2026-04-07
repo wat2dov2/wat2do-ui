@@ -4,7 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-UserRole = Literal["user", "admin"]
+from core.constants import ROLE_ADMIN, ROLE_USER
+
+UserRole = Literal[ROLE_USER, ROLE_ADMIN]
 
 
 class UserBase(BaseModel):
@@ -37,7 +39,7 @@ class UserResponse(UserBase):
     school: str | None = None
     interests: list[str] | None = None
     is_first_year: bool = False
-    role: UserRole = "user"
+    role: UserRole = ROLE_USER
     created_at: datetime
     updated_at: datetime
 

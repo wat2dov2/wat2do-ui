@@ -1,4 +1,5 @@
 import type { Event, EventFormData } from "@/shared/types";
+import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 
 /**
  * Event Service
@@ -19,7 +20,7 @@ export function createEvent(
   return {
     id: newId,
     title: eventData.title,
-    category: eventData.category || "Events",
+    category: eventData.category || DEFAULT_EVENT_CATEGORY,
     organization: eventData.organization,
     location: eventData.location,
     date: eventData.date,
@@ -50,7 +51,7 @@ export function updateEvent(
     date: eventData.date,
     time: eventData.time,
     location: eventData.location,
-    category: eventData.category || "Events",
+    category: eventData.category || DEFAULT_EVENT_CATEGORY,
     price: eventData.price || 0,
     food: eventData.food || [],
     requiresRegistration: eventData.requiresRegistration || false,

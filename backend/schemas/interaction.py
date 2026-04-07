@@ -1,13 +1,21 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-
-INTERACTION_TYPES = ("view", "click", "detail_view", "save", "unsave", "share")
+from core.constants import INTERACTION_TYPES
 
 
 class InteractionCreate(BaseModel):
     event_id: int
     interaction_type: str
     metadata: dict | None = None
+
+    @field_validator("interaction_type")
+    @classmethod
+    def _interaction_type_allowed(cls, v: str) -> str:
+        if v not in INTERACTION_TYPES:
+            raise ValueError(
+                f"interaction_type must be one of: {', '.join(INTERACTION_TYPES)}"
+            )
+        return v
 
 
 class InteractionBatch(BaseModel):

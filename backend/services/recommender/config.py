@@ -62,6 +62,17 @@ FIRST_YEAR_CATEGORIES: frozenset[str] = frozenset({
 })
 
 # ---------------------------------------------------------------------------
+# Reranker: price normalization
+# ---------------------------------------------------------------------------
+PRICE_NORMALIZATION_CAP: float = 50.0  # prices >= this map to 1.0 in the feature vector
+
+# ---------------------------------------------------------------------------
+# Reranker: time-bucket hour boundaries
+# ---------------------------------------------------------------------------
+TIME_BUCKET_MORNING_END: int = 12      # hours [0, 12) = morning
+TIME_BUCKET_AFTERNOON_END: int = 17    # hours [12, 17) = afternoon; >= 17 = evening
+
+# ---------------------------------------------------------------------------
 # Popularity scoring
 # ---------------------------------------------------------------------------
 POP_HALF_LIFE_DAYS: float = 7.0       # exponential decay half-life

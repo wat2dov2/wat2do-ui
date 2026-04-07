@@ -6,6 +6,7 @@ from core.constants import (
     BUCKET_AVATARS,
     BUCKET_CLUB_LOGOS,
     BUCKET_QR_ASSETS,
+    MAX_IMAGE_SIZE_BYTES,
 )
 from core.errors import CLUB_NOT_FOUND, EVENT_NOT_FOUND, USER_NOT_FOUND
 from services.storage_service import storage
@@ -24,7 +25,7 @@ async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
             f"File type {file.content_type} not allowed. Accepted: {', '.join(allowed)}",
         )
     data = await file.read()
-    limit = storage.BUCKETS.get(bucket, {}).get("file_size_limit", 5 * 1024 * 1024)
+    limit = storage.BUCKETS.get(bucket, {}).get("file_size_limit", MAX_IMAGE_SIZE_BYTES)
     if len(data) > limit:
         raise HTTPException(
             status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,

@@ -32,9 +32,9 @@ import { useOnboardingOTP } from "@/features/auth/hooks/useOnboardingOTP";
 import { useOnboardingForm, type OnboardingData } from "@/features/auth/hooks/useOnboardingForm";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { MultiSelect } from "@/shared/ui/multi-select";
-import { availableInterests } from "@/shared/data/interests";
+import { getAvailableInterests } from "@/shared/data/interests";
 import { updateUserProfile } from "@/features/auth/api/auth.api";
-import { availableSchools } from "@/shared/constants/schools";
+import { availableSchools, DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { GOOSE_IMAGE_URL } from "@/shared/constants/images";
 import { GoogleLogo } from "@/shared/ui/google-logo";
 import { translateInterest } from "@/shared/utils/translateInterest";
@@ -95,7 +95,7 @@ export function OnboardingModal({
             faculty: onboardingData.faculty,
             interests: onboardingData.interests,
             isFirstYear: onboardingData.isFirstYear,
-            school: availableSchools[0] || "University of Waterloo",
+            school: DEFAULT_SCHOOL,
           });
           onComplete({
             faculty: onboardingData.faculty,
@@ -417,7 +417,7 @@ export function OnboardingModal({
                   {t("settings.profile.interests")}
                 </FieldLabel>
                 <MultiSelect
-                  options={availableInterests}
+                  options={getAvailableInterests()}
                   selected={form.selectedInterests}
                   onToggle={form.toggleInterest}
                   translationKeyPrefix="categories"

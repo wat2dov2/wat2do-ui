@@ -14,6 +14,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
+import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import type { EventSubmission } from "@/shared/types";
 
 interface SubmissionDetailsDialogProps {
@@ -97,7 +98,7 @@ export function SubmissionDetailsDialog({
             </p>
           </div>
 
-          {submission.status === "pending" && (
+          {submission.status === SUBMISSION_PENDING && (
             <div className="flex gap-2 justify-end pt-4 border-t border-border">
               <Button variant="outline" onClick={onClose} disabled={isApproving}>
                 {t("common.cancel")}

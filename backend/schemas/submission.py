@@ -2,7 +2,11 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-SubmissionStatus = Literal["pending", "approved", "rejected"]
+from constants import SUBMISSION_APPROVED, SUBMISSION_PENDING, SUBMISSION_REJECTED
+
+SubmissionStatus = Literal[
+    SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED
+]
 
 
 class SubmissionCreate(BaseModel):

@@ -1,4 +1,5 @@
 import type { FilterState } from "@/shared/types";
+import { QP } from "@/shared/constants/queryParams";
 
 /**
  * Filter Service
@@ -93,7 +94,7 @@ export function parseFilterQueryString(
 ): FilterState | null {
   try {
     const params = new URLSearchParams(queryString);
-    const filtersParam = params.get("filters");
+    const filtersParam = params.get(QP.FILTERS);
     if (!filtersParam) return null;
 
     const decoded = decodeURIComponent(filtersParam);

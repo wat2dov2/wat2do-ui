@@ -3,10 +3,19 @@
 import uuid
 
 from fastapi import HTTPException, status
+from postgrest.exceptions import APIError
 from supabase_auth.errors import AuthApiError
 
 from core.allowed_emails import get_school_for_email, is_email_allowed
+from core.constants import PG_UNIQUE_VIOLATION
 from core.database import supabase, get_sb
+from core.errors import (
+    EMAIL_NOT_ALLOWED,
+    EMAIL_OR_USERNAME_TAKEN,
+    INVALID_EMAIL_OR_PASSWORD,
+    SESSION_REFRESH_FAILED,
+    SIGNUP_FAILED,
+)
 from core.logging import logger
 from core.tables import USERS
 from schemas.auth import (
@@ -35,7 +44,7 @@ class AuthService:
         if not is_email_allowed(data.email):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only student emails from allowed schools can sign up. Use a valid university email (e.g. @uwaterloo.ca).",
+                detail=EMAIL_NOT_ALLOWED,
             )
 
         try:
@@ -47,7 +56,7 @@ class AuthService:
         if not res.user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Signup failed — check email/password requirements",
+                detail=SIGNUP_FAILED,
             )
 
         school = get_school_for_email(data.email) or ""
@@ -64,11 +73,12 @@ class AuthService:
             r = self._db.table(USERS).insert(payload).execute()
             row = r.data[0]
             user_id = row["id"]
-        except Exception as e:
-            if "duplicate" in str(e).lower() or "unique" in str(e).lower() or "23505" in str(e):
+        except APIError as e:
+            if e.code == PG_UNIQUE_VIOLATION:
+                logger.warning("Duplicate user signup for %s: %s", data.email, e.message)
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Email or username already taken",
+                    detail=EMAIL_OR_USERNAME_TAKEN,
                 )
             raise
 
@@ -103,7 +113,7 @@ class AuthService:
         if not res.session:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password",
+                detail=INVALID_EMAIL_OR_PASSWORD,
             )
 
         return AuthResult(
@@ -125,7 +135,7 @@ class AuthService:
         if not res.session:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not refresh session — please log in again",
+                detail=SESSION_REFRESH_FAILED,
             )
 
         return AuthResult(

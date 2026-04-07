@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { OTP_LENGTH } from "@/features/auth/constants";
+import { OTP_LENGTH, OTP_VERIFICATION_DELAY_MS } from "@/features/auth/constants";
 
 interface UseOnboardingOTPOptions {
   onComplete: () => void;
@@ -20,7 +20,7 @@ export function useOnboardingOTP({ onComplete }: UseOnboardingOTPOptions) {
         setIsVerifying(false);
         setShowOtpInput(false);
         onComplete();
-      }, 800);
+      }, OTP_VERIFICATION_DELAY_MS);
     }
   }, [onComplete]);
 

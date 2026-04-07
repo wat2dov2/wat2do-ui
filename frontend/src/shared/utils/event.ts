@@ -1,4 +1,5 @@
 import type { Event, EventFormData } from "@/shared/types";
+import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 
 /**
  * Event Utilities
@@ -15,7 +16,7 @@ export function deriveCategoryFromClubType(clubType?: string): string {
     Athletics: "Athletics",
     "Student Society": "Academics",
   };
-  return clubType ? (mapping[clubType] || "Events") : "Events";
+  return clubType ? (mapping[clubType] || DEFAULT_EVENT_CATEGORY) : DEFAULT_EVENT_CATEGORY;
 }
 
 /**
@@ -66,7 +67,7 @@ export function formDataToEvent(
 ): Omit<Event, "id" | "addedDate" | "eventDate"> {
   return {
     title: formData.title,
-    category: formData.category || "Events",
+    category: formData.category || DEFAULT_EVENT_CATEGORY,
     organization: formData.organization,
     location: formData.location,
     date: formData.date,

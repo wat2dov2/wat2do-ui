@@ -4,6 +4,7 @@ import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { getEventSubmissions, getScrapedEvents } from "@/features/admin/api/admin.api";
+import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import { getSession } from "@/features/auth/api/auth.api";
 import { useBackendPosters } from "@/features/qrcode";
 import { AdminCard } from "@/features/admin/components/shared/AdminCard";
@@ -11,6 +12,7 @@ import type { Event } from "@/shared/types";
 import type { EventSubmission, ScrapedEvent } from "@/shared/types";
 import type { QRCode } from "@/shared/types";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
+import { QP } from "@/shared/constants/queryParams";
 
 interface AdminPanelProps {
   events: Event[];
@@ -40,7 +42,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
   // Get recent activities
   const recentActivities = useMemo(() => {
     const submissionItems = submissions
-      .filter((s) => s.status === "pending")
+      .filter((s) => s.status === SUBMISSION_PENDING)
       .map((s) => ({
         type: "submission" as const,
         data: s,
@@ -81,7 +83,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       // URL param will be handled by AdminSubmissionsPage via useSearchParams
       setTimeout(() => {
         const url = new URL(window.location.href);
-        url.searchParams.set("submissionId", activity.data.id);
+        url.searchParams.set(QP.SUBMISSION_ID, activity.data.id);
         window.history.pushState({}, "", url.toString());
         window.dispatchEvent(new PopStateEvent("popstate"));
       }, 0);
@@ -90,7 +92,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       // URL param will be handled by AdminEventsPage via useSearchParams
       setTimeout(() => {
         const url = new URL(window.location.href);
-        url.searchParams.set("eventId", activity.data.eventId.toString());
+        url.searchParams.set(QP.EVENT_ID, activity.data.eventId.toString());
         window.history.pushState({}, "", url.toString());
         window.dispatchEvent(new PopStateEvent("popstate"));
       }, 0);
@@ -99,7 +101,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       // URL param will be handled by AdminPostersPage via useSearchParams
       setTimeout(() => {
         const url = new URL(window.location.href);
-        url.searchParams.set("qrCodeId", activity.data.id);
+        url.searchParams.set(QP.QR_CODE_ID, activity.data.id);
         window.history.pushState({}, "", url.toString());
         window.dispatchEvent(new PopStateEvent("popstate"));
       }, 0);

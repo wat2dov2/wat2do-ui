@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { ViewMode, FilterViewMode } from "@/shared/types";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { getSession, isAuthenticated, isProfileCompleted } from "@/features/auth";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 export function useAppUI() {
   const { isDarkMode } = useDarkMode();
@@ -9,7 +10,7 @@ export function useAppUI() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filterViewMode, setFilterViewMode] = useState<FilterViewMode>("visual");
   const [eventsExpanded, setEventsExpanded] = useState(true);
-  const [selectedSchool, setSelectedSchool] = useState("University of Waterloo");
+  const [selectedSchool, setSelectedSchool] = useState(DEFAULT_SCHOOL);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSubmitEvent, setShowSubmitEvent] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);

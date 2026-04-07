@@ -146,7 +146,7 @@ function PosterMarker({
 
       {/* Tooltip on hover */}
       {isHovered && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-card border border-border rounded-lg shadow-xl text-xs z-50 pointer-events-none min-w-[160px]">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-card border border-border rounded-lg shadow-xl text-xs z-dropdown pointer-events-none min-w-[160px]">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3 text-primary shrink-0" />

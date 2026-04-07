@@ -8,6 +8,8 @@ from core.constants import (
     BUCKET_AVATARS,
     BUCKET_CLUB_LOGOS,
     BUCKET_QR_ASSETS,
+    MAX_AVATAR_SIZE_BYTES,
+    MAX_IMAGE_SIZE_BYTES,
     supabase_retry,
 )
 from core.database import supabase, supabase_admin
@@ -17,22 +19,22 @@ from core.logging import logger
 _DEFAULT_BUCKETS: dict[str, dict] = {
     BUCKET_EVENT_IMAGES: {
         "public": True,
-        "file_size_limit": 5 * 1024 * 1024,  # 5 MB
+        "file_size_limit": MAX_IMAGE_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"],
     },
     BUCKET_AVATARS: {
         "public": True,
-        "file_size_limit": 2 * 1024 * 1024,  # 2 MB
+        "file_size_limit": MAX_AVATAR_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
     },
     BUCKET_CLUB_LOGOS: {
         "public": True,
-        "file_size_limit": 2 * 1024 * 1024,
+        "file_size_limit": MAX_AVATAR_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
     },
     BUCKET_QR_ASSETS: {
         "public": True,
-        "file_size_limit": 5 * 1024 * 1024,
+        "file_size_limit": MAX_IMAGE_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
     },
 }

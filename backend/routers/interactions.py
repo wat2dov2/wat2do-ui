@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from postgrest.exceptions import APIError
 
 from core.database import supabase
@@ -26,7 +26,7 @@ def _resolve_user_from_token(token: str | None) -> str | None:
     return None
 
 
-@router.post("/batch", status_code=202)
+@router.post("/batch", status_code=status.HTTP_202_ACCEPTED)
 def record_interactions(data: InteractionBatch):
     """
     Record a batch of user-event interactions.

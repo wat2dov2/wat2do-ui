@@ -1,4 +1,5 @@
 import type { FilterState } from "@/shared/types";
+import { QP } from "@/shared/constants/queryParams";
 
 /**
  * Filter Utilities
@@ -54,7 +55,7 @@ export const hasFilters = hasActiveFilters;
 export function buildFilterQueryString(filters: FilterState): string {
   try {
     const encoded = encodeURIComponent(JSON.stringify(filters));
-    return `filters=${encoded}`;
+    return `${QP.FILTERS}=${encoded}`;
   } catch (error) {
     console.error("Failed to build filter query string:", error);
     return "";
@@ -69,7 +70,7 @@ export function parseFilterQueryString(
 ): FilterState | null {
   try {
     const params = new URLSearchParams(queryString);
-    const filtersParam = params.get("filters");
+    const filtersParam = params.get(QP.FILTERS);
     if (!filtersParam) return null;
 
     const decoded = decodeURIComponent(filtersParam);

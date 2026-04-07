@@ -5,14 +5,15 @@ categories, interest mappings, and status enums always come from
 one source of truth (the backend).
 """
 
-from typing import get_args
-
 from fastapi import APIRouter
 
-from constants import EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
+from constants import (
+    EVENT_CATEGORIES,
+    INTEREST_TO_CATEGORIES,
+    SUBMISSION_STATUSES,
+    REPORT_STATUSES,
+)
 from schemas.meta import AppConstantsResponse
-from schemas.submission import SubmissionStatus
-from schemas.report import ReportStatus
 
 router = APIRouter(prefix="/meta", tags=["meta"])
 
@@ -25,7 +26,8 @@ def get_constants():
     """
     return AppConstantsResponse(
         event_categories=list(EVENT_CATEGORIES),
+        interests=list(INTEREST_TO_CATEGORIES.keys()),
         interest_to_categories=INTEREST_TO_CATEGORIES,
-        submission_statuses=list(get_args(SubmissionStatus)),
-        report_statuses=list(get_args(ReportStatus)),
+        submission_statuses=list(SUBMISSION_STATUSES),
+        report_statuses=list(REPORT_STATUSES),
     )

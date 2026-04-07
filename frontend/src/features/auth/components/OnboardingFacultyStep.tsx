@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { FACULTY_OPTIONS } from "@/features/auth/hooks/useOnboardingFlow";
+import { SPLASH_ANIMATION_MS } from "@/features/auth/constants";
 
 const SELECT_PLACEHOLDER_VALUE = "__placeholder__";
 
@@ -61,14 +62,14 @@ export function OnboardingFacultyStep({
     if (next && FACULTY_OPTIONS.includes(next as (typeof FACULTY_OPTIONS)[number])) {
       setSplashPoints(generateSplashPoints(next));
       setSplash(true);
-      setTimeout(() => setSplash(false), 800);
+      setTimeout(() => setSplash(false), SPLASH_ANIMATION_MS);
     }
   };
 
   return (
     <>
       {splash && (
-        <div className="fixed inset-0 pointer-events-none z-100" aria-hidden>
+        <div className="fixed inset-0 pointer-events-none z-easter-egg" aria-hidden>
           {splashPoints.map((point, i) => (
             <motion.div
               key={i}

@@ -14,6 +14,7 @@ import type { Event, EventFormData, EventSubmission, Club } from "@/shared/types
 import { submissionToEventData } from "@/features/admin/utils/submissionToEvent";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useAppContext } from "@/contexts/AppContext";
+import { ROUTES, ADMIN_ROUTE_MAP } from "@/shared/constants/routes";
 
 interface AdminRoutesConfig {
   events: Event[];
@@ -49,7 +50,7 @@ export function AdminRouteWrapper({
   const adminProps = useMemo(
     () => ({
       events: config.events,
-      onBack: () => navigate("/admin"),
+      onBack: () => navigate(ROUTES.ADMIN),
       ...(includeEvents && {
         onEditEvent: config.onEditEvent,
         onDeleteEvent: config.onDeleteEvent,
@@ -85,16 +86,6 @@ export function AdminRouteWrapper({
 }
 
 /**
- * Admin route mapping for navigation
- */
-export const ADMIN_ROUTE_MAP: Record<string, string> = {
-  "admin-events": "/admin/events",
-  "admin-clubs": "/admin/clubs",
-  "admin-submissions": "/admin/submissions",
-  "admin-posters": "/admin/posters",
-};
-
-/**
  * Admin panel navigation handler
  */
 export function useAdminNavigation() {
@@ -102,7 +93,7 @@ export function useAdminNavigation() {
 
   return useMemo(
     () => (page: string) => {
-      navigate(ADMIN_ROUTE_MAP[page] || "/admin");
+      navigate(ADMIN_ROUTE_MAP[page] || ROUTES.ADMIN);
     },
     [navigate]
   );
@@ -156,7 +147,7 @@ export function AdminSubmissionsRoute({ config }: { config: AdminRoutesConfig })
 
   return (
     <AdminRouteWrapper config={config} includeSubmissions>
-      <AdminSubmissionsPage onBack={() => navigate("/admin")} />
+      <AdminSubmissionsPage onBack={() => navigate(ROUTES.ADMIN)} />
     </AdminRouteWrapper>
   );
 }

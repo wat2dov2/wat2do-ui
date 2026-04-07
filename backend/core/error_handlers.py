@@ -8,27 +8,26 @@ degradation), catch it locally — local catches always take priority.
 import logging
 import traceback
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from postgrest.exceptions import APIError
 from supabase_auth.errors import AuthApiError
 
-logger = logging.getLogger(__name__)
+from core.errors import (
+    AUTHENTICATION_ERROR,
+    DB_OPERATION_FAILED,
+    INTERNAL_SERVER_ERROR,
+    PG_CODE_TO_HTTP,
+)
 
-# PostgreSQL error code -> (HTTP status, safe user-facing message)
-_PG_CODE_TO_HTTP: dict[str, tuple[int, str]] = {
-    "23505": (409, "Resource already exists"),
-    "23503": (400, "Referenced resource does not exist"),
-    "23502": (400, "Required field is missing"),
-    "42501": (403, "Insufficient permissions"),
-}
+logger = logging.getLogger(__name__)
 
 
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AuthApiError)
     async def handle_auth_api_error(request: Request, exc: AuthApiError) -> JSONResponse:
         status_code = exc.status or 400
-        detail = exc.message or "Authentication error"
+        detail = exc.message or AUTHENTICATION_ERROR
         logger.warning(
             "AuthApiError on %s %s [code=%s]: %s",
             request.method, request.url.path, exc.code, detail,
@@ -37,7 +36,7 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(APIError)
     async def handle_postgrest_error(request: Request, exc: APIError) -> JSONResponse:
-        mapped = _PG_CODE_TO_HTTP.get(exc.code or "")
+        mapped = PG_CODE_TO_HTTP.get(exc.code or "")
         if mapped:
             status_code, detail = mapped
             logger.warning(
@@ -46,7 +45,7 @@ def register_error_handlers(app: FastAPI) -> None:
             )
         else:
             status_code = 502
-            detail = "Database operation failed"
+            detail = DB_OPERATION_FAILED
             logger.error(
                 "Unhandled PostgREST error on %s %s [code=%s]: %s | hint=%s | details=%s",
                 request.method, request.url.path,
@@ -64,6 +63,6 @@ def register_error_handlers(app: FastAPI) -> None:
             traceback.format_exc(),
         )
         return JSONResponse(
-            status_code=500,
-            content={"detail": "Internal server error"},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": INTERNAL_SERVER_ERROR},
         )

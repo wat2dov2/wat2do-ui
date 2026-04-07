@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Event } from "@/shared/types";
 import { formReducer, initialState, type FormState } from "@/features/qrcode/hooks/useCreateQRCodeForm.reducer";
 import { getUniqueEvents, createQRCodeFromState } from "@/features/qrcode/hooks/useCreateQRCodeForm.utils";
+import { MAX_UPLOAD_SIZE_BYTES } from "@/features/qrcode/constants";
 
 export function useCreateQRCodeForm(events: Event[], userEmail: string) {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ export function useCreateQRCodeForm(events: Event[], userEmail: string) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
       dispatch({
         type: "SET_ERRORS",
         payload: { ...state.errors, image: t("qrCode.imageSizeError") },

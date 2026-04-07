@@ -22,7 +22,7 @@ import {
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { useProfile } from "@/features/settings/hooks/useProfile";
 import { availableSchools } from "@/shared/constants/schools";
-import { availableInterests } from "@/shared/data/interests";
+import { getAvailableInterests } from "@/shared/data/interests";
 import { toFacultyKey } from "@/shared/utils/string";
 
 const availableFaculties = [
@@ -180,7 +180,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
               {t("settings.profile.selectInterests")}
             </p>
             <MultiSelect
-              options={availableInterests}
+              options={getAvailableInterests()}
               selected={profile.interests}
               onToggle={toggleInterest}
               translationKeyPrefix="categories"

@@ -17,7 +17,9 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
+import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import type { EventSubmission } from "@/shared/types";
+import { QP } from "@/shared/constants/queryParams";
 
 interface SubmissionsTableProps {
   submissions: EventSubmission[];
@@ -34,11 +36,11 @@ export function SubmissionsTable({
 }: SubmissionsTableProps) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const submissionIdParam = searchParams.get("submissionId");
+  const submissionIdParam = searchParams.get(QP.SUBMISSION_ID);
 
   const handleRowClick = (submissionId: string) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set("submissionId", submissionId);
+    newParams.set(QP.SUBMISSION_ID, submissionId);
     setSearchParams(newParams);
   };
 
@@ -104,7 +106,7 @@ export function SubmissionsTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-2">
-                    {submission.status === "pending" && (
+                    {submission.status === SUBMISSION_PENDING && (
                       <>
                         <Button
                           variant="secondary"

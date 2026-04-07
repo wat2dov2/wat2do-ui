@@ -5,7 +5,7 @@
 import { Field, FieldLabel } from "@/shared/ui/field";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { OnboardingStepWrapper } from "@/features/auth/components/OnboardingStepWrapper";
-import { availableInterests } from "@/shared/data/interests";
+import { getAvailableInterests } from "@/shared/data/interests";
 import { useTranslation } from "react-i18next";
 
 interface OnboardingInterestsStepProps {
@@ -37,7 +37,7 @@ export function OnboardingInterestsStep({
           {t("settings.profile.interests")}
         </FieldLabel>
         <MultiSelect
-          options={availableInterests}
+          options={getAvailableInterests()}
           selected={selectedInterests}
           onToggle={onToggleInterest}
           translationKeyPrefix="categories"

@@ -24,6 +24,7 @@ import {
 } from "@/app/routes/adminRoutes";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
+import { ROLE_ADMIN, ROLE_CLUB } from "@/shared/constants/roles";
 import {
   ClubPanelRoute,
   ClubPanelPostersRoute,
@@ -32,6 +33,7 @@ import {
 } from "@/app/routes/clubPanelRoutes";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { getDayOfWeek } from "@/shared/utils/date";
+import { ROUTES } from "@/shared/constants/routes";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { usePromotionsStore } from "@/features/credits/store/promotions.store";
@@ -289,7 +291,7 @@ export default function App() {
 
   const handleOpenOnboardingRoute = useCallback(() => {
     setShowOnboarding(false);
-    navigate("/onboarding");
+    navigate(ROUTES.ONBOARDING);
   }, [navigate, setShowOnboarding]);
 
   // Memoize admin route configuration
@@ -305,7 +307,7 @@ export default function App() {
     [events, handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
   );
 
-  const isAuthFlowRoute = location.pathname === "/login" || location.pathname === "/onboarding";
+  const isAuthFlowRoute = location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.ONBOARDING;
   const isQRRedirectRoute = /^\/qr\/[^/]+$/.test(location.pathname);
 
   // Full-page QR redirect: no app chrome, only loading then redirect (avoids events page flash)
@@ -323,39 +325,39 @@ export default function App() {
 
   const appRoutes = (
     <Routes>
-      <Route path="/login" element={<AuthEntryPage />} />
-      <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path={ROUTES.LOGIN} element={<AuthEntryPage />} />
+      <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
       <Route
-        path="/"
+        path={ROUTES.HOME}
         element={<EventsPageContainer />}
       />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/clubs" element={<ClubsPage />} />
-      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path={ROUTES.ABOUT} element={<AboutPage />} />
+      <Route path={ROUTES.CLUBS} element={<ClubsPage />} />
+      <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route
-        path="/admin"
-        element={<ProtectedRoute requiredRole="admin"><AdminPanelRoute config={adminConfig} /></ProtectedRoute>}
+        path={ROUTES.ADMIN}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminPanelRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
-        path="/admin/events"
-        element={<ProtectedRoute requiredRole="admin"><AdminEventsRoute config={adminConfig} /></ProtectedRoute>}
+        path={ROUTES.ADMIN_EVENTS}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminEventsRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
-        path="/admin/clubs"
-        element={<ProtectedRoute requiredRole="admin"><AdminClubsRoute config={adminConfig} /></ProtectedRoute>}
+        path={ROUTES.ADMIN_CLUBS}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminClubsRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
-        path="/admin/submissions"
-        element={<ProtectedRoute requiredRole="admin"><AdminSubmissionsRoute config={adminConfig} /></ProtectedRoute>}
+        path={ROUTES.ADMIN_SUBMISSIONS}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminSubmissionsRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
-        path="/admin/posters"
-        element={<ProtectedRoute requiredRole="admin"><AdminPostersRoute config={adminConfig} /></ProtectedRoute>}
+        path={ROUTES.ADMIN_POSTERS}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminPostersRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
-        path="/marketing"
+        path={ROUTES.MARKETING}
         element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requiredRole={ROLE_ADMIN}>
             <MarketingPage
               events={events}
               userEmail={userEmail || ""}
@@ -364,20 +366,20 @@ export default function App() {
         }
       />
       <Route
-        path="/club-panel"
-        element={<ProtectedRoute requiredRole="club"><ClubPanelRoute config={adminConfig} /></ProtectedRoute>}
+        path={ROUTES.CLUB_PANEL}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
-        path="/club-panel/posters"
-        element={<ProtectedRoute requiredRole="club"><ClubPanelPostersRoute config={adminConfig} /></ProtectedRoute>}
+        path={ROUTES.CLUB_PANEL_POSTERS}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelPostersRoute config={adminConfig} /></ProtectedRoute>}
       />
       <Route
-        path="/club-panel/integrations"
-        element={<ProtectedRoute requiredRole="club"><ClubPanelIntegrationsRoute /></ProtectedRoute>}
+        path={ROUTES.CLUB_PANEL_INTEGRATIONS}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelIntegrationsRoute /></ProtectedRoute>}
       />
       <Route
-        path="/club-panel/members"
-        element={<ProtectedRoute requiredRole="club"><ClubPanelMembersRoute /></ProtectedRoute>}
+        path={ROUTES.CLUB_PANEL_MEMBERS}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelMembersRoute /></ProtectedRoute>}
       />
     </Routes>
   );

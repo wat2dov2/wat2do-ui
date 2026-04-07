@@ -4,6 +4,22 @@ import confetti from "canvas-confetti";
 import { useTranslation } from "react-i18next";
 import type { EasterEggType } from "@/shared/components/useEasterEggs";
 
+// ---------------------------------------------------------------------------
+// Easter egg animation timing constants (ms)
+// ---------------------------------------------------------------------------
+/** Delay before the goose honk visual appears. */
+const HONK_DELAY_MS = 500;
+/** Duration the honk visual stays visible. */
+const HONK_CLEAR_DELAY_MS = 1500;
+/** Duration for the confetti / celebration effect. */
+const CONFETTI_DURATION_MS = 2500;
+/** Duration for the rain animation effect. */
+const RAIN_DURATION_MS = 4000;
+/** Duration for the food rain animation effect. */
+const FOOD_RAIN_DURATION_MS = 5000;
+/** Duration the internal Toast component stays visible. */
+const EASTER_TOAST_DURATION_MS = 2500;
+
 interface EasterEggsProps {
   activeEasterEgg: EasterEggType;
   onComplete: () => void;
@@ -25,7 +41,7 @@ export function EasterEggs({ activeEasterEgg, onComplete }: EasterEggsProps) {
   if (!activeEasterEgg) return null;
 
   return createPortal(
-    <div className="fixed inset-0 pointer-events-none z-99999">
+    <div className="fixed inset-0 pointer-events-none z-easter-egg">
       {activeEasterEgg === "goose" && <GooseCrossing onComplete={onComplete} />}
       {activeEasterEgg === "party" && <PartyMode onComplete={onComplete} />}
       {activeEasterEgg === "foodRain" && <FoodRain onComplete={onComplete} />}
@@ -46,8 +62,8 @@ function GooseCrossing({ onComplete }: { onComplete: () => void }) {
 
   useEffect(() => {
     // Play honk sound (we'll use a visual honk instead)
-    const honkTimeout = setTimeout(() => setHonked(true), 500);
-    const honkClearTimeout = setTimeout(() => setHonked(false), 1500);
+    const honkTimeout = setTimeout(() => setHonked(true), HONK_DELAY_MS);
+    const honkClearTimeout = setTimeout(() => setHonked(false), HONK_CLEAR_DELAY_MS);
 
     // Animate goose walking across screen
     const interval = setInterval(() => {
@@ -222,7 +238,7 @@ function FoodRain({ onComplete }: { onComplete: () => void }) {
 
     const timeout = setTimeout(() => {
       onComplete();
-    }, 5000);
+    }, FOOD_RAIN_DURATION_MS);
 
     return () => clearTimeout(timeout);
   }, [onComplete]);
@@ -297,7 +313,7 @@ function UofTSpirit({ onComplete }: { onComplete: () => void }) {
     const timeout = setTimeout(() => {
       clearInterval(interval);
       onComplete();
-    }, 2500);
+    }, CONFETTI_DURATION_MS);
 
     return () => {
       clearInterval(interval);
@@ -344,7 +360,7 @@ function McGillPride({ onComplete }: { onComplete: () => void }) {
     const timeout = setTimeout(() => {
       clearInterval(interval);
       onComplete();
-    }, 2500);
+    }, CONFETTI_DURATION_MS);
 
     return () => {
       clearInterval(interval);
@@ -381,7 +397,7 @@ function UBCRain({ onComplete }: { onComplete: () => void }) {
 
     const timeout = setTimeout(() => {
       onComplete();
-    }, 4000);
+    }, RAIN_DURATION_MS);
 
     return () => clearTimeout(timeout);
   }, [onComplete]);
@@ -446,7 +462,7 @@ function McMasterMarauder({ onComplete }: { onComplete: () => void }) {
     const timeout = setTimeout(() => {
       clearInterval(interval);
       onComplete();
-    }, 2500);
+    }, CONFETTI_DURATION_MS);
 
     return () => {
       clearInterval(interval);
@@ -462,7 +478,7 @@ function Toast({ message }: { message: string }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setVisible(false), 2500);
+    const timeout = setTimeout(() => setVisible(false), EASTER_TOAST_DURATION_MS);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -470,7 +486,7 @@ function Toast({ message }: { message: string }) {
 
   return (
     <div
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2 rounded-full shadow-lg text-sm font-medium z-100000"
+      className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-2 rounded-full shadow-lg text-sm font-medium z-max"
       style={{
         animation: "toastSlide 0.3s ease-out",
       }}

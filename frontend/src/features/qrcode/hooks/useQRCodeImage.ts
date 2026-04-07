@@ -4,6 +4,7 @@ import {
   qrCodeImageReducer,
   type QRCodeImageState,
 } from "@/features/qrcode/hooks/useQRCodeImage.reducer";
+import { MAX_UPLOAD_SIZE_BYTES } from "@/features/qrcode/constants";
 
 interface UseQRCodeImageOptions {
   qrCode: QRCode;
@@ -26,7 +27,7 @@ export function useQRCodeImage({ qrCode, isOpen }: UseQRCodeImageOptions) {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) return;
-    if (file.size > 5 * 1024 * 1024) return;
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {

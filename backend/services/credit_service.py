@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 
 from core.constants import DEFAULT_CREDIT_BALANCE
 from core.database import get_sb
+from core.errors import INSUFFICIENT_CREDITS
 from core.tables import USER_CREDITS, EVENT_PROMOTIONS
 from schemas.credit import CreditRow, PromotionResponse
 
@@ -59,7 +60,7 @@ def deduct_credits(user_id: str, amount: int) -> int:
     if row.balance < amount:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Insufficient credits",
+            detail=INSUFFICIENT_CREDITS,
         )
     new_balance = row.balance - amount
     get_sb().table(USER_CREDITS).update(

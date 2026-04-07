@@ -6,8 +6,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from core.auth import get_current_user, is_admin, require_owner_or_admin
+from core.constants import MAX_USER_AGENT_LENGTH
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
-from core.errors import POSTER_NOT_FOUND
+from core.errors import ID_MISMATCH, POSTER_NOT_FOUND, REQUIRES_LOCATION
 from services import qr_code_service
 
 router = APIRouter(prefix="/qr", tags=["qr"])
@@ -46,7 +47,7 @@ def resolve_qr_and_record_scan(
 
     session_id = request.headers.get("x-session-id") or str(uuid.uuid4())
     user_agent = request.headers.get("user-agent")
-    user_agent_trunc = user_agent[:512] if user_agent else None
+    user_agent_trunc = user_agent[:MAX_USER_AGENT_LENGTH] if user_agent else None
 
     if not qr.is_active:
         if lat is not None and lon is not None:
@@ -57,7 +58,7 @@ def resolve_qr_and_record_scan(
                 return redirect_config
         raise HTTPException(
             status_code=status.HTTP_202_ACCEPTED,
-            detail="requires_location",
+            detail=REQUIRES_LOCATION,
         )
 
     qr_code_service.record_scan(
@@ -91,7 +92,7 @@ def update_poster(
     user: dict = Depends(get_current_user),
 ):
     if data.id != qr_code_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID mismatch")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
     existing = qr_code_service.get_qr_code_by_id(qr_code_id)
     if not existing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)

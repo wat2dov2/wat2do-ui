@@ -11,7 +11,7 @@ export function Dropdown({ options, selected, onToggle }: DropdownProps) {
   return (
     <div
       data-dropdown
-      className="absolute z-50 mt-2 rounded-lg shadow-xl w-full max-h-60 overflow-y-auto bg-popover border border-border"
+      className="absolute z-dropdown mt-2 rounded-lg shadow-xl w-full max-h-60 overflow-y-auto bg-popover border border-border"
     >
       <div className="p-2">
         {options.map((option) => {
