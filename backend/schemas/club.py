@@ -31,6 +31,7 @@ class ClubResponse(BaseModel):
     discord: str | None = None
     club_type: str
     logo_url: str | None = None
+    created_by: str | None = None
 
     model_config = {"from_attributes": True}
 

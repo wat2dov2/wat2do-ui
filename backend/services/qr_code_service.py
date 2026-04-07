@@ -13,7 +13,7 @@ def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
     return QrCodeResponse.model_validate(r.data[0])
 
 
-def upsert_qr_code(data: QrCodeCreate) -> QrCodeResponse:
+def upsert_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
     sb = get_sb()
     existing = get_qr_code_by_id(data.id)
     dest_id = str(data.destination_id) if data.destination_id is not None else None
@@ -24,7 +24,7 @@ def upsert_qr_code(data: QrCodeCreate) -> QrCodeResponse:
         "destination_type": data.destination_type,
         "destination_id": dest_id,
         "filters": data.filters,
-        "created_by": data.created_by,
+        "created_by": created_by,
         "is_active": data.is_active if existing else False,
         "image_url": data.image_url,
         "latitude": data.latitude,
@@ -95,19 +95,34 @@ def delete_qr_code(qr_code_id: str) -> None:
     get_sb().table("qr_codes").delete().eq("id", qr_code_id).execute()
 
 
-def list_qr_codes() -> list[QrCodeResponse]:
-    r = get_sb().table("qr_codes").select("*").order("created_at", desc=True).execute()
-    return [QrCodeResponse.model_validate(q) for q in (r.data or [])]
+def list_qr_codes(*, created_by: str | None = None) -> list[QrCodeResponse]:
+    q = get_sb().table("qr_codes").select("*").order("created_at", desc=True)
+    if created_by:
+        q = q.eq("created_by", created_by)
+    r = q.execute()
+    return [QrCodeResponse.model_validate(qr) for qr in (r.data or [])]
 
 
 def list_scans(
     qr_code_id: str | None = None,
     from_time: datetime | None = None,
     to_time: datetime | None = None,
+    *,
+    owned_by: str | None = None,
 ) -> list[QrCodeScanResponse]:
+    # When owned_by is set, restrict results to QR codes created by that user.
+    if owned_by is not None:
+        owned_ids = [qr.id for qr in list_qr_codes(created_by=owned_by)]
+        if not owned_ids:
+            return []
+        if qr_code_id and qr_code_id not in owned_ids:
+            return []
+
     q = get_sb().table("qr_code_scans").select("*").order("scanned_at", desc=True)
     if qr_code_id:
         q = q.eq("qr_code_id", qr_code_id)
+    elif owned_by is not None:
+        q = q.in_("qr_code_id", owned_ids)
     if from_time:
         q = q.gte("scanned_at", from_time.isoformat())
     if to_time:

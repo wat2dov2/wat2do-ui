@@ -66,8 +66,9 @@ def list_events(
     return [EventResponse.model_validate(e) for e in (r.data or [])]
 
 
-def create_event(data: EventCreate) -> EventResponse:
+def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump()
+    payload["created_by"] = created_by
     r = get_sb().table("events").insert(payload).execute()
     return EventResponse.model_validate(r.data[0])
 

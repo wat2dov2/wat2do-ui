@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from core.auth import get_current_user
+from core.auth import get_current_user, require_owner_or_admin
 from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
 from services import event_service
 
@@ -55,28 +55,32 @@ def get_event(event_id: int):
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
     data: EventCreate,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
-    return event_service.create_event(data)
+    return event_service.create_event(data, created_by=auth_user["id"])
 
 
 @router.patch("/{event_id}", response_model=EventResponse)
 def update_event(
     event_id: int,
     data: EventUpdate,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
-    event = event_service.update_event(event_id, data)
+    event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    return event
+    require_owner_or_admin(auth_user, event.created_by)
+    updated = event_service.update_event(event_id, data)
+    return updated
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_event(
     event_id: int,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
-    deleted = event_service.delete_event(event_id)
-    if not deleted:
+    event = event_service.get_event(event_id)
+    if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    require_owner_or_admin(auth_user, event.created_by)
+    event_service.delete_event(event_id)

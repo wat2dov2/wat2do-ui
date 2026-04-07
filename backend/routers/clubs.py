@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from core.auth import get_current_user
+from core.auth import get_current_user, require_owner_or_admin
 from schemas.club import (
     ClubCreate,
     ClubUpdate,
@@ -49,8 +49,12 @@ def get_discord_options(_=Depends(get_current_user)):
 )
 def get_discord_integration(
     club_id: int,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    require_owner_or_admin(auth_user, club.created_by)
     integration = club_service.get_discord_integration(club_id)
     if not integration:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
@@ -64,8 +68,12 @@ def get_discord_integration(
 def upsert_discord_integration(
     club_id: int,
     data: DiscordIntegrationUpdate,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    require_owner_or_admin(auth_user, club.created_by)
     integration = club_service.upsert_discord_integration(
         club_id=club_id,
         server_id=data.server_id,
@@ -84,8 +92,12 @@ def upsert_discord_integration(
 )
 def disconnect_discord_integration(
     club_id: int,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    require_owner_or_admin(auth_user, club.created_by)
     integration = club_service.disconnect_discord_integration(club_id)
     if not integration:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
@@ -109,8 +121,12 @@ def get_platform_options(
 def get_platform_integration(
     club_id: int,
     platform: IntegrationPlatform,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    require_owner_or_admin(auth_user, club.created_by)
     integration = club_service.get_platform_integration(club_id, platform)
     if not integration:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
@@ -125,8 +141,12 @@ def upsert_platform_integration(
     club_id: int,
     platform: IntegrationPlatform,
     data: ClubIntegrationUpdate,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    require_owner_or_admin(auth_user, club.created_by)
     integration = club_service.upsert_platform_integration(
         club_id=club_id,
         platform=platform,
@@ -145,8 +165,12 @@ def upsert_platform_integration(
 def disconnect_platform_integration(
     club_id: int,
     platform: IntegrationPlatform,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    require_owner_or_admin(auth_user, club.created_by)
     integration = club_service.disconnect_platform_integration(club_id, platform)
     if not integration:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
@@ -156,28 +180,32 @@ def disconnect_platform_integration(
 @router.post("/", response_model=ClubResponse, status_code=status.HTTP_201_CREATED)
 def create_club(
     data: ClubCreate,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
-    return club_service.create_club(data)
+    return club_service.create_club(data, created_by=auth_user["id"])
 
 
 @router.patch("/{club_id}", response_model=ClubResponse)
 def update_club(
     club_id: int,
     data: ClubUpdate,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
-    club = club_service.update_club(club_id, data)
+    club = club_service.get_club(club_id)
     if not club:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
-    return club
+    require_owner_or_admin(auth_user, club.created_by)
+    updated = club_service.update_club(club_id, data)
+    return updated
 
 
 @router.delete("/{club_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_club(
     club_id: int,
-    _=Depends(get_current_user),
+    auth_user: dict = Depends(get_current_user),
 ):
-    deleted = club_service.delete_club(club_id)
-    if not deleted:
+    club = club_service.get_club(club_id)
+    if not club:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+    require_owner_or_admin(auth_user, club.created_by)
+    club_service.delete_club(club_id)

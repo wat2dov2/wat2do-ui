@@ -121,5 +121,6 @@ class EventResponse(BaseModel):
     other_handle: str | None = None
     display_handle: str | None = None
     added_at: datetime
+    created_by: str | None = None
 
     model_config = {"from_attributes": True}

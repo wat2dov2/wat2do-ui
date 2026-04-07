@@ -1,3 +1,22 @@
+from datetime import datetime, timezone
+from unittest.mock import MagicMock
+
+from schemas.club import ClubResponse
+from services import club_service
+from tests.conftest import FAKE_USER, OTHER_USER, ADMIN_USER
+
+
+def _mock_club(**overrides) -> ClubResponse:
+    defaults = {
+        "id": 1,
+        "club_name": "Test Club",
+        "club_type": "WUSA",
+        "created_by": FAKE_USER["id"],
+    }
+    defaults.update(overrides)
+    return ClubResponse.model_validate(defaults)
+
+
 def test_create_club_requires_auth(client):
     response = client.post("/clubs/", json={"club_name": "Test Club", "club_type": "WUSA"})
     assert response.status_code == 401
@@ -38,3 +57,125 @@ def test_upsert_instagram_integration_requires_auth(client):
         json={"connected": True, "name": "@testclub", "metadata": {"handle": "testclub"}},
     )
     assert response.status_code == 401
+
+
+def test_create_club_sets_created_by(authenticated_client, monkeypatch):
+    """create_club passes the authenticated user's ID as created_by."""
+    created_club = _mock_club()
+    mock_create = MagicMock(return_value=created_club)
+    monkeypatch.setattr(club_service, "create_club", mock_create)
+
+    resp = authenticated_client.post(
+        "/clubs/",
+        json={"club_name": "Test Club", "club_type": "WUSA"},
+    )
+    assert resp.status_code == 201
+    assert mock_create.call_count == 1
+    _, kwargs = mock_create.call_args
+    assert kwargs["created_by"] == FAKE_USER["id"]
+
+
+def test_update_club_owner_allowed(authenticated_client, monkeypatch):
+    """Owner can update their own club."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+    monkeypatch.setattr(club_service, "update_club", MagicMock(return_value=club))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.patch("/clubs/1", json={"club_name": "Updated"})
+    assert resp.status_code == 200
+
+
+def test_update_club_non_owner_rejected(other_user_client, monkeypatch):
+    """Non-owner, non-admin user gets 403."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = other_user_client.patch("/clubs/1", json={"club_name": "Hacked"})
+    assert resp.status_code == 403
+
+
+def test_delete_club_non_owner_rejected(other_user_client, monkeypatch):
+    """Non-owner, non-admin user gets 403 on delete."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = other_user_client.delete("/clubs/1")
+    assert resp.status_code == 403
+
+
+def test_delete_club_owner_allowed(authenticated_client, monkeypatch):
+    """Owner can delete their own club."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+    monkeypatch.setattr(club_service, "delete_club", MagicMock(return_value=True))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.delete("/clubs/1")
+    assert resp.status_code == 204
+
+
+def test_integration_non_owner_rejected(other_user_client, monkeypatch):
+    """Non-owner cannot read/modify club integrations."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = other_user_client.get("/clubs/1/integrations/discord")
+    assert resp.status_code == 403
+
+    resp = other_user_client.put(
+        "/clubs/1/integrations/discord",
+        json={
+            "connected": True,
+            "server_id": "1",
+            "server_name": "S",
+            "channel_id": "101",
+            "channel_name": "#e",
+        },
+    )
+    assert resp.status_code == 403
+
+    resp = other_user_client.delete("/clubs/1/integrations/discord")
+    assert resp.status_code == 403
+
+
+def test_integration_owner_allowed(authenticated_client, monkeypatch):
+    """Owner can read club integrations."""
+    club = _mock_club(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+    monkeypatch.setattr(
+        club_service,
+        "get_discord_integration",
+        MagicMock(return_value={"club_id": 1, "connected": False, "name": None, "server_id": None, "server_name": None, "channel_id": None, "channel_name": None, "last_sync": None}),
+    )
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.get("/clubs/1/integrations/discord")
+    assert resp.status_code == 200
+
+
+def test_update_legacy_club_non_admin_rejected(authenticated_client, monkeypatch):
+    """Legacy clubs (created_by=None) can only be modified by admins."""
+    club = _mock_club(created_by=None)
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.patch("/clubs/1", json={"club_name": "Hacked"})
+    assert resp.status_code == 403

@@ -74,3 +74,25 @@ async def get_admin_user(
             detail="Admin access required",
         )
     return auth_user
+
+
+def is_admin(auth_user: dict) -> bool:
+    """Return True if the authenticated user has the admin role (requires DB lookup)."""
+    db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
+    return db_user is not None and db_user.role == "admin"
+
+
+def require_owner_or_admin(auth_user: dict, resource_owner_id: str | None) -> None:
+    """Raise 403 if the user is neither the resource owner nor an admin.
+
+    When *resource_owner_id* is ``None`` (legacy rows created before ownership
+    tracking), only admins may modify the resource.
+    """
+    if resource_owner_id and auth_user["id"] == resource_owner_id:
+        return
+    if is_admin(auth_user):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Not authorized",
+    )

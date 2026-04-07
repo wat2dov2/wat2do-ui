@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from core.auth import get_current_user
+from core.auth import get_current_user, require_owner_or_admin
 from services.storage_service import storage
 from services import user_service, event_service, club_service
 
@@ -37,6 +37,7 @@ async def upload_event_image(
     event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+    require_owner_or_admin(user, event.created_by)
     data, content_type = await _validated_upload(file, "event-images")
     if event.source_image_url:
         old_path = storage.path_from_url(event.source_image_url, "event-images")
@@ -76,6 +77,7 @@ async def upload_club_logo(
     club = club_service.get_club(club_id)
     if not club:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Club not found")
+    require_owner_or_admin(user, club.created_by)
     data, content_type = await _validated_upload(file, "club-logos")
     if club.logo_url:
         old_path = storage.path_from_url(club.logo_url, "club-logos")

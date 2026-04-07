@@ -5,7 +5,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from core.auth import get_current_user
+from core.auth import get_current_user, is_admin, require_owner_or_admin
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
 from services import qr_code_service
 
@@ -14,7 +14,9 @@ router = APIRouter(prefix="/qr", tags=["qr"])
 
 @router.get("/", response_model=list[QrCodeResponse])
 def list_qr_codes(user: dict = Depends(get_current_user)):
-    return qr_code_service.list_qr_codes()
+    if is_admin(user):
+        return qr_code_service.list_qr_codes()
+    return qr_code_service.list_qr_codes(created_by=user["id"])
 
 
 @router.get("/scans", response_model=list[QrCodeScanResponse])
@@ -24,8 +26,9 @@ def list_scans(
     to_time: datetime | None = Query(None, description="Scans until this time (inclusive)"),
     user: dict = Depends(get_current_user),
 ):
+    owned_by = None if is_admin(user) else user["id"]
     return qr_code_service.list_scans(
-        qr_code_id=qr_code_id, from_time=from_time, to_time=to_time
+        qr_code_id=qr_code_id, from_time=from_time, to_time=to_time, owned_by=owned_by
     )
 
 
@@ -77,7 +80,7 @@ def create_poster(
     data: QrCodeCreate,
     user: dict = Depends(get_current_user),
 ):
-    return qr_code_service.upsert_qr_code(data)
+    return qr_code_service.upsert_qr_code(data, created_by=user["id"])
 
 
 @router.patch("/{qr_code_id}", response_model=QrCodeResponse)
@@ -88,7 +91,11 @@ def update_poster(
 ):
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID mismatch")
-    return qr_code_service.upsert_qr_code(data)
+    existing = qr_code_service.get_qr_code_by_id(qr_code_id)
+    if not existing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Poster not found")
+    require_owner_or_admin(user, existing.created_by)
+    return qr_code_service.upsert_qr_code(data, created_by=existing.created_by)
 
 
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -96,7 +103,8 @@ def delete_poster(
     qr_code_id: str,
     user: dict = Depends(get_current_user),
 ):
-    try:
-        qr_code_service.delete_qr_code(qr_code_id)
-    except ValueError:
+    existing = qr_code_service.get_qr_code_by_id(qr_code_id)
+    if not existing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Poster not found")
+    require_owner_or_admin(user, existing.created_by)
+    qr_code_service.delete_qr_code(qr_code_id)

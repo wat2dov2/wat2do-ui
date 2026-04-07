@@ -44,8 +44,9 @@ def list_clubs(
     return [ClubResponse.model_validate(c) for c in (r.data or [])]
 
 
-def create_club(data: ClubCreate) -> ClubResponse:
+def create_club(data: ClubCreate, *, created_by: str) -> ClubResponse:
     payload = data.model_dump()
+    payload["created_by"] = created_by
     r = get_sb().table("clubs").insert(payload).execute()
     return ClubResponse.model_validate(r.data[0])
 
