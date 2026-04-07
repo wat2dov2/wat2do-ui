@@ -27,7 +27,7 @@ export function useClubsPage() {
         setClubs(loadedClubs);
         setAllCategories(categories);
       } catch (error) {
-        // Silently fail - error handling should be done at API level
+        console.error("Failed to load clubs data:", error);
       } finally {
         setIsLoading(false);
       }

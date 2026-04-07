@@ -95,7 +95,7 @@ export function useAdminClubsPage({ itemsPerPage = 20 }: UseAdminClubsPageOption
         setClubs(loadedClubs);
         setClubTypes(types);
       } catch (error) {
-        // Silently fail - error handling should be done at API level
+        console.error("Failed to load admin clubs data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -175,7 +175,7 @@ export function useAdminClubsPage({ itemsPerPage = 20 }: UseAdminClubsPageOption
         setClubs(loadedClubs);
         setClubTypes(types);
       } catch (error) {
-        // Silently fail - error handling should be done at API level
+        console.error("Failed to refresh admin clubs data:", error);
       } finally {
         setIsLoading(false);
       }

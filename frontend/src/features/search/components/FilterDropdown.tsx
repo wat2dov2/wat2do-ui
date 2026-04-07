@@ -6,15 +6,67 @@ import { VisualFilters } from "@/features/search/components/VisualFilters";
 import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
 import type { FilterViewMode } from "@/shared/types";
 
+interface PieMenuState {
+  isOpen: boolean;
+  position: { x: number; y: number } | null;
+  open: (e: React.MouseEvent) => void;
+  close: () => void;
+}
+
+interface PieMenuItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
 interface FilterDropdownFilters {
+  // AI generation
   aiPrompt: string;
   setAiPrompt: (prompt: string) => void;
   aiGenerating: boolean;
   handleAiGenerate: () => void;
+  // JSON editor
   jsonError: string;
   jsonValue: string;
   handleJsonChange: (value: string | undefined) => void;
-  [key: string]: unknown;
+  // Category filters
+  selectedCategories: string[];
+  setSelectedCategories: (categories: string[]) => void;
+  categoryPieMenu: PieMenuState;
+  categoryPieItems: PieMenuItem[];
+  toggleCategory: (id: string) => void;
+  // Location filters
+  selectedLocations: string[];
+  setSelectedLocations: (locations: string[]) => void;
+  // Food filters
+  selectedFoods: string[];
+  setSelectedFoods: (foods: string[]) => void;
+  foodPieMenu: PieMenuState;
+  foodPieItems: PieMenuItem[];
+  toggleFood: (id: string) => void;
+  // Day of week filters
+  selectedDays: string[];
+  setSelectedDays: (days: string[]) => void;
+  dayPieMenu: PieMenuState;
+  dayPieItems: PieMenuItem[];
+  toggleDay: (id: string) => void;
+  // Date filters
+  dateRange: Date | undefined;
+  setDateRange: (date: Date | undefined) => void;
+  addedSince: Date | undefined;
+  setAddedSince: (date: Date | undefined) => void;
+  // Price & registration
+  priceRange: { min: string; max: string };
+  setPriceRange: (range: { min: string; max: string }) => void;
+  requiresRegistration: boolean;
+  setRequiresRegistration: (value: boolean) => void;
+  // Sort
+  sortBy: string;
+  setSortBy: (sortBy: string) => void;
+  sortOrder: "asc" | "desc";
+  setSortOrder: (order: "asc" | "desc") => void;
+  sortPieMenu: PieMenuState;
+  sortPieItems: PieMenuItem[];
 }
 
 interface FilterDropdownProps {

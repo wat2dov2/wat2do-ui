@@ -53,8 +53,8 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
       const { uploadAvatar } = await import("@/shared/services/uploadService");
       const url = await uploadAvatar(file);
       setAvatarUrl(url);
-    } catch {
-      // Upload failed silently
+    } catch (err) {
+      console.error("Failed to upload avatar:", err);
     } finally {
       setUploading(false);
     }

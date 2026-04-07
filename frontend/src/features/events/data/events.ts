@@ -387,33 +387,32 @@ export const mockEvents: Event[] = [
     display_handle: "wloo.dboat",
   },
 ].map((eventRaw): Event => {
-  const event = eventRaw as Record<string, unknown>;
   // Transform new format to include computed fields for backward compatibility
-  if (event.dtstart_utc) {
-    const dateInfo = getDateFromUTC(event.dtstart_utc as string);
-    const timeRange = event.dtend_utc 
-      ? getTimeRange(event.dtstart_utc as string, event.dtend_utc as string)
+  if (eventRaw.dtstart_utc) {
+    const dateInfo = getDateFromUTC(eventRaw.dtstart_utc);
+    const timeRange = eventRaw.dtend_utc
+      ? getTimeRange(eventRaw.dtstart_utc, eventRaw.dtend_utc)
       : dateInfo.time;
-    
+
     return {
-      ...event,
+      ...eventRaw,
       // Computed fields for backward compatibility
       date: dateInfo.date,
       time: timeRange,
       dayOfWeek: dateInfo.dayOfWeek,
       eventDate: dateInfo.eventDate,
       // Map fields
-      category: (event.category as string | undefined) || getCategoryFromClubType(event.club_type as string | undefined),
-      organization: (event.organization as string | undefined) || (event.display_handle as string | undefined) || '',
-      requiresRegistration: event.requiresRegistration ?? event.registration ?? false,
-      isLive: event.isLive ?? true,
-      food: event.food || [],
-      price: event.price ?? 0,
-      imageUrl: event.imageUrl || event.source_image_url,
-      addedDate: event.addedDate || (event.added_at ? new Date(event.added_at as string) : new Date()),
-    } as Event;
+      category: eventRaw.category || getCategoryFromClubType(eventRaw.club_type),
+      organization: eventRaw.organization || eventRaw.display_handle || '',
+      requiresRegistration: eventRaw.requiresRegistration ?? eventRaw.registration ?? false,
+      isLive: eventRaw.isLive ?? true,
+      food: eventRaw.food || [],
+      price: eventRaw.price ?? 0,
+      imageUrl: eventRaw.imageUrl || eventRaw.source_image_url,
+      addedDate: eventRaw.addedDate || (eventRaw.added_at ? new Date(eventRaw.added_at) : new Date()),
+    };
   }
-  return event as unknown as Event;
+  return eventRaw;
 });
 
 // Event categories: same as onboarding "What kind of events are you into?" (source of truth: shared/constants/eventCategories)

@@ -48,8 +48,8 @@ export function TopNav() {
     try {
       const { logoutAPI } = await import("@/features/auth/api/auth.api");
       await logoutAPI();
-    } catch {
-      // Clear local state even if backend call fails
+    } catch (err) {
+      console.error("Logout API call failed, clearing local state anyway:", err);
     }
     setProfileCompleted(false);
     setUserEmail(null);

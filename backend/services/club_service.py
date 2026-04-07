@@ -1,13 +1,19 @@
 """Clubs via Supabase. Sync."""
 
-import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
 from core.database import get_sb
-from schemas.club import ClubCreate, ClubUpdate, ClubResponse, IntegrationPlatform
+from schemas.club import (
+    ClubCreate,
+    ClubUpdate,
+    ClubResponse,
+    ClubIntegrationResponse,
+    DiscordIntegrationResponse,
+    IntegrationPlatform,
+)
 
 
 SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = (
@@ -164,72 +170,109 @@ def get_discord_options() -> dict:
     return get_integration_options("discord")
 
 
-def _get_integration_blob(club: ClubResponse) -> dict[str, dict]:
-    raw = club.discord
-    if not raw:
-        return {}
-    if not isinstance(raw, str):
-        return {}
-    if not raw.strip().startswith("{"):
-        # Legacy plain Discord link/handle.
-        return {
-            "discord": {
-                "connected": True,
-                "name": raw,
-                "last_sync": None,
-                "metadata": {},
-            }
-        }
-    try:
-        parsed = json.loads(raw)
-    except Exception as e:
-        log.warning("Failed to parse integrations JSON: %s", e)
-        return {}
-    if isinstance(parsed, dict) and "_integrations" in parsed:
-        integrations = parsed.get("_integrations")
-        return integrations if isinstance(integrations, dict) else {}
-    # Legacy discord-only JSON payload.
+def _row_to_integration_response(row: dict) -> ClubIntegrationResponse:
+    """Map a club_integrations DB row to the API response schema.
+
+    Reconstructs a metadata dict using the original key names each
+    platform expects.  Slack sends workspace_id/workspace_name which
+    are stored in the server_id/server_name columns, so we emit
+    the workspace_* aliases for Slack.
+    """
+    platform = row["platform"]
+    metadata: dict[str, str] = {}
+
+    # Server/workspace — Slack uses workspace_id/workspace_name aliases.
+    if row.get("server_id"):
+        if platform == "slack":
+            metadata["workspace_id"] = row["server_id"]
+        else:
+            metadata["server_id"] = row["server_id"]
+    if row.get("server_name"):
+        if platform == "slack":
+            metadata["workspace_name"] = row["server_name"]
+        else:
+            metadata["server_name"] = row["server_name"]
+    if row.get("channel_id"):
+        metadata["channel_id"] = row["channel_id"]
+    if row.get("channel_name"):
+        metadata["channel_name"] = row["channel_name"]
+    if row.get("handle"):
+        metadata["handle"] = row["handle"]
+    if row.get("group_id"):
+        metadata["group_id"] = row["group_id"]
+    if row.get("group_name"):
+        metadata["group_name"] = row["group_name"]
+    if row.get("page_id"):
+        metadata["page_id"] = row["page_id"]
+    if row.get("page_name"):
+        metadata["page_name"] = row["page_name"]
+    if row.get("connection_type"):
+        metadata["connection_type"] = row["connection_type"]
+    # Merge anything from the extra JSONB column.
+    extra = row.get("extra") or {}
+    if isinstance(extra, dict):
+        for k, v in extra.items():
+            if isinstance(v, str):
+                metadata[k] = v
+
+    return ClubIntegrationResponse(
+        club_id=row["club_id"],
+        platform=platform,
+        connected=bool(row.get("connected", False)),
+        name=row.get("name"),
+        last_sync=str(row["last_sync"]) if row.get("last_sync") else None,
+        metadata=metadata,
+    )
+
+
+def _empty_integration_response(club_id: int, platform: IntegrationPlatform) -> ClubIntegrationResponse:
+    """Return a disconnected placeholder for a platform with no DB row."""
+    return ClubIntegrationResponse(
+        club_id=club_id,
+        platform=platform,
+        connected=False,
+        name=None,
+        last_sync=None,
+        metadata={},
+    )
+
+
+def _metadata_to_columns(platform: IntegrationPlatform, metadata: dict[str, str] | None) -> dict:
+    """Extract well-known metadata keys into typed column values.
+
+    Slack sends workspace_id/workspace_name which map to the same
+    server_id/server_name columns used by Discord.
+    """
+    m = metadata or {}
     return {
-        "discord": {
-            "connected": bool(parsed.get("connected", True)),
-            "name": parsed.get("name"),
-            "last_sync": parsed.get("last_sync"),
-            "metadata": {
-                "server_id": parsed.get("server_id"),
-                "server_name": parsed.get("server_name"),
-                "channel_id": parsed.get("channel_id"),
-                "channel_name": parsed.get("channel_name"),
-            },
-        }
+        "server_id": m.get("server_id") or m.get("workspace_id"),
+        "server_name": m.get("server_name") or m.get("workspace_name"),
+        "channel_id": m.get("channel_id"),
+        "channel_name": m.get("channel_name"),
+        "handle": m.get("handle"),
+        "group_id": m.get("group_id"),
+        "group_name": m.get("group_name"),
+        "page_id": m.get("page_id"),
+        "page_name": m.get("page_name"),
+        "connection_type": m.get("connection_type"),
     }
 
 
-def _save_integration_blob(club_id: int, integrations: dict[str, dict]) -> bool:
-    payload = {"_integrations": integrations}
-    r = (
-        get_sb()
-        .table("clubs")
-        .update({"discord": json.dumps(payload)})
-        .eq("id", club_id)
-        .execute()
-    )
-    return bool(r.data)
-
-
-def get_platform_integration(club_id: int, platform: IntegrationPlatform) -> dict | None:
+def get_platform_integration(club_id: int, platform: IntegrationPlatform) -> ClubIntegrationResponse | None:
     club = get_club(club_id)
     if club is None:
         return None
-    integrations = _get_integration_blob(club)
-    data = integrations.get(platform) or {}
-    return {
-        "club_id": club_id,
-        "platform": platform,
-        "connected": bool(data.get("connected", False)),
-        "name": data.get("name"),
-        "last_sync": data.get("last_sync"),
-        "metadata": data.get("metadata") or {},
-    }
+    r = (
+        get_sb()
+        .table("club_integrations")
+        .select("*")
+        .eq("club_id", club_id)
+        .eq("platform", platform)
+        .execute()
+    )
+    if r.data and len(r.data) > 0:
+        return _row_to_integration_response(r.data[0])
+    return _empty_integration_response(club_id, platform)
 
 
 def upsert_platform_integration(
@@ -237,53 +280,96 @@ def upsert_platform_integration(
     platform: IntegrationPlatform,
     name: str | None = None,
     metadata: dict[str, str] | None = None,
-) -> dict | None:
+) -> ClubIntegrationResponse | None:
     club = get_club(club_id)
     if club is None:
         return None
-    integrations = _get_integration_blob(club)
-    integrations[platform] = {
+    now = datetime.now(timezone.utc).isoformat()
+    columns = _metadata_to_columns(platform, metadata)
+    payload = {
+        "club_id": club_id,
+        "platform": platform,
         "connected": True,
         "name": name,
-        "last_sync": datetime.utcnow().isoformat(),
-        "metadata": metadata or {},
+        "last_sync": now,
+        "updated_at": now,
+        **columns,
     }
-    if not _save_integration_blob(club_id, integrations):
+    r = (
+        get_sb()
+        .table("club_integrations")
+        .upsert(payload, on_conflict="club_id,platform")
+        .execute()
+    )
+    if not r.data:
+        log.warning("Failed to upsert integration for club_id=%s platform=%s", club_id, platform)
         return None
-    return get_platform_integration(club_id, platform)
+    return _row_to_integration_response(r.data[0])
 
 
-def disconnect_platform_integration(club_id: int, platform: IntegrationPlatform) -> dict | None:
+def disconnect_platform_integration(club_id: int, platform: IntegrationPlatform) -> ClubIntegrationResponse | None:
     club = get_club(club_id)
     if club is None:
         return None
-    integrations = _get_integration_blob(club)
-    integrations[platform] = {
+    now = datetime.now(timezone.utc).isoformat()
+    # Check if row exists; if not, just return empty.
+    r = (
+        get_sb()
+        .table("club_integrations")
+        .select("id")
+        .eq("club_id", club_id)
+        .eq("platform", platform)
+        .execute()
+    )
+    if not r.data or len(r.data) == 0:
+        return _empty_integration_response(club_id, platform)
+    # Set connected=false and clear data columns.
+    update_payload = {
         "connected": False,
         "name": None,
         "last_sync": None,
-        "metadata": {},
+        "server_id": None,
+        "server_name": None,
+        "channel_id": None,
+        "channel_name": None,
+        "handle": None,
+        "group_id": None,
+        "group_name": None,
+        "page_id": None,
+        "page_name": None,
+        "connection_type": None,
+        "extra": {},
+        "updated_at": now,
     }
-    if not _save_integration_blob(club_id, integrations):
+    r = (
+        get_sb()
+        .table("club_integrations")
+        .update(update_payload)
+        .eq("club_id", club_id)
+        .eq("platform", platform)
+        .execute()
+    )
+    if not r.data:
+        log.warning("Failed to disconnect integration for club_id=%s platform=%s", club_id, platform)
         return None
-    return get_platform_integration(club_id, platform)
+    return _row_to_integration_response(r.data[0])
 
 
-def get_discord_integration(club_id: int) -> dict | None:
+def get_discord_integration(club_id: int) -> DiscordIntegrationResponse | None:
     integration = get_platform_integration(club_id, "discord")
     if integration is None:
         return None
-    metadata = integration.get("metadata") or {}
-    return {
-        "club_id": club_id,
-        "connected": integration.get("connected", False),
-        "name": integration.get("name"),
-        "server_id": metadata.get("server_id"),
-        "server_name": metadata.get("server_name"),
-        "channel_id": metadata.get("channel_id"),
-        "channel_name": metadata.get("channel_name"),
-        "last_sync": integration.get("last_sync"),
-    }
+    metadata = integration.metadata or {}
+    return DiscordIntegrationResponse(
+        club_id=club_id,
+        connected=integration.connected,
+        name=integration.name,
+        server_id=metadata.get("server_id"),
+        server_name=metadata.get("server_name"),
+        channel_id=metadata.get("channel_id"),
+        channel_name=metadata.get("channel_name"),
+        last_sync=integration.last_sync,
+    )
 
 
 def upsert_discord_integration(
@@ -292,7 +378,7 @@ def upsert_discord_integration(
     server_name: str,
     channel_id: str,
     channel_name: str,
-) -> dict | None:
+) -> DiscordIntegrationResponse | None:
     integration = upsert_platform_integration(
         club_id=club_id,
         platform="discord",
@@ -309,7 +395,7 @@ def upsert_discord_integration(
     return get_discord_integration(club_id)
 
 
-def disconnect_discord_integration(club_id: int) -> dict | None:
+def disconnect_discord_integration(club_id: int) -> DiscordIntegrationResponse | None:
     integration = disconnect_platform_integration(club_id, "discord")
     if integration is None:
         return None

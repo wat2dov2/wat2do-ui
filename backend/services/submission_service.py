@@ -4,9 +4,10 @@ import uuid
 from datetime import datetime, timezone
 
 from core.database import get_sb
+from schemas.submission import SubmissionResponse
 
 
-def create_submission(user_id: str, event_data: dict) -> dict:
+def create_submission(user_id: str, event_data: dict) -> SubmissionResponse:
     """Create a new event submission."""
     payload = {
         "id": str(uuid.uuid4()),
@@ -15,19 +16,19 @@ def create_submission(user_id: str, event_data: dict) -> dict:
         "status": "pending",
     }
     r = get_sb().table("event_submissions").insert(payload).execute()
-    return r.data[0] if r.data else payload
+    return SubmissionResponse.model_validate(r.data[0]) if r.data else SubmissionResponse(**payload)
 
 
-def get_submissions(status: str | None = None) -> list[dict]:
+def get_submissions(status: str | None = None) -> list[SubmissionResponse]:
     """Return submissions, optionally filtered by status."""
     q = get_sb().table("event_submissions").select("*")
     if status:
         q = q.eq("status", status)
     r = q.order("submitted_at", desc=True).execute()
-    return r.data or []
+    return [SubmissionResponse.model_validate(row) for row in (r.data or [])]
 
 
-def get_submission_by_id(submission_id: str) -> dict | None:
+def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
     """Return a single submission by ID."""
     r = (
         get_sb()
@@ -36,14 +37,14 @@ def get_submission_by_id(submission_id: str) -> dict | None:
         .eq("id", submission_id)
         .execute()
     )
-    return r.data[0] if r.data else None
+    return SubmissionResponse.model_validate(r.data[0]) if r.data else None
 
 
 def update_submission(
     submission_id: str,
     status: str,
     rejection_reason: str | None = None,
-) -> dict | None:
+) -> SubmissionResponse | None:
     """Update a submission's status."""
     payload: dict = {
         "status": status,
@@ -59,7 +60,7 @@ def update_submission(
         .eq("id", submission_id)
         .execute()
     )
-    return r.data[0] if r.data else None
+    return SubmissionResponse.model_validate(r.data[0]) if r.data else None
 
 
 def delete_submission(submission_id: str) -> bool:

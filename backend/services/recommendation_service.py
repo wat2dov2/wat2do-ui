@@ -13,6 +13,8 @@ from postgrest.exceptions import APIError
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.database import get_sb
+from schemas.event import EventResponse
+from schemas.recommendation import RecommendationItem
 from services import user_service, interaction_service
 from services.recommender.content_based import get_content_scores
 from services.recommender.collaborative import get_collaborative_scores
@@ -47,7 +49,7 @@ class RecommendationEngine:
     # Online: thin serving layer — reads pre-computed recs, applies real-time filters
     # ---------------------------------------------------------------------------
 
-    def get_recommendations(self, user_id: str, limit: int = 20) -> list[dict]:
+    def get_recommendations(self, user_id: str, limit: int = 20) -> list[RecommendationItem]:
         """
         Read pre-computed recs from user_recommendations.
         Apply real-time filters: strip events the user has interacted with since
@@ -98,18 +100,18 @@ class RecommendationEngine:
                 log.warning("Failed to fetch future events: %s", e)
                 future_ids = None
 
-            results = []
+            results: list[RecommendationItem] = []
             for rec in recs.data:
                 eid = rec["event_id"]
                 if eid in exclude:
                     continue
                 if future_ids is not None and eid not in future_ids:
                     continue
-                results.append({
-                    "event_id": eid,
-                    "score": round(rec["predicted_score"], 4),
-                    "reason": rec.get("reason") or "Recommended for you",
-                })
+                results.append(RecommendationItem(
+                    event_id=eid,
+                    score=round(rec["predicted_score"], 4),
+                    reason=rec.get("reason") or "Recommended for you",
+                ))
                 if len(results) >= limit:
                     break
 
@@ -118,22 +120,22 @@ class RecommendationEngine:
 
         return self._compute_live(user_id, limit)
 
-    def get_popular_recommendations(self, limit: int = 20) -> list[dict]:
+    def get_popular_recommendations(self, limit: int = 20) -> list[RecommendationItem]:
         """Return popular upcoming events for anonymous or cold-start users."""
         candidates = self._get_candidate_events()
         if not candidates:
             return []
 
         try:
-            pop_scores = self._popularity_scorer([e["id"] for e in candidates])
-            candidates.sort(key=lambda e: pop_scores.get(e["id"], 0), reverse=True)
+            pop_scores = self._popularity_scorer([e.id for e in candidates])
+            candidates.sort(key=lambda e: pop_scores.get(e.id, 0), reverse=True)
             reason = "Popular on campus"
         except Exception as e:
             log.warning("Popularity scoring failed, falling back to recency: %s", e)
             reason = "Happening soon"
 
         return [
-            {"event_id": e["id"], "score": 0.0, "reason": reason}
+            RecommendationItem(event_id=e.id, score=0.0, reason=reason)
             for e in candidates[:limit]
         ]
 
@@ -146,7 +148,7 @@ class RecommendationEngine:
         user_id: str,
         limit: int = 20,
         lambda_param: float | None = None,
-    ) -> list[dict]:
+    ) -> list[RecommendationItem]:
         """Run full recommendation pipeline and store results in user_recommendations."""
         lp = lambda_param if lambda_param is not None else self.default_lambda
         results = self._compute_live(user_id, limit, lp)
@@ -158,10 +160,10 @@ class RecommendationEngine:
         for i, rec in enumerate(results):
             rows.append({
                 "user_id": user_id,
-                "event_id": rec["event_id"],
+                "event_id": rec.event_id,
                 "rank": i + 1,
-                "predicted_score": rec["score"],
-                "reason": rec["reason"],
+                "predicted_score": rec.score,
+                "reason": rec.reason,
                 "computed_at": now,
             })
 
@@ -231,15 +233,15 @@ class RecommendationEngine:
         user_id: str,
         limit: int = 20,
         lambda_param: float | None = None,
-    ) -> list[dict]:
+    ) -> list[RecommendationItem]:
         """Full recommendation pipeline: score, blend, re-rank."""
         lp = lambda_param if lambda_param is not None else self.default_lambda
         candidates = self._get_candidate_events()
         if not candidates:
             return []
 
-        candidate_ids = [e["id"] for e in candidates]
-        events_by_id = {e["id"]: e for e in candidates}
+        candidate_ids = [e.id for e in candidates]
+        events_by_id = {e.id: e for e in candidates}
 
         user = user_service.get_user(user_id)
         try:
@@ -292,7 +294,7 @@ class RecommendationEngine:
 
         if not blended:
             return [
-                {"event_id": e["id"], "score": 0.0, "reason": "Happening soon"}
+                RecommendationItem(event_id=e.id, score=0.0, reason="Happening soon")
                 for e in candidates[:limit]
             ]
 
@@ -309,16 +311,16 @@ class RecommendationEngine:
             reason = self._generate_reason(
                 eid, content_scores, collab_scores, pop_scores, events_by_id, weights
             )
-            results.append({
-                "event_id": eid,
-                "score": round(blended.get(eid, 0), 4),
-                "reason": reason,
-            })
+            results.append(RecommendationItem(
+                event_id=eid,
+                score=round(blended.get(eid, 0), 4),
+                reason=reason,
+            ))
 
         return results
 
     @staticmethod
-    def _get_candidate_events() -> list[dict]:
+    def _get_candidate_events() -> list[EventResponse]:
         """Load future events as recommendation candidates."""
         now = datetime.now(timezone.utc).isoformat()
         r = (
@@ -330,7 +332,7 @@ class RecommendationEngine:
             .limit(200)
             .execute()
         )
-        return r.data or []
+        return [EventResponse.model_validate(row) for row in (r.data or [])]
 
     @staticmethod
     def _generate_reason(
@@ -338,7 +340,7 @@ class RecommendationEngine:
         content_scores: dict[int, float],
         collab_scores: dict[int, float],
         pop_scores: dict[int, float],
-        events_by_id: dict[int, dict],
+        events_by_id: dict[int, EventResponse],
         weights: tuple[float, float, float],
     ) -> str:
         """Generate a human-readable reason for the recommendation."""
@@ -346,8 +348,8 @@ class RecommendationEngine:
         cf_score = collab_scores.get(eid, 0) * weights[1]
         p_score = pop_scores.get(eid, 0) * weights[2]
 
-        event = events_by_id.get(eid, {})
-        category = event.get("category", "")
+        event = events_by_id.get(eid)
+        category = event.category if event else ""
 
         if cf_score >= c_score and cf_score >= p_score and cf_score > 0:
             return "Similar to events you've enjoyed"

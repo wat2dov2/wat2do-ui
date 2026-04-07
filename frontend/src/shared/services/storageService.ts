@@ -15,6 +15,7 @@ export class StorageService {
       }
       return JSON.parse(item) as T;
     } catch (error) {
+      console.error(`Failed to read localStorage key "${key}":`, error);
       return defaultValue;
     }
   }
@@ -26,7 +27,7 @@ export class StorageService {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
-      // Silently fail if localStorage write fails
+      console.error(`Failed to write localStorage key "${key}":`, error);
     }
   }
 
@@ -37,7 +38,7 @@ export class StorageService {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      // Silently fail if localStorage remove fails
+      console.error(`Failed to remove localStorage key "${key}":`, error);
     }
   }
 
@@ -55,7 +56,7 @@ export class StorageService {
     try {
       localStorage.clear();
     } catch (error) {
-      // Silently fail if localStorage clear fails
+      console.error("Failed to clear localStorage:", error);
     }
   }
 }

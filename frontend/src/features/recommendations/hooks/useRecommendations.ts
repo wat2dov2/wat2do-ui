@@ -36,6 +36,7 @@ export function useRecommendations(limit = 20) {
           setError(null);
         })
         .catch((err) => {
+          console.error("Failed to fetch recommendations:", err);
           if (!mountedRef.current) return;
           setError(err instanceof Error ? err : new Error(String(err)));
         })

@@ -59,7 +59,7 @@ async function request<T>(
 
   if (res.status === 204) return undefined as T;
 
-  const body = await res.json().catch(() => null);
+  const body = await res.json().catch((err) => { console.error("Failed to parse API response JSON:", err); return null; });
 
   if (!res.ok) {
     throw new ApiError(res.status, body);

@@ -6,6 +6,7 @@ import math
 from services import interaction_service, user_service
 
 log = logging.getLogger(__name__)
+from schemas.event import EventResponse
 from services.recommender.content_based import get_content_scores
 from services.recommender.collaborative import get_collaborative_scores
 from services.recommender.popularity import get_popularity_scores
@@ -56,10 +57,10 @@ def evaluate_all_users(
     # Group by user
     user_events: dict[str, list[tuple[int, float]]] = {}
     for row in matrix:
-        uid = row["user_id"]
+        uid = row.user_id
         if uid not in user_events:
             user_events[uid] = []
-        user_events[uid].append((row["event_id"], row["score"]))
+        user_events[uid].append((row.event_id, row.score))
 
     # Only evaluate users with 5+ interactions
     eligible = {
@@ -77,8 +78,8 @@ def evaluate_all_users(
         }
 
     all_events_data = _load_all_events()
-    all_event_ids = [e["id"] for e in all_events_data]
-    events_by_id = {e["id"]: e for e in all_events_data}
+    all_event_ids = [e.id for e in all_events_data]
+    events_by_id = {e.id: e for e in all_events_data}
 
     total_precision = 0.0
     total_ndcg = 0.0
@@ -146,13 +147,13 @@ def evaluate_all_users(
     }
 
 
-def _load_all_events() -> list[dict]:
+def _load_all_events() -> list[EventResponse]:
     """Load all events with full metadata for evaluation."""
     r = get_sb().table("events").select("*").execute()
-    return r.data or []
+    return [EventResponse.model_validate(row) for row in (r.data or [])]
 
 
-def _load_events(event_ids: list[int]) -> list[dict]:
+def _load_events(event_ids: list[int]) -> list[EventResponse]:
     """Load full event data for content scoring."""
     r = get_sb().table("events").select("*").in_("id", event_ids).execute()
-    return r.data or []
+    return [EventResponse.model_validate(row) for row in (r.data or [])]

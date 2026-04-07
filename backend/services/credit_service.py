@@ -6,11 +6,12 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 
 from core.database import get_sb
+from schemas.credit import CreditRow, PromotionResponse
 
 DEFAULT_BALANCE = 100
 
 
-def get_or_create_credits(user_id: str) -> dict:
+def get_or_create_credits(user_id: str) -> CreditRow:
     """Return the credits row for a user, creating one if it doesn't exist."""
     r = (
         get_sb()
@@ -20,7 +21,7 @@ def get_or_create_credits(user_id: str) -> dict:
         .execute()
     )
     if r.data:
-        return r.data[0]
+        return CreditRow.model_validate(r.data[0])
 
     payload = {
         "id": str(uuid.uuid4()),
@@ -33,19 +34,19 @@ def get_or_create_credits(user_id: str) -> dict:
         .insert(payload)
         .execute()
     )
-    return r.data[0] if r.data else payload
+    return CreditRow.model_validate(r.data[0]) if r.data else CreditRow(**payload)
 
 
 def get_balance(user_id: str) -> int:
     """Return the user's credit balance."""
     row = get_or_create_credits(user_id)
-    return row["balance"]
+    return row.balance
 
 
 def add_credits(user_id: str, amount: int) -> int:
     """Add credits to a user's balance. Returns the new balance."""
     row = get_or_create_credits(user_id)
-    new_balance = row["balance"] + amount
+    new_balance = row.balance + amount
     get_sb().table("user_credits").update(
         {"balance": new_balance, "updated_at": datetime.now(timezone.utc).isoformat()}
     ).eq("user_id", user_id).execute()
@@ -55,12 +56,12 @@ def add_credits(user_id: str, amount: int) -> int:
 def deduct_credits(user_id: str, amount: int) -> int:
     """Deduct credits from a user's balance. Raises 400 if insufficient."""
     row = get_or_create_credits(user_id)
-    if row["balance"] < amount:
+    if row.balance < amount:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Insufficient credits",
         )
-    new_balance = row["balance"] - amount
+    new_balance = row.balance - amount
     get_sb().table("user_credits").update(
         {"balance": new_balance, "updated_at": datetime.now(timezone.utc).isoformat()}
     ).eq("user_id", user_id).execute()
@@ -73,7 +74,7 @@ def create_promotion(
     package: str,
     credits: int,
     duration: int,
-) -> dict:
+) -> PromotionResponse:
     """Create an event promotion. Deducts credits and inserts the promotion row."""
     deduct_credits(user_id, credits)
 
@@ -90,10 +91,10 @@ def create_promotion(
         "end_date": end.isoformat(),
     }
     r = get_sb().table("event_promotions").insert(payload).execute()
-    return r.data[0] if r.data else payload
+    return PromotionResponse.model_validate(r.data[0]) if r.data else PromotionResponse(**payload)
 
 
-def get_user_promotions(user_id: str) -> list[dict]:
+def get_user_promotions(user_id: str) -> list[PromotionResponse]:
     """Return all promotions for a user, newest first."""
     r = (
         get_sb()
@@ -103,7 +104,7 @@ def get_user_promotions(user_id: str) -> list[dict]:
         .order("created_at", desc=True)
         .execute()
     )
-    return r.data or []
+    return [PromotionResponse.model_validate(row) for row in (r.data or [])]
 
 
 def get_active_promoted_event_ids() -> list[int]:

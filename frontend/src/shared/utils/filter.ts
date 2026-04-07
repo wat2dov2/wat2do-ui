@@ -56,6 +56,7 @@ export function buildFilterQueryString(filters: FilterState): string {
     const encoded = encodeURIComponent(JSON.stringify(filters));
     return `filters=${encoded}`;
   } catch (error) {
+    console.error("Failed to build filter query string:", error);
     return "";
   }
 }
@@ -75,6 +76,7 @@ export function parseFilterQueryString(
     const parsed = JSON.parse(decoded) as FilterState;
     return parsed;
   } catch (error) {
+    console.error("Failed to parse filter query string:", error);
     return null;
   }
 }

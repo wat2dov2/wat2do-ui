@@ -20,7 +20,7 @@ interface FormState {
 
 type FormAction =
   | { type: "SET_FORM_DATA"; payload: EventFormData }
-  | { type: "UPDATE_FIELD"; payload: { field: keyof EventFormData; value: any } }
+  | { type: "UPDATE_FIELD"; payload: { field: keyof EventFormData; value: EventFormData[keyof EventFormData] } }
   | { type: "SET_SELECTED_DATE"; payload: Date | undefined }
   | { type: "SET_FOOD_INPUT"; payload: string }
   | { type: "ADD_FOOD"; payload: string }
@@ -256,7 +256,8 @@ export function useEventFormReducer(options: UseEventFormReducerOptions) {
             organization: parsed.organization || "",
           },
         });
-      } catch {
+      } catch (err) {
+        console.error("Failed to parse event form JSON:", err);
         dispatch({ type: "SET_JSON_ERROR", payload: "Invalid JSON format" });
       }
     },

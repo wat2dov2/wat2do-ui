@@ -27,6 +27,7 @@ export function useBackendScans(refreshKey?: number): {
         if (!cancelled) setScans(raw.map(normalizeBackendScan));
       })
       .catch((err) => {
+        console.error("Failed to fetch backend scans:", err);
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error(String(err)));
           setScans([]);

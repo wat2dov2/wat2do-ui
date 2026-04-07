@@ -56,8 +56,10 @@ export async function promoteEventAPI(
   } catch (err: unknown) {
     const detail = (err as { message?: string }).message ?? "";
     if (detail.includes("Insufficient credits")) {
+      console.error("Promotion failed due to insufficient credits:", err);
       return { success: false, needsCredits: true };
     }
+    console.error("Failed to create promotion:", err);
     throw err;
   }
 }

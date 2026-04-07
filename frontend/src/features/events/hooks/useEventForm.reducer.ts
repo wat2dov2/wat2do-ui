@@ -21,7 +21,7 @@ export interface FormState {
 
 export type FormAction =
   | { type: "SET_FORM_DATA"; payload: EventFormData }
-  | { type: "UPDATE_FIELD"; payload: { field: keyof EventFormData; value: any } }
+  | { type: "UPDATE_FIELD"; payload: { field: keyof EventFormData; value: EventFormData[keyof EventFormData] } }
   | { type: "SET_SELECTED_DATE"; payload: Date | undefined }
   | { type: "SET_FOOD_INPUT"; payload: string }
   | { type: "ADD_FOOD"; payload: string }

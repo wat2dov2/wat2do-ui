@@ -363,6 +363,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
         URL.revokeObjectURL(url);
       }
     } catch (err) {
+      console.error("PDF generation failed:", err);
       setPdfError(err instanceof Error ? err.message : String(err));
     } finally {
       setPdfGenerating(false);

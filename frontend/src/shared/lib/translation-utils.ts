@@ -10,7 +10,7 @@ import i18n from '@/shared/lib/i18n';
  * Direct translation function - no hook needed
  * Use for one-off translations or in non-React contexts
  */
-export function translate(key: string, options?: Record<string, any>): string {
+export function translate(key: string, options?: Record<string, string | number | boolean>): string {
   return i18n.t(key, options) as string;
 }
 

@@ -24,14 +24,14 @@ def get_collaborative_scores(
     # Build user vectors: {user_id: {event_id: score}}
     user_vectors: dict[str, dict[int, float]] = {}
     for row in matrix:
-        uid = row["user_id"]
+        uid = row.user_id
         if uid not in user_vectors:
             user_vectors[uid] = {}
-        user_vectors[uid][row["event_id"]] = row["score"]
+        user_vectors[uid][row.event_id] = row.score
 
     # Merge saves into matrix (save = weight 5)
     for s in saves:
-        uid, eid = s["user_id"], s["event_id"]
+        uid, eid = s.user_id, s.event_id
         if uid not in user_vectors:
             user_vectors[uid] = {}
         user_vectors[uid][eid] = user_vectors[uid].get(eid, 0) + 5.0

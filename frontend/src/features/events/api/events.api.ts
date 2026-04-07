@@ -116,7 +116,7 @@ export async function fetchSavedEventIdsFromBackend(): Promise<number[]> {
 }
 
 export async function saveEventToBackend(eventId: number): Promise<void> {
-  await api.put<unknown>(`/saved-events/${eventId}`);
+  await api.put<void>(`/saved-events/${eventId}`);
 }
 
 export async function unsaveEventFromBackend(eventId: number): Promise<void> {

@@ -19,8 +19,7 @@ def _resolve_db_user(auth_user: dict):
 
 @router.get("/", response_model=list[ScrapedEventResponse])
 def list_scraped_events(_: dict = Depends(get_admin_user)):
-    rows = scraped_event_service.get_scraped_events()
-    return [ScrapedEventResponse(**row) for row in rows]
+    return scraped_event_service.get_scraped_events()
 
 
 @router.post("/", response_model=ScrapedEventResponse, status_code=201)
@@ -28,9 +27,8 @@ def create_scraped_event(
     data: ScrapedEventCreate,
     _: dict = Depends(get_admin_user),
 ):
-    row = scraped_event_service.create_scraped_event(
+    return scraped_event_service.create_scraped_event(
         event_id=data.event_id,
         source=data.source,
         raw_data=data.raw_data,
     )
-    return ScrapedEventResponse(**row)

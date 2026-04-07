@@ -21,7 +21,8 @@ export function formatEventDate(dateStr: string): string {
       day: 'numeric' 
     };
     return date.toLocaleDateString('en-US', options).replace(',', '');
-  } catch {
+  } catch (err) {
+    console.error("Failed to format date string:", err);
     return dateStr;
   }
 }

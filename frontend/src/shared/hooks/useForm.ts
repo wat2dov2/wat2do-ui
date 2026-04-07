@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-interface UseFormOptions<T extends Record<string, any>> {
+interface UseFormOptions<T extends Record<string, unknown>> {
   initialData?: T;
   isEditMode?: boolean;
   isOpen: boolean;
@@ -23,7 +23,7 @@ interface UseFormReturn<T> {
  * Generic form hook for managing form state and validation
  * Works with any form data structure
  */
-export function useForm<T extends Record<string, any>>(
+export function useForm<T extends Record<string, unknown>>(
   options: UseFormOptions<T>
 ): UseFormReturn<T> {
   const { initialData, isEditMode = false, isOpen, validate, getDefaults } = options;

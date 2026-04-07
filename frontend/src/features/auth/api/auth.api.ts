@@ -128,8 +128,8 @@ export async function loginAPI(
 export async function logoutAPI(): Promise<void> {
   try {
     await api.post("/auth/logout");
-  } catch {
-    // Even if the backend call fails, clear local state
+  } catch (err) {
+    console.error("Logout API call failed, clearing local state anyway:", err);
   }
   clearAllAuthData();
 }
@@ -140,7 +140,8 @@ export async function refreshTokenAPI(): Promise<boolean> {
     const res = await api.post<TokenResponse>("/auth/refresh");
     saveAccessToken(res.access_token);
     return true;
-  } catch {
+  } catch (err) {
+    console.error("Token refresh failed, clearing auth data:", err);
     clearAllAuthData();
     return false;
   }

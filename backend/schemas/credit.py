@@ -1,6 +1,13 @@
 from pydantic import BaseModel
 
 
+class CreditRow(BaseModel):
+    """Internal representation of a user_credits row."""
+    id: str
+    user_id: str
+    balance: int
+
+
 class CreditBalanceResponse(BaseModel):
     balance: int
 

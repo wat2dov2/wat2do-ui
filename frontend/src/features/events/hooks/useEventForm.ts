@@ -114,7 +114,8 @@ export function useEventForm(options: UseEventFormOptions) {
             organization: parsed.organization || "",
           },
         });
-      } catch {
+      } catch (err) {
+        console.error("Failed to parse event form JSON:", err);
         dispatch({ type: "SET_JSON_ERROR", payload: t("forms.invalidJsonFormat") });
       }
     },
@@ -137,6 +138,7 @@ export function useEventForm(options: UseEventFormOptions) {
       dispatch({ type: "SET_JSON_VALUE", payload: generatedJson });
       handleJsonChange(generatedJson);
     } catch (error) {
+      console.error("AI event generation failed:", error);
       dispatch({
         type: "SET_JSON_ERROR",
         payload: error instanceof Error ? error.message : t("forms.aiGenerationFailed"),

@@ -99,6 +99,7 @@ function CreateQRCodeModalContent() {
         t("qrCode.posterCreatedMessage", { name: qrCode.name })
       );
     } catch (err) {
+      console.error("Failed to create QR code:", err);
       setCreateError(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setIsGenerating(false);

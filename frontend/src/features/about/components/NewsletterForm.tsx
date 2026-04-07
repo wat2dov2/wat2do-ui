@@ -18,7 +18,8 @@ export function NewsletterForm() {
       await api.post("/newsletter/subscribe", { email: email.trim() });
       setStatus("success");
       setEmail("");
-    } catch {
+    } catch (err) {
+      console.error("Newsletter subscribe failed:", err);
       setStatus("success");
       setEmail("");
     } finally {

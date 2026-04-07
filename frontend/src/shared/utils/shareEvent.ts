@@ -18,9 +18,8 @@ export async function shareEvent(event: Event): Promise<void> {
     try {
       await navigator.share(shareData);
       return;
-    } catch {
-      // User cancelled or error occurred, fall back to clipboard
-      // Silently handle AbortError (user cancellation)
+    } catch (err) {
+      console.error("Web Share API failed, falling back to clipboard:", err);
     }
   }
 
@@ -32,7 +31,8 @@ export async function shareEvent(event: Event): Promise<void> {
     // Show toast notification (you can enhance this with a toast library)
     // For now, we'll rely on the UI to show feedback
     return;
-  } catch {
+  } catch (err) {
+    console.error("Failed to copy share text to clipboard:", err);
     throw new Error("Failed to share event. Please copy the link manually.");
   }
 }
@@ -51,7 +51,8 @@ export async function copyEventLink(event: Event): Promise<void> {
   const url = getEventShareUrl(event);
   try {
     await navigator.clipboard.writeText(url);
-  } catch {
+  } catch (err) {
+    console.error("Failed to copy event link to clipboard:", err);
     throw new Error("Failed to copy link to clipboard.");
   }
 }

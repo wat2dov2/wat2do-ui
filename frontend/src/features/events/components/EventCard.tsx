@@ -204,7 +204,7 @@ export const EventCard = React.memo(function EventCard({
                       try {
                         await shareEvent(event);
                       } catch (error) {
-                        // Silently fail - user will see the error message from shareEvent
+                        console.error("Failed to share event:", error);
                       }
                     }}
                   >

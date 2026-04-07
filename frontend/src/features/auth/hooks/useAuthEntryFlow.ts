@@ -86,6 +86,7 @@ export function useAuthEntryFlow({
         onContinueToHome();
       }
     } catch (err) {
+      console.error("Auth entry flow failed:", err);
       if (err instanceof ApiError) {
         setError(err.message);
       } else {

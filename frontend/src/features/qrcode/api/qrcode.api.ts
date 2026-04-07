@@ -26,6 +26,7 @@ export async function fetchQrRedirectFromBackend(qrCodeId: string): Promise<QrRe
       if (err.status === 202) return { requires_location: true };
       if (err.status === 404) return null;
     }
+    console.error("Failed to fetch QR redirect config:", err);
     throw err;
   }
 }

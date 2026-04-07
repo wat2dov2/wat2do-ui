@@ -96,8 +96,8 @@ export function useAppNavigation({
               filters.setRequiresRegistration(parsedFilters.requiresRegistration);
             if (parsedFilters.searchQuery) filters.setSearchQuery(parsedFilters.searchQuery);
           }
-        } catch {
-          // Silently fail if filters can't be parsed from URL
+        } catch (err) {
+          console.error("Failed to parse filters from URL:", err);
         }
       }
 

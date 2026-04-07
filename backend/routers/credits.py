@@ -45,21 +45,19 @@ def add_credits(data: AddCreditsRequest, auth_user: dict = Depends(get_current_u
 @router.get("/promotions/", response_model=list[PromotionResponse])
 def list_promotions(auth_user: dict = Depends(get_current_user)):
     user = _resolve_db_user(auth_user)
-    rows = credit_service.get_user_promotions(str(user.id))
-    return [PromotionResponse(**row) for row in rows]
+    return credit_service.get_user_promotions(str(user.id))
 
 
 @router.post("/promotions/", response_model=PromotionResponse, status_code=201)
 def create_promotion(data: PromotionCreate, auth_user: dict = Depends(get_current_user)):
     user = _resolve_db_user(auth_user)
-    row = credit_service.create_promotion(
+    return credit_service.create_promotion(
         user_id=str(user.id),
         event_id=data.event_id,
         package=data.package,
         credits=data.credits,
         duration=data.duration,
     )
-    return PromotionResponse(**row)
 
 
 @router.get("/promotions/active-ids", response_model=list[int])

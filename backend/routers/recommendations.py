@@ -30,7 +30,7 @@ def get_recommendations(
             )
             try:
                 ab_test.record_impressions(
-                    user_id, [r["event_id"] for r in recs], variant
+                    user_id, [r.event_id for r in recs], variant
                 )
             except Exception:
                 log.debug("Failed to record AB impressions", exc_info=True)

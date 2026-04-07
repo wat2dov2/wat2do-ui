@@ -3,6 +3,7 @@
 import uuid
 
 from core.database import get_sb
+from schemas.saved_event import SavedEventResponse, UserEventPair
 
 
 def get_saved_event_ids(user_id: str) -> list[int]:
@@ -18,7 +19,7 @@ def get_saved_event_ids(user_id: str) -> list[int]:
     return [row["event_id"] for row in (r.data or [])]
 
 
-def save_event(user_id: str, event_id: int) -> dict:
+def save_event(user_id: str, event_id: int) -> SavedEventResponse:
     """Save an event for the user. Upsert to handle duplicates."""
     payload = {
         "id": str(uuid.uuid4()),
@@ -31,7 +32,7 @@ def save_event(user_id: str, event_id: int) -> dict:
         .upsert(payload, on_conflict="user_id,event_id")
         .execute()
     )
-    return r.data[0] if r.data else payload
+    return SavedEventResponse.model_validate(r.data[0]) if r.data else SavedEventResponse(**payload)
 
 
 def unsave_event(user_id: str, event_id: int) -> bool:
@@ -47,7 +48,7 @@ def unsave_event(user_id: str, event_id: int) -> bool:
     return bool(r.data)
 
 
-def get_all_user_saves() -> list[dict]:
+def get_all_user_saves() -> list[UserEventPair]:
     """Return all (user_id, event_id) pairs. Used by collaborative filtering."""
     r = (
         get_sb()
@@ -55,4 +56,4 @@ def get_all_user_saves() -> list[dict]:
         .select("user_id, event_id")
         .execute()
     )
-    return r.data or []
+    return [UserEventPair.model_validate(row) for row in (r.data or [])]

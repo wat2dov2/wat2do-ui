@@ -111,7 +111,8 @@ export async function getSubmissionById(id: string): Promise<EventSubmission | n
   try {
     const row = await api.get<SubmissionResponse>(`/submissions/${id}`);
     return toEventSubmission(row);
-  } catch {
+  } catch (err) {
+    console.error(`Failed to fetch submission ${id}:`, err);
     return null;
   }
 }

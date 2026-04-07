@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from constants import INTEREST_TO_CATEGORIES
 from core.database import get_sb
+from schemas.event import EventResponse
 from services import user_service, interaction_service
 
 log = logging.getLogger(__name__)
@@ -12,7 +13,7 @@ log = logging.getLogger(__name__)
 
 def get_content_scores(
     user_id: str,
-    candidate_events: list[dict],
+    candidate_events: list[EventResponse],
 ) -> dict[int, float]:
     """
     Score each candidate event based on how well it matches the user profile.
@@ -45,31 +46,34 @@ def get_content_scores(
     scores: dict[int, float] = {}
 
     for event in candidate_events:
-        eid = event["id"]
+        eid = event.id
         score = 0.0
 
         # Category match (weight: 0.4)
-        cat = event.get("category") or ""
+        cat = event.category or ""
         if matched_categories and cat in matched_categories:
             score += 0.4
         elif not matched_categories:
             score += 0.2
 
         # School match (weight: 0.15)
-        event_school = event.get("school") or ""
+        event_school = event.school or ""
         if user_school and event_school and user_school == event_school:
             score += 0.15
 
         # Org affinity (weight: 0.15)
-        org = event.get("organization") or ""
+        org = event.organization or ""
         if org in org_affinity:
             score += 0.15 * min(org_affinity[org], 1.0)
 
         # Temporal relevance (weight: 0.15)
-        dtstart = event.get("dtstart_utc")
+        dtstart = event.dtstart_utc
         if dtstart:
             try:
-                event_time = datetime.fromisoformat(dtstart.replace("Z", "+00:00"))
+                if isinstance(dtstart, str):
+                    event_time = datetime.fromisoformat(dtstart.replace("Z", "+00:00"))
+                else:
+                    event_time = dtstart if dtstart.tzinfo else dtstart.replace(tzinfo=timezone.utc)
                 hours_away = (event_time - now).total_seconds() / 3600
                 if hours_away < 0:
                     score += 0.0
@@ -85,12 +89,12 @@ def get_content_scores(
                 score += 0.04
 
         # Price (weight: 0.05) — free events get a slight boost
-        price = event.get("price")
+        price = event.price
         if price is None or price == 0:
             score += 0.05
 
         # Food availability (weight: 0.05)
-        food = event.get("food")
+        food = event.food
         if food and len(food) > 0:
             score += 0.05
 
@@ -114,7 +118,7 @@ def get_content_scores(
 
 def _compute_org_affinity(
     user_scores: dict[int, float],
-    candidate_events: list[dict],
+    candidate_events: list[EventResponse],
 ) -> dict[str, float]:
     """Build org affinity from user's past interactions."""
     if not user_scores:
@@ -122,9 +126,9 @@ def _compute_org_affinity(
 
     id_to_org: dict[int, str] = {}
     for e in candidate_events:
-        org = e.get("organization")
+        org = e.organization
         if org:
-            id_to_org[e["id"]] = org
+            id_to_org[e.id] = org
 
     # Also load past events the user interacted with
     interacted_ids = list(user_scores.keys())

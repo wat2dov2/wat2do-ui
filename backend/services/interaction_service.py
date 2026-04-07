@@ -3,6 +3,7 @@
 import uuid
 
 from core.database import get_sb
+from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
 
 # Weights for computing interaction scores.
 INTERACTION_WEIGHTS: dict[str, float] = {
@@ -18,7 +19,7 @@ INTERACTION_WEIGHTS: dict[str, float] = {
 def record_interactions(
     user_id: str | None,
     session_id: str,
-    interactions: list[dict],
+    interactions: list[InteractionCreate],
 ) -> int:
     """Batch-insert interactions. Returns count inserted."""
     if not interactions:
@@ -29,9 +30,9 @@ def record_interactions(
             "id": str(uuid.uuid4()),
             "user_id": user_id,
             "session_id": session_id,
-            "event_id": item["event_id"],
-            "interaction_type": item["interaction_type"],
-            "metadata": item.get("metadata"),
+            "event_id": item.event_id,
+            "interaction_type": item.interaction_type,
+            "metadata": item.metadata,
         })
     r = get_sb().table("user_interactions").insert(rows).execute()
     return len(r.data) if r.data else 0
@@ -54,9 +55,9 @@ def get_user_event_scores(user_id: str) -> dict[int, float]:
     return scores
 
 
-def get_interaction_matrix() -> list[dict]:
+def get_interaction_matrix() -> list[InteractionMatrixRow]:
     """
-    Return all user-event interaction scores as [{user_id, event_id, score}].
+    Return all user-event interaction scores as typed rows.
     Used by collaborative filtering to build the full matrix.
     """
     r = (
@@ -73,16 +74,16 @@ def get_interaction_matrix() -> list[dict]:
         weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
         agg[key] = agg.get(key, 0) + weight
     return [
-        {"user_id": uid, "event_id": eid, "score": score}
+        InteractionMatrixRow(user_id=uid, event_id=eid, score=score)
         for (uid, eid), score in agg.items()
         if score > 0
     ]
 
 
-def get_event_popularity(limit: int = 50) -> list[dict]:
+def get_event_popularity(limit: int = 50) -> list[EventPopularity]:
     """
     Return events ranked by weighted interaction count.
-    Returns [{event_id, score}] sorted descending.
+    Returns typed rows sorted descending.
     """
     r = (
         get_sb()
@@ -97,7 +98,7 @@ def get_event_popularity(limit: int = 50) -> list[dict]:
         scores[eid] = scores.get(eid, 0) + weight
 
     ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:limit]
-    return [{"event_id": eid, "score": score} for eid, score in ranked]
+    return [EventPopularity(event_id=eid, score=score) for eid, score in ranked]
 
 
 def get_user_interaction_count(user_id: str) -> int:

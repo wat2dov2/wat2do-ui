@@ -23,6 +23,7 @@ export function useBackendPosters(refreshKey?: number): {
         if (!cancelled) setPosters(list);
       })
       .catch((err) => {
+        console.error("Failed to fetch backend posters:", err);
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error(String(err)));
           setPosters([]);

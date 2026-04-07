@@ -72,7 +72,8 @@ export function useCreateQRCodeForm(events: Event[], userEmail: string) {
     if (state.destinationType === "custom-url" && state.customUrl.trim()) {
       try {
         new URL(state.customUrl);
-      } catch {
+      } catch (err) {
+        console.error("Invalid custom URL:", err);
         newErrors.url = t("qrCode.urlInvalid");
       }
     }

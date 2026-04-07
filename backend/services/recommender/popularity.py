@@ -4,6 +4,7 @@ import math
 from datetime import datetime, timezone
 
 from core.database import get_sb
+from schemas.event import EventTimeMeta
 from services import interaction_service
 
 
@@ -18,7 +19,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
     Returns {event_id: score} normalized to [0, 1].
     """
     popular = interaction_service.get_event_popularity(limit=500)
-    pop_map = {item["event_id"]: item["score"] for item in popular}
+    pop_map = {item.event_id: item.score for item in popular}
 
     candidate_set = set(candidate_event_ids)
     events_meta = _load_events_meta(candidate_event_ids)
@@ -28,10 +29,10 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
 
     for eid in candidate_set:
         raw_pop = pop_map.get(eid, 0)
-        meta = events_meta.get(eid, {})
+        meta = events_meta.get(eid)
 
         # Apply time decay based on event start time or added_at
-        dt_str = meta.get("dtstart_utc") or meta.get("added_at")
+        dt_str = (meta.dtstart_utc or meta.added_at) if meta else None
         decay = 1.0
         if dt_str:
             try:
@@ -58,7 +59,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
     return scores
 
 
-def _load_events_meta(event_ids: list[int]) -> dict[int, dict]:
+def _load_events_meta(event_ids: list[int]) -> dict[int, EventTimeMeta]:
     """Load minimal event metadata for decay calculation."""
     if not event_ids:
         return {}
@@ -69,4 +70,7 @@ def _load_events_meta(event_ids: list[int]) -> dict[int, dict]:
         .in_("id", event_ids)
         .execute()
     )
-    return {row["id"]: row for row in (r.data or [])}
+    return {
+        row["id"]: EventTimeMeta.model_validate(row)
+        for row in (r.data or [])
+    }

@@ -167,6 +167,7 @@ export function ClubPanelIntegrationsPage() {
           setSelectedClubId((prev) => prev ?? clubsData[0].id);
         }
       } catch (error) {
+        console.error("Failed to load integration settings:", error);
         if (redirectIfUnauthorized(error)) return;
         setDiscordError("Failed to load integration settings.");
       } finally {
@@ -217,6 +218,7 @@ export function ClubPanelIntegrationsPage() {
           })
         );
       } catch (error) {
+        console.error("Failed to load integrations:", error);
         if (redirectIfUnauthorized(error)) return;
         setDiscordError("Failed to load integrations.");
       } finally {
@@ -300,6 +302,7 @@ export function ClubPanelIntegrationsPage() {
         )
       );
     } catch (error) {
+      console.error(`Failed to disconnect ${platform} integration:`, error);
       if (redirectIfUnauthorized(error)) return;
       setDiscordError(`Failed to disconnect ${platform} integration.`);
     } finally {
@@ -347,6 +350,7 @@ export function ClubPanelIntegrationsPage() {
         );
       })
       .catch((error) => {
+        console.error(`Failed to connect ${platform} integration:`, error);
         if (redirectIfUnauthorized(error)) return;
         setDiscordError(`Failed to connect ${platform} integration.`);
       })

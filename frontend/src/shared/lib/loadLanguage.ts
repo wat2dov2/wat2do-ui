@@ -23,7 +23,7 @@ export async function loadLanguage(lang: string): Promise<void> {
       // Add the loaded resources to i18n
       i18n.addResourceBundle(lang, 'translation', resources.default);
     } catch (error) {
-      // Fallback to English if loading fails
+      console.error(`Failed to load language "${lang}":`, error);
       if (lang !== 'en') {
         await loadLanguage('en');
         i18n.changeLanguage('en');

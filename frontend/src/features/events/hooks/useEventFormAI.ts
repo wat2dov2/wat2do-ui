@@ -51,6 +51,7 @@ export function useEventFormAI({
         organization: newEvent.organization || "",
       });
     } catch (error) {
+      console.error("AI event generation failed:", error);
       setJsonError(
         error instanceof Error ? error.message : "Failed to generate event"
       );

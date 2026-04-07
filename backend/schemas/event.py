@@ -97,6 +97,13 @@ class LatestEventResponse(BaseModel):
     added_at: datetime
 
 
+class EventTimeMeta(BaseModel):
+    """Minimal event metadata for time-decay calculations."""
+    id: int
+    dtstart_utc: str | None = None
+    added_at: str | None = None
+
+
 class EventResponse(BaseModel):
     id: int
     title: str

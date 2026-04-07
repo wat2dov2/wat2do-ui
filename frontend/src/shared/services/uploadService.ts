@@ -26,7 +26,7 @@ async function uploadFile(
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
+    const body = await res.json().catch((err) => { console.error("Failed to parse upload error response:", err); return {}; });
     throw new Error(body.detail || `Upload failed (${res.status})`);
   }
 

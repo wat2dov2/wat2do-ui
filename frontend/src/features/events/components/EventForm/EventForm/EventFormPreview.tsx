@@ -64,7 +64,8 @@ export function EventFormPreview() {
       const month = date.toLocaleDateString(i18n.language || 'en-US', { month: 'short' });
       const day = date.getDate();
       return `${dayOfWeek} ${month} ${day}`;
-    } catch {
+    } catch (err) {
+      console.error("Failed to format preview date:", err);
       return formData.date;
     }
   }, [formData.date, i18n.language]);
@@ -79,7 +80,8 @@ export function EventFormPreview() {
       const h12 = h % 12 || 12;
       const mins = minutes ? `:${minutes}` : "";
       return `${h12}${mins} ${ampm}`;
-    } catch {
+    } catch (err) {
+      console.error("Failed to format preview time:", err);
       return formData.time;
     }
   }, [formData.time]);

@@ -3,6 +3,7 @@
 import math
 
 from constants import EVENT_CATEGORIES
+from schemas.event import EventResponse
 
 
 # One-hot dimension for categories.
@@ -15,7 +16,7 @@ TIME_BUCKETS = ("morning", "afternoon", "evening", "weekend")
 
 def mmr_rerank(
     scored_events: list[tuple[int, float]],
-    events_metadata: dict[int, dict],
+    events_metadata: dict[int, EventResponse],
     lambda_param: float = 0.7,
     k: int = 20,
 ) -> list[int]:
@@ -24,7 +25,7 @@ def mmr_rerank(
 
     Args:
         scored_events: [(event_id, relevance_score), ...]
-        events_metadata: {event_id: {category, price, organization, dtstart_utc, ...}}
+        events_metadata: {event_id: EventResponse}
         lambda_param: 0=pure diversity, 1=pure relevance
         k: number of results to return
 
@@ -36,7 +37,7 @@ def mmr_rerank(
 
     vectors: dict[int, list[float]] = {}
     for eid, _ in scored_events:
-        meta = events_metadata.get(eid, {})
+        meta = events_metadata.get(eid)
         vectors[eid] = _build_feature_vector(meta)
 
     score_map = dict(scored_events)
@@ -72,7 +73,7 @@ def mmr_rerank(
     return selected
 
 
-def _build_feature_vector(meta: dict) -> list[float]:
+def _build_feature_vector(meta: EventResponse | None) -> list[float]:
     """
     Build a feature vector for diversity measurement:
     - One-hot category (22 dims)
@@ -82,19 +83,23 @@ def _build_feature_vector(meta: dict) -> list[float]:
     """
     vec = [0.0] * (NUM_CATEGORIES + 1 + len(TIME_BUCKETS))
 
+    if meta is None:
+        return vec
+
     # Category one-hot
-    cat = meta.get("category") or ""
+    cat = meta.category or ""
     idx = CATEGORY_INDEX.get(cat)
     if idx is not None:
         vec[idx] = 1.0
 
     # Normalized price (0 = free, 1 = expensive)
-    price = meta.get("price") or 0
+    price = meta.price or 0
     vec[NUM_CATEGORIES] = min(price / 50.0, 1.0) if price else 0.0
 
     # Time bucket
-    dtstart = meta.get("dtstart_utc") or ""
-    bucket = _get_time_bucket(dtstart)
+    dtstart = meta.dtstart_utc
+    dtstart_str = dtstart.isoformat() if dtstart else ""
+    bucket = _get_time_bucket(dtstart_str)
     if bucket in TIME_BUCKETS:
         bucket_idx = TIME_BUCKETS.index(bucket)
         vec[NUM_CATEGORIES + 1 + bucket_idx] = 1.0

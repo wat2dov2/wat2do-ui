@@ -20,8 +20,7 @@ def _resolve_db_user(auth_user: dict):
 @router.post("/", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
 def create_submission(data: SubmissionCreate, auth_user: dict = Depends(get_current_user)):
     user = _resolve_db_user(auth_user)
-    row = submission_service.create_submission(str(user.id), data.event_data)
-    return SubmissionResponse(**row)
+    return submission_service.create_submission(str(user.id), data.event_data)
 
 
 @router.get("/", response_model=list[SubmissionResponse])
@@ -29,8 +28,7 @@ def list_submissions(
     submission_status: str | None = None,
     _: dict = Depends(get_admin_user),
 ):
-    rows = submission_service.get_submissions(status=submission_status)
-    return [SubmissionResponse(**row) for row in rows]
+    return submission_service.get_submissions(status=submission_status)
 
 
 @router.get("/{submission_id}", response_model=SubmissionResponse)
@@ -38,7 +36,7 @@ def get_submission(submission_id: str, _: dict = Depends(get_admin_user)):
     row = submission_service.get_submission_by_id(submission_id)
     if not row:
         raise HTTPException(status_code=404, detail="Submission not found")
-    return SubmissionResponse(**row)
+    return row
 
 
 @router.patch("/{submission_id}", response_model=SubmissionResponse)
@@ -52,7 +50,7 @@ def update_submission(
     )
     if not row:
         raise HTTPException(status_code=404, detail="Submission not found")
-    return SubmissionResponse(**row)
+    return row
 
 
 @router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)

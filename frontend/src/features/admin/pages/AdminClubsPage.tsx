@@ -66,7 +66,7 @@ export function AdminClubsPage() {
       }
       await refreshClubs();
     } catch (error) {
-      // Silently fail - error handling should be done at API level
+      console.error("Failed to delete club:", error);
     } finally {
       setDeleteConfirmId(null);
       setIsDeleting(false);
@@ -89,7 +89,7 @@ export function AdminClubsPage() {
       await refreshClubs();
       closeModal();
     } catch (error) {
-      // Silently fail - error handling should be done at API level
+      console.error("Failed to save club:", error);
     }
   };
 

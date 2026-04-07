@@ -39,7 +39,7 @@ def record_interactions(data: InteractionBatch):
         count = interaction_service.record_interactions(
             user_id=user_id,
             session_id=data.session_id,
-            interactions=[i.model_dump() for i in data.interactions],
+            interactions=data.interactions,
         )
         return {"recorded": count}
     except APIError as e:

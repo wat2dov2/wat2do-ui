@@ -70,7 +70,8 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
       await deletePosterFromBackend(id);
       await loadQRCodes();
       setDeleteConfirmId(null);
-    } catch {
+    } catch (err) {
+      console.error("Failed to delete poster:", err);
       // keep dialog open on error
     }
   };

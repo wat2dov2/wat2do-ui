@@ -3,13 +3,14 @@
 import uuid
 
 from core.database import get_sb
+from schemas.scraped_event import ScrapedEventResponse
 
 
 def create_scraped_event(
     event_id: int | None,
     source: str,
     raw_data: dict | None = None,
-) -> dict:
+) -> ScrapedEventResponse:
     """Record a scraped event."""
     payload = {
         "id": str(uuid.uuid4()),
@@ -18,10 +19,10 @@ def create_scraped_event(
         "raw_data": raw_data,
     }
     r = get_sb().table("scraped_events").insert(payload).execute()
-    return r.data[0] if r.data else payload
+    return ScrapedEventResponse.model_validate(r.data[0]) if r.data else ScrapedEventResponse(**payload)
 
 
-def get_scraped_events() -> list[dict]:
+def get_scraped_events() -> list[ScrapedEventResponse]:
     """Return all scraped events, newest first."""
     r = (
         get_sb()
@@ -30,4 +31,4 @@ def get_scraped_events() -> list[dict]:
         .order("scraped_at", desc=True)
         .execute()
     )
-    return r.data or []
+    return [ScrapedEventResponse.model_validate(row) for row in (r.data or [])]

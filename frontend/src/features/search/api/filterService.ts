@@ -73,7 +73,8 @@ export function parseFiltersFromJSON(
           : false,
     };
     return { filters, error: null };
-  } catch {
+  } catch (err) {
+    console.error("Failed to parse filters from JSON:", err);
     return {
       filters: createFilterState(),
       error: "Invalid JSON format",
@@ -88,7 +89,8 @@ export function buildFilterQueryString(filters: FilterState): string {
   try {
     const encoded = encodeURIComponent(JSON.stringify(filters));
     return `filters=${encoded}`;
-  } catch {
+  } catch (err) {
+    console.error("Failed to build filter query string:", err);
     return "";
   }
 }
@@ -107,7 +109,8 @@ export function parseFilterQueryString(
     const decoded = decodeURIComponent(filtersParam);
     const { filters } = parseFiltersFromJSON(decoded);
     return filters;
-  } catch {
+  } catch (err) {
+    console.error("Failed to parse filter query string:", err);
     return null;
   }
 }

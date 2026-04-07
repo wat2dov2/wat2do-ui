@@ -13,9 +13,11 @@ import { initializeAuth } from '@/features/auth/api/auth.api'
 
 if (import.meta.env.DEV) {
   try {
-    (ClickToComponent as any)();
-  } catch {
-    // ClickToComponent requires an editor environment (VS Code/Cursor)
+    // ClickToComponent is typed as a React component but exported as a plain function
+    // in dev mode. Cast to a generic callable to invoke it without JSX.
+    (ClickToComponent as unknown as () => void)();
+  } catch (err) {
+    console.error("ClickToComponent initialization failed (requires editor environment):", err);
   }
 }
 

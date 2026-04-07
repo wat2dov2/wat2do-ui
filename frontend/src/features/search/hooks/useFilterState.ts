@@ -114,6 +114,7 @@ export function useFilterState(profileCompleted: boolean) {
       const generatedJson = serializeFiltersToJSON(newFilters);
       handleJsonChange(generatedJson);
     } catch (error) {
+      console.error("AI filter generation failed:", error);
       setJsonError(
         error instanceof Error
           ? error.message
