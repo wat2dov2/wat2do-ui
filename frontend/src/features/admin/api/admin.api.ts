@@ -3,7 +3,7 @@
  * Handles all admin-related data operations via the backend.
  */
 
-import type { Event, EventSubmission, ReportedEvent, ScrapedEvent, Club } from "@/shared/types";
+import type { Event, EventSubmission, ReportedEvent, ScrapedEvent, Club, SubmissionStatus, ReportStatus } from "@/shared/types";
 import { fetchAllEvents } from "@/features/events/api/events.api";
 import {
   getAllClubs as getAllClubsData,
@@ -83,7 +83,7 @@ export async function getReportedEvents(): Promise<ReportedEvent[]> {
 }
 
 export async function getReportedEventsByStatus(
-  status: "pending" | "resolved" | "dismissed",
+  status: ReportStatus,
 ): Promise<ReportedEvent[]> {
   const rows = await api.get<ReportResponse[]>(`/reports/?report_status=${status}`);
   return rows.map(toReportedEvent);
@@ -95,7 +95,7 @@ export async function saveReportedEvent(report: { eventId: number; reason: strin
 
 export async function updateReportedEventStatus(
   id: string,
-  status: "pending" | "resolved" | "dismissed",
+  status: ReportStatus,
 ): Promise<void> {
   await api.patch(`/reports/${id}`, { status });
 }
@@ -118,7 +118,7 @@ export async function getSubmissionById(id: string): Promise<EventSubmission | n
 }
 
 export async function getSubmissionsByStatus(
-  status: "pending" | "approved" | "rejected",
+  status: SubmissionStatus,
 ): Promise<EventSubmission[]> {
   const rows = await api.get<SubmissionResponse[]>(`/submissions/?submission_status=${status}`);
   return rows.map(toEventSubmission);
@@ -130,7 +130,7 @@ export async function saveEventSubmission(eventData: Record<string, unknown>): P
 
 export async function updateEventSubmission(
   id: string,
-  status: "pending" | "approved" | "rejected",
+  status: SubmissionStatus,
   rejectionReason?: string,
 ): Promise<void> {
   await api.patch(`/submissions/${id}`, {
@@ -149,7 +149,7 @@ export async function rejectSubmission(id: string, rejectionReason: string): Pro
 
 export async function updateSubmissionStatus(
   id: string,
-  status: "pending" | "approved" | "rejected",
+  status: SubmissionStatus,
   rejectionReason?: string,
 ): Promise<void> {
   await updateEventSubmission(id, status, rejectionReason);

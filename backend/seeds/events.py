@@ -1,7 +1,9 @@
 from datetime import datetime, timezone, timedelta
 
 from core.config import settings
+from core.constants import BUCKET_EVENT_IMAGES
 from core.database import get_sb
+from core.tables import EVENTS
 from constants import EVENT_CATEGORIES
 
 
@@ -13,7 +15,7 @@ def _public_url(bucket: str, path: str) -> str | None:
 
 
 def _seed_image(i: int) -> str | None:
-    return _public_url("event-images", f"seed/event-{i:03d}.jpg")
+    return _public_url(BUCKET_EVENT_IMAGES, f"seed/event-{i:03d}.jpg")
 
 
 def _to_iso(dt: datetime | None) -> str | None:
@@ -106,9 +108,9 @@ def seed():
     sb = get_sb()
     created = 0
     for data in SEED_EVENTS:
-        r = sb.table("events").select("id").eq("title", data["title"]).execute()
+        r = sb.table(EVENTS).select("id").eq("title", data["title"]).execute()
         if r.data and len(r.data) > 0:
             continue
-        sb.table("events").insert(data).execute()
+        sb.table(EVENTS).insert(data).execute()
         created += 1
     print(f"Seeded {created} new events ({len(SEED_EVENTS)} total in seed list)")

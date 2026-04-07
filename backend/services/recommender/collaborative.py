@@ -3,7 +3,7 @@
 import math
 
 from services import interaction_service, saved_event_service
-from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT
+from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT, CF_SAVE_WEIGHT
 
 
 def get_collaborative_scores(
@@ -31,7 +31,7 @@ def get_collaborative_scores(
         uid, eid = s.user_id, s.event_id
         if uid not in user_vectors:
             user_vectors[uid] = {}
-        user_vectors[uid][eid] = user_vectors[uid].get(eid, 0) + 5.0
+        user_vectors[uid][eid] = user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT
 
     target_vec = user_vectors.get(user_id, {})
     if len(target_vec) < CF_MIN_INTERACTIONS:

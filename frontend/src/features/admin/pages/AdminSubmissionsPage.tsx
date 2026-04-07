@@ -29,7 +29,8 @@ import {
 import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmissionsFilters";
 import { useAdminSubmissionsPagination } from "@/features/admin/hooks/useAdminSubmissionsPagination";
 import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
-import type { EventSubmission } from "@/shared/types";
+import type { EventSubmission, SubmissionStatus } from "@/shared/types";
+import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 
 interface AdminSubmissionsPageProps {
@@ -44,7 +45,7 @@ export function AdminSubmissionsPage({
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [refreshKey, setRefreshKey] = useState(0);
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
   // Use hooks for business logic
   const filters = useAdminSubmissionsFilters({ refreshKey });
@@ -127,7 +128,7 @@ export function AdminSubmissionsPage({
           value={filters.statusFilter}
           onValueChange={(value) =>
             filters.setStatusFilter(
-              value as "all" | "pending" | "approved" | "rejected"
+              value as "all" | SubmissionStatus
             )
           }
         >

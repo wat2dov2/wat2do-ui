@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { getEventSubmissions } from "@/features/admin/api/admin.api";
-import type { EventSubmission } from "@/shared/types";
+import type { EventSubmission, SubmissionStatus } from "@/shared/types";
 
 interface UseAdminSubmissionsFiltersOptions {
   refreshKey: number;
@@ -11,7 +11,7 @@ interface UseAdminSubmissionsFiltersOptions {
  */
 export function useAdminSubmissionsFilters({ refreshKey }: UseAdminSubmissionsFiltersOptions) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | SubmissionStatus>("all");
   const [allSubmissions, setAllSubmissions] = useState<EventSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

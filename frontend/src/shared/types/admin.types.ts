@@ -1,8 +1,22 @@
 /**
  * Admin-related types
+ *
+ * Status unions must match the backend Literal types:
+ *   SubmissionStatus → schemas/submission.py
+ *   ReportStatus     → schemas/report.py
+ *
+ * At runtime, the canonical list is fetched via /meta/constants
+ * (see shared/api/metaApi.ts). These TypeScript types exist for
+ * compile-time safety; the backend is the source of truth.
  */
 
 import type { EventFormData } from "@/shared/types/event.types";
+
+/** Must match backend SubmissionStatus = Literal["pending","approved","rejected"] */
+export type SubmissionStatus = "pending" | "approved" | "rejected";
+
+/** Must match backend ReportStatus = Literal["pending","resolved","dismissed"] */
+export type ReportStatus = "pending" | "resolved" | "dismissed";
 
 // Admin panel types
 export interface EventSubmission {
@@ -10,7 +24,7 @@ export interface EventSubmission {
   eventData: EventFormData;
   submittedBy: string; // user email
   submittedAt: string; // ISO timestamp
-  status: "pending" | "approved" | "rejected";
+  status: SubmissionStatus;
   rejectionReason?: string; // Reason provided when rejecting
 }
 
@@ -20,7 +34,7 @@ export interface ReportedEvent {
   reportedBy: string;
   reportedAt: string;
   reason: string;
-  status: "pending" | "resolved" | "dismissed";
+  status: ReportStatus;
 }
 
 export interface ScrapedEvent {

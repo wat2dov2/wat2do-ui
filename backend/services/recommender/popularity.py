@@ -7,10 +7,7 @@ from core.database import get_sb
 from core.tables import EVENTS
 from schemas.event import EventTimeMeta
 from services import interaction_service
-
-
-# Exponential decay half-life in days.
-HALF_LIFE_DAYS = 7.0
+from services.recommender.config import POP_HALF_LIFE_DAYS, POP_FALLBACK_SCORE, POP_CANDIDATE_LIMIT
 
 
 def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
@@ -19,7 +16,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
     Events with zero interactions fall back to recency of added_at.
     Returns {event_id: score} normalized to [0, 1].
     """
-    popular = interaction_service.get_event_popularity(limit=500)
+    popular = interaction_service.get_event_popularity(limit=POP_CANDIDATE_LIMIT)
     pop_map = {item.event_id: item.score for item in popular}
 
     candidate_set = set(candidate_event_ids)
@@ -40,7 +37,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
                 dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
                 days_ago = (now - dt).total_seconds() / 86400
                 if days_ago > 0:
-                    decay = math.pow(0.5, days_ago / HALF_LIFE_DAYS)
+                    decay = math.pow(0.5, days_ago / POP_HALF_LIFE_DAYS)
             except (ValueError, TypeError):
                 pass
 
@@ -48,7 +45,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
             scores[eid] = raw_pop * decay
         else:
             # No interactions: use recency as proxy (small base score)
-            scores[eid] = 0.1 * decay
+            scores[eid] = POP_FALLBACK_SCORE * decay
 
     # Normalize to [0, 1]
     if scores:

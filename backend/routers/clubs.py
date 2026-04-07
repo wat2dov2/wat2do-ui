@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user, require_owner_or_admin
+from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from schemas.club import (
     ClubCreate,
     ClubUpdate,
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/clubs", tags=["clubs"])
 @router.get("/", response_model=list[ClubResponse])
 def list_clubs(
     skip: int = 0,
-    limit: int = Query(default=100, le=500),
+    limit: int = Query(default=DEFAULT_LIST_LIMIT, le=MAX_LIST_LIMIT),
     club_type: str | None = None,
     search: str | None = None,
 ):

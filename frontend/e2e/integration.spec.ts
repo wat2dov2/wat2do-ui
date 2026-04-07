@@ -3,12 +3,20 @@ import { test, expect } from "@playwright/test";
 const BASE = "http://localhost:5173";
 const API = "http://localhost:8000";
 
+/**
+ * Key values must match STORAGE_KEYS in src/shared/constants/storageKeys.ts.
+ * We can't import TS modules into Playwright's addInitScript (runs in the
+ * browser before bundles are loaded), so we duplicate the string values here.
+ */
+const STORAGE_KEY_USER_EMAIL = "userEmail";
+
 async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
-  await page.addInitScript(() => {
-    window.localStorage.setItem("wat2do_access_token", "test-access-token");
-    window.localStorage.setItem("wat2do_refresh_token", "test-refresh-token");
-    window.localStorage.setItem("userEmail", JSON.stringify("test@uwaterloo.ca"));
-  });
+  // Access token is in-memory (apiClient.ts), refresh token is httpOnly cookie —
+  // neither lives in localStorage. We only seed the email hint so
+  // isAuthenticated() sees a prior session indicator.
+  await page.addInitScript((emailKey) => {
+    window.localStorage.setItem(emailKey, JSON.stringify("test@uwaterloo.ca"));
+  }, STORAGE_KEY_USER_EMAIL);
 }
 
 async function seedQrData(

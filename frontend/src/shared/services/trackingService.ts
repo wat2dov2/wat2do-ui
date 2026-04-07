@@ -5,9 +5,7 @@
 
 import { getAccessToken } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
-
-const BASE_URL = API_BASE_URL;
-const SESSION_KEY = "wat2do_session_id";
+import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 
 interface QueuedInteraction {
   event_id: number;
@@ -16,10 +14,10 @@ interface QueuedInteraction {
 }
 
 function getSessionId(): string {
-  let sid = sessionStorage.getItem(SESSION_KEY);
+  let sid = sessionStorage.getItem(STORAGE_KEYS.SESSION_ID);
   if (!sid) {
     sid = crypto.randomUUID();
-    sessionStorage.setItem(SESSION_KEY, sid);
+    sessionStorage.setItem(STORAGE_KEYS.SESSION_ID, sid);
   }
   return sid;
 }
@@ -49,7 +47,7 @@ class Tracker {
       interactions: batch,
     });
 
-    const url = `${BASE_URL}/interactions/batch`;
+    const url = `${API_BASE_URL}/interactions/batch`;
     const blob = new Blob([payload], { type: "application/json" });
     navigator.sendBeacon(url, blob);
   }

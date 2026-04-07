@@ -1,7 +1,5 @@
 import { API_BASE_URL } from "@/shared/config/api";
 
-const BASE_URL = API_BASE_URL;
-
 // In-memory access token — never stored in localStorage
 let accessToken: string | null = null;
 
@@ -39,7 +37,7 @@ async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const url = `${BASE_URL}${path}`;
+  const url = `${API_BASE_URL}${path}`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string> ?? {}),

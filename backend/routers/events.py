@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user, require_owner_or_admin
+from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
 from core.errors import EVENT_NOT_FOUND
 from services import event_service
@@ -19,7 +20,7 @@ def get_latest_added():
 @router.get("/", response_model=list[EventResponse])
 def list_events(
     skip: int = 0,
-    limit: int = Query(default=100, le=500),
+    limit: int = Query(default=DEFAULT_LIST_LIMIT, le=MAX_LIST_LIMIT),
     category: str | None = None,
     club_type: str | None = None,
     school: str | None = None,

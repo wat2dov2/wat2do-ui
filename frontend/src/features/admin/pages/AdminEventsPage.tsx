@@ -25,8 +25,9 @@ import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptySt
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { cn } from "@/shared/lib/utils";
+import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
 export function AdminEventsPage() {
   const { events, onEditEvent, onDeleteEvent, onBack, onCreateEvent } = useAdminContext();

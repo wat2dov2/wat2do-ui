@@ -3,29 +3,34 @@
 import uuid
 from pathlib import PurePosixPath
 
-from tenacity import retry, stop_after_attempt, wait_exponential
-
+from core.constants import (
+    BUCKET_EVENT_IMAGES,
+    BUCKET_AVATARS,
+    BUCKET_CLUB_LOGOS,
+    BUCKET_QR_ASSETS,
+    supabase_retry,
+)
 from core.database import supabase, supabase_admin
 from core.logging import logger
 
 
 _DEFAULT_BUCKETS: dict[str, dict] = {
-    "event-images": {
+    BUCKET_EVENT_IMAGES: {
         "public": True,
         "file_size_limit": 5 * 1024 * 1024,  # 5 MB
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"],
     },
-    "avatars": {
+    BUCKET_AVATARS: {
         "public": True,
         "file_size_limit": 2 * 1024 * 1024,  # 2 MB
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
     },
-    "club-logos": {
+    BUCKET_CLUB_LOGOS: {
         "public": True,
         "file_size_limit": 2 * 1024 * 1024,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
     },
-    "qr-assets": {
+    BUCKET_QR_ASSETS: {
         "public": True,
         "file_size_limit": 5 * 1024 * 1024,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
@@ -66,7 +71,7 @@ class StorageService:
 
         return results
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, max=4))
+    @supabase_retry
     def upload_file(self, bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
         """Upload a file and return its public URL."""
         ext = PurePosixPath(filename).suffix or _MIME_TO_EXT.get(content_type, ".bin")

@@ -7,19 +7,12 @@
  */
 
 import { StorageService } from "@/shared/services/storageService";
+import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getUserProfile, updateUserProfile, type UserProfile } from "@/features/auth";
 import type { ViewMode, FilterViewMode } from "@/shared/types";
 
 // Re-export UserProfile for feature use
 export type { UserProfile };
-
-// Storage keys
-const STORAGE_KEYS = {
-  NOTIFICATION_PREFS: "notificationPreferences",
-  PRIVACY_PREFS: "privacyPreferences",
-  VIEW_MODE: "viewMode",
-  FILTER_VIEW_MODE: "filterViewMode",
-} as const;
 
 // Types
 export interface NotificationPreferences {

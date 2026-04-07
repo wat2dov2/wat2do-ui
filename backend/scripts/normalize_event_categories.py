@@ -13,12 +13,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.database import get_sb
+from core.tables import EVENTS
 from constants import EVENT_CATEGORIES, CATEGORY_NORMALIZE_MAP
 
 
 def main() -> None:
     sb = get_sb()
-    r = sb.table("events").select("id, title, category").execute()
+    r = sb.table(EVENTS).select("id, title, category").execute()
     events = r.data or []
     updated = 0
     for row in events:
@@ -29,7 +30,7 @@ def main() -> None:
             continue
         else:
             new_cat = CATEGORY_NORMALIZE_MAP.get(cat, "Academics")
-        sb.table("events").update({"category": new_cat}).eq("id", row["id"]).execute()
+        sb.table(EVENTS).update({"category": new_cat}).eq("id", row["id"]).execute()
         print(f"id={row['id']} {cat!r} -> {new_cat!r}")
         updated += 1
     print(f"Done. Updated {updated} events.")

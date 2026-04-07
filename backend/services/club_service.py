@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
+from typing import get_args
 
 log = logging.getLogger(__name__)
 
@@ -17,15 +18,7 @@ from schemas.club import (
 )
 
 
-SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = (
-    "whatsapp",
-    "discord",
-    "instagram",
-    "slack",
-    "telegram",
-    "linkedin",
-    "facebook",
-)
+SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = get_args(IntegrationPlatform)
 
 
 def get_club(club_id: int) -> ClubResponse | None:

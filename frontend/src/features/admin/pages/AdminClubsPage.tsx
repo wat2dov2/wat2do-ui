@@ -27,8 +27,9 @@ import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { createClubAPI, updateClubAPI, deleteClubAPI } from "@/features/clubs/api/clubs.api";
 import { useAdminContext } from "@/features/admin/context/AdminContext";
+import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
 export function AdminClubsPage() {
   const { onBack, onAddClub, onEditClub, onDeleteClub } = useAdminContext();

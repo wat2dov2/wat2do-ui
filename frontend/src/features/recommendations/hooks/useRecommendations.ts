@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { DEFAULT_RECOMMENDATION_LIMIT } from "@/shared/constants/pagination";
 import { fetchRecommendations } from "../api/recommendationApi";
 import type { RecommendationItem } from "../types";
 
@@ -10,9 +11,6 @@ interface CachedResult {
 }
 
 let cache: CachedResult | null = null;
-
-/** Must match backend DEFAULT_LIMIT in services/recommender/config.py */
-const DEFAULT_RECOMMENDATION_LIMIT = 20;
 
 export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>(

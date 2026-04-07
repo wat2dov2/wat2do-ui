@@ -1,4 +1,5 @@
 from core.database import get_sb
+from core.tables import USERS
 
 SEED_USERS = [
     {
@@ -35,9 +36,9 @@ def seed():
     sb = get_sb()
     created = 0
     for data in SEED_USERS:
-        r = sb.table("users").select("id").eq("email", data["email"]).execute()
+        r = sb.table(USERS).select("id").eq("email", data["email"]).execute()
         if r.data and len(r.data) > 0:
             continue
-        sb.table("users").insert(data).execute()
+        sb.table(USERS).insert(data).execute()
         created += 1
     print(f"Seeded {created} new users ({len(SEED_USERS)} total in seed list)")

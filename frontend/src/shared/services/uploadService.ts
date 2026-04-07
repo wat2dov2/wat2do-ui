@@ -1,8 +1,6 @@
 import { getAccessToken } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 
-const BASE_URL = API_BASE_URL;
-
 interface UploadResponse {
   url: string;
 }
@@ -20,7 +18,7 @@ async function uploadFile(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
+  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
     headers,
     body: form,

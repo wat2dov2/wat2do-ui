@@ -8,6 +8,18 @@ from core.database import get_sb
 from core.tables import EVENTS
 from schemas.event import EventResponse
 from services import user_service, interaction_service
+from services.recommender.config import (
+    CB_CATEGORY_MATCH,
+    CB_CATEGORY_NO_PROFILE,
+    CB_SCHOOL_MATCH,
+    CB_ORG_AFFINITY,
+    CB_TEMPORAL_TIERS,
+    CB_TEMPORAL_FALLBACK,
+    CB_FREE_EVENT,
+    CB_HAS_FOOD,
+    CB_FIRST_YEAR,
+    FIRST_YEAR_CATEGORIES,
+)
 
 log = logging.getLogger(__name__)
 
@@ -50,24 +62,20 @@ def get_content_scores(
         eid = event.id
         score = 0.0
 
-        # Category match (weight: 0.4)
         cat = event.category or ""
         if matched_categories and cat in matched_categories:
-            score += 0.4
+            score += CB_CATEGORY_MATCH
         elif not matched_categories:
-            score += 0.2
+            score += CB_CATEGORY_NO_PROFILE
 
-        # School match (weight: 0.15)
         event_school = event.school or ""
         if user_school and event_school and user_school == event_school:
-            score += 0.15
+            score += CB_SCHOOL_MATCH
 
-        # Org affinity (weight: 0.15)
         org = event.organization or ""
         if org in org_affinity:
-            score += 0.15 * min(org_affinity[org], 1.0)
+            score += CB_ORG_AFFINITY * min(org_affinity[org], 1.0)
 
-        # Temporal relevance (weight: 0.15)
         dtstart = event.dtstart_utc
         if dtstart:
             try:
@@ -78,32 +86,28 @@ def get_content_scores(
                 hours_away = (event_time - now).total_seconds() / 3600
                 if hours_away < 0:
                     score += 0.0
-                elif hours_away < 24:
-                    score += 0.15
-                elif hours_away < 72:
-                    score += 0.12
-                elif hours_away < 168:
-                    score += 0.08
                 else:
-                    score += 0.04
+                    added = False
+                    for max_hours, weight in CB_TEMPORAL_TIERS:
+                        if hours_away < max_hours:
+                            score += weight
+                            added = True
+                            break
+                    if not added:
+                        score += CB_TEMPORAL_FALLBACK
             except (ValueError, TypeError):
-                score += 0.04
+                score += CB_TEMPORAL_FALLBACK
 
-        # Price (weight: 0.05) — free events get a slight boost
         price = event.price
         if price is None or price == 0:
-            score += 0.05
+            score += CB_FREE_EVENT
 
-        # Food availability (weight: 0.05)
         food = event.food
         if food and len(food) > 0:
-            score += 0.05
+            score += CB_HAS_FOOD
 
-        # First-year boost (weight: 0.05)
-        if is_first_year:
-            first_year_cats = {"Academics", "Networking", "Culture", "Sports"}
-            if cat in first_year_cats:
-                score += 0.05
+        if is_first_year and cat in FIRST_YEAR_CATEGORIES:
+            score += CB_FIRST_YEAR
 
         scores[eid] = score
 

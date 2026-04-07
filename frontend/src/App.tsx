@@ -30,7 +30,7 @@ import {
   ClubPanelIntegrationsRoute,
   ClubPanelMembersRoute,
 } from "@/app/routes/clubPanelRoutes";
-import { getEventCategory } from "@/shared/utils/event";
+import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { getDayOfWeek } from "@/shared/utils/date";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
@@ -68,34 +68,6 @@ const OnboardingPage = lazy(() =>
     default: module.OnboardingPage,
   }))
 );
-
-/** Convert Event to EventFormData for edit mode */
-function eventToFormData(event: Event): EventFormData {
-  let date = event.date || "";
-  let time = event.time || "";
-  if ((!date || !time) && event.dtstart_utc) {
-    const d = new Date(event.dtstart_utc as string);
-    if (!isNaN(d.getTime())) {
-      const pad = (n: number) => String(n).padStart(2, "0");
-      date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-  }
-  const category = getEventCategory(event);
-  return {
-    title: event.title,
-    description: event.description || "",
-    date,
-    time,
-    location: event.location ?? "",
-    category,
-    price: event.price ?? 0,
-    food: event.food || [],
-    requiresRegistration: event.requiresRegistration ?? event.registration ?? false,
-    organization: event.organization || "",
-  };
-}
-
 
 export default function App() {
   const location = useLocation();

@@ -5,11 +5,10 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 
+from core.constants import DEFAULT_CREDIT_BALANCE
 from core.database import get_sb
 from core.tables import USER_CREDITS, EVENT_PROMOTIONS
 from schemas.credit import CreditRow, PromotionResponse
-
-DEFAULT_BALANCE = 100
 
 
 def get_or_create_credits(user_id: str) -> CreditRow:
@@ -27,7 +26,7 @@ def get_or_create_credits(user_id: str) -> CreditRow:
     payload = {
         "id": str(uuid.uuid4()),
         "user_id": user_id,
-        "balance": DEFAULT_BALANCE,
+        "balance": DEFAULT_CREDIT_BALANCE,
     }
     r = (
         get_sb()

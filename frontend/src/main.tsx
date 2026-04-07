@@ -10,6 +10,7 @@ import { getStoredLanguage } from '@/shared/lib/i18n'
 import App from '@/App.tsx'
 import ErrorBoundary from '@/app/ErrorBoundary'
 import { initializeAuth } from '@/features/auth/api/auth.api'
+import { loadAppConstants } from '@/shared/api/metaApi'
 
 if (import.meta.env.DEV) {
   try {
@@ -29,6 +30,9 @@ async function initApp() {
   await loadLanguage(initialLang);
   // Change language after it's loaded
   i18n.changeLanguage(initialLang);
+
+  // Load shared domain constants from backend (categories, statuses, etc.)
+  await loadAppConstants();
 
   // Restore auth session from httpOnly cookie (if user was previously logged in)
   await initializeAuth();

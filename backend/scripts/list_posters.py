@@ -10,10 +10,11 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.database import get_sb
+from core.tables import QR_CODES
 
 
 def main() -> None:
-    r = get_sb().table("qr_codes").select("id, name, is_active").execute()
+    r = get_sb().table(QR_CODES).select("id, name, is_active").execute()
     rows = r.data or []
     if not rows:
         print("No posters in database.")

@@ -27,19 +27,31 @@ export function getEventCategory(event: Pick<Event, "category" | "club_type">): 
 }
 
 /**
- * Convert Event to EventFormData for edit mode
+ * Convert Event to EventFormData for edit mode.
+ * Falls back to dtstart_utc when date/time strings are missing, and
+ * handles both old (requiresRegistration) and new (registration) fields.
  */
 export function eventToFormData(event: Event): EventFormData {
+  let date = event.date || "";
+  let time = event.time || "";
+  if ((!date || !time) && event.dtstart_utc) {
+    const d = new Date(event.dtstart_utc as string);
+    if (!isNaN(d.getTime())) {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      date = date || `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      time = time || `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+  }
   return {
     title: event.title,
     description: event.description || "",
-    date: event.date || "",
-    time: event.time || "",
-    location: event.location,
+    date,
+    time,
+    location: event.location ?? "",
     category: getEventCategory(event),
-    price: event.price || 0,
+    price: event.price ?? 0,
     food: event.food || [],
-    requiresRegistration: event.requiresRegistration || false,
+    requiresRegistration: event.requiresRegistration ?? event.registration ?? false,
     organization: event.organization || "",
   };
 }

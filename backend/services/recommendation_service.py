@@ -10,8 +10,8 @@ import logging
 from datetime import datetime, timezone
 
 from postgrest.exceptions import APIError
-from tenacity import retry, stop_after_attempt, wait_exponential
 
+from core.constants import supabase_retry
 from core.database import get_sb
 from core.tables import EVENTS, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
@@ -186,7 +186,7 @@ class RecommendationEngine:
 
         return results
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, max=4))
+    @supabase_retry
     def _store_user_recs(self, user_id: str, rows: list[dict]) -> None:
         """Upsert new recs then remove stale entries, so a failed insert never
         wipes existing recommendations."""
@@ -231,7 +231,7 @@ class RecommendationEngine:
         log.info("Recommendation batch complete: %s", {k: v for k, v in stats.items() if k != "failed_ids"})
         return stats
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, max=4))
+    @supabase_retry
     def _fetch_all_user_ids(self) -> list[dict]:
         """Fetch all user IDs, with retry on transient failures."""
         return get_sb().table(USERS).select("id").execute().data or []

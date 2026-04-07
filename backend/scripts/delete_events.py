@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.database import get_sb
+from core.tables import EVENTS
 
 
 def main(titles: list[str]) -> None:
@@ -22,12 +23,12 @@ def main(titles: list[str]) -> None:
 
     sb = get_sb()
     for title in titles:
-        r = sb.table("events").select("id, title, organization").eq("title", title).execute()
+        r = sb.table(EVENTS).select("id, title, organization").eq("title", title).execute()
         if not r.data:
             continue
         for row in r.data:
             print(f"Deleting id={row['id']} title={row['title']!r} org={row.get('organization') or ''!r}")
-            sb.table("events").delete().eq("id", row["id"]).execute()
+            sb.table(EVENTS).delete().eq("id", row["id"]).execute()
     print("Done.")
 
 

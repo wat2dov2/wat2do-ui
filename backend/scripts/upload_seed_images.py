@@ -13,6 +13,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.config import settings
+from core.constants import BUCKET_EVENT_IMAGES, BUCKET_AVATARS, BUCKET_CLUB_LOGOS, BUCKET_QR_ASSETS
 
 EVENT_IMAGE_COUNT = 30
 AVATAR_COUNT = 12
@@ -54,13 +55,13 @@ def main() -> None:
         url = f"https://picsum.photos/seed/wat2do-event-{i:03d}/800/600"
         data = download_image(url)
         try:
-            storage.from_("event-images").remove([key])
+            storage.from_(BUCKET_EVENT_IMAGES).remove([key])
         except Exception:
             pass
-        storage.from_("event-images").upload(
+        storage.from_(BUCKET_EVENT_IMAGES).upload(
             key, data, file_options={"content-type": "image/jpeg"}
         )
-        uploads.append(("event-images", key, _public_url(project_url, "event-images", key)))
+        uploads.append((BUCKET_EVENT_IMAGES, key, _public_url(project_url, BUCKET_EVENT_IMAGES, key)))
 
     # Avatars
     for i in range(1, AVATAR_COUNT + 1):
@@ -68,13 +69,13 @@ def main() -> None:
         url = f"https://picsum.photos/seed/wat2do-avatar-{i:03d}/400/400"
         data = download_image(url)
         try:
-            storage.from_("avatars").remove([key])
+            storage.from_(BUCKET_AVATARS).remove([key])
         except Exception:
             pass
-        storage.from_("avatars").upload(
+        storage.from_(BUCKET_AVATARS).upload(
             key, data, file_options={"content-type": "image/jpeg"}
         )
-        uploads.append(("avatars", key, _public_url(project_url, "avatars", key)))
+        uploads.append((BUCKET_AVATARS, key, _public_url(project_url, BUCKET_AVATARS, key)))
 
     # Club logos (simple square images)
     for i in range(1, LOGO_COUNT + 1):
@@ -82,13 +83,13 @@ def main() -> None:
         url = f"https://picsum.photos/seed/wat2do-logo-{i:03d}/200/200"
         data = download_image(url)
         try:
-            storage.from_("club-logos").remove([key])
+            storage.from_(BUCKET_CLUB_LOGOS).remove([key])
         except Exception:
             pass
-        storage.from_("club-logos").upload(
+        storage.from_(BUCKET_CLUB_LOGOS).upload(
             key, data, file_options={"content-type": "image/jpeg"}
         )
-        uploads.append(("club-logos", key, _public_url(project_url, "club-logos", key)))
+        uploads.append((BUCKET_CLUB_LOGOS, key, _public_url(project_url, BUCKET_CLUB_LOGOS, key)))
 
     # QR poster assets (reuse first N event images)
     for i in range(1, min(8, EVENT_IMAGE_COUNT) + 1):
@@ -96,13 +97,13 @@ def main() -> None:
         url = f"https://picsum.photos/seed/wat2do-poster-{i:03d}/800/1000"
         data = download_image(url)
         try:
-            storage.from_("qr-assets").remove([key])
+            storage.from_(BUCKET_QR_ASSETS).remove([key])
         except Exception:
             pass
-        storage.from_("qr-assets").upload(
+        storage.from_(BUCKET_QR_ASSETS).upload(
             key, data, file_options={"content-type": "image/jpeg"}
         )
-        uploads.append(("qr-assets", key, _public_url(project_url, "qr-assets", key)))
+        uploads.append((BUCKET_QR_ASSETS, key, _public_url(project_url, BUCKET_QR_ASSETS, key)))
 
     for bucket, key, public_url in uploads:
         print(f"  {bucket}/{key} -> {public_url[:70]}...")

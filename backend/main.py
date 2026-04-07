@@ -6,7 +6,7 @@ from core.error_handlers import register_error_handlers
 from routers import auth, users, events, clubs, uploads, qr
 from routers import (
     interactions, saved_events, recommendations, ab_test, ai,
-    credits, submissions, reports, scraped_events,
+    credits, submissions, reports, scraped_events, meta,
 )
 
 app = FastAPI(title="wat2do API")
@@ -35,6 +35,7 @@ app.include_router(credits.router)
 app.include_router(submissions.router)
 app.include_router(reports.router)
 app.include_router(scraped_events.router)
+app.include_router(meta.router)
 
 
 @app.get("/health")

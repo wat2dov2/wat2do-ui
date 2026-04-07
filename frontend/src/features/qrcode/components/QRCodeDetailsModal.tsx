@@ -50,11 +50,10 @@ function QRCodeDetailsModalContent() {
   });
 
   const qrUrl = generateQRCodeUrl(qrCode.id);
-  const apiBase = API_BASE_URL;
   const posterImageSrc = qrCode.imageUrl
     ? qrCode.imageUrl.startsWith("http") || qrCode.imageUrl.startsWith("data:")
       ? qrCode.imageUrl
-      : `${apiBase.replace(/\/$/, "")}${qrCode.imageUrl.startsWith("/") ? qrCode.imageUrl : `/${qrCode.imageUrl}`}`
+      : `${API_BASE_URL.replace(/\/$/, "")}${qrCode.imageUrl.startsWith("/") ? qrCode.imageUrl : `/${qrCode.imageUrl}`}`
     : undefined;
 
   const qrSize = 120;

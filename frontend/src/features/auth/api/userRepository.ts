@@ -5,17 +5,13 @@
  */
 
 import { StorageService } from "@/shared/services/storageService";
+import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import {
   getAccessToken,
   setAccessToken,
   clearAccessToken,
   hasAccessToken,
 } from "@/shared/services/apiClient";
-
-const STORAGE_KEYS = {
-  USER_EMAIL: "userEmail",
-  USER_PROFILE: "userProfile",
-} as const;
 
 export interface UserProfile {
   faculty: string;
