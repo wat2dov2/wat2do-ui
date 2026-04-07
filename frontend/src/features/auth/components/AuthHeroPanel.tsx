@@ -6,6 +6,7 @@ import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import type { Event } from "@/shared/types";
 import type { TFunction } from "i18next";
 import { getEventCategory } from "@/shared/utils/event";
+import { HERO_CARD_PLACEHOLDER_HEIGHT } from "@/features/auth/constants";
 
 function shuffle<T>(arr: T[]): T[] {
   const out = [...arr];
@@ -74,7 +75,7 @@ export function AuthHeroPanel() {
               <div
                 key={i}
                 className="rounded-xl overflow-hidden bg-muted/60 animate-pulse"
-                style={{ height: 220 }}
+                style={{ height: HERO_CARD_PLACEHOLDER_HEIGHT }}
               />
             ))}
           </div>

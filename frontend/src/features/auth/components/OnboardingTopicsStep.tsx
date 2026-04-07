@@ -6,6 +6,7 @@ import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LightRays } from "@/shared/ui/light-rays";
+import { PREVIEW_CARD_IMAGE_HEIGHT } from "@/features/auth/constants";
 
 interface OnboardingTopicsStepProps {
   selectedTopics: string[];
@@ -40,7 +41,7 @@ export function OnboardingTopicsStep({
               )}
             >
               {/* Image */}
-              <div className="relative overflow-hidden" style={{ height: 140 }}>
+              <div className="relative overflow-hidden" style={{ height: PREVIEW_CARD_IMAGE_HEIGHT }}>
                 <LazyImage
                   src={card.image}
                   alt={card.title}

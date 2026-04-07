@@ -23,6 +23,7 @@ import { MultiSelect } from "@/shared/ui/multi-select";
 import { useProfile } from "@/features/settings/hooks/useProfile";
 import { availableSchools } from "@/shared/constants/schools";
 import { availableInterests } from "@/shared/data/interests";
+import { toFacultyKey } from "@/shared/utils/string";
 
 const availableFaculties = [
   "Engineering",
@@ -138,7 +139,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
               </SelectTrigger>
               <SelectContent>
                 {availableFaculties.map((faculty) => {
-                  const facultyKey = faculty.toLowerCase().replace(/\s+/g, "");
+                  const facultyKey = toFacultyKey(faculty);
                   const translationKey = `onboarding.faculties.${
                     facultyKey === "appliedhealthsciences"
                       ? "appliedHealthSciences"

@@ -10,6 +10,7 @@ import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LightRays } from "@/shared/ui/light-rays";
+import { PREVIEW_CARD_IMAGE_HEIGHT } from "@/features/auth/constants";
 
 export interface PreviewEventData {
   title: string;
@@ -61,7 +62,7 @@ export function PreviewStyleEventCard({
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl"
       )}
     >
-      <div className="relative overflow-hidden" style={{ height: 140 }}>
+      <div className="relative overflow-hidden" style={{ height: PREVIEW_CARD_IMAGE_HEIGHT }}>
         <LazyImage
           src={event.image}
           alt={event.title}

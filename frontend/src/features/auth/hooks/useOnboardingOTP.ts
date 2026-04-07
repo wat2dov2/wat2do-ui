@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { OTP_LENGTH } from "@/features/auth/constants";
 
 interface UseOnboardingOTPOptions {
   onComplete: () => void;
@@ -13,7 +14,7 @@ export function useOnboardingOTP({ onComplete }: UseOnboardingOTPOptions) {
   const [showOtpInput, setShowOtpInput] = useState(false);
 
   const handleOtpComplete = useCallback((value: string) => {
-    if (value.length === 6) {
+    if (value.length === OTP_LENGTH) {
       setIsVerifying(true);
       setTimeout(() => {
         setIsVerifying(false);

@@ -39,6 +39,7 @@ import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { useCreateQRCodeForm } from "@/features/qrcode/hooks/useCreateQRCodeForm";
 import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/shared/utils/qrGenerator";
+import { QR_CANVAS_SIZE } from "@/features/qrcode/constants";
 import { createPosterToBackend } from "@/features/qrcode/api/qrcode.api";
 import {
   CreateQRCodeModalProvider,
@@ -115,10 +116,10 @@ function CreateQRCodeModalContent() {
 
     const img = new Image();
     img.onload = () => {
-      canvas.width = 512;
-      canvas.height = 512;
+      canvas.width = QR_CANVAS_SIZE;
+      canvas.height = QR_CANVAS_SIZE;
       ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, 512, 512);
+      ctx.fillRect(0, 0, QR_CANVAS_SIZE, QR_CANVAS_SIZE);
       ctx.drawImage(img, 0, 0);
       const dataUrl = canvas.toDataURL("image/png");
       downloadQRCodeAsPNG(dataUrl, form.state.name.trim() || t("qrCode.defaultFileName"));

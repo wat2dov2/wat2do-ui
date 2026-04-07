@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { COUNTER_ANIMATION_DURATION_MS } from "@/shared/constants/ui";
 
 interface EventCountProps {
   count: number;
@@ -17,7 +18,7 @@ export function EventCount({ count }: EventCountProps) {
 
     const start = previous.current;
     const end = count;
-    const duration = 450; // ms
+    const duration = COUNTER_ANIMATION_DURATION_MS;
     const startTime = performance.now();
 
     const tick = (now: number) => {

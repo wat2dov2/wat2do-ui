@@ -1,22 +1,19 @@
 import { test, expect } from "@playwright/test";
+import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
 const BASE = "http://localhost:5173";
 const API = "http://localhost:8000";
 
-/**
- * Key values must match STORAGE_KEYS in src/shared/constants/storageKeys.ts.
- * We can't import TS modules into Playwright's addInitScript (runs in the
- * browser before bundles are loaded), so we duplicate the string values here.
- */
-const STORAGE_KEY_USER_EMAIL = "userEmail";
+/** Shared test identity used across auth-seeded tests. */
+const TEST_EMAIL = "test@uwaterloo.ca";
 
 async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
   // Access token is in-memory (apiClient.ts), refresh token is httpOnly cookie —
   // neither lives in localStorage. We only seed the email hint so
   // isAuthenticated() sees a prior session indicator.
-  await page.addInitScript((emailKey) => {
-    window.localStorage.setItem(emailKey, JSON.stringify("test@uwaterloo.ca"));
-  }, STORAGE_KEY_USER_EMAIL);
+  await page.addInitScript(({ key, email }) => {
+    window.localStorage.setItem(key, JSON.stringify(email));
+  }, { key: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL });
 }
 
 async function seedQrData(
@@ -33,7 +30,7 @@ async function seedQrData(
       destinationId: "https://example.com",
       filters: null,
       createdAt: now,
-      createdBy: "test@uwaterloo.ca",
+      createdBy: TEST_EMAIL,
       isActive: true,
       imageUrl: undefined,
       latitude: 43.4723,
@@ -103,7 +100,7 @@ test.describe("Auth Page", () => {
 
     await expect(submit).toBeDisabled();
 
-    await page.locator('input[type="email"]').fill("test@uwaterloo.ca");
+    await page.locator('input[type="email"]').fill(TEST_EMAIL);
     await expect(submit).toBeDisabled();
 
     await page.locator('input[type="password"]').fill("short");

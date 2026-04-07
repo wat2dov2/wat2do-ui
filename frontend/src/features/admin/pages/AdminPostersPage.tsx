@@ -34,6 +34,8 @@ import { useAdminPostersPagination } from "@/features/admin/hooks/useAdminPoster
 import { useAdminPostersPage } from "@/features/admin/hooks/useAdminPostersPage";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 import type { QRCode } from "@/shared/types";
+import { ADMIN_POSTERS_PER_PAGE } from "@/shared/constants/pagination";
+import { ADMIN_MAP_HEIGHT } from "@/features/admin/constants";
 
 // Lazy load Mapbox map component - it's heavy and only needed when visible
 const QRScanMap = lazy(() => import("@/features/qrcode/components/QRScanMap").then(module => ({ default: module.QRScanMap })));
@@ -66,7 +68,7 @@ export function AdminPostersPage() {
     backendScans,
   });
   const pagination = useAdminPostersPagination({
-    itemsPerPage: 10,
+    itemsPerPage: ADMIN_POSTERS_PER_PAGE,
     scansPerPage: SCANS_PER_PAGE,
     filteredQRCodes: filters.filteredQRCodes,
     scansMatchingPosterSearch: filters.scansMatchingPosterSearch,
@@ -134,7 +136,7 @@ export function AdminPostersPage() {
                 fallback={
                   <div
                     className="w-full rounded-lg border border-border bg-muted flex items-center justify-center"
-                    style={{ height: "600px" }}
+                    style={{ height: ADMIN_MAP_HEIGHT }}
                   >
                     <div className="flex items-center justify-center gap-2 p-8">
                       <Spinner className="size-4" />
@@ -146,7 +148,7 @@ export function AdminPostersPage() {
                 <QRScanMap
                   scans={filters.scansMatchingPosterSearch}
                   posters={filters.qrCodes}
-                  height="600px"
+                  height={ADMIN_MAP_HEIGHT}
                   onMarkerClick={(qrCodeId) => {
                     const qrCode = filters.qrCodes.find(qr => qr.id === qrCodeId);
                     if (qrCode) {
@@ -158,7 +160,7 @@ export function AdminPostersPage() {
             ) : (
               <div
                 className="w-full rounded-lg border border-border bg-muted flex items-center justify-center"
-                style={{ height: "600px" }}
+                style={{ height: ADMIN_MAP_HEIGHT }}
               >
                 <div className="text-center p-8">
                   <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />

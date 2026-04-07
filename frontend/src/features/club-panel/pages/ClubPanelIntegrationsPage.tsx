@@ -26,6 +26,7 @@ import { Field, FieldGroup, FieldLabel } from "@/shared/ui/field";
 import type { Club } from "@/shared/types";
 import { DiscordIcon, InstagramIcon, SlackIcon, TelegramIcon, LinkedInIcon, FacebookIcon } from "@/shared/ui/platform-icons";
 import { ApiError } from "@/shared/services/apiClient";
+import { WHATSAPP_BOT_URL } from "@/shared/constants/externalUrls";
 import { getAllClubs } from "@/features/clubs";
 import {
   connectPlatformIntegration,
@@ -1137,7 +1138,7 @@ export function ClubPanelIntegrationsPage() {
               <div className="flex flex-col items-center py-4">
                 <div className="p-4 bg-background rounded-lg border border-border mb-4">
                   <QRCodeSVG
-                    value="https://wa.me/message/wat2do-bot-placeholder"
+                    value={WHATSAPP_BOT_URL}
                     size={160}
                     level="M"
                   />
@@ -1147,7 +1148,7 @@ export function ClubPanelIntegrationsPage() {
                 </p>
                 <Button variant="outline" className="w-full" asChild>
                   <a
-                    href="https://wa.me/message/wat2do-bot-placeholder"
+                    href={WHATSAPP_BOT_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { COUNTER_ANIMATION_DURATION_MS } from "@/shared/constants/ui";
 import { Search } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { ClubCard } from "@/features/clubs/components/ClubCard";
@@ -42,7 +43,7 @@ export function ClubsPage() {
     const end = filteredClubs.length;
     if (start === end) return;
 
-    const duration = 450;
+    const duration = COUNTER_ANIMATION_DURATION_MS;
     const startTime = performance.now();
 
     const tick = (now: number) => {

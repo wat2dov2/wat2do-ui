@@ -35,7 +35,11 @@ import { MultiSelect } from "@/shared/ui/multi-select";
 import { availableInterests } from "@/shared/data/interests";
 import { updateUserProfile } from "@/features/auth/api/auth.api";
 import { availableSchools } from "@/shared/constants/schools";
+import { GOOSE_IMAGE_URL } from "@/shared/constants/images";
+import { GoogleLogo } from "@/shared/ui/google-logo";
 import { translateInterest } from "@/shared/utils/translateInterest";
+import { toFacultyKey, sanitizeEmailUsername } from "@/shared/utils/string";
+import { OTP_LENGTH } from "@/features/auth/constants";
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -54,9 +58,6 @@ const availableFaculties = [
   "Health",
   "Applied Health Sciences",
 ];
-
-const GOOSE_IMAGE_URL =
-  "https://lh3.googleusercontent.com/rd-gg-dl/ABS2GSnULbbntBOQGWx17qUnha4hcyKXW4asH7zxR0zV3dANdBEYPEagYhHMszDOKX9O5kdpGZzZIFkeec9LyOLiy1zV2IvIbdipr-2UrDPSBEmaOUGefddFgFNJWzaLGire29cPMIU0ypmBaj88c5EJ8EJyZt6fv3xo0Y-LV-R7d96pf6Ig6GCvFgAkIpFOZqGQ0z6wpSfun0c8OZi-4oQJziK2vs3gVWP7UN_aeImAe_lWlxpy47iTUzRShknBpGNPtDEMk9x3RZdzYuU21tbT4lQZHL2pdA6oAwppje-Id8aceQu0b4Legme-nb60_-0oQJHJ0bWVgfu3lMwQ_tZjGQBFF8UNt92y17hbrE92eIyFLnxxHGVR43X9aeIukNwVlx-zIZXzWSkv2Xe0CGkViJ2MmCOHEWwAQoaIDi86f7uMn97bg-i7_7cO4cR5snB574v-s94b3KSg-XoqNUxiAkZgRqITK9Rx8YaRxZMuqfRb0nBjaA1iWhP8ln24wKfrugS5X8dJFpExxq-wQhh7zvjFcbVjdI-G9dUaBtji5UjCJUu5Y_HYMu9BfNTvAMAC6KRimkLHoue_biInFKWdwpr77m6t48XH3Psohdg11Jx-d5zaTjASWfUgm_pSqDADN0EJnRqkVZiDCJgmk1zWpkdmWbpq_iFfTQE7kLv5xKEQw9QIGlfBISP98XHpcK_A4JyTd20pKASFWjfGD1zK6S3HfznvUW3qqpbjdE15rDZa0qsGqaImOVLjIAXEehfcl-o-w6EWMXcpPS283P3S3mkh7J7X2J0bL3hE3z6kPt81SHPuZzifLqQmR237Q9DjtsUoLZpHY-u_um2-JpdGbygK6m5geh_c4Gxm-4FQ75ksSSh12c0gGI9n6Wtbt0dclDyno-RgNzEinsI1bt_5UYQyvsxtGo98BEWwYzfc70_2JGyElBxCVuM_SU2Jva19sKtekc1SoDAQgOixWsmchfnna83xk64CQ-TGm_AgB97ZjxqbpDlRYAL-CNa7bzGecRhhoZVOb840TJ-62vulNL2CPFG0fG5e2uaNGMo6q6WAa20K6fmY4_fPYBOTm3DGryIPPWMAatdv3Pp6BhjZJuWsLkxInyyy_ixin38D53OXfzg9ZCEqIJRudGCgF-VrtwW1V4SeP3PMch0dAzCqL4NUe2p29STX1Xeh-Ypvzs0kjqSNQaRPq9g=s1024-rj";
 
 export function OnboardingModal({
   isOpen,
@@ -202,24 +203,7 @@ export function OnboardingModal({
                     }}
                     className="w-full h-11 flex items-center justify-center gap-3 rounded-md border border-border transition-colors hover:bg-secondary mb-4"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
+                    <GoogleLogo />
                     <span className="font-medium text-sm text-foreground">
                       {t("modals.signIn.continueWithGoogle")}
                     </span>
@@ -242,7 +226,7 @@ export function OnboardingModal({
                         id="email-username"
                         type="text"
                         value={form.emailUsername}
-                        onChange={(e) => form.setEmailUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))}
+                        onChange={(e) => form.setEmailUsername(sanitizeEmailUsername(e.target.value))}
                         placeholder={t("modals.signIn.username")}
                         className="flex-1 h-10 text-sm rounded-l-md rounded-r-none border-r-0"
                       />
@@ -285,11 +269,11 @@ export function OnboardingModal({
 
                   <div className="flex justify-center mb-6">
                     <InputOTP
-                      maxLength={6}
+                      maxLength={OTP_LENGTH}
                       value={otp.otpValue}
                       onChange={(value) => {
                         otp.setOtpValue(value);
-                        if (value.length === 6) {
+                        if (value.length === OTP_LENGTH) {
                           otp.handleOtpComplete(value);
                         }
                       }}
@@ -358,7 +342,7 @@ export function OnboardingModal({
                     </SelectTrigger>
                     <SelectContent>
                       {availableFaculties.map((faculty) => {
-                        const facultyKey = faculty.toLowerCase().replace(/\s+/g, '');
+                        const facultyKey = toFacultyKey(faculty);
                         const translationKey = `onboarding.faculties.${facultyKey === 'appliedhealthsciences' ? 'appliedHealthSciences' : facultyKey}`;
                         return (
                           <SelectItem key={faculty} value={faculty}>

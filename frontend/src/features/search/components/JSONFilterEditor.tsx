@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
+import { JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
 
 // Lazy load Monaco Editor (3.6MB) - only needed for JSON filter view
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -41,7 +42,7 @@ export function JSONFilterEditor({
             theme={isDarkMode ? "vs-dark" : "vs-light"}
             options={{
               minimap: { enabled: false },
-              fontSize: 12,
+              fontSize: JSON_EDITOR_FONT_SIZE,
               lineNumbers: "off",
               scrollBeyondLastLine: false,
               wordWrap: "on",

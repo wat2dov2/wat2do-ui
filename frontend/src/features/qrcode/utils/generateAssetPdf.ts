@@ -6,6 +6,7 @@
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
+import { stripTrailingSlash } from "@/shared/utils/string";
 
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
@@ -111,7 +112,7 @@ export async function generateAssetPdf(
   for (let i = 0; i < posterIds.length; i++) {
     if (i > 0) doc.addPage();
     const url = baseUrl
-      ? `${baseUrl.replace(/\/$/, "")}/qr/${posterIds[i]}`
+      ? `${stripTrailingSlash(baseUrl)}/qr/${posterIds[i]}`
       : generateQRCodeUrl(posterIds[i]);
     const qrData = await qrDataUrl(url);
 

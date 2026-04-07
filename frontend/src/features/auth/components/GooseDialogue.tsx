@@ -1,5 +1,6 @@
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { GOOSE_IMAGE_PATH } from "@/shared/constants/images";
 import { useTypewriter } from "@/shared/hooks/useTypewriter";
 
 interface GooseDialogueProps {
@@ -25,7 +26,7 @@ export function GooseDialogue({
     <div className="w-full max-w-2xl mx-auto">
       <div className="flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
         <img
-          src="/images/mr-goose.png"
+          src={GOOSE_IMAGE_PATH}
           alt="Mr. Goose"
           className="w-16 h-16 object-contain shrink-0 -mt-1"
         />

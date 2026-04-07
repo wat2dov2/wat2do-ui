@@ -7,6 +7,7 @@ import { Field, FieldGroup, FieldLabel } from "@/shared/ui/field";
 import { Button } from "@/shared/ui/button";
 import { OnboardingStepWrapper } from "@/features/auth/components/OnboardingStepWrapper";
 import { useTranslation } from "react-i18next";
+import { toFacultyKey } from "@/shared/utils/string";
 
 const availableFaculties = [
   "Engineering",
@@ -56,7 +57,7 @@ export function OnboardingProfileStep({
             </SelectTrigger>
             <SelectContent>
               {availableFaculties.map((faculty) => {
-                const facultyKey = faculty.toLowerCase().replace(/\s+/g, "");
+                const facultyKey = toFacultyKey(faculty);
                 const translationKey = `onboarding.faculties.${
                   facultyKey === "appliedhealthsciences" ? "appliedHealthSciences" : facultyKey
                 }`;

@@ -1,19 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useAuthFlowStore } from "@/features/auth/store/authFlow.store";
 import { loginAPI, signupAPI, login as saveEmailLocally, ApiError } from "@/features/auth/api/auth.api";
+import { DOMAIN_TO_SCHOOL } from "@/shared/constants/schools";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const DOMAIN_TO_SCHOOL: Record<string, string> = {
-  "uwaterloo.ca": "University of Waterloo",
-  "utoronto.ca": "University of Toronto",
-  "mail.utoronto.ca": "University of Toronto",
-  "mcgill.ca": "McGill University",
-  "mail.mcgill.ca": "McGill University",
-  "ubc.ca": "University of British Columbia",
-  "student.ubc.ca": "University of British Columbia",
-  "mcmaster.ca": "McMaster University",
-};
 
 function schoolFromEmail(email: string): string {
   const domain = email.trim().split("@")[1]?.toLowerCase() ?? "";

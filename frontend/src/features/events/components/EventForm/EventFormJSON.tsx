@@ -9,6 +9,7 @@ import {
 import { AIGenerationInput } from "@/features/search";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
+import { JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
 
 // Lazy load Monaco Editor
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -68,7 +69,7 @@ export function EventFormJSON() {
               theme={isDarkMode ? "vs-dark" : "vs-light"}
               options={{
                 minimap: { enabled: false },
-                fontSize: 12,
+                fontSize: JSON_EDITOR_FONT_SIZE,
                 lineNumbers: "off",
                 scrollBeyondLastLine: false,
                 wordWrap: "on",

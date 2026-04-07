@@ -35,6 +35,7 @@ import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import type { Event } from "@/shared/types";
+import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 interface EventCardProps {
   event: Event;
@@ -132,7 +133,7 @@ export const EventCard = React.memo(function EventCard({
         }`}
       >
         {/* Event Image */}
-        <div className="relative overflow-hidden" style={{ height: "176px" }}>
+        <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
           {/* Background - lazy loaded image with fallback */}
           <LazyImage
             src={event.imageUrl || event.source_image_url}

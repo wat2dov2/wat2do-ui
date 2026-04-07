@@ -33,3 +33,4 @@ export * from "./sidebar-button";
 export * from "./lazy-image";
 export * from "./modal-components";
 export * from "./credit-package-card";
+export * from "./google-logo";

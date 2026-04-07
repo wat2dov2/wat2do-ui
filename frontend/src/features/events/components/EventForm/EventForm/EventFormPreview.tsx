@@ -7,6 +7,7 @@ import { LightRays } from "@/shared/ui/light-rays";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
+import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export function EventFormPreview() {
   const { t, i18n } = useTranslation();
@@ -99,7 +100,7 @@ export function EventFormPreview() {
         className="rounded-xl overflow-hidden flex flex-col bg-card"
       >
         {/* Event Image */}
-        <div className="relative overflow-hidden" style={{ height: "176px" }}>
+        <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
           {/* Background - using LazyImage with fallback */}
           <LazyImage
             src=""

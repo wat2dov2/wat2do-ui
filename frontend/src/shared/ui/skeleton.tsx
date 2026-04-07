@@ -1,4 +1,5 @@
 import { cn } from "@/shared/lib/utils";
+import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
@@ -17,7 +18,7 @@ export function EventCardSkeleton() {
   return (
     <div className="rounded-xl overflow-hidden bg-card border border-border flex flex-col h-full">
       {/* Image skeleton */}
-      <Skeleton className="h-[176px] w-full" />
+      <Skeleton className="w-full" style={{ height: EVENT_CARD_IMAGE_HEIGHT }} />
       
       {/* Content skeleton */}
       <div className="flex flex-col flex-1 p-4 space-y-3">
