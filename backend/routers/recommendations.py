@@ -16,7 +16,7 @@ router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 @router.get("/", response_model=list[RecommendationItem])
 def get_recommendations(
-    limit: int = Query(default=DEFAULT_LIMIT, le=MAX_LIMIT),
+    limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     auth_user: dict | None = Depends(get_optional_user),
 ):
     """Get event recommendations. Personalized if logged in, popular otherwise."""

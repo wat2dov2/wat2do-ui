@@ -35,9 +35,12 @@ def list_users(skip: int = 0, limit: int = DEFAULT_LIST_LIMIT) -> list[UserRespo
 
 
 def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
-    if get_user(user_id) is None:
+    existing = get_user(user_id)
+    if existing is None:
         return None
     payload = data.model_dump(exclude_unset=True)
+    if not payload:
+        return existing
     r = get_sb().table(USERS).update(payload).eq("id", str(user_id)).execute()
     return UserResponse.model_validate(r.data[0]) if r.data else None
 

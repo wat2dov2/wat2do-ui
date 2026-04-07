@@ -53,8 +53,8 @@ def update_profile(
 
 @router.get("/", response_model=list[UserResponse])
 def list_users(
-    skip: int = 0,
-    limit: int = Query(default=DEFAULT_LIST_LIMIT, le=MAX_LIST_LIMIT),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
     _=Depends(get_admin_user),
 ):
     return user_service.list_users(skip=skip, limit=limit)

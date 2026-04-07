@@ -21,8 +21,8 @@ router = APIRouter(prefix="/clubs", tags=["clubs"])
 
 @router.get("/", response_model=list[ClubResponse])
 def list_clubs(
-    skip: int = 0,
-    limit: int = Query(default=DEFAULT_LIST_LIMIT, le=MAX_LIST_LIMIT),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
     club_type: str | None = None,
     search: str | None = None,
 ):

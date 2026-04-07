@@ -53,9 +53,12 @@ def create_club(data: ClubCreate, *, created_by: str) -> ClubResponse:
 
 
 def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
-    if get_club(club_id) is None:
+    existing = get_club(club_id)
+    if existing is None:
         return None
     payload = data.model_dump(exclude_unset=True)
+    if not payload:
+        return existing
     r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
     return ClubResponse.model_validate(r.data[0]) if r.data else None
 
@@ -232,13 +235,22 @@ def _empty_integration_response(club_id: int, platform: IntegrationPlatform) -> 
     )
 
 
+_KNOWN_METADATA_KEYS = frozenset({
+    "server_id", "workspace_id", "server_name", "workspace_name",
+    "channel_id", "channel_name", "handle", "group_id", "group_name",
+    "page_id", "page_name", "connection_type",
+})
+
+
 def _metadata_to_columns(platform: IntegrationPlatform, metadata: dict[str, str] | None) -> dict:
     """Extract well-known metadata keys into typed column values.
 
     Slack sends workspace_id/workspace_name which map to the same
-    server_id/server_name columns used by Discord.
+    server_id/server_name columns used by Discord.  Unrecognized keys
+    are stored in the ``extra`` JSONB column.
     """
     m = metadata or {}
+    extra = {k: v for k, v in m.items() if k not in _KNOWN_METADATA_KEYS}
     return {
         "server_id": m.get("server_id") or m.get("workspace_id"),
         "server_name": m.get("server_name") or m.get("workspace_name"),
@@ -250,6 +262,7 @@ def _metadata_to_columns(platform: IntegrationPlatform, metadata: dict[str, str]
         "page_id": m.get("page_id"),
         "page_name": m.get("page_name"),
         "connection_type": m.get("connection_type"),
+        "extra": extra,
     }
 
 

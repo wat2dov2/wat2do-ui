@@ -1,5 +1,6 @@
 """QR codes and scans via Supabase. Sync."""
 
+import uuid
 from datetime import datetime
 
 from core.database import get_sb
@@ -57,9 +58,11 @@ def activate_poster_and_record_scan(
         "is_active": True,
     }).eq("id", qr_code_id).execute()
     sb.table(QR_CODE_SCANS).insert({
+        "id": str(uuid.uuid4()),
         "qr_code_id": qr_code_id,
         "session_id": session_id,
         "user_agent": user_agent,
+        "conversion_actions": [],
     }).execute()
     qr = get_qr_code_by_id(qr_code_id)
     dest_id = qr.destination_id
@@ -83,10 +86,12 @@ def record_scan(
     user_agent: str | None = None,
 ) -> QrCodeScanResponse:
     r = get_sb().table(QR_CODE_SCANS).insert({
+        "id": str(uuid.uuid4()),
         "qr_code_id": qr_code_id,
         "user_id": user_id,
         "session_id": session_id,
         "user_agent": user_agent,
+        "conversion_actions": [],
     }).execute()
     return QrCodeScanResponse.model_validate(r.data[0])
 

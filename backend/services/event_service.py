@@ -58,7 +58,7 @@ def list_events(
     if to_date:
         q = q.lte("dtstart_utc", to_date.isoformat())
     if has_food is True:
-        q = q.not_.is_("food", "null")
+        q = q.not_.is_("food", "null").neq("food", "[]")
     if max_price is not None:
         q = q.or_(f"price.is.null,price.lte.{max_price}")
     if registration is not None:
@@ -69,16 +69,19 @@ def list_events(
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
-    payload = data.model_dump()
+    payload = data.model_dump(mode="json")
     payload["created_by"] = created_by
     r = get_sb().table(EVENTS).insert(payload).execute()
     return EventResponse.model_validate(r.data[0])
 
 
 def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
-    if get_event(event_id) is None:
+    existing = get_event(event_id)
+    if existing is None:
         return None
-    payload = data.model_dump(exclude_unset=True)
+    payload = data.model_dump(mode="json", exclude_unset=True)
+    if not payload:
+        return existing
     r = get_sb().table(EVENTS).update(payload).eq("id", event_id).execute()
     return EventResponse.model_validate(r.data[0]) if r.data else None
 

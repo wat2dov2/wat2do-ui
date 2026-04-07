@@ -19,8 +19,8 @@ def get_latest_added():
 
 @router.get("/", response_model=list[EventResponse])
 def list_events(
-    skip: int = 0,
-    limit: int = Query(default=DEFAULT_LIST_LIMIT, le=MAX_LIST_LIMIT),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
     category: str | None = None,
     club_type: str | None = None,
     school: str | None = None,

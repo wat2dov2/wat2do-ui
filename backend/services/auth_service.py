@@ -8,11 +8,12 @@ from supabase_auth.errors import AuthApiError
 
 from core.allowed_emails import get_school_for_email, is_email_allowed
 from core.constants import PG_UNIQUE_VIOLATION
-from core.database import supabase, get_sb
+from core.database import supabase, supabase_admin, get_sb
 from core.errors import (
     EMAIL_NOT_ALLOWED,
     EMAIL_OR_USERNAME_TAKEN,
     INVALID_EMAIL_OR_PASSWORD,
+    INVALID_OR_EXPIRED_TOKEN,
     SESSION_REFRESH_FAILED,
     SIGNUP_FAILED,
 )
@@ -149,7 +150,7 @@ class AuthService:
 
     def logout(self, access_token: str) -> None:
         try:
-            self._auth.sign_out()
+            supabase_admin.auth.admin.sign_out(access_token)
         except AuthApiError as e:
             logger.warning("Logout error: %s", e.message)
             raise HTTPException(
@@ -166,12 +167,29 @@ class AuthService:
             )
 
     def reset_password(self, data: ResetPasswordRequest) -> None:
+        # Verify the access token and extract the user it belongs to
         try:
-            self._auth.update_user(
-                {"password": data.new_password},
+            res = supabase.auth.get_user(data.access_token)
+        except Exception as e:
+            logger.warning("Password reset token validation failed: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=INVALID_OR_EXPIRED_TOKEN,
+            )
+
+        if not res or not res.user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=INVALID_OR_EXPIRED_TOKEN,
+            )
+
+        # Use the admin client to update the specific user's password
+        try:
+            supabase_admin.auth.admin.update_user_by_id(
+                res.user.id, {"password": data.new_password}
             )
         except AuthApiError as e:
-            logger.warning("Password reset failed: %s", e.message)
+            logger.warning("Password reset failed for user %s: %s", res.user.id, e.message)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=e.message
             )
