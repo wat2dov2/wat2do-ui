@@ -1,13 +1,12 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useEvents } from "@/features/events/hooks/useEvents";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
-import { usePromotions } from "@/features/credits";
-import { useSavedEvents } from "@/features/events/hooks/useSavedEvents";
 import { filterEvents } from "@/features/search";
 import { EventList } from "@/features/events/components/EventList";
 import { EventsProvider } from "@/features/events/context/EventsContext";
-import { getDayOfWeek } from "@/shared/utils/date";
+import { useEventsStore } from "@/features/events/store/events.store";
+import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { usePromotionsStore } from "@/features/credits/store/promotions.store";
 import type { Event } from "@/shared/types";
 
 interface EventsPageProps {
@@ -35,13 +34,9 @@ export function EventsPage({
 }: EventsPageProps) {
   const { t } = useTranslation();
 
-  // Get day of week helper
-  const getDayOfWeekHelper = (date: string) => getDayOfWeek(date, t);
-
-  // Use custom hooks for state management
-  const { events, deleteEvent } = useEvents({
-    getDayOfWeek: getDayOfWeekHelper,
-  });
+  // Read from stores (single source of truth)
+  const events = useEventsStore((s) => s.events);
+  const deleteEvent = useEventsStore((s) => s.deleteEvent);
 
   const {
     searchQuery,
@@ -61,9 +56,9 @@ export function EventsPage({
     clearAllFilters,
   } = useFilterState(profileCompleted);
 
-  const { activePromotedEventIds } = usePromotions();
-
-  const { savedEventIds, toggleSaveEvent } = useSavedEvents();
+  const activePromotedEventIds = usePromotionsStore((s) => s.activePromotedEventIds);
+  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
 
   // Apply filters using service
   const filteredEvents = useMemo(() => {

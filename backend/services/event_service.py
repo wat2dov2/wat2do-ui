@@ -3,10 +3,10 @@
 from datetime import datetime
 
 from core.database import get_sb
-from schemas.event import EventCreate, EventUpdate
+from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
 
 
-def get_latest_added_event() -> dict | None:
+def get_latest_added_event() -> LatestEventResponse | None:
     """Return the most recently added event (by added_at desc), or None if no events."""
     r = (
         get_sb()
@@ -18,14 +18,14 @@ def get_latest_added_event() -> dict | None:
     )
     if not r.data or len(r.data) == 0:
         return None
-    return r.data[0]
+    return LatestEventResponse.model_validate(r.data[0])
 
 
-def get_event(event_id: int) -> dict | None:
+def get_event(event_id: int) -> EventResponse | None:
     r = get_sb().table("events").select("*").eq("id", event_id).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return r.data[0]
+    return EventResponse.model_validate(r.data[0])
 
 
 def list_events(
@@ -40,7 +40,7 @@ def list_events(
     has_food: bool | None = None,
     max_price: float | None = None,
     registration: bool | None = None,
-) -> list[dict]:
+) -> list[EventResponse]:
     q = get_sb().table("events").select("*")
     if category:
         q = q.eq("category", category)
@@ -63,21 +63,21 @@ def list_events(
         q = q.eq("registration", registration)
     q = q.order("dtstart_utc", desc=True).range(skip, skip + limit - 1)
     r = q.execute()
-    return r.data or []
+    return [EventResponse.model_validate(e) for e in (r.data or [])]
 
 
-def create_event(data: EventCreate) -> dict:
+def create_event(data: EventCreate) -> EventResponse:
     payload = data.model_dump()
     r = get_sb().table("events").insert(payload).execute()
-    return r.data[0]
+    return EventResponse.model_validate(r.data[0])
 
 
-def update_event(event_id: int, data: EventUpdate) -> dict | None:
+def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
     if get_event(event_id) is None:
         return None
     payload = data.model_dump(exclude_unset=True)
     r = get_sb().table("events").update(payload).eq("id", event_id).execute()
-    return r.data[0] if r.data else None
+    return EventResponse.model_validate(r.data[0]) if r.data else None
 
 
 def delete_event(event_id: int) -> bool:

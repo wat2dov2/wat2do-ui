@@ -26,8 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import { QRCodeDetailsModal, useBackendScans, useBackendPosters } from "@/features/qrcode";
-import { GenerateQRAssetsWizard } from "@/features/qrcode/components/GenerateQRAssetsWizard";
+import { QRCodeDetailsModal, useBackendScans, useBackendPosters, GenerateQRAssetsWizard } from "@/features/qrcode";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { useAdminContext } from "@/features/admin/context/AdminContext";
 import { useAdminPostersFilters } from "@/features/admin/hooks/useAdminPostersFilters";

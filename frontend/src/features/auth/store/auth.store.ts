@@ -1,7 +1,8 @@
 /**
  * Auth Store
  * State management for authentication
- * Syncs with localStorage and backend tokens
+ * Auth initialization happens in main.tsx before React renders,
+ * so tokens are already in memory by the time this mounts.
  */
 
 import { useState, useEffect, useCallback } from "react";

@@ -4,7 +4,8 @@ import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "luci
 import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
-import { availableCategories, availableDays, availableFoods } from "@/features/events/data/events";
+import { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";
+import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 

@@ -23,6 +23,7 @@ export { EventList } from "./components/EventList";
 export { EventDetailsModal } from "./components/EventDetailsModal";
 export { EventCount } from "./components/EventCount";
 export { SubmitEventModal } from "./components/SubmitEventModal";
+export { SidebarEventsSection } from "./components/SidebarEventsSection";
 
 // Hooks
 export { useAppEvents } from "./hooks/useAppEvents";

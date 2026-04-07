@@ -35,22 +35,18 @@ export function useClubsPage() {
     loadData();
   }, []);
 
-  // Filter clubs using API
+  // Filter clubs
   useEffect(() => {
     if (isLoading) {
       setFilteredClubs([]);
       return;
     }
 
-    async function applyFilters() {
-      const filtered = await filterClubs(clubs, {
-        searchQuery,
-        categories: selectedCategories,
-      });
-      setFilteredClubs(filtered);
-    }
-
-    applyFilters();
+    const filtered = filterClubs(clubs, {
+      searchQuery,
+      categories: selectedCategories,
+    });
+    setFilteredClubs(filtered);
   }, [clubs, searchQuery, selectedCategories, isLoading]);
 
   const toggleCategory = (category: string) => {

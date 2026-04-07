@@ -67,7 +67,7 @@ export function OnboardingPage() {
 
       // Persist to backend in background (fire-and-forget)
       import("@/features/auth/api/auth.api").then(({ updateProfileAPI }) =>
-        updateProfileAPI(profile).catch(() => {})
+        updateProfileAPI(profile).catch((err) => console.error("Failed to persist onboarding profile:", err))
       );
     },
     [navigate, setProfileCompleted, setUserEmail]

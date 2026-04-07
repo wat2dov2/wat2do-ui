@@ -1,0 +1,15 @@
+---
+description: Blunt rules for React component structure and patterns.
+globs: src/**/*.tsx
+alwaysApply: false
+---
+
+# React Components
+
+- Components must be functional components in PascalCase (`EventCard`, `SubmitEventModal`) – no class components, ever.
+- Put feature UI under its feature, e.g. `src/features/events/components/EventCard.tsx`, not in random top-level `src/components` unless you are explicitly working on legacy cleanup.
+- Local UI state lives in `useState` or `useReducer` inside the component; do not sneak stateful singletons or module-level mutable variables into components.
+- When a component’s logic is reusable or clearly not UI-specific, extract it into a `useXxx` hook in a `hooks/` folder instead of bloating the component (see patterns in `src/features/events/hooks`).
+- For list items or heavier, frequently-rendered components, wrap in `React.memo` when props are stable (see `EventCard` and sidebar button components).
+- Co-locate modal-related pieces: if you add a complex modal, follow the `SubmitEventModal` pattern with `[Name]Modal.tsx` plus optional `[Name]Modal.context.tsx` and `[Name]Modal.reducer.ts` right next to it.
+- Do not mix default and named exports for the same component unless there is a strong reason; prefer a single, clear export style per file.

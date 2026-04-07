@@ -6,14 +6,12 @@
 import React from "react";
 import { TopNav } from "@/app/TopNav";
 import { Sidebar } from "@/app/Sidebar";
-import { useAppContext } from "@/contexts/AppContext";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { pageMode } = useAppContext();
 
   return (
     <div className="h-dvh flex flex-col">

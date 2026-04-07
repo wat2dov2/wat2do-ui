@@ -1,10 +1,12 @@
 import type { Event } from "@/shared/types";
+import { tracker } from "@/shared/services/trackingService";
 
 /**
  * Share an event using the Web Share API with fallback to clipboard
  * Follows Web Interface Guidelines for sharing functionality
  */
 export async function shareEvent(event: Event): Promise<void> {
+  tracker.track(event.id, "share");
   const shareData = {
     title: event.title,
     text: `${event.title}\n${event.date} at ${event.time}\n${event.location}`,
@@ -16,7 +18,7 @@ export async function shareEvent(event: Event): Promise<void> {
     try {
       await navigator.share(shareData);
       return;
-    } catch (error) {
+    } catch {
       // User cancelled or error occurred, fall back to clipboard
       // Silently handle AbortError (user cancellation)
     }
@@ -30,7 +32,7 @@ export async function shareEvent(event: Event): Promise<void> {
     // Show toast notification (you can enhance this with a toast library)
     // For now, we'll rely on the UI to show feedback
     return;
-  } catch (error) {
+  } catch {
     throw new Error("Failed to share event. Please copy the link manually.");
   }
 }
@@ -49,7 +51,7 @@ export async function copyEventLink(event: Event): Promise<void> {
   const url = getEventShareUrl(event);
   try {
     await navigator.clipboard.writeText(url);
-  } catch (error) {
+  } catch {
     throw new Error("Failed to copy link to clipboard.");
   }
 }

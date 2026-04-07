@@ -1,0 +1,14 @@
+---
+description: Enforce the API → service → repository data flow and storage patterns.
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# API, Service, and Repository
+
+- New data flows must follow the existing three-layer structure: `*.api.ts` → `*.service.ts` → `*Repository.ts` (see the events and promotions features for concrete examples).
+- UI code (components, pages, hooks) should talk to `*.api.ts` functions only – never directly to repositories or raw storage.
+- Put business rules and orchestration in `*.service.ts` files; repositories are for persistence details only (localStorage, future HTTP, etc.).
+- Use the existing `StorageService` abstraction for anything touching localStorage; do not reach for `window.localStorage` directly.
+- Keep API modules as the public surface of a feature – if you feel tempted to import a repository or service directly from a component, add an API function instead.
+- When adding a new feature, mirror the existing events/settings API structure instead of improvising a one-off pattern.

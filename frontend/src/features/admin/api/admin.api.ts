@@ -1,9 +1,6 @@
 /**
  * Admin API
- * Handles all admin-related data operations
- * 
- * This is the public API for the admin feature.
- * It provides clean interfaces for managing admin data.
+ * Handles all admin-related data operations via the backend.
  */
 
 import type { Event, EventSubmission, ReportedEvent, ScrapedEvent, Club } from "@/shared/types";
@@ -16,25 +13,61 @@ import {
   updateClubAPI,
   deleteClubAPI,
 } from "@/features/clubs/api/clubs.api";
-import { StorageService } from "@/shared/services/storageService";
+import { api } from "@/shared/services/apiClient";
 
 // Re-export types for convenience
 export type { EventSubmission, ReportedEvent, ScrapedEvent };
 
-/**
- * Events API
- */
+// ── Backend response shapes (derived from OpenAPI spec) ─────────────
+import type {
+  ApiSubmissionResponse,
+  ApiReportResponse,
+  ApiScrapedEventResponse,
+} from "@/shared/generated";
 
-/**
- * Get all events from backend
- */
+type SubmissionResponse = ApiSubmissionResponse;
+type ReportResponse = ApiReportResponse;
+type ScrapedEventResponse = ApiScrapedEventResponse;
+
+// ── Mappers ─────────────────────────────────────────────────────────
+
+function toEventSubmission(row: SubmissionResponse): EventSubmission {
+  return {
+    id: row.id,
+    eventData: row.event_data as EventSubmission["eventData"],
+    submittedBy: row.user_id,
+    submittedAt: row.submitted_at,
+    status: row.status as EventSubmission["status"],
+    rejectionReason: row.rejection_reason ?? undefined,
+  };
+}
+
+function toReportedEvent(row: ReportResponse): ReportedEvent {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    reportedBy: row.user_id,
+    reportedAt: row.reported_at,
+    reason: row.reason,
+    status: row.status as ReportedEvent["status"],
+  };
+}
+
+function toScrapedEvent(row: ScrapedEventResponse): ScrapedEvent {
+  return {
+    id: row.id,
+    eventId: row.event_id ?? 0,
+    scrapedAt: row.scraped_at,
+    source: row.source,
+  };
+}
+
+// ── Events API ──────────────────────────────────────────────────────
+
 export async function getAllEvents(): Promise<Event[]> {
   return fetchAllEvents();
 }
 
-/**
- * Get event by ID
- */
 export async function getEventById(id: number): Promise<Event | null> {
   const events = await getAllEvents();
   return events.find((e) => e.id === id) || null;
@@ -42,241 +75,105 @@ export async function getEventById(id: number): Promise<Event | null> {
 
 export { createClubAPI as adminCreateClub, updateClubAPI as adminUpdateClub, deleteClubAPI as adminDeleteClub };
 
-/**
- * Reported Events API
- */
+// ── Reported Events API ─────────────────────────────────────────────
 
-/**
- * Get all reported events
- */
-export function getReportedEvents(): ReportedEvent[] {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.REPORTED_EVENTS,
-    null
-  );
-  const userReports: ReportedEvent[] = stored ? JSON.parse(stored) : [];
-  return userReports;
+export async function getReportedEvents(): Promise<ReportedEvent[]> {
+  const rows = await api.get<ReportResponse[]>("/reports/");
+  return rows.map(toReportedEvent);
 }
 
-/**
- * Get reported events by status
- */
-export function getReportedEventsByStatus(
-  status: "pending" | "resolved" | "dismissed"
-): ReportedEvent[] {
-  const reports = getReportedEvents();
-  return reports.filter((r) => r.status === status);
+export async function getReportedEventsByStatus(
+  status: "pending" | "resolved" | "dismissed",
+): Promise<ReportedEvent[]> {
+  const rows = await api.get<ReportResponse[]>(`/reports/?report_status=${status}`);
+  return rows.map(toReportedEvent);
 }
 
-/**
- * Save reported event
- */
-export function saveReportedEvent(report: ReportedEvent): void {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.REPORTED_EVENTS,
-    null
-  );
-  const reports: ReportedEvent[] = stored ? JSON.parse(stored) : [];
-  reports.push(report);
-  StorageService.setItem(STORAGE_KEYS.REPORTED_EVENTS, JSON.stringify(reports));
+export async function saveReportedEvent(report: { eventId: number; reason: string }): Promise<void> {
+  await api.post("/reports/", { event_id: report.eventId, reason: report.reason });
 }
 
-/**
- * Update reported event status
- */
-export function updateReportedEventStatus(
+export async function updateReportedEventStatus(
   id: string,
-  status: "pending" | "resolved" | "dismissed"
-): void {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.REPORTED_EVENTS,
-    null
-  );
-  const reports: ReportedEvent[] = stored ? JSON.parse(stored) : [];
-  const index = reports.findIndex((r) => r.id === id);
-  if (index !== -1) {
-    reports[index].status = status;
-    StorageService.setItem(STORAGE_KEYS.REPORTED_EVENTS, JSON.stringify(reports));
+  status: "pending" | "resolved" | "dismissed",
+): Promise<void> {
+  await api.patch(`/reports/${id}`, { status });
+}
+
+// ── Event Submissions API ───────────────────────────────────────────
+
+export async function getEventSubmissions(): Promise<EventSubmission[]> {
+  const rows = await api.get<SubmissionResponse[]>("/submissions/");
+  return rows.map(toEventSubmission);
+}
+
+export async function getSubmissionById(id: string): Promise<EventSubmission | null> {
+  try {
+    const row = await api.get<SubmissionResponse>(`/submissions/${id}`);
+    return toEventSubmission(row);
+  } catch {
+    return null;
   }
 }
 
-/**
- * Event Submissions API
- */
-
-const STORAGE_KEYS = {
-  EVENT_SUBMISSIONS: "eventSubmissions",
-  REPORTED_EVENTS: "reportedEvents",
-  SCRAPED_EVENTS: "scrapedEvents",
-} as const;
-
-/**
- * Get all event submissions
- */
-export function getEventSubmissions(): EventSubmission[] {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.EVENT_SUBMISSIONS,
-    null
-  );
-  const userSubmissions: EventSubmission[] = stored ? JSON.parse(stored) : [];
-  return userSubmissions;
+export async function getSubmissionsByStatus(
+  status: "pending" | "approved" | "rejected",
+): Promise<EventSubmission[]> {
+  const rows = await api.get<SubmissionResponse[]>(`/submissions/?submission_status=${status}`);
+  return rows.map(toEventSubmission);
 }
 
-/**
- * Get submission by ID
- */
-export function getSubmissionById(id: string): EventSubmission | null {
-  const submissions = getEventSubmissions();
-  return submissions.find((s) => s.id === id) || null;
+export async function saveEventSubmission(eventData: Record<string, unknown>): Promise<void> {
+  await api.post("/submissions/", { event_data: eventData });
 }
 
-/**
- * Get submissions by status
- */
-export function getSubmissionsByStatus(
-  status: "pending" | "approved" | "rejected"
-): EventSubmission[] {
-  const submissions = getEventSubmissions();
-  return submissions.filter((s) => s.status === status);
-}
-
-/**
- * Save event submission
- */
-export function saveEventSubmission(submission: EventSubmission): void {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.EVENT_SUBMISSIONS,
-    null
-  );
-  const submissions: EventSubmission[] = stored ? JSON.parse(stored) : [];
-  submissions.push(submission);
-  StorageService.setItem(STORAGE_KEYS.EVENT_SUBMISSIONS, JSON.stringify(submissions));
-}
-
-/**
- * Update event submission status
- */
-export function updateEventSubmission(
+export async function updateEventSubmission(
   id: string,
   status: "pending" | "approved" | "rejected",
-  rejectionReason?: string
-): void {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.EVENT_SUBMISSIONS,
-    null
-  );
-  const submissions: EventSubmission[] = stored ? JSON.parse(stored) : [];
-  const index = submissions.findIndex((s) => s.id === id);
-  if (index !== -1) {
-    submissions[index].status = status;
-    if (status === "rejected" && rejectionReason) {
-      submissions[index].rejectionReason = rejectionReason;
-    }
-    StorageService.setItem(STORAGE_KEYS.EVENT_SUBMISSIONS, JSON.stringify(submissions));
-  }
+  rejectionReason?: string,
+): Promise<void> {
+  await api.patch(`/submissions/${id}`, {
+    status,
+    rejection_reason: rejectionReason ?? null,
+  });
 }
 
-/**
- * Approve a submission
- */
-export function approveSubmission(id: string): void {
-  updateEventSubmission(id, "approved");
+export async function approveSubmission(id: string): Promise<void> {
+  await updateEventSubmission(id, "approved");
 }
 
-/**
- * Reject a submission
- */
-export function rejectSubmission(
-  id: string,
-  rejectionReason: string
-): void {
-  updateEventSubmission(id, "rejected", rejectionReason);
+export async function rejectSubmission(id: string, rejectionReason: string): Promise<void> {
+  await updateEventSubmission(id, "rejected", rejectionReason);
 }
 
-/**
- * Update submission status
- */
-export function updateSubmissionStatus(
+export async function updateSubmissionStatus(
   id: string,
   status: "pending" | "approved" | "rejected",
-  rejectionReason?: string
-): void {
-  updateEventSubmission(id, status, rejectionReason);
+  rejectionReason?: string,
+): Promise<void> {
+  await updateEventSubmission(id, status, rejectionReason);
 }
 
-/**
- * Delete a submission
- */
-export function deleteSubmission(id: string): void {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.EVENT_SUBMISSIONS,
-    null
-  );
-  const submissions: EventSubmission[] = stored ? JSON.parse(stored) : [];
-  const filtered = submissions.filter((s) => s.id !== id);
-  StorageService.setItem(STORAGE_KEYS.EVENT_SUBMISSIONS, JSON.stringify(filtered));
+export async function deleteSubmission(id: string): Promise<void> {
+  await api.delete(`/submissions/${id}`);
 }
 
-/**
- * Scraped Events API
- */
+// ── Scraped Events API ──────────────────────────────────────────────
 
-/**
- * Get all scraped events
- */
-export function getScrapedEvents(): ScrapedEvent[] {
-  // Migrate old "scrappedEvents" to "scrapedEvents"
-  const oldStored = StorageService.getItem<string | null>("scrappedEvents", null);
-  if (oldStored) {
-    try {
-      const oldData = JSON.parse(oldStored);
-      // Convert old format to new format
-      const migrated: ScrapedEvent[] = oldData.map((item: Record<string, unknown>) => ({
-        ...item,
-        scrapedAt: (item.scrappedAt || item.scrapedAt) as string,
-      })) as ScrapedEvent[];
-      StorageService.setItem(STORAGE_KEYS.SCRAPED_EVENTS, JSON.stringify(migrated));
-      StorageService.removeItem("scrappedEvents");
-    } catch {
-      // If migration fails, just remove old data
-      StorageService.removeItem("scrappedEvents");
-    }
-  }
-  
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.SCRAPED_EVENTS,
-    null
-  );
-  const userScraped: ScrapedEvent[] = stored ? JSON.parse(stored) : [];
-  return userScraped;
+export async function getScrapedEvents(): Promise<ScrapedEvent[]> {
+  const rows = await api.get<ScrapedEventResponse[]>("/scraped-events/");
+  return rows.map(toScrapedEvent);
 }
 
-/**
- * Save scraped event
- */
-export function saveScrapedEvent(scraped: ScrapedEvent): void {
-  const stored = StorageService.getItem<string | null>(
-    STORAGE_KEYS.SCRAPED_EVENTS,
-    null
-  );
-  const scrapedEvents: ScrapedEvent[] = stored ? JSON.parse(stored) : [];
-  scrapedEvents.push(scraped);
-  StorageService.setItem(STORAGE_KEYS.SCRAPED_EVENTS, JSON.stringify(scrapedEvents));
+export async function saveScrapedEvent(scraped: { eventId?: number; source: string }): Promise<void> {
+  await api.post("/scraped-events/", {
+    event_id: scraped.eventId ?? null,
+    source: scraped.source,
+  });
 }
 
-/**
- * QR Codes: use listPostersFromBackend, getScansFromBackend, deletePosterFromBackend
- * from @/features/qrcode/api/qrcode.api (or useBackendPosters / useBackendScans hooks).
- */
+// ── Admin Clubs API ─────────────────────────────────────────────────
 
-/**
- * Admin Clubs API
- * Wraps clubs functions for admin use
- */
-
-/**
- * Load all clubs and club types for admin
- */
 export async function loadAdminClubsData(): Promise<{
   clubs: Club[];
   clubTypes: string[];
@@ -288,15 +185,12 @@ export async function loadAdminClubsData(): Promise<{
   return { clubs, clubTypes };
 }
 
-/**
- * Filter clubs for admin page
- */
 export async function filterAdminClubs(
   clubs: Club[],
   options: {
     searchQuery?: string;
     clubType?: string;
-  }
+  },
 ): Promise<Club[]> {
   return filterClubsData(clubs, {
     searchQuery: options.searchQuery,
@@ -304,68 +198,45 @@ export async function filterAdminClubs(
   });
 }
 
-/**
- * Admin Events API
- * Filtering and querying functions for admin events page
- */
+// ── Admin Events filtering (pure logic, operates on fetched data) ───
 
-/**
- * Filter events for admin page
- */
 export function filterAdminEvents(
   events: Event[],
   filters: {
     searchQuery?: string;
     selectedCategory?: string;
     showReportedOnly?: boolean;
-  }
+    reportedEventIds?: Set<number>;
+  },
 ): Event[] {
   let filtered = events;
 
-  // Search filter
   if (filters.searchQuery) {
     const query = filters.searchQuery.toLowerCase();
     filtered = filtered.filter(
       (event) =>
         event.title.toLowerCase().includes(query) ||
-        (event.organization ?? "").toLowerCase().includes(query)
+        (event.organization ?? "").toLowerCase().includes(query),
     );
   }
 
-  // Category filter
   if (filters.selectedCategory) {
     filtered = filtered.filter(
-      (event) => event.category === filters.selectedCategory
+      (event) => event.category === filters.selectedCategory,
     );
   }
 
-  // Reported events filter
-  if (filters.showReportedOnly) {
-    const reportedEvents = getReportedEvents().filter(
-      (r) => r.status === "pending"
-    );
-    const reportedIds = new Set(reportedEvents.map((r) => r.eventId));
-    filtered = filtered.filter((event) => reportedIds.has(event.id));
+  if (filters.showReportedOnly && filters.reportedEventIds) {
+    filtered = filtered.filter((event) => filters.reportedEventIds!.has(event.id));
   }
 
   return filtered;
 }
 
-/**
- * Get unique categories from events
- */
 export function getEventCategories(events: Event[]): string[] {
   const categories = new Set<string>();
-  events.forEach((event) => { if (event.category) categories.add(event.category); });
+  events.forEach((event) => {
+    if (event.category) categories.add(event.category);
+  });
   return Array.from(categories).sort();
-}
-
-/**
- * Check if an event is reported
- */
-export function isEventReported(eventId: number): boolean {
-  const reportedEvents = getReportedEvents().filter(
-    (r) => r.status === "pending"
-  );
-  return reportedEvents.some((r) => r.eventId === eventId);
 }

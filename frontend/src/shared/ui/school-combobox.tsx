@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/shared/ui/popover";
 import { Highlighter } from "@/shared/ui/highlighter";
-import { availableSchools } from "@/features/events/data/events";
+import { availableSchools } from "@/shared/constants/schools";
 
 interface SchoolComboboxProps {
   value: string;

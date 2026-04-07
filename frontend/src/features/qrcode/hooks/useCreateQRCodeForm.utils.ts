@@ -1,4 +1,4 @@
-import type { QRCode, Event } from "@/shared/types";
+import type { QRCode, Event, FilterState } from "@/shared/types";
 import { getUniqueEvents as getUniqueEventsFromUtils } from "@/shared/utils/event";
 
 /**
@@ -17,7 +17,7 @@ export function createQRCodeFromState(
     destinationType: "event" | "events-list" | "custom-url";
     selectedEventId: number | undefined;
     customUrl: string;
-    filters: any;
+    filters: FilterState;
     imageUrl: string;
   },
   userEmail: string

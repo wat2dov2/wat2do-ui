@@ -1,44 +1,57 @@
 /**
  * Credits Repository
- * Internal data layer for credits feature
- * Handles credits and promotions data persistence
+ * Internal data layer for credits feature — backed by the API
  */
 
-import { StorageService } from "@/shared/services/storageService";
-import type { PromotedEvent } from "@/shared/types";
+import { api } from "@/shared/services/apiClient";
+import type { ApiCreditBalanceResponse, ApiPromotionResponse } from "@/shared/generated";
 
-const STORAGE_KEYS = {
-  USER_CREDITS: "userCredits",
-  PROMOTED_EVENTS: "promotedEvents",
-} as const;
+type CreditBalanceResponse = ApiCreditBalanceResponse;
+type PromotionResponse = ApiPromotionResponse;
 
 /**
- * Load user credits from localStorage
+ * Fetch user credit balance from the backend
  */
-export function loadUserCredits(): number {
-  return StorageService.getItem<number>(STORAGE_KEYS.USER_CREDITS, 100); // Default 100 credits
+export async function fetchBalance(): Promise<number> {
+  const res = await api.get<CreditBalanceResponse>("/credits/");
+  return res.balance;
 }
 
 /**
- * Save user credits to localStorage
+ * Add credits via the backend
  */
-export function saveUserCredits(credits: number): void {
-  StorageService.setItem(STORAGE_KEYS.USER_CREDITS, credits);
+export async function addCreditsAPI(amount: number): Promise<number> {
+  const res = await api.post<CreditBalanceResponse>("/credits/add", { amount });
+  return res.balance;
 }
 
 /**
- * Load promoted events from localStorage
+ * Fetch user's promotions from the backend
  */
-export function loadPromotedEvents(): PromotedEvent[] {
-  return StorageService.getItem<PromotedEvent[]>(
-    STORAGE_KEYS.PROMOTED_EVENTS,
-    []
-  );
+export async function fetchPromotions(): Promise<PromotionResponse[]> {
+  return api.get<PromotionResponse[]>("/promotions/");
 }
 
 /**
- * Save promoted events to localStorage
+ * Create a promotion via the backend
  */
-export function savePromotedEvents(events: PromotedEvent[]): void {
-  StorageService.setItem(STORAGE_KEYS.PROMOTED_EVENTS, events);
+export async function createPromotionAPI(
+  eventId: number,
+  packageId: string,
+  credits: number,
+  duration: number,
+): Promise<PromotionResponse> {
+  return api.post<PromotionResponse>("/promotions/", {
+    event_id: eventId,
+    package: packageId,
+    credits,
+    duration,
+  });
+}
+
+/**
+ * Fetch all currently active promoted event IDs (public endpoint)
+ */
+export async function fetchActivePromotedEventIds(): Promise<number[]> {
+  return api.get<number[]>("/promotions/active-ids");
 }

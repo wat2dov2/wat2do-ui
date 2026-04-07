@@ -9,6 +9,7 @@ import { loadLanguage } from '@/shared/lib/loadLanguage'
 import { getStoredLanguage } from '@/shared/lib/i18n'
 import App from '@/App.tsx'
 import ErrorBoundary from '@/app/ErrorBoundary'
+import { initializeAuth } from '@/features/auth/api/auth.api'
 
 if (import.meta.env.DEV) {
   try {
@@ -27,7 +28,10 @@ async function initApp() {
   // Change language after it's loaded
   i18n.changeLanguage(initialLang);
 
-  // Render after language is loaded
+  // Restore auth session from httpOnly cookie (if user was previously logged in)
+  await initializeAuth();
+
+  // Render after language and auth are loaded
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>

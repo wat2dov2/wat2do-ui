@@ -6,21 +6,11 @@
 import type { Event, EventFormData } from "@/shared/types";
 import { api } from "@/shared/services/apiClient";
 import {
-  loadUserEvents,
-  saveUserEvents,
-  loadUserEventIds,
-  saveUserEventIds,
-  removeUserEvent,
-  loadSavedEventIds,
-  saveSavedEventIds,
-} from "@/features/events/api/eventRepository";
-import {
   createEvent,
   updateEvent as updateEventService,
   getEventById,
 } from "@/features/events/api/eventService";
 import { filterEvents, sortEvents, type SearchFilters, type SortOptions } from "@/features/search";
-import { getUniqueEvents } from "@/shared/utils/event";
 
 /**
  * Fetch events from backend API.
@@ -51,19 +41,6 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<Event>(`/events/${id}`);
 }
 
-/**
- * Kept for backward compat — returns an empty list.
- * Components should use fetchAllEvents() instead.
- */
-export function loadAllEvents(): Event[] {
-  return [];
-}
-
-export function saveEvents(events: Event[], eventIds: number[]): void {
-  saveUserEvents(events);
-  saveUserEventIds(eventIds);
-}
-
 export async function createEventAPI(
   eventData: EventFormData,
   getDayOfWeek: (date: string) => string,
@@ -80,7 +57,8 @@ export async function createEventAPI(
       category: eventData.category || null,
       organization: eventData.organization || null,
     });
-  } catch {
+  } catch (error) {
+    console.warn("Backend event creation failed, using local fallback:", error);
     return createEvent(eventData, getDayOfWeek);
   }
 }
@@ -103,18 +81,14 @@ export async function updateEventAPI(
       organization: eventData.organization || null,
     });
     return updated;
-  } catch {
+  } catch (error) {
+    console.warn("Backend event update failed, using local fallback:", error);
     return updateEventService(event, eventData, getDayOfWeek);
   }
 }
 
 export async function deleteEventAPI(eventId: number): Promise<void> {
-  try {
-    await api.delete(`/events/${eventId}`);
-  } catch {
-    // still clean up local
-  }
-  removeUserEvent(eventId);
+  await api.delete(`/events/${eventId}`);
 }
 
 export function filterEventsAPI(events: Event[], filters: SearchFilters): Event[] {
@@ -129,16 +103,22 @@ export function getEventByIdAPI(events: Event[], id: number): Event | undefined 
   return getEventById(events, id);
 }
 
-export function loadSavedEventIdsAPI(): number[] {
-  return loadSavedEventIds();
-}
-
-export function saveSavedEventIdsAPI(ids: number[]): void {
-  saveSavedEventIds(ids);
-}
-
 export function toggleSaveEventAPI(eventId: number, currentSavedIds: number[]): number[] {
   return currentSavedIds.includes(eventId)
     ? currentSavedIds.filter((id) => id !== eventId)
     : [...currentSavedIds, eventId];
+}
+
+// --- Backend-synced saved events ---
+
+export async function fetchSavedEventIdsFromBackend(): Promise<number[]> {
+  return api.get<number[]>("/saved-events/");
+}
+
+export async function saveEventToBackend(eventId: number): Promise<void> {
+  await api.put<unknown>(`/saved-events/${eventId}`);
+}
+
+export async function unsaveEventFromBackend(eventId: number): Promise<void> {
+  await api.delete(`/saved-events/${eventId}`);
 }

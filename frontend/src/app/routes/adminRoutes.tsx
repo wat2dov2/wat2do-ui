@@ -10,7 +10,7 @@ import { AdminEventsPage } from "@/features/admin";
 import { AdminClubsPage } from "@/features/admin";
 import { AdminSubmissionsPage } from "@/features/admin";
 import { AdminPostersPage } from "@/features/admin";
-import type { Event, EventSubmission, Club } from "@/shared/types";
+import type { Event, EventFormData, EventSubmission, Club } from "@/shared/types";
 import { submissionToEventData } from "@/features/admin/utils/submissionToEvent";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useAppContext } from "@/contexts/AppContext";
@@ -20,7 +20,7 @@ interface AdminRoutesConfig {
   onEditEvent: (event: Event) => void | Promise<void>;
   onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
-  onAddEvent: (eventData: any) => Promise<number>;
+  onAddEvent: (eventData: EventFormData) => Promise<number>;
   userEmail: string | null;
 }
 

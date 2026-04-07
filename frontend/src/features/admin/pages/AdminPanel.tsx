@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -32,11 +32,27 @@ interface AdminPanelProps {
 
 export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
   const { t } = useTranslation();
-  const { posters: backendPosters, loading: recentActivityLoading } = useBackendPosters();
+  const { posters: backendPosters, loading: postersLoading } = useBackendPosters();
+  const [submissions, setSubmissions] = useState<EventSubmission[]>([]);
+  const [scrapedEvents, setScrapedEvents] = useState<ScrapedEvent[]>([]);
+  const [adminDataLoading, setAdminDataLoading] = useState(true);
+
+  // Fetch submissions and scraped events from backend
+  useEffect(() => {
+    Promise.all([getEventSubmissions(), getScrapedEvents()])
+      .then(([subs, scraped]) => {
+        setSubmissions(subs);
+        setScrapedEvents(scraped);
+      })
+      .catch((err) => console.error("Failed to load admin data:", err))
+      .finally(() => setAdminDataLoading(false));
+  }, []);
+
+  const recentActivityLoading = postersLoading || adminDataLoading;
 
   // Get recent activities
   const recentActivities = useMemo(() => {
-    const submissions = getEventSubmissions()
+    const submissionItems = submissions
       .filter((s) => s.status === "pending")
       .map((s) => ({
         type: "submission" as const,
@@ -44,7 +60,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
         timestamp: new Date(s.submittedAt),
       }));
 
-    const scraped = getScrapedEvents().map((s) => ({
+    const scrapedItems = scrapedEvents.map((s) => ({
       type: "scraped" as const,
       data: s,
       timestamp: new Date(s.scrapedAt),
@@ -64,12 +80,12 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       | { type: "submission"; data: EventSubmission; timestamp: Date }
       | { type: "scraped"; data: ScrapedEvent; timestamp: Date }
       | { type: "poster"; data: QRCode; timestamp: Date };
-    const all: ActivityItem[] = [...submissions, ...scraped, ...createdPosters];
+    const all: ActivityItem[] = [...submissionItems, ...scrapedItems, ...createdPosters];
 
     return all
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
       .slice(0, 10);
-  }, [backendPosters]);
+  }, [submissions, scrapedEvents, backendPosters]);
 
 
   const handleActivityClick = (activity: (typeof recentActivities)[0]) => {

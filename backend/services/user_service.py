@@ -3,24 +3,24 @@
 from uuid import UUID
 
 from core.database import get_sb
-from schemas.user import UserUpdate
+from schemas.user import UserUpdate, UserResponse
 
 
-def get_user(user_id: UUID) -> dict | None:
+def get_user(user_id: UUID) -> UserResponse | None:
     r = get_sb().table("users").select("*").eq("id", str(user_id)).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return r.data[0]
+    return UserResponse.model_validate(r.data[0])
 
 
-def get_user_by_supabase_id(supabase_auth_id: str) -> dict | None:
+def get_user_by_supabase_id(supabase_auth_id: str) -> UserResponse | None:
     r = get_sb().table("users").select("*").eq("supabase_auth_id", supabase_auth_id).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return r.data[0]
+    return UserResponse.model_validate(r.data[0])
 
 
-def list_users(skip: int = 0, limit: int = 100) -> list[dict]:
+def list_users(skip: int = 0, limit: int = 100) -> list[UserResponse]:
     r = (
         get_sb()
         .table("users")
@@ -29,15 +29,15 @@ def list_users(skip: int = 0, limit: int = 100) -> list[dict]:
         .range(skip, skip + limit - 1)
         .execute()
     )
-    return r.data or []
+    return [UserResponse.model_validate(u) for u in (r.data or [])]
 
 
-def update_user(user_id: UUID, data: UserUpdate) -> dict | None:
+def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
     if get_user(user_id) is None:
         return None
     payload = data.model_dump(exclude_unset=True)
     r = get_sb().table("users").update(payload).eq("id", str(user_id)).execute()
-    return r.data[0] if r.data else None
+    return UserResponse.model_validate(r.data[0]) if r.data else None
 
 
 def delete_user(user_id: UUID) -> bool:

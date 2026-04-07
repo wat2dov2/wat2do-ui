@@ -56,13 +56,13 @@ export function QRRedirectPage() {
           getLocation().then(({ latitude, longitude }) =>
             fetchQrRedirectWithLocation(qrCodeId, latitude, longitude)
               .then((config) => redirectFromConfig(config))
-              .catch(() => navigate("/", { replace: true }))
+              .catch((err) => { console.error("QR redirect failed:", err); navigate("/", { replace: true }); })
           );
           return;
         }
         redirectFromConfig(result);
       })
-      .catch(() => navigate("/", { replace: true }));
+      .catch((err) => { console.error("QR redirect failed:", err); navigate("/", { replace: true }); });
   }, [qrCodeId, navigate, t]);
 
   return (

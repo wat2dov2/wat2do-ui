@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { loadDarkMode, saveDarkMode } from "@/features/settings/api/settings.api";
+import { loadTheme, saveTheme } from "@/shared/services/preferencesStorage";
 
 /**
  * Custom hook for managing dark mode
  */
 export function useDarkMode() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = loadDarkMode();
+    const saved = loadTheme();
     if (saved !== null) {
-      return saved;
+      return saved === "dark";
     }
     // Check system preference
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -21,14 +21,14 @@ export function useDarkMode() {
     } else {
       document.documentElement.classList.remove("dark");
     }
-    saveDarkMode(isDarkMode);
+    saveTheme(isDarkMode ? "dark" : "light");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   // Sync isDarkMode state when theme changes externally
   const handleThemeChange = useCallback((isDark: boolean) => {
     setIsDarkMode(isDark);
-    saveDarkMode(isDark);
+    saveTheme(isDark ? "dark" : "light");
   }, []);
 
   // Watch for theme changes via MutationObserver (for AnimatedThemeToggler)
@@ -37,7 +37,7 @@ export function useDarkMode() {
       const isDark = document.documentElement.classList.contains("dark");
       if (isDark !== isDarkMode) {
         setIsDarkMode(isDark);
-        saveDarkMode(isDark);
+        saveTheme(isDark ? "dark" : "light");
       }
     });
     observer.observe(document.documentElement, {

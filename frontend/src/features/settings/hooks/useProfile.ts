@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { loadProfile, saveProfile, type UserProfile } from "@/features/settings/api/settings.api";
-import { availableSchools } from "@/features/events/data/events";
+import { availableSchools } from "@/shared/constants/schools";
 
 export type { UserProfile };
 
@@ -26,7 +26,7 @@ export function useProfile() {
         .then((remote) => {
           if (!cancelled && remote) setProfile(remote);
         })
-        .catch(() => {});
+        .catch((err) => console.error("Failed to fetch profile:", err));
     });
     return () => { cancelled = true; };
   }, []);
@@ -40,7 +40,7 @@ export function useProfile() {
     setSyncing(true);
     import("@/features/auth/api/auth.api")
       .then(({ updateProfileAPI }) => updateProfileAPI(profile))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to sync profile:", err))
       .finally(() => setSyncing(false));
   }, [profile]);
 

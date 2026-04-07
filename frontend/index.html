@@ -9,11 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title>app</title>
     <script>
-      // Apply dark mode immediately before React loads to prevent flash
+      // Apply theme immediately before React loads to prevent flash
       (function() {
-        const saved = localStorage.getItem('darkMode');
-        const isDark = saved !== null 
-          ? JSON.parse(saved) 
+        // Migrate old darkMode boolean to theme string (one-time)
+        if (localStorage.getItem('darkMode') !== null && localStorage.getItem('theme') === null) {
+          var wasDark = JSON.parse(localStorage.getItem('darkMode'));
+          localStorage.setItem('theme', JSON.stringify(wasDark ? 'dark' : 'light'));
+          localStorage.removeItem('darkMode');
+        }
+        var raw = localStorage.getItem('theme');
+        // StorageService wraps values in JSON.stringify, so theme is stored as '"dark"' or '"light"'
+        var theme = null;
+        try { theme = raw !== null ? JSON.parse(raw) : null; } catch(e) { theme = raw; }
+        var isDark = theme !== null
+          ? theme === 'dark'
           : window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (isDark) {
           document.documentElement.classList.add('dark');

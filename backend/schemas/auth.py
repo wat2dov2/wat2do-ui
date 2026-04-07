@@ -13,10 +13,6 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
 class ForgotPasswordRequest(BaseModel):
     email: str
 
@@ -28,7 +24,6 @@ class ResetPasswordRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    refresh_token: str
     token_type: str = "bearer"
     expires_in: int
     user_id: str
@@ -37,7 +32,6 @@ class TokenResponse(BaseModel):
 class SignupResponse(BaseModel):
     user_id: str
     access_token: str | None = None
-    refresh_token: str | None = None
     token_type: str = "bearer"
     expires_in: int | None = None
     confirmation_required: bool = False

@@ -19,8 +19,6 @@ const STORAGE_KEYS = {
   PRIVACY_PREFS: "privacyPreferences",
   VIEW_MODE: "viewMode",
   FILTER_VIEW_MODE: "filterViewMode",
-  DARK_MODE: "darkMode",
-  THEME: "theme",
 } as const;
 
 // Types
@@ -129,73 +127,6 @@ export function saveFilterViewMode(filterViewMode: FilterViewMode): void {
 }
 
 /**
- * Theme/Dark Mode API
+ * Theme & Language — re-exported from shared (canonical home: shared/services/preferencesStorage.ts)
  */
-
-/**
- * Load dark mode preference from localStorage
- */
-export function loadDarkMode(): boolean | null {
-  const saved = StorageService.getItem<string | null>(
-    STORAGE_KEYS.DARK_MODE,
-    null
-  );
-  if (saved === null) return null;
-  try {
-    return JSON.parse(saved) as boolean;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Save dark mode preference to localStorage
- */
-export function saveDarkMode(isDark: boolean): void {
-  StorageService.setItem(STORAGE_KEYS.DARK_MODE, JSON.stringify(isDark));
-}
-
-/**
- * Load theme preference (for AnimatedThemeToggler compatibility)
- */
-export function loadTheme(): "dark" | "light" | null {
-  const saved = StorageService.getItem<string | null>(
-    STORAGE_KEYS.THEME,
-    null
-  );
-  return saved === "dark" || saved === "light" ? saved : null;
-}
-
-/**
- * Save theme preference (for AnimatedThemeToggler compatibility)
- */
-export function saveTheme(theme: "dark" | "light"): void {
-  StorageService.setItem(STORAGE_KEYS.THEME, theme);
-}
-
-/**
- * Language Preferences API
- */
-
-const SUPPORTED_LANGUAGES = ['en'] as const;
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
-
-const LANGUAGE_STORAGE_KEY = "i18n-language";
-
-/**
- * Load language preference from localStorage
- */
-export function loadLanguage(): SupportedLanguage {
-  const saved = StorageService.getItem<string | null>(LANGUAGE_STORAGE_KEY, null);
-  if (saved && SUPPORTED_LANGUAGES.includes(saved as SupportedLanguage)) {
-    return saved as SupportedLanguage;
-  }
-  return 'en';
-}
-
-/**
- * Save language preference to localStorage
- */
-export function saveLanguage(language: SupportedLanguage): void {
-  StorageService.setItem(LANGUAGE_STORAGE_KEY, language);
-}
+export { loadTheme, saveTheme, loadLanguage, saveLanguage, type SupportedLanguage } from "@/shared/services/preferencesStorage";

@@ -6,7 +6,7 @@
 import React, { useMemo } from "react";
 import { AdminProvider } from "@/features/admin";
 import { ClubPanel, ClubPanelPostersPage, ClubPanelIntegrationsPage, ClubPanelMembersPage } from "@/features/club-panel";
-import type { Event } from "@/shared/types";
+import type { Event, EventFormData } from "@/shared/types";
 import { useNavigation } from "@/contexts/NavigationContext";
 
 interface ClubPanelRoutesConfig {
@@ -14,7 +14,7 @@ interface ClubPanelRoutesConfig {
   onEditEvent: (event: Event) => void;
   onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
-  onAddEvent: (eventData: any) => Promise<number>;
+  onAddEvent: (eventData: EventFormData) => Promise<number>;
   userEmail: string | null;
 }
 

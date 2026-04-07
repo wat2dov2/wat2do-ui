@@ -4,12 +4,12 @@
  * Uses useReducer for complex state management
  */
 
-import { useReducer, useMemo, useEffect, useRef, startTransition } from "react";
+import { useReducer, useMemo, useEffect, useRef, useState, startTransition } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   filterAdminEvents,
   getEventCategories,
-  isEventReported as isEventReportedAPI,
+  getReportedEvents,
 } from "@/features/admin/api/admin.api";
 import type { Event } from "@/shared/types";
 
@@ -75,11 +75,24 @@ export function useAdminEventsPage({
 }: UseAdminEventsPageOptions) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [reportedEventIds, setReportedEventIds] = useState<Set<number>>(new Set());
   const prevFiltersRef = useRef({
     searchQuery: state.searchQuery,
     selectedCategory: state.selectedCategory,
     showReportedOnly: state.showReportedOnly,
   });
+
+  // Fetch reported events on mount
+  useEffect(() => {
+    getReportedEvents()
+      .then((reports) => {
+        const pendingIds = new Set(
+          reports.filter((r) => r.status === "pending").map((r) => r.eventId),
+        );
+        setReportedEventIds(pendingIds);
+      })
+      .catch((err) => console.error("Failed to fetch reported events:", err));
+  }, []);
 
   // Get eventId from URL
   const eventIdParam = searchParams.get("eventId");
@@ -116,14 +129,15 @@ export function useAdminEventsPage({
     return getEventCategories(events);
   }, [events]);
 
-  // Filter events using API
+  // Filter events
   const filteredEvents = useMemo(() => {
     return filterAdminEvents(events, {
       searchQuery: state.searchQuery,
       selectedCategory: state.selectedCategory,
       showReportedOnly: state.showReportedOnly,
+      reportedEventIds,
     });
-  }, [events, state.searchQuery, state.selectedCategory, state.showReportedOnly]);
+  }, [events, state.searchQuery, state.selectedCategory, state.showReportedOnly, reportedEventIds]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -152,7 +166,7 @@ export function useAdminEventsPage({
   }, [filteredEvents, state.currentPage, itemsPerPage]);
 
   const isEventReported = (eventId: number) => {
-    return isEventReportedAPI(eventId);
+    return reportedEventIds.has(eventId);
   };
 
   return {

@@ -1,120 +1,76 @@
 /**
  * Credits API
- * Handles all credits and promotions-related data operations
- * 
- * This is the public API for the credits feature.
- * It consolidates repository and service operations.
+ * Public API for the credits feature — all operations hit the backend.
  */
 
 import type { PromotedEvent } from "@/shared/types";
 import {
-  loadUserCredits,
-  saveUserCredits,
-  loadPromotedEvents,
-  savePromotedEvents,
+  fetchBalance,
+  addCreditsAPI,
+  fetchPromotions,
+  createPromotionAPI,
+  fetchActivePromotedEventIds,
 } from "@/features/credits/api/creditsRepository";
-import {
-  promoteEvent as promoteEventService,
-  getActivePromotedEventIds,
-  isEventPromoted as isEventPromotedService,
-} from "@/shared/services/promotionService";
 
-/**
- * Credits API
- */
+// ── Credits ─────────────────────────────────────────────────────────
 
-/**
- * Load user credits
- */
-export function loadCredits(): number {
-  return loadUserCredits();
+export async function loadCredits(): Promise<number> {
+  return fetchBalance();
 }
 
-/**
- * Save user credits
- */
-export function saveCredits(credits: number): void {
-  saveUserCredits(credits);
+export async function addCredits(amount: number): Promise<number> {
+  return addCreditsAPI(amount);
 }
 
-/**
- * Add credits to user account
- */
-export function addCredits(currentCredits: number, amount: number): number {
-  const newCredits = currentCredits + amount;
-  saveCredits(newCredits);
-  return newCredits;
+// ── Promotions ──────────────────────────────────────────────────────
+
+/** Map backend promotion rows to the frontend PromotedEvent shape. */
+function toPromotedEvent(row: {
+  event_id: number;
+  package: string;
+  start_date: string;
+  end_date: string;
+}): PromotedEvent {
+  return {
+    eventId: row.event_id,
+    package: row.package as PromotedEvent["package"],
+    startDate: row.start_date,
+    endDate: row.end_date,
+  };
 }
 
-/**
- * Promotions API
- */
-
-/**
- * Load promoted events
- */
-export function loadPromotedEventsAPI(): PromotedEvent[] {
-  return loadPromotedEvents();
+export async function loadPromotedEvents(): Promise<PromotedEvent[]> {
+  const rows = await fetchPromotions();
+  return rows.map(toPromotedEvent);
 }
 
-/**
- * Save promoted events
- */
-export function savePromotedEventsAPI(events: PromotedEvent[]): void {
-  savePromotedEvents(events);
-}
-
-/**
- * Promote an event
- * Returns the result with updated credits and promotions
- */
-export function promoteEventAPI(
+export async function promoteEventAPI(
   eventId: number,
   packageId: string,
   credits: number,
   duration: number,
-  currentCredits: number,
-  currentPromotions: PromotedEvent[]
-): {
-  success: boolean;
-  newCredits: number;
-  newPromotions: PromotedEvent[];
-  needsCredits?: boolean;
-} {
-  const result = promoteEventService(
-    eventId,
-    packageId,
-    credits,
-    duration,
-    currentCredits,
-    currentPromotions
-  );
-
-  if (result.success) {
-    // Persist the changes
-    saveCredits(result.newCredits);
-    savePromotedEventsAPI(result.newPromotions);
-    return { success: true, newCredits: result.newCredits, newPromotions: result.newPromotions };
-  } else {
-    return { success: false, newCredits: currentCredits, newPromotions: currentPromotions, needsCredits: true };
+): Promise<{ success: boolean; needsCredits?: boolean }> {
+  try {
+    await createPromotionAPI(eventId, packageId, credits, duration);
+    return { success: true };
+  } catch (err: unknown) {
+    const detail = (err as { message?: string }).message ?? "";
+    if (detail.includes("Insufficient credits")) {
+      return { success: false, needsCredits: true };
+    }
+    throw err;
   }
 }
 
-/**
- * Get active promoted event IDs
- */
-export function getActivePromotedEventIdsAPI(
-  promotions: PromotedEvent[]
-): number[] {
-  return getActivePromotedEventIds(promotions);
+export async function getActivePromotedEventIds(): Promise<number[]> {
+  return fetchActivePromotedEventIds();
 }
 
-/**
- * Check if an event is currently promoted
- */
-export function isEventPromotedAPI(
+/** Client-side check — is an event currently promoted? */
+export function isEventPromoted(
   eventId: number,
-  promotions: PromotedEvent[]
+  promotions: PromotedEvent[],
 ): boolean {
-  return isEventPromotedService(eventId, promotions);
+  const now = new Date().toISOString();
+  return promotions.some((p) => p.eventId === eventId && p.endDate > now);
 }

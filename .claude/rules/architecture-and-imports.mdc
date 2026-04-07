@@ -1,0 +1,15 @@
+---
+description: Enforce feature-based architecture and import alias usage.
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Architecture and Imports
+
+- Always use the `@/` alias for imports (e.g. `@/features/events/components/EventCard`) instead of long relative paths like `../../../features/events/components/EventCard`.
+- Keep domain logic inside `src/features/<domain>/` (e.g. `src/features/events`, `src/features/auth`) instead of dumping it into `src/components` or `src/shared` by default.
+- When creating a new feature, mirror the existing structure: `components/`, `api/`, `store/`, `context/`, `hooks/`, `utils/` as appropriate (see `src/features/events` and `src/features/auth`).
+- Do not have multiple implementations of the same UI concept across random folders; colocate the canonical version under its owning feature.
+- Shared, truly cross-cutting code belongs in `src/shared` (e.g. `src/shared/ui`, `src/shared/types`, `src/shared/lib`) and should be imported via `@/shared/...`.
+- Do not reach directly into another feature’s internal folders from a different feature; if something needs to be reused, promote it into `src/shared` first.
+- Prefer importing from feature or shared barrels (index files) where they exist, instead of deep, brittle paths into subfolders.

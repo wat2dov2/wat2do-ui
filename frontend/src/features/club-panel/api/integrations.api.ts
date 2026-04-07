@@ -1,38 +1,20 @@
 import { api } from "@/shared/services/apiClient";
+import type {
+  ApiClubIntegrationResponse,
+  ApiDiscordChannelOption,
+  ApiDiscordServerOption,
+  ApiDiscordIntegrationOptionsResponse,
+} from "@/shared/generated";
 
-export type IntegrationPlatform =
-  | "whatsapp"
-  | "discord"
-  | "instagram"
-  | "slack"
-  | "telegram"
-  | "linkedin"
-  | "facebook";
+export type IntegrationPlatform = ApiClubIntegrationResponse["platform"];
 
-export interface IntegrationChannelOption {
-  id: string;
-  name: string;
-}
+export type IntegrationChannelOption = ApiDiscordChannelOption;
 
-export interface IntegrationServerOption {
-  id: string;
-  name: string;
-  channels: IntegrationChannelOption[];
-}
+export type IntegrationServerOption = ApiDiscordServerOption;
 
-export interface IntegrationOptionsResponse {
-  oauth_url: string | null;
-  servers: IntegrationServerOption[];
-}
+export type IntegrationOptionsResponse = ApiDiscordIntegrationOptionsResponse;
 
-export interface PlatformIntegrationResponse {
-  club_id: number;
-  platform: IntegrationPlatform;
-  connected: boolean;
-  name: string | null;
-  last_sync: string | null;
-  metadata: Record<string, string>;
-}
+export type PlatformIntegrationResponse = ApiClubIntegrationResponse;
 
 export async function getIntegrationOptions(
   platform: IntegrationPlatform

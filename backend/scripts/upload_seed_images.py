@@ -5,7 +5,6 @@ Requires SUPABASE_SECRET_KEY in .env (bypasses RLS).
 Downloads placeholder images and uploads to event-images, avatars, club-logos, qr-assets.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -13,9 +12,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dotenv import load_dotenv
-
-load_dotenv()
+from core.config import settings
 
 EVENT_IMAGE_COUNT = 30
 AVATAR_COUNT = 12
@@ -24,12 +21,10 @@ LOGO_COUNT = 12
 
 def get_storage():
     from supabase import create_client
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SECRET_KEY")
-    if not url or not key:
+    if not settings.supabase_url or not settings.supabase_secret_key:
         print("Add SUPABASE_SECRET_KEY to backend/.env (Supabase Dashboard > Settings > API Keys)")
         raise SystemExit(1)
-    return create_client(url, key).storage
+    return create_client(settings.supabase_url, settings.supabase_secret_key).storage
 
 
 def download_image(url: str) -> bytes:
@@ -40,16 +35,15 @@ def download_image(url: str) -> bytes:
 
 
 def _public_url(project_url: str, bucket: str, path: str) -> str:
-    project_url = project_url.rstrip("/")
     return f"{project_url}/storage/v1/object/public/{bucket}/{path}"
 
 
 def main() -> None:
-    if not os.environ.get("SUPABASE_URL") or not os.environ.get("SUPABASE_KEY"):
+    if not settings.supabase_url or not settings.supabase_key:
         print("SUPABASE_URL and SUPABASE_KEY required in .env")
         sys.exit(1)
 
-    project_url = os.environ["SUPABASE_URL"]
+    project_url = settings.supabase_url
     storage = get_storage()
 
     uploads: list[tuple[str, str, str]] = []  # (bucket, path, url)

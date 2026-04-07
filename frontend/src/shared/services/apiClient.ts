@@ -1,28 +1,22 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
-const TOKEN_KEY = "wat2do_access_token";
-const REFRESH_KEY = "wat2do_refresh_token";
+// In-memory access token — never stored in localStorage
+let accessToken: string | null = null;
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  return accessToken;
 }
 
-export function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_KEY);
+export function setAccessToken(token: string): void {
+  accessToken = token;
 }
 
-export function setTokens(access: string, refresh: string): void {
-  localStorage.setItem(TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_KEY, refresh);
+export function clearAccessToken(): void {
+  accessToken = null;
 }
 
-export function clearTokens(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_KEY);
-}
-
-export function hasTokens(): boolean {
-  return localStorage.getItem(TOKEN_KEY) !== null;
+export function hasAccessToken(): boolean {
+  return accessToken !== null;
 }
 
 class ApiError extends Error {
@@ -54,7 +48,14 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, { ...options, headers });
+  const fetchOptions: RequestInit = { ...options, headers };
+
+  // Send cookies for auth endpoints (httpOnly refresh token cookie)
+  if (path.startsWith("/auth/")) {
+    fetchOptions.credentials = "include";
+  }
+
+  const res = await fetch(url, fetchOptions);
 
   if (res.status === 204) return undefined as T;
 

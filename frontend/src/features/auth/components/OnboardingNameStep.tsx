@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, Search } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { availableSchools } from "@/features/events/data/events";
+import { availableSchools } from "@/shared/constants/schools";
 
 interface OnboardingSchoolStepProps {
   school: string;

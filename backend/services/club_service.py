@@ -1,10 +1,13 @@
 """Clubs via Supabase. Sync."""
 
 import json
+import logging
 from datetime import datetime
 
+log = logging.getLogger(__name__)
+
 from core.database import get_sb
-from schemas.club import ClubCreate, ClubUpdate, IntegrationPlatform
+from schemas.club import ClubCreate, ClubUpdate, ClubResponse, IntegrationPlatform
 
 
 SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = (
@@ -18,11 +21,11 @@ SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = (
 )
 
 
-def get_club(club_id: int) -> dict | None:
+def get_club(club_id: int) -> ClubResponse | None:
     r = get_sb().table("clubs").select("*").eq("id", club_id).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return r.data[0]
+    return ClubResponse.model_validate(r.data[0])
 
 
 def list_clubs(
@@ -30,7 +33,7 @@ def list_clubs(
     limit: int = 100,
     club_type: str | None = None,
     search: str | None = None,
-) -> list[dict]:
+) -> list[ClubResponse]:
     q = get_sb().table("clubs").select("*")
     if club_type:
         q = q.eq("club_type", club_type)
@@ -38,21 +41,21 @@ def list_clubs(
         q = q.ilike("club_name", f"%{search}%")
     q = q.order("club_name").range(skip, skip + limit - 1)
     r = q.execute()
-    return r.data or []
+    return [ClubResponse.model_validate(c) for c in (r.data or [])]
 
 
-def create_club(data: ClubCreate) -> dict:
+def create_club(data: ClubCreate) -> ClubResponse:
     payload = data.model_dump()
     r = get_sb().table("clubs").insert(payload).execute()
-    return r.data[0]
+    return ClubResponse.model_validate(r.data[0])
 
 
-def update_club(club_id: int, data: ClubUpdate) -> dict | None:
+def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     if get_club(club_id) is None:
         return None
     payload = data.model_dump(exclude_unset=True)
     r = get_sb().table("clubs").update(payload).eq("id", club_id).execute()
-    return r.data[0] if r.data else None
+    return ClubResponse.model_validate(r.data[0]) if r.data else None
 
 
 def delete_club(club_id: int) -> bool:
@@ -160,8 +163,8 @@ def get_discord_options() -> dict:
     return get_integration_options("discord")
 
 
-def _get_integration_blob(club: dict) -> dict[str, dict]:
-    raw = club.get("discord")
+def _get_integration_blob(club: ClubResponse) -> dict[str, dict]:
+    raw = club.discord
     if not raw:
         return {}
     if not isinstance(raw, str):
@@ -178,7 +181,8 @@ def _get_integration_blob(club: dict) -> dict[str, dict]:
         }
     try:
         parsed = json.loads(raw)
-    except Exception:
+    except Exception as e:
+        log.warning("Failed to parse integrations JSON: %s", e)
         return {}
     if isinstance(parsed, dict) and "_integrations" in parsed:
         integrations = parsed.get("_integrations")

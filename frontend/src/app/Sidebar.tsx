@@ -13,7 +13,7 @@ import {
   Settings,
 } from "lucide-react";
 import { SidebarButton } from "@/shared/ui/sidebar-button";
-import { SidebarEventsSection } from "@/features/events/components/SidebarEventsSection";
+import { SidebarEventsSection } from "@/features/events";
 import { useSidebar } from "@/app/hooks/useSidebar";
 import { useAppContext } from "@/contexts/AppContext";
 import { cn } from "@/shared/lib/utils";

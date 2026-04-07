@@ -20,4 +20,16 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // Architecture boundary: shared/ must never import from features/
+  {
+    files: ['src/shared/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@/features/*', '@/features/**'],
+          message: 'shared/ must not import from features/. Move the needed code to shared/ or pass it as a parameter.',
+        }],
+      }],
+    },
+  },
 ])

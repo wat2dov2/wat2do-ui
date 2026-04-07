@@ -1,0 +1,31 @@
+name: Nightly recommendation compute
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # 2am UTC every night
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+jobs:
+  compute:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Run recommendation job
+        working-directory: backend
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python jobs/compute_recommendations.py

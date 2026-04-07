@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from services import storage_service
+from services.storage_service import storage
 
 
 def _make_file(filename: str, content: bytes, content_type: str) -> dict:
@@ -25,7 +25,7 @@ def test_upload_qr_asset_success(authenticated_client, monkeypatch):
         }
         return "https://example.com/qr-assets/fake.png"
 
-    monkeypatch.setattr(storage_service, "upload_file", fake_upload_file)
+    monkeypatch.setattr(storage, "upload_file", fake_upload_file)
 
     files = _make_file("poster.png", b"fake-bytes", "image/png")
     resp = authenticated_client.post("/uploads/qr-asset", files=files)
@@ -55,7 +55,7 @@ def test_upload_qr_asset_too_large(authenticated_client, monkeypatch):
     """QR asset upload enforces file size limits."""
 
     # Force a very small size limit so we don't allocate huge buffers.
-    monkeypatch.setitem(storage_service.BUCKETS["qr-assets"], "file_size_limit", 10)
+    monkeypatch.setitem(storage.BUCKETS["qr-assets"], "file_size_limit", 10)
 
     files = _make_file("big.png", b"x" * 11, "image/png")
     resp = authenticated_client.post("/uploads/qr-asset", files=files)

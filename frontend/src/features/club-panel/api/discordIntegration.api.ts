@@ -1,31 +1,15 @@
 import { api } from "@/shared/services/apiClient";
+import type {
+  ApiDiscordChannelOption,
+  ApiDiscordServerOption,
+  ApiDiscordIntegrationOptionsResponse,
+  ApiDiscordIntegrationResponse,
+} from "@/shared/generated";
 
-export interface DiscordChannelOption {
-  id: string;
-  name: string;
-}
-
-export interface DiscordServerOption {
-  id: string;
-  name: string;
-  channels: DiscordChannelOption[];
-}
-
-export interface DiscordIntegrationOptionsResponse {
-  oauth_url: string;
-  servers: DiscordServerOption[];
-}
-
-export interface DiscordIntegrationResponse {
-  club_id: number;
-  connected: boolean;
-  name: string | null;
-  server_id: string | null;
-  server_name: string | null;
-  channel_id: string | null;
-  channel_name: string | null;
-  last_sync: string | null;
-}
+export type DiscordChannelOption = ApiDiscordChannelOption;
+export type DiscordServerOption = ApiDiscordServerOption;
+export type DiscordIntegrationOptionsResponse = ApiDiscordIntegrationOptionsResponse;
+export type DiscordIntegrationResponse = ApiDiscordIntegrationResponse;
 
 export async function getDiscordIntegrationOptions(): Promise<DiscordIntegrationOptionsResponse> {
   return api.get<DiscordIntegrationOptionsResponse>("/clubs/integrations/discord/options");

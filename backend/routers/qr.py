@@ -44,7 +44,7 @@ def resolve_qr_and_record_scan(
     user_agent = request.headers.get("user-agent")
     user_agent_trunc = user_agent[:512] if user_agent else None
 
-    if not qr.get("is_active"):
+    if not qr.is_active:
         if lat is not None and lon is not None:
             redirect_config = qr_code_service.activate_poster_and_record_scan(
                 qr_code_id, lat, lon, session_id=session_id, user_agent=user_agent_trunc
@@ -59,16 +59,16 @@ def resolve_qr_and_record_scan(
     qr_code_service.record_scan(
         qr_code_id, session_id=session_id, user_agent=user_agent_trunc
     )
-    dest_id = qr.get("destination_id")
-    if qr.get("destination_type") == "event" and dest_id is not None:
+    dest_id = qr.destination_id
+    if qr.destination_type == "event" and dest_id is not None:
         try:
             dest_id = int(dest_id)
         except (TypeError, ValueError):
             pass
     return QrCodeRedirect(
-        destination_type=qr["destination_type"],
+        destination_type=qr.destination_type,
         destination_id=dest_id,
-        filters=qr.get("filters"),
+        filters=qr.filters,
     )
 
 

@@ -21,7 +21,7 @@ import {
 } from "@/shared/ui/select";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { useProfile } from "@/features/settings/hooks/useProfile";
-import { availableSchools } from "@/features/events/data/events";
+import { availableSchools } from "@/shared/constants/schools";
 import { availableInterests } from "@/shared/data/interests";
 
 const availableFaculties = [

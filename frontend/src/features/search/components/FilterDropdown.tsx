@@ -6,10 +6,21 @@ import { VisualFilters } from "@/features/search/components/VisualFilters";
 import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
 import type { FilterViewMode } from "@/shared/types";
 
+interface FilterDropdownFilters {
+  aiPrompt: string;
+  setAiPrompt: (prompt: string) => void;
+  aiGenerating: boolean;
+  handleAiGenerate: () => void;
+  jsonError: string;
+  jsonValue: string;
+  handleJsonChange: (value: string | undefined) => void;
+  [key: string]: unknown;
+}
+
 interface FilterDropdownProps {
   filterViewMode: FilterViewMode;
   onFilterViewModeChange: (mode: FilterViewMode) => void;
-  filters: any;
+  filters: FilterDropdownFilters;
   isDarkMode: boolean;
 }
 

@@ -6,16 +6,13 @@ Usage:
     python scripts/setup_storage.py
 """
 
-import os
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dotenv import load_dotenv
-
-load_dotenv()
+from core.config import settings
 
 SQL_FILE = Path(__file__).resolve().parent / "setup_storage.sql"
 
@@ -49,7 +46,7 @@ def split_sql(text: str) -> list[str]:
 
 
 def main() -> None:
-    db_url = os.environ.get("DATABASE_URL", "")
+    db_url = settings.database_url
     if not db_url:
         print("ERROR: DATABASE_URL not set in .env")
         sys.exit(1)

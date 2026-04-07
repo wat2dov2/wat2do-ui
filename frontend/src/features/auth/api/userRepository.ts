@@ -1,16 +1,15 @@
 /**
  * User Repository
  * Internal data layer for auth feature
- * Handles user data persistence (localStorage + API tokens)
+ * Handles user data persistence (localStorage for profile cache, in-memory for tokens)
  */
 
 import { StorageService } from "@/shared/services/storageService";
 import {
   getAccessToken,
-  getRefreshToken,
-  setTokens as setApiTokens,
-  clearTokens as clearApiTokens,
-  hasTokens as hasApiTokens,
+  setAccessToken,
+  clearAccessToken,
+  hasAccessToken,
 } from "@/shared/services/apiClient";
 
 const STORAGE_KEYS = {
@@ -53,16 +52,16 @@ export function clearUserProfile(): void {
   StorageService.removeItem(STORAGE_KEYS.USER_PROFILE);
 }
 
-// --- Tokens (delegated to apiClient) ---
+// --- Tokens (in-memory via apiClient) ---
 
-export { getAccessToken, getRefreshToken, hasApiTokens as hasTokens };
+export { getAccessToken, hasAccessToken as hasTokens };
 
-export function saveTokens(accessToken: string, refreshToken: string): void {
-  setApiTokens(accessToken, refreshToken);
+export function saveAccessToken(token: string): void {
+  setAccessToken(token);
 }
 
 export function clearTokens(): void {
-  clearApiTokens();
+  clearAccessToken();
 }
 
 // --- Full clear on logout ---
@@ -70,5 +69,5 @@ export function clearTokens(): void {
 export function clearAllAuthData(): void {
   saveUserEmail(null);
   clearUserProfile();
-  clearApiTokens();
+  clearAccessToken();
 }

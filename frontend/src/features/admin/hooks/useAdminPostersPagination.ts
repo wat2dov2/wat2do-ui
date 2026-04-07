@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
+import type { QRCode, QRCodeScan } from "@/shared/types";
 
 interface UseAdminPostersPaginationOptions {
   itemsPerPage: number;
   scansPerPage: number;
-  filteredQRCodes: any[];
-  scansMatchingPosterSearch: any[];
+  filteredQRCodes: QRCode[];
+  scansMatchingPosterSearch: QRCodeScan[];
   timeFilter: string;
 }
 

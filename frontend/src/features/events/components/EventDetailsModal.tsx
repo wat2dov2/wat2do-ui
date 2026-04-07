@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { tracker } from "@/shared/services/trackingService";
 import { ImageOff, ExternalLink } from "lucide-react";
 import {
   Dialog,
@@ -69,6 +70,22 @@ export function EventDetailsModal({
   }, [event]);
 
   const isOpen = event !== null;
+
+  // Track detail_view on open, dwell time on close
+  const openTimeRef = useRef<number>(0);
+  useEffect(() => {
+    if (displayedEvent) {
+      openTimeRef.current = Date.now();
+      tracker.track(displayedEvent.id, "detail_view");
+    }
+    return () => {
+      if (displayedEvent && openTimeRef.current > 0) {
+        const dwellMs = Date.now() - openTimeRef.current;
+        tracker.track(displayedEvent.id, "click", { dwell_time_ms: dwellMs });
+        openTimeRef.current = 0;
+      }
+    };
+  }, [displayedEvent]);
 
   const similarEvents = useMemo(() => {
     if (!displayedEvent) return [];

@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from core.auth import get_current_user
+from core.auth import get_current_user, get_admin_user
 from schemas.user import UserUpdate, UserProfileUpdate, UserResponse
 from services import user_service
 
@@ -30,7 +30,7 @@ def update_me(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found"
         )
-    updated = user_service.update_user(UUID(user["id"]), data)
+    updated = user_service.update_user(user.id, data)
     return updated
 
 
@@ -45,7 +45,7 @@ def update_profile(
             status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found"
         )
     update_data = UserUpdate(**data.model_dump(exclude_unset=True))
-    updated = user_service.update_user(UUID(user["id"]), update_data)
+    updated = user_service.update_user(user.id, update_data)
     return updated
 
 
@@ -53,7 +53,7 @@ def update_profile(
 def list_users(
     skip: int = 0,
     limit: int = 100,
-    _=Depends(get_current_user),
+    _=Depends(get_admin_user),
 ):
     return user_service.list_users(skip=skip, limit=limit)
 
@@ -61,7 +61,7 @@ def list_users(
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: UUID,
-    _=Depends(get_current_user),
+    _=Depends(get_admin_user),
 ):
     user = user_service.get_user(user_id)
     if not user:
@@ -72,7 +72,7 @@ def get_user(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: UUID,
-    _=Depends(get_current_user),
+    _=Depends(get_admin_user),
 ):
     deleted = user_service.delete_user(user_id)
     if not deleted:

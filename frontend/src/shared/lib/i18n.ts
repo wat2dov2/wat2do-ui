@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { loadLanguage, saveLanguage, type SupportedLanguage } from '@/features/settings/api/settings.api';
+import { loadLanguage, saveLanguage, type SupportedLanguage } from '@/shared/services/preferencesStorage';
 import { LANGUAGE_CODES } from '@/shared/constants/languages';
 
 // Get language from settings API or default to English

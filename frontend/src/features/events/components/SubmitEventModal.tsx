@@ -38,7 +38,7 @@ import {
 import {
   SubmitEventModalProvider,
   useSubmitEventModalContext,
-} from "@/features/events/components/SubmitEventModal.context";
+} from "@/features/events/context/SubmitEventModal.context";
 import type { EventFormData } from "@/shared/types";
 
 interface SubmitEventModalProps {
@@ -156,7 +156,7 @@ function SubmitEventModalFormBody({ formInitialData }: { formInitialData: EventF
       dispatch({ type: "SET_IS_SUBMITTED", payload: true });
       if (eventForm.imageFile && eventId) {
         import("@/shared/services/uploadService").then(({ uploadEventImage }) => {
-          uploadEventImage(eventId, eventForm.imageFile!).catch(() => {});
+          uploadEventImage(eventId, eventForm.imageFile!).catch((err) => console.error("Failed to upload event image:", err));
         });
       }
       if (!eventFormPromotion.showPromotion) {
@@ -371,7 +371,7 @@ function SubmitEventModalContent() {
     setResolvedInitialData(undefined);
     loadEventForEdit(editEventId)
       .then((data) => setResolvedInitialData(data))
-      .catch(() => setResolvedInitialData(undefined));
+      .catch((err) => { console.error("Failed to load event for edit:", err); setResolvedInitialData(undefined); });
   }, [isOpen, editEventId, loadEventForEdit]);
 
   if (isOpen && editEventId && loadEventForEdit && resolvedInitialData === undefined) {

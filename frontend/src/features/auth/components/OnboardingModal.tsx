@@ -34,7 +34,7 @@ import { useModalState } from "@/shared/hooks/useModalState";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { availableInterests } from "@/shared/data/interests";
 import { updateUserProfile } from "@/features/auth/api/auth.api";
-import { availableSchools } from "@/features/events/data/events";
+import { availableSchools } from "@/shared/constants/schools";
 import { translateInterest } from "@/shared/utils/translateInterest";
 
 interface OnboardingModalProps {

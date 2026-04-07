@@ -1,33 +1,5 @@
-import { useState, useCallback } from "react";
-import { usePromotions } from "@/features/credits";
-
 /**
- * Hook for managing promotions in the App component
- * Extends usePromotions with App-specific functionality like buy credits modal
+ * @deprecated Use usePromotionsStore directly from "@/features/credits/store/promotions.store"
+ * This hook is kept for backwards compatibility but all new code should use the store.
  */
-export function useAppPromotions() {
-  const promotions = usePromotions();
-  const [showBuyCredits, setShowBuyCredits] = useState(false);
-
-  // Promote event handler that shows buy credits modal if needed
-  const promoteEvent = useCallback(
-    (eventId: number, packageId: string, credits: number, duration: number): boolean => {
-      const result = promotions.promoteEvent(eventId, packageId, credits, duration);
-      
-      if (result.needsCredits) {
-        setShowBuyCredits(true);
-        return false;
-      }
-      
-      return result.success;
-    },
-    [promotions]
-  );
-
-  return {
-    ...promotions,
-    showBuyCredits,
-    setShowBuyCredits,
-    promoteEvent,
-  };
-}
+export { usePromotionsStore as useAppPromotions } from "@/features/credits/store/promotions.store";

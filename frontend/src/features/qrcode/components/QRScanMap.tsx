@@ -14,8 +14,7 @@ interface QRScanMapProps {
   onMarkerClick?: (qrCodeId: string) => void;
 }
 
-// Default Mapbox token - in production, this should come from environment variables
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "pk.eyJ1IjoibWFwYm94MTIzNDV0cSIsImEiOiJjbWI0NWdsN3gweHR4MnZweTE4emMwbmljIn0.hKl8l4kis1ZmQyjHe2kKqQ";
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
 
 // Color scale based on scan count
 // Industry standard: Green (low) -> Yellow (medium) -> Red (high)
@@ -179,7 +178,7 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
     let cancelled = false;
     listPostersFromBackend()
       .then((list) => { if (!cancelled) setFetchedPosters(list); })
-      .catch(() => {});
+      .catch((err) => console.error("Failed to fetch posters:", err));
     return () => { cancelled = true; };
   }, [postersProp]);
 

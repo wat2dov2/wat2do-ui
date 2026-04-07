@@ -1,9 +1,12 @@
 /**
- * Events Store
- * All events come from the backend API.
+ * Events Store (Zustand)
+ *
+ * Single source of truth for all events data. State lives outside React,
+ * so every component that imports this store reads the same data — no
+ * duplicate fetches, no divergent state.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { create } from "zustand";
 import type { Event, EventFormData } from "@/shared/types";
 import {
   fetchAllEvents,
@@ -15,60 +18,62 @@ import { getUniqueEvents } from "@/shared/utils/event";
 
 type GetDayOfWeekFn = (date: string) => string;
 
-interface UseEventsStoreOptions {
-  getDayOfWeek: GetDayOfWeekFn;
+interface EventsState {
+  events: Event[];
+  isLoading: boolean;
+  userCreatedEventIds: number[];
+
+  /** Fetch all events from backend. Idempotent — skips if already loaded. */
+  fetchEvents: () => Promise<void>;
+  addEvent: (data: EventFormData, getDayOfWeek: GetDayOfWeekFn) => Promise<number>;
+  updateEvent: (eventId: number, data: EventFormData, getDayOfWeek: GetDayOfWeekFn) => Promise<void>;
+  deleteEvent: (eventId: number) => Promise<void>;
 }
 
-export function useEventsStore(options: UseEventsStoreOptions) {
-  const { getDayOfWeek } = options;
+export const useEventsStore = create<EventsState>((set, get) => ({
+  events: [],
+  isLoading: true,
+  userCreatedEventIds: [],
 
-  const [events, setEvents] = useState<Event[]>([]);
-  const [userCreatedEventIds, setUserCreatedEventIds] = useState<number[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  fetchEvents: async () => {
+    // Already loaded or in-flight — skip
+    if (get().events.length > 0 || !get().isLoading) return;
+    try {
+      const events = await fetchAllEvents();
+      set({ events, isLoading: false });
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+      set({ isLoading: false });
+    }
+  },
 
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    fetchAllEvents()
-      .then((apiEvents) => {
-        if (!cancelled) setEvents(apiEvents);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
+  addEvent: async (data, getDayOfWeek) => {
+    const created = await createEventAPI(data, getDayOfWeek);
+    set((state) => ({
+      events: getUniqueEvents([created, ...state.events]),
+      userCreatedEventIds: [...state.userCreatedEventIds, created.id],
+    }));
+    return created.id;
+  },
 
-  const addEvent = useCallback(
-    async (eventData: EventFormData): Promise<number> => {
-      const created = await createEventAPI(eventData, getDayOfWeek);
-      setEvents((prev) => getUniqueEvents([created, ...prev]));
-      setUserCreatedEventIds((prev) => [...prev, created.id]);
-      return created.id;
-    },
-    [getDayOfWeek],
-  );
+  updateEvent: async (eventId, data, getDayOfWeek) => {
+    const event = get().events.find((e) => e.id === eventId);
+    if (!event) return;
+    const updated = await updateEventAPI(event, data, getDayOfWeek);
+    set((state) => ({
+      events: state.events.map((e) => (e.id === eventId ? updated : e)),
+    }));
+  },
 
-  const updateEvent = useCallback(
-    async (eventId: number, eventData: EventFormData) => {
-      const event = events.find((e) => e.id === eventId);
-      if (!event) return;
-      const updated = await updateEventAPI(event, eventData, getDayOfWeek);
-      setEvents((prev) => prev.map((e) => (e.id === eventId ? updated : e)));
-    },
-    [events, getDayOfWeek],
-  );
-
-  const deleteEvent = useCallback(async (eventId: number) => {
+  deleteEvent: async (eventId) => {
     try {
       await deleteEventAPI(eventId);
-      setEvents((prev) => prev.filter((e) => e.id !== eventId));
-      setUserCreatedEventIds((prev) => prev.filter((id) => id !== eventId));
-    } catch {
-      // Keep event in list on failure
+      set((state) => ({
+        events: state.events.filter((e) => e.id !== eventId),
+        userCreatedEventIds: state.userCreatedEventIds.filter((id) => id !== eventId),
+      }));
+    } catch (err) {
+      console.error("Failed to delete event:", err);
     }
-  }, []);
-
-  return { events, isLoading, userCreatedEventIds, addEvent, updateEvent, deleteEvent };
-}
+  },
+}));

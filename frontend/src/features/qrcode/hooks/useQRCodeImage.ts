@@ -39,7 +39,8 @@ export function useQRCodeImage({ qrCode, isOpen }: UseQRCodeImageOptions) {
       uploadQRAsset(file).then((url) => {
         dispatch({ type: "SET_EDITED_IMAGE_URL", payload: url });
         dispatch({ type: "SET_IMAGE_PREVIEW", payload: url });
-      }).catch(() => {
+      }).catch((err) => {
+        console.error("Failed to upload QR asset:", err);
         const reader2 = new FileReader();
         reader2.onload = (ev) => {
           const fallback = ev.target?.result as string;

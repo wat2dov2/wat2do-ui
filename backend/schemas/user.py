@@ -34,6 +34,7 @@ class UserResponse(UserBase):
     school: str | None = None
     interests: list[str] | None = None
     is_first_year: bool = False
+    role: str = "user"
     created_at: datetime
     updated_at: datetime
 

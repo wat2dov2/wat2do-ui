@@ -419,31 +419,6 @@ export const mockEvents: Event[] = [
 // Event categories: same as onboarding "What kind of events are you into?" (source of truth: shared/constants/eventCategories)
 export { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";
 
-export const availableFoods = [
-  "Snacks",
-  "Pizza",
-  "Sandwiches",
-  "Salad",
-  "Dessert",
-  "Drinks",
-  "Vegan",
-  "Gluten-free",
-];
-
-export const availableDays = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-
-export const availableSchools = [
-  "University of Waterloo",
-  "University of Toronto",
-  "McGill University",
-  "University of British Columbia",
-  "McMaster University",
-];
+// Re-exported from shared — canonical home is shared/constants/
+export { availableFoods, availableDays } from "@/shared/constants/eventFilters";
+export { availableSchools } from "@/shared/constants/schools";

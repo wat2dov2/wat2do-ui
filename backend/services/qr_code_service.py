@@ -3,17 +3,17 @@
 from datetime import datetime
 
 from core.database import get_sb
-from schemas.qr_code import QrCodeCreate, QrCodeRedirect
+from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
 
 
-def get_qr_code_by_id(qr_code_id: str) -> dict | None:
+def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
     r = get_sb().table("qr_codes").select("*").eq("id", qr_code_id).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return r.data[0]
+    return QrCodeResponse.model_validate(r.data[0])
 
 
-def upsert_qr_code(data: QrCodeCreate) -> dict:
+def upsert_qr_code(data: QrCodeCreate) -> QrCodeResponse:
     sb = get_sb()
     existing = get_qr_code_by_id(data.id)
     dest_id = str(data.destination_id) if data.destination_id is not None else None
@@ -46,7 +46,7 @@ def activate_poster_and_record_scan(
     user_agent: str | None = None,
 ) -> QrCodeRedirect | None:
     qr = get_qr_code_by_id(qr_code_id)
-    if not qr or qr.get("is_active"):
+    if not qr or qr.is_active:
         return None
     sb = get_sb()
     sb.table("qr_codes").update({
@@ -60,16 +60,16 @@ def activate_poster_and_record_scan(
         "user_agent": user_agent,
     }).execute()
     qr = get_qr_code_by_id(qr_code_id)
-    dest_id = qr.get("destination_id")
-    if qr.get("destination_type") == "event" and dest_id is not None:
+    dest_id = qr.destination_id
+    if qr.destination_type == "event" and dest_id is not None:
         try:
             dest_id = int(dest_id)
         except (TypeError, ValueError):
             pass
     return QrCodeRedirect(
-        destination_type=qr["destination_type"],
+        destination_type=qr.destination_type,
         destination_id=dest_id,
-        filters=qr.get("filters"),
+        filters=qr.filters,
     )
 
 
@@ -79,14 +79,14 @@ def record_scan(
     user_id: str | None = None,
     session_id: str,
     user_agent: str | None = None,
-) -> dict:
+) -> QrCodeScanResponse:
     r = get_sb().table("qr_code_scans").insert({
         "qr_code_id": qr_code_id,
         "user_id": user_id,
         "session_id": session_id,
         "user_agent": user_agent,
     }).execute()
-    return r.data[0]
+    return QrCodeScanResponse.model_validate(r.data[0])
 
 
 def delete_qr_code(qr_code_id: str) -> None:
@@ -95,16 +95,16 @@ def delete_qr_code(qr_code_id: str) -> None:
     get_sb().table("qr_codes").delete().eq("id", qr_code_id).execute()
 
 
-def list_qr_codes() -> list[dict]:
+def list_qr_codes() -> list[QrCodeResponse]:
     r = get_sb().table("qr_codes").select("*").order("created_at", desc=True).execute()
-    return r.data or []
+    return [QrCodeResponse.model_validate(q) for q in (r.data or [])]
 
 
 def list_scans(
     qr_code_id: str | None = None,
     from_time: datetime | None = None,
     to_time: datetime | None = None,
-) -> list[dict]:
+) -> list[QrCodeScanResponse]:
     q = get_sb().table("qr_code_scans").select("*").order("scanned_at", desc=True)
     if qr_code_id:
         q = q.eq("qr_code_id", qr_code_id)
@@ -113,4 +113,4 @@ def list_scans(
     if to_time:
         q = q.lte("scanned_at", to_time.isoformat())
     r = q.execute()
-    return r.data or []
+    return [QrCodeScanResponse.model_validate(s) for s in (r.data or [])]

@@ -73,10 +73,10 @@ export function parseFiltersFromJSON(
           : false,
     };
     return { filters, error: null };
-  } catch (error) {
+  } catch {
     return {
       filters: createFilterState(),
-      error: error instanceof Error ? error.message : "Invalid JSON format",
+      error: "Invalid JSON format",
     };
   }
 }
@@ -88,7 +88,7 @@ export function buildFilterQueryString(filters: FilterState): string {
   try {
     const encoded = encodeURIComponent(JSON.stringify(filters));
     return `filters=${encoded}`;
-  } catch (error) {
+  } catch {
     return "";
   }
 }
@@ -107,28 +107,13 @@ export function parseFilterQueryString(
     const decoded = decodeURIComponent(filtersParam);
     const { filters } = parseFiltersFromJSON(decoded);
     return filters;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
-/**
- * Check if any filters are active
- */
-export function hasActiveFilters(filters: FilterState): boolean {
-  return (
-    filters.searchQuery.trim() !== "" ||
-    filters.categories.length > 0 ||
-    filters.locations.length > 0 ||
-    filters.foods.length > 0 ||
-    filters.days.length > 0 ||
-    filters.priceRange.min !== "" ||
-    filters.priceRange.max !== "" ||
-    filters.dateRange !== "" ||
-    filters.addedSince !== "" ||
-    filters.requiresRegistration
-  );
-}
+// Canonical home: shared/utils/filter.ts — re-exported for backward compat
+export { hasActiveFilters } from "@/shared/utils/filter";
 
 /**
  * Clear all filters (return to default state)

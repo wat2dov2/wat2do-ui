@@ -2,8 +2,8 @@
  * Auth API
  * Public API for authentication operations
  *
- * Sync helpers read from localStorage (for rendering).
- * Async helpers call the backend API (for mutations).
+ * Access token is stored in memory (via apiClient).
+ * Refresh token is in an httpOnly cookie (managed by the backend).
  */
 
 import { api, ApiError } from "@/shared/services/apiClient";
@@ -12,7 +12,7 @@ import {
   saveUserEmail,
   loadUserProfile,
   saveUserProfile,
-  saveTokens,
+  saveAccessToken,
   clearAllAuthData,
   hasTokens,
   type UserProfile,
@@ -24,7 +24,6 @@ export type { UserProfile };
 
 interface TokenResponse {
   access_token: string;
-  refresh_token: string;
   token_type: string;
   expires_in: number;
   user_id: string;
@@ -33,7 +32,6 @@ interface TokenResponse {
 interface SignupResponse {
   user_id: string;
   access_token?: string | null;
-  refresh_token?: string | null;
   token_type: string;
   expires_in?: number | null;
   confirmation_required: boolean;
@@ -53,7 +51,7 @@ interface BackendUserProfile {
   updated_at: string;
 }
 
-// ── Sync helpers (read from localStorage) ────────────────────────────
+// ── Sync helpers (read from localStorage / memory) ───────────────────
 
 export function getSession(): { email: string | null } {
   return { email: loadUserEmail() };
@@ -101,8 +99,8 @@ export async function signupAPI(
     full_name: fullName ?? undefined,
   });
 
-  if (res.access_token && res.refresh_token) {
-    saveTokens(res.access_token, res.refresh_token);
+  if (res.access_token) {
+    saveAccessToken(res.access_token);
   }
   saveUserEmail(email);
 
@@ -121,7 +119,7 @@ export async function loginAPI(
     password,
   });
 
-  saveTokens(res.access_token, res.refresh_token);
+  saveAccessToken(res.access_token);
   saveUserEmail(email);
 
   return { userId: res.user_id };
@@ -137,19 +135,31 @@ export async function logoutAPI(): Promise<void> {
 }
 
 export async function refreshTokenAPI(): Promise<boolean> {
-  const refreshToken = localStorage.getItem("wat2do_refresh_token");
-  if (!refreshToken) return false;
-
+  // Refresh token is sent automatically as an httpOnly cookie
   try {
-    const res = await api.post<TokenResponse>("/auth/refresh", {
-      refresh_token: refreshToken,
-    });
-    saveTokens(res.access_token, res.refresh_token);
+    const res = await api.post<TokenResponse>("/auth/refresh");
+    saveAccessToken(res.access_token);
     return true;
   } catch {
     clearAllAuthData();
     return false;
   }
+}
+
+/**
+ * Initialize auth on app startup.
+ * Checks if there's a hint of a prior session (userEmail in localStorage),
+ * then attempts to refresh the access token via the httpOnly cookie.
+ */
+export async function initializeAuth(): Promise<boolean> {
+  const email = loadUserEmail();
+  if (!email) return false;
+
+  const success = await refreshTokenAPI();
+  if (!success) {
+    clearAllAuthData();
+  }
+  return success;
 }
 
 export async function fetchProfileAPI(): Promise<UserProfile | null> {

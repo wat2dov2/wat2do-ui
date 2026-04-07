@@ -1,12 +1,15 @@
+"""Storage via Supabase. Sync."""
+
 import uuid
 from pathlib import PurePosixPath
+
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from core.database import supabase, supabase_admin
 from core.logging import logger
 
-_storage = (supabase_admin or supabase).storage
 
-BUCKETS = {
+_DEFAULT_BUCKETS: dict[str, dict] = {
     "event-images": {
         "public": True,
         "file_size_limit": 5 * 1024 * 1024,  # 5 MB
@@ -29,65 +32,69 @@ BUCKETS = {
     },
 }
 
+_MIME_TO_EXT = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+    "image/svg+xml": ".svg",
+}
 
-def ensure_buckets() -> dict[str, bool]:
-    """Create all required storage buckets if they don't exist. Returns status per bucket."""
-    existing = {b.id for b in _storage.list_buckets()}
-    results: dict[str, bool] = {}
 
-    for bucket_id, opts in BUCKETS.items():
-        if bucket_id in existing:
-            logger.info("Bucket '%s' already exists", bucket_id)
-            results[bucket_id] = True
-            continue
+class StorageService:
+    def __init__(self, storage_client, buckets: dict[str, dict] | None = None):
+        self._storage = storage_client
+        self.BUCKETS = buckets if buckets is not None else _DEFAULT_BUCKETS
+
+    def ensure_buckets(self) -> dict[str, bool]:
+        """Create all required storage buckets if they don't exist."""
+        existing = {b.id for b in self._storage.list_buckets()}
+        results: dict[str, bool] = {}
+
+        for bucket_id, opts in self.BUCKETS.items():
+            if bucket_id in existing:
+                logger.info("Bucket '%s' already exists", bucket_id)
+                results[bucket_id] = True
+                continue
+            try:
+                self._storage.create_bucket(bucket_id, options=opts)
+                logger.info("Created bucket '%s'", bucket_id)
+                results[bucket_id] = True
+            except Exception as e:
+                logger.error("Failed to create bucket '%s': %s", bucket_id, e)
+                results[bucket_id] = False
+
+        return results
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, max=4))
+    def upload_file(self, bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+        """Upload a file and return its public URL."""
+        ext = PurePosixPath(filename).suffix or _MIME_TO_EXT.get(content_type, ".bin")
+        path = f"{uuid.uuid4().hex}{ext}"
+
+        self._storage.from_(bucket).upload(
+            path,
+            file_bytes,
+            file_options={"content-type": content_type},
+        )
+
+        return self._storage.from_(bucket).get_public_url(path)
+
+    def delete_file(self, bucket: str, path: str) -> None:
+        """Delete a file by its path within a bucket."""
         try:
-            _storage.create_bucket(bucket_id, options=opts)
-            logger.info("Created bucket '%s'", bucket_id)
-            results[bucket_id] = True
+            self._storage.from_(bucket).remove([path])
         except Exception as e:
-            logger.error("Failed to create bucket '%s': %s", bucket_id, e)
-            results[bucket_id] = False
+            logger.warning("Failed to delete %s/%s: %s", bucket, path, e)
 
-    return results
-
-
-def upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
-    """Upload a file and return its public URL."""
-    ext = PurePosixPath(filename).suffix or _ext_from_mime(content_type)
-    path = f"{uuid.uuid4().hex}{ext}"
-
-    _storage.from_(bucket).upload(
-        path,
-        file_bytes,
-        file_options={"content-type": content_type},
-    )
-
-    return _storage.from_(bucket).get_public_url(path)
+    @staticmethod
+    def path_from_url(url: str, bucket: str) -> str | None:
+        """Extract the storage path from a public URL for deletion."""
+        marker = f"/object/public/{bucket}/"
+        idx = url.find(marker)
+        if idx == -1:
+            return None
+        return url[idx + len(marker):]
 
 
-def delete_file(bucket: str, path: str) -> None:
-    """Delete a file by its path within a bucket."""
-    try:
-        _storage.from_(bucket).remove([path])
-    except Exception as e:
-        logger.warning("Failed to delete %s/%s: %s", bucket, path, e)
-
-
-def path_from_url(url: str, bucket: str) -> str | None:
-    """Extract the storage path from a public URL for deletion."""
-    marker = f"/object/public/{bucket}/"
-    idx = url.find(marker)
-    if idx == -1:
-        return None
-    return url[idx + len(marker):]
-
-
-def _ext_from_mime(mime: str) -> str:
-    mapping = {
-        "image/jpeg": ".jpg",
-        "image/png": ".png",
-        "image/webp": ".webp",
-        "image/gif": ".gif",
-        "image/svg+xml": ".svg",
-    }
-    return mapping.get(mime, ".bin")
+storage = StorageService((supabase_admin or supabase).storage)

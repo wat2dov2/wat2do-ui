@@ -4,10 +4,10 @@
  * User can multi-select (optional).
  */
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchAllEvents } from "@/features/events/api/events.api";
 import { PreviewStyleEventCard, type PreviewEventData } from "@/features/auth/components/PreviewStyleEventCard";
+import { useEventsStore } from "@/features/events/store/events.store";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import type { Event } from "@/shared/types";
 import type { TFunction } from "i18next";
@@ -67,36 +67,19 @@ export function OnboardingEventGrid({
   className,
 }: OnboardingEventGridProps) {
   const { t, i18n } = useTranslation();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetchAllEvents()
-      .then((list) => {
-        if (cancelled) return;
-        const shuffled = shuffle(list);
-        setEvents(shuffled.slice(0, 8));
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e?.message ?? "Failed to load events");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Read from store (same data as events page — no duplicate fetch)
+  const allEvents = useEventsStore((s) => s.events);
+  const loading = useEventsStore((s) => s.isLoading);
 
   const locale = i18n.language || "en-US";
-  const previewEvents = useMemo(
-    () => events.map((e) => ({ event: e, preview: eventToPreview(e, locale, t) })),
-    [events, locale, t]
-  );
+
+  // Pick 8 random events for onboarding (stable until events change)
+  const previewEvents = useMemo(() => {
+    if (allEvents.length === 0) return [];
+    const shuffled = shuffle(allEvents);
+    return shuffled.slice(0, 8).map((e) => ({ event: e, preview: eventToPreview(e, locale, t) }));
+  }, [allEvents, locale, t]);
 
   if (loading) {
     return (
@@ -118,20 +101,7 @@ export function OnboardingEventGrid({
     );
   }
 
-  if (error) {
-    return (
-      <div
-        className={cn(
-          "text-sm text-muted-foreground text-center py-8 max-w-md mx-auto",
-          className
-        )}
-      >
-        Couldn’t load events. You can skip this step and continue.
-      </div>
-    );
-  }
-
-  if (events.length === 0) {
+  if (!loading && previewEvents.length === 0) {
     return (
       <div
         className={cn(

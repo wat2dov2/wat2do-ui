@@ -1,14 +1,9 @@
-import os
-
-from dotenv import load_dotenv
-
+from core.config import settings
 from core.database import get_sb
-
-load_dotenv()
 
 
 def _public_url(bucket: str, path: str) -> str | None:
-    base = (os.environ.get("SUPABASE_URL") or "").rstrip("/")
+    base = settings.supabase_url
     if not base:
         return None
     return f"{base}/storage/v1/object/public/{bucket}/{path}"

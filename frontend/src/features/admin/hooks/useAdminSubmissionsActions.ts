@@ -21,28 +21,29 @@ export function useAdminSubmissionsActions({
   const [rejectSubmissionId, setRejectSubmissionId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  const handleApprove = useCallback((submission: EventSubmission) => {
-    updateEventSubmission(submission.id, "approved");
+  const handleApprove = useCallback(async (submission: EventSubmission) => {
+    await updateEventSubmission(submission.id, "approved");
     if (onApprove) {
       onApprove(submission);
     }
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("submissionId");
     setSearchParams(newParams);
-  }, [onApprove, searchParams, setSearchParams]);
+    setRefreshKey((prev) => prev + 1);
+  }, [onApprove, searchParams, setSearchParams, setRefreshKey]);
 
   const handleRejectClick = useCallback((submission: EventSubmission) => {
     setRejectSubmissionId(submission.id);
     setRejectionReason("");
   }, []);
 
-  const handleRejectConfirm = useCallback((submissionIdParam: string | null) => {
+  const handleRejectConfirm = useCallback(async (submissionIdParam: string | null) => {
     if (rejectSubmissionId && rejectionReason.trim()) {
-      updateEventSubmission(rejectSubmissionId, "rejected", rejectionReason.trim());
+      await updateEventSubmission(rejectSubmissionId, "rejected", rejectionReason.trim());
       setRejectSubmissionId(null);
       setRejectionReason("");
       setRefreshKey((prev) => prev + 1);
-      
+
       // Close modal if the rejected submission was open
       if (submissionIdParam === rejectSubmissionId) {
         const newParams = new URLSearchParams(searchParams);

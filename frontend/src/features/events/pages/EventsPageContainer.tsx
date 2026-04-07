@@ -2,14 +2,17 @@ import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { Utensils, Heart } from "lucide-react";
-import { EventList, EventCount, useAppEvents, useSavedEvents, useLatestAddedEvent } from "@/features/events";
+import { EventList, EventCount, useLatestAddedEvent } from "@/features/events";
+import { useRecommendations } from "@/features/recommendations";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { EventsProvider } from "@/features/events/context/EventsContext";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown, useSearch } from "@/features/search";
-import { useAppPromotions } from "@/app/hooks/useAppPromotions";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
 import { useAppContext } from "@/contexts/AppContext";
-import type { ViewMode, QuickFilterConfig } from "@/shared/types";
+import { useEventsStore } from "@/features/events/store/events.store";
+import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { usePromotionsStore } from "@/features/credits/store/promotions.store";
+import type { Event, ViewMode, QuickFilterConfig } from "@/shared/types";
 
 export function EventsPageContainer() {
   const {
@@ -23,12 +26,15 @@ export function EventsPageContainer() {
   } = useAppContext();
   const { t } = useTranslation();
   const { activeEasterEgg, clearEasterEgg, checkSearchQuery } = useEasterEggs();
-  
-  // Use hooks for business logic
-  const appEvents = useAppEvents();
-  const { isLoading } = appEvents;
-  const { savedEventIds, toggleSaveEvent } = useSavedEvents();
-  const promotions = useAppPromotions();
+
+  // Read from stores (single source of truth — no duplicate fetches)
+  const events = useEventsStore((s) => s.events);
+  const isLoading = useEventsStore((s) => s.isLoading);
+  const deleteEvent = useEventsStore((s) => s.deleteEvent);
+  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
+  const activePromotedEventIds = usePromotionsStore((s) => s.activePromotedEventIds);
+
   const { latest: latestAddedEvent } = useLatestAddedEvent();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -37,18 +43,30 @@ export function EventsPageContainer() {
     return () => clearInterval(id);
   }, [latestAddedEvent]);
 
+  const { recommendations } = useRecommendations();
+
   const filters = useSearch({
-    events: appEvents.events,
+    events,
     profileCompleted,
     savedEventIds,
   });
 
-  const handleEditEvent = (event: any) => {
-    appEvents.handleEditEvent(event);
-  };
+  // Re-order filtered events: recommended first, then the rest in original order
+  const orderedEvents = useMemo(() => {
+    if (recommendations.length === 0) return filters.filteredEvents;
+    const scoreMap = new Map(recommendations.map((r) => [r.event_id, r.score]));
+    return [...filters.filteredEvents].sort((a, b) => {
+      const sa = scoreMap.get(a.id) ?? -1;
+      const sb = scoreMap.get(b.id) ?? -1;
+      if (sa >= 0 && sb < 0) return -1;
+      if (sa < 0 && sb >= 0) return 1;
+      if (sa >= 0 && sb >= 0) return sb - sa;
+      return 0; // preserve original order for non-recommended
+    });
+  }, [filters.filteredEvents, recommendations]);
 
   const handleDeleteEvent = async (eventId: number) => {
-    await appEvents.deleteEvent(eventId);
+    await deleteEvent(eventId);
   };
 
   // Memoize view mode change handler to ensure stable reference
@@ -172,15 +190,14 @@ export function EventsPageContainer() {
           <EventsProvider
             savedEventIds={savedEventIds}
             toggleSaveEvent={toggleSaveEvent}
-            activePromotedEventIds={promotions.activePromotedEventIds}
+            activePromotedEventIds={activePromotedEventIds}
             isAdmin={isAdmin}
-            onEdit={handleEditEvent}
             onDelete={handleDeleteEvent}
-            allEvents={appEvents.events}
+            allEvents={events}
             onClearFilters={filters.handleClearAllFilters}
           >
             <EventList
-              events={filters.filteredEvents}
+              events={orderedEvents}
               viewMode={viewMode}
             />
           </EventsProvider>

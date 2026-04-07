@@ -99,7 +99,7 @@ export function useFilterState(profileCompleted: boolean) {
 
     if (!isApiKeyConfigured()) {
       setJsonError(
-        "OpenAI API key not configured. Add your key in src/lib/openai.ts"
+        "AI generation is not available. Please check server configuration."
       );
       return;
     }

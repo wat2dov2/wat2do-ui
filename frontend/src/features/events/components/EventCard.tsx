@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -79,6 +80,26 @@ export const EventCard = React.memo(function EventCard({
   const eventIdParam = searchParams.get("eventId");
   const showDetailsModal = !disableModal && eventIdParam === event.id.toString();
 
+  // Track card visibility (view impression)
+  const cardRef = useRef<HTMLElement>(null);
+  const trackedRef = useRef(false);
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || trackedRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !trackedRef.current) {
+          trackedRef.current = true;
+          tracker.track(event.id, "view");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [event.id]);
+
   // Use extracted hook for badges
   const badges = useEventBadges(event);
 
@@ -89,11 +110,13 @@ export const EventCard = React.memo(function EventCard({
   return (
     <>
       <article
+        ref={cardRef}
         data-event-card
         data-event-id={event.id}
         role="article"
         aria-label={`Event: ${event.title}`}
         onClick={() => {
+          tracker.track(event.id, "click");
           if (onEventClick) {
             onEventClick(event);
           } else if (!disableModal) {

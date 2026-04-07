@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from core.auth import get_current_user
-from services import storage_service, user_service, event_service, club_service
+from services.storage_service import storage
+from services import user_service, event_service, club_service
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
@@ -11,14 +12,14 @@ MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
     if not file.content_type:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing content type")
-    allowed = storage_service.BUCKETS.get(bucket, {}).get("allowed_mime_types", [])
+    allowed = storage.BUCKETS.get(bucket, {}).get("allowed_mime_types", [])
     if file.content_type not in allowed:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             f"File type {file.content_type} not allowed. Accepted: {', '.join(allowed)}",
         )
     data = await file.read()
-    limit = storage_service.BUCKETS.get(bucket, {}).get("file_size_limit", MAX_FILE_SIZE)
+    limit = storage.BUCKETS.get(bucket, {}).get("file_size_limit", MAX_FILE_SIZE)
     if len(data) > limit:
         raise HTTPException(
             status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -37,11 +38,11 @@ async def upload_event_image(
     if not event:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
     data, content_type = await _validated_upload(file, "event-images")
-    if event.get("source_image_url"):
-        old_path = storage_service.path_from_url(event["source_image_url"], "event-images")
+    if event.source_image_url:
+        old_path = storage.path_from_url(event.source_image_url, "event-images")
         if old_path:
-            storage_service.delete_file("event-images", old_path)
-    url = storage_service.upload_file("event-images", data, file.filename or "image", content_type)
+            storage.delete_file("event-images", old_path)
+    url = storage.upload_file("event-images", data, file.filename or "image", content_type)
     from schemas.event import EventUpdate
     event_service.update_event(event_id, EventUpdate(source_image_url=url))
     return {"url": url}
@@ -56,14 +57,13 @@ async def upload_avatar(
     if not db_user:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     data, content_type = await _validated_upload(file, "avatars")
-    if db_user.get("avatar_url"):
-        old_path = storage_service.path_from_url(db_user["avatar_url"], "avatars")
+    if db_user.avatar_url:
+        old_path = storage.path_from_url(db_user.avatar_url, "avatars")
         if old_path:
-            storage_service.delete_file("avatars", old_path)
-    url = storage_service.upload_file("avatars", data, file.filename or "avatar", content_type)
-    from uuid import UUID
+            storage.delete_file("avatars", old_path)
+    url = storage.upload_file("avatars", data, file.filename or "avatar", content_type)
     from schemas.user import UserUpdate
-    user_service.update_user(UUID(db_user["id"]), UserUpdate(avatar_url=url))
+    user_service.update_user(db_user.id, UserUpdate(avatar_url=url))
     return {"url": url}
 
 
@@ -77,11 +77,11 @@ async def upload_club_logo(
     if not club:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Club not found")
     data, content_type = await _validated_upload(file, "club-logos")
-    if club.get("logo_url"):
-        old_path = storage_service.path_from_url(club["logo_url"], "club-logos")
+    if club.logo_url:
+        old_path = storage.path_from_url(club.logo_url, "club-logos")
         if old_path:
-            storage_service.delete_file("club-logos", old_path)
-    url = storage_service.upload_file("club-logos", data, file.filename or "logo", content_type)
+            storage.delete_file("club-logos", old_path)
+    url = storage.upload_file("club-logos", data, file.filename or "logo", content_type)
     from schemas.club import ClubUpdate
     club_service.update_club(club_id, ClubUpdate(logo_url=url))
     return {"url": url}
@@ -93,5 +93,5 @@ async def upload_qr_asset(
     user: dict = Depends(get_current_user),
 ):
     data, content_type = await _validated_upload(file, "qr-assets")
-    url = storage_service.upload_file("qr-assets", data, file.filename or "asset", content_type)
+    url = storage.upload_file("qr-assets", data, file.filename or "asset", content_type)
     return {"url": url}

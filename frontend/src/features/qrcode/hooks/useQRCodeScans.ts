@@ -20,7 +20,7 @@ export function useQRCodeScans({ qrCode, isOpen }: UseQRCodeScansOptions) {
   const loadScans = useCallback(() => {
     getScansFromBackend(qrCode.id)
       .then((raw) => dispatch({ type: "SET_SCANS", payload: raw.map(normalizeBackendScan) }))
-      .catch(() => dispatch({ type: "SET_SCANS", payload: [] }));
+      .catch((err) => { console.error("Failed to load QR scans:", err); dispatch({ type: "SET_SCANS", payload: [] }); });
   }, [qrCode.id]);
 
   useEffect(() => {

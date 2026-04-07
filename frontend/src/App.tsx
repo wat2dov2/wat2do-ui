@@ -1,17 +1,15 @@
-import React, { Suspense, lazy, useMemo } from "react";
-import { useCallback } from "react";
+import React, { Suspense, lazy, useMemo, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AppLayout } from "@/app/AppLayout";
-import { EventsPageContainer, SubmitEventModal, useAppEvents, useSavedEvents } from "@/features/events";
+import { EventsPageContainer, SubmitEventModal } from "@/features/events";
 import { CommandPalette } from "@/features/commands/components/CommandPalette";
 import { CommandPaletteProvider } from "@/features/commands/context/CommandPaletteContext";
 import { BuyCreditsModal } from "@/features/credits/components/BuyCreditsModal";
 import { EasterEggs } from "@/shared/components/EasterEggs";
 import { useSearch } from "@/features/search";
-import { useAppPromotions } from "@/app/hooks/useAppPromotions";
 import { useAppUI } from "@/app/hooks/useAppUI";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
@@ -25,7 +23,7 @@ import {
   AdminPostersRoute,
 } from "@/app/routes/adminRoutes";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
-import { ProtectedRoute } from "@/shared/components/ProtectedRoute";
+import { ProtectedRoute } from "@/app/ProtectedRoute";
 import {
   ClubPanelRoute,
   ClubPanelPostersRoute,
@@ -33,6 +31,11 @@ import {
   ClubPanelMembersRoute,
 } from "@/app/routes/clubPanelRoutes";
 import { getEventCategory } from "@/shared/utils/event";
+import { getDayOfWeek } from "@/shared/utils/date";
+import { useEventsStore } from "@/features/events/store/events.store";
+import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { usePromotionsStore } from "@/features/credits/store/promotions.store";
+import type { Event, EventFormData } from "@/shared/types";
 
 // Lazy load pages for code splitting
 const AboutPage = lazy(() =>
@@ -66,29 +69,109 @@ const OnboardingPage = lazy(() =>
   }))
 );
 
+/** Convert Event to EventFormData for edit mode */
+function eventToFormData(event: Event): EventFormData {
+  let date = event.date || "";
+  let time = event.time || "";
+  if ((!date || !time) && event.dtstart_utc) {
+    const d = new Date(event.dtstart_utc as string);
+    if (!isNaN(d.getTime())) {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+  }
+  const category = getEventCategory(event);
+  return {
+    title: event.title,
+    description: event.description || "",
+    date,
+    time,
+    location: event.location ?? "",
+    category,
+    price: event.price ?? 0,
+    food: event.food || [],
+    requiresRegistration: event.requiresRegistration ?? event.registration ?? false,
+    organization: event.organization || "",
+  };
+}
+
 
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  // Initialize hooks
-  const appEvents = useAppEvents();
+  // ── Store data (single source of truth) ──────────────────────
+  const events = useEventsStore((s) => s.events);
+  const storeAddEvent = useEventsStore((s) => s.addEvent);
+  const storeUpdateEvent = useEventsStore((s) => s.updateEvent);
+  const storeDeleteEvent = useEventsStore((s) => s.deleteEvent);
+
+  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+
+  const userCredits = usePromotionsStore((s) => s.userCredits);
+  const storePromoteEvent = usePromotionsStore((s) => s.promoteEvent);
+  const storeAddCredits = usePromotionsStore((s) => s.addCredits);
+
+  // Trigger store fetches once on mount
+  useEffect(() => {
+    useEventsStore.getState().fetchEvents();
+    useSavedEventsStore.getState().fetchSavedEvents();
+    usePromotionsStore.getState().fetchPromotions();
+  }, []);
+
+  // ── getDayOfWeek for event mutations ─────────────────────────
+  const getDayOfWeekFn = useCallback(
+    (dateStr: string) => getDayOfWeek(dateStr, t),
+    [t],
+  );
+
+  const addEvent = useCallback(
+    (data: EventFormData) => storeAddEvent(data, getDayOfWeekFn),
+    [storeAddEvent, getDayOfWeekFn],
+  );
+
+  const updateEvent = useCallback(
+    (eventId: number, data: EventFormData) => storeUpdateEvent(eventId, data, getDayOfWeekFn),
+    [storeUpdateEvent, getDayOfWeekFn],
+  );
+
+  const deleteEvent = storeDeleteEvent;
+
+  // ── Edit event state (local UI) ──────────────────────────────
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+
+  const handleEditEvent = useCallback((event: Event) => {
+    setEditingEvent(event);
+  }, []);
+
+  const clearEditing = useCallback(() => {
+    setEditingEvent(null);
+  }, []);
+
+  // ── Buy credits modal state (local UI) ───────────────────────
+  const [showBuyCredits, setShowBuyCredits] = useState(false);
+
+  const promoteEvent = useCallback(
+    async (eventId: number, packageId: string, credits: number, duration: number): Promise<boolean> => {
+      const result = await storePromoteEvent(eventId, packageId, credits, duration);
+      if (result.needsCredits) {
+        setShowBuyCredits(true);
+        return false;
+      }
+      return result.success;
+    },
+    [storePromoteEvent],
+  );
+
+  // ── UI hooks ─────────────────────────────────────────────────
   const appUI = useAppUI();
-  const savedEvents = useSavedEvents();
   const easterEggs = useEasterEggs();
-  
-  // Get events and profile completion for filters
-  const { events, addEvent, updateEvent, deleteEvent, editingEvent, handleEditEvent, eventToFormData, clearEditing } = appEvents;
-  const { savedEventIds } = savedEvents;
-  
-  // Initialize filters hook with events and profile
+
   const { profileCompleted } = appUI;
   const filters = useSearch({ events, profileCompleted, savedEventIds });
-  
-  // Initialize promotions hook
-  const promotions = useAppPromotions();
-  
-  // Initialize navigation hook with events and filter setters
+
   const navigation = useAppNavigation({
     events,
     filters: {
@@ -104,7 +187,7 @@ export default function App() {
       setFilterStateFromURL: filters.setFilterStateFromURL,
     },
   });
-  
+
   // Get UI state
   const {
     viewMode,
@@ -128,16 +211,13 @@ export default function App() {
     setSelectedSchool,
     isDarkMode,
   } = appUI;
-  
-  // Get promotions state
-  const { userCredits, promoteEvent, showBuyCredits, setShowBuyCredits, addCredits } = promotions;
-  
+
   // Get easter eggs
   const { activeEasterEgg, clearEasterEgg } = easterEggs;
-  
+
   // Get page mode from navigation
   const { pageMode } = navigation;
-  
+
   // Combine profile completion from both hooks
   const isProfileCompleted = profileCompleted || uiProfileCompleted;
 
@@ -145,21 +225,21 @@ export default function App() {
   const appContextValue = useMemo(() => ({
     // Navigation
     pageMode,
-    
+
     // UI State
     viewMode,
     setViewMode,
     filterViewMode,
     setFilterViewMode,
-    
+
     // Sidebar
     eventsExpanded,
     setEventsExpanded,
-    
+
     // School
     selectedSchool,
     setSelectedSchool,
-    
+
     // Modals
     showOnboarding,
     setShowOnboarding,
@@ -167,16 +247,16 @@ export default function App() {
     setShowSubmitEvent,
     showCommandPalette,
     setShowCommandPalette,
-    
+
     // Profile
     profileCompleted: isProfileCompleted,
     setProfileCompleted: setUIProfileCompleted,
     userEmail,
     setUserEmail,
-    
+
     // Dark mode
     isDarkMode,
-    
+
     // Admin
     isAdmin,
   }), [
@@ -202,7 +282,7 @@ export default function App() {
     isDarkMode,
     isAdmin,
   ]);
-  
+
   // Handle submit event close
   const handleSubmitEventClose = useCallback(() => {
     setShowSubmitEvent(false);
@@ -227,7 +307,7 @@ export default function App() {
 
       return eventToFormData(fullEvent);
     },
-    [eventToFormData]
+    []
   );
 
   // Handle command palette filter actions
@@ -239,9 +319,6 @@ export default function App() {
     setShowOnboarding(false);
     navigate("/onboarding");
   }, [navigate, setShowOnboarding]);
-
-  // Get navigation helpers
-  const { t } = useTranslation();
 
   // Memoize admin route configuration
   const adminConfig = useMemo(
@@ -358,7 +435,7 @@ export default function App() {
           isOpen={showBuyCredits}
           onClose={() => setShowBuyCredits(false)}
           currentCredits={userCredits}
-          onPurchase={addCredits}
+          onPurchase={storeAddCredits}
         />
 
         <CommandPaletteProvider

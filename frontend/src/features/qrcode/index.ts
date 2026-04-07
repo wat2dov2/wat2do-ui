@@ -15,6 +15,7 @@ export { CreateQRCodeModal } from "./components/CreateQRCodeModal";
 export { QRScanMap } from "./components/QRScanMap";
 export { QRCodeStatsDisplay } from "./components/QRCode/QRCodeStatsDisplay";
 export { QRCodeScansChart } from "./components/QRCode/QRCodeScansChart";
+export { GenerateQRAssetsWizard } from "./components/GenerateQRAssetsWizard";
 
 // Hooks
 export { useQRCodeScans } from "./hooks/useQRCodeScans";

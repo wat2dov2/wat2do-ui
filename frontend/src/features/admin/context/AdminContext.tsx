@@ -1,9 +1,14 @@
 /**
  * Admin Context
- * Provides shared callbacks and data for admin pages to reduce prop drilling
+ * Provides shared callbacks and data for admin pages to reduce prop drilling.
+ *
+ * Note: This context bundles events, clubs, submissions, and posters concerns.
+ * The AdminRouteWrapper (adminRoutes.tsx) already scopes which callbacks each
+ * route receives. The memoization below prevents unnecessary re-renders when
+ * the parent re-renders with the same logical values.
  */
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useMemo } from "react";
 import type { Event, Club, EventSubmission } from "@/shared/types";
 
 interface AdminContextValue {
@@ -12,18 +17,18 @@ interface AdminContextValue {
   onEditEvent?: (event: Event) => void | Promise<void>;
   onDeleteEvent?: (eventId: number) => void;
   onCreateEvent?: () => void;
-  
+
   // Clubs
   onAddClub?: (club: Club) => void;
   onEditClub?: (club: Club) => void;
   onDeleteClub?: (clubId: number) => void;
-  
+
   // Submissions
   onApprove?: (submission: EventSubmission) => void;
-  
+
   // Posters/QR Codes
   userEmail?: string;
-  
+
   // Navigation
   onBack: () => void;
 }
@@ -39,7 +44,46 @@ interface AdminProviderProps extends AdminContextValue {
   children: React.ReactNode;
 }
 
-export function AdminProvider({ children, ...value }: AdminProviderProps) {
+export function AdminProvider({
+  children,
+  events,
+  onEditEvent,
+  onDeleteEvent,
+  onCreateEvent,
+  onAddClub,
+  onEditClub,
+  onDeleteClub,
+  onApprove,
+  userEmail,
+  onBack,
+}: AdminProviderProps) {
+  const value = useMemo<AdminContextValue>(
+    () => ({
+      events,
+      onEditEvent,
+      onDeleteEvent,
+      onCreateEvent,
+      onAddClub,
+      onEditClub,
+      onDeleteClub,
+      onApprove,
+      userEmail,
+      onBack,
+    }),
+    [
+      events,
+      onEditEvent,
+      onDeleteEvent,
+      onCreateEvent,
+      onAddClub,
+      onEditClub,
+      onDeleteClub,
+      onApprove,
+      userEmail,
+      onBack,
+    ]
+  );
+
   return (
     <AdminContext.Provider value={value}>
       {children}

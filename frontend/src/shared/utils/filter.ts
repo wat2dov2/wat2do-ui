@@ -1,5 +1,4 @@
 import type { FilterState } from "@/shared/types";
-import { hasActiveFilters } from "@/features/search/api/filterService";
 
 /**
  * Filter Utilities
@@ -30,11 +29,24 @@ export function getFilterCounts(filters: {
 }
 
 /**
- * Check if filters are active (using filter service)
+ * Check if any filters are active
  */
-export function hasFilters(filters: FilterState): boolean {
-  return hasActiveFilters(filters);
+export function hasActiveFilters(filters: FilterState): boolean {
+  return (
+    filters.searchQuery.trim() !== "" ||
+    filters.categories.length > 0 ||
+    filters.locations.length > 0 ||
+    filters.foods.length > 0 ||
+    filters.days.length > 0 ||
+    filters.priceRange.min !== "" ||
+    filters.priceRange.max !== "" ||
+    filters.dateRange !== "" ||
+    filters.addedSince !== "" ||
+    filters.requiresRegistration
+  );
 }
+
+export const hasFilters = hasActiveFilters;
 
 /**
  * Build filter query string for URL

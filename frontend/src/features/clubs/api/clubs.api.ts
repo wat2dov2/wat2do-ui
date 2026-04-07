@@ -6,15 +6,6 @@
 import type { Club } from "@/shared/types";
 import { api } from "@/shared/services/apiClient";
 import {
-  loadUserClubs,
-  saveUserClubs,
-  loadUserClubIds,
-  saveUserClubIds,
-  removeUserClub,
-} from "@/features/clubs/api/clubRepository";
-import {
-  createClub,
-  updateClub as updateClubService,
   filterClubsBySearch,
   filterClubsByCategory,
   filterClubsByType,
@@ -26,53 +17,24 @@ export async function getAllClubs(): Promise<Club[]> {
 }
 
 export async function createClubAPI(clubData: Omit<Club, "id">): Promise<Club> {
-  try {
-    return await api.post<Club>("/clubs/", clubData);
-  } catch {
-    const newClub = createClub(clubData);
-    const userClubs = loadUserClubs();
-    const userClubIds = loadUserClubIds();
-    saveUserClubs([...userClubs, newClub]);
-    saveUserClubIds([...userClubIds, newClub.id]);
-    return newClub;
-  }
+  return api.post<Club>("/clubs/", clubData);
 }
 
 export async function updateClubAPI(
   club: Club,
   clubData: Partial<Omit<Club, "id">>,
 ): Promise<Club> {
-  try {
-    return await api.patch<Club>(`/clubs/${club.id}`, clubData);
-  } catch {
-    const updatedClub = updateClubService(club, clubData);
-    const userClubs = loadUserClubs();
-    const idx = userClubs.findIndex((c) => c.id === club.id);
-    if (idx !== -1) {
-      userClubs[idx] = updatedClub;
-      saveUserClubs(userClubs);
-    } else {
-      const userClubIds = loadUserClubIds();
-      saveUserClubs([...userClubs, updatedClub]);
-      saveUserClubIds([...userClubIds, updatedClub.id]);
-    }
-    return updatedClub;
-  }
+  return api.patch<Club>(`/clubs/${club.id}`, clubData);
 }
 
 export async function deleteClubAPI(clubId: number): Promise<void> {
-  try {
-    await api.delete(`/clubs/${clubId}`);
-  } catch {
-    // still clean up local
-  }
-  removeUserClub(clubId);
+  await api.delete(`/clubs/${clubId}`);
 }
 
-export async function filterClubs(
+export function filterClubs(
   clubs: Club[],
   options: { categories?: string[]; clubType?: string; searchQuery?: string },
-): Promise<Club[]> {
+): Club[] {
   let filtered = clubs;
   if (options.searchQuery) filtered = filterClubsBySearch(filtered, options.searchQuery);
   if (options.categories?.length) filtered = filterClubsByCategory(filtered, options.categories);

@@ -1,13 +1,34 @@
 """Tests for QR resolve + scan recording. Use mocks so no DB required."""
 
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from main import app
-from schemas.qr_code import QrCodeRedirect
+from schemas.qr_code import QrCodeRedirect, QrCodeResponse
 from services import qr_code_service
+
+
+def _mock_qr(**overrides) -> QrCodeResponse:
+    """Build a QrCodeResponse with sensible defaults, overridden by kwargs."""
+    defaults = {
+        "id": "test-qr",
+        "name": "Test",
+        "description": None,
+        "destination_type": "custom-url",
+        "destination_id": None,
+        "filters": None,
+        "created_at": datetime.now(timezone.utc),
+        "created_by": "tester",
+        "is_active": True,
+        "image_url": None,
+        "latitude": 0.0,
+        "longitude": 0.0,
+    }
+    defaults.update(overrides)
+    return QrCodeResponse.model_validate(defaults)
 
 
 @pytest.fixture
@@ -28,7 +49,7 @@ def test_resolve_qr_404(client):
 
 def test_resolve_qr_records_scan_and_returns_config(client):
     """GET /qr/{id} records a scan and returns redirect config."""
-    mock_qr = {"id": "test-qr-1", "destination_type": "custom-url", "destination_id": "https://example.com", "filters": None, "is_active": True}
+    mock_qr = _mock_qr(id="test-qr-1", destination_type="custom-url", destination_id="https://example.com")
 
     def mock_get(qr_code_id):
         return mock_qr if qr_code_id == "test-qr-1" else None
@@ -51,13 +72,7 @@ def test_resolve_qr_records_scan_and_returns_config(client):
 
 def test_resolve_inactive_qr_requires_location(client):
     """First scan on an inactive poster returns 202 until lat/lon is provided."""
-    mock_qr = {
-        "id": "inactive-1",
-        "destination_type": "event",
-        "destination_id": "42",
-        "filters": None,
-        "is_active": False,
-    }
+    mock_qr = _mock_qr(id="inactive-1", destination_type="event", destination_id="42", is_active=False)
 
     def mock_get(qr_code_id):
         return mock_qr if qr_code_id == "inactive-1" else None
@@ -74,13 +89,7 @@ def test_resolve_inactive_qr_requires_location(client):
 
 def test_resolve_inactive_qr_with_location_activates_and_returns_config(client):
     """First scan with lat/lon activates poster and returns redirect config."""
-    mock_qr = {
-        "id": "inactive-2",
-        "destination_type": "event",
-        "destination_id": "99",
-        "filters": None,
-        "is_active": False,
-    }
+    mock_qr = _mock_qr(id="inactive-2", destination_type="event", destination_id="99", is_active=False)
     redirect = QrCodeRedirect(
         destination_type="event",
         destination_id=99,
