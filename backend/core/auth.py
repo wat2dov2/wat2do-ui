@@ -1,8 +1,13 @@
+import logging
+
+import jwt
+from jwt import PyJWKClient
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from core.config import settings
 from core.constants import ROLE_ADMIN
-from core.database import supabase
 from core.errors import (
     ADMIN_ACCESS_REQUIRED,
     CREDENTIALS_INVALID,
@@ -11,11 +16,26 @@ from core.errors import (
     USER_NOT_FOUND,
 )
 
+log = logging.getLogger(__name__)
+
 bearer = HTTPBearer()
 bearer_optional = HTTPBearer(auto_error=False)
 
+# JWKS client — fetches public keys from Supabase's discovery endpoint
+# and caches them in-memory for 10 minutes.
+_jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+_jwks_client: PyJWKClient | None = None
+_ASYMMETRIC_ALGS = ["ES256", "RS256", "EdDSA"]
+
 # Lazy import to avoid circular dependency (user_service → database → config)
 _user_service = None
+
+
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        _jwks_client = PyJWKClient(_jwks_url, cache_keys=True, lifespan=600)
+    return _jwks_client
 
 
 def _get_user_service():
@@ -27,28 +47,60 @@ def _get_user_service():
 
 
 def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
-    """Validate a Bearer token and return the Supabase auth user dict."""
-    try:
-        res = supabase.auth.get_user(token.credentials)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=INVALID_OR_EXPIRED_TOKEN,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    """Validate a Bearer token locally via JWT signature verification.
 
-    if not res or not res.user:
+    Tries JWKS discovery first (asymmetric signing keys — ES256/RS256).
+    Falls back to SUPABASE_JWT_SECRET (HS256) for legacy projects.
+    """
+    credentials = token.credentials
+
+    # 1) JWKS discovery (new signing keys system)
+    try:
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials)
+        payload = jwt.decode(
+            credentials,
+            signing_key.key,
+            algorithms=_ASYMMETRIC_ALGS + ["HS256"],
+            audience="authenticated",
+        )
+        return _payload_to_user(payload)
+    except Exception as e:
+        log.debug("JWKS verification failed (%s), trying JWT secret fallback", e)
+
+    # 2) Shared secret fallback (legacy HS256)
+    if settings.supabase_jwt_secret:
+        try:
+            payload = jwt.decode(
+                credentials,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
+            return _payload_to_user(payload)
+        except jwt.InvalidTokenError:
+            pass
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=INVALID_OR_EXPIRED_TOKEN,
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+def _payload_to_user(payload: dict) -> dict:
+    """Extract user info from a verified JWT payload."""
+    sub = payload.get("sub")
+    if not sub:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=CREDENTIALS_INVALID,
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     return {
-        "id": res.user.id,
-        "email": res.user.email,
-        "aud": res.user.aud,
-        "role": res.user.role,
+        "id": sub,
+        "email": payload.get("email"),
+        "aud": payload.get("aud"),
+        "role": payload.get("role"),
     }
 
 

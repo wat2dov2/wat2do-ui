@@ -8,22 +8,17 @@ import { LoadingPage } from "@/shared/ui/loading-page";
 import { EventsProvider } from "@/features/events/context/EventsContext";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown, useSearch } from "@/features/search";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
-import { useAppContext } from "@/contexts/AppContext";
+import { useUIContext } from "@/contexts/UIContext";
+import { useUserContext } from "@/contexts/UserContext";
+import { getUserId } from "@/features/auth";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { usePromotionsStore } from "@/features/credits/store/promotions.store";
 import type { Event, ViewMode, QuickFilterConfig } from "@/shared/types";
 
 export function EventsPageContainer() {
-  const {
-    profileCompleted,
-    viewMode,
-    setViewMode,
-    filterViewMode,
-    setFilterViewMode,
-    isDarkMode,
-    isAdmin,
-  } = useAppContext();
+  const { viewMode, setViewMode, filterViewMode, setFilterViewMode, isDarkMode } = useUIContext();
+  const { profileCompleted, isAdmin } = useUserContext();
   const { t } = useTranslation();
   const { activeEasterEgg, clearEasterEgg, checkSearchQuery } = useEasterEggs();
 
@@ -43,7 +38,7 @@ export function EventsPageContainer() {
     return () => clearInterval(id);
   }, [latestAddedEvent]);
 
-  const { recommendations } = useRecommendations();
+  const { recommendations, isLoading: recsLoading } = useRecommendations();
 
   const filters = useSearch({
     events,
@@ -128,8 +123,8 @@ export function EventsPageContainer() {
         onViewModeChange={handleViewModeChange}
       />
 
-      {/* Filters - only show when events are loaded */}
-      {!isLoading && (
+      {/* Filters - only show when events and recommendations are loaded */}
+      {!isLoading && !recsLoading && (
         <div className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-baseline gap-3">
@@ -184,7 +179,7 @@ export function EventsPageContainer() {
 
       {/* Main Content */}
       <main className="w-full" role="main" aria-label={t("search.ariaLabel")}>
-        {isLoading ? (
+        {isLoading || recsLoading ? (
           <LoadingPage />
         ) : (
           <EventsProvider
@@ -192,6 +187,7 @@ export function EventsPageContainer() {
             toggleSaveEvent={toggleSaveEvent}
             activePromotedEventIds={activePromotedEventIds}
             isAdmin={isAdmin}
+            currentUserId={getUserId()}
             onDelete={handleDeleteEvent}
             allEvents={events}
             onClearFilters={filters.handleClearAllFilters}
