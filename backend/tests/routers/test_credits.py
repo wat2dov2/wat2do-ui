@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
-from core.constants import MAX_CREDITS_PER_ADD
+from core.constants import MAX_CREDITS_PER_ADD, ROLE_ADMIN
 from schemas.credit import PromotionResponse
+from schemas.event import EventResponse
 from schemas.user import UserResponse
-from services import credit_service, user_service
-from tests.conftest import FAKE_USER
+from services import credit_service, event_service, user_service
+from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 TARGET_USER_ID = "00000000-0000-0000-0000-000000000001"
 
@@ -22,6 +23,19 @@ def _mock_db_user(**overrides) -> UserResponse:
     }
     defaults.update(overrides)
     return UserResponse.model_validate(defaults)
+
+
+def _mock_event(**overrides) -> EventResponse:
+    defaults = {
+        "id": 1,
+        "title": "Test Event",
+        "location": "Here",
+        "organization": "TestOrg",
+        "added_at": datetime.now(timezone.utc),
+        "created_by": FAKE_USER["id"],
+    }
+    defaults.update(overrides)
+    return EventResponse.model_validate(defaults)
 
 
 def _mock_promotion(**overrides) -> PromotionResponse:
@@ -161,7 +175,9 @@ def test_create_promotion_requires_auth(client):
 def test_create_promotion_succeeds(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
     promo = _mock_promotion()
+    event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
     monkeypatch.setattr(credit_service, "create_promotion", MagicMock(return_value=promo))
 
     resp = authenticated_client.post(
@@ -182,7 +198,9 @@ def test_create_promotion_ignores_client_credits_and_duration(authenticated_clie
     """Even if a malicious client sends credits/duration, the server ignores them."""
     db_user = _mock_db_user()
     promo = _mock_promotion()
+    event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
     monkeypatch.setattr(credit_service, "create_promotion", MagicMock(return_value=promo))
 
     resp = authenticated_client.post(
@@ -208,6 +226,72 @@ def test_create_promotion_rejects_invalid_package(authenticated_client, monkeypa
         json={"event_id": 1, "package": "nonexistent"},
     )
     assert resp.status_code == 422
+
+
+# ── POST /promotions/ ownership checks ──────────────────────────────
+
+
+def test_create_promotion_rejects_nonexistent_event(authenticated_client, monkeypatch):
+    """Promoting a nonexistent event returns 404."""
+    db_user = _mock_db_user()
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=None))
+
+    resp = authenticated_client.post(
+        "/promotions/",
+        json={"event_id": 999, "package": "featured"},
+    )
+    assert resp.status_code == 404
+
+
+def test_create_promotion_non_owner_rejected(other_user_client, monkeypatch):
+    """Non-owner, non-admin user gets 403 when promoting someone else's event."""
+    db_user = _mock_db_user(id="00000000-0000-0000-0000-000000000002")
+    event = _mock_event(created_by=FAKE_USER["id"])  # owned by FAKE_USER, not OTHER_USER
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+
+    resp = other_user_client.post(
+        "/promotions/",
+        json={"event_id": 1, "package": "featured"},
+    )
+    assert resp.status_code == 403
+
+
+def test_create_promotion_admin_can_promote_any_event(admin_client, monkeypatch):
+    """Admin can promote any event regardless of ownership."""
+    promo = _mock_promotion()
+    event = _mock_event(created_by=FAKE_USER["id"])  # not owned by admin
+    admin_db_user = UserResponse(
+        id="00000000-0000-0000-0000-000000000000",
+        email=ADMIN_USER["email"],
+        role=ROLE_ADMIN,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=admin_db_user))
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(credit_service, "create_promotion", MagicMock(return_value=promo))
+
+    resp = admin_client.post(
+        "/promotions/",
+        json={"event_id": 1, "package": "featured"},
+    )
+    assert resp.status_code == 201
+
+
+def test_create_promotion_legacy_event_non_admin_rejected(authenticated_client, monkeypatch):
+    """Legacy events (created_by=None) can only be promoted by admins."""
+    db_user = _mock_db_user()
+    event = _mock_event(created_by=None)
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+
+    resp = authenticated_client.post(
+        "/promotions/",
+        json={"event_id": 1, "package": "featured"},
+    )
+    assert resp.status_code == 403
 
 
 # ── GET /promotions/active-ids (public) ──────────────────────────────

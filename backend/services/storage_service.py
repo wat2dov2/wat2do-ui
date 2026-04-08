@@ -12,7 +12,7 @@ from core.constants import (
     MAX_IMAGE_SIZE_BYTES,
     supabase_retry,
 )
-from core.database import supabase, supabase_admin
+from core.database import supabase_admin
 from core.logging import logger
 
 
@@ -104,4 +104,4 @@ class StorageService:
         return url[idx + len(marker):]
 
 
-storage = StorageService((supabase_admin or supabase).storage)
+storage = StorageService(supabase_admin.storage)

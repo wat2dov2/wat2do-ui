@@ -27,12 +27,14 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AuthApiError)
     async def handle_auth_api_error(request: Request, exc: AuthApiError) -> JSONResponse:
         status_code = exc.status or 400
-        detail = exc.message or AUTHENTICATION_ERROR
+        # Log the real Supabase message server-side for debugging, but never
+        # send it to the client — raw messages like "User already registered"
+        # or "Email not confirmed" enable user-enumeration attacks.
         logger.warning(
             "AuthApiError on %s %s [code=%s]: %s",
-            request.method, request.url.path, exc.code, detail,
+            request.method, request.url.path, exc.code, exc.message,
         )
-        return JSONResponse(status_code=status_code, content={"detail": detail})
+        return JSONResponse(status_code=status_code, content={"detail": AUTHENTICATION_ERROR})
 
     @app.exception_handler(APIError)
     async def handle_postgrest_error(request: Request, exc: APIError) -> JSONResponse:

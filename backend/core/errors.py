@@ -45,7 +45,8 @@ EMAIL_NOT_ALLOWED = (
 # ---------------------------------------------------------------------------
 # 400 / 409 – Validation & conflict
 # ---------------------------------------------------------------------------
-SIGNUP_FAILED = "Signup failed — check email/password requirements"
+SIGNUP_FAILED = "Unable to create account — check email/password requirements"
+PASSWORD_RESET_FAILED = "Unable to reset password — please try again"
 EMAIL_OR_USERNAME_TAKEN = "Email or username already taken"
 INSUFFICIENT_CREDITS = "Insufficient credits"
 INVALID_PROMOTION_PACKAGE = "Invalid promotion package"

@@ -1,15 +1,16 @@
 import logging
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from core.auth import get_admin_user, get_current_user, resolve_db_user
+from core.auth import get_admin_user, get_current_user, require_owner_or_admin, resolve_db_user
+from core.errors import EVENT_NOT_FOUND
 from schemas.credit import (
     AddCreditsRequest,
     CreditBalanceResponse,
     PromotionCreate,
     PromotionResponse,
 )
-from services import credit_service
+from services import credit_service, event_service
 
 router = APIRouter(tags=["credits"])
 log = logging.getLogger(__name__)
@@ -44,6 +45,10 @@ def list_promotions(auth_user: dict = Depends(get_current_user)):
 @router.post("/promotions/", response_model=PromotionResponse, status_code=status.HTTP_201_CREATED)
 def create_promotion(data: PromotionCreate, auth_user: dict = Depends(get_current_user)):
     user = resolve_db_user(auth_user)
+    event = event_service.get_event(data.event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=EVENT_NOT_FOUND)
+    require_owner_or_admin(auth_user, event.created_by)
     return credit_service.create_promotion(
         user_id=str(user.id),
         event_id=data.event_id,

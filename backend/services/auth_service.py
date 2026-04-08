@@ -14,6 +14,7 @@ from core.errors import (
     EMAIL_OR_USERNAME_TAKEN,
     INVALID_EMAIL_OR_PASSWORD,
     INVALID_OR_EXPIRED_TOKEN,
+    PASSWORD_RESET_FAILED,
     SESSION_REFRESH_FAILED,
     SIGNUP_FAILED,
 )
@@ -52,7 +53,7 @@ class AuthService:
             res = self._auth.sign_up({"email": data.email, "password": data.password})
         except AuthApiError as e:
             logger.warning("Signup failed for %s: %s", data.email, e.message)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=SIGNUP_FAILED)
 
         if not res.user:
             raise HTTPException(
@@ -109,7 +110,10 @@ class AuthService:
             )
         except AuthApiError as e:
             logger.warning("Login failed for %s: %s", data.email, e.message)
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.message)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=INVALID_EMAIL_OR_PASSWORD,
+            )
 
         if not res.session:
             raise HTTPException(
@@ -131,7 +135,10 @@ class AuthService:
             res = self._auth.refresh_session(refresh_token)
         except AuthApiError as e:
             logger.warning("Token refresh failed: %s", e.message)
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.message)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=SESSION_REFRESH_FAILED,
+            )
 
         if not res.session:
             raise HTTPException(
@@ -154,17 +161,18 @@ class AuthService:
         except AuthApiError as e:
             logger.warning("Logout error: %s", e.message)
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=e.message
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=INVALID_OR_EXPIRED_TOKEN,
             )
 
     def forgot_password(self, email: str) -> None:
         try:
             self._auth.reset_password_email(email)
         except AuthApiError as e:
+            # Swallow the error so the router always returns a generic
+            # "If that email exists …" response — raising here would let
+            # an attacker distinguish existing vs non-existing emails.
             logger.warning("Password reset request failed for %s: %s", email, e.message)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=e.message
-            )
 
     def reset_password(self, data: ResetPasswordRequest) -> None:
         # Verify the access token and extract the user it belongs to
@@ -191,7 +199,8 @@ class AuthService:
         except AuthApiError as e:
             logger.warning("Password reset failed for user %s: %s", res.user.id, e.message)
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=e.message
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=PASSWORD_RESET_FAILED,
             )
 
         # Revoke ALL existing sessions for this user so any stolen refresh
