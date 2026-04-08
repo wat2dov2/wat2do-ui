@@ -2,7 +2,7 @@
  * TopNav Component
  */
 
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Shield, LogOut, Building2 } from "lucide-react";
@@ -16,20 +16,16 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
-import { useAppContext } from "@/contexts/AppContext";
+import { useUIContext } from "@/contexts/UIContext";
+import { useUserContext } from "@/contexts/UserContext";
+import { useModalContext } from "@/contexts/ModalContext";
 import { ROUTES } from "@/shared/constants/routes";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 export function TopNav() {
-  const {
-    selectedSchool,
-    setSelectedSchool,
-    profileCompleted,
-    setProfileCompleted,
-    setUserEmail,
-    setShowOnboarding,
-    isAdmin,
-  } = useAppContext();
+  const { selectedSchool, setSelectedSchool } = useUIContext();
+  const { profileCompleted, setProfileCompleted, setUserEmail, isAdmin, hasClub } = useUserContext();
+  const { setShowOnboarding } = useModalContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -95,8 +91,8 @@ export function TopNav() {
           </Tooltip>
         )}
 
-        {/* Club Panel Button – only visible to signed-in users */}
-        {profileCompleted && (
+        {/* Club Panel Button – only visible to club owners (and admins) */}
+        {profileCompleted && (hasClub || isAdmin) && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="secondary" size="sm" onClick={handleClubPanelClick}>

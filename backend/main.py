@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,8 +11,22 @@ from routers import (
     credits, submissions, reports, scraped_events, meta,
 )
 
+log = logging.getLogger(__name__)
+
 app = FastAPI(title="wat2do API")
 register_error_handlers(app)
+
+# Block wildcard origins with credentials — this combination lets any site
+# make authenticated requests.  Starlette "reflects" the caller's Origin
+# header when allow_origins=["*"] + allow_credentials=True, which is even
+# worse than a plain wildcard because the browser sees a valid match.
+if "*" in settings.cors_origins:
+    raise RuntimeError(
+        "CORS_ORIGINS must not contain '*' when credentials are enabled. "
+        "Set explicit origins, e.g. CORS_ORIGINS=[\"https://wat2do.app\"]"
+    )
+
+log.info("CORS allowed origins: %s", settings.cors_origins)
 
 app.add_middleware(
     CORSMiddleware,

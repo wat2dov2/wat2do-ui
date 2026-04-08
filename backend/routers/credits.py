@@ -1,8 +1,8 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
-from core.auth import get_current_user, resolve_db_user
+from core.auth import get_admin_user, get_current_user, resolve_db_user
 from schemas.credit import (
     AddCreditsRequest,
     CreditBalanceResponse,
@@ -26,9 +26,9 @@ def get_credits(auth_user: dict = Depends(get_current_user)):
 
 
 @router.post("/credits/add", response_model=CreditBalanceResponse)
-def add_credits(data: AddCreditsRequest, auth_user: dict = Depends(get_current_user)):
-    user = resolve_db_user(auth_user)
-    new_balance = credit_service.add_credits(str(user.id), data.amount)
+def add_credits(data: AddCreditsRequest, _: dict = Depends(get_admin_user)):
+    """Admin-only: add credits to a target user's balance."""
+    new_balance = credit_service.add_credits(data.user_id, data.amount)
     return CreditBalanceResponse(balance=new_balance)
 
 
@@ -48,8 +48,6 @@ def create_promotion(data: PromotionCreate, auth_user: dict = Depends(get_curren
         user_id=str(user.id),
         event_id=data.event_id,
         package=data.package,
-        credits=data.credits,
-        duration=data.duration,
     )
 
 

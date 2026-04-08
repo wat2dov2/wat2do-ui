@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Instagram, MessageCircle, Tag, ExternalLink } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import type { Club } from "@/shared/types";
+import { sanitizeHref } from "@/shared/utils/url";
 
 // Normalize club category to use consolidated event category translations where applicable
 function getClubCategoryTranslation(category: string, t: (key: string) => string): string {
@@ -63,8 +64,9 @@ export function ClubCard({ club }: ClubCardProps) {
   };
 
   const handleClubPageClick = () => {
-    if (club.club_page.startsWith("http")) {
-      window.open(club.club_page, "_blank");
+    const safe = sanitizeHref(club.club_page);
+    if (safe) {
+      window.open(safe, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -121,9 +123,9 @@ export function ClubCard({ club }: ClubCardProps) {
               <span>{club.ig}</span>
             </a>
           )}
-          {club.discord && (
+          {club.discord && sanitizeHref(club.discord) && (
             <a
-              href={club.discord}
+              href={sanitizeHref(club.discord)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}

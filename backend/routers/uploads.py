@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from core.auth import get_current_user, require_owner_or_admin
@@ -40,7 +42,7 @@ async def upload_event_image(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),
 ):
-    event = event_service.get_event(event_id)
+    event = await asyncio.to_thread(event_service.get_event, event_id)
     if not event:
         raise HTTPException(status.HTTP_404_NOT_FOUND, EVENT_NOT_FOUND)
     require_owner_or_admin(user, event.created_by)
@@ -48,10 +50,12 @@ async def upload_event_image(
     if event.source_image_url:
         old_path = storage.path_from_url(event.source_image_url, BUCKET_EVENT_IMAGES)
         if old_path:
-            storage.delete_file(BUCKET_EVENT_IMAGES, old_path)
-    url = storage.upload_file(BUCKET_EVENT_IMAGES, data, file.filename or "image", content_type)
+            await asyncio.to_thread(storage.delete_file, BUCKET_EVENT_IMAGES, old_path)
+    url = await asyncio.to_thread(
+        storage.upload_file, BUCKET_EVENT_IMAGES, data, file.filename or "image", content_type,
+    )
     from schemas.event import EventUpdate
-    event_service.update_event(event_id, EventUpdate(source_image_url=url))
+    await asyncio.to_thread(event_service.update_event, event_id, EventUpdate(source_image_url=url))
     return {"url": url}
 
 
@@ -60,17 +64,19 @@ async def upload_avatar(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),
 ):
-    db_user = user_service.get_user_by_supabase_id(user["id"])
+    db_user = await asyncio.to_thread(user_service.get_user_by_supabase_id, user["id"])
     if not db_user:
         raise HTTPException(status.HTTP_404_NOT_FOUND, USER_NOT_FOUND)
     data, content_type = await _validated_upload(file, BUCKET_AVATARS)
     if db_user.avatar_url:
         old_path = storage.path_from_url(db_user.avatar_url, BUCKET_AVATARS)
         if old_path:
-            storage.delete_file(BUCKET_AVATARS, old_path)
-    url = storage.upload_file(BUCKET_AVATARS, data, file.filename or "avatar", content_type)
+            await asyncio.to_thread(storage.delete_file, BUCKET_AVATARS, old_path)
+    url = await asyncio.to_thread(
+        storage.upload_file, BUCKET_AVATARS, data, file.filename or "avatar", content_type,
+    )
     from schemas.user import UserUpdate
-    user_service.update_user(db_user.id, UserUpdate(avatar_url=url))
+    await asyncio.to_thread(user_service.update_user, db_user.id, UserUpdate(avatar_url=url))
     return {"url": url}
 
 
@@ -80,7 +86,7 @@ async def upload_club_logo(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),
 ):
-    club = club_service.get_club(club_id)
+    club = await asyncio.to_thread(club_service.get_club, club_id)
     if not club:
         raise HTTPException(status.HTTP_404_NOT_FOUND, CLUB_NOT_FOUND)
     require_owner_or_admin(user, club.created_by)
@@ -88,10 +94,12 @@ async def upload_club_logo(
     if club.logo_url:
         old_path = storage.path_from_url(club.logo_url, BUCKET_CLUB_LOGOS)
         if old_path:
-            storage.delete_file(BUCKET_CLUB_LOGOS, old_path)
-    url = storage.upload_file(BUCKET_CLUB_LOGOS, data, file.filename or "logo", content_type)
+            await asyncio.to_thread(storage.delete_file, BUCKET_CLUB_LOGOS, old_path)
+    url = await asyncio.to_thread(
+        storage.upload_file, BUCKET_CLUB_LOGOS, data, file.filename or "logo", content_type,
+    )
     from schemas.club import ClubUpdate
-    club_service.update_club(club_id, ClubUpdate(logo_url=url))
+    await asyncio.to_thread(club_service.update_club, club_id, ClubUpdate(logo_url=url))
     return {"url": url}
 
 
@@ -101,5 +109,7 @@ async def upload_qr_asset(
     user: dict = Depends(get_current_user),
 ):
     data, content_type = await _validated_upload(file, BUCKET_QR_ASSETS)
-    url = storage.upload_file(BUCKET_QR_ASSETS, data, file.filename or "asset", content_type)
+    url = await asyncio.to_thread(
+        storage.upload_file, BUCKET_QR_ASSETS, data, file.filename or "asset", content_type,
+    )
     return {"url": url}

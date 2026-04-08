@@ -80,6 +80,12 @@ POP_FALLBACK_SCORE: float = 0.1       # base score for events with 0 interaction
 POP_CANDIDATE_LIMIT: int = 500        # max events fetched for popularity scoring
 
 # ---------------------------------------------------------------------------
+# Caching & time-windowing for recommendation queries
+# ---------------------------------------------------------------------------
+INTERACTION_LOOKBACK_DAYS: int = 90   # only use interactions from the last N days
+CACHE_TTL_SECONDS: int = 300          # 5-minute TTL for shared recommendation data
+
+# ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------
 EVAL_K: int = 10                 # default K for precision/NDCG

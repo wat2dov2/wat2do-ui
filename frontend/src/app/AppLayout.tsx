@@ -1,6 +1,6 @@
 /**
  * AppLayout Component
- * Refactored to use AppContext - eliminates 12 props
+ * Refactored to use split contexts (UIContext, UserContext, ModalContext)
  */
 
 import React from "react";

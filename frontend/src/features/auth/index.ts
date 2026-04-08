@@ -33,11 +33,14 @@ export {
 export { useAuth } from "./hooks/useAuth";
 
 // API (public interface)
-export { 
-  login, 
-  logout, 
+export {
+  login,
+  logout,
   getSession,
   getUserProfile,
+  getUserId,
+  getUserRole,
+  getUserHasClub,
   updateUserProfile,
   isAuthenticated,
   isProfileCompleted,

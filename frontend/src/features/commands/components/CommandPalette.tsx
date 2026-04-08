@@ -28,30 +28,33 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/shared/ui/command";
-import { useCommandPalette } from "@/features/commands/context/CommandPaletteContext";
+import { useUserContext } from "@/contexts/UserContext";
+import { useUIContext } from "@/contexts/UIContext";
+import { useModalContext } from "@/contexts/ModalContext";
 import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  setShowFilterDropdown: (show: boolean) => void;
+  onClearAllFilters: () => void;
+  onSetFreeFilter: () => void;
+  onShowOnboarding: () => void;
 }
 
 export function CommandPalette({
   isOpen,
   onOpenChange,
+  setShowFilterDropdown,
+  onClearAllFilters,
+  onSetFreeFilter,
+  onShowOnboarding,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    profileCompleted,
-    viewMode,
-    setViewMode,
-    setShowFilterDropdown,
-    setShowSubmitEvent,
-    setShowOnboarding,
-    onClearAllFilters,
-    onSetFreeFilter,
-  } = useCommandPalette();
+  const { profileCompleted } = useUserContext();
+  const { viewMode, setViewMode } = useUIContext();
+  const { setShowSubmitEvent } = useModalContext();
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onOpenChange} title={t("commands.commandPalette")} description={t("commands.commandPaletteDescription")}>
@@ -167,7 +170,7 @@ export function CommandPalette({
           ) : (
             <CommandItem
               onSelect={() => {
-                setShowOnboarding(true);
+                onShowOnboarding();
                 onOpenChange(false);
               }}
             >

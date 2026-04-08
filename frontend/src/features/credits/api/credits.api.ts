@@ -47,11 +47,9 @@ export async function loadPromotedEvents(): Promise<PromotedEvent[]> {
 export async function promoteEventAPI(
   eventId: number,
   packageId: string,
-  credits: number,
-  duration: number,
 ): Promise<{ success: boolean; needsCredits?: boolean }> {
   try {
-    await createPromotionAPI(eventId, packageId, credits, duration);
+    await createPromotionAPI(eventId, packageId);
     return { success: true };
   } catch (err: unknown) {
     const detail = (err as { message?: string }).message ?? "";

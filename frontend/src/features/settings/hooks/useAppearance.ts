@@ -2,7 +2,7 @@
  * useAppearance Hook
  * Manages appearance preferences (view mode, filter view mode)
  * 
- * Note: viewMode and filterViewMode are also managed globally in AppContext
+ * Note: viewMode and filterViewMode are also managed globally in UIContext
  * This hook provides local state management for the settings page
  */
 

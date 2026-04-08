@@ -37,3 +37,6 @@ export { QuickFilterChip } from "./components/QuickFilterChip";
 
 // Hooks
 export { useSearch } from "./hooks/useSearch";
+
+// Store
+export { useSearchStore } from "./store/search.store";

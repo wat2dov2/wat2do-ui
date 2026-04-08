@@ -11,7 +11,7 @@ import { GooseDialogue } from "@/features/auth/components/GooseDialogue";
 import { OnboardingProgressDots } from "@/features/auth/components/OnboardingProgressDots";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
-import { useAppContext } from "@/contexts/AppContext";
+import { useUserContext } from "@/contexts/UserContext";
 
 const stepVariants = {
   enter: { opacity: 0, y: 20 },
@@ -41,7 +41,7 @@ function getGooseMessage(step: number, school: string): string {
 
 export function OnboardingPage() {
   const navigate = useNavigate();
-  const { setProfileCompleted, setUserEmail } = useAppContext();
+  const { setProfileCompleted, setUserEmail } = useUserContext();
 
   const handleComplete = useCallback(
     (data: {
@@ -56,6 +56,8 @@ export function OnboardingPage() {
         interests: data.selectedTopics,
         isFirstYear: data.isFirstYear,
         school: data.school,
+        role: "user" as const,
+        hasClub: false,
       };
 
       // Redirect to events immediately so the user isn't stuck on a slow transition

@@ -4,6 +4,7 @@ import type { Event } from "@/shared/types";
 import { formReducer, initialState, type FormState } from "@/features/qrcode/hooks/useCreateQRCodeForm.reducer";
 import { getUniqueEvents, createQRCodeFromState } from "@/features/qrcode/hooks/useCreateQRCodeForm.utils";
 import { MAX_UPLOAD_SIZE_BYTES } from "@/features/qrcode/constants";
+import { isSafeUrl } from "@/shared/utils/url";
 
 export function useCreateQRCodeForm(events: Event[], userEmail: string) {
   const { t } = useTranslation();
@@ -71,10 +72,7 @@ export function useCreateQRCodeForm(events: Event[], userEmail: string) {
       newErrors.url = t("qrCode.urlRequired");
     }
     if (state.destinationType === "custom-url" && state.customUrl.trim()) {
-      try {
-        new URL(state.customUrl);
-      } catch (err) {
-        console.error("Invalid custom URL:", err);
+      if (!isSafeUrl(state.customUrl.trim())) {
         newErrors.url = t("qrCode.urlInvalid");
       }
     }

@@ -7,6 +7,7 @@ import { EventsProvider } from "@/features/events/context/EventsContext";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { usePromotionsStore } from "@/features/credits/store/promotions.store";
+import { getUserId } from "@/features/auth";
 import type { Event } from "@/shared/types";
 
 interface EventsPageProps {
@@ -153,6 +154,7 @@ export function EventsPage({
           toggleSaveEvent={handleToggleSave}
           activePromotedEventIds={activePromotedEventIds}
           isAdmin={isAdmin}
+          currentUserId={getUserId()}
           onEdit={handleEdit}
           onDelete={handleDelete}
           allEvents={events}

@@ -29,6 +29,12 @@ def list_clubs(
     return club_service.list_clubs(skip=skip, limit=limit, club_type=club_type, search=search)
 
 
+@router.get("/mine", response_model=list[ClubResponse])
+def list_my_clubs(auth_user: dict = Depends(get_current_user)):
+    """Return clubs owned by the authenticated user."""
+    return club_service.list_clubs_by_owner(auth_user["id"])
+
+
 @router.get("/{club_id}", response_model=ClubResponse)
 def get_club(club_id: int):
     club = club_service.get_club(club_id)

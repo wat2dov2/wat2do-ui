@@ -29,7 +29,7 @@ import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { useEventsContextOptional } from "@/features/events/context/EventsContext";
-import { useAppContext } from "@/contexts/AppContext";
+import { useUserContext } from "@/contexts/UserContext";
 import { shareEvent } from "@/shared/utils/shareEvent";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
@@ -64,16 +64,21 @@ export const EventCard = React.memo(function EventCard({
   // Get values from context (with prop overrides)
   // Use optional context - returns null when not inside EventsProvider
   const context = useEventsContextOptional();
-  const { profileCompleted } = useAppContext();
+  const { profileCompleted } = useUserContext();
 
   // Provide fallback defaults when context is null
   const toggleSaveEvent = context?.toggleSaveEvent ?? (() => {});
   const isAdmin = context?.isAdmin ?? false;
+  const currentUserId = context?.currentUserId;
   const onEdit = context?.onEdit;
   const onDelete = context?.onDelete;
   const allEvents = context?.allEvents ?? [];
   const contextOnEventClick = context?.onEventClick;
   const contextDisableModal = context?.disableModal;
+
+  // Show edit/delete only if the user is an admin or the event owner
+  const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
+  const canManageEvent = isAdmin || isOwner;
   
   // Use prop values if provided, otherwise fall back to context
   const onEventClick = propOnEventClick ?? contextOnEventClick;
@@ -249,7 +254,7 @@ export const EventCard = React.memo(function EventCard({
                     <Flag className="w-3.5 h-3.5" />
                     {t("common.report")}
                   </button>
-                  {isAdmin && (
+                  {canManageEvent && (
                     <>
                       <div className="h-px bg-border my-0.5" />
                       <button
@@ -293,46 +298,31 @@ export const EventCard = React.memo(function EventCard({
         {/* Event Content */}
         <div className="relative flex flex-col flex-1 px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
           <LightRays />
-          {/* Title, Info, and Bottom Badges */}
           <div className="flex flex-col gap-3 h-full flex-1">
-            {/* Title */}
             <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
               {event.title}
             </h3>
 
-            {/* Event Info + Badges Row */}
+            {/* Info + Badges - pinned to bottom */}
             <div className="flex items-end justify-between gap-3 mt-auto">
-              {/* Left side: Date / Time / Location */}
               <div className="space-y-0.5">
-                {/* Date */}
-                <div className="flex gap-1.5 items-center">
-                  <span className="text-[11px] text-muted-foreground">
-                    {cardDate}
-                  </span>
-                </div>
-
-                {/* Time */}
-                <div className="flex gap-1.5 items-center">
-                  <span className="text-[11px] text-muted-foreground">
-                    {cardTime}
-                  </span>
-                </div>
-
-                {/* Location */}
-                <div className="flex gap-1.5 items-center">
-                  <span className="text-[11px] text-muted-foreground truncate">
-                    {event.location}
-                  </span>
-                </div>
+                <span className="block text-[11px] text-muted-foreground">
+                  {cardDate}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {cardTime}
+                </span>
+                <span className="block text-[11px] text-muted-foreground truncate">
+                  {event.location}
+                </span>
               </div>
 
-              {/* Right side: Event Badges - Bottom right, right aligned */}
               {badges.length > 0 && (
-                <div className="flex flex-col gap-1 items-end shrink-0">
+                <div className="flex flex-col gap-1.5 items-end shrink-0">
                   {badges.map((badge) => (
                     <span
                       key={badge.text}
-                      className="text-[11px] text-muted-foreground"
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-muted-foreground text-muted-foreground whitespace-nowrap"
                     >
                       {badge.text}
                     </span>

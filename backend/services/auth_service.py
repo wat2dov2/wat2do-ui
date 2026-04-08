@@ -194,5 +194,17 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST, detail=e.message
             )
 
+        # Revoke ALL existing sessions for this user so any stolen refresh
+        # tokens (the reason the user is resetting) can no longer be used.
+        try:
+            supabase_admin.auth.admin.sign_out(data.access_token, scope="global")
+        except AuthApiError as e:
+            # Password was already changed — log but don't fail the request.
+            logger.warning(
+                "Failed to revoke sessions after password reset for user %s: %s",
+                res.user.id,
+                e.message,
+            )
+
 
 auth = AuthService(auth_client=supabase.auth, db_client=get_sb())

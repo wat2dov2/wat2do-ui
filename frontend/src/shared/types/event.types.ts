@@ -37,6 +37,8 @@ export interface Event {
   fb_handle?: string | null;
   other_handle?: string | null;
   display_handle?: string;
+  /** Supabase user ID of the user who created this event (null for scraped events). */
+  created_by?: string | null;
 }
 
 // Event submission data (matches EventFormData from SubmitEventModal)

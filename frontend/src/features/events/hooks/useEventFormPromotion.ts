@@ -1,6 +1,5 @@
 import { useReducer, useCallback } from "react";
 import { useConfetti } from "@/shared/hooks/useConfetti";
-import { PROMOTION_PACKAGES } from "@/shared/types";
 import {
   promotionReducer,
   initialPromotionState,
@@ -12,8 +11,6 @@ interface UseEventFormPromotionOptions {
   onPromote?: (
     eventId: number,
     packageId: string,
-    credits: number,
-    duration: number
   ) => boolean;
 }
 
@@ -31,16 +28,8 @@ export function useEventFormPromotion({
   const handlePromote = useCallback(() => {
     if (!state.selectedPromotion || !createdEventId || !onPromote) return;
 
-    const pkg = PROMOTION_PACKAGES.find((p) => p.id === state.selectedPromotion);
-    if (!pkg) return;
+    const success = onPromote(createdEventId, state.selectedPromotion);
 
-    const success = onPromote(
-      createdEventId,
-      pkg.id,
-      pkg.credits,
-      pkg.duration
-    );
-    
     if (success) {
       dispatch({ type: "SET_PROMOTION_SUCCESS", payload: true });
       trigger({

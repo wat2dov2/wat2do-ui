@@ -20,7 +20,8 @@ class InteractionCreate(BaseModel):
 
 class InteractionBatch(BaseModel):
     session_id: str
-    token: str | None = None
+    token: str | None = None  # DEPRECATED: ignored, auth via Bearer header
+    user_id: str | None = None  # optional; validated against authenticated user
     interactions: list[InteractionCreate]
 
 

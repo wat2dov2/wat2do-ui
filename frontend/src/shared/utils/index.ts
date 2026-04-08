@@ -8,3 +8,4 @@ export * from "./event";
 export * from "./shareEvent";
 export * from "./translateInterest";
 export * from "./string";
+export * from "./url";

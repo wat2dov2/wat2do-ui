@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAppContext } from "@/contexts/AppContext";
+import { useModalContext } from "@/contexts/ModalContext";
 import { ROUTES } from "@/shared/constants/routes";
 
 /**
@@ -10,7 +10,7 @@ import { ROUTES } from "@/shared/constants/routes";
  * Eliminated sidebarHovered dependency
  */
 export function useSidebar() {
-  const { setShowCommandPalette, setShowSubmitEvent } = useAppContext();
+  const { setShowCommandPalette, setShowSubmitEvent } = useModalContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
 

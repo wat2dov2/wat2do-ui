@@ -12,8 +12,7 @@ import { AdminSubmissionsPage } from "@/features/admin";
 import { AdminPostersPage } from "@/features/admin";
 import type { Event, EventFormData, EventSubmission, Club } from "@/shared/types";
 import { submissionToEventData } from "@/features/admin/utils/submissionToEvent";
-import { useNavigation } from "@/contexts/NavigationContext";
-import { useAppContext } from "@/contexts/AppContext";
+import { useNavigate } from "react-router-dom";
 import { ROUTES, ADMIN_ROUTE_MAP } from "@/shared/constants/routes";
 
 interface AdminRoutesConfig {
@@ -45,7 +44,7 @@ export function AdminRouteWrapper({
   includeSubmissions = false,
   includePosters = false,
 }: AdminRouteWrapperProps) {
-  const { navigate } = useNavigation();
+  const navigate = useNavigate();
 
   const adminProps = useMemo(
     () => ({
@@ -89,7 +88,7 @@ export function AdminRouteWrapper({
  * Admin panel navigation handler
  */
 export function useAdminNavigation() {
-  const { navigate } = useNavigation();
+  const navigate = useNavigate();
 
   return useMemo(
     () => (page: string) => {
@@ -143,7 +142,7 @@ export function AdminClubsRoute({ config }: { config: AdminRoutesConfig }) {
  * Admin Submissions Route Component
  */
 export function AdminSubmissionsRoute({ config }: { config: AdminRoutesConfig }) {
-  const { navigate } = useNavigation();
+  const navigate = useNavigate();
 
   return (
     <AdminRouteWrapper config={config} includeSubmissions>

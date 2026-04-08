@@ -26,8 +26,6 @@ interface PromotionsState {
   promoteEvent: (
     eventId: number,
     packageId: string,
-    credits: number,
-    duration: number,
   ) => Promise<{ success: boolean; needsCredits?: boolean }>;
   isEventPromoted: (eventId: number) => boolean;
 }
@@ -68,8 +66,8 @@ export const usePromotionsStore = create<PromotionsState>((set, get) => ({
     set({ userCredits: newBalance });
   },
 
-  promoteEvent: async (eventId, packageId, credits, duration) => {
-    const result = await promoteEventAPI(eventId, packageId, credits, duration);
+  promoteEvent: async (eventId, packageId) => {
+    const result = await promoteEventAPI(eventId, packageId);
     if (result.success) {
       // Refresh state from backend
       const [balance, promos] = await Promise.all([

@@ -5,6 +5,7 @@
 
 import type { QRCode, QRCodeScan } from "@/shared/types";
 import { api, ApiError } from "@/shared/services/apiClient";
+import { isSafeUrl } from "@/shared/utils/url";
 
 /** Response from GET /qr/{id}: backend records the scan and returns redirect config. */
 export interface QrRedirectConfig {
@@ -57,7 +58,12 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
       break;
     case "custom-url":
       if (config.destination_id != null && typeof config.destination_id === "string") {
-        window.location.href = config.destination_id;
+        if (isSafeUrl(config.destination_id)) {
+          window.location.href = config.destination_id;
+        } else {
+          console.error("Blocked unsafe redirect URL:", config.destination_id);
+          window.location.href = "/";
+        }
       }
       break;
     default:

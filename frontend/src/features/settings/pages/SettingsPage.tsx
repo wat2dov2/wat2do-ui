@@ -14,12 +14,13 @@ import { ProfileTab } from "@/features/settings/components/ProfileTab";
 import { NotificationsTab } from "@/features/settings/components/NotificationsTab";
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
 import { PrivacyTab } from "@/features/settings/components/PrivacyTab";
-import { useAppContext } from "@/contexts/AppContext";
+import { useUIContext } from "@/contexts/UIContext";
+import { useUserContext } from "@/contexts/UserContext";
 import { QP } from "@/shared/constants/queryParams";
 
 export function SettingsPage() {
-  const { userEmail, viewMode, setViewMode, filterViewMode, setFilterViewMode } =
-    useAppContext();
+  const { viewMode, setViewMode, filterViewMode, setFilterViewMode } = useUIContext();
+  const { userEmail } = useUserContext();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get(QP.TAB) || "profile";

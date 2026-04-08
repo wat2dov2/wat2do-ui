@@ -49,8 +49,6 @@ interface SubmitEventModalProps {
   onPromote?: (
     eventId: number,
     packageId: string,
-    credits: number,
-    duration: number
   ) => boolean;
   onBuyCredits?: () => void;
   editEventId?: number;

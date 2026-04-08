@@ -48,8 +48,13 @@ EMAIL_NOT_ALLOWED = (
 SIGNUP_FAILED = "Signup failed — check email/password requirements"
 EMAIL_OR_USERNAME_TAKEN = "Email or username already taken"
 INSUFFICIENT_CREDITS = "Insufficient credits"
+INVALID_PROMOTION_PACKAGE = "Invalid promotion package"
 ID_MISMATCH = "ID mismatch"
 REQUIRES_LOCATION = "requires_location"
+INVALID_CUSTOM_URL = "custom-url destination_id must be a valid http or https URL"
+BATCH_TOO_LARGE = "Batch exceeds maximum size of {limit} interactions"
+USER_ID_MISMATCH = "Cannot submit interactions on behalf of another user"
+DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same event"
 
 # ---------------------------------------------------------------------------
 # 502 / 503 – Upstream / AI errors
@@ -57,6 +62,11 @@ REQUIRES_LOCATION = "requires_location"
 AI_EMPTY_RESPONSE = "Empty response from AI. Please try a different prompt."
 AI_INVALID_JSON = "AI returned invalid JSON. Please try again."
 AI_NOT_CONFIGURED = "OpenAI API key not configured on the server."
+
+# ---------------------------------------------------------------------------
+# 429 – Rate limiting
+# ---------------------------------------------------------------------------
+RATE_LIMIT_EXCEEDED = "Too many requests — please wait before trying again."
 
 # ---------------------------------------------------------------------------
 # Global error handler defaults

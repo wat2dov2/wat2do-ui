@@ -42,6 +42,10 @@ MAX_LIST_LIMIT = 500         # upper bound enforced by Query(le=...)
 # Interaction defaults
 # ---------------------------------------------------------------------------
 DEFAULT_INTERACTION_LIMIT = 50   # default limit for popularity queries
+MAX_INTERACTION_BATCH_SIZE = 50  # max interactions per single batch request
+# Deduplication: max identical (user, event, type) interactions within window
+MAX_DUPLICATE_INTERACTIONS = 10
+DEDUP_WINDOW_MINUTES = 60        # sliding window for deduplication check
 
 # ---------------------------------------------------------------------------
 # QR / scan recording
@@ -81,6 +85,32 @@ AB_DEFAULT_VARIANTS = (AB_VARIANT_CONTROL, AB_VARIANT_TREATMENT)
 # Credits
 # ---------------------------------------------------------------------------
 DEFAULT_CREDIT_BALANCE = 100
+MAX_CREDITS_PER_ADD = 10_000   # upper bound for a single add_credits call
+
+# ---------------------------------------------------------------------------
+# Promotion packages — server-authoritative pricing
+# Maps package name -> (credit cost, duration in days).
+# The client sends only the package name; cost and duration are looked up here.
+# ---------------------------------------------------------------------------
+PROMOTION_PACKAGES: dict[str, tuple[int, int]] = {
+    "featured": (50, 7),
+    "email": (100, 1),
+    "combo": (200, 7),
+}
+
+# ---------------------------------------------------------------------------
+# Rate limiting (per-user sliding window)
+# ---------------------------------------------------------------------------
+RATE_LIMIT_MAX_REQUESTS = 10     # max requests allowed in the window
+RATE_LIMIT_WINDOW_SECONDS = 60   # window duration in seconds
+
+# Auth endpoints — per-IP limits (unauthenticated, stricter)
+AUTH_RATE_LIMIT_MAX_REQUESTS = 10        # login & signup
+AUTH_RATE_LIMIT_WINDOW_SECONDS = 60
+AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS = 5   # forgot-password & reset-password
+AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS = 60
+AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS = 30    # token refresh (legitimate clients auto-refresh)
+AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS = 60
 
 # ---------------------------------------------------------------------------
 # Retry decorator for Supabase operations

@@ -1,7 +1,6 @@
 import { Navigate } from "react-router-dom";
-import { isAuthenticated } from "@/features/auth";
-import { useAppContext } from "@/contexts/AppContext";
-import { ROLE_ADMIN, type Role } from "@/shared/constants/roles";
+import { isAuthenticated, getUserRole, getUserHasClub } from "@/features/auth";
+import { ROLE_ADMIN, ROLE_CLUB, type Role } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface ProtectedRouteProps {
@@ -11,18 +10,17 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { isAdmin } = useAppContext();
-
   if (!isAuthenticated()) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
+
+  if (requiredRole === ROLE_ADMIN && getUserRole() !== "admin") {
     return <Navigate to={ROUTES.HOME} replace />;
   }
 
-  if (requiredRole === ROLE_ADMIN && !isAdmin) {
+  if (requiredRole === ROLE_CLUB && !getUserHasClub() && getUserRole() !== "admin") {
     return <Navigate to={ROUTES.HOME} replace />;
   }
-
-  // "club" role: for now all authenticated users can access club panel.
-  // Gate this once a club membership model is added.
 
   return <>{children}</>;
 }

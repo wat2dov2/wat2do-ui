@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
+from core.sanitize import sanitize_postgrest_value
 from core.tables import CLUBS, CLUB_INTEGRATIONS
 from schemas.club import (
     ClubCreate,
@@ -20,6 +21,12 @@ from schemas.club import (
 
 
 SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = get_args(IntegrationPlatform)
+
+
+def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
+    """Return all clubs created by the given Supabase auth user id."""
+    r = get_sb().table(CLUBS).select("*").eq("created_by", owner_id).execute()
+    return [ClubResponse.model_validate(c) for c in (r.data or [])]
 
 
 def get_club(club_id: int) -> ClubResponse | None:
@@ -39,7 +46,9 @@ def list_clubs(
     if club_type:
         q = q.eq("club_type", club_type)
     if search:
-        q = q.ilike("club_name", f"%{search}%")
+        safe = sanitize_postgrest_value(search)
+        if safe:
+            q = q.ilike("club_name", f"%{safe}%")
     q = q.order("club_name").range(skip, skip + limit - 1)
     r = q.execute()
     return [ClubResponse.model_validate(c) for c in (r.data or [])]

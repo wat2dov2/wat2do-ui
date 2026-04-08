@@ -141,60 +141,42 @@ export function EventFormPreview() {
         </div>
 
         {/* Event Content */}
-        <div className="relative flex flex-col px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
+        <div className="relative flex flex-col flex-1 px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
           <LightRays />
-          {/* Title and Badges Row */}
-          <div className="flex items-start gap-3">
-            {/* Left side: Title, Date, Location */}
-            <div className="flex-1 min-w-0 flex flex-col gap-4">
-              <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
-                {formData.title || t("events.eventTitle")}
-              </h3>
+          <div className="flex flex-col gap-3 h-full flex-1">
+            <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
+              {formData.title || t("events.eventTitle")}
+            </h3>
 
-              {/* Event Info */}
+            {/* Info + Badges - pinned to bottom */}
+            <div className="flex items-end justify-between gap-3 mt-auto">
               <div className="space-y-0.5">
-                {/* Date */}
                 {cardDate && (
-                  <div className="flex gap-1.5 items-center">
-                    <span className="text-[11px] text-muted-foreground">
-                      {cardDate}
-                    </span>
-                  </div>
+                  <span className="block text-[11px] text-muted-foreground">{cardDate}</span>
                 )}
-
-                {/* Time */}
                 {cardTime && (
-                  <div className="flex gap-1.5 items-center">
-                    <span className="text-[11px] text-muted-foreground">
-                      {cardTime}
-                    </span>
-                  </div>
+                  <span className="block text-[11px] text-muted-foreground">{cardTime}</span>
                 )}
-
-                {/* Location */}
                 {formData.location && (
-                  <div className="flex gap-1.5 items-center">
-                    <span className="text-[11px] text-muted-foreground truncate">
-                      {formData.location}
-                    </span>
-                  </div>
+                  <span className="block text-[11px] text-muted-foreground truncate">
+                    {formData.location}
+                  </span>
                 )}
               </div>
-            </div>
 
-            {/* Right side: Event Badges - Stacked vertically, right aligned */}
-            {badges.length > 0 && (
-              <div className="flex flex-col gap-1.5 items-end shrink-0">
-                {badges.map((badge) => (
-                  <span
-                    key={badge.text}
-                    className={`font-medium text-[10px] px-2 py-0.5 rounded-xl ${badge.bgClass} ${badge.textClass}`}
-                  >
-                    {badge.text}
-                  </span>
-                ))}
-              </div>
-            )}
+              {badges.length > 0 && (
+                <div className="flex flex-col gap-1.5 items-end shrink-0">
+                  {badges.map((badge) => (
+                    <span
+                      key={badge.text}
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-muted-foreground text-muted-foreground whitespace-nowrap"
+                    >
+                      {badge.text}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </article>

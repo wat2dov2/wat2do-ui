@@ -3,6 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from core.auth import bearer
 from core.config import settings
 from core.errors import NO_REFRESH_TOKEN
+from core.rate_limit import (
+    auth_rate_limiter,
+    auth_refresh_rate_limiter,
+    auth_sensitive_rate_limiter,
+)
 from schemas.auth import (
     SignupRequest,
     SignupResponse,
@@ -43,7 +48,11 @@ def _clear_refresh_cookie(response: Response) -> None:
 
 
 @router.post("/signup", response_model=SignupResponse)
-def signup(data: SignupRequest, response: Response):
+def signup(
+    data: SignupRequest,
+    response: Response,
+    _rl: None = Depends(auth_rate_limiter.ip_dependency()),
+):
     result = auth.signup(data)
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token)
@@ -51,7 +60,11 @@ def signup(data: SignupRequest, response: Response):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest, response: Response):
+def login(
+    data: LoginRequest,
+    response: Response,
+    _rl: None = Depends(auth_rate_limiter.ip_dependency()),
+):
     result = auth.login(data)
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token)
@@ -59,7 +72,11 @@ def login(data: LoginRequest, response: Response):
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh(request: Request, response: Response):
+def refresh(
+    request: Request,
+    response: Response,
+    _rl: None = Depends(auth_refresh_rate_limiter.ip_dependency()),
+):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
         raise HTTPException(
@@ -80,12 +97,22 @@ def logout(response: Response, token=Depends(bearer)):
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-def forgot_password(data: ForgotPasswordRequest):
+def forgot_password(
+    data: ForgotPasswordRequest,
+    _rl: None = Depends(auth_sensitive_rate_limiter.ip_dependency()),
+):
     auth.forgot_password(data.email)
     return MessageResponse(message="If that email exists, a reset link has been sent")
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-def reset_password(data: ResetPasswordRequest):
+def reset_password(
+    data: ResetPasswordRequest,
+    response: Response,
+    _rl: None = Depends(auth_sensitive_rate_limiter.ip_dependency()),
+):
     auth.reset_password(data)
+    # All sessions were revoked server-side; clear the caller's refresh cookie
+    # so the browser doesn't hold a now-invalid token.
+    _clear_refresh_cookie(response)
     return MessageResponse(message="Password updated successfully")

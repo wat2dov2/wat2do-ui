@@ -1,6 +1,8 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from core.constants import MAX_CREDITS_PER_ADD
 
 PromotionPackage = Literal["featured", "email", "combo"]
 
@@ -17,14 +19,13 @@ class CreditBalanceResponse(BaseModel):
 
 
 class AddCreditsRequest(BaseModel):
-    amount: int
+    user_id: str = Field(..., description="Target user ID to receive credits")
+    amount: int = Field(..., gt=0, le=MAX_CREDITS_PER_ADD)
 
 
 class PromotionCreate(BaseModel):
     event_id: int
     package: PromotionPackage
-    credits: int
-    duration: int  # days
 
 
 class PromotionResponse(BaseModel):

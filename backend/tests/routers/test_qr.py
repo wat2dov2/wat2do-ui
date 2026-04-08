@@ -6,10 +6,12 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
+from core.constants import ROLE_ADMIN
 from main import app
 from schemas.qr_code import QrCodeRedirect, QrCodeResponse
+from schemas.user import UserResponse
 from services import qr_code_service
-from tests.conftest import FAKE_USER, OTHER_USER
+from tests.conftest import FAKE_USER, ADMIN_USER, OTHER_USER
 
 
 def _mock_qr(**overrides) -> QrCodeResponse:
@@ -30,6 +32,16 @@ def _mock_qr(**overrides) -> QrCodeResponse:
     }
     defaults.update(overrides)
     return QrCodeResponse.model_validate(defaults)
+
+
+def _admin_db_user() -> UserResponse:
+    return UserResponse(
+        id="00000000-0000-0000-0000-000000000000",
+        email=ADMIN_USER["email"],
+        role=ROLE_ADMIN,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
 
 
 @pytest.fixture
@@ -143,6 +155,98 @@ def test_create_poster_sets_created_by(authenticated_client, monkeypatch):
     assert kwargs["created_by"] == FAKE_USER["id"]
 
 
+# ── URL validation for custom-url destination type ─────────────────────
+
+
+def test_create_poster_rejects_javascript_url(authenticated_client):
+    """POST /qr/ with javascript: URL returns 422."""
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "xss-qr",
+            "name": "XSS",
+            "destination_type": "custom-url",
+            "destination_id": "javascript:alert(1)",
+            "created_by": FAKE_USER["id"],
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_create_poster_rejects_data_url(authenticated_client):
+    """POST /qr/ with data: URL returns 422."""
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "data-qr",
+            "name": "Data",
+            "destination_type": "custom-url",
+            "destination_id": "data:text/html,<script>alert(1)</script>",
+            "created_by": FAKE_USER["id"],
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_create_poster_accepts_https_url(authenticated_client, monkeypatch):
+    """POST /qr/ with a valid https URL succeeds."""
+    qr = _mock_qr(destination_id="https://example.com")
+    mock_upsert = MagicMock(return_value=qr)
+    monkeypatch.setattr(qr_code_service, "upsert_qr_code", mock_upsert)
+
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "safe-qr",
+            "name": "Safe",
+            "destination_type": "custom-url",
+            "destination_id": "https://example.com",
+            "created_by": FAKE_USER["id"],
+        },
+    )
+    assert resp.status_code == 201
+
+
+def test_update_poster_rejects_javascript_url(authenticated_client, monkeypatch):
+    """PATCH /qr/{id} with javascript: URL returns 422."""
+    existing = _mock_qr(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.patch(
+        "/qr/test-qr",
+        json={
+            "id": "test-qr",
+            "name": "Hacked",
+            "destination_type": "custom-url",
+            "destination_id": "javascript:alert(document.cookie)",
+            "created_by": FAKE_USER["id"],
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_create_poster_allows_custom_url_without_destination_id(authenticated_client, monkeypatch):
+    """POST /qr/ with custom-url but no destination_id (null) is allowed."""
+    qr = _mock_qr()
+    mock_upsert = MagicMock(return_value=qr)
+    monkeypatch.setattr(qr_code_service, "upsert_qr_code", mock_upsert)
+
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "null-url-qr",
+            "name": "No URL",
+            "destination_type": "custom-url",
+            "destination_id": None,
+            "created_by": FAKE_USER["id"],
+        },
+    )
+    assert resp.status_code == 201
+
+
 def test_update_poster_non_owner_rejected(other_user_client, monkeypatch):
     """Non-owner cannot update a QR code."""
     existing = _mock_qr(created_by=FAKE_USER["id"])
@@ -185,4 +289,162 @@ def test_delete_poster_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.delete("/qr/test-qr")
+    assert resp.status_code == 204
+
+
+# ── 401 without auth ────────────────────────────────────────────────────
+
+
+def test_create_poster_requires_auth(client):
+    """POST /qr/ returns 401 without auth."""
+    resp = client.post("/qr/", json={"id": "x", "name": "X", "destination_type": "custom-url"})
+    assert resp.status_code == 401
+
+
+def test_update_poster_requires_auth(client):
+    """PATCH /qr/{id} returns 401 without auth."""
+    resp = client.patch("/qr/test-qr", json={"id": "test-qr", "name": "X", "destination_type": "custom-url"})
+    assert resp.status_code == 401
+
+
+def test_delete_poster_requires_auth(client):
+    """DELETE /qr/{id} returns 401 without auth."""
+    resp = client.delete("/qr/test-qr")
+    assert resp.status_code == 401
+
+
+def test_list_qr_codes_requires_auth(client):
+    """GET /qr/ returns 401 without auth."""
+    resp = client.get("/qr/")
+    assert resp.status_code == 401
+
+
+def test_list_scans_requires_auth(client):
+    """GET /qr/scans returns 401 without auth."""
+    resp = client.get("/qr/scans")
+    assert resp.status_code == 401
+
+
+# ── Admin sees all vs user sees own ─────────────────────────────────────
+
+
+def test_list_qr_codes_user_sees_own(authenticated_client, monkeypatch):
+    """Regular user only sees their own QR codes (created_by filter applied)."""
+    own_qr = [_mock_qr(created_by=FAKE_USER["id"])]
+    mock_list = MagicMock(return_value=own_qr)
+    monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.get("/qr/")
+    assert resp.status_code == 200
+    # Verify the service was called with the user's created_by filter
+    mock_list.assert_called_once_with(created_by=FAKE_USER["id"])
+
+
+def test_list_qr_codes_admin_sees_all(admin_client, monkeypatch):
+    """Admin sees all QR codes (no created_by filter)."""
+    all_qrs = [_mock_qr(created_by=FAKE_USER["id"]), _mock_qr(id="other-qr", created_by=OTHER_USER["id"])]
+    mock_list = MagicMock(return_value=all_qrs)
+    monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    resp = admin_client.get("/qr/")
+    assert resp.status_code == 200
+    # Admin: called without created_by filter
+    mock_list.assert_called_once_with()
+
+
+def test_list_scans_user_sees_own(authenticated_client, monkeypatch):
+    """Regular user scans are filtered by owned_by."""
+    mock_list = MagicMock(return_value=[])
+    monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.get("/qr/scans")
+    assert resp.status_code == 200
+    _, kwargs = mock_list.call_args
+    assert kwargs["owned_by"] == FAKE_USER["id"]
+
+
+def test_list_scans_admin_sees_all(admin_client, monkeypatch):
+    """Admin scans have owned_by=None (sees all)."""
+    mock_list = MagicMock(return_value=[])
+    monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    resp = admin_client.get("/qr/scans")
+    assert resp.status_code == 200
+    _, kwargs = mock_list.call_args
+    assert kwargs["owned_by"] is None
+
+
+# ── Owner can update (success) ──────────────────────────────────────────
+
+
+def test_update_poster_owner_allowed(authenticated_client, monkeypatch):
+    """Owner can update their own QR code."""
+    existing = _mock_qr(created_by=FAKE_USER["id"])
+    updated = _mock_qr(name="Updated Name", created_by=FAKE_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+    monkeypatch.setattr(qr_code_service, "upsert_qr_code", MagicMock(return_value=updated))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    resp = authenticated_client.patch(
+        "/qr/test-qr",
+        json={
+            "id": "test-qr",
+            "name": "Updated Name",
+            "destination_type": "custom-url",
+            "created_by": FAKE_USER["id"],
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Updated Name"
+
+
+# ── Admin can update/delete non-owned QR codes ──────────────────────────
+
+
+def test_admin_can_update_non_owned_qr(admin_client, monkeypatch):
+    """Admin can update a QR code they don't own."""
+    existing = _mock_qr(created_by=OTHER_USER["id"])
+    updated = _mock_qr(name="Admin Fix", created_by=OTHER_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+    monkeypatch.setattr(qr_code_service, "upsert_qr_code", MagicMock(return_value=updated))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    resp = admin_client.patch(
+        "/qr/test-qr",
+        json={
+            "id": "test-qr",
+            "name": "Admin Fix",
+            "destination_type": "custom-url",
+            "created_by": OTHER_USER["id"],
+        },
+    )
+    assert resp.status_code == 200
+
+
+def test_admin_can_delete_non_owned_qr(admin_client, monkeypatch):
+    """Admin can delete a QR code they don't own."""
+    existing = _mock_qr(created_by=OTHER_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+    monkeypatch.setattr(qr_code_service, "delete_qr_code", MagicMock())
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    resp = admin_client.delete("/qr/test-qr")
     assert resp.status_code == 204

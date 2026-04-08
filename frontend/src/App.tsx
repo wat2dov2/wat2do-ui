@@ -6,15 +6,15 @@ import { LoadingPage } from "@/shared/ui/loading-page";
 import { AppLayout } from "@/app/AppLayout";
 import { EventsPageContainer, SubmitEventModal } from "@/features/events";
 import { CommandPalette } from "@/features/commands/components/CommandPalette";
-import { CommandPaletteProvider } from "@/features/commands/context/CommandPaletteContext";
 import { BuyCreditsModal } from "@/features/credits/components/BuyCreditsModal";
 import { EasterEggs } from "@/shared/components/EasterEggs";
-import { useSearch } from "@/features/search";
-import { useAppUI } from "@/app/hooks/useAppUI";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
+import { useSearchStore } from "@/features/search/store/search.store";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
-import { AppProvider } from "@/contexts/AppContext";
-import { NavigationProvider } from "@/contexts/NavigationContext";
+import { ModalProvider, useModalContext } from "@/contexts/ModalContext";
+import { UIProvider } from "@/contexts/UIContext";
+import { UserProvider, useUserContext } from "@/contexts/UserContext";
+
 import {
   AdminPanelRoute,
   AdminEventsRoute,
@@ -73,16 +73,60 @@ const OnboardingPage = lazy(() =>
 
 export default function App() {
   const location = useLocation();
+  const isQRRedirectRoute = /^\/qr\/[^/]+$/.test(location.pathname);
+
+  // Full-page QR redirect: no app chrome, only loading then redirect
+  if (isQRRedirectRoute) {
+    return (
+      <UserProvider>
+        <UIProvider>
+          <ModalProvider>
+            <TooltipProvider delayDuration={0}>
+              <QRRedirectPage />
+            </TooltipProvider>
+          </ModalProvider>
+        </UIProvider>
+      </UserProvider>
+    );
+  }
+
+  return (
+    <UserProvider>
+      <UIProvider>
+        <ModalProvider>
+          <TooltipProvider delayDuration={0}>
+            <AppContent />
+          </TooltipProvider>
+        </ModalProvider>
+      </UIProvider>
+    </UserProvider>
+  );
+}
+
+/**
+ * Inner component that consumes context values.
+ * Separated from App so that context providers are above this in the tree.
+ */
+function AppContent() {
+  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Read from contexts (state is owned by the providers now)
+  const { userEmail } = useUserContext();
+  const {
+    setShowOnboarding,
+    showSubmitEvent,
+    setShowSubmitEvent,
+    showCommandPalette,
+    setShowCommandPalette,
+  } = useModalContext();
 
   // ── Store data (single source of truth) ──────────────────────
   const events = useEventsStore((s) => s.events);
   const storeAddEvent = useEventsStore((s) => s.addEvent);
   const storeUpdateEvent = useEventsStore((s) => s.updateEvent);
   const storeDeleteEvent = useEventsStore((s) => s.deleteEvent);
-
-  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
 
   const userCredits = usePromotionsStore((s) => s.userCredits);
   const storePromoteEvent = usePromotionsStore((s) => s.promoteEvent);
@@ -128,8 +172,8 @@ export default function App() {
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const promoteEvent = useCallback(
-    async (eventId: number, packageId: string, credits: number, duration: number): Promise<boolean> => {
-      const result = await storePromoteEvent(eventId, packageId, credits, duration);
+    async (eventId: number, packageId: string): Promise<boolean> => {
+      const result = await storePromoteEvent(eventId, packageId);
       if (result.needsCredits) {
         setShowBuyCredits(true);
         return false;
@@ -139,123 +183,29 @@ export default function App() {
     [storePromoteEvent],
   );
 
-  // ── UI hooks ─────────────────────────────────────────────────
-  const appUI = useAppUI();
+  // ── Easter eggs ──────────────────────────────────────────────
   const easterEggs = useEasterEggs();
-
-  const { profileCompleted } = appUI;
-  const filters = useSearch({ events, profileCompleted, savedEventIds });
-
-  const navigation = useAppNavigation({
-    events,
-    filters: {
-      setSearchQuery: filters.setSearchQuery,
-      setSelectedCategories: filters.setSelectedCategories,
-      setSelectedLocations: filters.setSelectedLocations,
-      setSelectedFoods: filters.setSelectedFoods,
-      setSelectedDays: filters.setSelectedDays,
-      setPriceRange: filters.setPriceRange,
-      setDateRange: filters.setDateRange,
-      setAddedSince: filters.setAddedSince,
-      setRequiresRegistration: filters.setRequiresRegistration,
-      setFilterStateFromURL: filters.setFilterStateFromURL,
-    },
-  });
-
-  // Get UI state
-  const {
-    viewMode,
-    setViewMode,
-    filterViewMode,
-    setFilterViewMode,
-    showOnboarding,
-    setShowOnboarding,
-    showSubmitEvent,
-    setShowSubmitEvent,
-    showCommandPalette,
-    setShowCommandPalette,
-    profileCompleted: uiProfileCompleted,
-    setProfileCompleted: setUIProfileCompleted,
-    userEmail,
-    setUserEmail,
-    isAdmin,
-    eventsExpanded,
-    setEventsExpanded,
-    selectedSchool,
-    setSelectedSchool,
-    isDarkMode,
-  } = appUI;
-
-  // Get easter eggs
   const { activeEasterEgg, clearEasterEgg } = easterEggs;
 
-  // Get page mode from navigation
-  const { pageMode } = navigation;
+  // ── Search store (single source of truth — shared with EventsPageContainer) ─
+  const searchStore = useSearchStore();
 
-  // Combine profile completion from both hooks
-  const isProfileCompleted = profileCompleted || uiProfileCompleted;
-
-  // Create context value - memoized to prevent unnecessary re-renders
-  const appContextValue = useMemo(() => ({
-    // Navigation
-    pageMode,
-
-    // UI State
-    viewMode,
-    setViewMode,
-    filterViewMode,
-    setFilterViewMode,
-
-    // Sidebar
-    eventsExpanded,
-    setEventsExpanded,
-
-    // School
-    selectedSchool,
-    setSelectedSchool,
-
-    // Modals
-    showOnboarding,
-    setShowOnboarding,
-    showSubmitEvent,
-    setShowSubmitEvent,
-    showCommandPalette,
-    setShowCommandPalette,
-
-    // Profile
-    profileCompleted: isProfileCompleted,
-    setProfileCompleted: setUIProfileCompleted,
-    userEmail,
-    setUserEmail,
-
-    // Dark mode
-    isDarkMode,
-
-    // Admin
-    isAdmin,
-  }), [
-    pageMode,
-    viewMode,
-    setViewMode,
-    filterViewMode,
-    setFilterViewMode,
-    eventsExpanded,
-    setEventsExpanded,
-    selectedSchool,
-    setSelectedSchool,
-    showOnboarding,
-    setShowOnboarding,
-    showSubmitEvent,
-    setShowSubmitEvent,
-    showCommandPalette,
-    setShowCommandPalette,
-    isProfileCompleted,
-    setUIProfileCompleted,
-    userEmail,
-    setUserEmail,
-    isDarkMode,
-    isAdmin,
-  ]);
+  // Called for side effects: processes URL params (filters, eventId scroll) on initial load
+  useAppNavigation({
+    events,
+    filters: {
+      setSearchQuery: searchStore.setSearchQuery,
+      setSelectedCategories: searchStore.setSelectedCategories,
+      setSelectedLocations: searchStore.setSelectedLocations,
+      setSelectedFoods: searchStore.setSelectedFoods,
+      setSelectedDays: searchStore.setSelectedDays,
+      setPriceRange: searchStore.setPriceRange,
+      setDateRange: searchStore.setDateRange,
+      setAddedSince: searchStore.setAddedSince,
+      setRequiresRegistration: searchStore.setRequiresRegistration,
+      setFilterStateFromURL: searchStore.setFilterStateFromURL,
+    },
+  });
 
   // Handle submit event close
   const handleSubmitEventClose = useCallback(() => {
@@ -263,8 +213,7 @@ export default function App() {
     clearEditing();
   }, [setShowSubmitEvent, clearEditing]);
 
-  // Open submit modal in edit mode (used by admin and anywhere that has an Edit button).
-  // Pass event id so the modal can fetch and populate the form (SubmitEventModal uses loadEventForEdit).
+  // Open submit modal in edit mode
   const handleEditEventAndOpenModal = useCallback(
     (event: Parameters<typeof handleEditEvent>[0]) => {
       handleEditEvent({ id: event.id } as Parameters<typeof handleEditEvent>[0]);
@@ -278,7 +227,6 @@ export default function App() {
       const { fetchEventById } = await import("@/features/events/api/events.api");
       const fullEvent = await fetchEventById(eventId);
       fullEvent.category = getEventCategory(fullEvent);
-
       return eventToFormData(fullEvent);
     },
     []
@@ -286,8 +234,8 @@ export default function App() {
 
   // Handle command palette filter actions
   const handleSetFreeFilter = useCallback(() => {
-    filters.setFreeFilter(true);
-  }, [filters]);
+    searchStore.setFreeFilter(true);
+  }, [searchStore]);
 
   const handleOpenOnboardingRoute = useCallback(() => {
     setShowOnboarding(false);
@@ -308,20 +256,6 @@ export default function App() {
   );
 
   const isAuthFlowRoute = location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.ONBOARDING;
-  const isQRRedirectRoute = /^\/qr\/[^/]+$/.test(location.pathname);
-
-  // Full-page QR redirect: no app chrome, only loading then redirect (avoids events page flash)
-  if (isQRRedirectRoute) {
-    return (
-      <AppProvider value={appContextValue}>
-        <NavigationProvider>
-          <TooltipProvider delayDuration={0}>
-            <QRRedirectPage />
-          </TooltipProvider>
-        </NavigationProvider>
-      </AppProvider>
-    );
-  }
 
   const appRoutes = (
     <Routes>
@@ -385,80 +319,61 @@ export default function App() {
   );
 
   return (
-    <AppProvider value={appContextValue}>
-      <NavigationProvider>
-        <TooltipProvider delayDuration={0}>
-        {/* Modals - rendered outside AppLayout to ensure they respond to state changes immediately */}
-        <SubmitEventModal
-          isOpen={showSubmitEvent}
-          onClose={handleSubmitEventClose}
-          onSubmit={async (eventData) => addEvent(eventData)}
-          userCredits={userCredits}
-          onPromote={promoteEvent}
-          onBuyCredits={() => setShowBuyCredits(true)}
-          editEventId={editingEvent?.id}
-          initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
-          loadEventForEdit={loadEventForEdit}
-          onUpdate={async (eventId, eventData) => {
-            await updateEvent(eventId, eventData);
-            handleSubmitEventClose();
-          }}
-        />
+    <>
+      {/* Modals - rendered outside AppLayout to ensure they respond to state changes immediately */}
+      <SubmitEventModal
+        isOpen={showSubmitEvent}
+        onClose={handleSubmitEventClose}
+        onSubmit={async (eventData) => addEvent(eventData)}
+        userCredits={userCredits}
+        onPromote={promoteEvent}
+        onBuyCredits={() => setShowBuyCredits(true)}
+        editEventId={editingEvent?.id}
+        initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
+        loadEventForEdit={loadEventForEdit}
+        onUpdate={async (eventId, eventData) => {
+          await updateEvent(eventId, eventData);
+          handleSubmitEventClose();
+        }}
+      />
 
-        <BuyCreditsModal
-          isOpen={showBuyCredits}
-          onClose={() => setShowBuyCredits(false)}
-          currentCredits={userCredits}
-          onPurchase={storeAddCredits}
-        />
+      <BuyCreditsModal
+        isOpen={showBuyCredits}
+        onClose={() => setShowBuyCredits(false)}
+        currentCredits={userCredits}
+        onPurchase={storeAddCredits}
+      />
 
-        <CommandPaletteProvider
-          value={{
-            profileCompleted: isProfileCompleted,
-            viewMode,
-            setViewMode,
-            setShowFilterDropdown: filters.setShowFilterDropdown,
-            setShowSubmitEvent,
-            setShowOnboarding: (show) => {
-              if (show) {
-                handleOpenOnboardingRoute();
-                return;
-              }
-              setShowOnboarding(false);
-            },
-            onClearAllFilters: filters.handleClearAllFilters,
-            onSetFreeFilter: handleSetFreeFilter,
-          }}
-        >
-          <CommandPalette
-            isOpen={showCommandPalette}
-            onOpenChange={setShowCommandPalette}
-          />
-        </CommandPaletteProvider>
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onOpenChange={setShowCommandPalette}
+        setShowFilterDropdown={searchStore.setShowFilterDropdown}
+        onClearAllFilters={() => searchStore.clearAllFilters()}
+        onSetFreeFilter={handleSetFreeFilter}
+        onShowOnboarding={handleOpenOnboardingRoute}
+      />
 
-        <Suspense
-          fallback={
-            <div className="flex items-center justify-center min-h-[400px]">
-              <LoadingPage className="min-h-[400px]" />
-            </div>
-          }
-        >
-          {isAuthFlowRoute ? (
-            appRoutes
-          ) : (
-            <AppLayout>
-              {/* Easter Eggs */}
-              <EasterEggs
-                activeEasterEgg={activeEasterEgg}
-                onComplete={clearEasterEgg}
-              />
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-[400px]">
+            <LoadingPage className="min-h-[400px]" />
+          </div>
+        }
+      >
+        {isAuthFlowRoute ? (
+          appRoutes
+        ) : (
+          <AppLayout>
+            {/* Easter Eggs */}
+            <EasterEggs
+              activeEasterEgg={activeEasterEgg}
+              onComplete={clearEasterEgg}
+            />
 
-              {appRoutes}
-            </AppLayout>
-          )}
-        </Suspense>
-        </TooltipProvider>
-      </NavigationProvider>
-    </AppProvider>
+            {appRoutes}
+          </AppLayout>
+        )}
+      </Suspense>
+    </>
   );
 }

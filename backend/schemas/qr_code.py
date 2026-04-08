@@ -1,13 +1,26 @@
 """Pydantic schemas for QR codes and scans."""
 
 from datetime import datetime
+from urllib.parse import urlparse
 from uuid import UUID
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 QrDestinationType = Literal["event", "events-list", "custom-url"]
+
+# Protocols considered safe for custom-url redirects.
+_SAFE_PROTOCOLS = {"http", "https"}
+
+
+def _is_safe_url(url: str) -> bool:
+    """Return True if *url* is a well-formed http(s) URL."""
+    try:
+        parsed = urlparse(url)
+        return parsed.scheme in _SAFE_PROTOCOLS and bool(parsed.netloc)
+    except Exception:
+        return False
 
 
 class QrCodeRedirect(BaseModel):
@@ -32,6 +45,17 @@ class QrCodeCreate(BaseModel):
     image_url: str | None = None
     latitude: float = 0.0
     longitude: float = 0.0
+
+    @model_validator(mode="after")
+    def validate_custom_url(self):
+        """Reject non-http(s) URLs for custom-url destination type."""
+        if self.destination_type == "custom-url" and self.destination_id is not None:
+            url = str(self.destination_id)
+            if not _is_safe_url(url):
+                raise ValueError(
+                    "custom-url destination_id must be a valid http or https URL"
+                )
+        return self
 
 
 class QrCodeResponse(BaseModel):

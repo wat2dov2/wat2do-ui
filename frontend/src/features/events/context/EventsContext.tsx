@@ -11,21 +11,23 @@ interface EventsContextValue {
   // Saved events
   savedEventIds: number[];
   toggleSaveEvent: (eventId: number) => void;
-  
+
   // Promotions
   activePromotedEventIds: number[];
-  
-  // Admin actions
+
+  // Admin / owner actions
   isAdmin: boolean;
+  /** Supabase user ID of the currently logged-in user (undefined when logged out). */
+  currentUserId?: string;
   onEdit?: (event: Event) => void;
   onDelete?: (eventId: number) => void;
-  
+
   // All events (for similar events in modal)
   allEvents: Event[];
-  
+
   // Clear filters action
   onClearFilters?: () => void;
-  
+
   // Optional event click handlers
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
@@ -39,6 +41,7 @@ interface EventsProviderProps {
   toggleSaveEvent: (eventId: number) => void;
   activePromotedEventIds: number[];
   isAdmin: boolean;
+  currentUserId?: string;
   onEdit?: (event: Event) => void;
   onDelete?: (eventId: number) => void;
   allEvents: Event[];
@@ -53,6 +56,7 @@ export function EventsProvider({
   toggleSaveEvent,
   activePromotedEventIds,
   isAdmin,
+  currentUserId,
   onEdit,
   onDelete,
   allEvents,
@@ -66,6 +70,7 @@ export function EventsProvider({
       toggleSaveEvent,
       activePromotedEventIds,
       isAdmin,
+      currentUserId,
       onEdit,
       onDelete,
       allEvents,
@@ -78,6 +83,7 @@ export function EventsProvider({
       toggleSaveEvent,
       activePromotedEventIds,
       isAdmin,
+      currentUserId,
       onEdit,
       onDelete,
       allEvents,

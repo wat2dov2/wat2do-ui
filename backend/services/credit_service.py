@@ -1,71 +1,66 @@
-"""Credits and event promotions persistence."""
+"""Credits and event promotions persistence.
 
+Credit mutations (add / deduct) use PostgreSQL RPC functions that perform
+the balance check and update in a single atomic statement, preventing the
+TOCTOU race condition that would allow double-spending under concurrency.
+"""
+
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 
-from core.constants import DEFAULT_CREDIT_BALANCE
+from core.constants import DEFAULT_CREDIT_BALANCE, PROMOTION_PACKAGES
 from core.database import get_sb
-from core.errors import INSUFFICIENT_CREDITS
-from core.tables import USER_CREDITS, EVENT_PROMOTIONS
-from schemas.credit import CreditRow, PromotionResponse
+from core.errors import INSUFFICIENT_CREDITS, INVALID_PROMOTION_PACKAGE
+from core.tables import EVENT_PROMOTIONS
+from schemas.credit import PromotionResponse
 
+log = logging.getLogger(__name__)
 
-def get_or_create_credits(user_id: str) -> CreditRow:
-    """Return the credits row for a user, creating one if it doesn't exist."""
-    r = (
-        get_sb()
-        .table(USER_CREDITS)
-        .select("*")
-        .eq("user_id", user_id)
-        .execute()
-    )
-    if r.data:
-        return CreditRow.model_validate(r.data[0])
-
-    payload = {
-        "id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "balance": DEFAULT_CREDIT_BALANCE,
-    }
-    r = (
-        get_sb()
-        .table(USER_CREDITS)
-        .insert(payload)
-        .execute()
-    )
-    return CreditRow.model_validate(r.data[0]) if r.data else CreditRow(**payload)
+# Sentinel returned by the adjust_credits DB function when funds are insufficient.
+_INSUFFICIENT_FUNDS_SENTINEL = -1
 
 
 def get_balance(user_id: str) -> int:
-    """Return the user's credit balance."""
-    row = get_or_create_credits(user_id)
-    return row.balance
+    """Return the user's credit balance, creating the row if needed."""
+    r = get_sb().rpc(
+        "ensure_user_credits",
+        {"p_user_id": user_id, "p_default_balance": DEFAULT_CREDIT_BALANCE},
+    ).execute()
+    return r.data
 
 
 def add_credits(user_id: str, amount: int) -> int:
-    """Add credits to a user's balance. Returns the new balance."""
-    row = get_or_create_credits(user_id)
-    new_balance = row.balance + amount
-    get_sb().table(USER_CREDITS).update(
-        {"balance": new_balance, "updated_at": datetime.now(timezone.utc).isoformat()}
-    ).eq("user_id", user_id).execute()
-    return new_balance
+    """Atomically add credits to a user's balance. Returns the new balance."""
+    r = get_sb().rpc(
+        "adjust_credits",
+        {
+            "p_user_id": user_id,
+            "p_amount": amount,
+            "p_default_balance": DEFAULT_CREDIT_BALANCE,
+        },
+    ).execute()
+    return r.data
 
 
 def deduct_credits(user_id: str, amount: int) -> int:
-    """Deduct credits from a user's balance. Raises 400 if insufficient."""
-    row = get_or_create_credits(user_id)
-    if row.balance < amount:
+    """Atomically deduct credits. Raises 400 if insufficient funds."""
+    r = get_sb().rpc(
+        "adjust_credits",
+        {
+            "p_user_id": user_id,
+            "p_amount": -amount,
+            "p_default_balance": DEFAULT_CREDIT_BALANCE,
+        },
+    ).execute()
+    new_balance = r.data
+    if new_balance == _INSUFFICIENT_FUNDS_SENTINEL:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=INSUFFICIENT_CREDITS,
         )
-    new_balance = row.balance - amount
-    get_sb().table(USER_CREDITS).update(
-        {"balance": new_balance, "updated_at": datetime.now(timezone.utc).isoformat()}
-    ).eq("user_id", user_id).execute()
     return new_balance
 
 
@@ -73,21 +68,31 @@ def create_promotion(
     user_id: str,
     event_id: int,
     package: str,
-    credits: int,
-    duration: int,
 ) -> PromotionResponse:
-    """Create an event promotion. Deducts credits and inserts the promotion row."""
-    deduct_credits(user_id, credits)
+    """Create an event promotion.
+
+    Looks up the credit cost and duration from ``PROMOTION_PACKAGES`` so the
+    client cannot control pricing.  Raises 400 for unknown packages.
+    """
+    pkg = PROMOTION_PACKAGES.get(package)
+    if pkg is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=INVALID_PROMOTION_PACKAGE,
+        )
+    credits_cost, duration_days = pkg
+
+    deduct_credits(user_id, credits_cost)
 
     now = datetime.now(timezone.utc)
-    end = now + timedelta(days=duration)
+    end = now + timedelta(days=duration_days)
 
     payload = {
         "id": str(uuid.uuid4()),
         "user_id": user_id,
         "event_id": event_id,
         "package": package,
-        "credits_spent": credits,
+        "credits_spent": credits_cost,
         "start_date": now.isoformat(),
         "end_date": end.isoformat(),
     }

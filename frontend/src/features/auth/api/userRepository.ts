@@ -14,10 +14,16 @@ import {
 } from "@/shared/services/apiClient";
 
 export interface UserProfile {
+  /** Supabase user UUID (from backend `users.id`). Null for legacy cached profiles. */
+  id?: string;
   faculty: string;
   interests: string[];
   isFirstYear: boolean;
   school: string;
+  /** Mirrors the backend ``role`` column ("user" | "admin"). Defaults to "user". */
+  role: "user" | "admin";
+  /** True when the user owns at least one club. */
+  hasClub: boolean;
 }
 
 // --- Email ---

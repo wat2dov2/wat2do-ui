@@ -104,14 +104,18 @@ def _payload_to_user(payload: dict) -> dict:
     }
 
 
-async def get_current_user(
+def get_current_user(
     token: HTTPAuthorizationCredentials = Depends(bearer),
 ) -> dict:
-    """Require a valid Bearer token. Returns the auth user or 401."""
+    """Require a valid Bearer token. Returns the auth user or 401.
+
+    Defined as a plain ``def`` so FastAPI runs it in a thread-pool,
+    keeping the synchronous JWT / JWKS operations off the event loop.
+    """
     return _resolve_user(token)
 
 
-async def get_optional_user(
+def get_optional_user(
     token: HTTPAuthorizationCredentials | None = Depends(bearer_optional),
 ) -> dict | None:
     """Accept an optional Bearer token. Returns the auth user or None."""
@@ -123,7 +127,7 @@ async def get_optional_user(
         return None
 
 
-async def get_admin_user(
+def get_admin_user(
     auth_user: dict = Depends(get_current_user),
 ) -> dict:
     """Require a valid Bearer token AND admin role. Returns 403 if not admin."""

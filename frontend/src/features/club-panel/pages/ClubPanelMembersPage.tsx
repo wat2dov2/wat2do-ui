@@ -2,12 +2,12 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Users } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { useNavigation } from "@/contexts/NavigationContext";
+import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 
 export function ClubPanelMembersPage() {
   const { t } = useTranslation();
-  const { navigate } = useNavigation();
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-5">

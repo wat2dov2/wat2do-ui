@@ -4,7 +4,7 @@ import { ArrowLeft, Link, MessageCircle, Check, ExternalLink, AtSign } from "luc
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { useNavigation } from "@/contexts/NavigationContext";
+import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import {
@@ -54,7 +54,7 @@ interface Integration {
 
 export function ClubPanelIntegrationsPage() {
   const { t } = useTranslation();
-  const { navigate } = useNavigation();
+  const navigate = useNavigate();
 
   // Integration states (mock - not persisted)
   const [integrations, setIntegrations] = useState<Integration[]>([

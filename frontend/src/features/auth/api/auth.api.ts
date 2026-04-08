@@ -47,8 +47,14 @@ interface BackendUserProfile {
   school?: string | null;
   interests?: string[] | null;
   is_first_year: boolean;
+  role?: "user" | "admin";
   created_at: string;
   updated_at: string;
+}
+
+interface BackendClubResponse {
+  id: number;
+  club_name: string;
 }
 
 // ── Sync helpers (read from localStorage / memory) ───────────────────
@@ -68,6 +74,21 @@ export function getUserProfile(): UserProfile | null {
 export function isProfileCompleted(): boolean {
   const profile = loadUserProfile();
   return profile !== null && profile.faculty !== "" && profile.interests.length > 0;
+}
+
+export function getUserRole(): "user" | "admin" {
+  const profile = loadUserProfile();
+  return profile?.role ?? "user";
+}
+
+export function getUserId(): string | undefined {
+  const profile = loadUserProfile();
+  return profile?.id ?? undefined;
+}
+
+export function getUserHasClub(): boolean {
+  const profile = loadUserProfile();
+  return profile?.hasClub ?? false;
 }
 
 // ── Legacy sync login (kept for backward compat within onboarding) ──
@@ -151,6 +172,7 @@ export async function refreshTokenAPI(): Promise<boolean> {
  * Initialize auth on app startup.
  * Checks if there's a hint of a prior session (userEmail in localStorage),
  * then attempts to refresh the access token via the httpOnly cookie.
+ * Also refreshes the user profile (including role) so cached data stays current.
  */
 export async function initializeAuth(): Promise<boolean> {
   const email = loadUserEmail();
@@ -159,18 +181,40 @@ export async function initializeAuth(): Promise<boolean> {
   const success = await refreshTokenAPI();
   if (!success) {
     clearAllAuthData();
+    return false;
   }
-  return success;
+
+  // Refresh profile (including role) so cached data stays in sync with backend.
+  try {
+    await fetchProfileAPI();
+  } catch (err) {
+    console.error("Profile fetch during auth init failed, continuing with cached data:", err);
+  }
+
+  return true;
 }
 
 export async function fetchProfileAPI(): Promise<UserProfile | null> {
   try {
     const data = await api.get<BackendUserProfile>("/users/me");
+
+    // Check club ownership in parallel — gracefully default to false on failure.
+    let hasClub = false;
+    try {
+      const clubs = await api.get<BackendClubResponse[]>("/clubs/mine");
+      hasClub = clubs.length > 0;
+    } catch (err) {
+      console.error("Failed to fetch user clubs, defaulting hasClub to false:", err);
+    }
+
     const profile: UserProfile = {
+      id: data.id,
       faculty: data.faculty ?? "",
       school: data.school ?? "",
       interests: data.interests ?? [],
       isFirstYear: data.is_first_year ?? false,
+      role: data.role ?? "user",
+      hasClub,
     };
     saveUserProfile(profile);
     if (data.email) saveUserEmail(data.email);

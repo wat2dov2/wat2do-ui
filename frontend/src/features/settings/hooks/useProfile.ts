@@ -9,6 +9,8 @@ const DEFAULT_PROFILE: UserProfile = {
   interests: [],
   isFirstYear: false,
   school: availableSchools[0] || "",
+  role: "user",
+  hasClub: false,
 };
 
 export function useProfile() {

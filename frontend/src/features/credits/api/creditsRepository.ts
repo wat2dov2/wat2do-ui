@@ -33,19 +33,16 @@ export async function fetchPromotions(): Promise<PromotionResponse[]> {
 }
 
 /**
- * Create a promotion via the backend
+ * Create a promotion via the backend.
+ * Only sends event_id and package — the server determines cost and duration.
  */
 export async function createPromotionAPI(
   eventId: number,
   packageId: string,
-  credits: number,
-  duration: number,
 ): Promise<PromotionResponse> {
   return api.post<PromotionResponse>("/promotions/", {
     event_id: eventId,
     package: packageId,
-    credits,
-    duration,
   });
 }
 

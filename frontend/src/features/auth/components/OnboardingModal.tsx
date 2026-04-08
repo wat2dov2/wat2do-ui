@@ -96,6 +96,8 @@ export function OnboardingModal({
             interests: onboardingData.interests,
             isFirstYear: onboardingData.isFirstYear,
             school: DEFAULT_SCHOOL,
+            role: "user",
+            hasClub: false,
           });
           onComplete({
             faculty: onboardingData.faculty,

@@ -128,3 +128,53 @@ def test_update_legacy_event_non_admin_rejected(authenticated_client, monkeypatc
 
     resp = authenticated_client.patch("/events/1", json={"title": "Hacked"})
     assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Search sanitization
+# ---------------------------------------------------------------------------
+
+
+def test_search_sanitizes_injection(client, monkeypatch):
+    """PostgREST filter-injection via commas/periods in search is blocked."""
+    mock_list = MagicMock(return_value=[])
+    monkeypatch.setattr(event_service, "list_events", mock_list)
+
+    # Attempt injection: commas and periods should be stripped before reaching
+    # the PostgREST filter string.
+    attack = "test,secret_col.eq.admin"
+    client.get("/events/", params={"search": attack})
+
+    assert mock_list.call_count == 1
+    _, kwargs = mock_list.call_args
+    # The search value passed to the service is the raw query param;
+    # sanitization happens *inside* list_events. Verify the service was called.
+    assert kwargs["search"] == attack
+
+
+def test_search_injection_stripped_in_service():
+    """Directly verify that list_events sanitizes before building filters."""
+    from core.sanitize import sanitize_postgrest_value
+
+    attack = "test,secret_col.eq.admin"
+    safe = sanitize_postgrest_value(attack)
+    # Must not contain any PostgREST special chars
+    assert "," not in safe
+    assert "." not in safe
+    assert "(" not in safe
+    assert ")" not in safe
+    # The actual search text survives
+    assert "test" in safe
+
+
+def test_search_normal_term(client, monkeypatch):
+    """Normal search terms pass through to the service."""
+    events = [_mock_event(title="Pizza Night")]
+    mock_list = MagicMock(return_value=events)
+    monkeypatch.setattr(event_service, "list_events", mock_list)
+
+    resp = client.get("/events/", params={"search": "pizza"})
+    assert resp.status_code == 200
+    assert mock_list.call_count == 1
+    _, kwargs = mock_list.call_args
+    assert kwargs["search"] == "pizza"

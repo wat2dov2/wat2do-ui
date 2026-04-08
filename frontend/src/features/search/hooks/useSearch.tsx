@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, startTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "lucide-react";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
+import { useSearchStore } from "@/features/search/store/search.store";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
 import { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";
@@ -42,17 +43,18 @@ export function useSearch({
   const [sortBy, setSortBy] = useState<string>("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  // Saved filter for quick filter (business logic)
-  const [savedFilter, setSavedFilter] = useState(false);
+  // Saved filter — shared via store so command palette clear-all resets it
+  const savedFilter = useSearchStore((s) => s.savedFilter);
+  const setSavedFilter = useSearchStore((s) => s.setSavedFilter);
 
-  // Filter dropdown state (UI state - but needed for command palette integration)
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  // Filter dropdown state — shared via store so command palette can toggle it
+  const showFilterDropdown = useSearchStore((s) => s.showFilterDropdown);
+  const setShowFilterDropdown = useSearchStore((s) => s.setShowFilterDropdown);
 
   // Clear all filters handler (use startTransition to keep UI responsive)
   const handleClearAllFilters = useCallback(() => {
     startTransition(() => {
       filterState.clearAllFilters();
-      setSavedFilter(false);
     });
   }, [filterState]);
 

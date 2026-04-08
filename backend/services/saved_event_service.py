@@ -1,10 +1,19 @@
 """Saved events: persist user bookmarks to Supabase."""
 
+import threading
+import time
 import uuid
 
 from core.database import get_sb
 from core.tables import USER_SAVED_EVENTS
 from schemas.saved_event import SavedEventResponse, UserEventPair
+from services.recommender.config import CACHE_TTL_SECONDS
+
+# ---------------------------------------------------------------------------
+# Simple TTL cache for get_all_user_saves (shared across recommendation requests)
+# ---------------------------------------------------------------------------
+_cache_lock = threading.Lock()
+_saves_cache: tuple[float, list[UserEventPair]] | None = None
 
 
 def get_saved_event_ids(user_id: str) -> list[int]:
@@ -50,11 +59,31 @@ def unsave_event(user_id: str, event_id: int) -> bool:
 
 
 def get_all_user_saves() -> list[UserEventPair]:
-    """Return all (user_id, event_id) pairs. Used by collaborative filtering."""
-    r = (
-        get_sb()
-        .table(USER_SAVED_EVENTS)
-        .select("user_id, event_id")
-        .execute()
-    )
-    return [UserEventPair.model_validate(row) for row in (r.data or [])]
+    """Return all (user_id, event_id) pairs. Used by collaborative filtering.
+
+    Cached for CACHE_TTL_SECONDS so concurrent recommendation requests
+    share one DB round-trip.
+    """
+    global _saves_cache
+
+    if _saves_cache is not None:
+        expires_at, value = _saves_cache
+        if time.monotonic() <= expires_at:
+            return value
+
+    with _cache_lock:
+        # Double-check after acquiring lock
+        if _saves_cache is not None:
+            expires_at, value = _saves_cache
+            if time.monotonic() <= expires_at:
+                return value
+
+        r = (
+            get_sb()
+            .table(USER_SAVED_EVENTS)
+            .select("user_id, event_id")
+            .execute()
+        )
+        result = [UserEventPair.model_validate(row) for row in (r.data or [])]
+        _saves_cache = (time.monotonic() + CACHE_TTL_SECONDS, result)
+        return result

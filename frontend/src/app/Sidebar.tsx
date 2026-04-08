@@ -15,18 +15,15 @@ import {
 import { SidebarButton } from "@/shared/ui/sidebar-button";
 import { SidebarEventsSection } from "@/features/events";
 import { useSidebar } from "@/app/hooks/useSidebar";
-import { useAppContext } from "@/contexts/AppContext";
+import { useUIContext } from "@/contexts/UIContext";
+import { useUserContext } from "@/contexts/UserContext";
+import { useModalContext } from "@/contexts/ModalContext";
 import { cn } from "@/shared/lib/utils";
 
 export function Sidebar() {
-  const {
-    pageMode,
-    eventsExpanded,
-    setEventsExpanded,
-    profileCompleted,
-    setShowCommandPalette,
-    setShowSubmitEvent,
-  } = useAppContext();
+  const { pageMode, eventsExpanded, setEventsExpanded } = useUIContext();
+  const { profileCompleted } = useUserContext();
+  const { setShowCommandPalette, setShowSubmitEvent } = useModalContext();
 
   const {
     handleCommandPaletteClick,

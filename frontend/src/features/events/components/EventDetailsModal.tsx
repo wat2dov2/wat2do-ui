@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
+import { sanitizeHref } from "@/shared/utils/url";
 import { ImageOff, ExternalLink } from "lucide-react";
 import {
   Dialog,
@@ -140,13 +141,13 @@ export function EventDetailsModal({
                   value={displayedEvent.description || t("common.noDescription")}
                 />
 
-                {displayedEvent.source_url && (
+                {displayedEvent.source_url && sanitizeHref(displayedEvent.source_url) && (
                   <div>
                     <h3 className="font-semibold text-sm text-foreground mb-1">
                       {t("events.sourceLink")}
                     </h3>
                     <a
-                      href={displayedEvent.source_url}
+                      href={sanitizeHref(displayedEvent.source_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline flex items-center gap-1.5"

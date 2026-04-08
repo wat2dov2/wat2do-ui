@@ -7,7 +7,7 @@ import React, { useMemo } from "react";
 import { AdminProvider } from "@/features/admin";
 import { ClubPanel, ClubPanelPostersPage, ClubPanelIntegrationsPage, ClubPanelMembersPage } from "@/features/club-panel";
 import type { Event, EventFormData } from "@/shared/types";
-import { useNavigation } from "@/contexts/NavigationContext";
+import { useNavigate } from "react-router-dom";
 import { ROUTES, CLUB_PANEL_ROUTE_MAP } from "@/shared/constants/routes";
 
 interface ClubPanelRoutesConfig {
@@ -23,7 +23,7 @@ interface ClubPanelRoutesConfig {
  * Club panel navigation handler
  */
 export function useClubPanelNavigation() {
-  const { navigate } = useNavigation();
+  const navigate = useNavigate();
 
   return useMemo(
     () => (page: string) => {
@@ -46,7 +46,7 @@ export function ClubPanelRoute({ config }: { config: ClubPanelRoutesConfig }) {
  * Club Panel Posters Route Component
  */
 export function ClubPanelPostersRoute({ config }: { config: ClubPanelRoutesConfig }) {
-  const { navigate } = useNavigation();
+  const navigate = useNavigate();
 
   const adminProps = useMemo(
     () => ({

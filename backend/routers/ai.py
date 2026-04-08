@@ -2,12 +2,14 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from openai import OpenAI
 
 from constants import EVENT_CATEGORIES, CATEGORY_NORMALIZE_MAP
+from core.auth import get_current_user
 from core.config import settings
 from core.errors import AI_EMPTY_RESPONSE, AI_INVALID_JSON, AI_NOT_CONFIGURED
+from core.rate_limit import ai_rate_limiter
 from schemas.ai import AIPromptRequest, FilterStateResponse, EventFormDataResponse
 
 log = logging.getLogger(__name__)
@@ -157,7 +159,11 @@ def _validate_filter_response(parsed: dict) -> FilterStateResponse:
 
 
 @router.post("/generate-filters", response_model=FilterStateResponse)
-def generate_filters(body: AIPromptRequest):
+def generate_filters(
+    body: AIPromptRequest,
+    _user: dict = Depends(get_current_user),
+    _rl: None = Depends(ai_rate_limiter.dependency()),
+):
     client = _get_openai_client()
 
     prompt_with_date = _FILTER_SYSTEM_PROMPT.format(
@@ -263,7 +269,11 @@ def _validate_event_response(parsed: dict) -> EventFormDataResponse:
 
 
 @router.post("/generate-event", response_model=EventFormDataResponse)
-def generate_event(body: AIPromptRequest):
+def generate_event(
+    body: AIPromptRequest,
+    _user: dict = Depends(get_current_user),
+    _rl: None = Depends(ai_rate_limiter.dependency()),
+):
     client = _get_openai_client()
 
     prompt_with_date = _EVENT_SYSTEM_PROMPT.format(
