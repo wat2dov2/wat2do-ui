@@ -34,8 +34,11 @@ from services.recommender.config import (
     CANDIDATE_POOL_SIZE,
 )
 
-
 log = logging.getLogger(__name__)
+
+# Page size for batched loading from PostgREST.  Supabase's default max-rows
+# is 1000 — queries without an explicit limit are silently truncated there.
+_LOAD_PAGE_SIZE = 1000
 
 
 class RecommendationEngine:
@@ -263,8 +266,27 @@ class RecommendationEngine:
 
     @supabase_retry
     def _fetch_all_user_ids(self) -> list[dict]:
-        """Fetch all user IDs, with retry on transient failures."""
-        return get_sb().table(USERS).select("id").execute().data or []
+        """Fetch all user IDs, with retry on transient failures.
+
+        Loads rows in pages of ``_LOAD_PAGE_SIZE`` to avoid silent truncation
+        by PostgREST's server-side ``max-rows`` limit (default 1000 on Supabase).
+        """
+        rows: list[dict] = []
+        offset = 0
+        while True:
+            page = (
+                get_sb()
+                .table(USERS)
+                .select("id")
+                .order("id")
+                .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+                .execute()
+            ).data or []
+            rows.extend(page)
+            if len(page) < _LOAD_PAGE_SIZE:
+                break
+            offset += _LOAD_PAGE_SIZE
+        return rows
 
     # ---------------------------------------------------------------------------
     # Core pipeline (shared by live and offline)

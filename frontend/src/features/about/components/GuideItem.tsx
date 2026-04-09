@@ -4,6 +4,7 @@
  */
 
 import { useTranslation } from "react-i18next";
+import { sanitizeTranslationHTML } from "@/shared/utils/string";
 
 interface GuideItemProps {
   emoji: string;
@@ -38,7 +39,7 @@ export function GuideItem({
         {paragraphs.map((para) => (
           <p
             key={para.key}
-            dangerouslySetInnerHTML={{ __html: t(para.key) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeTranslationHTML(t(para.key)) }}
           />
         ))}
       </div>

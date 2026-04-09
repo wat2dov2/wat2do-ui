@@ -3,14 +3,12 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from postgrest.exceptions import APIError
 
-from fastapi.security import HTTPAuthorizationCredentials
-
-from core.auth import get_optional_user, resolve_db_user, _resolve_user
+from core.auth import get_optional_user, resolve_db_user
 from core.constants import MAX_INTERACTION_BATCH_SIZE
 from core.errors import BATCH_TOO_LARGE, USER_ID_MISMATCH
 from core.rate_limit import RateLimiter, anon_interaction_rate_limiter
 from schemas.interaction import InteractionBatch
-from services import interaction_service, user_service
+from services import interaction_service
 
 # Rate limiter for authenticated interaction submissions.
 # More generous than the AI limiter: 30 batch requests per 60 seconds.
@@ -18,26 +16,6 @@ _interaction_limiter = RateLimiter(max_requests=30, window_seconds=60)
 
 router = APIRouter(prefix="/interactions", tags=["interactions"])
 log = logging.getLogger(__name__)
-
-
-def _resolve_user_from_body_token(token: str | None) -> str | None:
-    """Resolve a DB user ID from a Supabase auth token sent in the request body.
-
-    This exists for ``sendBeacon`` compatibility — the browser API cannot set
-    custom headers, so the token is sent in the JSON payload instead.
-    Returns None on failure (invalid / expired token, missing DB user).
-    """
-    if not token:
-        return None
-    try:
-        cred = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
-        auth_user = _resolve_user(cred)
-        db_user = user_service.get_user_by_supabase_id(auth_user["id"])
-        if db_user:
-            return str(db_user.id)
-    except Exception as e:
-        log.warning("Body-token user resolution failed: %s", e)
-    return None
 
 
 @router.post("/batch", status_code=status.HTTP_202_ACCEPTED)
@@ -49,12 +27,11 @@ def record_interactions(
     """
     Record a batch of user-event interactions.
 
-    Supports two auth mechanisms:
-    1. **Bearer header** (preferred) — standard ``Authorization: Bearer <token>``
-    2. **Body token** (sendBeacon fallback) — ``token`` field in the JSON payload,
-       because ``navigator.sendBeacon`` cannot set custom headers.
+    Auth is via the standard ``Authorization: Bearer <token>`` header.
+    The frontend uses ``fetch()`` with ``keepalive: true`` (instead of
+    ``sendBeacon``) so it can set this header even during page unload.
 
-    When a user is authenticated (via either mechanism):
+    When a user is authenticated:
     - Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.
     - Duplicate interactions are deduplicated within a sliding time window.
 
@@ -74,13 +51,10 @@ def record_interactions(
         )
 
     # ── Resolve user identity ─────────────────────────────────────────
-    # Prefer Bearer header auth; fall back to body token for sendBeacon.
     user_id: str | None = None
     if auth_user is not None:
         db_user = resolve_db_user(auth_user)
         user_id = str(db_user.id)
-    elif data.token:
-        user_id = _resolve_user_from_body_token(data.token)
 
     # ── Rate limit ───────────────────────────────────────────────────
     # Authenticated users: keyed by user ID (existing behavior).

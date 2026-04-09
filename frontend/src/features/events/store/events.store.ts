@@ -21,6 +21,7 @@ type GetDayOfWeekFn = (date: string) => string;
 interface EventsState {
   events: Event[];
   isLoading: boolean;
+  fetchError: boolean;
   userCreatedEventIds: number[];
 
   /** Fetch all events from backend. Idempotent — skips if already loaded. */
@@ -30,20 +31,31 @@ interface EventsState {
   deleteEvent: (eventId: number) => Promise<void>;
 }
 
+/** Module-level flag to deduplicate concurrent fetchEvents calls. */
+let _fetchInFlight = false;
+
 export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
   isLoading: true,
+  fetchError: false,
   userCreatedEventIds: [],
 
   fetchEvents: async () => {
-    // Already loaded or in-flight — skip
-    if (get().events.length > 0 || !get().isLoading) return;
+    const state = get();
+    // Already in-flight — skip
+    if (state.isLoading && _fetchInFlight) return;
+    // Already loaded successfully — skip
+    if (state.events.length > 0 && !state.fetchError) return;
+    _fetchInFlight = true;
+    set({ isLoading: true, fetchError: false });
     try {
       const events = await fetchAllEvents();
-      set({ events, isLoading: false });
+      set({ events, isLoading: false, fetchError: false });
     } catch (err) {
       console.error("Failed to fetch events:", err);
-      set({ isLoading: false });
+      set({ isLoading: false, fetchError: true });
+    } finally {
+      _fetchInFlight = false;
     }
   },
 

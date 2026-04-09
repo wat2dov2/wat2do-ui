@@ -1,6 +1,11 @@
 /**
  * Lightweight interaction tracker.
- * Buffers events and flushes via sendBeacon on page unload / visibility change.
+ * Buffers events and flushes via fetch-keepalive on page unload / visibility change.
+ *
+ * Uses fetch() with keepalive instead of sendBeacon so we can attach the
+ * Authorization header.  sendBeacon cannot set custom headers, which previously
+ * forced the access token into the JSON body — a credential-exposure risk
+ * (POST bodies are logged by proxies, WAFs, and APM tools).
  */
 
 import { getAccessToken } from "@/shared/services/apiClient";
@@ -43,13 +48,27 @@ class Tracker {
     const batch = this.queue.splice(0);
     const payload = JSON.stringify({
       session_id: getSessionId(),
-      token: getAccessToken(),
       interactions: batch,
     });
 
     const url = `${API_BASE_URL}/interactions/batch`;
-    const blob = new Blob([payload], { type: "application/json" });
-    navigator.sendBeacon(url, blob);
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    const token = getAccessToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    // fetch + keepalive survives page unload (like sendBeacon) but supports
+    // custom headers, so the token travels in the Authorization header — not
+    // in the request body where it could be logged by intermediaries.
+    fetch(url, {
+      method: "POST",
+      headers,
+      body: payload,
+      keepalive: true,
+    }).catch((err) => console.error("Failed to flush interaction batch:", err));
   }
 }
 

@@ -19,6 +19,24 @@ def test_generate_event_requires_auth(client):
 
 
 # ---------------------------------------------------------------------------
+# Prompt validation
+# ---------------------------------------------------------------------------
+
+
+def test_prompt_too_long_returns_422(authenticated_client):
+    """Prompts exceeding 2000 chars are rejected before hitting OpenAI."""
+    long_prompt = "a" * 2001
+    resp = authenticated_client.post("/ai/generate-filters", json={"prompt": long_prompt})
+    assert resp.status_code == 422
+
+
+def test_empty_prompt_returns_422(authenticated_client):
+    """Empty prompts are rejected."""
+    resp = authenticated_client.post("/ai/generate-filters", json={"prompt": ""})
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
 # Authenticated requests succeed (OpenAI call mocked)
 # ---------------------------------------------------------------------------
 

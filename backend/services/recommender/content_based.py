@@ -1,7 +1,13 @@
 """Content-based filtering: score events by metadata match to user profile."""
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from schemas.user import UserResponse
 
 from constants import INTEREST_TO_CATEGORIES
 from core.database import get_sb
@@ -27,12 +33,22 @@ log = logging.getLogger(__name__)
 def get_content_scores(
     user_id: str,
     candidate_events: list[EventResponse],
+    *,
+    user: UserResponse | None = None,
 ) -> dict[int, float]:
     """
     Score each candidate event based on how well it matches the user profile.
     Returns {event_id: score} with scores in [0, 1].
+
+    Args:
+        user_id: The user to score for.
+        candidate_events: Events to score.
+        user: Optional pre-fetched user profile. When provided the DB lookup
+              for the user row is skipped, avoiding a redundant round-trip
+              when the caller already has the profile (e.g. batch evaluation).
     """
-    user = user_service.get_user(user_id)
+    if user is None:
+        user = user_service.get_user(user_id)
     if not user:
         return {}
 

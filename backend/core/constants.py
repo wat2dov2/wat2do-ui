@@ -47,9 +47,25 @@ MAX_PAGE_SIZE = 100          # upper bound for page_size query param
 # ---------------------------------------------------------------------------
 DEFAULT_INTERACTION_LIMIT = 50   # default limit for popularity queries
 MAX_INTERACTION_BATCH_SIZE = 50  # max interactions per single batch request
+MAX_INTERACTION_METADATA_BYTES = 2048  # max serialised size of metadata per interaction
 # Deduplication: max identical (user, event, type) interactions within window
 MAX_DUPLICATE_INTERACTIONS = 10
 DEDUP_WINDOW_MINUTES = 60        # sliding window for deduplication check
+
+# ---------------------------------------------------------------------------
+# Input size limits for Pydantic schemas
+# ---------------------------------------------------------------------------
+MAX_SESSION_ID_LENGTH = 128          # UUIDs / short opaque tokens
+MAX_USERNAME_LENGTH = 100            # matches DB VARCHAR(100)
+MAX_FULL_NAME_LENGTH = 255           # matches DB VARCHAR(255)
+MAX_FACULTY_LENGTH = 255             # matches DB VARCHAR(255)
+MAX_SCHOOL_LENGTH = 255              # matches DB VARCHAR(255)
+MAX_INTEREST_LENGTH = 100            # single interest tag
+MAX_INTERESTS_COUNT = 50             # max items in interests list
+MAX_REPORT_REASON_LENGTH = 2000      # free-text report reason
+MAX_REJECTION_REASON_LENGTH = 2000   # admin rejection reason
+MAX_AVATAR_URL_LENGTH = 2048         # URL length (RFC 2616 practical limit)
+MAX_EVENT_DATA_BYTES = 32_768        # 32 KB – serialised submission event_data
 
 # ---------------------------------------------------------------------------
 # QR / scan recording

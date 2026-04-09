@@ -1,5 +1,6 @@
 """Saved events: persist user bookmarks to Supabase."""
 
+import logging
 import threading
 import time
 import uuid
@@ -9,6 +10,12 @@ from core.tables import USER_SAVED_EVENTS
 from schemas.saved_event import SavedEventResponse, UserEventPair
 from services.recommender.config import CACHE_TTL_SECONDS
 
+log = logging.getLogger(__name__)
+
+# Page size for batched loading from PostgREST.  Supabase's default max-rows
+# is 1000 — queries without an explicit limit are silently truncated there.
+_LOAD_PAGE_SIZE = 1000
+
 # ---------------------------------------------------------------------------
 # Simple TTL cache for get_all_user_saves (shared across recommendation requests)
 # ---------------------------------------------------------------------------
@@ -17,16 +24,29 @@ _saves_cache: tuple[float, list[UserEventPair]] | None = None
 
 
 def get_saved_event_ids(user_id: str) -> list[int]:
-    """Return event IDs saved by this user."""
-    r = (
-        get_sb()
-        .table(USER_SAVED_EVENTS)
-        .select("event_id")
-        .eq("user_id", user_id)
-        .order("saved_at", desc=True)
-        .execute()
-    )
-    return [row["event_id"] for row in (r.data or [])]
+    """Return event IDs saved by this user.
+
+    Loads rows in pages of ``_LOAD_PAGE_SIZE`` to avoid silent truncation
+    by PostgREST's server-side ``max-rows`` limit (default 1000 on Supabase).
+    """
+    ids: list[int] = []
+    offset = 0
+    while True:
+        r = (
+            get_sb()
+            .table(USER_SAVED_EVENTS)
+            .select("event_id")
+            .eq("user_id", user_id)
+            .order("saved_at", desc=True)
+            .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+            .execute()
+        )
+        page = r.data or []
+        ids.extend(row["event_id"] for row in page)
+        if len(page) < _LOAD_PAGE_SIZE:
+            break
+        offset += _LOAD_PAGE_SIZE
+    return ids
 
 
 def save_event(user_id: str, event_id: int) -> SavedEventResponse:
@@ -63,6 +83,9 @@ def get_all_user_saves() -> list[UserEventPair]:
 
     Cached for CACHE_TTL_SECONDS so concurrent recommendation requests
     share one DB round-trip.
+
+    Loads rows in pages of ``_LOAD_PAGE_SIZE`` to avoid silent truncation
+    by PostgREST's server-side ``max-rows`` limit (default 1000 on Supabase).
     """
     global _saves_cache
 
@@ -78,12 +101,24 @@ def get_all_user_saves() -> list[UserEventPair]:
             if time.monotonic() <= expires_at:
                 return value
 
-        r = (
-            get_sb()
-            .table(USER_SAVED_EVENTS)
-            .select("user_id, event_id")
-            .execute()
-        )
-        result = [UserEventPair.model_validate(row) for row in (r.data or [])]
+        # Paginate to avoid silent truncation at PostgREST's max-rows limit.
+        rows: list[dict] = []
+        offset = 0
+        while True:
+            r = (
+                get_sb()
+                .table(USER_SAVED_EVENTS)
+                .select("user_id, event_id")
+                .order("saved_at")
+                .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+                .execute()
+            )
+            page = r.data or []
+            rows.extend(page)
+            if len(page) < _LOAD_PAGE_SIZE:
+                break
+            offset += _LOAD_PAGE_SIZE
+
+        result = [UserEventPair.model_validate(row) for row in rows]
         _saves_cache = (time.monotonic() + CACHE_TTL_SECONDS, result)
         return result

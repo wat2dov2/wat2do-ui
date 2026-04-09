@@ -1,9 +1,74 @@
 """Collaborative filtering: user-based and item-based with cosine similarity."""
 
+import logging
 import math
+import threading
+import time
 
 from services import interaction_service, saved_event_service
-from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT, CF_SAVE_WEIGHT
+from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT, CF_SAVE_WEIGHT, CACHE_TTL_SECONDS
+
+log = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Cached CF matrices: rebuilding user vectors {user_id: {event_id: score}}
+# and item vectors {event_id: {user_id: score}} from the raw interaction
+# matrix + saves is O(rows) and identical for every caller within the same
+# cache window.  Cache both so the work is done once per TTL period instead
+# of once per live-fallback request.
+# ---------------------------------------------------------------------------
+_vectors_lock = threading.Lock()
+_vectors_cache: tuple[float, dict[str, dict[int, float]], dict[int, dict[str, float]]] | None = None
+
+
+def _get_cf_matrices() -> tuple[dict[str, dict[int, float]], dict[int, dict[str, float]]]:
+    """Return (user_vectors, item_vectors), rebuilding if the TTL has expired."""
+    global _vectors_cache
+
+    if _vectors_cache is not None:
+        expires_at, user_vecs, item_vecs = _vectors_cache
+        if time.monotonic() <= expires_at:
+            return user_vecs, item_vecs
+
+    with _vectors_lock:
+        # Double-check after acquiring lock
+        if _vectors_cache is not None:
+            expires_at, user_vecs, item_vecs = _vectors_cache
+            if time.monotonic() <= expires_at:
+                return user_vecs, item_vecs
+
+        matrix = interaction_service.get_interaction_matrix()
+        saves = saved_event_service.get_all_user_saves()
+
+        user_vectors: dict[str, dict[int, float]] = {}
+        for row in matrix:
+            uid = row.user_id
+            if uid not in user_vectors:
+                user_vectors[uid] = {}
+            user_vectors[uid][row.event_id] = row.score
+
+        for s in saves:
+            uid, eid = s.user_id, s.event_id
+            if uid not in user_vectors:
+                user_vectors[uid] = {}
+            user_vectors[uid][eid] = user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT
+
+        # Transpose: item_vectors[event_id][user_id] = score
+        item_vectors: dict[int, dict[str, float]] = {}
+        for uid, vec in user_vectors.items():
+            for eid, score in vec.items():
+                if eid not in item_vectors:
+                    item_vectors[eid] = {}
+                item_vectors[eid][uid] = score
+
+        _vectors_cache = (time.monotonic() + CACHE_TTL_SECONDS, user_vectors, item_vectors)
+        log.info(
+            "Rebuilt CF matrices: %d users, %d items, %d entries",
+            len(user_vectors),
+            len(item_vectors),
+            sum(len(v) for v in user_vectors.values()),
+        )
+        return user_vectors, item_vectors
 
 
 def get_collaborative_scores(
@@ -15,23 +80,7 @@ def get_collaborative_scores(
     Returns {event_id: score} for candidate events.
     Returns empty dict if user has too few interactions (cold start).
     """
-    matrix = interaction_service.get_interaction_matrix()
-    saves = saved_event_service.get_all_user_saves()
-
-    # Build user vectors: {user_id: {event_id: score}}
-    user_vectors: dict[str, dict[int, float]] = {}
-    for row in matrix:
-        uid = row.user_id
-        if uid not in user_vectors:
-            user_vectors[uid] = {}
-        user_vectors[uid][row.event_id] = row.score
-
-    # Merge saves into matrix (save = weight 5)
-    for s in saves:
-        uid, eid = s.user_id, s.event_id
-        if uid not in user_vectors:
-            user_vectors[uid] = {}
-        user_vectors[uid][eid] = user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT
+    user_vectors, item_vectors = _get_cf_matrices()
 
     target_vec = user_vectors.get(user_id, {})
     if len(target_vec) < CF_MIN_INTERACTIONS:
@@ -46,7 +95,7 @@ def get_collaborative_scores(
     user_scores = _user_based_cf(user_id, target_vec, user_vectors, unseen)
 
     # Item-based CF
-    item_scores = _item_based_cf(target_vec, user_vectors, unseen)
+    item_scores = _item_based_cf(target_vec, item_vectors, unseen)
 
     # Blend user-based and item-based CF
     all_eids = set(user_scores.keys()) | set(item_scores.keys())
@@ -105,18 +154,10 @@ def _user_based_cf(
 
 def _item_based_cf(
     target_vec: dict[int, float],
-    user_vectors: dict[str, dict[int, float]],
+    item_vectors: dict[int, dict[str, float]],
     unseen_eids: set[int],
 ) -> dict[int, float]:
     """Score unseen events by similarity to events the user has interacted with."""
-    # Build item vectors: {event_id: {user_id: score}}
-    item_vectors: dict[int, dict[str, float]] = {}
-    for uid, vec in user_vectors.items():
-        for eid, score in vec.items():
-            if eid not in item_vectors:
-                item_vectors[eid] = {}
-            item_vectors[eid][uid] = score
-
     scores: dict[int, float] = {}
     for candidate_eid in unseen_eids:
         candidate_vec = item_vectors.get(candidate_eid, {})

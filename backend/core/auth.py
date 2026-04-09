@@ -25,7 +25,12 @@ bearer_optional = HTTPBearer(auto_error=False)
 # and caches them in-memory for 10 minutes.
 _jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
 _jwks_client: PyJWKClient | None = None
-_ASYMMETRIC_ALGS = ["ES256", "RS256", "EdDSA"]
+# Only asymmetric algorithms are allowed in the JWKS path.  Never include
+# HS256 here — doing so enables the classic "algorithm confusion" attack where
+# an attacker signs a token with the *public* key as an HMAC secret.
+_ASYMMETRIC_ALGS = ("RS256", "ES256", "EdDSA")
+# Supabase issues tokens with iss = <project_url>/auth/v1
+_EXPECTED_ISSUER = f"{settings.supabase_url.rstrip('/')}/auth/v1"
 
 # Lazy import to avoid circular dependency (user_service → database → config)
 _user_service = None
@@ -54,14 +59,15 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
     """
     credentials = token.credentials
 
-    # 1) JWKS discovery (new signing keys system)
+    # 1) JWKS discovery (asymmetric signing keys only — never HS256)
     try:
         signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials)
         payload = jwt.decode(
             credentials,
             signing_key.key,
-            algorithms=_ASYMMETRIC_ALGS + ["HS256"],
+            algorithms=list(_ASYMMETRIC_ALGS),
             audience="authenticated",
+            issuer=_EXPECTED_ISSUER,
         )
         return _payload_to_user(payload)
     except Exception as e:
@@ -75,6 +81,7 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
                 audience="authenticated",
+                issuer=_EXPECTED_ISSUER,
             )
             return _payload_to_user(payload)
         except jwt.InvalidTokenError:

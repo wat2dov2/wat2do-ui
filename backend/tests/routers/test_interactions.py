@@ -1,11 +1,11 @@
 """Tests for interactions router — auth, ownership, batch limits, dedup, rate limiting."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
-from core.auth import get_current_user, get_optional_user
+from core.auth import get_optional_user
 from core.constants import MAX_INTERACTION_BATCH_SIZE
 from main import app
 from tests.conftest import FAKE_USER, OTHER_USER
@@ -32,7 +32,6 @@ def _make_db_user(user_id=FAKE_DB_USER_ID, email=FAKE_USER["email"]):
 
 def _batch_payload(
     session_id: str = "sess-1",
-    token: str | None = None,
     user_id: str | None = None,
     interactions: list | None = None,
 ) -> dict:
@@ -44,8 +43,6 @@ def _batch_payload(
             {"event_id": 2, "interaction_type": "click"},
         ],
     }
-    if token is not None:
-        payload["token"] = token
     if user_id is not None:
         payload["user_id"] = user_id
     return payload
@@ -133,53 +130,16 @@ def test_batch_202_with_bearer_auth(authenticated_client, monkeypatch):
     assert kwargs["user_id"] == FAKE_DB_USER_ID
 
 
-# ── Authenticated tracking (body token / sendBeacon) ──────────────────
-
-
-def test_batch_202_with_body_token(client, monkeypatch):
-    """Body token (sendBeacon compat) resolves user and records interactions."""
-    from routers import interactions
-    from services import interaction_service, user_service
-
-    db_user = _make_db_user()
-
-    monkeypatch.setattr(interactions, "_resolve_user", lambda cred: FAKE_USER)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"])
-    monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
-
-    resp = client.post("/interactions/batch", json=_batch_payload(token="fake-jwt"))
-    assert resp.status_code == 202
-    assert resp.json()["recorded"] == 2
-
-    _, kwargs = interaction_service.record_interactions.call_args
-    assert kwargs["user_id"] == FAKE_DB_USER_ID
-
-
-def test_batch_falls_back_when_body_token_invalid(client, monkeypatch):
-    """Invalid body token falls back to anonymous (user_id=None)."""
-    from routers import interactions
-    from services import interaction_service
-
-    monkeypatch.setattr(interactions, "_resolve_user", MagicMock(side_effect=Exception("invalid token")))
-    monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=1))
-
-    resp = client.post("/interactions/batch", json=_batch_payload(token="bad"))
-    assert resp.status_code == 202
-
-    _, kwargs = interaction_service.record_interactions.call_args
-    assert kwargs["user_id"] is None
-
-
 # ── Batch size limit ──────────────────────────────────────────────────
 
 
 def test_batch_rejects_oversized_payload(client):
-    """Batch exceeding MAX_INTERACTION_BATCH_SIZE is rejected with 400."""
+    """Batch exceeding MAX_INTERACTION_BATCH_SIZE is rejected at validation."""
     oversized = [{"event_id": i, "interaction_type": "view"} for i in range(MAX_INTERACTION_BATCH_SIZE + 1)]
     resp = client.post("/interactions/batch", json=_batch_payload(interactions=oversized))
-    assert resp.status_code == 400
-    assert "maximum size" in resp.json()["detail"]
+    # Pydantic's max_length on the list field rejects with 422 before the
+    # router's own batch-size guard (which returns 400) is reached.
+    assert resp.status_code == 422
 
 
 def test_batch_accepts_max_size(client, monkeypatch):
@@ -370,6 +330,38 @@ def test_batch_rejects_invalid_interaction_type(client):
     }
     resp = client.post("/interactions/batch", json=payload)
     assert resp.status_code == 422
+
+
+def test_batch_rejects_oversized_metadata(client):
+    """Interaction with metadata exceeding MAX_INTERACTION_METADATA_BYTES is rejected."""
+    from core.constants import MAX_INTERACTION_METADATA_BYTES
+
+    oversized_metadata = {"data": "x" * MAX_INTERACTION_METADATA_BYTES}
+    payload = {
+        "session_id": "sess-1",
+        "interactions": [
+            {"event_id": 1, "interaction_type": "view", "metadata": oversized_metadata},
+        ],
+    }
+    resp = client.post("/interactions/batch", json=payload)
+    assert resp.status_code == 422
+    assert "metadata" in resp.text.lower()
+
+
+def test_batch_accepts_small_metadata(client, monkeypatch):
+    """Interaction with metadata under the size limit is accepted."""
+    from services import interaction_service
+
+    monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=1))
+
+    payload = {
+        "session_id": "sess-1",
+        "interactions": [
+            {"event_id": 1, "interaction_type": "view", "metadata": {"source": "home"}},
+        ],
+    }
+    resp = client.post("/interactions/batch", json=payload)
+    assert resp.status_code == 202
 
 
 def test_batch_empty_interactions_accepted(client, monkeypatch):

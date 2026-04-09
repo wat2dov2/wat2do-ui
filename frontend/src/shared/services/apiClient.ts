@@ -33,6 +33,67 @@ class ApiError extends Error {
   }
 }
 
+// ── 401 Retry / Token Refresh ───────────────────────────────────────
+//
+// When a request returns 401, we attempt a single token refresh via the
+// httpOnly cookie and retry the original request. A shared promise
+// prevents concurrent refresh calls — all in-flight 401s wait on the
+// same refresh attempt.
+
+let refreshPromise: Promise<boolean> | null = null;
+
+interface TokenRefreshResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user_id: string;
+}
+
+/**
+ * Attempt to refresh the access token. Returns true if a new token was
+ * obtained, false otherwise. Concurrent callers share one in-flight request.
+ * Exported for use by uploadService which makes raw fetch calls.
+ */
+export function refreshAccessToken(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // send the httpOnly refresh cookie
+      });
+
+      if (!res.ok) return false;
+
+      const data: TokenRefreshResponse = await res.json();
+      setAccessToken(data.access_token);
+      return true;
+    } catch (err) {
+      console.error("Token refresh request failed:", err);
+      return false;
+    }
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
+
+/**
+ * Called when token refresh fails — clears in-memory token and redirects
+ * to login. Uses window.location so it works outside of React Router.
+ * Exported for use by uploadService which makes raw fetch calls.
+ */
+export function handleAuthFailure(): void {
+  clearAccessToken();
+  // Only redirect if not already on the login page
+  if (!window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login";
+  }
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -62,6 +123,35 @@ async function request<T>(
   const body = await res.json().catch((err) => { console.error("Failed to parse API response JSON:", err); return null; });
 
   if (!res.ok) {
+    // On 401, attempt to refresh the token and retry — but not for auth
+    // endpoints themselves (to avoid infinite loops on /auth/refresh failures).
+    if (res.status === 401 && !path.startsWith("/auth/")) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        // Retry the original request with the new token
+        const retryHeaders: Record<string, string> = {
+          ...headers,
+          Authorization: `Bearer ${getAccessToken()}`,
+        };
+        const retryRes = await fetch(url, { ...options, headers: retryHeaders });
+
+        if (retryRes.status === 204) return undefined as T;
+
+        const retryBody = await retryRes.json().catch((err) => {
+          console.error("Failed to parse retry response JSON:", err);
+          return null;
+        });
+
+        if (!retryRes.ok) {
+          throw new ApiError(retryRes.status, retryBody);
+        }
+        return retryBody as T;
+      }
+
+      // Refresh failed — session is dead
+      handleAuthFailure();
+    }
+
     throw new ApiError(res.status, body);
   }
 

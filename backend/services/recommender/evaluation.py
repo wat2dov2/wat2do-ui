@@ -124,6 +124,23 @@ def evaluate_all_users(
             len(all_event_ids),
         )
 
+    # --- Hoist user-independent and batch-fetchable work outside the loop ---
+
+    # Popularity scores are identical for every user; compute once.
+    pop = get_popularity_scores(all_event_ids)
+
+    # Batch-fetch all user profiles and interaction counts (2 queries total
+    # instead of 2*N sequential round-trips).
+    eligible_uids = list(eligible.keys())
+    users_by_id = user_service.get_users_by_ids(eligible_uids)
+    interaction_counts = interaction_service.get_user_interaction_counts(eligible_uids)
+
+    log.info(
+        "Batch-loaded %d user profiles and %d interaction counts for evaluation",
+        len(users_by_id),
+        len(interaction_counts),
+    )
+
     total_precision = 0.0
     total_ndcg = 0.0
     count = 0
@@ -134,8 +151,8 @@ def evaluate_all_users(
 
         try:
             # Dynamic weights matching production (_compute_live)
-            interaction_count = interaction_service.get_user_interaction_count(uid)
-            user = user_service.get_user(uid)
+            interaction_count = interaction_counts.get(uid, 0)
+            user = users_by_id.get(uid)
             has_profile = bool(user and user.interests)
 
             if interaction_count >= hot_threshold:
@@ -149,9 +166,10 @@ def evaluate_all_users(
 
             w_content, w_collab, w_pop = weights
 
-            content = get_content_scores(uid, all_events_data)
+            # Pass pre-fetched user to avoid redundant DB lookup inside
+            # get_content_scores.
+            content = get_content_scores(uid, all_events_data, user=user)
             collab = get_collaborative_scores(uid, all_event_ids)
-            pop = get_popularity_scores(all_event_ids)
 
             blended = {}
             for eid in all_event_ids:

@@ -22,22 +22,31 @@ if (import.meta.env.DEV) {
   }
 }
 
-// Initialize app - ensure translations are loaded before rendering
+// Initialize app - load translations, constants, and auth before rendering.
+// Each step is individually guarded so the app always renders, even if
+// non-critical initialization fails (English-only > white screen).
 async function initApp() {
-  const initialLang = getStoredLanguage();
-  
-  // Always load the initial language (including English) to ensure translations are available
-  await loadLanguage(initialLang);
-  // Change language after it's loaded
-  i18n.changeLanguage(initialLang);
+  try {
+    const initialLang = getStoredLanguage();
+    await loadLanguage(initialLang);
+    i18n.changeLanguage(initialLang);
+  } catch (err) {
+    console.error("Language initialization failed, falling back to English:", err);
+  }
 
-  // Load shared domain constants from backend (categories, statuses, etc.)
-  await loadAppConstants();
+  try {
+    await loadAppConstants();
+  } catch (err) {
+    console.error("App constants initialization failed, using fallbacks:", err);
+  }
 
-  // Restore auth session from httpOnly cookie (if user was previously logged in)
-  await initializeAuth();
+  try {
+    await initializeAuth();
+  } catch (err) {
+    console.error("Auth initialization failed, continuing without session:", err);
+  }
 
-  // Render after language and auth are loaded
+  // Always render — a degraded app is better than a white screen.
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>
@@ -49,4 +58,6 @@ async function initApp() {
   )
 }
 
-initApp();
+initApp().catch((err) =>
+  console.error("Critical: initApp failed unexpectedly:", err),
+);

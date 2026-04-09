@@ -4,6 +4,7 @@
  */
 
 import { useTranslation } from "react-i18next";
+import { sanitizeTranslationHTML } from "@/shared/utils/string";
 
 interface SectionProps {
   dateKey: string;
@@ -38,7 +39,7 @@ export function Section({
             key={para.key}
             className={para.className}
             {...(para.isHTML
-              ? { dangerouslySetInnerHTML: { __html: t(para.key) } }
+              ? { dangerouslySetInnerHTML: { __html: sanitizeTranslationHTML(t(para.key)) } }
               : { children: t(para.key) })}
           />
         ))}

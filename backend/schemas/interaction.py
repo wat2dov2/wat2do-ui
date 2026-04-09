@@ -1,6 +1,13 @@
-from pydantic import BaseModel, field_validator
+import json
 
-from core.constants import INTERACTION_TYPES
+from pydantic import BaseModel, Field, field_validator
+
+from core.constants import (
+    INTERACTION_TYPES,
+    MAX_INTERACTION_BATCH_SIZE,
+    MAX_INTERACTION_METADATA_BYTES,
+    MAX_SESSION_ID_LENGTH,
+)
 
 
 class InteractionCreate(BaseModel):
@@ -17,12 +24,23 @@ class InteractionCreate(BaseModel):
             )
         return v
 
+    @field_validator("metadata")
+    @classmethod
+    def _metadata_size_limit(cls, v: dict | None) -> dict | None:
+        if v is None:
+            return v
+        size = len(json.dumps(v, separators=(",", ":")))
+        if size > MAX_INTERACTION_METADATA_BYTES:
+            raise ValueError(
+                f"metadata exceeds maximum size ({size} bytes, limit {MAX_INTERACTION_METADATA_BYTES})"
+            )
+        return v
+
 
 class InteractionBatch(BaseModel):
-    session_id: str
-    token: str | None = None  # DEPRECATED: ignored, auth via Bearer header
-    user_id: str | None = None  # optional; validated against authenticated user
-    interactions: list[InteractionCreate]
+    session_id: str = Field(..., min_length=1, max_length=MAX_SESSION_ID_LENGTH)
+    user_id: str | None = Field(default=None, max_length=MAX_SESSION_ID_LENGTH)
+    interactions: list[InteractionCreate] = Field(..., max_length=MAX_INTERACTION_BATCH_SIZE)
 
 
 class InteractionMatrixRow(BaseModel):

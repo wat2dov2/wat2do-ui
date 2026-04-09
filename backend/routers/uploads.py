@@ -11,6 +11,7 @@ from core.constants import (
     MAX_IMAGE_SIZE_BYTES,
 )
 from core.errors import CLUB_NOT_FOUND, EVENT_NOT_FOUND, USER_NOT_FOUND
+from core.svg_sanitize import looks_like_svg, sanitize_svg
 from services.storage_service import storage
 from services import user_service, event_service, club_service
 
@@ -33,6 +34,38 @@ async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
             status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             f"File too large. Max {limit // (1024*1024)} MB.",
         )
+
+    # SVG detection: inspect actual file bytes, not the client-declared
+    # Content-Type.  An attacker could upload a malicious SVG as
+    # "image/png" to skip sanitization entirely — so we check the
+    # content regardless.
+    is_svg = looks_like_svg(data)
+
+    if is_svg:
+        if "image/svg+xml" not in allowed:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "SVG content detected but SVG uploads are not allowed for this resource.",
+            )
+        try:
+            data = sanitize_svg(data)
+        except ValueError as exc:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"Invalid SVG file: {exc}",
+            )
+        # Correct the content type to match the actual content so storage
+        # serves the file with the right MIME type.
+        return data, "image/svg+xml"
+
+    # Client claims SVG but content is not actually SVG — reject the
+    # malformed upload rather than storing arbitrary bytes as "SVG".
+    if file.content_type == "image/svg+xml":
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "File declared as SVG but content is not valid SVG.",
+        )
+
     return data, file.content_type
 
 

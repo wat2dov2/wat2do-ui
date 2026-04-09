@@ -106,6 +106,54 @@ def test_upload_qr_asset_requires_auth(client):
     assert resp.status_code in (401, 403)
 
 
+def test_upload_svg_sanitizes_script_tags(authenticated_client, monkeypatch):
+    """SVG uploads are sanitized — <script> tags are stripped before storage."""
+
+    stored_bytes: bytes | None = None
+
+    def fake_upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+        nonlocal stored_bytes
+        stored_bytes = file_bytes
+        return "https://example.com/qr-assets/clean.svg"
+
+    monkeypatch.setattr(storage, "upload_file", fake_upload_file)
+
+    malicious_svg = (
+        b'<svg xmlns="http://www.w3.org/2000/svg">'
+        b"<script>alert('xss')</script>"
+        b'<rect width="50" height="50"/>'
+        b"</svg>"
+    )
+    files = _make_file("logo.svg", malicious_svg, "image/svg+xml")
+    resp = authenticated_client.post("/uploads/qr-asset", files=files)
+
+    assert resp.status_code == 200
+    assert stored_bytes is not None
+    assert b"<script" not in stored_bytes
+    assert b"alert" not in stored_bytes
+    assert b"<rect" in stored_bytes
+
+
+def test_upload_svg_rejects_invalid_xml(authenticated_client):
+    """SVG upload with non-XML content is rejected."""
+
+    files = _make_file("bad.svg", b"not xml at all", "image/svg+xml")
+    resp = authenticated_client.post("/uploads/qr-asset", files=files)
+
+    assert resp.status_code == 400
+    assert "SVG" in resp.json()["detail"]
+
+
+def test_upload_svg_rejects_non_svg_root(authenticated_client):
+    """SVG upload whose root element is not <svg> is rejected."""
+
+    files = _make_file("fake.svg", b"<html><body>hi</body></html>", "image/svg+xml")
+    resp = authenticated_client.post("/uploads/qr-asset", files=files)
+
+    assert resp.status_code == 400
+    assert "SVG" in resp.json()["detail"]
+
+
 # ── Event image upload ownership ────────────────────────────────────────
 
 
@@ -166,3 +214,78 @@ def test_upload_club_logo_owner_allowed(authenticated_client, monkeypatch):
     files = _make_file("logo.png", b"fake-bytes", "image/png")
     resp = authenticated_client.post("/uploads/club-logo/1", files=files)
     assert resp.status_code == 200
+
+
+# ── Content-Type spoofing: SVG disguised as other image types ──────────
+
+
+def test_svg_disguised_as_png_still_sanitized(authenticated_client, monkeypatch):
+    """SVG content uploaded as image/png is detected and sanitized, not passed through raw."""
+
+    stored_bytes: bytes | None = None
+
+    def fake_upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+        nonlocal stored_bytes
+        stored_bytes = file_bytes
+        return "https://example.com/qr-assets/sneaky.png"
+
+    monkeypatch.setattr(storage, "upload_file", fake_upload_file)
+
+    malicious_svg = (
+        b'<svg xmlns="http://www.w3.org/2000/svg">'
+        b"<script>alert('xss')</script>"
+        b'<rect width="50" height="50"/>'
+        b"</svg>"
+    )
+    # Attacker lies about Content-Type — claims it's image/png
+    files = _make_file("innocent.png", malicious_svg, "image/png")
+    resp = authenticated_client.post("/uploads/qr-asset", files=files)
+
+    assert resp.status_code == 200
+    assert stored_bytes is not None
+    # The <script> tag must be stripped even though Content-Type said image/png
+    assert b"<script" not in stored_bytes
+    assert b"alert" not in stored_bytes
+    assert b"<rect" in stored_bytes
+
+
+def test_svg_disguised_as_png_corrects_content_type(authenticated_client, monkeypatch):
+    """When SVG content is detected, the content type passed to storage is corrected to image/svg+xml."""
+
+    recorded_ct: str | None = None
+
+    def fake_upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+        nonlocal recorded_ct
+        recorded_ct = content_type
+        return "https://example.com/qr-assets/fixed.svg"
+
+    monkeypatch.setattr(storage, "upload_file", fake_upload_file)
+
+    clean_svg = b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50"/></svg>'
+    files = _make_file("poster.png", clean_svg, "image/png")
+    resp = authenticated_client.post("/uploads/qr-asset", files=files)
+
+    assert resp.status_code == 200
+    assert recorded_ct == "image/svg+xml"
+
+
+def test_svg_disguised_as_png_blocked_on_non_svg_bucket(authenticated_client, monkeypatch):
+    """SVG content uploaded to a bucket that doesn't allow SVGs is rejected."""
+
+    event = _mock_event(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    malicious_svg = (
+        b'<svg xmlns="http://www.w3.org/2000/svg">'
+        b"<script>alert('xss')</script>"
+        b"</svg>"
+    )
+    # event-images bucket does NOT allow image/svg+xml
+    files = _make_file("evil.png", malicious_svg, "image/png")
+    resp = authenticated_client.post("/uploads/event-image/1", files=files)
+
+    assert resp.status_code == 400
+    assert "SVG" in resp.json()["detail"]

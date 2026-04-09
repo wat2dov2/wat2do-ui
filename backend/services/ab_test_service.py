@@ -37,6 +37,7 @@ class ABTestService:
             "event_id": event_id,
             "variant": variant,
             "event_type": AB_EVENT_IMPRESSION,
+            "experiment_name": self.experiment_name,
         }]).execute()
 
     def record_impressions(self, user_id: str, event_ids: list[int], variant: str) -> None:
@@ -44,7 +45,13 @@ class ABTestService:
         if not event_ids:
             return
         rows = [
-            {"user_id": user_id, "event_id": eid, "variant": variant, "event_type": AB_EVENT_IMPRESSION}
+            {
+                "user_id": user_id,
+                "event_id": eid,
+                "variant": variant,
+                "event_type": AB_EVENT_IMPRESSION,
+                "experiment_name": self.experiment_name,
+            }
             for eid in event_ids
         ]
         get_sb().table(AB_TEST_EVENTS).insert(rows).execute()
@@ -56,33 +63,41 @@ class ABTestService:
             "event_id": event_id,
             "variant": variant,
             "event_type": AB_EVENT_CLICK,
+            "experiment_name": self.experiment_name,
         }]).execute()
 
     def get_ctr_by_variant(self) -> dict[str, dict]:
-        """Compute click-through rate per variant."""
-        r = get_sb().table(AB_TEST_EVENTS).select("variant, event_type").execute()
+        """Compute click-through rate per variant.
 
-        counts: dict[str, dict[str, int]] = {
-            v: {"impressions": 0, "clicks": 0} for v in self.variants
+        Uses a server-side RPC function (``get_ab_test_ctr``) that aggregates
+        counts with ``GROUP BY`` in a single database query, filtered by
+        ``experiment_name``.  This replaces the previous client-side pagination
+        loop that fetched all rows in 1000-row pages.
+        """
+        r = get_sb().rpc(
+            "get_ab_test_ctr",
+            {"p_experiment_name": self.experiment_name},
+        ).execute()
+
+        # Build result dict, starting with zeros for all known variants
+        # so the response always includes both even if one has no data yet.
+        result: dict[str, dict] = {
+            v: {"impressions": 0, "clicks": 0, "ctr": 0.0}
+            for v in self.variants
         }
+
         for row in r.data or []:
             variant = row["variant"]
-            if variant not in counts:
+            if variant not in result:
                 continue
-            if row["event_type"] == AB_EVENT_IMPRESSION:
-                counts[variant]["impressions"] += 1
-            elif row["event_type"] == AB_EVENT_CLICK:
-                counts[variant]["clicks"] += 1
-
-        result = {}
-        for variant, data in counts.items():
-            imp = data["impressions"]
-            clicks = data["clicks"]
+            imp = row["impressions"]
+            clicks = row["clicks"]
             result[variant] = {
                 "impressions": imp,
                 "clicks": clicks,
                 "ctr": round(clicks / imp, 4) if imp > 0 else 0.0,
             }
+
         return result
 
 

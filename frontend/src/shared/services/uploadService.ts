@@ -1,4 +1,8 @@
-import { getAccessToken } from "@/shared/services/apiClient";
+import {
+  getAccessToken,
+  refreshAccessToken,
+  handleAuthFailure,
+} from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
 
 interface UploadResponse {
@@ -18,11 +22,41 @@ async function uploadFile(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const res = await fetch(url, {
     method: "POST",
     headers,
     body: form,
   });
+
+  // On 401, attempt token refresh and retry the upload
+  if (res.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const retryForm = new FormData();
+      retryForm.append("file", file);
+
+      const retryHeaders: Record<string, string> = {
+        Authorization: `Bearer ${getAccessToken()}`,
+      };
+      const retryRes = await fetch(url, {
+        method: "POST",
+        headers: retryHeaders,
+        body: retryForm,
+      });
+
+      if (!retryRes.ok) {
+        const body = await retryRes.json().catch((err) => { console.error("Failed to parse upload retry error response:", err); return {}; });
+        throw new Error(body.detail || `Upload failed (${retryRes.status})`);
+      }
+
+      const data: UploadResponse = await retryRes.json();
+      return data.url;
+    }
+
+    handleAuthFailure();
+    throw new Error("Upload failed: session expired");
+  }
 
   if (!res.ok) {
     const body = await res.json().catch((err) => { console.error("Failed to parse upload error response:", err); return {}; });
