@@ -52,7 +52,7 @@ def test_create_submission_authenticated(authenticated_client, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# GET /submissions/ -- requires get_admin_user
+# GET /submissions/ -- requires get_admin_user, returns paginated response
 # ---------------------------------------------------------------------------
 
 def test_list_submissions_requires_auth(client):
@@ -68,13 +68,52 @@ def test_list_submissions_forbidden_for_non_admin(authenticated_client):
 
 
 def test_list_submissions_admin(admin_client, monkeypatch):
-    """GET /submissions/ as admin returns 200."""
-    monkeypatch.setattr(submission_service, "get_submissions", MagicMock(return_value=[_mock_submission()]))
+    """GET /submissions/ as admin returns paginated 200."""
+    monkeypatch.setattr(
+        submission_service, "get_submissions",
+        MagicMock(return_value=([_mock_submission()], 1)),
+    )
 
     resp = admin_client.get("/submissions/")
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
-    assert len(resp.json()) == 1
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["page"] == 1
+    assert body["page_size"] == 50
+    assert body["total_pages"] == 1
+    assert len(body["items"]) == 1
+    assert body["items"][0]["id"] == "sub-001"
+
+
+def test_list_submissions_with_pagination_params(admin_client, monkeypatch):
+    """GET /submissions/?page=2&page_size=10 passes correct offset/limit."""
+    mock_fn = MagicMock(return_value=([], 25))
+    monkeypatch.setattr(submission_service, "get_submissions", mock_fn)
+
+    resp = admin_client.get("/submissions/?page=2&page_size=10")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 25
+    assert body["page"] == 2
+    assert body["page_size"] == 10
+    assert body["total_pages"] == 3
+    assert len(body["items"]) == 0
+    # Verify the service was called with correct offset/limit
+    _, kwargs = mock_fn.call_args
+    assert kwargs["offset"] == 10
+    assert kwargs["limit"] == 10
+
+
+def test_list_submissions_default_pagination(admin_client, monkeypatch):
+    """GET /submissions/ without params uses defaults (page=1, page_size=50)."""
+    mock_fn = MagicMock(return_value=([], 0))
+    monkeypatch.setattr(submission_service, "get_submissions", mock_fn)
+
+    resp = admin_client.get("/submissions/")
+    assert resp.status_code == 200
+    _, kwargs = mock_fn.call_args
+    assert kwargs["offset"] == 0
+    assert kwargs["limit"] == 50
 
 
 # ---------------------------------------------------------------------------

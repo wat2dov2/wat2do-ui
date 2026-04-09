@@ -1,8 +1,10 @@
-"""In-memory rate limiter for FastAPI endpoints.
+"""In-memory sliding-window rate limiter for FastAPI endpoints.
 
 Uses a sliding-window counter stored in a plain dict.  Suitable for
-single-process deployments; swap for Redis-backed storage if running
-behind multiple workers.
+single-process deployments.  For multi-worker setups, replace the
+in-memory dict with a Redis-backed store (SORTED SET + ZRANGEBYSCORE)
+without changing the public API — only ``_cleanup`` and ``_check``
+need a new backend.
 
 Usage (authenticated, keyed by user ID)::
 
@@ -31,10 +33,11 @@ The ``dependency()`` method reads the user dict injected by
 
 The ``ip_dependency()`` method reads the client IP from ``Request``
 and tracks calls per IP address — suitable for unauthenticated
-endpoints like login, signup, and password reset.
+endpoints like login, signup, and QR scans.
 """
 
 import logging
+import math
 import time
 from collections import defaultdict
 from threading import Lock
@@ -43,12 +46,16 @@ from fastapi import Depends, HTTPException, Request, status
 
 from core.auth import get_current_user
 from core.constants import (
+    ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
+    ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_RATE_LIMIT_MAX_REQUESTS,
     AUTH_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
     AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
     AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
+    QR_SCAN_RATE_LIMIT_MAX_REQUESTS,
+    QR_SCAN_RATE_LIMIT_WINDOW_SECONDS,
     RATE_LIMIT_MAX_REQUESTS,
     RATE_LIMIT_WINDOW_SECONDS,
 )
@@ -58,7 +65,14 @@ log = logging.getLogger(__name__)
 
 
 class RateLimiter:
-    """Sliding-window rate limiter keyed by authenticated user ID."""
+    """Sliding-window rate limiter keyed by an arbitrary string (user ID, IP, etc.).
+
+    Stores ``(key -> [monotonic timestamps])`` in a dict guarded by a
+    threading lock.  Each call to ``_check`` prunes expired entries,
+    then either records the new request or raises 429 with a
+    ``Retry-After`` header indicating how many seconds until the
+    oldest request in the window expires.
+    """
 
     def __init__(
         self,
@@ -67,7 +81,7 @@ class RateLimiter:
     ) -> None:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
-        # {user_id: [timestamp, ...]}
+        # {key: [timestamp, ...]}
         self._requests: dict[str, list[float]] = defaultdict(list)
         self._lock = Lock()
 
@@ -75,10 +89,10 @@ class RateLimiter:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _cleanup(self, user_id: str, now: float) -> None:
+    def _cleanup(self, key: str, now: float) -> None:
         """Remove timestamps outside the current window (must hold lock)."""
         cutoff = now - self.window_seconds
-        timestamps = self._requests[user_id]
+        timestamps = self._requests[key]
         # Find first index within the window and slice
         idx = 0
         for idx, ts in enumerate(timestamps):
@@ -88,26 +102,35 @@ class RateLimiter:
             # All entries are expired
             idx = len(timestamps)
         if idx:
-            self._requests[user_id] = timestamps[idx:]
+            self._requests[key] = timestamps[idx:]
 
-    def _check(self, user_id: str) -> None:
-        """Raise 429 if the user has exceeded their request quota."""
+    def _check(self, key: str) -> None:
+        """Raise 429 if *key* has exceeded its request quota.
+
+        The 429 response includes a ``Retry-After`` header (seconds)
+        so well-behaved clients know when to retry.
+        """
         now = time.monotonic()
         with self._lock:
-            self._cleanup(user_id, now)
-            if len(self._requests[user_id]) >= self.max_requests:
+            self._cleanup(key, now)
+            if len(self._requests[key]) >= self.max_requests:
+                # Earliest request still in window — time until it expires
+                oldest = self._requests[key][0]
+                retry_after = max(1, math.ceil((oldest + self.window_seconds) - now))
                 log.warning(
-                    "Rate limit exceeded for user %s (%d/%d in %ds)",
-                    user_id,
-                    len(self._requests[user_id]),
+                    "Rate limit exceeded for %s (%d/%d in %ds, retry_after=%ds)",
+                    key,
+                    len(self._requests[key]),
                     self.max_requests,
                     self.window_seconds,
+                    retry_after,
                 )
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     detail=RATE_LIMIT_EXCEEDED,
+                    headers={"Retry-After": str(retry_after)},
                 )
-            self._requests[user_id].append(now)
+            self._requests[key].append(now)
 
     # ------------------------------------------------------------------
     # Public API
@@ -131,8 +154,8 @@ class RateLimiter:
     def ip_dependency(self):
         """Return a FastAPI dependency that enforces the rate limit by client IP.
 
-        Suitable for unauthenticated endpoints (login, signup, password
-        reset) where there is no user ID to key on.  Uses
+        Suitable for unauthenticated endpoints (login, signup, QR scans)
+        where there is no user ID to key on.  Uses
         ``request.client.host`` as the key.
         """
 
@@ -163,4 +186,17 @@ auth_sensitive_rate_limiter = RateLimiter(
 auth_refresh_rate_limiter = RateLimiter(
     max_requests=AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
+)
+# Anonymous interaction batches (POST /interactions/batch without auth).
+# Legitimate frontends fire view/impression events on scroll — generous limit
+# but stops bots from flooding the interactions table.
+anon_interaction_rate_limiter = RateLimiter(
+    max_requests=ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS,
+)
+# QR scan recording (GET /qr/{id}).  Normal usage is one scan per poster;
+# repeated rapid scans from the same IP are clearly automated.
+qr_scan_rate_limiter = RateLimiter(
+    max_requests=QR_SCAN_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=QR_SCAN_RATE_LIMIT_WINDOW_SECONDS,
 )

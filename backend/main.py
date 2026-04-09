@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.error_handlers import register_error_handlers
+from core.security_headers import SecurityHeadersMiddleware
 from routers import auth, users, events, clubs, uploads, qr
 from routers import (
     interactions, saved_events, recommendations, ab_test, ai,
@@ -13,7 +14,13 @@ from routers import (
 
 log = logging.getLogger(__name__)
 
-app = FastAPI(title="wat2do API")
+app = FastAPI(
+    title="wat2do API",
+    # Disable OpenAPI docs in production to reduce attack surface.
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
+)
 register_error_handlers(app)
 
 # Block wildcard origins with credentials — this combination lets any site
@@ -35,6 +42,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security headers (CSP, X-Content-Type-Options, X-Frame-Options, etc.)
+# Added after CORS so it wraps every response including preflight.
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(auth.router)
 app.include_router(users.router)

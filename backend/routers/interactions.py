@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from postgrest.exceptions import APIError
 
 from fastapi.security import HTTPAuthorizationCredentials
@@ -8,7 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from core.auth import get_optional_user, resolve_db_user, _resolve_user
 from core.constants import MAX_INTERACTION_BATCH_SIZE
 from core.errors import BATCH_TOO_LARGE, USER_ID_MISMATCH
-from core.rate_limit import RateLimiter
+from core.rate_limit import RateLimiter, anon_interaction_rate_limiter
 from schemas.interaction import InteractionBatch
 from services import interaction_service, user_service
 
@@ -43,6 +43,7 @@ def _resolve_user_from_body_token(token: str | None) -> str | None:
 @router.post("/batch", status_code=status.HTTP_202_ACCEPTED)
 def record_interactions(
     data: InteractionBatch,
+    request: Request,
     auth_user: dict | None = Depends(get_optional_user),
 ):
     """
@@ -63,6 +64,7 @@ def record_interactions(
     Anonymous requests (no auth at all) are still allowed for basic
     view/impression tracking, but without a ``user_id`` they cannot influence
     personalised recommendations or collaborative filtering scores.
+    Anonymous requests are IP-rate-limited to prevent abuse.
     """
     # ── Batch size guard (always enforced) ────────────────────────────
     if len(data.interactions) > MAX_INTERACTION_BATCH_SIZE:
@@ -80,9 +82,14 @@ def record_interactions(
     elif data.token:
         user_id = _resolve_user_from_body_token(data.token)
 
-    # ── Rate limit (authenticated users only) ───────────────────────
+    # ── Rate limit ───────────────────────────────────────────────────
+    # Authenticated users: keyed by user ID (existing behavior).
+    # Anonymous requests: keyed by client IP to prevent automated flooding.
     if user_id is not None:
         _interaction_limiter._check(user_id)
+    else:
+        client_ip = request.client.host if request.client else "unknown"
+        anon_interaction_rate_limiter._check(client_ip)
 
     # ── User-ID ownership check ───────────────────────────────────────
     # If the client sends a user_id in the payload it MUST match.

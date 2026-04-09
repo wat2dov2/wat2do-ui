@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DEFAULT_RECOMMENDATION_LIMIT } from "@/shared/constants/pagination";
+import { getUserId } from "@/features/auth";
 import { fetchRecommendations } from "../api/recommendationApi";
 import type { RecommendationItem } from "../types";
 
@@ -10,20 +11,33 @@ interface CachedResult {
   timestamp: number;
 }
 
-let cache: CachedResult | null = null;
+// Cache keyed by user ID so different users (or logged-out -> logged-in
+// transitions) never see stale recommendations from another session.
+// "anonymous" key is used for logged-out popular recommendations.
+const cacheByUser = new Map<string, CachedResult>();
+
+function getCacheKey(): string {
+  return getUserId() ?? "anonymous";
+}
 
 export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
+  const cacheKey = getCacheKey();
+  const cached = cacheByUser.get(cacheKey);
+
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>(
-    () => cache?.data ?? [],
+    () => cached?.data ?? [],
   );
-  const [isLoading, setIsLoading] = useState(!cache);
+  const [isLoading, setIsLoading] = useState(!cached);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
 
   const load = useCallback(
     (force = false) => {
-      if (!force && cache && Date.now() - cache.timestamp < CACHE_TTL_MS) {
-        setRecommendations(cache.data);
+      const key = getCacheKey();
+      const entry = cacheByUser.get(key);
+
+      if (!force && entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+        setRecommendations(entry.data);
         setIsLoading(false);
         return;
       }
@@ -32,7 +46,7 @@ export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
       fetchRecommendations(limit)
         .then((data) => {
           if (!mountedRef.current) return;
-          cache = { data, timestamp: Date.now() };
+          cacheByUser.set(key, { data, timestamp: Date.now() });
           setRecommendations(data);
           setError(null);
         })
@@ -48,13 +62,14 @@ export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
     [limit],
   );
 
+  // Re-fetch when user identity changes (login/logout)
   useEffect(() => {
     mountedRef.current = true;
     load();
     return () => {
       mountedRef.current = false;
     };
-  }, [load]);
+  }, [load, cacheKey]);
 
   const refresh = useCallback(() => load(true), [load]);
 

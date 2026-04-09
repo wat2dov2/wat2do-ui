@@ -21,13 +21,26 @@ def create_submission(user_id: str, event_data: dict) -> SubmissionResponse:
     return SubmissionResponse.model_validate(r.data[0]) if r.data else SubmissionResponse(**payload)
 
 
-def get_submissions(status: str | None = None) -> list[SubmissionResponse]:
-    """Return submissions, optionally filtered by status."""
-    q = get_sb().table(EVENT_SUBMISSIONS).select("*")
+def get_submissions(
+    status: str | None = None,
+    *,
+    offset: int = 0,
+    limit: int | None = None,
+) -> tuple[list[SubmissionResponse], int]:
+    """Return submissions, optionally filtered by status.
+
+    Returns (items, total_count).  When *limit* is None the query is
+    unbounded (legacy behaviour for non-paginated callers).
+    """
+    q = get_sb().table(EVENT_SUBMISSIONS).select("*", count="exact")
     if status:
         q = q.eq("status", status)
-    r = q.order("submitted_at", desc=True).execute()
-    return [SubmissionResponse.model_validate(row) for row in (r.data or [])]
+    q = q.order("submitted_at", desc=True)
+    if limit is not None:
+        q = q.range(offset, offset + limit - 1)
+    r = q.execute()
+    items = [SubmissionResponse.model_validate(row) for row in (r.data or [])]
+    return items, r.count or len(items)
 
 
 def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:

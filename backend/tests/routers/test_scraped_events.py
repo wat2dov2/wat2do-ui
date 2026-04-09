@@ -19,7 +19,7 @@ def _mock_scraped_event(**overrides) -> ScrapedEventResponse:
 
 
 # ---------------------------------------------------------------------------
-# GET /scraped-events/ -- requires get_admin_user
+# GET /scraped-events/ -- requires get_admin_user, returns paginated response
 # ---------------------------------------------------------------------------
 
 def test_list_scraped_events_requires_auth(client):
@@ -35,15 +35,38 @@ def test_list_scraped_events_forbidden_for_non_admin(authenticated_client):
 
 
 def test_list_scraped_events_admin(admin_client, monkeypatch):
-    """GET /scraped-events/ as admin returns 200."""
+    """GET /scraped-events/ as admin returns paginated 200."""
     monkeypatch.setattr(
-        scraped_event_service, "get_scraped_events", MagicMock(return_value=[_mock_scraped_event()])
+        scraped_event_service, "get_scraped_events",
+        MagicMock(return_value=([_mock_scraped_event()], 1)),
     )
 
     resp = admin_client.get("/scraped-events/")
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
-    assert len(resp.json()) == 1
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["page"] == 1
+    assert body["page_size"] == 50
+    assert body["total_pages"] == 1
+    assert len(body["items"]) == 1
+    assert body["items"][0]["source"] == "test-scraper"
+
+
+def test_list_scraped_events_with_pagination_params(admin_client, monkeypatch):
+    """GET /scraped-events/?page=2&page_size=25 passes correct offset/limit."""
+    mock_fn = MagicMock(return_value=([], 30))
+    monkeypatch.setattr(scraped_event_service, "get_scraped_events", mock_fn)
+
+    resp = admin_client.get("/scraped-events/?page=2&page_size=25")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 30
+    assert body["page"] == 2
+    assert body["page_size"] == 25
+    assert body["total_pages"] == 2
+    _, kwargs = mock_fn.call_args
+    assert kwargs["offset"] == 25
+    assert kwargs["limit"] == 25
 
 
 # ---------------------------------------------------------------------------

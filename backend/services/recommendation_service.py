@@ -7,6 +7,7 @@ Two modes:
 """
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from postgrest.exceptions import APIError
@@ -83,34 +84,33 @@ class RecommendationEngine:
 
         if recs and recs.data:
             computed_at = recs.data[0].get("computed_at")
+            rec_event_ids = [rec["event_id"] for rec in recs.data]
 
-            try:
-                recently_actioned = (
-                    get_sb()
-                    .table(USER_INTERACTIONS)
-                    .select("event_id")
-                    .eq("user_id", user_id)
-                    .gt("created_at", computed_at)
-                    .execute()
-                )
-                exclude = {r["event_id"] for r in (recently_actioned.data or [])}
-            except APIError as e:
-                log.warning("Failed to fetch recent interactions for user %s: %s", user_id, e)
-                exclude = set()
-
+            # Parallelize the two independent filter queries:
+            # 1. Recently actioned events (to exclude)
+            # 2. Which of these rec'd event IDs are still in the future (filtered lookup
+            #    instead of scanning all future events)
+            exclude: set[int] = set()
+            future_ids: set[int] | None = None
             now = datetime.now(timezone.utc).isoformat()
-            try:
-                future_events = (
-                    get_sb()
-                    .table(EVENTS)
-                    .select("id")
-                    .gte("dtstart_utc", now)
-                    .execute()
+
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                actions_future = pool.submit(
+                    self._fetch_recent_actions, user_id, computed_at
                 )
-                future_ids = {e["id"] for e in (future_events.data or [])}
-            except APIError as e:
-                log.warning("Failed to fetch future events: %s", e)
-                future_ids = None
+                future_future = pool.submit(
+                    self._fetch_future_event_ids, rec_event_ids, now
+                )
+
+                try:
+                    exclude = actions_future.result()
+                except APIError as e:
+                    log.warning("Failed to fetch recent interactions for user %s: %s", user_id, e)
+
+                try:
+                    future_ids = future_future.result()
+                except APIError as e:
+                    log.warning("Failed to check future events: %s", e)
 
             results: list[RecommendationItem] = []
             for rec in recs.data:
@@ -131,6 +131,36 @@ class RecommendationEngine:
                 return results
 
         return self._compute_live(user_id, limit)
+
+    @staticmethod
+    def _fetch_recent_actions(user_id: str, since: str) -> set[int]:
+        """Fetch event IDs the user interacted with after a given timestamp."""
+        r = (
+            get_sb()
+            .table(USER_INTERACTIONS)
+            .select("event_id")
+            .eq("user_id", user_id)
+            .gt("created_at", since)
+            .execute()
+        )
+        return {row["event_id"] for row in (r.data or [])}
+
+    @staticmethod
+    def _fetch_future_event_ids(event_ids: list[int], now: str) -> set[int]:
+        """Check which of the given event IDs are still in the future.
+
+        Uses an IN-clause filter instead of scanning all future events,
+        so the query touches only the rows we care about.
+        """
+        r = (
+            get_sb()
+            .table(EVENTS)
+            .select("id")
+            .in_("id", event_ids)
+            .gte("dtstart_utc", now)
+            .execute()
+        )
+        return {e["id"] for e in (r.data or [])}
 
     def get_popular_recommendations(self, limit: int = DEFAULT_LIMIT) -> list[RecommendationItem]:
         """Return popular upcoming events for anonymous or cold-start users."""
@@ -255,34 +285,53 @@ class RecommendationEngine:
         candidate_ids = [e.id for e in candidates]
         events_by_id = {e.id: e for e in candidates}
 
-        user = user_service.get_user(user_id)
-        try:
-            interaction_count = interaction_service.get_user_interaction_count(user_id)
-        except Exception as e:
-            log.warning("Failed to get interaction count for user %s: %s", user_id, e)
-            interaction_count = 0
+        # Parallelize independent DB lookups: user profile + interaction count
+        user = None
+        interaction_count = 0
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            user_future = pool.submit(user_service.get_user, user_id)
+            count_future = pool.submit(interaction_service.get_user_interaction_count, user_id)
+
+            user = user_future.result()
+            try:
+                interaction_count = count_future.result()
+            except Exception as e:
+                log.warning("Failed to get interaction count for user %s: %s", user_id, e)
+
         has_profile = bool(user and user.interests)
 
         content_scores: dict[int, float] = {}
         collab_scores: dict[int, float] = {}
         pop_scores: dict[int, float] = {}
 
-        try:
-            pop_scores = self._popularity_scorer(candidate_ids)
-        except Exception as e:
-            log.warning("Popularity scoring failed for live recs: %s", e)
+        # Parallelize scoring strategies: popularity always runs; content and
+        # collaborative run conditionally but are independent of each other.
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures: dict[str, object] = {}
+            futures["pop"] = pool.submit(self._popularity_scorer, candidate_ids)
 
-        if has_profile:
-            try:
-                content_scores = self._content_scorer(user_id, candidates)
-            except Exception as e:
-                log.warning("Content scoring failed for user %s: %s", user_id, e)
+            if has_profile:
+                futures["content"] = pool.submit(self._content_scorer, user_id, candidates)
 
-        if interaction_count >= self.warm_threshold:
+            if interaction_count >= self.warm_threshold:
+                futures["collab"] = pool.submit(self._collab_scorer, user_id, candidate_ids)
+
             try:
-                collab_scores = self._collab_scorer(user_id, candidate_ids)
+                pop_scores = futures["pop"].result()
             except Exception as e:
-                log.warning("Collaborative scoring failed for user %s: %s", user_id, e)
+                log.warning("Popularity scoring failed for live recs: %s", e)
+
+            if "content" in futures:
+                try:
+                    content_scores = futures["content"].result()
+                except Exception as e:
+                    log.warning("Content scoring failed for user %s: %s", user_id, e)
+
+            if "collab" in futures:
+                try:
+                    collab_scores = futures["collab"].result()
+                except Exception as e:
+                    log.warning("Collaborative scoring failed for user %s: %s", user_id, e)
 
         if interaction_count >= self.hot_threshold:
             weights = WEIGHTS_HOT

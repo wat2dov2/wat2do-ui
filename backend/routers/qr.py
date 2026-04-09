@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from core.auth import get_current_user, is_admin, require_owner_or_admin
 from core.constants import MAX_USER_AGENT_LENGTH
+from core.pagination import PaginatedResponse, PaginationParams, paginated_response
+from core.rate_limit import qr_scan_rate_limiter
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
 from core.errors import ID_MISMATCH, POSTER_NOT_FOUND, REQUIRES_LOCATION
 from services import qr_code_service
@@ -14,24 +16,43 @@ from services import qr_code_service
 router = APIRouter(prefix="/qr", tags=["qr"])
 
 
-@router.get("/", response_model=list[QrCodeResponse])
-def list_qr_codes(user: dict = Depends(get_current_user)):
+@router.get("/", response_model=PaginatedResponse[QrCodeResponse])
+def list_qr_codes(
+    pagination: PaginationParams = Depends(),
+    user: dict = Depends(get_current_user),
+):
     if is_admin(user):
-        return qr_code_service.list_qr_codes()
-    return qr_code_service.list_qr_codes(created_by=user["id"])
+        items, total = qr_code_service.list_qr_codes(
+            offset=pagination.offset,
+            limit=pagination.page_size,
+        )
+    else:
+        items, total = qr_code_service.list_qr_codes(
+            created_by=user["id"],
+            offset=pagination.offset,
+            limit=pagination.page_size,
+        )
+    return paginated_response(items, total, pagination)
 
 
-@router.get("/scans", response_model=list[QrCodeScanResponse])
+@router.get("/scans", response_model=PaginatedResponse[QrCodeScanResponse])
 def list_scans(
     qr_code_id: str | None = Query(None, description="Filter by QR code id"),
     from_time: datetime | None = Query(None, description="Scans from this time (inclusive)"),
     to_time: datetime | None = Query(None, description="Scans until this time (inclusive)"),
+    pagination: PaginationParams = Depends(),
     user: dict = Depends(get_current_user),
 ):
     owned_by = None if is_admin(user) else user["id"]
-    return qr_code_service.list_scans(
-        qr_code_id=qr_code_id, from_time=from_time, to_time=to_time, owned_by=owned_by
+    items, total = qr_code_service.list_scans(
+        qr_code_id=qr_code_id,
+        from_time=from_time,
+        to_time=to_time,
+        owned_by=owned_by,
+        offset=pagination.offset,
+        limit=pagination.page_size,
     )
+    return paginated_response(items, total, pagination)
 
 
 @router.get("/{qr_code_id}")
@@ -40,6 +61,7 @@ def resolve_qr_and_record_scan(
     request: Request,
     lat: float | None = Query(None, description="Scanner latitude (required for first scan to activate poster)"),
     lon: float | None = Query(None, description="Scanner longitude (required for first scan to activate poster)"),
+    _rl: None = Depends(qr_scan_rate_limiter.ip_dependency()),
 ):
     qr = qr_code_service.get_qr_code_by_id(qr_code_id)
     if not qr:

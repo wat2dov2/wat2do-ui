@@ -75,12 +75,15 @@ def other_user_client():
 
 
 @pytest.fixture(autouse=True)
-def _clear_rate_limiter():
-    """Reset the interaction rate limiter between tests."""
+def _clear_rate_limiters():
+    """Reset all interaction rate limiters between tests."""
     from routers.interactions import _interaction_limiter
+    from core.rate_limit import anon_interaction_rate_limiter
     _interaction_limiter._requests.clear()
+    anon_interaction_rate_limiter._requests.clear()
     yield
     _interaction_limiter._requests.clear()
+    anon_interaction_rate_limiter._requests.clear()
 
 
 # ── Anonymous tracking (no auth) ──────────────────────────────────────
@@ -267,7 +270,7 @@ def test_dedup_not_called_for_anonymous(client, monkeypatch):
 
 
 def test_rate_limit_triggers_429(authenticated_client, monkeypatch):
-    """Exceeding the rate limit returns 429."""
+    """Exceeding the rate limit returns 429 with Retry-After header."""
     from routers.interactions import _interaction_limiter
     from services import interaction_service, user_service
 
@@ -287,23 +290,49 @@ def test_rate_limit_triggers_429(authenticated_client, monkeypatch):
         r3 = authenticated_client.post("/interactions/batch", json=_batch_payload())
         assert r3.status_code == 429
         assert "Too many requests" in r3.json()["detail"]
+        assert "Retry-After" in r3.headers
+        assert int(r3.headers["Retry-After"]) >= 1
     finally:
         _interaction_limiter.max_requests = original_max
 
 
-def test_rate_limit_not_applied_to_anonymous(client, monkeypatch):
-    """Anonymous requests are not rate-limited (no user_id to key on)."""
+def test_anon_rate_limit_by_ip_triggers_429(client, monkeypatch):
+    """Anonymous requests are IP-rate-limited; exceeding the limit returns 429."""
+    from core.rate_limit import anon_interaction_rate_limiter
+    from services import interaction_service
+
+    monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
+
+    original_max = anon_interaction_rate_limiter.max_requests
+    anon_interaction_rate_limiter.max_requests = 2
+    try:
+        r1 = client.post("/interactions/batch", json=_batch_payload())
+        r2 = client.post("/interactions/batch", json=_batch_payload())
+        assert r1.status_code == 202
+        assert r2.status_code == 202
+
+        r3 = client.post("/interactions/batch", json=_batch_payload())
+        assert r3.status_code == 429
+        assert "Too many requests" in r3.json()["detail"]
+        assert "Retry-After" in r3.headers
+    finally:
+        anon_interaction_rate_limiter.max_requests = original_max
+
+
+def test_anon_rate_limit_does_not_affect_user_keyed_limiter(client, monkeypatch):
+    """Anonymous IP limiter is separate from the per-user limiter."""
     from routers.interactions import _interaction_limiter
     from services import interaction_service
 
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
+    # Set user-keyed limiter to 1 — should not affect anonymous requests
     _interaction_limiter.max_requests = 1
     try:
         r1 = client.post("/interactions/batch", json=_batch_payload())
         r2 = client.post("/interactions/batch", json=_batch_payload())
         assert r1.status_code == 202
-        assert r2.status_code == 202  # no 429 for anonymous
+        assert r2.status_code == 202  # not hit because user limiter is separate
     finally:
         _interaction_limiter.max_requests = 30
 

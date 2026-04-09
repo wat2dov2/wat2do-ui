@@ -102,12 +102,25 @@ def delete_qr_code(qr_code_id: str) -> None:
     get_sb().table(QR_CODES).delete().eq("id", qr_code_id).execute()
 
 
-def list_qr_codes(*, created_by: str | None = None) -> list[QrCodeResponse]:
-    q = get_sb().table(QR_CODES).select("*").order("created_at", desc=True)
+def list_qr_codes(
+    *,
+    created_by: str | None = None,
+    offset: int = 0,
+    limit: int | None = None,
+) -> tuple[list[QrCodeResponse], int]:
+    """Return QR codes, newest first.
+
+    Returns (items, total_count).  When *limit* is None the query is
+    unbounded (legacy behaviour for non-paginated callers).
+    """
+    q = get_sb().table(QR_CODES).select("*", count="exact").order("created_at", desc=True)
     if created_by:
         q = q.eq("created_by", created_by)
+    if limit is not None:
+        q = q.range(offset, offset + limit - 1)
     r = q.execute()
-    return [QrCodeResponse.model_validate(qr) for qr in (r.data or [])]
+    items = [QrCodeResponse.model_validate(qr) for qr in (r.data or [])]
+    return items, r.count or len(items)
 
 
 def list_scans(
@@ -116,16 +129,24 @@ def list_scans(
     to_time: datetime | None = None,
     *,
     owned_by: str | None = None,
-) -> list[QrCodeScanResponse]:
+    offset: int = 0,
+    limit: int | None = None,
+) -> tuple[list[QrCodeScanResponse], int]:
+    """Return scans, newest first.
+
+    Returns (items, total_count).  When *limit* is None the query is
+    unbounded (legacy behaviour for non-paginated callers).
+    """
     # When owned_by is set, restrict results to QR codes created by that user.
     if owned_by is not None:
-        owned_ids = [qr.id for qr in list_qr_codes(created_by=owned_by)]
+        owned_items, _ = list_qr_codes(created_by=owned_by)
+        owned_ids = [qr.id for qr in owned_items]
         if not owned_ids:
-            return []
+            return [], 0
         if qr_code_id and qr_code_id not in owned_ids:
-            return []
+            return [], 0
 
-    q = get_sb().table(QR_CODE_SCANS).select("*").order("scanned_at", desc=True)
+    q = get_sb().table(QR_CODE_SCANS).select("*", count="exact").order("scanned_at", desc=True)
     if qr_code_id:
         q = q.eq("qr_code_id", qr_code_id)
     elif owned_by is not None:
@@ -134,5 +155,8 @@ def list_scans(
         q = q.gte("scanned_at", from_time.isoformat())
     if to_time:
         q = q.lte("scanned_at", to_time.isoformat())
+    if limit is not None:
+        q = q.range(offset, offset + limit - 1)
     r = q.execute()
-    return [QrCodeScanResponse.model_validate(s) for s in (r.data or [])]
+    items = [QrCodeScanResponse.model_validate(s) for s in (r.data or [])]
+    return items, r.count or len(items)

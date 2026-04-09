@@ -1,4 +1,4 @@
-"""Tests for QR resolve + scan recording + ownership. Use mocks so no DB required."""
+"""Tests for QR resolve + scan recording + ownership + rate limiting. Use mocks so no DB required."""
 
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from core.constants import ROLE_ADMIN
+from core.rate_limit import qr_scan_rate_limiter
 from main import app
 from schemas.qr_code import QrCodeRedirect, QrCodeResponse
 from schemas.user import UserResponse
@@ -47,6 +48,14 @@ def _admin_db_user() -> UserResponse:
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _clear_qr_rate_limiter():
+    """Reset the QR scan rate limiter between tests."""
+    qr_scan_rate_limiter._requests.clear()
+    yield
+    qr_scan_rate_limiter._requests.clear()
 
 
 def test_resolve_qr_404(client):
@@ -331,7 +340,7 @@ def test_list_scans_requires_auth(client):
 def test_list_qr_codes_user_sees_own(authenticated_client, monkeypatch):
     """Regular user only sees their own QR codes (created_by filter applied)."""
     own_qr = [_mock_qr(created_by=FAKE_USER["id"])]
-    mock_list = MagicMock(return_value=own_qr)
+    mock_list = MagicMock(return_value=(own_qr, 1))
     monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
 
     from services import user_service
@@ -339,14 +348,18 @@ def test_list_qr_codes_user_sees_own(authenticated_client, monkeypatch):
 
     resp = authenticated_client.get("/qr/")
     assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["items"]) == 1
+    assert body["total"] == 1
     # Verify the service was called with the user's created_by filter
-    mock_list.assert_called_once_with(created_by=FAKE_USER["id"])
+    _, kwargs = mock_list.call_args
+    assert kwargs["created_by"] == FAKE_USER["id"]
 
 
 def test_list_qr_codes_admin_sees_all(admin_client, monkeypatch):
     """Admin sees all QR codes (no created_by filter)."""
     all_qrs = [_mock_qr(created_by=FAKE_USER["id"]), _mock_qr(id="other-qr", created_by=OTHER_USER["id"])]
-    mock_list = MagicMock(return_value=all_qrs)
+    mock_list = MagicMock(return_value=(all_qrs, 2))
     monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
 
     from services import user_service
@@ -354,13 +367,17 @@ def test_list_qr_codes_admin_sees_all(admin_client, monkeypatch):
 
     resp = admin_client.get("/qr/")
     assert resp.status_code == 200
-    # Admin: called without created_by filter
-    mock_list.assert_called_once_with()
+    body = resp.json()
+    assert len(body["items"]) == 2
+    assert body["total"] == 2
+    # Admin: called without created_by filter (only offset/limit kwargs)
+    _, kwargs = mock_list.call_args
+    assert "created_by" not in kwargs
 
 
 def test_list_scans_user_sees_own(authenticated_client, monkeypatch):
     """Regular user scans are filtered by owned_by."""
-    mock_list = MagicMock(return_value=[])
+    mock_list = MagicMock(return_value=([], 0))
     monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
 
     from services import user_service
@@ -374,7 +391,7 @@ def test_list_scans_user_sees_own(authenticated_client, monkeypatch):
 
 def test_list_scans_admin_sees_all(admin_client, monkeypatch):
     """Admin scans have owned_by=None (sees all)."""
-    mock_list = MagicMock(return_value=[])
+    mock_list = MagicMock(return_value=([], 0))
     monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
 
     from services import user_service
@@ -448,3 +465,51 @@ def test_admin_can_delete_non_owned_qr(admin_client, monkeypatch):
 
     resp = admin_client.delete("/qr/test-qr")
     assert resp.status_code == 204
+
+
+# ── QR scan rate limiting ────────────────────────────────────────────────
+
+
+def test_qr_scan_rate_limit_triggers_429(client):
+    """Exceeding the QR scan rate limit returns 429 with Retry-After header."""
+    mock_qr = _mock_qr(id="rate-test", destination_type="custom-url", destination_id="https://example.com")
+    original_get = qr_code_service.get_qr_code_by_id
+    original_record = qr_code_service.record_scan
+    qr_code_service.get_qr_code_by_id = MagicMock(return_value=mock_qr)
+    qr_code_service.record_scan = MagicMock(return_value={})
+
+    original_max = qr_scan_rate_limiter.max_requests
+    qr_scan_rate_limiter.max_requests = 2
+    try:
+        r1 = client.get("/qr/rate-test")
+        r2 = client.get("/qr/rate-test")
+        assert r1.status_code == 200
+        assert r2.status_code == 200
+
+        r3 = client.get("/qr/rate-test")
+        assert r3.status_code == 429
+        assert "Too many requests" in r3.json()["detail"]
+        assert "Retry-After" in r3.headers
+        assert int(r3.headers["Retry-After"]) >= 1
+    finally:
+        qr_scan_rate_limiter.max_requests = original_max
+        qr_code_service.get_qr_code_by_id = original_get
+        qr_code_service.record_scan = original_record
+
+
+def test_qr_scan_rate_limit_allows_within_limit(client):
+    """Requests within the rate limit proceed normally."""
+    mock_qr = _mock_qr(id="ok-test", destination_type="custom-url", destination_id="https://example.com")
+    original_get = qr_code_service.get_qr_code_by_id
+    original_record = qr_code_service.record_scan
+    qr_code_service.get_qr_code_by_id = MagicMock(return_value=mock_qr)
+    qr_code_service.record_scan = MagicMock(return_value={})
+
+    try:
+        # Default limit is 30/min — a few requests should be fine
+        for _ in range(3):
+            resp = client.get("/qr/ok-test")
+            assert resp.status_code == 200
+    finally:
+        qr_code_service.get_qr_code_by_id = original_get
+        qr_code_service.record_scan = original_record

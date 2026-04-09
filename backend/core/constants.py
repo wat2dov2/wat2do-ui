@@ -38,6 +38,10 @@ MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB  – avatars, club logos
 DEFAULT_LIST_LIMIT = 100     # events & clubs list default
 MAX_LIST_LIMIT = 500         # upper bound enforced by Query(le=...)
 
+# Admin list pagination (page-based)
+DEFAULT_PAGE_SIZE = 50       # default items per page for admin endpoints
+MAX_PAGE_SIZE = 100          # upper bound for page_size query param
+
 # ---------------------------------------------------------------------------
 # Interaction defaults
 # ---------------------------------------------------------------------------
@@ -111,6 +115,17 @@ AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS = 5   # forgot-password & reset-password
 AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS = 60
 AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS = 30    # token refresh (legitimate clients auto-refresh)
 AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS = 60
+
+# Anonymous interaction batches — per-IP (no user identity to key on).
+# More generous than auth limits since legitimate frontends fire view/impression
+# events on every scroll, but tight enough to stop automated flooding.
+ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS = 60
+ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS = 60
+
+# QR scan recording — per-IP.  Normal usage is a single scan per poster;
+# a burst of >30 requests/minute from one IP is clearly automated.
+QR_SCAN_RATE_LIMIT_MAX_REQUESTS = 30
+QR_SCAN_RATE_LIMIT_WINDOW_SECONDS = 60
 
 # ---------------------------------------------------------------------------
 # Retry decorator for Supabase operations

@@ -52,7 +52,7 @@ def test_create_report_authenticated(authenticated_client, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# GET /reports/ -- requires get_admin_user
+# GET /reports/ -- requires get_admin_user, returns paginated response
 # ---------------------------------------------------------------------------
 
 def test_list_reports_requires_auth(client):
@@ -68,13 +68,38 @@ def test_list_reports_forbidden_for_non_admin(authenticated_client):
 
 
 def test_list_reports_admin(admin_client, monkeypatch):
-    """GET /reports/ as admin returns 200."""
-    monkeypatch.setattr(report_service, "get_reports", MagicMock(return_value=[_mock_report()]))
+    """GET /reports/ as admin returns paginated 200."""
+    monkeypatch.setattr(
+        report_service, "get_reports",
+        MagicMock(return_value=([_mock_report()], 1)),
+    )
 
     resp = admin_client.get("/reports/")
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
-    assert len(resp.json()) == 1
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["page"] == 1
+    assert body["page_size"] == 50
+    assert body["total_pages"] == 1
+    assert len(body["items"]) == 1
+    assert body["items"][0]["id"] == "rpt-001"
+
+
+def test_list_reports_with_pagination_params(admin_client, monkeypatch):
+    """GET /reports/?page=3&page_size=20 passes correct offset/limit."""
+    mock_fn = MagicMock(return_value=([], 55))
+    monkeypatch.setattr(report_service, "get_reports", mock_fn)
+
+    resp = admin_client.get("/reports/?page=3&page_size=20")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 55
+    assert body["page"] == 3
+    assert body["page_size"] == 20
+    assert body["total_pages"] == 3
+    _, kwargs = mock_fn.call_args
+    assert kwargs["offset"] == 40
+    assert kwargs["limit"] == 20
 
 
 # ---------------------------------------------------------------------------

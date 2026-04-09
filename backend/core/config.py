@@ -11,6 +11,9 @@ _DEV_ORIGINS = [
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
+    # "development", "testing", or "production". Controls OpenAPI docs visibility.
+    environment: str = "development"
+
     supabase_url: str
     supabase_key: str
     supabase_secret_key: str = ""
@@ -24,6 +27,10 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     # JWT secret for local token verification. Dashboard > Settings > API > JWT Secret.
     supabase_jwt_secret: str = ""
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() == "production"
 
 
 settings = Settings()

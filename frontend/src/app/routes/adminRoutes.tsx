@@ -1,19 +1,35 @@
 /**
  * Admin Routes Configuration
- * Centralized admin route handlers and props to reduce duplication
+ * Centralized admin route handlers and props to reduce duplication.
+ *
+ * Heavy admin page components are lazy-loaded so they are split into a
+ * separate chunk that only admin users ever download.
  */
 
-import React, { useMemo } from "react";
-import { AdminProvider } from "@/features/admin";
-import { AdminPanel } from "@/features/admin";
-import { AdminEventsPage } from "@/features/admin";
-import { AdminClubsPage } from "@/features/admin";
-import { AdminSubmissionsPage } from "@/features/admin";
-import { AdminPostersPage } from "@/features/admin";
+import React, { lazy, Suspense, useMemo } from "react";
+import { AdminProvider } from "@/features/admin/context/AdminContext";
 import type { Event, EventFormData, EventSubmission, Club } from "@/shared/types";
 import { submissionToEventData } from "@/features/admin/utils/submissionToEvent";
 import { useNavigate } from "react-router-dom";
 import { ROUTES, ADMIN_ROUTE_MAP } from "@/shared/constants/routes";
+import { LoadingPage } from "@/shared/ui/loading-page";
+
+// Lazy-loaded admin page components — only fetched when an admin route renders.
+const AdminPanel = lazy(() =>
+  import("@/features/admin").then((m) => ({ default: m.AdminPanel }))
+);
+const AdminEventsPage = lazy(() =>
+  import("@/features/admin").then((m) => ({ default: m.AdminEventsPage }))
+);
+const AdminClubsPage = lazy(() =>
+  import("@/features/admin").then((m) => ({ default: m.AdminClubsPage }))
+);
+const AdminSubmissionsPage = lazy(() =>
+  import("@/features/admin").then((m) => ({ default: m.AdminSubmissionsPage }))
+);
+const AdminPostersPage = lazy(() =>
+  import("@/features/admin").then((m) => ({ default: m.AdminPostersPage }))
+);
 
 interface AdminRoutesConfig {
   events: Event[];
@@ -98,6 +114,15 @@ export function useAdminNavigation() {
   );
 }
 
+/** Suspense wrapper for lazy-loaded admin pages. */
+function AdminSuspense({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
+      {children}
+    </Suspense>
+  );
+}
+
 /**
  * Admin Panel Route Component
  */
@@ -111,7 +136,9 @@ export function AdminPanelRoute({ config }: { config: AdminRoutesConfig }) {
       includeClubs
       includeSubmissions
     >
-      <AdminPanel events={config.events} onNavigate={handleNavigate} />
+      <AdminSuspense>
+        <AdminPanel events={config.events} onNavigate={handleNavigate} />
+      </AdminSuspense>
     </AdminRouteWrapper>
   );
 }
@@ -122,7 +149,9 @@ export function AdminPanelRoute({ config }: { config: AdminRoutesConfig }) {
 export function AdminEventsRoute({ config }: { config: AdminRoutesConfig }) {
   return (
     <AdminRouteWrapper config={config} includeEvents>
-      <AdminEventsPage />
+      <AdminSuspense>
+        <AdminEventsPage />
+      </AdminSuspense>
     </AdminRouteWrapper>
   );
 }
@@ -133,7 +162,9 @@ export function AdminEventsRoute({ config }: { config: AdminRoutesConfig }) {
 export function AdminClubsRoute({ config }: { config: AdminRoutesConfig }) {
   return (
     <AdminRouteWrapper config={config} includeClubs>
-      <AdminClubsPage />
+      <AdminSuspense>
+        <AdminClubsPage />
+      </AdminSuspense>
     </AdminRouteWrapper>
   );
 }
@@ -146,7 +177,9 @@ export function AdminSubmissionsRoute({ config }: { config: AdminRoutesConfig })
 
   return (
     <AdminRouteWrapper config={config} includeSubmissions>
-      <AdminSubmissionsPage onBack={() => navigate(ROUTES.ADMIN)} />
+      <AdminSuspense>
+        <AdminSubmissionsPage onBack={() => navigate(ROUTES.ADMIN)} />
+      </AdminSuspense>
     </AdminRouteWrapper>
   );
 }
@@ -157,7 +190,9 @@ export function AdminSubmissionsRoute({ config }: { config: AdminRoutesConfig })
 export function AdminPostersRoute({ config }: { config: AdminRoutesConfig }) {
   return (
     <AdminRouteWrapper config={config} includePosters>
-      <AdminPostersPage />
+      <AdminSuspense>
+        <AdminPostersPage />
+      </AdminSuspense>
     </AdminRouteWrapper>
   );
 }

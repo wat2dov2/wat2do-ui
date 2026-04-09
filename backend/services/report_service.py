@@ -22,13 +22,26 @@ def create_report(user_id: str, event_id: int, reason: str) -> ReportResponse:
     return ReportResponse.model_validate(r.data[0]) if r.data else ReportResponse(**payload)
 
 
-def get_reports(status: str | None = None) -> list[ReportResponse]:
-    """Return reports, optionally filtered by status."""
-    q = get_sb().table(REPORTED_EVENTS).select("*")
+def get_reports(
+    status: str | None = None,
+    *,
+    offset: int = 0,
+    limit: int | None = None,
+) -> tuple[list[ReportResponse], int]:
+    """Return reports, optionally filtered by status.
+
+    Returns (items, total_count).  When *limit* is None the query is
+    unbounded (legacy behaviour for non-paginated callers).
+    """
+    q = get_sb().table(REPORTED_EVENTS).select("*", count="exact")
     if status:
         q = q.eq("status", status)
-    r = q.order("reported_at", desc=True).execute()
-    return [ReportResponse.model_validate(row) for row in (r.data or [])]
+    q = q.order("reported_at", desc=True)
+    if limit is not None:
+        q = q.range(offset, offset + limit - 1)
+    r = q.execute()
+    items = [ReportResponse.model_validate(row) for row in (r.data or [])]
+    return items, r.count or len(items)
 
 
 def update_report(report_id: str, status: str) -> ReportResponse | None:

@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from core.auth import get_current_user, get_admin_user, resolve_db_user
+from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from schemas.submission import SubmissionCreate, SubmissionUpdate, SubmissionResponse
 from core.errors import SUBMISSION_NOT_FOUND
 from services import submission_service
@@ -17,12 +18,18 @@ def create_submission(data: SubmissionCreate, auth_user: dict = Depends(get_curr
     return submission_service.create_submission(str(user.id), data.event_data)
 
 
-@router.get("/", response_model=list[SubmissionResponse])
+@router.get("/", response_model=PaginatedResponse[SubmissionResponse])
 def list_submissions(
     submission_status: str | None = None,
+    pagination: PaginationParams = Depends(),
     _: dict = Depends(get_admin_user),
 ):
-    return submission_service.get_submissions(status=submission_status)
+    items, total = submission_service.get_submissions(
+        status=submission_status,
+        offset=pagination.offset,
+        limit=pagination.page_size,
+    )
+    return paginated_response(items, total, pagination)
 
 
 @router.get("/{submission_id}", response_model=SubmissionResponse)
