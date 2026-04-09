@@ -1,6 +1,7 @@
 """MMR (Maximal Marginal Relevance) re-ranker for diversity."""
 
 import math
+from datetime import datetime
 
 from constants import EVENT_CATEGORIES
 from schemas.event import EventResponse
@@ -119,7 +120,6 @@ def _get_time_bucket(dtstart: str) -> str:
     if not dtstart:
         return "afternoon"
     try:
-        from datetime import datetime
         dt = datetime.fromisoformat(dtstart.replace("Z", "+00:00"))
         if dt.weekday() >= 5:
             return "weekend"

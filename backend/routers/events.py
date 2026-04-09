@@ -28,7 +28,7 @@ def list_events(
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     has_food: bool | None = None,
-    max_price: float | None = None,
+    max_price: float | None = Query(default=None, ge=0, allow_inf_nan=False),
     registration: bool | None = None,
 ):
     return event_service.list_events(

@@ -47,7 +47,10 @@ def list_clubs(
     if search:
         term = search.strip()
         if term:
-            q = q.ilike("club_name", f"%{term}%")
+            # Quote the value so PostgREST treats it as a literal —
+            # prevents filter injection via commas, dots, or parens.
+            quoted = f'"%{term}%"'
+            q = q.or_(f"club_name.ilike.{quoted}")
     q = q.order("club_name").range(skip, skip + limit - 1)
     r = q.execute()
     return [ClubResponse.model_validate(c) for c in (r.data or [])]

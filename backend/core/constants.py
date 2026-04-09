@@ -69,7 +69,20 @@ MAX_INTERESTS_COUNT = 50             # max items in interests list
 MAX_REPORT_REASON_LENGTH = 2000      # free-text report reason
 MAX_REJECTION_REASON_LENGTH = 2000   # admin rejection reason
 MAX_AVATAR_URL_LENGTH = 2048         # URL length (RFC 2616 practical limit)
+MAX_URL_LENGTH = 2048                # general URL length (RFC 2616 practical limit)
 MAX_EVENT_DATA_BYTES = 32_768        # 32 KB – serialised submission event_data
+
+# Event fields
+MAX_EVENT_TITLE_LENGTH = 300         # generous for long event names
+MAX_EVENT_DESCRIPTION_LENGTH = 5000  # detailed descriptions, not unbounded
+MAX_EVENT_LOCATION_LENGTH = 500      # full address / venue name
+MAX_EVENT_ORGANIZATION_LENGTH = 255  # organisation name
+MAX_EVENT_CLUB_TYPE_LENGTH = 100     # short classification value
+MAX_EVENT_SCHOOL_LENGTH = 255        # school name (matches user school limit)
+MAX_EVENT_CATEGORY_LENGTH = 100      # category enum value
+MAX_EVENT_HANDLE_LENGTH = 255        # social-media handle or profile URL
+MAX_EVENT_FOOD_ITEM_LENGTH = 100     # single food item tag
+MAX_EVENT_FOOD_COUNT = 20            # max food items per event
 
 # ---------------------------------------------------------------------------
 # QR / scan recording

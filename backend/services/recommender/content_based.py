@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from schemas.user import UserResponse
 
+from postgrest.exceptions import APIError
+
 from constants import INTEREST_TO_CATEGORIES
 from core.database import get_sb
 from core.tables import EVENTS
@@ -62,12 +64,15 @@ def get_content_scores(
         cats = INTEREST_TO_CATEGORIES.get(interest, [])
         matched_categories.update(cats)
 
-    # Build org affinity from past interactions (graceful if table missing)
+    # Build org affinity from past interactions (graceful on DB errors)
     try:
         user_scores = interaction_service.get_user_event_scores(user_id)
         org_affinity = _compute_org_affinity(user_scores, candidate_events)
-    except Exception as e:
-        log.warning("Failed to build org affinity for user %s: %s", user_id, e)
+    except APIError as e:
+        log.error(
+            "DB error building org affinity for user %s: %s (code=%s)",
+            user_id, e.message, e.code,
+        )
         user_scores = {}
         org_affinity = {}
 
@@ -111,7 +116,8 @@ def get_content_scores(
                             break
                     if not added:
                         score += CB_TEMPORAL_FALLBACK
-            except (ValueError, TypeError):
+            except (ValueError, TypeError) as e:
+                log.warning("Bad dtstart for event %s, using fallback: %s", eid, e)
                 score += CB_TEMPORAL_FALLBACK
 
         price = event.price
