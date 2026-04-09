@@ -7,6 +7,8 @@ Two modes:
 """
 
 import logging
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
@@ -33,9 +35,29 @@ from services.recommender.config import (
     WEIGHTS_WARM_NO_COLLAB,
     WEIGHTS_COLD,
     CANDIDATE_POOL_SIZE,
+    CANDIDATE_EVENTS_CACHE_TTL,
 )
 
 log = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Short-lived TTL cache for candidate events (future events query).
+# Identical for all users within a time window — avoids redundant DB hits
+# during nightly batch processing (compute_all_users) and concurrent live
+# requests.  Uses the same double-check lock pattern as interaction_service.
+# ---------------------------------------------------------------------------
+_candidates_lock = threading.Lock()
+_candidates_cache: tuple[float, list[EventResponse]] | None = None
+
+
+def _get_cached_candidates() -> list[EventResponse] | None:
+    """Return cached candidate events if still valid, else None."""
+    if _candidates_cache is None:
+        return None
+    expires_at, value = _candidates_cache
+    if time.monotonic() > expires_at:
+        return None
+    return value
 
 
 class RecommendationEngine:
@@ -419,18 +441,41 @@ class RecommendationEngine:
 
     @staticmethod
     def _get_candidate_events() -> list[EventResponse]:
-        """Load future events as recommendation candidates."""
-        now = datetime.now(timezone.utc).isoformat()
-        r = (
-            get_sb()
-            .table(EVENTS)
-            .select("*")
-            .gte("dtstart_utc", now)
-            .order("dtstart_utc", desc=False)
-            .limit(CANDIDATE_POOL_SIZE)
-            .execute()
-        )
-        return [EventResponse.model_validate(row) for row in (r.data or [])]
+        """Load future events as recommendation candidates.
+
+        Cached for CANDIDATE_EVENTS_CACHE_TTL seconds so concurrent
+        recommendation requests (and nightly batch runs) share one DB
+        round-trip.  The TTL is kept short (60s) to avoid serving stale
+        event data to live users.
+        """
+        global _candidates_cache
+
+        cached = _get_cached_candidates()
+        if cached is not None:
+            log.debug("Candidate events cache HIT (%d events)", len(cached))
+            return cached
+
+        with _candidates_lock:
+            # Double-check after acquiring lock
+            cached = _get_cached_candidates()
+            if cached is not None:
+                log.debug("Candidate events cache HIT after lock (%d events)", len(cached))
+                return cached
+
+            log.debug("Candidate events cache MISS — querying DB")
+            now = datetime.now(timezone.utc).isoformat()
+            r = (
+                get_sb()
+                .table(EVENTS)
+                .select("*")
+                .gte("dtstart_utc", now)
+                .order("dtstart_utc", desc=False)
+                .limit(CANDIDATE_POOL_SIZE)
+                .execute()
+            )
+            result = [EventResponse.model_validate(row) for row in (r.data or [])]
+            _candidates_cache = (time.monotonic() + CANDIDATE_EVENTS_CACHE_TTL, result)
+            return result
 
     @staticmethod
     def _generate_reason(

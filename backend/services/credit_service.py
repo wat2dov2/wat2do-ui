@@ -114,7 +114,7 @@ def create_promotion(
         credits_spent=credits_cost,
         start_date=row.get("start_date", ""),
         end_date=row.get("end_date", ""),
-        created_at=row.get("start_date", ""),
+        created_at=row.get("created_at", ""),
     )
 
 

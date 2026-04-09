@@ -99,6 +99,16 @@ CF_MAX_USER_EVENT_SCORE: float = 15.0
 INTERACTION_LOOKBACK_DAYS: int = 90   # only use interactions from the last N days
 CACHE_TTL_SECONDS: int = 1800         # 30-minute TTL for shared recommendation data
 
+# Per-user interaction scores: shorter TTL because scores change when the user
+# interacts, and the cache is per-user (memory scales with active users).
+USER_SCORES_CACHE_TTL: int = 300      # 5-minute TTL for per-user event scores
+USER_SCORES_CACHE_MAX: int = 512      # max users cached (LRU eviction)
+
+# Candidate events (future events query): identical for all users within a
+# time window, so a short global TTL avoids redundant DB hits during batch
+# processing without serving stale data for long.
+CANDIDATE_EVENTS_CACHE_TTL: int = 60  # 1-minute TTL for candidate events
+
 # ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------

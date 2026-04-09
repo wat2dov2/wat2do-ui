@@ -22,11 +22,14 @@ from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.tables import USER_INTERACTIONS
 from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
+from cachetools import TTLCache
 from services.recommender.config import (
     CACHE_TTL_SECONDS,
     CF_MAX_USER_EVENT_SCORE,
     INTERACTION_LOOKBACK_DAYS,
     POP_MAX_USER_CONTRIBUTION,
+    USER_SCORES_CACHE_MAX,
+    USER_SCORES_CACHE_TTL,
 )
 
 log = logging.getLogger(__name__)
@@ -53,6 +56,32 @@ def _cache_get(key: str) -> object | None:
 def _cache_set(key: str, value: object, ttl: int = CACHE_TTL_SECONDS) -> None:
     """Store a value with a TTL."""
     _cache[key] = (time.monotonic() + ttl, value)
+
+
+# ---------------------------------------------------------------------------
+# Per-user TTL cache for get_user_event_scores.
+# Uses cachetools.TTLCache (same library as user_service) for automatic
+# per-entry expiry and LRU eviction at max size.  Protected by a lock so
+# that concurrent requests for the same user don't trigger parallel DB
+# fetches (double-check pattern consistent with the global caches above).
+# ---------------------------------------------------------------------------
+_user_scores_lock = threading.Lock()
+_user_scores_cache: TTLCache[str, dict[int, float]] = TTLCache(
+    maxsize=USER_SCORES_CACHE_MAX, ttl=USER_SCORES_CACHE_TTL,
+)
+
+
+def clear_user_scores_cache(user_id: str | None = None) -> None:
+    """Invalidate cached user event scores.
+
+    Args:
+        user_id: Clear scores for a specific user.  If None, clear all.
+    """
+    with _user_scores_lock:
+        if user_id is None:
+            _user_scores_cache.clear()
+        else:
+            _user_scores_cache.pop(user_id, None)
 
 
 # Weights for computing interaction scores.
@@ -89,23 +118,44 @@ def record_interactions(
 
 
 def get_user_event_scores(user_id: str) -> dict[int, float]:
-    """Weighted interaction scores for a single user: {event_id: score}."""
-    scores: dict[int, float] = {}
-    for row in iter_all_pages(
-        lambda offset, ps: (
-            get_sb()
-            .table(USER_INTERACTIONS)
-            .select("event_id, interaction_type")
-            .eq("user_id", user_id)
-            .order("created_at")
-            .range(offset, offset + ps - 1)
-            .execute()
-        ).data or [],
-    ):
-        eid = row["event_id"]
-        weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-        scores[eid] = scores.get(eid, 0) + weight
-    return scores
+    """Weighted interaction scores for a single user: {event_id: score}.
+
+    Results are cached per-user for USER_SCORES_CACHE_TTL seconds to avoid
+    hitting the database on every recommendation request.  Thread-safe via
+    double-check locking so concurrent requests share one DB round-trip.
+    """
+    # Fast path: check without lock
+    cached = _user_scores_cache.get(user_id)
+    if cached is not None:
+        log.debug("User event scores cache HIT for user %s", user_id)
+        return cached
+
+    with _user_scores_lock:
+        # Double-check after acquiring lock
+        cached = _user_scores_cache.get(user_id)
+        if cached is not None:
+            log.debug("User event scores cache HIT (after lock) for user %s", user_id)
+            return cached
+
+        log.debug("User event scores cache MISS for user %s — querying DB", user_id)
+        scores: dict[int, float] = {}
+        for row in iter_all_pages(
+            lambda offset, ps: (
+                get_sb()
+                .table(USER_INTERACTIONS)
+                .select("event_id, interaction_type")
+                .eq("user_id", user_id)
+                .order("created_at")
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data or [],
+        ):
+            eid = row["event_id"]
+            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
+            scores[eid] = scores.get(eid, 0) + weight
+
+        _user_scores_cache[user_id] = scores
+        return scores
 
 
 def get_interaction_matrix() -> list[InteractionMatrixRow]:
