@@ -25,10 +25,8 @@ from services.recommender.config import (
     WEIGHTS_COLD,
 )
 from core.database import get_sb
+from core.pagination import fetch_all_pages
 from core.tables import EVENTS
-
-# Page size for batched event loading from PostgREST.
-_LOAD_PAGE_SIZE = 1000
 
 
 def precision_at_k(recommended_ids: list[int], relevant_ids: set[int], k: int) -> float:
@@ -214,25 +212,17 @@ def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
     *max_events* rows is returned.  This keeps memory bounded while preserving
     statistical representativeness for offline evaluation.
     """
-    events: list[EventResponse] = []
-    offset = 0
-
-    while True:
-        r = (
+    rows = fetch_all_pages(
+        lambda offset, ps: (
             get_sb()
             .table(EVENTS)
             .select("*")
             .order("id")
-            .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+            .range(offset, offset + ps - 1)
             .execute()
-        )
-        page = r.data or []
-        if not page:
-            break
-        events.extend(EventResponse.model_validate(row) for row in page)
-        if len(page) < _LOAD_PAGE_SIZE:
-            break
-        offset += _LOAD_PAGE_SIZE
+        ).data or [],
+    )
+    events = [EventResponse.model_validate(row) for row in rows]
 
     if max_events > 0 and len(events) > max_events:
         log.info(

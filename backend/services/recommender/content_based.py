@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
@@ -49,8 +50,44 @@ def get_content_scores(
               for the user row is skipped, avoiding a redundant round-trip
               when the caller already has the profile (e.g. batch evaluation).
     """
-    if user is None:
-        user = user_service.get_user(user_id)
+    # Parallelize independent DB lookups: user profile (when not pre-supplied)
+    # and interaction scores are independent — neither result feeds the other.
+    user_scores: dict[int, float] = {}
+    needs_user_fetch = user is None
+
+    if needs_user_fetch:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            user_future = pool.submit(user_service.get_user, user_id)
+            scores_future = pool.submit(
+                interaction_service.get_user_event_scores, user_id,
+            )
+
+            try:
+                user = user_future.result()
+            except Exception as e:
+                log.warning("Failed to fetch user profile for %s: %s", user_id, e)
+
+            try:
+                user_scores = scores_future.result()
+            except APIError as e:
+                log.error(
+                    "DB error fetching event scores for user %s: %s (code=%s)",
+                    user_id, e.message, e.code,
+                )
+            except Exception as e:
+                log.error("Unexpected error fetching event scores for user %s: %s", user_id, e)
+    else:
+        # User already supplied; only need interaction scores.
+        try:
+            user_scores = interaction_service.get_user_event_scores(user_id)
+        except APIError as e:
+            log.error(
+                "DB error fetching event scores for user %s: %s (code=%s)",
+                user_id, e.message, e.code,
+            )
+        except Exception as e:
+            log.error("Unexpected error fetching event scores for user %s: %s", user_id, e)
+
     if not user:
         return {}
 
@@ -64,17 +101,8 @@ def get_content_scores(
         cats = INTEREST_TO_CATEGORIES.get(interest, [])
         matched_categories.update(cats)
 
-    # Build org affinity from past interactions (graceful on DB errors)
-    try:
-        user_scores = interaction_service.get_user_event_scores(user_id)
-        org_affinity = _compute_org_affinity(user_scores, candidate_events)
-    except APIError as e:
-        log.error(
-            "DB error building org affinity for user %s: %s (code=%s)",
-            user_id, e.message, e.code,
-        )
-        user_scores = {}
-        org_affinity = {}
+    # Build org affinity from past interactions
+    org_affinity = _compute_org_affinity(user_scores, candidate_events)
 
     now = datetime.now(timezone.utc)
     scores: dict[int, float] = {}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -48,7 +48,7 @@ interface EventCardProps {
 }
 
 
-export const EventCard = React.memo(function EventCard({
+export function EventCard({
   event,
   isSaved = false,
   isPromoted = false,
@@ -388,4 +388,4 @@ export const EventCard = React.memo(function EventCard({
       </Dialog>
     </>
   );
-});
+}

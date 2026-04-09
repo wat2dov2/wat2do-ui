@@ -7,13 +7,14 @@ Two modes:
 """
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
 from postgrest.exceptions import APIError
 
 from core.constants import supabase_retry
 from core.database import get_sb
+from core.pagination import fetch_all_pages
 from core.tables import EVENTS, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
 from schemas.recommendation import RecommendationItem
@@ -35,10 +36,6 @@ from services.recommender.config import (
 )
 
 log = logging.getLogger(__name__)
-
-# Page size for batched loading from PostgREST.  Supabase's default max-rows
-# is 1000 — queries without an explicit limit are silently truncated there.
-_LOAD_PAGE_SIZE = 1000
 
 
 class RecommendationEngine:
@@ -238,25 +235,49 @@ class RecommendationEngine:
          .lt("computed_at", computed_at)
          .execute())
 
-    def compute_all_users(self, limit: int = DEFAULT_LIMIT, lambda_param: float | None = None) -> dict:
-        """Run compute_and_store for every user. Returns stats dict."""
+    def compute_all_users(
+        self,
+        limit: int = DEFAULT_LIMIT,
+        lambda_param: float | None = None,
+        max_workers: int = 6,
+    ) -> dict:
+        """Run compute_and_store for every user in parallel. Returns stats dict.
+
+        Uses ThreadPoolExecutor to process users concurrently. Each user's
+        computation is independent (no shared mutable state, DB writes are
+        scoped by user_id). max_workers is kept moderate to respect Supabase
+        API rate limits — each worker issues multiple HTTP requests per user.
+        """
         users = self._fetch_all_user_ids()
+        total = len(users)
         processed = 0
         failed = 0
         failed_ids: list[str] = []
 
-        for user in users:
-            uid = user["id"]
-            try:
-                self.compute_and_store(uid, limit, lambda_param)
-                processed += 1
-            except Exception:
-                failed += 1
-                failed_ids.append(str(uid))
-                log.warning("Failed to compute recs for user %s", uid, exc_info=True)
+        log.info("Starting recommendation batch for %d users (max_workers=%d)", total, max_workers)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            future_to_uid = {
+                pool.submit(self.compute_and_store, user["id"], limit, lambda_param): user["id"]
+                for user in users
+            }
+
+            for future in as_completed(future_to_uid):
+                uid = future_to_uid[future]
+                try:
+                    future.result()
+                    processed += 1
+                except Exception:
+                    failed += 1
+                    failed_ids.append(str(uid))
+                    log.warning("Failed to compute recs for user %s", uid, exc_info=True)
+
+                done = processed + failed
+                if done % 100 == 0 or done == total:
+                    log.info("Batch progress: %d/%d done (%d failed)", done, total, failed)
 
         stats = {
-            "total_users": len(users),
+            "total_users": total,
             "processed": processed,
             "failed": failed,
             "failed_ids": failed_ids,
@@ -266,27 +287,17 @@ class RecommendationEngine:
 
     @supabase_retry
     def _fetch_all_user_ids(self) -> list[dict]:
-        """Fetch all user IDs, with retry on transient failures.
-
-        Loads rows in pages of ``_LOAD_PAGE_SIZE`` to avoid silent truncation
-        by PostgREST's server-side ``max-rows`` limit (default 1000 on Supabase).
-        """
-        rows: list[dict] = []
-        offset = 0
-        while True:
-            page = (
+        """Fetch all user IDs, with retry on transient failures."""
+        return fetch_all_pages(
+            lambda offset, ps: (
                 get_sb()
                 .table(USERS)
                 .select("id")
                 .order("id")
-                .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+                .range(offset, offset + ps - 1)
                 .execute()
-            ).data or []
-            rows.extend(page)
-            if len(page) < _LOAD_PAGE_SIZE:
-                break
-            offset += _LOAD_PAGE_SIZE
-        return rows
+            ).data or [],
+        )
 
     # ---------------------------------------------------------------------------
     # Core pipeline (shared by live and offline)
@@ -314,7 +325,11 @@ class RecommendationEngine:
             user_future = pool.submit(user_service.get_user, user_id)
             count_future = pool.submit(interaction_service.get_user_interaction_count, user_id)
 
-            user = user_future.result()
+            try:
+                user = user_future.result()
+            except Exception as e:
+                log.warning("Failed to fetch user profile for %s, degrading to cold-start: %s", user_id, e)
+
             try:
                 interaction_count = count_future.result()
             except Exception as e:
@@ -333,7 +348,7 @@ class RecommendationEngine:
             futures["pop"] = pool.submit(self._popularity_scorer, candidate_ids)
 
             if has_profile:
-                futures["content"] = pool.submit(self._content_scorer, user_id, candidates)
+                futures["content"] = pool.submit(self._content_scorer, user_id, candidates, user=user)
 
             if interaction_count >= self.warm_threshold:
                 futures["collab"] = pool.submit(self._collab_scorer, user_id, candidate_ids)

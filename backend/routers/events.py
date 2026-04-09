@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user, require_owner_or_admin
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
-from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
+from schemas.event import EventCreate, EventUpdate, EventResponse, EventSummaryResponse, LatestEventResponse
 from core.errors import EVENT_NOT_FOUND
 from services import event_service
 
@@ -17,7 +17,7 @@ def get_latest_added():
     return event_service.get_latest_added_event()
 
 
-@router.get("/", response_model=list[EventResponse])
+@router.get("/", response_model=list[EventSummaryResponse] | list[EventResponse])
 def list_events(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
@@ -30,6 +30,7 @@ def list_events(
     has_food: bool | None = None,
     max_price: float | None = Query(default=None, ge=0, allow_inf_nan=False),
     registration: bool | None = None,
+    summary: bool = Query(default=False, description="Return lightweight card-view fields only"),
 ):
     return event_service.list_events(
         skip=skip,
@@ -43,6 +44,7 @@ def list_events(
         has_food=has_food,
         max_price=max_price,
         registration=registration,
+        summary=summary,
     )
 
 

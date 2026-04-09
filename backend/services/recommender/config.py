@@ -98,7 +98,7 @@ CF_MAX_USER_EVENT_SCORE: float = 15.0
 # Caching & time-windowing for recommendation queries
 # ---------------------------------------------------------------------------
 INTERACTION_LOOKBACK_DAYS: int = 90   # only use interactions from the last N days
-CACHE_TTL_SECONDS: int = 300          # 5-minute TTL for shared recommendation data
+CACHE_TTL_SECONDS: int = 1800         # 30-minute TTL for shared recommendation data
 
 # ---------------------------------------------------------------------------
 # Evaluation

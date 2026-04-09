@@ -121,6 +121,34 @@ class EventTimeMeta(BaseModel):
     added_at: str | None = None
 
 
+class EventSummaryResponse(BaseModel):
+    """Lightweight payload for list/card views — omits large text fields
+    (description, social handles) that are only needed in detail views.
+    Keeps the payload ~60-70 % smaller than EventResponse for typical events.
+    """
+
+    id: int
+    title: str
+    location: str
+    dtstart_utc: datetime | None = None
+    dtend_utc: datetime | None = None
+    price: float | None = None
+    food: list[str] | None = None
+    registration: bool = False
+    source_image_url: str | None = None
+    category: str | None = None
+    organization: str | None = None
+    display_handle: str | None = None
+    added_at: datetime
+    created_by: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+# Columns to SELECT for summary queries — kept in sync with EventSummaryResponse.
+EVENT_SUMMARY_COLUMNS = ",".join(EventSummaryResponse.model_fields.keys())
+
+
 class EventResponse(BaseModel):
     id: int
     title: str

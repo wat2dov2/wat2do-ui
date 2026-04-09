@@ -19,6 +19,7 @@ from core.constants import (
     MAX_USER_INTERACTIONS_PER_WINDOW,
 )
 from core.database import get_sb
+from core.pagination import iter_all_pages
 from core.tables import USER_INTERACTIONS
 from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
 from services.recommender.config import (
@@ -29,11 +30,6 @@ from services.recommender.config import (
 )
 
 log = logging.getLogger(__name__)
-
-# Page size for batched loading from PostgREST.  Supabase's default max-rows
-# is 1000 — queries without an explicit limit are silently truncated there.
-# Paginating in pages of 1000 avoids silent data loss.
-_LOAD_PAGE_SIZE = 1000
 
 # ---------------------------------------------------------------------------
 # Simple TTL cache for expensive shared queries (interaction matrix, popularity).
@@ -93,31 +89,22 @@ def record_interactions(
 
 
 def get_user_event_scores(user_id: str) -> dict[int, float]:
-    """Weighted interaction scores for a single user: {event_id: score}.
-
-    Loads rows in pages of ``_LOAD_PAGE_SIZE`` to avoid silent truncation
-    by PostgREST's server-side ``max-rows`` limit (default 1000 on Supabase).
-    """
+    """Weighted interaction scores for a single user: {event_id: score}."""
     scores: dict[int, float] = {}
-    offset = 0
-    while True:
-        r = (
+    for row in iter_all_pages(
+        lambda offset, ps: (
             get_sb()
             .table(USER_INTERACTIONS)
             .select("event_id, interaction_type")
             .eq("user_id", user_id)
             .order("created_at")
-            .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+            .range(offset, offset + ps - 1)
             .execute()
-        )
-        page = r.data or []
-        for row in page:
-            eid = row["event_id"]
-            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-            scores[eid] = scores.get(eid, 0) + weight
-        if len(page) < _LOAD_PAGE_SIZE:
-            break
-        offset += _LOAD_PAGE_SIZE
+        ).data or [],
+    ):
+        eid = row["event_id"]
+        weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
+        scores[eid] = scores.get(eid, 0) + weight
     return scores
 
 
@@ -128,9 +115,6 @@ def get_interaction_matrix() -> list[InteractionMatrixRow]:
 
     Time-windowed to INTERACTION_LOOKBACK_DAYS and cached for CACHE_TTL_SECONDS
     so that concurrent recommendation requests share one DB round-trip.
-
-    Loads rows in pages of ``_LOAD_PAGE_SIZE`` to avoid silent truncation
-    by PostgREST's server-side ``max-rows`` limit (default 1000 on Supabase).
     """
     cached = _cache_get("interaction_matrix")
     if cached is not None:
@@ -146,28 +130,22 @@ def get_interaction_matrix() -> list[InteractionMatrixRow]:
             datetime.now(timezone.utc) - timedelta(days=INTERACTION_LOOKBACK_DAYS)
         ).isoformat()
 
-        # Paginate to avoid silent truncation at PostgREST's max-rows limit.
         agg: dict[tuple[str, int], float] = {}
-        offset = 0
-        while True:
-            r = (
+        for row in iter_all_pages(
+            lambda offset, ps: (
                 get_sb()
                 .table(USER_INTERACTIONS)
                 .select("user_id, event_id, interaction_type")
                 .not_.is_("user_id", "null")
                 .gte("created_at", cutoff)
                 .order("created_at")
-                .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+                .range(offset, offset + ps - 1)
                 .execute()
-            )
-            page = r.data or []
-            for row in page:
-                key = (row["user_id"], row["event_id"])
-                weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-                agg[key] = agg.get(key, 0) + weight
-            if len(page) < _LOAD_PAGE_SIZE:
-                break
-            offset += _LOAD_PAGE_SIZE
+            ).data or [],
+        ):
+            key = (row["user_id"], row["event_id"])
+            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
+            agg[key] = agg.get(key, 0) + weight
 
         result = [
             InteractionMatrixRow(
@@ -189,9 +167,6 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
 
     Time-windowed to INTERACTION_LOOKBACK_DAYS and cached for CACHE_TTL_SECONDS.
     The cache stores the full ranked list; the limit is applied after.
-
-    Loads rows in pages of ``_LOAD_PAGE_SIZE`` to avoid silent truncation
-    by PostgREST's server-side ``max-rows`` limit (default 1000 on Supabase).
     """
     cache_key = "event_popularity"
     cached = _cache_get(cache_key)
@@ -207,30 +182,24 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
             datetime.now(timezone.utc) - timedelta(days=INTERACTION_LOOKBACK_DAYS)
         ).isoformat()
 
-        # Paginate to avoid silent truncation at PostgREST's max-rows limit.
         # Aggregate per (user, event) first so we can cap each user's
         # contribution before summing across users.  This prevents a small
         # number of bot accounts from dominating popularity scores.
         user_event_scores: dict[tuple[str | None, int], float] = {}
-        offset = 0
-        while True:
-            r = (
+        for row in iter_all_pages(
+            lambda offset, ps: (
                 get_sb()
                 .table(USER_INTERACTIONS)
                 .select("user_id, event_id, interaction_type")
                 .gte("created_at", cutoff)
                 .order("created_at")
-                .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+                .range(offset, offset + ps - 1)
                 .execute()
-            )
-            page = r.data or []
-            for row in page:
-                key = (row.get("user_id"), row["event_id"])
-                weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-                user_event_scores[key] = user_event_scores.get(key, 0) + weight
-            if len(page) < _LOAD_PAGE_SIZE:
-                break
-            offset += _LOAD_PAGE_SIZE
+            ).data or [],
+        ):
+            key = (row.get("user_id"), row["event_id"])
+            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
+            user_event_scores[key] = user_event_scores.get(key, 0) + weight
 
         # Sum across users with per-user cap applied.
         scores: dict[int, float] = {}
@@ -269,24 +238,19 @@ def get_user_interaction_counts(user_ids: list[str]) -> dict[str, int]:
         return {}
 
     counts: dict[str, int] = {}
-    offset = 0
-    while True:
-        r = (
+    for row in iter_all_pages(
+        lambda offset, ps: (
             get_sb()
             .table(USER_INTERACTIONS)
             .select("user_id")
             .in_("user_id", user_ids)
             .order("created_at")
-            .range(offset, offset + _LOAD_PAGE_SIZE - 1)
+            .range(offset, offset + ps - 1)
             .execute()
-        )
-        page = r.data or []
-        for row in page:
-            uid = row["user_id"]
-            counts[uid] = counts.get(uid, 0) + 1
-        if len(page) < _LOAD_PAGE_SIZE:
-            break
-        offset += _LOAD_PAGE_SIZE
+        ).data or [],
+    ):
+        uid = row["user_id"]
+        counts[uid] = counts.get(uid, 0) + 1
 
     return counts
 
@@ -324,8 +288,8 @@ def check_duplicate_interactions(
         )
         existing = r.data or []
     except Exception as e:
-        log.warning("Dedup check failed, allowing all interactions: %s", e)
-        return interactions
+        log.error("Dedup check failed, rejecting batch to prevent gaming: %s", e)
+        return []
 
     # Count existing (event_id, type) pairs and total interactions
     counts: dict[tuple[int, str], int] = {}

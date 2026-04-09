@@ -6,7 +6,14 @@ from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENTS
-from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
+from schemas.event import (
+    EventCreate,
+    EventUpdate,
+    EventResponse,
+    EventSummaryResponse,
+    LatestEventResponse,
+    EVENT_SUMMARY_COLUMNS,
+)
 
 
 def get_latest_added_event() -> LatestEventResponse | None:
@@ -43,8 +50,10 @@ def list_events(
     has_food: bool | None = None,
     max_price: float | None = None,
     registration: bool | None = None,
-) -> list[EventResponse]:
-    q = get_sb().table(EVENTS).select("*")
+    summary: bool = False,
+) -> list[EventSummaryResponse] | list[EventResponse]:
+    select_cols = EVENT_SUMMARY_COLUMNS if summary else "*"
+    q = get_sb().table(EVENTS).select(select_cols)
     if category:
         q = q.eq("category", category)
     if club_type:
@@ -66,12 +75,17 @@ def list_events(
     if has_food is True:
         q = q.not_.is_("food", "null").neq("food", "[]")
     if max_price is not None:
-        q = q.or_(f"price.is.null,price.lte.{max_price}")
+        # Format as fixed-point to avoid scientific notation (e.g. 1e-05)
+        # and ensure the value contains only digits/dot — no PostgREST
+        # control characters can appear in the filter string.
+        safe_price = f"{max_price:.6f}"
+        q = q.or_(f"price.is.null,price.lte.{safe_price}")
     if registration is not None:
         q = q.eq("registration", registration)
     q = q.order("dtstart_utc", desc=True).range(skip, skip + limit - 1)
     r = q.execute()
-    return [EventResponse.model_validate(e) for e in (r.data or [])]
+    model = EventSummaryResponse if summary else EventResponse
+    return [model.model_validate(e) for e in (r.data or [])]
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
