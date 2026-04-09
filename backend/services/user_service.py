@@ -21,10 +21,15 @@ def get_user(user_id: UUID) -> UserResponse | None:
     return UserResponse.model_validate(r.data[0])
 
 
-def get_user_by_supabase_id(supabase_auth_id: str) -> UserResponse | None:
-    cached = _supabase_id_cache.get(supabase_auth_id)
-    if cached is not None:
-        return cached
+def get_user_by_supabase_id(
+    supabase_auth_id: str,
+    *,
+    bypass_cache: bool = False,
+) -> UserResponse | None:
+    if not bypass_cache:
+        cached = _supabase_id_cache.get(supabase_auth_id)
+        if cached is not None:
+            return cached
     r = get_sb().table(USERS).select("*").eq("supabase_auth_id", supabase_auth_id).execute()
     if not r.data or len(r.data) == 0:
         return None

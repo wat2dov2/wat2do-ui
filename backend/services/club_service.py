@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
+from core.sanitize import sanitize_postgrest_value
 from core.tables import CLUBS, CLUB_INTEGRATIONS
 from schemas.club import (
     ClubCreate,
@@ -45,10 +46,10 @@ def list_clubs(
     if club_type:
         q = q.eq("club_type", club_type)
     if search:
-        term = search.strip()
+        term = sanitize_postgrest_value(search)
         if term:
-            # Quote the value so PostgREST treats it as a literal —
-            # prevents filter injection via commas, dots, or parens.
+            # Sanitize strips PostgREST control chars (commas, dots, parens,
+            # quotes) then we double-quote so the value is a safe literal.
             quoted = f'"%{term}%"'
             q = q.or_(f"club_name.ilike.{quoted}")
     q = q.order("club_name").range(skip, skip + limit - 1)

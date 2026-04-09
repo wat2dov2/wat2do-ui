@@ -41,9 +41,10 @@ Usage (unauthenticated, keyed by client IP)::
 The ``dependency()`` method reads the user dict injected by
 ``get_current_user`` and tracks calls per ``user["id"]``.
 
-The ``ip_dependency()`` method reads the client IP from ``Request``
-and tracks calls per IP address — suitable for unauthenticated
-endpoints like login, signup, and QR scans.
+The ``ip_dependency()`` method resolves the real client IP via
+``core.client_ip.get_client_ip()`` (proxy-aware) and tracks calls
+per IP — suitable for unauthenticated endpoints like login, signup,
+and QR scans.
 """
 
 import logging
@@ -55,6 +56,7 @@ from threading import Lock
 from fastapi import Depends, HTTPException, Request, status
 
 from core.auth import get_current_user
+from core.client_ip import get_client_ip
 from core.constants import (
     ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
     ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS,
@@ -218,13 +220,12 @@ class RateLimiter:
         """Return a FastAPI dependency that enforces the rate limit by client IP.
 
         Suitable for unauthenticated endpoints (login, signup, QR scans)
-        where there is no user ID to key on.  Uses
-        ``request.client.host`` as the key.
+        where there is no user ID to key on.  Uses ``get_client_ip()``
+        to resolve the real client address behind a reverse proxy.
         """
 
         async def _ip_rate_limit_dep(request: Request) -> None:
-            client_ip = request.client.host if request.client else "unknown"
-            self._check(client_ip)
+            self._check(get_client_ip(request))
 
         return _ip_rate_limit_dep
 

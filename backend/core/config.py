@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     # JWT secret for local token verification. Dashboard > Settings > API > JWT Secret.
     supabase_jwt_secret: str = ""
+    # Trusted reverse-proxy IPs.  When a request arrives from one of these
+    # addresses, ``get_client_ip()`` reads the real client IP from the
+    # ``X-Forwarded-For`` / ``X-Real-IP`` headers instead of
+    # ``request.client.host``.  Docker-internal bridge IPs (172.x) and
+    # loopback (127.0.0.1) are included by default for the standard
+    # docker-compose deployment; override via TRUSTED_PROXIES env var
+    # (JSON list) if your proxy has a different address.
+    trusted_proxies: list[str] = ["127.0.0.1", "::1", "172.16.0.0/12"]
 
     @property
     def is_production(self) -> bool:

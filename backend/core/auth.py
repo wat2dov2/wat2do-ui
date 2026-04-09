@@ -137,8 +137,14 @@ def get_optional_user(
 def get_admin_user(
     auth_user: dict = Depends(get_current_user),
 ) -> dict:
-    """Require a valid Bearer token AND admin role. Returns 403 if not admin."""
-    db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
+    """Require a valid Bearer token AND admin role. Returns 403 if not admin.
+
+    Bypasses the user cache so that role changes (e.g. demotion) take
+    effect immediately — no stale-cache window.
+    """
+    db_user = _get_user_service().get_user_by_supabase_id(
+        auth_user["id"], bypass_cache=True
+    )
     if not db_user or db_user.role != ROLE_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -148,8 +154,13 @@ def get_admin_user(
 
 
 def is_admin(auth_user: dict) -> bool:
-    """Return True if the authenticated user has the admin role (requires DB lookup)."""
-    db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
+    """Return True if the authenticated user has the admin role (requires DB lookup).
+
+    Bypasses the user cache so that role changes take effect immediately.
+    """
+    db_user = _get_user_service().get_user_by_supabase_id(
+        auth_user["id"], bypass_cache=True
+    )
     return db_user is not None and db_user.role == ROLE_ADMIN
 
 

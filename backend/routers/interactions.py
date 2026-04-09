@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from postgrest.exceptions import APIError
 
 from core.auth import get_optional_user, resolve_db_user
+from core.client_ip import get_client_ip
 from core.constants import MAX_INTERACTION_BATCH_SIZE
 from core.errors import BATCH_TOO_LARGE, USER_ID_MISMATCH
 from core.rate_limit import RateLimiter, anon_interaction_rate_limiter
@@ -62,8 +63,7 @@ def record_interactions(
     if user_id is not None:
         _interaction_limiter._check(user_id)
     else:
-        client_ip = request.client.host if request.client else "unknown"
-        anon_interaction_rate_limiter._check(client_ip)
+        anon_interaction_rate_limiter._check(get_client_ip(request))
 
     # ── User-ID ownership check ───────────────────────────────────────
     # If the client sends a user_id in the payload it MUST match.

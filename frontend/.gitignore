@@ -23,5 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment
+.env
+.env.local
+.env.*.local
+
 # Cursor hooks state
 .cursor/hooks/state/
