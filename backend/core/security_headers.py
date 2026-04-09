@@ -11,6 +11,8 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 
+from core.config import settings
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -112,5 +114,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         for header, value in _SECURITY_HEADERS.items():
             response.headers[header] = value
+
+        # HSTS: tell browsers to always use HTTPS.  Only set in production —
+        # sending this header over plain HTTP on localhost would lock the
+        # browser into HTTPS for dev and break the workflow.
+        if settings.is_production:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         return response

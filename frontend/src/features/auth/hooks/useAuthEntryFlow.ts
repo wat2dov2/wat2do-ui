@@ -5,6 +5,34 @@ import { DOMAIN_TO_SCHOOL } from "@/shared/constants/schools";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Map backend auth errors to user-facing messages.
+ *
+ * Login errors always get a generic message to prevent user-enumeration
+ * (attacker cannot distinguish "no such account" from "wrong password").
+ * Signup errors that reveal domain restrictions (403) are passed through
+ * since they don't confirm whether a specific account exists.
+ */
+function sanitizeAuthError(err: ApiError, mode: AuthMode): string {
+  if (mode === "login") {
+    return "Invalid email or password";
+  }
+
+  // Signup: allow domain-restriction messages (403) through — they don't
+  // reveal whether an individual account exists, only school eligibility.
+  if (err.status === 403) {
+    return err.message;
+  }
+
+  // For 409 (duplicate email/username) use a generic message so attackers
+  // cannot confirm that a specific email is registered.
+  if (err.status === 409) {
+    return "Unable to create account — please try a different email or username";
+  }
+
+  return err.message;
+}
+
 function schoolFromEmail(email: string): string {
   const domain = email.trim().split("@")[1]?.toLowerCase() ?? "";
   return DOMAIN_TO_SCHOOL[domain] ?? "";
@@ -78,7 +106,7 @@ export function useAuthEntryFlow({
     } catch (err) {
       console.error("Auth entry flow failed:", err);
       if (err instanceof ApiError) {
-        setError(err.message);
+        setError(sanitizeAuthError(err, authMode));
       } else {
         setError("Something went wrong. Please try again.");
       }
