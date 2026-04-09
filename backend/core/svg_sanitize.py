@@ -128,14 +128,32 @@ def looks_like_svg(raw: bytes) -> bool:
     # without scanning multi-megabyte raster images.
     head = raw[:4096]
 
-    # Strip UTF-8 BOM if present.
+    # Strip BOM and decode to text.  XML (and therefore SVG) can be
+    # encoded as UTF-8, UTF-16 LE, or UTF-16 BE.  Browsers silently
+    # handle all three, so we must detect SVG in each encoding to
+    # prevent Content-Type spoofing (e.g. uploading a UTF-16 SVG as
+    # "image/png" to bypass sanitization).
     if head.startswith(b"\xef\xbb\xbf"):
+        # UTF-8 BOM
         head = head[3:]
+        encoding = "utf-8"
+    elif head.startswith(b"\xff\xfe"):
+        # UTF-16 LE BOM
+        head = head[2:]
+        encoding = "utf-16-le"
+    elif head.startswith(b"\xfe\xff"):
+        # UTF-16 BE BOM
+        head = head[2:]
+        encoding = "utf-16-be"
+    elif b"\x00" in head[:4]:
+        # No BOM but null bytes in the first 4 bytes suggest UTF-16.
+        # UTF-16 BE "<" is 0x00 0x3C; UTF-16 LE "<" is 0x3C 0x00.
+        encoding = "utf-16-be" if head[0:1] == b"\x00" else "utf-16-le"
+    else:
+        encoding = "utf-8"
 
-    # Decode to text for case-insensitive matching; SVG is always XML
-    # (UTF-8/UTF-16/ASCII).  If decoding fails it cannot be valid SVG.
     try:
-        text = head.decode("utf-8", errors="strict").lstrip()
+        text = head.decode(encoding, errors="strict").lstrip()
     except (UnicodeDecodeError, ValueError):
         return False
 

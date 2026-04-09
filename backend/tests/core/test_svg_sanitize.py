@@ -502,3 +502,38 @@ class TestLooksLikeSvg:
     def test_rejects_non_utf8_binary(self):
         """Binary data that cannot be decoded as UTF-8 is not SVG."""
         assert looks_like_svg(b"\x80\x81\x82\x83\x84") is False
+
+    # ── UTF-16 detection (defense-in-depth) ──────────────────────────
+
+    def test_detects_utf16_le_with_bom(self):
+        """UTF-16 LE SVG with BOM is detected."""
+        svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+        raw = b"\xff\xfe" + svg.encode("utf-16-le")
+        assert looks_like_svg(raw) is True
+
+    def test_detects_utf16_be_with_bom(self):
+        """UTF-16 BE SVG with BOM is detected."""
+        svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+        raw = b"\xfe\xff" + svg.encode("utf-16-be")
+        assert looks_like_svg(raw) is True
+
+    def test_detects_utf16_le_without_bom(self):
+        """UTF-16 LE SVG without BOM (null byte heuristic) is detected."""
+        svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+        raw = svg.encode("utf-16-le")
+        assert looks_like_svg(raw) is True
+
+    def test_detects_utf16_be_without_bom(self):
+        """UTF-16 BE SVG without BOM (null byte heuristic) is detected."""
+        svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+        raw = svg.encode("utf-16-be")
+        assert looks_like_svg(raw) is True
+
+    def test_utf16_svg_is_sanitized(self):
+        """A UTF-16 encoded SVG with a script tag is detected and sanitizable."""
+        svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+        raw = svg.encode("utf-16")
+        assert looks_like_svg(raw) is True
+        result = sanitize_svg(raw)
+        assert b"<script" not in result
+        assert b"alert" not in result
