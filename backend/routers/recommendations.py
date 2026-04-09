@@ -34,6 +34,6 @@ def get_recommendations(
                     user_id, [r.event_id for r in recs], variant
                 )
             except Exception:
-                log.debug("Failed to record AB impressions", exc_info=True)
+                log.warning("Failed to record AB impressions for user %s", user_id, exc_info=True)
             return recs
     return recommendation_engine.get_popular_recommendations(limit=limit)

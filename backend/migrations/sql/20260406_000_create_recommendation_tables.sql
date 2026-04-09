@@ -1,15 +1,20 @@
--- Recommendation engine tables
--- Run this in the Supabase Dashboard SQL Editor (https://supabase.com/dashboard/project/_/sql)
+-- Migration: create recommendation engine tables
+-- Created: 2026-04-06
+--
+-- These tables were originally created outside the migration system
+-- (scripts/create_recommendation_tables.sql). This migration brings them into
+-- the sequence so fresh environments work without manual SQL.
+-- All statements are idempotent (IF NOT EXISTS) for safety on existing DBs.
 
 -- 1. user_interactions: raw interaction events (views, clicks, saves, shares)
 CREATE TABLE IF NOT EXISTS user_interactions (
-    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id     uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-    session_id  varchar(255) NOT NULL,
-    event_id    integer NOT NULL,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    session_id      varchar(255) NOT NULL,
+    event_id        integer NOT NULL,
     interaction_type varchar(32) NOT NULL,
-    metadata    jsonb,
-    created_at  timestamptz DEFAULT now()
+    metadata        jsonb,
+    created_at      timestamptz DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS ix_user_interactions_user_event ON user_interactions (user_id, event_id);
@@ -52,15 +57,8 @@ CREATE TABLE IF NOT EXISTS ab_test_events (
 
 CREATE INDEX IF NOT EXISTS ix_ab_test_events_variant ON ab_test_events (variant);
 
--- Grant access to the service role (bypasses RLS)
--- If you have RLS enabled, these tables need policies or the service role key
+-- Enable RLS on all tables (required by project policy)
 ALTER TABLE user_interactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_saved_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_recommendations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ab_test_events ENABLE ROW LEVEL SECURITY;
-
--- Allow the service role full access (backend uses service role key)
-CREATE POLICY "Service role full access" ON user_interactions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON user_saved_events FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON user_recommendations FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON ab_test_events FOR ALL USING (true) WITH CHECK (true);

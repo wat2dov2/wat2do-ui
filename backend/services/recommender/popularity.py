@@ -1,5 +1,6 @@
 """Popularity-based fallback: score events by weighted interaction count + time decay."""
 
+import logging
 import math
 from datetime import datetime, timezone
 
@@ -8,6 +9,8 @@ from core.tables import EVENTS
 from schemas.event import EventTimeMeta
 from services import interaction_service
 from services.recommender.config import POP_HALF_LIFE_DAYS, POP_FALLBACK_SCORE, POP_CANDIDATE_LIMIT
+
+log = logging.getLogger(__name__)
 
 
 def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
@@ -38,8 +41,9 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
                 days_ago = (now - dt).total_seconds() / 86400
                 if days_ago > 0:
                     decay = math.pow(0.5, days_ago / POP_HALF_LIFE_DAYS)
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+                log.warning("Unparseable timestamp for event %s, zeroing decay: %s", eid, e)
+                decay = 0.0
 
         if raw_pop > 0:
             scores[eid] = raw_pop * decay

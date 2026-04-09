@@ -59,6 +59,13 @@ def main():
         log.info("  Failed IDs:      %s", ", ".join(stats["failed_ids"][:10]))
     log.info("  Elapsed:         %.1fs", elapsed)
 
+    # --- Fail if too many users errored ---
+    if stats["total_users"] > 0:
+        failure_rate = stats["failed"] / stats["total_users"]
+        if failure_rate > 0.5:
+            log.error("Failure rate %.0f%% exceeds 50%% threshold — aborting", failure_rate * 100)
+            sys.exit(1)
+
     # --- Evaluate ---
     if not args.skip_eval:
         log.info("Running evaluation...")

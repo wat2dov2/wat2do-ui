@@ -46,7 +46,6 @@ CB_CATEGORY_MATCH: float = 0.4        # category matches user interests
 CB_CATEGORY_NO_PROFILE: float = 0.2   # fallback when user has no interests
 CB_SCHOOL_MATCH: float = 0.15         # same school as user
 CB_ORG_AFFINITY: float = 0.15         # user has history with this org
-CB_TEMPORAL_WEIGHT: float = 0.15      # base temporal relevance weight
 CB_TEMPORAL_TIERS: tuple[tuple[int, float], ...] = (
     (24, 0.15),    # < 24h away
     (72, 0.12),    # < 3 days away
