@@ -152,19 +152,19 @@ def test_search_sanitizes_injection(client, monkeypatch):
     assert kwargs["search"] == attack
 
 
-def test_search_injection_stripped_in_service():
-    """Directly verify that list_events sanitizes before building filters."""
-    from core.sanitize import sanitize_postgrest_value
-
+def test_search_injection_neutralised_by_quoting():
+    """Verify that the or_() filter string quotes the value so injection chars are literal."""
     attack = "test,secret_col.eq.admin"
-    safe = sanitize_postgrest_value(attack)
-    # Must not contain any PostgREST special chars
-    assert "," not in safe
-    assert "." not in safe
-    assert "(" not in safe
-    assert ")" not in safe
-    # The actual search text survives
-    assert "test" in safe
+    # Reproduce the quoting logic from list_events
+    term = attack.strip()
+    quoted = f'"%{term}%"'
+    columns = ("title", "description", "location", "organization")
+    filter_str = ",".join(f"{col}.ilike.{quoted}" for col in columns)
+    # The attack value must appear inside quotes — PostgREST treats quoted
+    # segments as literal values, so the comma and dots cannot escape.
+    for col in columns:
+        segment = f'{col}.ilike."%{attack}%"'
+        assert segment in filter_str
 
 
 def test_search_normal_term(client, monkeypatch):

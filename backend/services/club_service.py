@@ -8,7 +8,6 @@ log = logging.getLogger(__name__)
 
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
-from core.sanitize import sanitize_postgrest_value
 from core.tables import CLUBS, CLUB_INTEGRATIONS
 from schemas.club import (
     ClubCreate,
@@ -46,9 +45,9 @@ def list_clubs(
     if club_type:
         q = q.eq("club_type", club_type)
     if search:
-        safe = sanitize_postgrest_value(search)
-        if safe:
-            q = q.ilike("club_name", f"%{safe}%")
+        term = search.strip()
+        if term:
+            q = q.ilike("club_name", f"%{term}%")
     q = q.order("club_name").range(skip, skip + limit - 1)
     r = q.execute()
     return [ClubResponse.model_validate(c) for c in (r.data or [])]

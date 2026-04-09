@@ -80,6 +80,21 @@ POP_FALLBACK_SCORE: float = 0.1       # base score for events with 0 interaction
 POP_CANDIDATE_LIMIT: int = 500        # max events fetched for popularity scoring
 
 # ---------------------------------------------------------------------------
+# Anti-gaming: per-user score dampening
+# ---------------------------------------------------------------------------
+# Cap on the weighted score any single user can contribute to a single event's
+# popularity.  Without this, a bot account spamming all interaction types at the
+# dedup limit dominates the popularity ranking.  The cap is applied before
+# aggregation across users, so an event's popularity reflects breadth of
+# interest (many users) rather than depth from a few heavy users.
+POP_MAX_USER_CONTRIBUTION: float = 15.0
+
+# Same idea for the collaborative-filtering interaction matrix.  Each (user,
+# event) score is clamped so that inflated interaction counts don't distort
+# cosine-similarity neighbourhoods.
+CF_MAX_USER_EVENT_SCORE: float = 15.0
+
+# ---------------------------------------------------------------------------
 # Caching & time-windowing for recommendation queries
 # ---------------------------------------------------------------------------
 INTERACTION_LOOKBACK_DAYS: int = 90   # only use interactions from the last N days

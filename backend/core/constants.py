@@ -49,8 +49,12 @@ DEFAULT_INTERACTION_LIMIT = 50   # default limit for popularity queries
 MAX_INTERACTION_BATCH_SIZE = 50  # max interactions per single batch request
 MAX_INTERACTION_METADATA_BYTES = 2048  # max serialised size of metadata per interaction
 # Deduplication: max identical (user, event, type) interactions within window
-MAX_DUPLICATE_INTERACTIONS = 10
+MAX_DUPLICATE_INTERACTIONS = 3
 DEDUP_WINDOW_MINUTES = 60        # sliding window for deduplication check
+# Global cap: max total interactions a single user can record per dedup window,
+# regardless of how many distinct events/types they target.  Prevents a bot
+# account from gaming popularity by spreading interactions across many events.
+MAX_USER_INTERACTIONS_PER_WINDOW = 100
 
 # ---------------------------------------------------------------------------
 # Input size limits for Pydantic schemas

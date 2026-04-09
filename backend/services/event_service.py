@@ -4,7 +4,6 @@ from datetime import datetime
 
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
-from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENTS
 from schemas.event import EventCreate, EventUpdate, EventResponse, LatestEventResponse
 
@@ -52,10 +51,13 @@ def list_events(
     if school:
         q = q.eq("school", school)
     if search:
-        safe = sanitize_postgrest_value(search)
-        if safe:
-            term = f"%{safe}%"
-            q = q.or_(f"title.ilike.{term},description.ilike.{term},location.ilike.{term},organization.ilike.{term}")
+        term = search.strip()
+        if term:
+            # Quote the value so PostgREST treats it as a literal —
+            # no dots, commas, or parens can escape the value position.
+            quoted = f'"%{term}%"'
+            columns = ("title", "description", "location", "organization")
+            q = q.or_(",".join(f"{col}.ilike.{quoted}" for col in columns))
     if from_date:
         q = q.gte("dtstart_utc", from_date.isoformat())
     if to_date:

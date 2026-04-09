@@ -16,11 +16,17 @@ from core.constants import (
     INTERACTION_UNSAVE,
     INTERACTION_VIEW,
     MAX_DUPLICATE_INTERACTIONS,
+    MAX_USER_INTERACTIONS_PER_WINDOW,
 )
 from core.database import get_sb
 from core.tables import USER_INTERACTIONS
 from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
-from services.recommender.config import INTERACTION_LOOKBACK_DAYS, CACHE_TTL_SECONDS
+from services.recommender.config import (
+    CACHE_TTL_SECONDS,
+    CF_MAX_USER_EVENT_SCORE,
+    INTERACTION_LOOKBACK_DAYS,
+    POP_MAX_USER_CONTRIBUTION,
+)
 
 log = logging.getLogger(__name__)
 
@@ -164,7 +170,11 @@ def get_interaction_matrix() -> list[InteractionMatrixRow]:
             offset += _LOAD_PAGE_SIZE
 
         result = [
-            InteractionMatrixRow(user_id=uid, event_id=eid, score=score)
+            InteractionMatrixRow(
+                user_id=uid,
+                event_id=eid,
+                score=min(score, CF_MAX_USER_EVENT_SCORE),
+            )
             for (uid, eid), score in agg.items()
             if score > 0
         ]
@@ -198,13 +208,16 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
         ).isoformat()
 
         # Paginate to avoid silent truncation at PostgREST's max-rows limit.
-        scores: dict[int, float] = {}
+        # Aggregate per (user, event) first so we can cap each user's
+        # contribution before summing across users.  This prevents a small
+        # number of bot accounts from dominating popularity scores.
+        user_event_scores: dict[tuple[str | None, int], float] = {}
         offset = 0
         while True:
             r = (
                 get_sb()
                 .table(USER_INTERACTIONS)
-                .select("event_id, interaction_type")
+                .select("user_id, event_id, interaction_type")
                 .gte("created_at", cutoff)
                 .order("created_at")
                 .range(offset, offset + _LOAD_PAGE_SIZE - 1)
@@ -212,12 +225,18 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
             )
             page = r.data or []
             for row in page:
-                eid = row["event_id"]
+                key = (row.get("user_id"), row["event_id"])
                 weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-                scores[eid] = scores.get(eid, 0) + weight
+                user_event_scores[key] = user_event_scores.get(key, 0) + weight
             if len(page) < _LOAD_PAGE_SIZE:
                 break
             offset += _LOAD_PAGE_SIZE
+
+        # Sum across users with per-user cap applied.
+        scores: dict[int, float] = {}
+        for (_, eid), raw_score in user_event_scores.items():
+            capped = min(raw_score, POP_MAX_USER_CONTRIBUTION)
+            scores[eid] = scores.get(eid, 0) + capped
 
         ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         result = [EventPopularity(event_id=eid, score=score) for eid, score in ranked]
@@ -276,12 +295,17 @@ def check_duplicate_interactions(
     user_id: str,
     interactions: list[InteractionCreate],
 ) -> list[InteractionCreate]:
-    """Filter out interactions that exceed the deduplication threshold.
+    """Filter out interactions that exceed deduplication or global rate thresholds.
 
-    For each (event_id, interaction_type) pair in *interactions*, count how
-    many matching rows the user already has within the dedup window.  If the
-    count is already at or above ``MAX_DUPLICATE_INTERACTIONS``, drop that
-    interaction from the batch.  Returns the filtered list.
+    Two limits are enforced within the sliding dedup window:
+
+    1. **Per-(event, type) cap** -- ``MAX_DUPLICATE_INTERACTIONS`` identical
+       interactions per event per type.  Prevents hammering the same event.
+    2. **Global per-user cap** -- ``MAX_USER_INTERACTIONS_PER_WINDOW`` total
+       interactions across all events/types.  Prevents bots from spreading
+       interactions across many events to game popularity scores.
+
+    Returns the filtered list.
     """
     if not interactions:
         return []
@@ -303,14 +327,25 @@ def check_duplicate_interactions(
         log.warning("Dedup check failed, allowing all interactions: %s", e)
         return interactions
 
-    # Count existing (event_id, type) pairs
+    # Count existing (event_id, type) pairs and total interactions
     counts: dict[tuple[int, str], int] = {}
+    total_in_window = len(existing)
     for row in existing:
         key = (row["event_id"], row["interaction_type"])
         counts[key] = counts.get(key, 0) + 1
 
     filtered: list[InteractionCreate] = []
     for item in interactions:
+        # Global per-user cap across all events/types
+        if total_in_window >= MAX_USER_INTERACTIONS_PER_WINDOW:
+            log.warning(
+                "Dropping interaction user=%s event=%s type=%s — global cap reached (%d/%d)",
+                user_id, item.event_id, item.interaction_type,
+                total_in_window, MAX_USER_INTERACTIONS_PER_WINDOW,
+            )
+            continue
+
+        # Per-(event, type) cap
         key = (item.event_id, item.interaction_type)
         current = counts.get(key, 0)
         if current >= MAX_DUPLICATE_INTERACTIONS:
@@ -319,8 +354,10 @@ def check_duplicate_interactions(
                 user_id, item.event_id, item.interaction_type, current,
             )
             continue
-        # Track in-batch duplicates too
+
+        # Track in-batch duplicates and global count
         counts[key] = current + 1
+        total_in_window += 1
         filtered.append(item)
 
     return filtered
