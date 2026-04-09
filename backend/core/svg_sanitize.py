@@ -73,14 +73,33 @@ _URI_ATTRS: set[str] = {
     "background",
 }
 
-# Block javascript:, vbscript:, and dangerous data: URIs.
-# data:image/svg+xml is blocked because nested SVGs can contain <script>;
-# the sanitizer cannot recurse into base64-encoded payloads.
-# Other data:image/* (png, jpeg, webp, gif) are safe raster formats.
-_DANGEROUS_URI_RE = re.compile(
-    r"^\s*(javascript|vbscript|data\s*:(?!image/(?!svg\+xml)))",
+# ── Safe URI scheme allowlist ─────────────────────────────────────────
+# Instead of trying to blocklist dangerous schemes (javascript:, vbscript:,
+# etc.), we allowlist known-safe schemes.  This is more robust because new
+# dangerous schemes or encoding tricks cannot bypass it.
+#
+# Allowed:
+#   - http: / https:  — normal links
+#   - data:image/<raster> — inline raster images (png, jpeg, webp, gif)
+#     (data:image/svg+xml is NOT allowed — nested SVGs can contain <script>)
+#   - Fragment-only (#id) and relative paths — safe, no scheme at all
+#
+# The scheme is extracted *after* stripping all ASCII whitespace from the
+# value prefix, defeating attacks like "java\nscript:" or "java&#9;script:"
+# where the XML parser resolves &#10;/&#9; into literal whitespace that
+# browsers silently strip when evaluating URI schemes.
+_SAFE_URI_SCHEME_RE = re.compile(
+    r"^(https?:|data:image/(?!svg\+xml)[a-z]+[;,]|#|/[^/])",
     re.IGNORECASE,
 )
+
+# Characters browsers strip from URI schemes before evaluating them.
+# Covers tab (\t), newline (\n), carriage return (\r), and space.
+_SCHEME_WHITESPACE_RE = re.compile(r"[\t\n\r ]+")
+
+# Maximum prefix length to inspect when extracting the scheme.
+# "data:image/svg+xml;..." is ~22 chars — 40 is generous.
+_SCHEME_PREFIX_LEN = 40
 
 # Namespace-unaware local-name extraction: "{http://...}tagname" -> "tagname"
 _LOCAL_NAME_RE = re.compile(r"\{[^}]*\}")
@@ -191,10 +210,17 @@ def _clean_element(el: ET.Element) -> None:
             to_remove.append(attr)
             continue
 
-        # URI attributes with javascript:/vbscript:/data: schemes
-        if attr_lower in _URI_ATTRS and _DANGEROUS_URI_RE.search(value):
-            to_remove.append(attr)
-            continue
+        # URI attributes: only allow known-safe schemes.  Strip
+        # whitespace from the scheme prefix first — browsers ignore
+        # whitespace in schemes, so "java\nscript:" executes as
+        # "javascript:" but would bypass a naive regex.
+        if attr_lower in _URI_ATTRS:
+            stripped = _SCHEME_WHITESPACE_RE.sub("", value[:_SCHEME_PREFIX_LEN])
+            # Allow empty/relative values, fragment refs, and safe schemes.
+            # Block everything else (javascript:, vbscript:, data:text/html, ...).
+            if stripped and not _SAFE_URI_SCHEME_RE.match(stripped):
+                to_remove.append(attr)
+                continue
 
     for attr in to_remove:
         logger.warning(

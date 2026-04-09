@@ -115,6 +115,62 @@ class TestSanitizeSvg:
         result = sanitize_svg(svg)
         assert b"javascript" not in result
 
+    def test_strips_javascript_newline_entity_bypass(self):
+        """&#10; (newline) in scheme: java&#10;script: is blocked.
+
+        The XML parser resolves &#10; to a literal newline.  Browsers
+        strip whitespace from URI schemes, executing the script.  The
+        sanitizer must strip whitespace before checking the scheme.
+        """
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href="java&#10;script:alert(1)"><text>click</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"script:" not in result
+
+    def test_strips_javascript_tab_entity_bypass(self):
+        """&#9; (tab) in scheme is blocked."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href="java&#9;script:alert(1)"><text>click</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"script:" not in result
+
+    def test_strips_javascript_cr_entity_bypass(self):
+        """&#13; (carriage return) in scheme is blocked."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href="java&#13;script:alert(1)"><text>click</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"script:" not in result
+
+    def test_strips_xlink_href_whitespace_bypass(self):
+        """xlink:href with whitespace-obfuscated javascript: is blocked."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg" '
+            b'xmlns:xlink="http://www.w3.org/1999/xlink">'
+            b'<a xlink:href="java&#10;script:alert(1)"><text>click</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"script:" not in result
+
+    def test_strips_vbscript_whitespace_bypass(self):
+        """vbscript with embedded whitespace entity is blocked."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href="vb&#10;script:alert(1)"><text>click</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"script:" not in result
+
     def test_safe_href_preserved(self):
         """Non-javascript hrefs are kept."""
         svg = (
@@ -124,6 +180,46 @@ class TestSanitizeSvg:
         )
         result = sanitize_svg(svg)
         assert b"https://example.com" in result
+
+    def test_safe_http_href_preserved(self):
+        """Plain http: links are kept."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href="http://example.com"><text>link</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"http://example.com" in result
+
+    def test_fragment_href_preserved(self):
+        """Fragment-only hrefs (#id) are kept."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href="#section1"><text>link</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"#section1" in result
+
+    def test_relative_path_href_preserved(self):
+        """Relative path hrefs are kept."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href="/images/icon.png"><text>link</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"/images/icon.png" in result
+
+    def test_empty_href_preserved(self):
+        """Empty href is kept (not dangerous)."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<a href=""><text>link</text></a>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b'href=""' in result
 
     # ── data: URI handling ────────────────────────────────────────────
 

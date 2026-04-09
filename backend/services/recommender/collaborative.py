@@ -6,7 +6,7 @@ import threading
 import time
 
 from services import interaction_service, saved_event_service
-from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT, CF_SAVE_WEIGHT, CACHE_TTL_SECONDS
+from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT, CF_SAVE_WEIGHT, CF_MAX_USER_EVENT_SCORE, CACHE_TTL_SECONDS
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +51,10 @@ def _get_cf_matrices() -> tuple[dict[str, dict[int, float]], dict[int, dict[str,
             uid, eid = s.user_id, s.event_id
             if uid not in user_vectors:
                 user_vectors[uid] = {}
-            user_vectors[uid][eid] = user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT
+            user_vectors[uid][eid] = min(
+                user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT,
+                CF_MAX_USER_EVENT_SCORE,
+            )
 
         # Transpose: item_vectors[event_id][user_id] = score
         item_vectors: dict[int, dict[str, float]] = {}
