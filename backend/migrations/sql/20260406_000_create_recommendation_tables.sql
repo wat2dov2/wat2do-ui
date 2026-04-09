@@ -1,10 +1,17 @@
 -- Migration: create recommendation engine tables
 -- Created: 2026-04-06
 --
--- These tables were originally created outside the migration system
--- (scripts/create_recommendation_tables.sql). This migration brings them into
--- the sequence so fresh environments work without manual SQL.
--- All statements are idempotent (IF NOT EXISTS) for safety on existing DBs.
+-- These tables were originally created outside the migration system via
+-- backend/scripts/create_recommendation_tables.sql (run manually in the
+-- Supabase SQL editor).  This migration brings them into the proper
+-- sequence so that fresh environments get them automatically.
+--
+-- Must run BEFORE 20260406_003 (enable_rls_on_existing_tables) which
+-- drops policies on these tables, and before any later migration that
+-- adds columns or indexes to them.
+--
+-- All statements are idempotent (IF NOT EXISTS) so this is safe to run
+-- against databases where the tables already exist (e.g., production).
 
 -- 1. user_interactions: raw interaction events (views, clicks, saves, shares)
 CREATE TABLE IF NOT EXISTS user_interactions (
