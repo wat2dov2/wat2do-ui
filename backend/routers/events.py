@@ -3,7 +3,14 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user, require_owner_or_admin
-from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
+from core.constants import (
+    DEFAULT_LIST_LIMIT,
+    MAX_LIST_LIMIT,
+    MAX_EVENT_CATEGORY_LENGTH,
+    MAX_EVENT_CLUB_TYPE_LENGTH,
+    MAX_EVENT_SCHOOL_LENGTH,
+    MAX_SEARCH_QUERY_LENGTH,
+)
 from schemas.event import EventCreate, EventUpdate, EventResponse, EventSummaryResponse, LatestEventResponse
 from core.errors import EVENT_NOT_FOUND
 from services import event_service
@@ -21,10 +28,10 @@ def get_latest_added():
 def list_events(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
-    category: str | None = None,
-    club_type: str | None = None,
-    school: str | None = None,
-    search: str | None = None,
+    category: str | None = Query(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH),
+    club_type: str | None = Query(default=None, max_length=MAX_EVENT_CLUB_TYPE_LENGTH),
+    school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
+    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     has_food: bool | None = None,

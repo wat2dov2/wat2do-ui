@@ -72,6 +72,10 @@ MAX_AVATAR_URL_LENGTH = 2048         # URL length (RFC 2616 practical limit)
 MAX_URL_LENGTH = 2048                # general URL length (RFC 2616 practical limit)
 MAX_EVENT_DATA_BYTES = 32_768        # 32 KB – serialised submission event_data
 
+# Query-parameter limits (search / filter strings in GET endpoints)
+MAX_SEARCH_QUERY_LENGTH = 200        # free-text search terms
+MAX_STATUS_FILTER_LENGTH = 30        # status enum filter (e.g. "pending", "approved")
+
 # Event fields
 MAX_EVENT_TITLE_LENGTH = 300         # generous for long event names
 MAX_EVENT_DESCRIPTION_LENGTH = 5000  # detailed descriptions, not unbounded

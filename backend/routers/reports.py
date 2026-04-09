@@ -1,8 +1,9 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_current_user, get_admin_user, resolve_db_user
+from core.constants import MAX_STATUS_FILTER_LENGTH
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from schemas.report import ReportCreate, ReportUpdate, ReportResponse
 from core.errors import REPORT_NOT_FOUND
@@ -20,7 +21,7 @@ def create_report(data: ReportCreate, auth_user: dict = Depends(get_current_user
 
 @router.get("/", response_model=PaginatedResponse[ReportResponse])
 def list_reports(
-    report_status: str | None = None,
+    report_status: str | None = Query(default=None, max_length=MAX_STATUS_FILTER_LENGTH),
     pagination: PaginationParams = Depends(),
     _: dict = Depends(get_admin_user),
 ):

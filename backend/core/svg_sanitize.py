@@ -12,7 +12,10 @@ Strategy:
 2. Verify the payload is well-formed XML with an ``<svg>`` root.
 3. Walk the element tree and remove dangerous elements entirely.
 4. Strip dangerous attributes (event handlers, javascript: URIs).
-5. Re-serialize the cleaned tree.
+5. Sanitize ``<style>`` elements and inline ``style`` attributes to
+   remove CSS-based attack vectors (``@import``, ``url()``,
+   ``expression()``, ``-moz-binding``, ``behavior:``).
+6. Re-serialize the cleaned tree.
 
 This runs at upload time — the stored file is always the sanitized
 version, so the attack surface is eliminated regardless of how
@@ -72,6 +75,31 @@ _URI_ATTRS: set[str] = {
     "data",
     "background",
 }
+
+# ── Dangerous CSS patterns ───────────────────────────────────────────
+# CSS properties/functions that can load external resources, execute
+# expressions, or trigger XSS.  Applied to both <style> element text
+# and inline style="..." attributes.
+#
+# @import url(...)       — loads external stylesheets (data exfil)
+# url(...)               — loads external resources (fonts, backgrounds)
+# expression(...)        — IE CSS expression (arbitrary JS)
+# -moz-binding: url(...) — old Firefox XBL bindings (arbitrary JS)
+# behavior: url(...)     — IE DHTML behaviors (arbitrary JS)
+#
+# We strip lines/declarations matching these rather than removing the
+# entire <style>, because legitimate SVGs (Illustrator, Inkscape) rely
+# on <style> for basic fills, fonts, and class-based styling.
+_CSS_DANGEROUS_RE = re.compile(
+    r"""
+      @import\b          # @import rule (loads external stylesheet)
+    | expression\s*\(    # IE CSS expression (JS execution)
+    | -moz-binding\s*:   # Firefox XBL binding (JS execution)
+    | behavior\s*:       # IE DHTML behavior (JS execution)
+    | url\s*\(           # url() function (external resource load)
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
 
 # ── Safe URI scheme allowlist ─────────────────────────────────────────
 # Instead of trying to blocklist dangerous schemes (javascript:, vbscript:,
@@ -203,6 +231,30 @@ def sanitize_svg(raw: bytes) -> bytes:
     return out.getvalue()
 
 
+def _sanitize_css(text: str) -> str:
+    """Remove dangerous constructs from CSS text.
+
+    Strips entire lines/declarations that contain ``@import``,
+    ``url()``, ``expression()``, ``-moz-binding``, or ``behavior:``.
+    Returns the cleaned CSS string (may be empty).
+    """
+    if not text:
+        return text
+    # Process line by line.  A single @import or url() taints the whole
+    # line — attempting to surgically remove just the function call is
+    # fragile and easy to bypass with creative whitespace/comments.
+    cleaned_lines: list[str] = []
+    for line in text.splitlines(keepends=True):
+        if _CSS_DANGEROUS_RE.search(line):
+            logger.warning(
+                "SVG sanitizer: stripped dangerous CSS line: %s",
+                line.strip()[:120],
+            )
+            continue
+        cleaned_lines.append(line)
+    return "".join(cleaned_lines)
+
+
 def _clean_element(el: ET.Element) -> None:
     """Recursively remove dangerous children and attributes from *el*."""
 
@@ -215,6 +267,18 @@ def _clean_element(el: ET.Element) -> None:
             )
             el.remove(child)
             continue
+
+        # <style> elements: keep the element but sanitize its CSS text to
+        # strip @import, url(), expression(), -moz-binding, behavior:.
+        # If nothing survives, remove the empty <style> entirely.
+        if _local_name(child.tag) == "style":
+            if child.text:
+                child.text = _sanitize_css(child.text)
+            if not (child.text and child.text.strip()):
+                logger.warning("SVG sanitizer: removed empty/dangerous <style> element")
+                el.remove(child)
+                continue
+
         # Recurse into safe children.
         _clean_element(child)
 
@@ -226,6 +290,17 @@ def _clean_element(el: ET.Element) -> None:
         # Event handler attributes (onclick, onload, etc.)
         if _EVENT_HANDLER_RE.match(attr_lower):
             to_remove.append(attr)
+            continue
+
+        # Inline style attributes: sanitize CSS to strip url(),
+        # expression(), @import, etc.  If nothing survives, remove
+        # the attribute entirely.
+        if attr_lower == "style":
+            cleaned = _sanitize_css(value)
+            if cleaned and cleaned.strip():
+                el.attrib[attr] = cleaned
+            else:
+                to_remove.append(attr)
             continue
 
         # URI attributes: only allow known-safe schemes.  Strip

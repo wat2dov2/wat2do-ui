@@ -37,7 +37,7 @@ def list_qr_codes(
 
 @router.get("/scans", response_model=PaginatedResponse[QrCodeScanResponse])
 def list_scans(
-    qr_code_id: str | None = Query(None, description="Filter by QR code id"),
+    qr_code_id: str | None = Query(None, max_length=128, description="Filter by QR code id"),
     from_time: datetime | None = Query(None, description="Scans from this time (inclusive)"),
     to_time: datetime | None = Query(None, description="Scans until this time (inclusive)"),
     pagination: PaginationParams = Depends(),
@@ -55,7 +55,7 @@ def list_scans(
     return paginated_response(items, total, pagination)
 
 
-@router.get("/{qr_code_id}")
+@router.get("/{qr_code_id}", response_model=QrCodeRedirect)
 def resolve_qr_and_record_scan(
     qr_code_id: str,
     request: Request,
