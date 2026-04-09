@@ -6,8 +6,7 @@ TOCTOU race condition that would allow double-spending under concurrency.
 """
 
 import logging
-import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 
@@ -73,6 +72,10 @@ def create_promotion(
 
     Looks up the credit cost and duration from ``PROMOTION_PACKAGES`` so the
     client cannot control pricing.  Raises 400 for unknown packages.
+
+    Credit deduction and promotion insertion happen inside a single
+    PostgreSQL RPC (``promote_event``), guaranteeing atomicity — if the
+    insert fails the deduction is rolled back automatically.
     """
     pkg = PROMOTION_PACKAGES.get(package)
     if pkg is None:
@@ -82,22 +85,37 @@ def create_promotion(
         )
     credits_cost, duration_days = pkg
 
-    deduct_credits(user_id, credits_cost)
+    try:
+        r = get_sb().rpc(
+            "promote_event",
+            {
+                "p_user_id": user_id,
+                "p_event_id": event_id,
+                "p_package": package,
+                "p_credits_cost": credits_cost,
+                "p_duration_days": duration_days,
+                "p_default_balance": DEFAULT_CREDIT_BALANCE,
+            },
+        ).execute()
+    except Exception as e:
+        if "insufficient_credits" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=INSUFFICIENT_CREDITS,
+            )
+        raise
 
-    now = datetime.now(timezone.utc)
-    end = now + timedelta(days=duration_days)
-
-    payload = {
-        "id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "event_id": event_id,
-        "package": package,
-        "credits_spent": credits_cost,
-        "start_date": now.isoformat(),
-        "end_date": end.isoformat(),
-    }
-    r = get_sb().table(EVENT_PROMOTIONS).insert(payload).execute()
-    return PromotionResponse.model_validate(r.data[0]) if r.data else PromotionResponse(**payload)
+    row = r.data[0] if r.data else {}
+    return PromotionResponse(
+        id=row.get("promotion_id", ""),
+        user_id=user_id,
+        event_id=event_id,
+        package=package,
+        credits_spent=credits_cost,
+        start_date=row.get("start_date", ""),
+        end_date=row.get("end_date", ""),
+        created_at=row.get("start_date", ""),
+    )
 
 
 def get_user_promotions(user_id: str) -> list[PromotionResponse]:

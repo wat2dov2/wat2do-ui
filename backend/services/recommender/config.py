@@ -90,3 +90,4 @@ CACHE_TTL_SECONDS: int = 300          # 5-minute TTL for shared recommendation d
 # ---------------------------------------------------------------------------
 EVAL_K: int = 10                 # default K for precision/NDCG
 EVAL_MIN_INTERACTIONS: int = 5   # min interactions to be eligible
+EVAL_MAX_EVENTS: int = 2000      # cap on events loaded for offline eval (0 = no limit)

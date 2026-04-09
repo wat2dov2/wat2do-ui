@@ -35,20 +35,30 @@ def list_my_clubs(auth_user: dict = Depends(get_current_user)):
     return club_service.list_clubs_by_owner(auth_user["id"])
 
 
-@router.get("/{club_id}", response_model=ClubResponse)
-def get_club(club_id: int):
-    club = club_service.get_club(club_id)
-    if not club:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=CLUB_NOT_FOUND)
-    return club
-
-
 @router.get(
     "/integrations/discord/options",
     response_model=DiscordIntegrationOptionsResponse,
 )
 def get_discord_options(_=Depends(get_current_user)):
     return club_service.get_discord_options()
+
+
+@router.get(
+    "/integrations/{platform}/options",
+)
+def get_platform_options(
+    platform: IntegrationPlatform,
+    _=Depends(get_current_user),
+):
+    return club_service.get_integration_options(platform)
+
+
+@router.get("/{club_id}", response_model=ClubResponse)
+def get_club(club_id: int):
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=CLUB_NOT_FOUND)
+    return club
 
 
 @router.get(
@@ -110,16 +120,6 @@ def disconnect_discord_integration(
     if not integration:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=CLUB_NOT_FOUND)
     return integration
-
-
-@router.get(
-    "/integrations/{platform}/options",
-)
-def get_platform_options(
-    platform: IntegrationPlatform,
-    _=Depends(get_current_user),
-):
-    return club_service.get_integration_options(platform)
 
 
 @router.get(
