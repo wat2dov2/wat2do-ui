@@ -1,4 +1,4 @@
-import { useState, useReducer, useMemo, useCallback, useRef } from "react";
+import { useState, useReducer, useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { EventFormData } from "@/shared/types";
 import {
@@ -34,46 +34,52 @@ export function useEventForm(options: UseEventFormOptions) {
     (arg) => getInitialState(arg.initialData, arg.isEditMode)
   );
 
-  // Reset form when modal opens (derived from isOpen change, no useEffect needed)
-  if (isOpen && !prevIsOpenRef.current) {
-    const resetState = getInitialState(initialData, isEditMode);
-    dispatch({
-      type: "RESET",
-      payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
-    });
-    prevInitialDataRef.current = initialData;
-    prevEditDataReadyRef.current = editDataReady;
-  }
-  prevIsOpenRef.current = isOpen;
+  // Reset form when modal opens (isOpen transitions false → true)
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      const resetState = getInitialState(initialData, isEditMode);
+      dispatch({
+        type: "RESET",
+        payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
+      });
+      prevInitialDataRef.current = initialData;
+      prevEditDataReadyRef.current = editDataReady;
+    }
+    prevIsOpenRef.current = isOpen;
+
+    if (!isOpen) {
+      prevInitialDataRef.current = undefined;
+      prevEditDataReadyRef.current = 0;
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset form when initialData arrives after opening (e.g. fetched in modal when editing from admin)
-  const fetchedDataJustReady =
-    isOpen &&
-    isEditMode &&
-    editDataReady === 1 &&
-    prevEditDataReadyRef.current !== 1 &&
-    initialData;
-  if (fetchedDataJustReady) {
-    const resetState = getInitialState(initialData, isEditMode);
-    dispatch({
-      type: "RESET",
-      payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
-    });
-    prevInitialDataRef.current = initialData;
-    prevEditDataReadyRef.current = 1;
-  } else if (isOpen && isEditMode && initialData && initialData !== prevInitialDataRef.current) {
-    const resetState = getInitialState(initialData, isEditMode);
-    dispatch({
-      type: "RESET",
-      payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
-    });
-    prevInitialDataRef.current = initialData;
-  }
-  if (editDataReady === 1) prevEditDataReadyRef.current = 1;
-  if (!isOpen) {
-    prevInitialDataRef.current = undefined;
-    prevEditDataReadyRef.current = 0;
-  }
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchedDataJustReady =
+      isEditMode &&
+      editDataReady === 1 &&
+      prevEditDataReadyRef.current !== 1 &&
+      initialData;
+    if (fetchedDataJustReady) {
+      const resetState = getInitialState(initialData, isEditMode);
+      dispatch({
+        type: "RESET",
+        payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
+      });
+      prevInitialDataRef.current = initialData;
+      prevEditDataReadyRef.current = 1;
+    } else if (isEditMode && initialData && initialData !== prevInitialDataRef.current) {
+      const resetState = getInitialState(initialData, isEditMode);
+      dispatch({
+        type: "RESET",
+        payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
+      });
+      prevInitialDataRef.current = initialData;
+    }
+    if (editDataReady === 1) prevEditDataReadyRef.current = 1;
+  }, [isOpen, isEditMode, editDataReady, initialData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Validate on change - use useMemo instead of useEffect
   const errors = useMemo(
@@ -192,7 +198,10 @@ export function useEventForm(options: UseEventFormOptions) {
   }, []);
 
   // Check if form is valid
-  const isValid = isEventFormValid(state.formData, errors);
+  const isValid = useMemo(
+    () => isEventFormValid(state.formData, errors),
+    [state.formData, errors],
+  );
 
   // Sync formData to JSON when needed
   const syncToJSON = useCallback(() => {

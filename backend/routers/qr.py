@@ -1,19 +1,31 @@
 """QR code redirect and scan recording. Public GET /qr/{id} records a scan and returns redirect config."""
 
+import logging
 import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from core.auth import get_current_user, is_admin, require_owner_or_admin
-from core.constants import MAX_USER_AGENT_LENGTH
+from core.constants import MAX_SESSION_ID_LENGTH, MAX_USER_AGENT_LENGTH
+
+log = logging.getLogger(__name__)
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from core.rate_limit import qr_scan_rate_limiter
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
-from core.errors import ID_MISMATCH, POSTER_NOT_FOUND, REQUIRES_LOCATION
+from core.errors import ID_MISMATCH, POSTER_NOT_FOUND
 from services import qr_code_service
 
 router = APIRouter(prefix="/qr", tags=["qr"])
+
+
+def _get_poster_or_404_authorized(qr_code_id: str, user: dict) -> QrCodeResponse:
+    """Fetch a poster by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
+    existing = qr_code_service.get_qr_code_by_id(qr_code_id)
+    if not existing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
+    require_owner_or_admin(user, existing.created_by)
+    return existing
 
 
 @router.get("/", response_model=PaginatedResponse[QrCodeResponse])
@@ -59,43 +71,23 @@ def list_scans(
 def resolve_qr_and_record_scan(
     qr_code_id: str,
     request: Request,
-    lat: float | None = Query(None, description="Scanner latitude (required for first scan to activate poster)"),
-    lon: float | None = Query(None, description="Scanner longitude (required for first scan to activate poster)"),
+    lat: float | None = Query(None, ge=-90, le=90, description="Scanner latitude (required for first scan to activate poster)"),
+    lon: float | None = Query(None, ge=-180, le=180, description="Scanner longitude (required for first scan to activate poster)"),
     _rl: None = Depends(qr_scan_rate_limiter.ip_dependency()),
 ):
-    qr = qr_code_service.get_qr_code_by_id(qr_code_id)
-    if not qr:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
-
-    session_id = request.headers.get("x-session-id") or str(uuid.uuid4())
+    session_id_raw = request.headers.get("x-session-id")
+    if session_id_raw and len(session_id_raw) > MAX_SESSION_ID_LENGTH:
+        session_id_raw = session_id_raw[:MAX_SESSION_ID_LENGTH]
+    session_id = session_id_raw or str(uuid.uuid4())
     user_agent = request.headers.get("user-agent")
     user_agent_trunc = user_agent[:MAX_USER_AGENT_LENGTH] if user_agent else None
 
-    if not qr.is_active:
-        if lat is not None and lon is not None:
-            redirect_config = qr_code_service.activate_poster_and_record_scan(
-                qr_code_id, lat, lon, session_id=session_id, user_agent=user_agent_trunc
-            )
-            if redirect_config:
-                return redirect_config
-        raise HTTPException(
-            status_code=status.HTTP_202_ACCEPTED,
-            detail=REQUIRES_LOCATION,
-        )
-
-    qr_code_service.record_scan(
-        qr_code_id, session_id=session_id, user_agent=user_agent_trunc
-    )
-    dest_id = qr.destination_id
-    if qr.destination_type == "event" and dest_id is not None:
-        try:
-            dest_id = int(dest_id)
-        except (TypeError, ValueError):
-            pass
-    return QrCodeRedirect(
-        destination_type=qr.destination_type,
-        destination_id=dest_id,
-        filters=qr.filters,
+    return qr_code_service.handle_scan(
+        qr_code_id,
+        lat=lat,
+        lon=lon,
+        session_id=session_id,
+        user_agent=user_agent_trunc,
     )
 
 
@@ -115,10 +107,7 @@ def update_poster(
 ):
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
-    existing = qr_code_service.get_qr_code_by_id(qr_code_id)
-    if not existing:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
-    require_owner_or_admin(user, existing.created_by)
+    existing = _get_poster_or_404_authorized(qr_code_id, user)
     return qr_code_service.upsert_qr_code(data, created_by=existing.created_by)
 
 
@@ -127,8 +116,5 @@ def delete_poster(
     qr_code_id: str,
     user: dict = Depends(get_current_user),
 ):
-    existing = qr_code_service.get_qr_code_by_id(qr_code_id)
-    if not existing:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
-    require_owner_or_admin(user, existing.created_by)
+    _get_poster_or_404_authorized(qr_code_id, user)
     qr_code_service.delete_qr_code(qr_code_id)

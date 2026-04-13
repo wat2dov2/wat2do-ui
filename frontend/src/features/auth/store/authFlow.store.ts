@@ -28,7 +28,8 @@ const INITIAL_AUTH_FLOW_STATE: AuthFlowState = {
   },
 };
 
-export function useAuthFlowStore() {
+/** Local state hook — not a shared store. Each call creates an isolated instance. */
+export function useAuthFlowState() {
   const [state, setState] = useState<AuthFlowState>(INITIAL_AUTH_FLOW_STATE);
 
   const setAuthEmail = useCallback((email: string) => {

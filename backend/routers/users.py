@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from core.auth import get_current_user, get_admin_user
+from core.auth import get_current_user, get_admin_user, get_db_user
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from schemas.user import UserUpdate, UserProfileUpdate, UserResponse
 from core.errors import USER_NOT_FOUND, USER_PROFILE_NOT_FOUND
@@ -25,13 +25,8 @@ def get_me(auth_user: dict = Depends(get_current_user)):
 @router.patch("/me", response_model=UserResponse)
 def update_me(
     data: UserUpdate,
-    auth_user: dict = Depends(get_current_user),
+    user=Depends(get_db_user),
 ):
-    user = user_service.get_user_by_supabase_id(auth_user["id"])
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
-        )
     updated = user_service.update_user(user.id, data)
     return updated
 
@@ -39,13 +34,8 @@ def update_me(
 @router.patch("/me/profile", response_model=UserResponse)
 def update_profile(
     data: UserProfileUpdate,
-    auth_user: dict = Depends(get_current_user),
+    user=Depends(get_db_user),
 ):
-    user = user_service.get_user_by_supabase_id(auth_user["id"])
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND
-        )
     update_data = UserUpdate(**data.model_dump(exclude_unset=True))
     updated = user_service.update_user(user.id, update_data)
     return updated

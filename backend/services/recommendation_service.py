@@ -7,13 +7,12 @@ Two modes:
 """
 
 import logging
-import threading
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
 from postgrest.exceptions import APIError
 
+from core.cache import TTLCache
 from core.constants import supabase_retry
 from core.database import get_sb
 from core.pagination import fetch_all_pages
@@ -27,16 +26,14 @@ from services.recommender.popularity import get_popularity_scores
 from services.recommender.reranker import mmr_rerank
 from services.recommender.config import (
     DEFAULT_LIMIT,
+    MAX_LIMIT,
     DEFAULT_LAMBDA,
     HOT_THRESHOLD,
     WARM_THRESHOLD,
-    WEIGHTS_HOT,
-    WEIGHTS_WARM,
-    WEIGHTS_WARM_NO_COLLAB,
-    WEIGHTS_COLD,
     CANDIDATE_POOL_SIZE,
     CANDIDATE_EVENTS_CACHE_TTL,
 )
+from services.recommender.scoring import select_weights, blend_scores
 
 log = logging.getLogger(__name__)
 
@@ -44,20 +41,9 @@ log = logging.getLogger(__name__)
 # Short-lived TTL cache for candidate events (future events query).
 # Identical for all users within a time window — avoids redundant DB hits
 # during nightly batch processing (compute_all_users) and concurrent live
-# requests.  Uses the same double-check lock pattern as interaction_service.
+# requests.
 # ---------------------------------------------------------------------------
-_candidates_lock = threading.Lock()
-_candidates_cache: tuple[float, list[EventResponse]] | None = None
-
-
-def _get_cached_candidates() -> list[EventResponse] | None:
-    """Return cached candidate events if still valid, else None."""
-    if _candidates_cache is None:
-        return None
-    expires_at, value = _candidates_cache
-    if time.monotonic() > expires_at:
-        return None
-    return value
+_candidates_cache = TTLCache(default_ttl=CANDIDATE_EVENTS_CACHE_TTL)
 
 
 class RecommendationEngine:
@@ -392,25 +378,14 @@ class RecommendationEngine:
                 except Exception as e:
                     log.warning("Collaborative scoring failed for user %s: %s", user_id, e)
 
-        if interaction_count >= self.hot_threshold:
-            weights = WEIGHTS_HOT
-        elif interaction_count >= self.warm_threshold:
-            weights = WEIGHTS_WARM
-        elif has_profile:
-            weights = WEIGHTS_WARM_NO_COLLAB
-        else:
-            weights = WEIGHTS_COLD
-
-        w_content, w_collab, w_pop = weights
-        blended: dict[int, float] = {}
-        for eid in candidate_ids:
-            score = (
-                w_content * content_scores.get(eid, 0)
-                + w_collab * collab_scores.get(eid, 0)
-                + w_pop * pop_scores.get(eid, 0)
-            )
-            if score > 0:
-                blended[eid] = score
+        weights = select_weights(
+            interaction_count, has_profile,
+            hot_threshold=self.hot_threshold,
+            warm_threshold=self.warm_threshold,
+        )
+        blended = blend_scores(
+            candidate_ids, content_scores, collab_scores, pop_scores, weights,
+        )
 
         if not blended:
             return [
@@ -448,20 +423,7 @@ class RecommendationEngine:
         round-trip.  The TTL is kept short (60s) to avoid serving stale
         event data to live users.
         """
-        global _candidates_cache
-
-        cached = _get_cached_candidates()
-        if cached is not None:
-            log.debug("Candidate events cache HIT (%d events)", len(cached))
-            return cached
-
-        with _candidates_lock:
-            # Double-check after acquiring lock
-            cached = _get_cached_candidates()
-            if cached is not None:
-                log.debug("Candidate events cache HIT after lock (%d events)", len(cached))
-                return cached
-
+        def _fetch_candidates() -> list[EventResponse]:
             log.debug("Candidate events cache MISS — querying DB")
             now = datetime.now(timezone.utc).isoformat()
             r = (
@@ -473,9 +435,9 @@ class RecommendationEngine:
                 .limit(CANDIDATE_POOL_SIZE)
                 .execute()
             )
-            result = [EventResponse.model_validate(row) for row in (r.data or [])]
-            _candidates_cache = (time.monotonic() + CANDIDATE_EVENTS_CACHE_TTL, result)
-            return result
+            return [EventResponse.model_validate(row) for row in (r.data or [])]
+
+        return _candidates_cache.get_or_compute("candidates", _fetch_candidates)
 
     @staticmethod
     def _generate_reason(

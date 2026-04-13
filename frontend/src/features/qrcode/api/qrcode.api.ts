@@ -6,6 +6,8 @@
 import type { QRCode, QRCodeScan } from "@/shared/types";
 import { api, ApiError } from "@/shared/services/apiClient";
 import { isSafeUrl } from "@/shared/utils/url";
+import { API_BASE_URL } from "@/shared/config/api";
+import { stripTrailingSlash } from "@/shared/utils/string";
 
 /** Response from GET /qr/{id}: backend records the scan and returns redirect config. */
 export interface QrRedirectConfig {
@@ -208,5 +210,19 @@ export function normalizeBackendScan(b: QrCodeScanBackend): QRCodeScan {
     conversionActions: b.conversion_actions ?? [],
     userAgent: b.user_agent ?? undefined,
   };
+}
+
+/**
+ * Resolve a poster image URL to an absolute URL.
+ * If the imageUrl is already absolute (http/https) or a data URI, returns it as-is.
+ * Otherwise, prepends API_BASE_URL, normalizing slashes.
+ */
+export function getQRImageUrl(imageUrl: string): string {
+  if (imageUrl.startsWith("http") || imageUrl.startsWith("data:")) {
+    return imageUrl;
+  }
+  const base = stripTrailingSlash(API_BASE_URL);
+  const path = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  return `${base}${path}`;
 }
 

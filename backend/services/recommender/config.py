@@ -110,8 +110,38 @@ USER_SCORES_CACHE_MAX: int = 512      # max users cached (LRU eviction)
 CANDIDATE_EVENTS_CACHE_TTL: int = 60  # 1-minute TTL for candidate events
 
 # ---------------------------------------------------------------------------
+# Interaction scoring weights
+# ---------------------------------------------------------------------------
+# Weights for computing per-user event scores from raw interaction types.
+# Used by interaction_service for user-event scoring, the collaborative
+# filtering matrix, and popularity aggregation.
+from core.constants import (
+    INTERACTION_CLICK,
+    INTERACTION_DETAIL_VIEW,
+    INTERACTION_SAVE,
+    INTERACTION_SHARE,
+    INTERACTION_TYPES,
+    INTERACTION_UNSAVE,
+    INTERACTION_VIEW,
+)
+
+INTERACTION_WEIGHTS: dict[str, float] = {
+    INTERACTION_VIEW: 1.0,
+    INTERACTION_CLICK: 2.0,
+    INTERACTION_DETAIL_VIEW: 3.0,
+    INTERACTION_SAVE: 5.0,
+    INTERACTION_UNSAVE: -3.0,
+    INTERACTION_SHARE: 3.0,
+}
+
+assert set(INTERACTION_WEIGHTS.keys()) == set(INTERACTION_TYPES), (
+    f"INTERACTION_WEIGHTS keys {set(INTERACTION_WEIGHTS.keys())} != INTERACTION_TYPES {set(INTERACTION_TYPES)}"
+)
+
+# ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------
 EVAL_K: int = 10                 # default K for precision/NDCG
 EVAL_MIN_INTERACTIONS: int = 5   # min interactions to be eligible
 EVAL_MAX_EVENTS: int = 2000      # cap on events loaded for offline eval (0 = no limit)
+

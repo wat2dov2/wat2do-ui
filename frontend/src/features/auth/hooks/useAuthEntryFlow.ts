@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useAuthFlowStore } from "@/features/auth/store/authFlow.store";
+import { useAuthFlowState } from "@/features/auth/store/authFlow.store";
 import { loginAPI, signupAPI, login as saveEmailLocally, ApiError } from "@/features/auth/api/auth.api";
 import { DOMAIN_TO_SCHOOL } from "@/shared/constants/schools";
 
@@ -49,7 +49,7 @@ export function useAuthEntryFlow({
   onContinueToOnboarding,
   onContinueToHome,
 }: UseAuthEntryFlowOptions) {
-  const store = useAuthFlowStore();
+  const store = useAuthFlowState();
   const { authEntry } = store.state;
 
   const [password, setPassword] = useState("");

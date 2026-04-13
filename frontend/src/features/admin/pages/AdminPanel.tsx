@@ -1,110 +1,67 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { getEventSubmissions, getScrapedEvents } from "@/features/admin/api/admin.api";
-import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
-import { getSession } from "@/features/auth/api/auth.api";
-import { useBackendPosters } from "@/features/qrcode";
 import { AdminCard } from "@/features/admin/components/shared/AdminCard";
+import { useAdminPanel, type ActivityItem } from "@/features/admin/hooks/useAdminPanel";
 import type { Event } from "@/shared/types";
-import type { EventSubmission, ScrapedEvent } from "@/shared/types";
-import type { QRCode } from "@/shared/types";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import { QP } from "@/shared/constants/queryParams";
+import { ROUTES } from "@/shared/constants/routes";
 
 interface AdminPanelProps {
   events: Event[];
   onNavigate: (page: "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters") => void;
 }
 
+type ActivityType = ActivityItem["type"];
+
+const activityIconMap: Record<ActivityType, ReactNode> = {
+  submission: <FileText className="w-4 h-4 text-primary" />,
+  poster: <QrCode className="w-4 h-4 text-primary" />,
+  scraped: <Calendar className="w-4 h-4 text-primary" />,
+};
+
+/** Extract the display strings from an activity item to avoid deep traversal in JSX. */
+function getActivityDisplay(
+  activity: ActivityItem,
+  events: Event[],
+  t: (key: string) => string,
+): { label: string; detail: string; submittedBy?: string } {
+  if (activity.type === "submission") {
+    return {
+      label: t("admin.newEventSubmission"),
+      detail: activity.data.eventData.title,
+      submittedBy: activity.data.submittedBy,
+    };
+  }
+  if (activity.type === "scraped") {
+    const event = events.find((e) => e.id === Number(activity.data.eventId));
+    const clubName = event?.organization || event?.display_handle || "Unknown";
+    const detail = event
+      ? `${event.title} (${clubName})`
+      : `Event ID ${activity.data.eventId}`;
+    return { label: t("admin.eventScraped"), detail };
+  }
+  // poster
+  return { label: "Created poster", detail: activity.data.name };
+}
+
 export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
   const { t } = useTranslation();
-  const { posters: backendPosters, loading: postersLoading } = useBackendPosters();
-  const [submissions, setSubmissions] = useState<EventSubmission[]>([]);
-  const [scrapedEvents, setScrapedEvents] = useState<ScrapedEvent[]>([]);
-  const [adminDataLoading, setAdminDataLoading] = useState(true);
-
-  // Fetch submissions and scraped events from backend
-  useEffect(() => {
-    Promise.all([getEventSubmissions(), getScrapedEvents()])
-      .then(([subs, scraped]) => {
-        setSubmissions(subs);
-        setScrapedEvents(scraped);
-      })
-      .catch((err) => console.error("Failed to load admin data:", err))
-      .finally(() => setAdminDataLoading(false));
-  }, []);
-
-  const recentActivityLoading = postersLoading || adminDataLoading;
-
-  // Get recent activities
-  const recentActivities = useMemo(() => {
-    const submissionItems = submissions
-      .filter((s) => s.status === SUBMISSION_PENDING)
-      .map((s) => ({
-        type: "submission" as const,
-        data: s,
-        timestamp: new Date(s.submittedAt),
-      }));
-
-    const scrapedItems = scrapedEvents.map((s) => ({
-      type: "scraped" as const,
-      data: s,
-      timestamp: new Date(s.scrapedAt),
-    }));
-
-    const session = getSession();
-    const userEmail = session.email || "";
-    const createdPosters = backendPosters
-      .filter((qr) => qr.createdBy === userEmail)
-      .map((qr) => ({
-        type: "poster" as const,
-        data: qr,
-        timestamp: new Date(qr.createdAt),
-      }));
-
-    type ActivityItem =
-      | { type: "submission"; data: EventSubmission; timestamp: Date }
-      | { type: "scraped"; data: ScrapedEvent; timestamp: Date }
-      | { type: "poster"; data: QRCode; timestamp: Date };
-    const all: ActivityItem[] = [...submissionItems, ...scrapedItems, ...createdPosters];
-
-    return all
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, 10);
-  }, [submissions, scrapedEvents, backendPosters]);
-
+  const navigate = useNavigate();
+  const { recentActivities, recentActivityLoading } = useAdminPanel();
 
   const handleActivityClick = (activity: (typeof recentActivities)[0]) => {
     if (activity.type === "submission") {
-      onNavigate("admin-submissions");
-      // URL param will be handled by AdminSubmissionsPage via useSearchParams
-      setTimeout(() => {
-        const url = new URL(window.location.href);
-        url.searchParams.set(QP.SUBMISSION_ID, activity.data.id);
-        window.history.pushState({}, "", url.toString());
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }, 0);
+      navigate(`${ROUTES.ADMIN_SUBMISSIONS}?${QP.SUBMISSION_ID}=${activity.data.id}`);
     } else if (activity.type === "scraped") {
-      onNavigate("admin-events");
-      // URL param will be handled by AdminEventsPage via useSearchParams
-      setTimeout(() => {
-        const url = new URL(window.location.href);
-        url.searchParams.set(QP.EVENT_ID, activity.data.eventId.toString());
-        window.history.pushState({}, "", url.toString());
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }, 0);
+      navigate(`${ROUTES.ADMIN_EVENTS}?${QP.EVENT_ID}=${activity.data.eventId}`);
     } else if (activity.type === "poster") {
-      onNavigate("admin-posters");
-      // URL param will be handled by AdminPostersPage via useSearchParams
-      setTimeout(() => {
-        const url = new URL(window.location.href);
-        url.searchParams.set(QP.QR_CODE_ID, activity.data.id);
-        window.history.pushState({}, "", url.toString());
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }, 0);
+      navigate(`${ROUTES.ADMIN_POSTERS}?${QP.QR_CODE_ID}=${activity.data.id}`);
     }
   };
 
@@ -175,53 +132,32 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      {activity.type === "submission" ? (
-                        <FileText className="w-4 h-4 text-primary" />
-                      ) : activity.type === "poster" ? (
-                        <QrCode className="w-4 h-4 text-primary" />
-                      ) : (
-                        <Calendar className="w-4 h-4 text-primary" />
-                      )}
+                      {activityIconMap[activity.type]}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground mb-1">
-                            {activity.type === "submission" ? (
+                          {(() => {
+                            const { label, detail, submittedBy } = getActivityDisplay(activity, events, t);
+                            return (
                               <>
-                                <span className="font-bold">{t("admin.newEventSubmission")}</span>
-                                <span className="font-normal text-muted-foreground">: {activity.data.eventData.title}</span>
+                                <p className="text-sm text-foreground mb-1">
+                                  <span className="font-bold">{label}</span>
+                                  <span className="font-normal text-muted-foreground">: {detail}</span>
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{formatRelativeTime(activity.timestamp)}</span>
+                                  {submittedBy && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{t("admin.submittedBy")}: {submittedBy}</span>
+                                    </>
+                                  )}
+                                </div>
                               </>
-                            ) : activity.type === "scraped" ? (
-                              (() => {
-                                const event = events.find((e) => e.id === Number(activity.data.eventId));
-                                const clubName = event?.organization || event?.display_handle || 'Unknown';
-                                return (
-                                  <>
-                                    <span className="font-semibold">{t("admin.eventScraped")}</span>
-                                    <span className="font-normal text-muted-foreground">
-                                      : {event ? `${event.title} (${clubName})` : `Event ID ${activity.data.eventId}`}
-                                    </span>
-                                  </>
-                                );
-                              })()
-                            ) : (
-                              <>
-                                <span className="font-bold">Created poster</span>
-                                <span className="font-normal text-muted-foreground">: {activity.data.name}</span>
-                              </>
-                            )}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            <span>{formatRelativeTime(activity.timestamp)}</span>
-                            {activity.type === "submission" && (
-                              <>
-                                <span>•</span>
-                                <span>{t("admin.submittedBy")}: {activity.data.submittedBy}</span>
-                              </>
-                            )}
-                          </div>
+                            );
+                          })()}
                         </div>
                         <Button
                           variant="secondary"

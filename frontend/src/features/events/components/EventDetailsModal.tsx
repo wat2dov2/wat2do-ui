@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
+import { formatDisplayDate, formatDisplayTime } from "@/shared/utils/date";
 import { ImageOff, ExternalLink } from "lucide-react";
 import {
   Dialog,
@@ -26,28 +27,6 @@ import {
 import { useModalState } from "@/shared/hooks/useModalState";
 import type { Event } from "@/shared/types";
 
-function formatDisplayDate(event: Event): string {
-  if (event.date) return event.date;
-  const raw = event.dtstart_utc || event.eventDate;
-  if (!raw) return "";
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
-}
-
-function formatDisplayTime(event: Event): string {
-  if (event.time) return event.time;
-  const raw = event.dtstart_utc || event.eventDate;
-  if (!raw) return "";
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return "";
-  const end = event.dtend_utc ? new Date(event.dtend_utc) : null;
-  const start = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  if (end && !isNaN(end.getTime())) {
-    return `${start} – ${end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
-  }
-  return start;
-}
 
 interface EventDetailsModalProps {
   event: Event | null;

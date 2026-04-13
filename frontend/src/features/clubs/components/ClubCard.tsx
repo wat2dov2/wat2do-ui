@@ -4,21 +4,8 @@ import { Instagram, MessageCircle, Tag, ExternalLink } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import type { Club } from "@/shared/types";
 import { sanitizeHref } from "@/shared/utils/url";
-
-// Normalize club category to use consolidated event category translations where applicable
-function getClubCategoryTranslation(category: string, t: (key: string) => string): string {
-  const categoryMap: Record<string, string> = {
-    "Academic": "categories.academic",
-    "Religious": "categories.religious",
-    "Cultural": "categories.cultural",
-  };
-  const normalizedKey = categoryMap[category];
-  if (normalizedKey) {
-    return t(normalizedKey) || category;
-  }
-  // Fallback to clubs.categories.* for WUSA-specific categories
-  return t(`clubs.categories.${category}`) || category;
-}
+import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
+import { getCategoryClasses } from "@/shared/utils/event";
 
 interface ClubCardProps {
   club: Club;
@@ -26,42 +13,6 @@ interface ClubCardProps {
 
 export function ClubCard({ club }: ClubCardProps) {
   const { t } = useTranslation();
-  
-  const getCategoryColor = (category: string): { bg: string; text: string } => {
-    // Map categories to existing category colors where possible
-    const mapping: Record<string, { bg: string; text: string }> = {
-      Academic: {
-        bg: "bg-category-academic-bg",
-        text: "text-category-academic-text",
-      },
-      Religious: {
-        bg: "bg-category-religious-bg",
-        text: "text-category-religious-text",
-      },
-      "Religious and Spiritual": {
-        bg: "bg-category-religious-bg",
-        text: "text-category-religious-text",
-      },
-      Cultural: {
-        bg: "bg-category-cultural-bg",
-        text: "text-category-cultural-text",
-      },
-      "Creative Arts, Dance and Music": {
-        bg: "bg-category-arts-bg",
-        text: "text-category-arts-text",
-      },
-      "Games, Recreational and Social": {
-        bg: "bg-category-social-bg",
-        text: "text-category-social-text",
-      },
-    };
-    return (
-      mapping[category] || {
-        bg: "bg-category-default-bg",
-        text: "text-category-default-text",
-      }
-    );
-  };
 
   const handleClubPageClick = () => {
     const safe = sanitizeHref(club.club_page);
@@ -81,7 +32,7 @@ export function ClubCard({ club }: ClubCardProps) {
         {/* Categories */}
         <div className="flex flex-wrap gap-1.5">
           {club.categories.slice(0, 2).map((category) => {
-            const colors = getCategoryColor(category);
+            const colors = getCategoryClasses(category);
             const translatedCategory = getClubCategoryTranslation(category, t);
             return (
               <Badge

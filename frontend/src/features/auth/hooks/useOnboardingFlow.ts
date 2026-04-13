@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useAuthFlowStore } from "@/features/auth/store/authFlow.store";
+import { useAuthFlowState } from "@/features/auth/store/authFlow.store";
 import { EVENT_CATEGORIES, type EventCategory } from "@/shared/constants/eventCategories";
 import { ONBOARDING_EVENT_CARDS } from "@/features/auth/data/onboardingImages";
 
@@ -28,7 +28,7 @@ interface UseOnboardingFlowOptions {
 }
 
 export function useOnboardingFlow({ onComplete }: UseOnboardingFlowOptions) {
-  const store = useAuthFlowStore();
+  const store = useAuthFlowState();
   const { onboarding } = store.state;
 
   const validTopics = useMemo(

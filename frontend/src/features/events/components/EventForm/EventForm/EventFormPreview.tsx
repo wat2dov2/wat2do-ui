@@ -7,6 +7,7 @@ import { LightRays } from "@/shared/ui/light-rays";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
+import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export function EventFormPreview() {
@@ -14,78 +15,28 @@ export function EventFormPreview() {
   const { formData } = useEventFormContext();
 
   // Generate badges matching EventCard structure
-  const badges = useMemo(() => {
-    const badgeList: Array<{ text: string; bgClass: string; textClass: string }> = [];
+  const previewBadgeStyles = useMemo(() => ({
+    freeBg: "bg-success/20",
+    freeText: "text-success",
+    foodBg: "bg-warning/20",
+    foodText: "text-warning",
+  }), []);
 
-    // Price badge
-    const price = formData.price ?? 0;
-    if (price === 0) {
-      badgeList.push({
-        text: t("common.free"),
-        bgClass: "bg-success/20",
-        textClass: "text-success",
-      });
-    } else if (price !== null) {
-      badgeList.push({
-        text: `$${price}`,
-        bgClass: "bg-primary/20",
-        textClass: "text-primary",
-      });
-    }
-
-    // Food badge
-    const food = formData.food || [];
-    if (food.length > 0) {
-      badgeList.push({
-        text: t("common.freeFood"),
-        bgClass: "bg-warning/20",
-        textClass: "text-warning",
-      });
-    }
-
-    // Registration badge
-    if (formData.requiresRegistration) {
-      badgeList.push({
-        text: t("common.registrationRequired"),
-        bgClass: "bg-purple-500/20",
-        textClass: "text-purple-500",
-      });
-    }
-
-    return badgeList;
-  }, [formData.price, formData.food, formData.requiresRegistration, t]);
+  const badges = useMemo(
+    () => computeEventBadges(formData, t, previewBadgeStyles),
+    [formData.price, formData.food, formData.requiresRegistration, t, previewBadgeStyles],
+  );
 
   // Format date and time for preview (matching EventCard format)
-  const cardDate = useMemo(() => {
-    if (!formData.date) return "";
-    // Try to format similar to formatCardDate
-    try {
-      const date = new Date(formData.date);
-      const dayOfWeek = date.toLocaleDateString(i18n.language || 'en-US', { weekday: 'long' });
-      const month = date.toLocaleDateString(i18n.language || 'en-US', { month: 'short' });
-      const day = date.getDate();
-      return `${dayOfWeek} ${month} ${day}`;
-    } catch (err) {
-      console.error("Failed to format preview date:", err);
-      return formData.date;
-    }
-  }, [formData.date, i18n.language]);
+  const cardDate = useMemo(
+    () => formatCardDate({ dtstart_utc: formData.date || undefined }, i18n.language || 'en-US'),
+    [formData.date, i18n.language],
+  );
 
-  const cardTime = useMemo(() => {
-    if (!formData.time) return "";
-    // Format time similar to formatCardTime
-    try {
-      const [hours, minutes] = formData.time.split(":");
-      const h = parseInt(hours);
-      const ampm = h >= 12 ? "PM" : "AM";
-      const h12 = h % 12 || 12;
-      const mins = minutes ? `:${minutes}` : "";
-      return `${h12}${mins} ${ampm}`;
-    } catch (err) {
-      console.error("Failed to format preview time:", err);
-      return formData.time;
-    }
-  }, [formData.time]);
+  const cardTime = useMemo(
+    () => formatCardTime({ time: formData.time || undefined }),
+    [formData.time],
+  );
 
   return (
     <div className="w-80 border-l border-border p-6 overflow-y-auto min-h-0 space-y-4">

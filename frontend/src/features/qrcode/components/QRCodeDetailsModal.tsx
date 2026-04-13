@@ -19,8 +19,7 @@ import { QRCodeStatsDisplay } from "@/features/qrcode/components/QRCode/QRCodeSt
 import { QRCodeScansChart } from "@/features/qrcode/components/QRCode/QRCodeScansChart";
 import type { QRCode, Event } from "@/shared/types";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
-import { API_BASE_URL } from "@/shared/config/api";
-import { stripTrailingSlash } from "@/shared/utils/string";
+import { getQRImageUrl } from "@/features/qrcode/api/qrcode.api";
 import {
   QRCodeDetailsModalProvider,
   useQRCodeDetailsModalContext,
@@ -51,11 +50,7 @@ function QRCodeDetailsModalContent() {
   });
 
   const qrUrl = generateQRCodeUrl(qrCode.id);
-  const posterImageSrc = qrCode.imageUrl
-    ? qrCode.imageUrl.startsWith("http") || qrCode.imageUrl.startsWith("data:")
-      ? qrCode.imageUrl
-      : `${stripTrailingSlash(API_BASE_URL)}${qrCode.imageUrl.startsWith("/") ? qrCode.imageUrl : `/${qrCode.imageUrl}`}`
-    : undefined;
+  const posterImageSrc = qrCode.imageUrl ? getQRImageUrl(qrCode.imageUrl) : undefined;
 
   const qrSize = 120;
   const qrPadding = 8;

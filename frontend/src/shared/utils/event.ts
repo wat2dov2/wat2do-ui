@@ -82,6 +82,77 @@ export function formDataToEvent(
 }
 
 /**
+ * Derive date/time/dayOfWeek from a UTC datetime string.
+ */
+function getDateFromUTC(utcString: string): { date: string; time: string; dayOfWeek: string; eventDate: Date } {
+  const date = new Date(utcString);
+  const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+  const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  const timeStr = minutes > 0
+    ? `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`
+    : `${displayHours} ${ampm}`;
+
+  return { date: dateStr, time: timeStr, dayOfWeek, eventDate: date };
+}
+
+/**
+ * Format a time range string from two UTC datetime strings.
+ */
+function getTimeRange(dtstart_utc: string, dtend_utc: string): string {
+  const start = new Date(dtstart_utc);
+  const end = new Date(dtend_utc);
+
+  const formatTime = (d: Date): string => {
+    const hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return minutes > 0
+      ? `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`
+      : `${displayHours} ${ampm}`;
+  };
+
+  return `${formatTime(start)} - ${formatTime(end)}`;
+}
+
+/**
+ * Transform a raw event object (e.g. from backend or mock data) into a fully
+ * computed Event with backward-compatible fields (date, time, dayOfWeek,
+ * eventDate, category, organization, requiresRegistration, etc.).
+ *
+ * If the event already has all computed fields, it is returned as-is.
+ */
+export function transformRawEvent(eventRaw: Event): Event {
+  if (!eventRaw.dtstart_utc) return eventRaw;
+
+  const dateInfo = getDateFromUTC(eventRaw.dtstart_utc);
+  const timeRange = eventRaw.dtend_utc
+    ? getTimeRange(eventRaw.dtstart_utc, eventRaw.dtend_utc)
+    : dateInfo.time;
+
+  return {
+    ...eventRaw,
+    date: dateInfo.date,
+    time: timeRange,
+    dayOfWeek: dateInfo.dayOfWeek,
+    eventDate: dateInfo.eventDate,
+    category: eventRaw.category || deriveCategoryFromClubType(eventRaw.club_type),
+    organization: eventRaw.organization || eventRaw.display_handle || '',
+    requiresRegistration: eventRaw.requiresRegistration ?? eventRaw.registration ?? false,
+    isLive: eventRaw.isLive ?? true,
+    food: eventRaw.food || [],
+    price: eventRaw.price ?? 0,
+    imageUrl: eventRaw.imageUrl || eventRaw.source_image_url,
+    addedDate: eventRaw.addedDate || (eventRaw.added_at ? new Date(eventRaw.added_at) : new Date()),
+  };
+}
+
+/**
  * Check if event is upcoming
  */
 export function isEventUpcoming(event: Event): boolean {

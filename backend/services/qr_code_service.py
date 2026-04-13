@@ -1,12 +1,35 @@
 """QR codes and scans via Supabase. Sync."""
 
+import logging
 import uuid
 from datetime import datetime
 
 from core.database import get_sb
-from core.errors import POSTER_NOT_FOUND
+from core.exceptions import NotFoundError, ValidationError
+
+log = logging.getLogger(__name__)
+from core.errors import POSTER_NOT_FOUND, REQUIRES_LOCATION
 from core.tables import QR_CODES, QR_CODE_SCANS
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
+
+
+def _coerce_destination_id(
+    destination_type: str,
+    destination_id: str | None,
+    qr_code_id: str,
+) -> str | int | None:
+    """Cast destination_id to int for event-type QR codes.
+
+    Returns the original value for non-event types.  Logs a warning
+    (instead of raising) when the cast fails so callers always get a
+    usable redirect.
+    """
+    if destination_type == "event" and destination_id is not None:
+        try:
+            return int(destination_id)
+        except (TypeError, ValueError) as e:
+            log.warning("QR %s has non-integer destination_id for event type: %s", qr_code_id, e)
+    return destination_id
 
 
 def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
@@ -28,7 +51,7 @@ def upsert_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
         "destination_id": dest_id,
         "filters": data.filters,
         "created_by": created_by,
-        "is_active": data.is_active if existing else False,
+        "is_active": existing.is_active if existing else False,
         "image_url": data.image_url,
         "latitude": data.latitude,
         "longitude": data.longitude,
@@ -52,11 +75,16 @@ def activate_poster_and_record_scan(
     if not qr or qr.is_active:
         return None
     sb = get_sb()
-    sb.table(QR_CODES).update({
+    # Conditional update: only succeeds if is_active is still False,
+    # preventing the TOCTOU race when multiple first-scans arrive concurrently.
+    r = sb.table(QR_CODES).update({
         "latitude": latitude,
         "longitude": longitude,
         "is_active": True,
-    }).eq("id", qr_code_id).execute()
+    }).eq("id", qr_code_id).eq("is_active", False).execute()
+    if not r.data:
+        # Another request won the race — this poster was already activated.
+        return None
     sb.table(QR_CODE_SCANS).insert({
         "id": str(uuid.uuid4()),
         "qr_code_id": qr_code_id,
@@ -65,15 +93,49 @@ def activate_poster_and_record_scan(
         "conversion_actions": [],
     }).execute()
     qr = get_qr_code_by_id(qr_code_id)
-    dest_id = qr.destination_id
-    if qr.destination_type == "event" and dest_id is not None:
-        try:
-            dest_id = int(dest_id)
-        except (TypeError, ValueError):
-            pass
     return QrCodeRedirect(
         destination_type=qr.destination_type,
-        destination_id=dest_id,
+        destination_id=_coerce_destination_id(qr.destination_type, qr.destination_id, qr_code_id),
+        filters=qr.filters,
+    )
+
+
+def handle_scan(
+    qr_code_id: str,
+    *,
+    lat: float | None,
+    lon: float | None,
+    session_id: str,
+    user_agent: str | None = None,
+) -> QrCodeRedirect:
+    """Orchestrate a QR scan: activate if inactive (with coordinates), otherwise record and redirect.
+
+    Raises ``NotFoundError`` when the QR code does not exist.
+    Raises ``ValidationError`` when the poster is inactive and no coordinates
+    were provided (the client must supply lat/lon to activate the poster).
+    """
+    qr = get_qr_code_by_id(qr_code_id)
+    if not qr:
+        raise NotFoundError(POSTER_NOT_FOUND)
+
+    if not qr.is_active:
+        if lat is not None and lon is not None:
+            redirect_config = activate_poster_and_record_scan(
+                qr_code_id, lat, lon, session_id=session_id, user_agent=user_agent
+            )
+            if redirect_config:
+                return redirect_config
+        raise ValidationError(REQUIRES_LOCATION)
+
+    record_scan(qr_code_id, session_id=session_id, user_agent=user_agent)
+    return build_redirect(qr)
+
+
+def build_redirect(qr: QrCodeResponse) -> QrCodeRedirect:
+    """Build a QrCodeRedirect from a QrCodeResponse, coercing destination_id."""
+    return QrCodeRedirect(
+        destination_type=qr.destination_type,
+        destination_id=_coerce_destination_id(qr.destination_type, qr.destination_id, qr.id),
         filters=qr.filters,
     )
 
@@ -98,7 +160,7 @@ def record_scan(
 
 def delete_qr_code(qr_code_id: str) -> None:
     if not get_qr_code_by_id(qr_code_id):
-        raise ValueError(POSTER_NOT_FOUND)
+        raise NotFoundError(POSTER_NOT_FOUND)
     get_sb().table(QR_CODES).delete().eq("id", qr_code_id).execute()
 
 

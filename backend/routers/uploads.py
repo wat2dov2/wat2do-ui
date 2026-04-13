@@ -2,16 +2,18 @@ import asyncio
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from core.auth import get_current_user, require_owner_or_admin
+from core.auth import get_current_user, get_db_user, require_owner_or_admin
 from core.constants import (
     BUCKET_EVENT_IMAGES,
     BUCKET_AVATARS,
     BUCKET_CLUB_LOGOS,
     BUCKET_QR_ASSETS,
-    MAX_IMAGE_SIZE_BYTES,
 )
-from core.errors import CLUB_NOT_FOUND, EVENT_NOT_FOUND, USER_NOT_FOUND
+from core.errors import CLUB_NOT_FOUND, EVENT_NOT_FOUND
 from core.svg_sanitize import looks_like_svg, sanitize_svg
+from schemas.club import ClubUpdate
+from schemas.event import EventUpdate
+from schemas.user import UserUpdate
 from services.storage_service import storage
 from services import user_service, event_service, club_service
 
@@ -21,14 +23,14 @@ router = APIRouter(prefix="/uploads", tags=["uploads"])
 async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
     if not file.content_type:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Missing content type")
-    allowed = storage.BUCKETS.get(bucket, {}).get("allowed_mime_types", [])
+    allowed = storage.get_allowed_mime_types(bucket)
     if file.content_type not in allowed:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             f"File type {file.content_type} not allowed. Accepted: {', '.join(allowed)}",
         )
     data = await file.read()
-    limit = storage.BUCKETS.get(bucket, {}).get("file_size_limit", MAX_IMAGE_SIZE_BYTES)
+    limit = storage.get_file_size_limit(bucket)
     if len(data) > limit:
         raise HTTPException(
             status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -69,6 +71,24 @@ async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
     return data, file.content_type
 
 
+async def _replace_image(file: UploadFile, bucket: str, old_url: str | None, update_fn) -> str:
+    """Validate file, delete old image if present, upload new, and update the resource.
+
+    *update_fn* receives the new URL and persists it (e.g. via service.update_*).
+    Returns the new public URL.
+    """
+    data, content_type = await _validated_upload(file, bucket)
+    if old_url:
+        old_path = storage.path_from_url(old_url, bucket)
+        if old_path:
+            await asyncio.to_thread(storage.delete_file, bucket, old_path)
+    url = await asyncio.to_thread(
+        storage.upload_file, bucket, data, file.filename or "upload", content_type,
+    )
+    await asyncio.to_thread(update_fn, url)
+    return url
+
+
 @router.post("/event-image/{event_id}")
 async def upload_event_image(
     event_id: int,
@@ -79,37 +99,22 @@ async def upload_event_image(
     if not event:
         raise HTTPException(status.HTTP_404_NOT_FOUND, EVENT_NOT_FOUND)
     require_owner_or_admin(user, event.created_by)
-    data, content_type = await _validated_upload(file, BUCKET_EVENT_IMAGES)
-    if event.source_image_url:
-        old_path = storage.path_from_url(event.source_image_url, BUCKET_EVENT_IMAGES)
-        if old_path:
-            await asyncio.to_thread(storage.delete_file, BUCKET_EVENT_IMAGES, old_path)
-    url = await asyncio.to_thread(
-        storage.upload_file, BUCKET_EVENT_IMAGES, data, file.filename or "image", content_type,
+    url = await _replace_image(
+        file, BUCKET_EVENT_IMAGES, event.source_image_url,
+        lambda u: event_service.update_event(event_id, EventUpdate(source_image_url=u)),
     )
-    from schemas.event import EventUpdate
-    await asyncio.to_thread(event_service.update_event, event_id, EventUpdate(source_image_url=url))
     return {"url": url}
 
 
 @router.post("/avatar")
 async def upload_avatar(
     file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
+    db_user=Depends(get_db_user),
 ):
-    db_user = await asyncio.to_thread(user_service.get_user_by_supabase_id, user["id"])
-    if not db_user:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, USER_NOT_FOUND)
-    data, content_type = await _validated_upload(file, BUCKET_AVATARS)
-    if db_user.avatar_url:
-        old_path = storage.path_from_url(db_user.avatar_url, BUCKET_AVATARS)
-        if old_path:
-            await asyncio.to_thread(storage.delete_file, BUCKET_AVATARS, old_path)
-    url = await asyncio.to_thread(
-        storage.upload_file, BUCKET_AVATARS, data, file.filename or "avatar", content_type,
+    url = await _replace_image(
+        file, BUCKET_AVATARS, db_user.avatar_url,
+        lambda u: user_service.update_user(db_user.id, UserUpdate(avatar_url=u)),
     )
-    from schemas.user import UserUpdate
-    await asyncio.to_thread(user_service.update_user, db_user.id, UserUpdate(avatar_url=url))
     return {"url": url}
 
 
@@ -123,16 +128,10 @@ async def upload_club_logo(
     if not club:
         raise HTTPException(status.HTTP_404_NOT_FOUND, CLUB_NOT_FOUND)
     require_owner_or_admin(user, club.created_by)
-    data, content_type = await _validated_upload(file, BUCKET_CLUB_LOGOS)
-    if club.logo_url:
-        old_path = storage.path_from_url(club.logo_url, BUCKET_CLUB_LOGOS)
-        if old_path:
-            await asyncio.to_thread(storage.delete_file, BUCKET_CLUB_LOGOS, old_path)
-    url = await asyncio.to_thread(
-        storage.upload_file, BUCKET_CLUB_LOGOS, data, file.filename or "logo", content_type,
+    url = await _replace_image(
+        file, BUCKET_CLUB_LOGOS, club.logo_url,
+        lambda u: club_service.update_club(club_id, ClubUpdate(logo_url=u)),
     )
-    from schemas.club import ClubUpdate
-    await asyncio.to_thread(club_service.update_club, club_id, ClubUpdate(logo_url=url))
     return {"url": url}
 
 

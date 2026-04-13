@@ -93,7 +93,7 @@ def test_resolve_qr_records_scan_and_returns_config(client):
 
 
 def test_resolve_inactive_qr_requires_location(client):
-    """First scan on an inactive poster returns 202 until lat/lon is provided."""
+    """First scan on an inactive poster returns 400 until lat/lon is provided."""
     mock_qr = _mock_qr(id="inactive-1", destination_type="event", destination_id="42", is_active=False)
 
     def mock_get(qr_code_id):
@@ -103,7 +103,7 @@ def test_resolve_inactive_qr_requires_location(client):
     qr_code_service.get_qr_code_by_id = MagicMock(side_effect=mock_get)
     try:
         resp = client.get("/qr/inactive-1")
-        assert resp.status_code == 202
+        assert resp.status_code == 400
         assert resp.json()["detail"] == "requires_location"
     finally:
         qr_code_service.get_qr_code_by_id = original_get

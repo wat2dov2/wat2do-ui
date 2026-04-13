@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Error logged to browser console automatically
+    console.error("Uncaught render error:", error, errorInfo);
   }
 
   handleReset = () => {

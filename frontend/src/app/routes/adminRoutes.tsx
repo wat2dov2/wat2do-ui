@@ -10,6 +10,7 @@ import React, { lazy, Suspense, useMemo } from "react";
 import { AdminProvider } from "@/features/admin/context/AdminContext";
 import type { Event, EventFormData, EventSubmission, Club } from "@/shared/types";
 import { submissionToEventData } from "@/features/admin/utils/submissionToEvent";
+import { adminCreateClub, adminUpdateClub, adminDeleteClub } from "@/features/admin/api/admin.api";
 import { useNavigate } from "react-router-dom";
 import { ROUTES, ADMIN_ROUTE_MAP } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -73,15 +74,12 @@ export function AdminRouteWrapper({
       }),
       ...(includeClubs && {
         onAddClub: async (club: Club) => {
-          const { adminCreateClub } = await import("@/features/admin/api/admin.api");
           await adminCreateClub(club);
         },
         onEditClub: async (club: Club) => {
-          const { adminUpdateClub } = await import("@/features/admin/api/admin.api");
           await adminUpdateClub(club, club);
         },
         onDeleteClub: async (clubId: number) => {
-          const { adminDeleteClub } = await import("@/features/admin/api/admin.api");
           await adminDeleteClub(clubId);
         },
       }),

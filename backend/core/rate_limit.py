@@ -19,12 +19,16 @@ the storage backend to Redis or another shared store.
 Usage (authenticated, keyed by user ID)::
 
     from core.rate_limit import RateLimiter
+    from core.auth import get_current_user
 
     ai_limiter = RateLimiter(max_requests=10, window_seconds=60)
 
+    def _user_id_key(user: dict = Depends(get_current_user)) -> str:
+        return user["id"]
+
     @router.post("/expensive")
     def expensive(user: dict = Depends(get_current_user),
-                  _rl: None = Depends(ai_limiter.dependency())):
+                  _rl: None = Depends(ai_limiter.dependency(key_func=_user_id_key))):
         ...
 
 Usage (unauthenticated, keyed by client IP)::
@@ -55,7 +59,6 @@ from threading import Lock
 
 from fastapi import Depends, HTTPException, Request, status
 
-from core.auth import get_current_user
 from core.client_ip import get_client_ip
 from core.constants import (
     ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
@@ -168,7 +171,7 @@ class RateLimiter:
                 len(self._requests),
             )
 
-    def _check(self, key: str) -> None:
+    def check(self, key: str) -> None:
         """Raise 429 if *key* has exceeded its request quota.
 
         The 429 response includes a ``Retry-After`` header (seconds)
@@ -201,18 +204,28 @@ class RateLimiter:
     # Public API
     # ------------------------------------------------------------------
 
-    def dependency(self):
+    def dependency(self, key_func=None):
         """Return a FastAPI dependency that enforces the rate limit.
 
-        The dependency requires ``get_current_user`` so the user dict is
-        available for keying.  Include it *after* ``get_current_user`` in
-        the endpoint signature.
-        """
+        *key_func* is an optional FastAPI dependency that returns the string
+        key to rate-limit by (e.g. a dependency that extracts the user ID
+        from the auth token).  When omitted, the client IP address is used
+        as the key, making the limiter auth-agnostic.
 
-        async def _rate_limit_dep(
-            user: dict = Depends(get_current_user),
-        ) -> None:
-            self._check(user["id"])
+        Routers that want per-user limiting should pass a dependency that
+        extracts the user ID, e.g.::
+
+            def _user_id_key(user: dict = Depends(get_current_user)) -> str:
+                return user["id"]
+
+            _rl: None = Depends(ai_limiter.dependency(key_func=_user_id_key))
+        """
+        if key_func is None:
+            async def _rate_limit_dep(request: Request) -> None:
+                self.check(get_client_ip(request))
+        else:
+            async def _rate_limit_dep(key: str = Depends(key_func)) -> None:
+                self.check(key)
 
         return _rate_limit_dep
 
@@ -225,7 +238,7 @@ class RateLimiter:
         """
 
         async def _ip_rate_limit_dep(request: Request) -> None:
-            self._check(get_client_ip(request))
+            self.check(get_client_ip(request))
 
         return _ip_rate_limit_dep
 

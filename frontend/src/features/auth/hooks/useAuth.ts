@@ -5,7 +5,7 @@
  */
 
 import { useCallback } from "react";
-import { useAuthStore } from "@/features/auth/store/auth.store";
+import { useAuthFormState } from "@/features/auth/store/auth.store";
 import {
   loginAPI,
   signupAPI,
@@ -17,7 +17,7 @@ import {
 } from "@/features/auth/api/auth.api";
 
 export function useAuth() {
-  const store = useAuthStore();
+  const store = useAuthFormState();
 
   const handleLogin = useCallback(
     async (email: string, password: string) => {

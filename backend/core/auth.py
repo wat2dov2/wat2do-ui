@@ -84,8 +84,8 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
                 issuer=_EXPECTED_ISSUER,
             )
             return _payload_to_user(payload)
-        except jwt.InvalidTokenError:
-            pass
+        except jwt.InvalidTokenError as e:
+            log.debug("JWT HS256 fallback verification failed: %s", e)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -134,6 +134,19 @@ def get_optional_user(
         return None
 
 
+def _check_admin(supabase_id: str) -> bool:
+    """Return True if the user identified by *supabase_id* has the admin role.
+
+    Single source of truth for the DB lookup + role comparison used by
+    both ``get_admin_user`` and ``is_admin``.  Always bypasses the user
+    cache so that role changes take effect immediately.
+    """
+    db_user = _get_user_service().get_user_by_supabase_id(
+        supabase_id, bypass_cache=True
+    )
+    return db_user is not None and db_user.role == ROLE_ADMIN
+
+
 def get_admin_user(
     auth_user: dict = Depends(get_current_user),
 ) -> dict:
@@ -142,10 +155,7 @@ def get_admin_user(
     Bypasses the user cache so that role changes (e.g. demotion) take
     effect immediately — no stale-cache window.
     """
-    db_user = _get_user_service().get_user_by_supabase_id(
-        auth_user["id"], bypass_cache=True
-    )
-    if not db_user or db_user.role != ROLE_ADMIN:
+    if not _check_admin(auth_user["id"]):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ADMIN_ACCESS_REQUIRED,
@@ -158,22 +168,34 @@ def is_admin(auth_user: dict) -> bool:
 
     Bypasses the user cache so that role changes take effect immediately.
     """
-    db_user = _get_user_service().get_user_by_supabase_id(
-        auth_user["id"], bypass_cache=True
-    )
-    return db_user is not None and db_user.role == ROLE_ADMIN
+    return _check_admin(auth_user["id"])
 
 
-def resolve_db_user(auth_user: dict):
+def resolve_db_user(auth_user: dict, *, user_lookup=None):
     """Look up the internal DB user from a Supabase auth user dict.
 
     Raises 404 if the user has not completed signup (no row in ``users``).
     Shared by routers that need the internal user row after auth.
+
+    *user_lookup* can be injected for testing; defaults to
+    ``user_service.get_user_by_supabase_id``.
     """
-    db_user = _get_user_service().get_user_by_supabase_id(auth_user["id"])
+    lookup = user_lookup or _get_user_service().get_user_by_supabase_id
+    db_user = lookup(auth_user["id"])
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)
     return db_user
+
+
+def get_db_user(
+    auth_user: dict = Depends(get_current_user),
+):
+    """FastAPI dependency: authenticate then resolve the internal DB user.
+
+    Composes ``get_current_user`` with ``resolve_db_user`` so routers
+    can use ``Depends(get_db_user)`` instead of the manual two-step.
+    """
+    return resolve_db_user(auth_user)
 
 
 def require_owner_or_admin(auth_user: dict, resource_owner_id: str | None) -> None:

@@ -8,11 +8,12 @@ TOCTOU race condition that would allow double-spending under concurrency.
 import logging
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, status
+from postgrest.exceptions import APIError
 
 from core.constants import DEFAULT_CREDIT_BALANCE, PROMOTION_PACKAGES
 from core.database import get_sb
 from core.errors import INSUFFICIENT_CREDITS, INVALID_PROMOTION_PACKAGE
+from core.exceptions import ValidationError
 from core.tables import EVENT_PROMOTIONS
 from schemas.credit import PromotionResponse
 
@@ -20,6 +21,16 @@ log = logging.getLogger(__name__)
 
 # Sentinel returned by the adjust_credits DB function when funds are insufficient.
 _INSUFFICIENT_FUNDS_SENTINEL = -1
+
+
+def _is_insufficient_credits(error: APIError) -> bool:
+    """Return True if the APIError indicates insufficient credits.
+
+    The promote_event RPC raises a PostgreSQL exception whose message
+    contains "insufficient_credits" when the user's balance is too low.
+    Centralised here so the detection policy lives in one place.
+    """
+    return "insufficient_credits" in str(error)
 
 
 def get_balance(user_id: str) -> int:
@@ -56,10 +67,7 @@ def deduct_credits(user_id: str, amount: int) -> int:
     ).execute()
     new_balance = r.data
     if new_balance == _INSUFFICIENT_FUNDS_SENTINEL:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=INSUFFICIENT_CREDITS,
-        )
+        raise ValidationError(INSUFFICIENT_CREDITS)
     return new_balance
 
 
@@ -79,10 +87,7 @@ def create_promotion(
     """
     pkg = PROMOTION_PACKAGES.get(package)
     if pkg is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=INVALID_PROMOTION_PACKAGE,
-        )
+        raise ValidationError(INVALID_PROMOTION_PACKAGE)
     credits_cost, duration_days = pkg
 
     try:
@@ -97,12 +102,10 @@ def create_promotion(
                 "p_default_balance": DEFAULT_CREDIT_BALANCE,
             },
         ).execute()
-    except Exception as e:
-        if "insufficient_credits" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=INSUFFICIENT_CREDITS,
-            )
+    except APIError as e:
+        if _is_insufficient_credits(e):
+            raise ValidationError(INSUFFICIENT_CREDITS)
+        log.error("RPC promote_event failed: %s", e)
         raise
 
     row = r.data[0] if r.data else {}

@@ -5,7 +5,7 @@
 
 import type { Event, EventSubmission, ReportedEvent, ScrapedEvent, Club, SubmissionStatus, ReportStatus } from "@/shared/types";
 import { SUBMISSION_APPROVED, SUBMISSION_REJECTED } from "@/shared/constants/statuses";
-import { fetchAllEvents } from "@/features/events/api/events.api";
+import { fetchAllEvents, fetchEventById } from "@/features/events";
 import {
   getAllClubs as getAllClubsData,
   getClubTypes as getClubTypesData,
@@ -13,7 +13,7 @@ import {
   createClubAPI,
   updateClubAPI,
   deleteClubAPI,
-} from "@/features/clubs/api/clubs.api";
+} from "@/features/clubs";
 import { api } from "@/shared/services/apiClient";
 
 // Re-export types for convenience
@@ -70,8 +70,12 @@ export async function getAllEvents(): Promise<Event[]> {
 }
 
 export async function getEventById(id: number): Promise<Event | null> {
-  const events = await getAllEvents();
-  return events.find((e) => e.id === id) || null;
+  try {
+    return await fetchEventById(id);
+  } catch (err) {
+    console.error(`Failed to fetch event ${id}:`, err);
+    return null;
+  }
 }
 
 export { createClubAPI as adminCreateClub, updateClubAPI as adminUpdateClub, deleteClubAPI as adminDeleteClub };

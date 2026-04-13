@@ -23,7 +23,8 @@ interface AuthState {
   profileCompleted: boolean;
 }
 
-export function useAuthStore() {
+/** Local state hook — not a shared store. Each call creates an isolated instance. */
+export function useAuthFormState() {
   const [state, setState] = useState<AuthState>(() => {
     const session = getSession();
     const profile = getUserProfile();
@@ -70,8 +71,7 @@ export function useAuthStore() {
     setState((prev) => ({
       ...prev,
       profile,
-      profileCompleted:
-        profile !== null && profile.faculty !== "" && profile.interests.length > 0,
+      profileCompleted: isProfileCompleted(),
     }));
   }, []);
 

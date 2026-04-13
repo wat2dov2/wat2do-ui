@@ -12,10 +12,9 @@ import {
   FieldSet,
   FieldError,
 } from "@/shared/ui/field";
-import { useAdminContext } from "@/features/admin/context/AdminContext";
-import { createPosterToBackend } from "@/features/qrcode/api/qrcode.api";
+import { useAdminContext } from "@/features/admin";
+import { useCreatePoster } from "@/features/qrcode/hooks/useCreatePoster";
 import { generateAssetPdf, sanitizeFilename } from "@/features/qrcode/utils/generateAssetPdf";
-import { getSession } from "@/features/auth/api/auth.api";
 import { Spinner } from "@/shared/ui/spinner";
 
 type WizardStep = 1 | 2 | 3;
@@ -112,7 +111,8 @@ interface GenerateQRAssetsWizardProps {
 export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps) {
   const { t } = useTranslation();
   const { userEmail: contextUserEmail } = useAdminContext();
-  const userEmail = contextUserEmail ?? getSession().email ?? "";
+  const { resolveEmail, createPoster } = useCreatePoster();
+  const userEmail = resolveEmail(contextUserEmail);
   const [step, setStep] = useState<WizardStep>(1);
   const [assets, setAssets] = useState<QRAsset[]>([]);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
@@ -331,7 +331,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
           const name = asset.quantity > 1
             ? `${asset.name.replace(/\.[^.]+$/, "")} - Page ${i + 1}`
             : asset.name.replace(/\.[^.]+$/, "");
-          const poster = await createPosterToBackend({
+          const poster = await createPoster({
             id: crypto.randomUUID(),
             name,
             description: null,

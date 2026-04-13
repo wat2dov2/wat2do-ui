@@ -1,8 +1,8 @@
 import { useReducer, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getSmartDefaults } from "@/shared/utils/date";
-import { validateEventForm, markAllFieldsTouched } from "@/shared/services/validationService";
+import { validateEventForm, isEventFormValid, markAllFieldsTouched } from "@/shared/services/validationService";
 import type { EventFormData, ValidationErrors } from "@/shared/types";
+import { getInitialState } from "@/features/events/hooks/useEventForm.utils";
 import {
   eventFormSubmissionReducer,
   type EventFormSubmissionState,
@@ -31,38 +31,12 @@ export function useEventFormSubmission({
 }: UseEventFormSubmissionOptions) {
   const { t } = useTranslation();
 
-  // Get initial state
-  const getInitialState = useCallback((): EventFormSubmissionState => {
-    const defaults = getSmartDefaults();
-    const formData = isEditMode && initialData
-      ? initialData
-      : {
-          title: "",
-          description: "",
-          date: defaults.date,
-          time: defaults.time,
-          location: "",
-          category: "",
-          price: 0,
-          food: [],
-          requiresRegistration: false,
-          organization: "",
-        };
-
-    const dateStr = formData.date || defaults.date;
-    const selectedDate = dateStr
-      ? (() => {
-          const date = new Date(dateStr);
-          return isNaN(date.getTime()) ? undefined : date;
-        })()
-      : undefined;
-
+  // Get initial state — reuse shared utility for form data defaults
+  const getSubmissionInitialState = useCallback((): EventFormSubmissionState => {
+    const base = getInitialState(initialData, isEditMode);
     return {
-      formData,
-      selectedDate,
-      foodInput: "",
+      ...base,
       errors: {},
-      touched: {},
       isSubmitted: false,
       createdEventId: null,
       successMessage: "",
@@ -71,7 +45,7 @@ export function useEventFormSubmission({
 
   const [state, dispatch] = useReducer(
     eventFormSubmissionReducer,
-    getInitialState()
+    getSubmissionInitialState()
   );
 
   // Validate on change - derived state (no need to store in reducer)
@@ -83,16 +57,16 @@ export function useEventFormSubmission({
   // Reset function - can be called from parent when modal opens
   const reset = useCallback(() => {
     if (isOpen) {
-      const initialState = getInitialState();
+      const initial = getSubmissionInitialState();
       dispatch({
         type: "RESET",
         payload: {
-          formData: initialState.formData,
-          selectedDate: initialState.selectedDate,
+          formData: initial.formData,
+          selectedDate: initial.selectedDate,
         },
       });
     }
-  }, [isOpen, getInitialState]);
+  }, [isOpen, getSubmissionInitialState]);
 
   const handleBlur = useCallback((field: string) => {
     dispatch({
@@ -153,13 +127,8 @@ export function useEventFormSubmission({
   );
 
   const isFormValid = useMemo(
-    () =>
-      state.formData.title.trim() &&
-      state.formData.organization.trim() &&
-      state.formData.date &&
-      state.formData.time &&
-      state.formData.location,
-    [state.formData]
+    () => isEventFormValid(state.formData, errors),
+    [state.formData, errors]
   );
 
   return {

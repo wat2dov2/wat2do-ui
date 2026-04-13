@@ -38,9 +38,9 @@ import type { QRCode, Event } from "@/shared/types";
 import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { useCreateQRCodeForm } from "@/features/qrcode/hooks/useCreateQRCodeForm";
+import { useCreatePoster } from "@/features/qrcode/hooks/useCreatePoster";
 import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/shared/utils/qrGenerator";
 import { QR_CANVAS_SIZE } from "@/features/qrcode/constants";
-import { createPosterToBackend } from "@/features/qrcode/api/qrcode.api";
 import {
   CreateQRCodeModalProvider,
   useCreateQRCodeModalContext,
@@ -58,6 +58,7 @@ function CreateQRCodeModalContent() {
   const { t } = useTranslation();
   const { isOpen, onClose, onCreate, events, userEmail } = useCreateQRCodeModalContext();
   const form = useCreateQRCodeForm(events, userEmail);
+  const { createPoster } = useCreatePoster();
   const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
 
   // Use modal state hook for standardized open/close handling
@@ -82,7 +83,7 @@ function CreateQRCodeModalContent() {
           : form.state.destinationType === "custom-url"
             ? form.state.customUrl.trim()
             : null;
-      const qrCode = await createPosterToBackend({
+      const qrCode = await createPoster({
         id,
         name: form.state.name.trim(),
         description: form.state.description.trim() || null,

@@ -20,6 +20,7 @@ import { useUIContext } from "@/contexts/UIContext";
 import { useUserContext } from "@/contexts/UserContext";
 import { useModalContext } from "@/contexts/ModalContext";
 import { ROUTES } from "@/shared/constants/routes";
+import { useAuth } from "@/features/auth";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 export function TopNav() {
@@ -28,6 +29,7 @@ export function TopNav() {
   const { setShowOnboarding } = useModalContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogoClick = useCallback(() => {
     navigate(ROUTES.HOME);
@@ -43,14 +45,13 @@ export function TopNav() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      const { logoutAPI } = await import("@/features/auth/api/auth.api");
-      await logoutAPI();
+      await logout();
     } catch (err) {
       console.error("Logout API call failed, clearing local state anyway:", err);
     }
     setProfileCompleted(false);
     setUserEmail(null);
-  }, [setProfileCompleted, setUserEmail]);
+  }, [logout, setProfileCompleted, setUserEmail]);
 
   const handleSignIn = useCallback(() => {
     navigate(ROUTES.LOGIN);

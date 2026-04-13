@@ -1,98 +1,53 @@
-"""User-event interaction tracking and aggregation."""
+"""User-event interaction tracking and aggregation.
+
+This module is a thin CRUD/dedup layer.  Recommendation-specific scoring
+(get_user_event_scores, get_interaction_matrix, get_event_popularity, and
+cache infrastructure) lives in services.recommender.interaction_scores so
+that this service has no dependency on recommender config.
+
+The four scoring functions are re-exported here so existing call sites
+(popularity.py, collaborative.py, content_based.py, evaluation.py) that
+access them via `interaction_service.<name>` continue to work unchanged.
+"""
 
 import logging
-import threading
-import time
 import uuid
 from datetime import datetime, timedelta, timezone
 
 from core.constants import (
-    DEFAULT_INTERACTION_LIMIT,
     DEDUP_WINDOW_MINUTES,
-    INTERACTION_CLICK,
-    INTERACTION_DETAIL_VIEW,
-    INTERACTION_SAVE,
-    INTERACTION_SHARE,
-    INTERACTION_UNSAVE,
-    INTERACTION_VIEW,
     MAX_DUPLICATE_INTERACTIONS,
+    MAX_INTERACTION_BATCH_SIZE,
     MAX_USER_INTERACTIONS_PER_WINDOW,
 )
 from core.database import get_sb
+from core.exceptions import AuthenticationError, AuthorizationError, ValidationError
 from core.pagination import iter_all_pages
 from core.tables import USER_INTERACTIONS
 from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
-from cachetools import TTLCache
-from services.recommender.config import (
-    CACHE_TTL_SECONDS,
-    CF_MAX_USER_EVENT_SCORE,
-    INTERACTION_LOOKBACK_DAYS,
-    POP_MAX_USER_CONTRIBUTION,
-    USER_SCORES_CACHE_MAX,
-    USER_SCORES_CACHE_TTL,
+from services.recommender.interaction_scores import (
+    clear_user_scores_cache,
+    get_event_popularity,
+    get_interaction_matrix,
+    get_user_event_scores,
 )
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Simple TTL cache for expensive shared queries (interaction matrix, popularity).
-# These are global data identical for every request within a time window.
-# ---------------------------------------------------------------------------
-_cache_lock = threading.Lock()
-_cache: dict[str, tuple[float, object]] = {}  # key -> (expires_at, value)
-
-
-def _cache_get(key: str) -> object | None:
-    """Return cached value if still valid, else None."""
-    entry = _cache.get(key)
-    if entry is None:
-        return None
-    expires_at, value = entry
-    if time.monotonic() > expires_at:
-        return None
-    return value
-
-
-def _cache_set(key: str, value: object, ttl: int = CACHE_TTL_SECONDS) -> None:
-    """Store a value with a TTL."""
-    _cache[key] = (time.monotonic() + ttl, value)
-
-
-# ---------------------------------------------------------------------------
-# Per-user TTL cache for get_user_event_scores.
-# Uses cachetools.TTLCache (same library as user_service) for automatic
-# per-entry expiry and LRU eviction at max size.  Protected by a lock so
-# that concurrent requests for the same user don't trigger parallel DB
-# fetches (double-check pattern consistent with the global caches above).
-# ---------------------------------------------------------------------------
-_user_scores_lock = threading.Lock()
-_user_scores_cache: TTLCache[str, dict[int, float]] = TTLCache(
-    maxsize=USER_SCORES_CACHE_MAX, ttl=USER_SCORES_CACHE_TTL,
-)
-
-
-def clear_user_scores_cache(user_id: str | None = None) -> None:
-    """Invalidate cached user event scores.
-
-    Args:
-        user_id: Clear scores for a specific user.  If None, clear all.
-    """
-    with _user_scores_lock:
-        if user_id is None:
-            _user_scores_cache.clear()
-        else:
-            _user_scores_cache.pop(user_id, None)
-
-
-# Weights for computing interaction scores.
-INTERACTION_WEIGHTS: dict[str, float] = {
-    INTERACTION_VIEW: 1.0,
-    INTERACTION_CLICK: 2.0,
-    INTERACTION_DETAIL_VIEW: 3.0,
-    INTERACTION_SAVE: 5.0,
-    INTERACTION_UNSAVE: -3.0,
-    INTERACTION_SHARE: 3.0,
-}
+# Re-export scoring helpers so callers that do
+#   `interaction_service.get_interaction_matrix()`
+# continue to work without modification.
+__all__ = [
+    "clear_user_scores_cache",
+    "get_event_popularity",
+    "get_interaction_matrix",
+    "get_user_event_scores",
+    "record_interactions",
+    "record_interactions_batch",
+    "check_duplicate_interactions",
+    "get_user_interaction_count",
+    "get_user_interaction_counts",
+]
 
 
 def record_interactions(
@@ -117,150 +72,73 @@ def record_interactions(
     return len(r.data) if r.data else 0
 
 
-def get_user_event_scores(user_id: str) -> dict[int, float]:
-    """Weighted interaction scores for a single user: {event_id: score}.
+def _validate_batch(
+    user_id: str | None,
+    payload_user_id: str | None,
+    interactions: list[InteractionCreate],
+) -> None:
+    """Validate batch size and user-ID ownership.
 
-    Results are cached per-user for USER_SCORES_CACHE_TTL seconds to avoid
-    hitting the database on every recommendation request.  Thread-safe via
-    double-check locking so concurrent requests share one DB round-trip.
+    Raises ``ValidationError``, ``AuthenticationError``, or
+    ``AuthorizationError`` on failure.
     """
-    # Fast path: check without lock
-    cached = _user_scores_cache.get(user_id)
-    if cached is not None:
-        log.debug("User event scores cache HIT for user %s", user_id)
-        return cached
-
-    with _user_scores_lock:
-        # Double-check after acquiring lock
-        cached = _user_scores_cache.get(user_id)
-        if cached is not None:
-            log.debug("User event scores cache HIT (after lock) for user %s", user_id)
-            return cached
-
-        log.debug("User event scores cache MISS for user %s — querying DB", user_id)
-        scores: dict[int, float] = {}
-        for row in iter_all_pages(
-            lambda offset, ps: (
-                get_sb()
-                .table(USER_INTERACTIONS)
-                .select("event_id, interaction_type")
-                .eq("user_id", user_id)
-                .order("created_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
-        ):
-            eid = row["event_id"]
-            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-            scores[eid] = scores.get(eid, 0) + weight
-
-        _user_scores_cache[user_id] = scores
-        return scores
-
-
-def get_interaction_matrix() -> list[InteractionMatrixRow]:
-    """
-    Return user-event interaction scores as typed rows.
-    Used by collaborative filtering to build the user-item matrix.
-
-    Time-windowed to INTERACTION_LOOKBACK_DAYS and cached for CACHE_TTL_SECONDS
-    so that concurrent recommendation requests share one DB round-trip.
-    """
-    cached = _cache_get("interaction_matrix")
-    if cached is not None:
-        return cached  # type: ignore[return-value]
-
-    with _cache_lock:
-        # Double-check after acquiring lock
-        cached = _cache_get("interaction_matrix")
-        if cached is not None:
-            return cached  # type: ignore[return-value]
-
-        cutoff = (
-            datetime.now(timezone.utc) - timedelta(days=INTERACTION_LOOKBACK_DAYS)
-        ).isoformat()
-
-        agg: dict[tuple[str, int], float] = {}
-        for row in iter_all_pages(
-            lambda offset, ps: (
-                get_sb()
-                .table(USER_INTERACTIONS)
-                .select("user_id, event_id, interaction_type")
-                .not_.is_("user_id", "null")
-                .gte("created_at", cutoff)
-                .order("created_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
-        ):
-            key = (row["user_id"], row["event_id"])
-            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-            agg[key] = agg.get(key, 0) + weight
-
-        result = [
-            InteractionMatrixRow(
-                user_id=uid,
-                event_id=eid,
-                score=min(score, CF_MAX_USER_EVENT_SCORE),
+    if len(interactions) > MAX_INTERACTION_BATCH_SIZE:
+        raise ValidationError(
+            f"Batch exceeds maximum size of {MAX_INTERACTION_BATCH_SIZE} interactions",
+        )
+    if payload_user_id is not None:
+        if user_id is None:
+            raise AuthenticationError(
+                "Cannot submit interactions on behalf of another user",
             )
-            for (uid, eid), score in agg.items()
-            if score > 0
-        ]
-        _cache_set("interaction_matrix", result)
-        return result
+        if payload_user_id != user_id:
+            raise AuthorizationError(
+                "Cannot submit interactions on behalf of another user",
+            )
 
 
-def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPopularity]:
+def record_interactions_batch(
+    user_id: str | None,
+    payload_user_id: str | None,
+    session_id: str,
+    interactions: list[InteractionCreate],
+) -> int:
+    """Orchestrate a batch interaction request: validate, dedup, persist.
+
+    Business rules:
+    - Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.
+    - If the payload contains a ``user_id`` it must match the authenticated
+      user.  Unauthenticated requests may not send a ``user_id``.
+    - Authenticated users get deduplication; anonymous users do not.
+    - DB errors are caught and logged; the method returns 0 in that case.
+
+    Raises ``ValidationError``, ``AuthenticationError``, or
+    ``AuthorizationError`` on validation/auth failures.
+    Returns the number of interactions recorded.
     """
-    Return events ranked by weighted interaction count.
-    Returns typed rows sorted descending.
+    from postgrest.exceptions import APIError
 
-    Time-windowed to INTERACTION_LOOKBACK_DAYS and cached for CACHE_TTL_SECONDS.
-    The cache stores the full ranked list; the limit is applied after.
-    """
-    cache_key = "event_popularity"
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached[:limit]  # type: ignore[index]
+    _validate_batch(user_id, payload_user_id, interactions)
 
-    with _cache_lock:
-        cached = _cache_get(cache_key)
-        if cached is not None:
-            return cached[:limit]  # type: ignore[index]
+    # ── Deduplication (authenticated users only) ─────────────────────
+    if user_id is not None:
+        interactions = check_duplicate_interactions(
+            user_id=user_id,
+            interactions=interactions,
+        )
+        if not interactions:
+            return 0
 
-        cutoff = (
-            datetime.now(timezone.utc) - timedelta(days=INTERACTION_LOOKBACK_DAYS)
-        ).isoformat()
-
-        # Aggregate per (user, event) first so we can cap each user's
-        # contribution before summing across users.  This prevents a small
-        # number of bot accounts from dominating popularity scores.
-        user_event_scores: dict[tuple[str | None, int], float] = {}
-        for row in iter_all_pages(
-            lambda offset, ps: (
-                get_sb()
-                .table(USER_INTERACTIONS)
-                .select("user_id, event_id, interaction_type")
-                .gte("created_at", cutoff)
-                .order("created_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
-        ):
-            key = (row.get("user_id"), row["event_id"])
-            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-            user_event_scores[key] = user_event_scores.get(key, 0) + weight
-
-        # Sum across users with per-user cap applied.
-        scores: dict[int, float] = {}
-        for (_, eid), raw_score in user_event_scores.items():
-            capped = min(raw_score, POP_MAX_USER_CONTRIBUTION)
-            scores[eid] = scores.get(eid, 0) + capped
-
-        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        result = [EventPopularity(event_id=eid, score=score) for eid, score in ranked]
-        _cache_set(cache_key, result)
-        return result[:limit]
+    # ── Persist ──────────────────────────────────────────────────────
+    try:
+        return record_interactions(
+            user_id=user_id,
+            session_id=session_id,
+            interactions=interactions,
+        )
+    except APIError as e:
+        log.warning("interactions table unavailable: %s", e)
+        return 0
 
 
 def get_user_interaction_count(user_id: str) -> int:

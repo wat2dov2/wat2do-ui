@@ -19,24 +19,31 @@ const stepVariants = {
   exit: { opacity: 0, y: -20 },
 };
 
+/** Goose dialogue messages by step. Extracted for easy future i18n migration. */
+const GOOSE_MESSAGES: Record<number, string> = {
+  0: "Hey there!",
+  1: "Welcome to the Wat2Do family! We're a collective with 1 goal: to create as many memories as possible in our short time in university",
+  2: "Everyone here is into something different. What kind of events are you into?",
+  4: "Gotcha, and which faculty are you in?",
+  5: "Ding! Your personalized feed is hot, fresh, and ready to serve!",
+};
+
+const GOOSE_MESSAGE_STEP3_WITH_SCHOOL = (school: string) =>
+  `5 other students have the exact same interests! Now, which of these from ${school} catch your eye?`;
+const GOOSE_MESSAGE_STEP3_DEFAULT =
+  "Love it, this is how we find the good stuff. Which of these catch your eye?";
+
+const ONBOARDING_LABELS = {
+  searchPlaceholder: "Search or select event types...",
+  doneNextLabel: "Take me to Wat2Do!",
+  defaultNextLabel: "Continue",
+} as const;
+
 function getGooseMessage(step: number, school: string): string {
-  switch (step) {
-    case 0:
-      return "Hey there!";
-    case 1:
-      return "Welcome to the Wat2Do family! We're a collective with 1 goal: to create as many memories as possible in our short time in university";
-    case 2:
-      return "Everyone here is into something different. What kind of events are you into?";
-    case 3:
-      if (school) return `5 other students have the exact same interests! Now, which of these from ${school} catch your eye?`;
-      return "Love it, this is how we find the good stuff. Which of these catch your eye?";
-    case 4:
-      return "Gotcha, and which faculty are you in?";
-    case 5:
-      return "Ding! Your personalized feed is hot, fresh, and ready to serve!";
-    default:
-      return "";
+  if (step === 3) {
+    return school ? GOOSE_MESSAGE_STEP3_WITH_SCHOOL(school) : GOOSE_MESSAGE_STEP3_DEFAULT;
   }
+  return GOOSE_MESSAGES[step] ?? "";
 }
 
 export function OnboardingPage() {
@@ -80,6 +87,31 @@ export function OnboardingPage() {
 
   const isDoneStep = flow.currentStep === 5;
 
+  const stepContent: Record<number, JSX.Element> = {
+    0: <div className="w-full min-h-[120px]" aria-hidden />,
+    1: <div className="w-full min-h-[120px]" aria-hidden />,
+    2: (
+      <OnboardingInterestsCombobox
+        selected={flow.selectedTopics}
+        onToggle={flow.toggleTopic}
+        placeholder={ONBOARDING_LABELS.searchPlaceholder}
+      />
+    ),
+    3: (
+      <OnboardingEventGrid
+        selectedEventIds={flow.selectedEventIds}
+        onToggleEventId={flow.toggleEventId}
+      />
+    ),
+    4: (
+      <OnboardingFacultyStep
+        faculty={flow.faculty}
+        onFacultyChange={flow.setFaculty}
+      />
+    ),
+    5: <div className="w-full min-h-[120px]" aria-hidden />,
+  };
+
   const gooseMessage = useMemo(
     () => getGooseMessage(flow.currentStep, flow.school),
     [flow.currentStep, flow.school]
@@ -111,35 +143,7 @@ export function OnboardingPage() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="w-full"
             >
-              {/* Steps 0 & 1: dialogue only — no form content */}
-              {(flow.currentStep === 0 || flow.currentStep === 1) && (
-                <div className="w-full min-h-[120px]" aria-hidden />
-              )}
-
-              {flow.currentStep === 2 && (
-                <OnboardingInterestsCombobox
-                  selected={flow.selectedTopics}
-                  onToggle={flow.toggleTopic}
-                  placeholder="Search or select event types..."
-                />
-              )}
-
-              {flow.currentStep === 3 && (
-                <OnboardingEventGrid
-                  selectedEventIds={flow.selectedEventIds}
-                  onToggleEventId={flow.toggleEventId}
-                />
-              )}
-
-              {flow.currentStep === 4 && (
-                <OnboardingFacultyStep
-                  faculty={flow.faculty}
-                  onFacultyChange={flow.setFaculty}
-                />
-              )}
-
-              {/* Step 5: done — message and CTA are in the goose dialogue only */}
-              {isDoneStep && <div className="w-full min-h-[120px]" aria-hidden />}
+              {stepContent[flow.currentStep]}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -152,7 +156,7 @@ export function OnboardingPage() {
           onNext={flow.goNext}
           nextDisabled={!flow.canContinue}
           showBack={flow.currentStep > 0}
-          nextLabel={isDoneStep ? "Take me to Wat2Do!" : "Continue"}
+          nextLabel={isDoneStep ? ONBOARDING_LABELS.doneNextLabel : ONBOARDING_LABELS.defaultNextLabel}
         />
       </div>
     </main>

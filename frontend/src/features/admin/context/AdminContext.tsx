@@ -19,9 +19,9 @@ interface AdminContextValue {
   onCreateEvent?: () => void;
 
   // Clubs
-  onAddClub?: (club: Club) => void;
-  onEditClub?: (club: Club) => void;
-  onDeleteClub?: (clubId: number) => void;
+  onAddClub?: (club: Club) => void | Promise<void>;
+  onEditClub?: (club: Club) => void | Promise<void>;
+  onDeleteClub?: (clubId: number) => void | Promise<void>;
 
   // Submissions
   onApprove?: (submission: EventSubmission) => void;

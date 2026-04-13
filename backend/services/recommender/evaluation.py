@@ -19,11 +19,8 @@ from services.recommender.config import (
     WARM_THRESHOLD,
     DEFAULT_LAMBDA,
     EVAL_MIN_INTERACTIONS,
-    WEIGHTS_HOT,
-    WEIGHTS_WARM,
-    WEIGHTS_WARM_NO_COLLAB,
-    WEIGHTS_COLD,
 )
+from services.recommender.scoring import select_weights, blend_scores
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENTS
@@ -153,33 +150,21 @@ def evaluate_all_users(
             user = users_by_id.get(uid)
             has_profile = bool(user and user.interests)
 
-            if interaction_count >= hot_threshold:
-                weights = WEIGHTS_HOT
-            elif interaction_count >= warm_threshold:
-                weights = WEIGHTS_WARM
-            elif has_profile:
-                weights = WEIGHTS_WARM_NO_COLLAB
-            else:
-                weights = WEIGHTS_COLD
-
-            w_content, w_collab, w_pop = weights
+            weights = select_weights(
+                interaction_count, has_profile,
+                hot_threshold=hot_threshold,
+                warm_threshold=warm_threshold,
+            )
 
             # Pass pre-fetched user to avoid redundant DB lookup inside
             # get_content_scores.
             content = get_content_scores(uid, all_events_data, user=user)
             collab = get_collaborative_scores(uid, all_event_ids)
 
-            blended = {}
-            for eid in all_event_ids:
-                if eid == held_out_eid:
-                    continue
-                score = (
-                    w_content * content.get(eid, 0)
-                    + w_collab * collab.get(eid, 0)
-                    + w_pop * pop.get(eid, 0)
-                )
-                if score > 0:
-                    blended[eid] = score
+            blended = blend_scores(
+                all_event_ids, content, collab, pop, weights,
+                exclude={held_out_eid},
+            )
 
             # Apply MMR re-ranking matching production
             scored_list = sorted(blended.items(), key=lambda x: x[1], reverse=True)
@@ -206,31 +191,53 @@ def evaluate_all_users(
 
 
 def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
-    """Load events in pages for evaluation, with optional cap.
+    """Load events for evaluation, with a hard cap on rows fetched.
 
-    When *max_events* > 0 and the catalog exceeds that cap, a random sample of
-    *max_events* rows is returned.  This keeps memory bounded while preserving
-    statistical representativeness for offline evaluation.
+    Uses a DB-level limit to avoid pulling unbounded rows into memory.
+    When the catalog is larger than *max_events*, a random offset is
+    chosen so different evaluation runs cover different slices.
     """
-    rows = fetch_all_pages(
-        lambda offset, ps: (
+    # Get total count first to decide whether sampling is needed.
+    count_resp = (
+        get_sb()
+        .table(EVENTS)
+        .select("id", count="exact")
+        .limit(0)
+        .execute()
+    )
+    total = count_resp.count or 0
+
+    if max_events > 0 and total > max_events:
+        log.info(
+            "Sampling %d of %d events for evaluation (DB-level limit)",
+            max_events,
+            total,
+        )
+        # Random offset so each nightly run evaluates a different slice.
+        max_offset = max(total - max_events, 0)
+        offset = random.randint(0, max_offset) if max_offset > 0 else 0
+        r = (
             get_sb()
             .table(EVENTS)
             .select("*")
             .order("id")
-            .range(offset, offset + ps - 1)
+            .range(offset, offset + max_events - 1)
             .execute()
-        ).data or [],
-    )
-    events = [EventResponse.model_validate(row) for row in rows]
-
-    if max_events > 0 and len(events) > max_events:
-        log.info(
-            "Sampling %d of %d events for evaluation", max_events, len(events)
         )
-        events = random.sample(events, max_events)
+        rows = r.data or []
+    else:
+        rows = fetch_all_pages(
+            lambda offset, ps: (
+                get_sb()
+                .table(EVENTS)
+                .select("*")
+                .order("id")
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data or [],
+        )
 
-    return events
+    return [EventResponse.model_validate(row) for row in rows]
 
 
 def _load_events(event_ids: list[int]) -> list[EventResponse]:

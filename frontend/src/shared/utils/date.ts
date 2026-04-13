@@ -123,6 +123,51 @@ export function formatCardDate(
 }
 
 /**
+ * Format event date for modal/detail display (e.g., "Mon, Jan 27, 2025").
+ * Falls back to the raw `date` string, then to `dtstart_utc` / `eventDate`.
+ */
+export function formatDisplayDate(event: {
+  date?: string;
+  dtstart_utc?: string;
+  eventDate?: Date;
+}): string {
+  if (event.date) return event.date;
+  const raw = event.dtstart_utc || event.eventDate;
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/**
+ * Format event time for modal/detail display (e.g., "8:00 AM – 10:00 AM").
+ * Falls back to the raw `time` string, then to `dtstart_utc` / `eventDate`.
+ */
+export function formatDisplayTime(event: {
+  time?: string;
+  dtstart_utc?: string;
+  dtend_utc?: string;
+  eventDate?: Date;
+}): string {
+  if (event.time) return event.time;
+  const raw = event.dtstart_utc || event.eventDate;
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  const end = event.dtend_utc ? new Date(event.dtend_utc) : null;
+  const start = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (end && !isNaN(end.getTime())) {
+    return `${start} \u2013 ${end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+  }
+  return start;
+}
+
+/**
  * Format event time for card display (e.g., "12:30 PM to 3:00 PM")
  */
 export function formatCardTime(event: {

@@ -25,7 +25,6 @@ import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptySt
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { createClubAPI, updateClubAPI, deleteClubAPI } from "@/features/clubs/api/clubs.api";
 import { useAdminContext } from "@/features/admin/context/AdminContext";
 import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
 
@@ -61,9 +60,8 @@ export function AdminClubsPage() {
   const handleDelete = async (clubId: number) => {
     setIsDeleting(true);
     try {
-      await deleteClubAPI(clubId);
       if (onDeleteClub) {
-        onDeleteClub(clubId);
+        await onDeleteClub(clubId);
       }
       await refreshClubs();
     } catch (error) {
@@ -77,14 +75,12 @@ export function AdminClubsPage() {
   const handleSave = async (club: Club) => {
     try {
       if (editingClub) {
-        await updateClubAPI(editingClub, club);
         if (onEditClub) {
-          onEditClub(club);
+          await onEditClub(club);
         }
       } else {
-        await createClubAPI(club);
         if (onAddClub) {
-          onAddClub(club);
+          await onAddClub(club);
         }
       }
       await refreshClubs();
