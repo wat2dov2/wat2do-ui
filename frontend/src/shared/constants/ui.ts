@@ -5,9 +5,6 @@
  * Feature-local constants live in their own feature directory.
  */
 
-/** Duration (ms) for the animated counter easing effect (events page, clubs page). */
-export const COUNTER_ANIMATION_DURATION_MS = 450;
-
 /**
  * Standard image-area height (px) for full-size event cards
  * (EventCard, EventFormPreview, EventCardSkeleton).
@@ -25,3 +22,6 @@ export const SCROLL_INTO_VIEW_DELAY_MS = 100;
 
 /** Tiny delay (ms) to trigger CSS enter-animations on next paint. */
 export const ANIMATION_FRAME_TRIGGER_MS = 10;
+
+/** Height of the scan-locations map on the posters page. Used by admin and club-panel. */
+export const POSTER_MAP_HEIGHT = "600px";

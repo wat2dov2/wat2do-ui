@@ -1,26 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { COUNTER_ANIMATION_DURATION_MS } from "@/shared/constants/ui";
+import NumberFlow from "@number-flow/react";
 import { Search } from "lucide-react";
-import { Badge } from "@/shared/ui/badge";
 import { ClubCard } from "@/features/clubs/components/ClubCard";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { useClubsPage } from "@/features/clubs/hooks/useClubsPage";
-
-// Normalize club category to use consolidated event category translations where applicable
-function getClubCategoryTranslation(category: string, t: (key: string) => string): string {
-  const categoryMap: Record<string, string> = {
-    "Academic": "categories.academic",
-    "Religious": "categories.religious",
-    "Cultural": "categories.cultural",
-  };
-  const normalizedKey = categoryMap[category];
-  if (normalizedKey) {
-    return t(normalizedKey) || category;
-  }
-  // Fallback to clubs.categories.* for WUSA-specific categories
-  return t(`clubs.categories.${category}`) || category;
-}
+import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
 
 export function ClubsPage() {
   const { t } = useTranslation();
@@ -33,44 +18,6 @@ export function ClubsPage() {
     filteredClubs,
     isLoading,
   } = useClubsPage();
-
-  const [animatedCount, setAnimatedCount] = useState(filteredClubs.length);
-  const prevCountRef = useRef(filteredClubs.length);
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const start = prevCountRef.current;
-    const end = filteredClubs.length;
-    if (start === end) return;
-
-    const duration = COUNTER_ANIMATION_DURATION_MS;
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const value = Math.round(start + (end - start) * eased);
-      setAnimatedCount(value);
-
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      } else {
-        prevCountRef.current = end;
-      }
-    };
-
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [filteredClubs.length]);
 
   return (
     <div className="space-y-5">
@@ -92,7 +39,7 @@ export function ClubsPage() {
             placeholder={t("clubs.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border border-border bg-muted text-foreground rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-border transition-all shadow-md"
+            className="w-full border border-border bg-secondary text-foreground rounded-xl pl-9 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-border transition-all shadow-md"
           />
           {searchQuery && (
             <button
@@ -127,7 +74,7 @@ export function ClubsPage() {
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   selectedCategories.includes(category)
                     ? "bg-primary/80 text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    : "bg-secondary text-muted-foreground"
                 }`}
               >
                 {getClubCategoryTranslation(category, t)}
@@ -140,8 +87,9 @@ export function ClubsPage() {
 
       {/* Results Count */}
       <div className="flex items-center justify-between">
-        <span className="font-bold text-xl text-foreground">
-          {animatedCount} {animatedCount === 1 ? t("clubs.club") : t("clubs.clubs")}
+        <span className="font-bold text-xl text-foreground inline-flex items-baseline gap-1">
+          <NumberFlow value={filteredClubs.length} />
+          <span>{filteredClubs.length === 1 ? t("clubs.club") : t("clubs.clubs")}</span>
         </span>
       </div>
 
@@ -156,7 +104,7 @@ export function ClubsPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
             <Search className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">

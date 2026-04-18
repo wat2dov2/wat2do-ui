@@ -38,7 +38,7 @@ export function ClubCard({ club }: ClubCardProps) {
               <Badge
                 key={category}
                 variant="outline"
-                className={`${colors.bg} ${colors.text} text-[10px] px-2 py-0.5 rounded-full font-medium`}
+                className={`${colors.bg} ${colors.text} text-[10px] px-2 py-0.5 rounded-full font-medium border-0`}
               >
                 {translatedCategory.length > 20 ? translatedCategory.substring(0, 20) + "..." : translatedCategory}
               </Badge>
@@ -47,7 +47,7 @@ export function ClubCard({ club }: ClubCardProps) {
           {club.categories.length > 2 && (
             <Badge
               variant="outline"
-              className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full font-medium"
+              className="bg-secondary text-muted-foreground text-[10px] px-2 py-0.5 rounded-full font-medium border-0"
             >
               +{club.categories.length - 2}
             </Badge>
