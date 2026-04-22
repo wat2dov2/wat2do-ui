@@ -181,7 +181,7 @@ export function ClubPanelIntegrationsPage() {
         onConnect={integrations.handleInstagramConnect}
       />
 
-      {/* Slack Connection Modal */}
+      {/* Slack Connection Modal (has secondary selection, so wired individually) */}
       <SlackIntegrationModal
         open={integrations.slack.modalOpen}
         onOpenChange={integrations.slack.setModalOpen}
@@ -197,44 +197,28 @@ export function ClubPanelIntegrationsPage() {
         onActivate={integrations.slack.handleActivate}
       />
 
-      {/* Telegram Connection Modal */}
-      <TelegramIntegrationModal
-        open={integrations.telegram.modalOpen}
-        onOpenChange={integrations.telegram.setModalOpen}
-        step={integrations.telegram.step}
-        authorized={integrations.telegram.authorized}
-        selectedPrimaryId={integrations.telegram.selectedPrimaryId}
-        servers={integrations.telegram.servers}
-        onAuthorize={integrations.telegram.handleAuthorize}
-        onSelectPrimary={integrations.telegram.setSelectedPrimaryId}
-        onActivate={integrations.telegram.handleActivate}
-      />
-
-      {/* LinkedIn Connection Modal */}
-      <LinkedInIntegrationModal
-        open={integrations.linkedin.modalOpen}
-        onOpenChange={integrations.linkedin.setModalOpen}
-        step={integrations.linkedin.step}
-        authorized={integrations.linkedin.authorized}
-        selectedPrimaryId={integrations.linkedin.selectedPrimaryId}
-        servers={integrations.linkedin.servers}
-        onAuthorize={integrations.linkedin.handleAuthorize}
-        onSelectPrimary={integrations.linkedin.setSelectedPrimaryId}
-        onActivate={integrations.linkedin.handleActivate}
-      />
-
-      {/* Facebook Connection Modal */}
-      <FacebookIntegrationModal
-        open={integrations.facebook.modalOpen}
-        onOpenChange={integrations.facebook.setModalOpen}
-        step={integrations.facebook.step}
-        authorized={integrations.facebook.authorized}
-        selectedPrimaryId={integrations.facebook.selectedPrimaryId}
-        servers={integrations.facebook.servers}
-        onAuthorize={integrations.facebook.handleAuthorize}
-        onSelectPrimary={integrations.facebook.setSelectedPrimaryId}
-        onActivate={integrations.facebook.handleActivate}
-      />
+      {/* Telegram / LinkedIn / Facebook — share the same modal prop shape */}
+      {([
+        ["telegram", TelegramIntegrationModal],
+        ["linkedin", LinkedInIntegrationModal],
+        ["facebook", FacebookIntegrationModal],
+      ] as const).map(([key, Modal]) => {
+        const pc = integrations.platformConnects[key];
+        return (
+          <Modal
+            key={key}
+            open={pc.modalOpen}
+            onOpenChange={pc.setModalOpen}
+            step={pc.step}
+            authorized={pc.authorized}
+            selectedPrimaryId={pc.selectedPrimaryId}
+            servers={pc.servers}
+            onAuthorize={pc.handleAuthorize}
+            onSelectPrimary={pc.setSelectedPrimaryId}
+            onActivate={pc.handleActivate}
+          />
+        );
+      })}
     </div>
   );
 }

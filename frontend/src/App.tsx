@@ -1,19 +1,17 @@
 import React, { Suspense, lazy, useMemo, useState, useEffect, useCallback } from "react";
-import { useTranslation } from "react-i18next";
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AppLayout } from "@/app/AppLayout";
-import { EventsPageContainer, SubmitEventModal } from "@/features/events";
-import { CommandPalette } from "@/features/commands/components/CommandPalette";
-import { BuyCreditsModal } from "@/features/credits/components/BuyCreditsModal";
+import { EventsPageContainer } from "@/features/events";
 import { EasterEggs } from "@/shared/components/EasterEggs";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
-import { ModalProvider, useModalContext } from "@/contexts/ModalContext";
-import { UIProvider } from "@/contexts/UIContext";
-import { UserProvider, useUserContext } from "@/contexts/UserContext";
+import { useModalStore } from "@/shared/store/modal.store";
+import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
+import { ModalContainer } from "@/app/ModalContainer";
+import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 
 import {
   AdminPanelRoute,
@@ -31,13 +29,11 @@ import {
   ClubPanelIntegrationsRoute,
   ClubPanelMembersRoute,
 } from "@/app/routes/clubPanelRoutes";
-import { eventToFormData, getEventCategory } from "@/shared/utils/event";
-import { getDayOfWeek } from "@/shared/utils/date";
 import { ROUTES } from "@/shared/constants/routes";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { usePromotionsStore } from "@/features/credits/store/promotions.store";
-import type { Event, EventFormData } from "@/shared/types";
+import { useCreditsStore, usePromotionsStore } from "@/features/credits";
+import type { Event } from "@/shared/types";
 
 // Lazy load pages for code splitting
 const AboutPage = lazy(() =>
@@ -78,86 +74,55 @@ export default function App() {
   // Full-page QR redirect: no app chrome, only loading then redirect
   if (isQRRedirectRoute) {
     return (
-      <UserProvider>
-        <UIProvider>
-          <ModalProvider>
-            <TooltipProvider delayDuration={0}>
-              <QRRedirectPage />
-            </TooltipProvider>
-          </ModalProvider>
-        </UIProvider>
-      </UserProvider>
+      <TooltipProvider delayDuration={0}>
+        <QRRedirectPage />
+      </TooltipProvider>
     );
   }
 
   return (
-    <UserProvider>
-      <UIProvider>
-        <ModalProvider>
-          <TooltipProvider delayDuration={0}>
-            <AppContent />
-          </TooltipProvider>
-        </ModalProvider>
-      </UIProvider>
-    </UserProvider>
+    <TooltipProvider delayDuration={0}>
+      <CommandPaletteHotkeys />
+      <AppContent />
+    </TooltipProvider>
   );
 }
 
 /**
- * Inner component that consumes context values.
- * Separated from App so that context providers are above this in the tree.
+ * Inner component that consumes auth state via narrow hooks.
+ * Auth slices come from `useAuthState` (localStorage + event-bus backed).
  */
 function AppContent() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { t } = useTranslation();
 
-  // Read from contexts (state is owned by the providers now)
-  const { userEmail } = useUserContext();
-  const {
-    setShowOnboarding,
-    showSubmitEvent,
-    setShowSubmitEvent,
-    showCommandPalette,
-    setShowCommandPalette,
-  } = useModalContext();
+  const userEmail = useUserEmail();
+  // Setter-only subscription. Setter refs are stable in Zustand, so this
+  // does not cause AppContent to re-render when modal state changes — we
+  // only need it for adminConfig/clubPanelConfig and
+  // handleEditEventAndOpenModal. The modal state reads (showSubmitEvent,
+  // showCommandPalette) live in `<ModalContainer />` to keep Routes from
+  // re-rendering on modal toggles.
+  const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
 
   // ── Store data (single source of truth) ──────────────────────
   const events = useEventsStore((s) => s.events);
-  const storeAddEvent = useEventsStore((s) => s.addEvent);
-  const storeUpdateEvent = useEventsStore((s) => s.updateEvent);
-  const storeDeleteEvent = useEventsStore((s) => s.deleteEvent);
+  const addEvent = useEventsStore((s) => s.addEvent);
+  const deleteEvent = useEventsStore((s) => s.deleteEvent);
 
-  const userCredits = usePromotionsStore((s) => s.userCredits);
-  const storePromoteEvent = usePromotionsStore((s) => s.promoteEvent);
-  const storeAddCredits = usePromotionsStore((s) => s.addCredits);
-
-  // Trigger store fetches once on mount
+  // Trigger store fetches once on mount. Per-user stores (savedEvents,
+  // credits, promotions) also listen to "auth-user-login" events so a
+  // post-mount login refetches without needing this useEffect to re-run.
   useEffect(() => {
     useEventsStore.getState().fetchEvents();
     useSavedEventsStore.getState().fetchSavedEvents();
-    usePromotionsStore.getState().fetchPromotions();
+    useCreditsStore.getState().fetchBalance();
+    usePromotionsStore.getState().fetchActivePromotedEventIds();
   }, []);
 
-  // ── getDayOfWeek for event mutations ─────────────────────────
-  const getDayOfWeekFn = useCallback(
-    (dateStr: string) => getDayOfWeek(dateStr, t),
-    [t],
-  );
-
-  const addEvent = useCallback(
-    (data: EventFormData) => storeAddEvent(data, getDayOfWeekFn),
-    [storeAddEvent, getDayOfWeekFn],
-  );
-
-  const updateEvent = useCallback(
-    (eventId: number, data: EventFormData) => storeUpdateEvent(eventId, data, getDayOfWeekFn),
-    [storeUpdateEvent, getDayOfWeekFn],
-  );
-
-  const deleteEvent = storeDeleteEvent;
-
   // ── Edit event state (local UI) ──────────────────────────────
+  // Owned here (not in ModalContainer) because adminConfig and
+  // clubPanelConfig call handleEditEventAndOpenModal, which needs to
+  // populate `editingEvent` before opening SubmitEventModal.
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const handleEditEvent = useCallback((event: Event) => {
@@ -168,50 +133,27 @@ function AppContent() {
     setEditingEvent(null);
   }, []);
 
-  // ── Buy credits modal state (local UI) ───────────────────────
-  const [showBuyCredits, setShowBuyCredits] = useState(false);
-
-  const promoteEvent = useCallback(
-    async (eventId: number, packageId: string): Promise<boolean> => {
-      const result = await storePromoteEvent(eventId, packageId);
-      if (result.needsCredits) {
-        setShowBuyCredits(true);
-        return false;
-      }
-      return result.success;
-    },
-    [storePromoteEvent],
-  );
-
   // ── Easter eggs ──────────────────────────────────────────────
   const easterEggs = useEasterEggs();
   const { activeEasterEgg, clearEasterEgg } = easterEggs;
 
-  // ── Search store (single source of truth — shared with EventsPageContainer) ─
-  const searchStore = useSearchStore();
+  // ── Search store setter (stable ref, selector-based subscription) ─
+  // Avoid useSearchStore() with no selector — it would subscribe AppContent
+  // to every filter-value change and re-render Routes on each keystroke.
+  // Setter refs never change identity in Zustand, so narrow selectors
+  // give us a no-op subscription.
+  const setFilterStateFromURL = useSearchStore((s) => s.setFilterStateFromURL);
+
+  const navFilters = useMemo(
+    () => ({ setFilterStateFromURL }),
+    [setFilterStateFromURL],
+  );
 
   // Called for side effects: processes URL params (filters, eventId scroll) on initial load
   useAppNavigation({
     events,
-    filters: {
-      setSearchQuery: searchStore.setSearchQuery,
-      setSelectedCategories: searchStore.setSelectedCategories,
-      setSelectedLocations: searchStore.setSelectedLocations,
-      setSelectedFoods: searchStore.setSelectedFoods,
-      setSelectedDays: searchStore.setSelectedDays,
-      setPriceRange: searchStore.setPriceRange,
-      setDateRange: searchStore.setDateRange,
-      setAddedSince: searchStore.setAddedSince,
-      setRequiresRegistration: searchStore.setRequiresRegistration,
-      setFilterStateFromURL: searchStore.setFilterStateFromURL,
-    },
+    filters: navFilters,
   });
-
-  // Handle submit event close
-  const handleSubmitEventClose = useCallback(() => {
-    setShowSubmitEvent(false);
-    clearEditing();
-  }, [setShowSubmitEvent, clearEditing]);
 
   // Open submit modal in edit mode
   const handleEditEventAndOpenModal = useCallback(
@@ -222,28 +164,21 @@ function AppContent() {
     [handleEditEvent, setShowSubmitEvent]
   );
 
-  const loadEventForEdit = useCallback(
-    async (eventId: number) => {
-      const { fetchEventById } = await import("@/features/events/api/events.api");
-      const fullEvent = await fetchEventById(eventId);
-      fullEvent.category = getEventCategory(fullEvent);
-      return eventToFormData(fullEvent);
-    },
-    []
+  // Memoize admin route configuration. Admin pages read `events` from
+  // `useEventsStore` directly and `userEmail` from `useUserEmail`, so
+  // neither field belongs here.
+  const adminConfig = useMemo(
+    () => ({
+      onEditEvent: handleEditEventAndOpenModal,
+      onDeleteEvent: deleteEvent,
+      onCreateEvent: () => setShowSubmitEvent(true),
+      onAddEvent: addEvent,
+    }),
+    [handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent]
   );
 
-  // Handle command palette filter actions
-  const handleSetFreeFilter = useCallback(() => {
-    searchStore.setFreeFilter(true);
-  }, [searchStore]);
-
-  const handleOpenOnboardingRoute = useCallback(() => {
-    setShowOnboarding(false);
-    navigate(ROUTES.ONBOARDING);
-  }, [navigate, setShowOnboarding]);
-
-  // Memoize admin route configuration
-  const adminConfig = useMemo(
+  // Club-panel routes still consume events + userEmail via a shared config.
+  const clubPanelConfig = useMemo(
     () => ({
       events,
       onEditEvent: handleEditEventAndOpenModal,
@@ -301,11 +236,11 @@ function AppContent() {
       />
       <Route
         path={ROUTES.CLUB_PANEL}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelRoute config={adminConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelRoute config={clubPanelConfig} /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.CLUB_PANEL_POSTERS}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelPostersRoute config={adminConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelPostersRoute config={clubPanelConfig} /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.CLUB_PANEL_INTEGRATIONS}
@@ -320,37 +255,10 @@ function AppContent() {
 
   return (
     <>
-      {/* Modals - rendered outside AppLayout to ensure they respond to state changes immediately */}
-      <SubmitEventModal
-        isOpen={showSubmitEvent}
-        onClose={handleSubmitEventClose}
-        onSubmit={async (eventData) => addEvent(eventData)}
-        userCredits={userCredits}
-        onPromote={promoteEvent}
-        onBuyCredits={() => setShowBuyCredits(true)}
-        editEventId={editingEvent?.id}
-        initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
-        loadEventForEdit={loadEventForEdit}
-        onUpdate={async (eventId, eventData) => {
-          await updateEvent(eventId, eventData);
-          handleSubmitEventClose();
-        }}
-      />
-
-      <BuyCreditsModal
-        isOpen={showBuyCredits}
-        onClose={() => setShowBuyCredits(false)}
-        currentCredits={userCredits}
-        onPurchase={storeAddCredits}
-      />
-
-      <CommandPalette
-        isOpen={showCommandPalette}
-        onOpenChange={setShowCommandPalette}
-        setShowFilterDropdown={searchStore.setShowFilterDropdown}
-        onClearAllFilters={() => searchStore.clearAllFilters()}
-        onSetFreeFilter={handleSetFreeFilter}
-        onShowOnboarding={handleOpenOnboardingRoute}
+      {/* Modals - isolated in their own container so modal toggles don't re-render the Routes subtree */}
+      <ModalContainer
+        editingEvent={editingEvent}
+        clearEditing={clearEditing}
       />
 
       <Suspense

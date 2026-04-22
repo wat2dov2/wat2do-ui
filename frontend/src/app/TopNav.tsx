@@ -2,7 +2,7 @@
  * TopNav Component
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Shield, LogOut, Building2 } from "lucide-react";
@@ -16,20 +16,17 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
-import { useUIContext } from "@/contexts/UIContext";
-import { useUserContext } from "@/contexts/UserContext";
-import { useModalContext } from "@/contexts/ModalContext";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { ROUTES } from "@/shared/constants/routes";
-import { useAuth } from "@/features/auth";
+import { logoutAPI } from "@/features/auth";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 export function TopNav() {
-  const { selectedSchool, setSelectedSchool } = useUIContext();
-  const { profileCompleted, setProfileCompleted, setUserEmail, isAdmin, hasClub } = useUserContext();
-  const { setShowOnboarding } = useModalContext();
+  const [selectedSchool, setSelectedSchool] = useState(DEFAULT_SCHOOL);
+  const { profileCompleted, isAdmin, hasClub } = useAuthState();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
 
   const handleLogoClick = useCallback(() => {
     navigate(ROUTES.HOME);
@@ -45,18 +42,18 @@ export function TopNav() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await logout();
+      await logoutAPI();
     } catch (err) {
       console.error("Logout API call failed, clearing local state anyway:", err);
     }
-    setProfileCompleted(false);
-    setUserEmail(null);
-  }, [logout, setProfileCompleted, setUserEmail]);
+    // logoutAPI → clearAllAuthData fires AUTH_STATE_REFRESH_EVENT which the
+    // useAuthState snapshot subscribes to — the UI flips back to signed-out
+    // automatically. No manual setters needed.
+  }, []);
 
   const handleSignIn = useCallback(() => {
     navigate(ROUTES.LOGIN);
-    setShowOnboarding(false);
-  }, [navigate, setShowOnboarding]);
+  }, [navigate]);
 
   return (
     <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-nav">

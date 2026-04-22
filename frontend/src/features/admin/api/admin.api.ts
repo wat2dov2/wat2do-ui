@@ -14,7 +14,7 @@ import {
   updateClubAPI,
   deleteClubAPI,
 } from "@/features/clubs";
-import { api } from "@/shared/services/apiClient";
+import { api, ApiError } from "@/shared/services/apiClient";
 
 // Re-export types for convenience
 export type { EventSubmission, ReportedEvent, ScrapedEvent };
@@ -73,8 +73,14 @@ export async function getEventById(id: number): Promise<Event | null> {
   try {
     return await fetchEventById(id);
   } catch (err) {
+    // Only treat 404 as "not found" — propagate other errors (500, 401, etc.)
+    // so real outages surface instead of masquerading as a missing record.
+    if (err instanceof ApiError && err.status === 404) {
+      console.warn(`Event ${id} not found:`, err);
+      return null;
+    }
     console.error(`Failed to fetch event ${id}:`, err);
-    return null;
+    throw err;
   }
 }
 
@@ -117,8 +123,14 @@ export async function getSubmissionById(id: string): Promise<EventSubmission | n
     const row = await api.get<SubmissionResponse>(`/submissions/${id}`);
     return toEventSubmission(row);
   } catch (err) {
+    // Only treat 404 as "not found" — propagate other errors (500, 401, etc.)
+    // so real outages surface instead of masquerading as a missing record.
+    if (err instanceof ApiError && err.status === 404) {
+      console.warn(`Submission ${id} not found:`, err);
+      return null;
+    }
     console.error(`Failed to fetch submission ${id}:`, err);
-    return null;
+    throw err;
   }
 }
 

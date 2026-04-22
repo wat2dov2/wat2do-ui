@@ -1,9 +1,11 @@
 import logging
+from collections.abc import Callable
+from typing import TypeVar
 
 import jwt
 from jwt import PyJWKClient
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from core.config import settings
@@ -15,6 +17,7 @@ from core.errors import (
     NOT_AUTHORIZED,
     USER_NOT_FOUND,
 )
+from core.exceptions import AuthenticationError, AuthorizationError, NotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -57,8 +60,18 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
     Tries JWKS discovery first (asymmetric signing keys — ES256/RS256).
     Falls back to SUPABASE_JWT_SECRET (HS256) for legacy projects.
     """
-    credentials = token.credentials
+    return _decode_jwt(token.credentials)
 
+
+def _decode_jwt(credentials: str) -> dict:
+    """Decode and verify a raw JWT string. Returns the auth-user dict.
+
+    A21: narrowed the exception surface of the JWKS branch so that signature
+    failures surface clearly.  Only JWKS-specific (``PyJWKClientError``) and
+    signature-specific (``InvalidTokenError``) errors trigger the HS256
+    fallback — arbitrary bugs no longer silently downgrade the verification.
+    Failures are logged at ``warning`` so operators see JWKS regressions.
+    """
     # 1) JWKS discovery (asymmetric signing keys only — never HS256)
     try:
         signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials)
@@ -70,8 +83,8 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
             issuer=_EXPECTED_ISSUER,
         )
         return _payload_to_user(payload)
-    except Exception as e:
-        log.debug("JWKS verification failed (%s), trying JWT secret fallback", e)
+    except (jwt.PyJWKClientError, jwt.InvalidTokenError) as e:
+        log.warning("JWKS verification failed (%s), trying JWT secret fallback", e)
 
     # 2) Shared secret fallback (legacy HS256)
     if settings.supabase_jwt_secret:
@@ -85,24 +98,53 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
             )
             return _payload_to_user(payload)
         except jwt.InvalidTokenError as e:
-            log.debug("JWT HS256 fallback verification failed: %s", e)
+            log.warning("JWT HS256 fallback verification failed: %s", e)
 
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=INVALID_OR_EXPIRED_TOKEN,
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+
+
+def decode_jwt_payload(credentials: str) -> dict:
+    """Decode a JWT and return the *raw payload* (not the auth-user dict).
+
+    Used by flows that need to inspect claims beyond ``sub/email/aud/role``
+    — e.g. password reset, which must verify the token was issued for
+    recovery (``amr=["recovery"]`` / ``email_action_type="recovery"``) and
+    not a regular session.
+    """
+    # Reuse the signature-verification path in _decode_jwt by decoding a
+    # second time without the auth-user projection.
+    try:
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials)
+        return jwt.decode(
+            credentials,
+            signing_key.key,
+            algorithms=list(_ASYMMETRIC_ALGS),
+            audience="authenticated",
+            issuer=_EXPECTED_ISSUER,
+        )
+    except (jwt.PyJWKClientError, jwt.InvalidTokenError) as e:
+        log.warning("JWKS payload decode failed (%s), trying HS256 fallback", e)
+
+    if settings.supabase_jwt_secret:
+        try:
+            return jwt.decode(
+                credentials,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                audience="authenticated",
+                issuer=_EXPECTED_ISSUER,
+            )
+        except jwt.InvalidTokenError as e:
+            log.warning("HS256 payload decode failed: %s", e)
+
+    raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
 
 
 def _payload_to_user(payload: dict) -> dict:
     """Extract user info from a verified JWT payload."""
     sub = payload.get("sub")
     if not sub:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=CREDENTIALS_INVALID,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise AuthenticationError(CREDENTIALS_INVALID)
     return {
         "id": sub,
         "email": payload.get("email"),
@@ -125,25 +167,37 @@ def get_current_user(
 def get_optional_user(
     token: HTTPAuthorizationCredentials | None = Depends(bearer_optional),
 ) -> dict | None:
-    """Accept an optional Bearer token. Returns the auth user or None."""
+    """Accept an optional Bearer token. Returns the auth user or None.
+
+    A4: Distinguishes "no header" (truly anonymous, silent) from "bad
+    header" (malformed / expired token).  Malformed tokens are logged at
+    ``warning`` so operators can spot auth regressions and clients can
+    detect misconfigured sessions via log correlation rather than blind
+    anonymity.
+    """
     if token is None:
         return None
     try:
         return _resolve_user(token)
-    except HTTPException:
+    except (AuthenticationError, HTTPException) as e:
+        log.warning("Optional auth failed with invalid token, continuing as anonymous: %s", e)
         return None
 
 
-def _check_admin(supabase_id: str) -> bool:
+def _check_admin(supabase_id: str, *, user_lookup=None) -> bool:
     """Return True if the user identified by *supabase_id* has the admin role.
 
     Single source of truth for the DB lookup + role comparison used by
     both ``get_admin_user`` and ``is_admin``.  Always bypasses the user
     cache so that role changes take effect immediately.
+
+    *user_lookup* can be injected for testing; defaults to
+    ``user_service.get_user_by_supabase_id`` (with ``bypass_cache=True``).
     """
-    db_user = _get_user_service().get_user_by_supabase_id(
-        supabase_id, bypass_cache=True
+    lookup = user_lookup or (
+        lambda sid: _get_user_service().get_user_by_supabase_id(sid, bypass_cache=True)
     )
+    db_user = lookup(supabase_id)
     return db_user is not None and db_user.role == ROLE_ADMIN
 
 
@@ -156,19 +210,19 @@ def get_admin_user(
     effect immediately — no stale-cache window.
     """
     if not _check_admin(auth_user["id"]):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=ADMIN_ACCESS_REQUIRED,
-        )
+        raise AuthorizationError(ADMIN_ACCESS_REQUIRED)
     return auth_user
 
 
-def is_admin(auth_user: dict) -> bool:
+def is_admin(auth_user: dict, *, user_lookup=None) -> bool:
     """Return True if the authenticated user has the admin role (requires DB lookup).
 
     Bypasses the user cache so that role changes take effect immediately.
+
+    *user_lookup* can be injected for testing; defaults to
+    ``user_service.get_user_by_supabase_id``.
     """
-    return _check_admin(auth_user["id"])
+    return _check_admin(auth_user["id"], user_lookup=user_lookup)
 
 
 def resolve_db_user(auth_user: dict, *, user_lookup=None):
@@ -183,7 +237,7 @@ def resolve_db_user(auth_user: dict, *, user_lookup=None):
     lookup = user_lookup or _get_user_service().get_user_by_supabase_id
     db_user = lookup(auth_user["id"])
     if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)
+        raise NotFoundError(USER_NOT_FOUND)
     return db_user
 
 
@@ -208,7 +262,27 @@ def require_owner_or_admin(auth_user: dict, resource_owner_id: str | None) -> No
         return
     if is_admin(auth_user):
         return
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail=NOT_AUTHORIZED,
-    )
+    raise AuthorizationError(NOT_AUTHORIZED)
+
+
+T = TypeVar("T")
+
+
+def get_authorized_resource(
+    fetcher: Callable[[], T | None],
+    not_found_detail: str,
+    auth_user: dict,
+    *,
+    owner_field: str = "created_by",
+) -> T:
+    """Fetch a resource, raise 404 if missing, raise 403 if not owner/admin.
+
+    *fetcher* is a zero-argument callable that returns the resource or ``None``.
+    *not_found_detail* is the error string for the 404 response.
+    *owner_field* is the attribute name on the resource that holds the owner ID.
+    """
+    resource = fetcher()
+    if resource is None:
+        raise NotFoundError(not_found_detail)
+    require_owner_or_admin(auth_user, getattr(resource, owner_field))
+    return resource

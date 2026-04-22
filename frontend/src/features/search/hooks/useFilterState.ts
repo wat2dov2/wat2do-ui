@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import type { FilterState } from "@/shared/types/filter.types";
+import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import {
   serializeFiltersToJSON,
   parseFiltersFromJSON,
+  storeStatesToFilterState,
 } from "@/features/search/api/filterService";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
 import { useSearchStore } from "@/features/search/store/search.store";
@@ -16,118 +18,143 @@ import { useSearchStore } from "@/features/search/store/search.store";
  * prompt) stays local to this hook.
  */
 export function useFilterState(profileCompleted: boolean) {
-  // ── Shared filter values from store ─────────────────────────────
-  const searchQuery = useSearchStore((s) => s.searchQuery);
-  const setSearchQuery = useSearchStore((s) => s.setSearchQuery);
-  const selectedCategories = useSearchStore((s) => s.selectedCategories);
-  const setSelectedCategories = useSearchStore((s) => s.setSelectedCategories);
-  const selectedLocations = useSearchStore((s) => s.selectedLocations);
-  const setSelectedLocations = useSearchStore((s) => s.setSelectedLocations);
-  const selectedFoods = useSearchStore((s) => s.selectedFoods);
-  const setSelectedFoods = useSearchStore((s) => s.setSelectedFoods);
-  const selectedDays = useSearchStore((s) => s.selectedDays);
-  const setSelectedDays = useSearchStore((s) => s.setSelectedDays);
-  const priceRange = useSearchStore((s) => s.priceRange);
-  const setPriceRange = useSearchStore((s) => s.setPriceRange);
-  const dateRange = useSearchStore((s) => s.dateRange);
-  const setDateRange = useSearchStore((s) => s.setDateRange);
-  const addedSince = useSearchStore((s) => s.addedSince);
-  const setAddedSince = useSearchStore((s) => s.setAddedSince);
-  const requiresRegistration = useSearchStore((s) => s.requiresRegistration);
-  const setRequiresRegistration = useSearchStore((s) => s.setRequiresRegistration);
-  const includeFoods = useSearchStore((s) => s.includeFoods);
-  const setIncludeFoods = useSearchStore((s) => s.setIncludeFoods);
-  const todayFilter = useSearchStore((s) => s.todayFilter);
-  const setTodayFilter = useSearchStore((s) => s.setTodayFilter);
-  const thisWeekFilter = useSearchStore((s) => s.thisWeekFilter);
-  const setThisWeekFilter = useSearchStore((s) => s.setThisWeekFilter);
-  const freeFilter = useSearchStore((s) => s.freeFilter);
-  const setFreeFilter = useSearchStore((s) => s.setFreeFilter);
-  const freeFoodFilter = useSearchStore((s) => s.freeFoodFilter);
-  const setFreeFoodFilter = useSearchStore((s) => s.setFreeFoodFilter);
-  const forYouFilter = useSearchStore((s) => s.forYouFilter);
-  const setForYouFilter = useSearchStore((s) => s.setForYouFilter);
-  const toggleCategory = useSearchStore((s) => s.toggleCategory);
-  const toggleLocation = useSearchStore((s) => s.toggleLocation);
-  const toggleDay = useSearchStore((s) => s.toggleDay);
-  const toggleFood = useSearchStore((s) => s.toggleFood);
-  const clearAllFilters = useSearchStore((s) => s.clearAllFilters);
-  const setFilterStateFromURL = useSearchStore((s) => s.setFilterStateFromURL);
+  const { t } = useTranslation();
 
-  // Derived JSON value - no useEffect needed
-  const jsonValue = useMemo(() => {
-    const filterState: FilterState = {
-      searchQuery,
-      categories: selectedCategories,
-      locations: selectedLocations,
-      foods: selectedFoods,
-      days: selectedDays,
-      priceRange,
-      dateRange: dateRange?.toISOString() || "",
-      addedSince: addedSince?.toISOString() || "",
-      requiresRegistration,
-    };
-    return serializeFiltersToJSON(filterState);
-  }, [
+  // ── Shared filter values + actions from store (single shallow subscription) ──
+  // Action refs are stable in Zustand (they never change identity), but bundling
+  // them into the same useShallow call keeps the hook body declarative and
+  // avoids a separate subscription per action.
+  const {
     searchQuery,
     selectedCategories,
     selectedLocations,
     selectedFoods,
     selectedDays,
     priceRange,
-    dateRange,
-    addedSince,
     requiresRegistration,
-  ]);
+    freeFoodFilter,
+    setSearchQuery,
+    setSelectedCategories,
+    setSelectedLocations,
+    setSelectedFoods,
+    setSelectedDays,
+    setPriceRange,
+    setRequiresRegistration,
+    setFreeFoodFilter,
+    toggleFilter,
+    clearAllFilters,
+    setFilterStateFromURL,
+  } = useSearchStore(
+    useShallow((s) => ({
+      searchQuery: s.searchQuery,
+      selectedCategories: s.selectedCategories,
+      selectedLocations: s.selectedLocations,
+      selectedFoods: s.selectedFoods,
+      selectedDays: s.selectedDays,
+      priceRange: s.priceRange,
+      requiresRegistration: s.requiresRegistration,
+      freeFoodFilter: s.freeFoodFilter,
+      setSearchQuery: s.setSearchQuery,
+      setSelectedCategories: s.setSelectedCategories,
+      setSelectedLocations: s.setSelectedLocations,
+      setSelectedFoods: s.setSelectedFoods,
+      setSelectedDays: s.setSelectedDays,
+      setPriceRange: s.setPriceRange,
+      setRequiresRegistration: s.setRequiresRegistration,
+      setFreeFoodFilter: s.setFreeFoodFilter,
+      toggleFilter: s.toggleFilter,
+      clearAllFilters: s.clearAllFilters,
+      setFilterStateFromURL: s.setFilterStateFromURL,
+    })),
+  );
 
-  // JSON error state (only for JSON editor)
+  // Per-filter toggle adapters — stable refs derived from the single
+  // toggleFilter action so downstream props don't churn.
+  const toggleCategory = useCallback(
+    (cat: string) => toggleFilter("selectedCategories", cat),
+    [toggleFilter],
+  );
+  const toggleLocation = useCallback(
+    (loc: string) => toggleFilter("selectedLocations", loc),
+    [toggleFilter],
+  );
+  const toggleFood = useCallback(
+    (food: string) => toggleFilter("selectedFoods", food),
+    [toggleFilter],
+  );
+  const toggleDay = useCallback(
+    (day: string) => toggleFilter("selectedDays", day),
+    [toggleFilter],
+  );
+
+  // Derived JSON value - no useEffect needed.
+  // The key rename (selectedCategories → categories, etc.) is documented on
+  // storeStatesToFilterState in filterService.ts.
+  const jsonValue = useMemo(
+    () =>
+      serializeFiltersToJSON(
+        storeStatesToFilterState({
+          searchQuery,
+          selectedCategories,
+          selectedLocations,
+          selectedFoods,
+          selectedDays,
+          priceRange,
+          requiresRegistration,
+        }),
+      ),
+    [
+      searchQuery,
+      selectedCategories,
+      selectedLocations,
+      selectedFoods,
+      selectedDays,
+      priceRange,
+      requiresRegistration,
+    ],
+  );
+
+  // JSON editor + AI state (only the dropdown cares; kept local)
   const [jsonError, setJsonError] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
 
   // Handle JSON editor changes
-  const handleJsonChange = useCallback((value: string | undefined) => {
-    if (!value) return;
+  const handleJsonChange = useCallback(
+    (value: string | undefined) => {
+      if (!value) return;
 
-    const { filters, error } = parseFiltersFromJSON(value);
-    if (error) {
-      setJsonError(error);
-      return;
-    }
+      const { filters, error } = parseFiltersFromJSON(value);
+      if (error) {
+        setJsonError(error);
+        return;
+      }
 
-    setJsonError("");
-    setFilterStateFromURL({
-      searchQuery: filters.searchQuery || "",
-      categories: filters.categories || [],
-      locations: filters.locations || [],
-      foods: filters.foods || [],
-      days: filters.days || [],
-      priceRange: filters.priceRange || { min: "", max: "" },
-      dateRange:
-        filters.dateRange && filters.dateRange.length > 0
-          ? filters.dateRange
-          : "",
-      addedSince:
-        filters.addedSince && filters.addedSince.length > 0
-          ? filters.addedSince
-          : "",
-      requiresRegistration: filters.requiresRegistration || false,
-    });
-  }, [setFilterStateFromURL]);
+      setJsonError("");
+      setFilterStateFromURL({
+        searchQuery: filters.searchQuery || "",
+        categories: filters.categories || [],
+        locations: filters.locations || [],
+        foods: filters.foods || [],
+        days: filters.days || [],
+        priceRange: filters.priceRange || { min: "", max: "" },
+        requiresRegistration: filters.requiresRegistration || false,
+      });
+    },
+    [setFilterStateFromURL],
+  );
 
   // AI filter generation handler
   const handleAiGenerate = useCallback(async () => {
     if (!aiPrompt.trim()) return;
 
     if (!profileCompleted) {
-      setJsonError("Sign in to use AI filter generation.");
+      setJsonError(t("filters.aiSignInRequired"));
       return;
     }
 
     if (!isApiKeyConfigured()) {
-      setJsonError(
-        "AI generation is not available. Please check server configuration."
-      );
+      setJsonError(t("filters.aiNotAvailable"));
       return;
     }
 
@@ -143,40 +170,12 @@ export function useFilterState(profileCompleted: boolean) {
     } catch (error) {
       console.error("AI filter generation failed:", error);
       setJsonError(
-        error instanceof Error
-          ? error.message
-          : "Failed to generate filters. Please try again."
+        error instanceof Error ? error.message : t("filters.aiGenerateFailed"),
       );
     } finally {
       setAiGenerating(false);
     }
-  }, [aiPrompt, profileCompleted, handleJsonChange]);
-
-  // Get current filter state
-  const filterState = useMemo(
-    (): FilterState => ({
-      searchQuery,
-      categories: selectedCategories,
-      locations: selectedLocations,
-      foods: selectedFoods,
-      days: selectedDays,
-      priceRange,
-      dateRange: dateRange?.toISOString() || "",
-      addedSince: addedSince?.toISOString() || "",
-      requiresRegistration,
-    }),
-    [
-      searchQuery,
-      selectedCategories,
-      selectedLocations,
-      selectedFoods,
-      selectedDays,
-      priceRange,
-      dateRange,
-      addedSince,
-      requiresRegistration,
-    ]
-  );
+  }, [aiPrompt, profileCompleted, handleJsonChange, t]);
 
   return {
     // Filter state
@@ -192,26 +191,12 @@ export function useFilterState(profileCompleted: boolean) {
     setSelectedDays,
     priceRange,
     setPriceRange,
-    dateRange,
-    setDateRange,
-    addedSince,
-    setAddedSince,
     requiresRegistration,
     setRequiresRegistration,
-    includeFoods,
-    setIncludeFoods,
 
-    // Quick filters
-    todayFilter,
-    setTodayFilter,
-    thisWeekFilter,
-    setThisWeekFilter,
-    freeFilter,
-    setFreeFilter,
+    // Quick filters (only the ones wired to UI)
     freeFoodFilter,
     setFreeFoodFilter,
-    forYouFilter,
-    setForYouFilter,
 
     // Toggle functions
     toggleCategory,
@@ -235,6 +220,5 @@ export function useFilterState(profileCompleted: boolean) {
     // Utilities
     clearAllFilters,
     setFilterStateFromURL,
-    filterState,
   };
 }

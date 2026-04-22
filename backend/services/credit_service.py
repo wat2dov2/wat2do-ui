@@ -12,8 +12,8 @@ from postgrest.exceptions import APIError
 
 from core.constants import DEFAULT_CREDIT_BALANCE, PROMOTION_PACKAGES
 from core.database import get_sb
-from core.errors import INSUFFICIENT_CREDITS, INVALID_PROMOTION_PACKAGE
-from core.exceptions import ValidationError
+from core.errors import INSUFFICIENT_CREDITS, INSUFFICIENT_CREDITS_CODE, INVALID_PROMOTION_PACKAGE
+from core.exceptions import ServiceError, ValidationError
 from core.tables import EVENT_PROMOTIONS
 from schemas.credit import PromotionResponse
 
@@ -67,7 +67,7 @@ def deduct_credits(user_id: str, amount: int) -> int:
     ).execute()
     new_balance = r.data
     if new_balance == _INSUFFICIENT_FUNDS_SENTINEL:
-        raise ValidationError(INSUFFICIENT_CREDITS)
+        raise ValidationError(INSUFFICIENT_CREDITS, code=INSUFFICIENT_CREDITS_CODE)
     return new_balance
 
 
@@ -104,44 +104,141 @@ def create_promotion(
         ).execute()
     except APIError as e:
         if _is_insufficient_credits(e):
-            raise ValidationError(INSUFFICIENT_CREDITS)
-        log.error("RPC promote_event failed: %s", e)
+            raise ValidationError(INSUFFICIENT_CREDITS, code=INSUFFICIENT_CREDITS_CODE) from e
+        # C18: include the traceback so post-mortems of atomicity edge cases
+        # have the full stack.  A plain ``log.error("... %s", e)`` drops it.
+        log.exception("RPC promote_event failed: %s", e)
         raise
 
-    row = r.data[0] if r.data else {}
-    return PromotionResponse(
-        id=row.get("promotion_id", ""),
-        user_id=user_id,
-        event_id=event_id,
-        package=package,
-        credits_spent=credits_cost,
-        start_date=row.get("start_date", ""),
-        end_date=row.get("end_date", ""),
-        created_at=row.get("created_at", ""),
-    )
+    # C10: empty data from a write RPC is a real problem, not a success.
+    # Fabricating a synthetic response (id="", start_date="", ...) hides
+    # whether the DB committed a row and whether credits were deducted.
+    # Raise so the global handler maps it to 500 and the client can retry.
+    if not r.data:
+        log.error(
+            "RPC promote_event returned no rows for user=%s event=%s package=%s",
+            user_id, event_id, package,
+        )
+        raise ServiceError("promote_event returned no rows")
+
+    row = r.data[0]
+    # The RPC returns "promotion_id" as the key; map it to "id" for model_validate.
+    if "promotion_id" in row and "id" not in row:
+        row["id"] = row.pop("promotion_id")
+    return PromotionResponse.model_validate(row)
 
 
-def get_user_promotions(user_id: str) -> list[PromotionResponse]:
-    """Return all promotions for a user, newest first."""
-    r = (
+def get_user_promotions(
+    user_id: str,
+    *,
+    active: bool | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[PromotionResponse]:
+    """Return promotions for a user, newest first.
+
+    C14: added pagination (``limit`` / ``offset``) and an optional ``active``
+    filter so clients that only care about currently-running promotions
+    don't download the user's entire history on every app-open.
+    """
+    q = (
         get_sb()
         .table(EVENT_PROMOTIONS)
         .select("*")
         .eq("user_id", user_id)
         .order("created_at", desc=True)
-        .execute()
     )
+    if active is True:
+        q = q.gt("end_date", datetime.now(timezone.utc).isoformat())
+    elif active is False:
+        q = q.lte("end_date", datetime.now(timezone.utc).isoformat())
+
+    # Supabase-py maps (offset, offset + limit - 1) inclusive via .range().
+    if limit > 0:
+        q = q.range(offset, offset + limit - 1)
+
+    r = q.execute()
     return [PromotionResponse.model_validate(row) for row in (r.data or [])]
 
 
 def get_active_promoted_event_ids() -> list[int]:
-    """Return event IDs with currently active promotions."""
+    """Return event IDs with currently active promotions.
+
+    C12: uses strict ``gt`` (>) to align with the RPC's ``end_date > now()``
+    predicate.  A row at the exact expiry second is considered expired by
+    both queries.
+    """
     now = datetime.now(timezone.utc).isoformat()
     r = (
         get_sb()
         .table(EVENT_PROMOTIONS)
         .select("event_id")
-        .gte("end_date", now)
+        .gt("end_date", now)
         .execute()
     )
     return list({row["event_id"] for row in (r.data or [])})
+
+
+def refund_active_promotions_for_event(event_id: int) -> int:
+    """Refund the unused portion of every active promotion on *event_id*.
+
+    Called before deleting an event so the owner does not silently lose
+    credits they paid for a promotion that will never run its full term.
+
+    The refund is prorated: ``credits_spent * remaining / total`` rounded
+    down to whole credits.  Credits are returned via ``adjust_credits``
+    which emits a ledger row automatically (see migration
+    20260416003_add_credit_ledger.sql).
+
+    Returns the number of promotion rows refunded (0 if none active).
+    Errors on individual refunds are logged and the loop continues so
+    a single bad row does not block event deletion.
+    """
+    now = datetime.now(timezone.utc)
+    r = (
+        get_sb()
+        .table(EVENT_PROMOTIONS)
+        .select("id,user_id,credits_spent,start_date,end_date")
+        .eq("event_id", event_id)
+        .gt("end_date", now.isoformat())
+        .execute()
+    )
+    rows = r.data or []
+    refunded = 0
+    for row in rows:
+        try:
+            start = datetime.fromisoformat(row["start_date"].replace("Z", "+00:00"))
+            end = datetime.fromisoformat(row["end_date"].replace("Z", "+00:00"))
+        except (KeyError, ValueError, AttributeError) as e:
+            log.warning(
+                "Skipping refund for promotion %s on event %s — bad timestamps: %s",
+                row.get("id"), event_id, e,
+            )
+            continue
+
+        total = (end - start).total_seconds()
+        remaining = max(0.0, (end - now).total_seconds())
+        if total <= 0:
+            # Defensive: a zero-duration row has no refund.
+            continue
+        credits_spent = int(row.get("credits_spent") or 0)
+        refund_amount = int(credits_spent * remaining / total)
+        if refund_amount <= 0:
+            continue
+        try:
+            add_credits(row["user_id"], refund_amount)
+            refunded += 1
+            log.info(
+                "Refunded %s credits to user=%s for promotion=%s on deleted event=%s",
+                refund_amount, row["user_id"], row["id"], event_id,
+            )
+        except Exception as e:
+            # Don't block event deletion on a single bad refund — log and
+            # continue so the caller can still delete the event.  The
+            # ledger will show the skipped refunds via the absence of a
+            # row if operators audit later.
+            log.error(
+                "Failed to refund %s credits to user=%s for promotion=%s on event=%s: %s",
+                refund_amount, row["user_id"], row["id"], event_id, e,
+            )
+    return refunded

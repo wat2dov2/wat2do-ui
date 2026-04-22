@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     supabase_secret_key: str = ""
     database_url: str = ""  # Optional; only for legacy Alembic/scripts. App uses Supabase client only.
     openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+    openai_timeout: int = 15
+    openai_temperature_precise: float = 0.3
+    openai_temperature_creative: float = 0.7
     # Set CORS_ORIGINS env var as a JSON list for production,
     # e.g. CORS_ORIGINS=["https://wat2do.app","https://www.wat2do.app"]
     cors_origins: list[str] = _DEV_ORIGINS
@@ -30,11 +34,17 @@ class Settings(BaseSettings):
     # Trusted reverse-proxy IPs.  When a request arrives from one of these
     # addresses, ``get_client_ip()`` reads the real client IP from the
     # ``X-Forwarded-For`` / ``X-Real-IP`` headers instead of
-    # ``request.client.host``.  Docker-internal bridge IPs (172.x) and
-    # loopback (127.0.0.1) are included by default for the standard
-    # docker-compose deployment; override via TRUSTED_PROXIES env var
-    # (JSON list) if your proxy has a different address.
-    trusted_proxies: list[str] = ["127.0.0.1", "::1", "172.16.0.0/12"]
+    # ``request.client.host``.
+    #
+    # **Security warning (P2):** The default is *loopback only*.  A broad
+    # CIDR range (e.g. the whole Docker bridge ``172.16.0.0/12``) is a
+    # spoofing vector: any co-tenant / side-car container with an IP in
+    # that range can forge ``X-Forwarded-For`` and impersonate an
+    # arbitrary client — bypassing every rate-limit keyed on IP.
+    # Deployers **must** explicitly list the proxy's IP (ideally a ``/32``)
+    # via the ``TRUSTED_PROXIES`` env var (JSON list); never add a range
+    # that shares peers with untrusted workloads.
+    trusted_proxies: list[str] = ["127.0.0.1", "::1"]
 
     @property
     def is_production(self) -> bool:

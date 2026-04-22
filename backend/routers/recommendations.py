@@ -2,12 +2,10 @@ import logging
 
 from fastapi import APIRouter, Depends, Query
 
-from core.auth import get_optional_user
+from core.auth import get_optional_user, resolve_db_user
+from core.exceptions import NotFoundError
 from schemas.recommendation import RecommendationItem
-from services.recommendation_service import engine as recommendation_engine
-from services.recommender.config import DEFAULT_LIMIT, MAX_LIMIT
-from services.ab_test_service import ab_test
-from services import user_service
+from services.recommendation_service import engine as recommendation_engine, DEFAULT_LIMIT, MAX_LIMIT
 
 log = logging.getLogger(__name__)
 
@@ -21,19 +19,13 @@ def get_recommendations(
 ):
     """Get event recommendations. Personalized if logged in, popular otherwise."""
     if auth_user:
-        db_user = user_service.get_user_by_supabase_id(auth_user["id"])
+        try:
+            db_user = resolve_db_user(auth_user)
+        except NotFoundError:
+            log.warning("Auth user %s has no DB row, falling back to popular", auth_user["id"])
+            db_user = None
         if db_user:
-            user_id = str(db_user.id)
-            variant = ab_test.get_user_variant(user_id)
-            recs = recommendation_engine.get_recommendations(
-                user_id=user_id,
-                limit=limit,
+            return recommendation_engine.get_personalized_recommendations(
+                user_id=str(db_user.id), limit=limit,
             )
-            try:
-                ab_test.record_impressions(
-                    user_id, [r.event_id for r in recs], variant
-                )
-            except Exception:
-                log.warning("Failed to record AB impressions for user %s", user_id, exc_info=True)
-            return recs
     return recommendation_engine.get_popular_recommendations(limit=limit)

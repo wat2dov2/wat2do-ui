@@ -20,7 +20,7 @@
   --popover-foreground: var(--foreground);
   --primary: #0052FF;
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: var(--muted);
+  --secondary: hsl(0 0% 95%);
   --secondary-foreground: hsl(0 0% 20%);
   --muted: hsl(0 0% 97%);
   --muted-foreground: hsl(0 0% 56%);
@@ -33,7 +33,7 @@
   --ring: hsl(0 0% 71%);
   --sidebar: hsl(0 0% 99%);
   --sidebar-foreground: var(--foreground);
-  --sidebar-accent: var(--muted);
+  --sidebar-accent: var(--secondary);
   --sidebar-accent-foreground: var(--secondary-foreground);
   --sidebar-border: var(--border);
 
@@ -163,7 +163,7 @@
   --popover-foreground: var(--foreground);
   --primary: #0052FF;
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: var(--muted);
+  --secondary: hsl(0 0% 18%);
   --secondary-foreground: var(--foreground);
   --muted: hsl(0 0% 18%);
   --muted-foreground: hsl(0 0% 64%);

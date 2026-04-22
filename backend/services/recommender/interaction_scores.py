@@ -9,12 +9,9 @@ The general CRUD/dedup operations remain in interaction_service.
 """
 
 import logging
-import threading
 from datetime import datetime, timedelta, timezone
 
-from cachetools import TTLCache
-
-from core.cache import TTLCache as SharedTTLCache
+from core.cache import TTLCache
 from core.constants import DEFAULT_INTERACTION_LIMIT
 from core.database import get_sb
 from core.pagination import iter_all_pages
@@ -36,18 +33,19 @@ log = logging.getLogger(__name__)
 # Simple TTL cache for expensive shared queries (interaction matrix, popularity).
 # These are global data identical for every request within a time window.
 # ---------------------------------------------------------------------------
-_shared_cache = SharedTTLCache(default_ttl=CACHE_TTL_SECONDS)
-
+_shared_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 
 # ---------------------------------------------------------------------------
 # Per-user TTL cache for get_user_event_scores.
-# Uses cachetools.TTLCache for automatic per-entry expiry and LRU eviction
-# at max size.  Protected by a lock so that concurrent requests for the same
-# user don't trigger parallel DB fetches (double-check pattern).
+# Uses the shared TTLCache with per-user keys for automatic TTL expiry and
+# thread-safe double-check locking via get_or_compute.
+#
+# P5: bounded with LRU eviction via ``max_size`` so memory stays proportional
+# to the active user cohort, not the all-time-unique-user count.
 # ---------------------------------------------------------------------------
-_user_scores_lock = threading.Lock()
-_user_scores_cache: TTLCache[str, dict[int, float]] = TTLCache(
-    maxsize=USER_SCORES_CACHE_MAX, ttl=USER_SCORES_CACHE_TTL,
+_user_scores_cache = TTLCache(
+    default_ttl=USER_SCORES_CACHE_TTL,
+    max_size=USER_SCORES_CACHE_MAX,
 )
 
 
@@ -57,11 +55,31 @@ def clear_user_scores_cache(user_id: str | None = None) -> None:
     Args:
         user_id: Clear scores for a specific user.  If None, clear all.
     """
-    with _user_scores_lock:
-        if user_id is None:
-            _user_scores_cache.clear()
-        else:
-            _user_scores_cache.pop(user_id, None)
+    if user_id is None:
+        _user_scores_cache.clear()
+    else:
+        _user_scores_cache.delete(f"user_scores:{user_id}")
+
+
+def _fetch_user_event_scores(user_id: str) -> dict[int, float]:
+    """Fetch weighted interaction scores for a single user from the DB."""
+    log.debug("User event scores cache MISS for user %s -- querying DB", user_id)
+    scores: dict[int, float] = {}
+    for row in iter_all_pages(
+        lambda offset, ps: (
+            get_sb()
+            .table(USER_INTERACTIONS)
+            .select("event_id, interaction_type")
+            .eq("user_id", user_id)
+            .order("created_at")
+            .range(offset, offset + ps - 1)
+            .execute()
+        ).data or [],
+    ):
+        eid = row["event_id"]
+        weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
+        scores[eid] = scores.get(eid, 0) + weight
+    return scores
 
 
 def get_user_event_scores(user_id: str) -> dict[int, float]:
@@ -71,38 +89,10 @@ def get_user_event_scores(user_id: str) -> dict[int, float]:
     hitting the database on every recommendation request.  Thread-safe via
     double-check locking so concurrent requests share one DB round-trip.
     """
-    # Fast path: check without lock
-    cached = _user_scores_cache.get(user_id)
-    if cached is not None:
-        log.debug("User event scores cache HIT for user %s", user_id)
-        return cached
-
-    with _user_scores_lock:
-        # Double-check after acquiring lock
-        cached = _user_scores_cache.get(user_id)
-        if cached is not None:
-            log.debug("User event scores cache HIT (after lock) for user %s", user_id)
-            return cached
-
-        log.debug("User event scores cache MISS for user %s — querying DB", user_id)
-        scores: dict[int, float] = {}
-        for row in iter_all_pages(
-            lambda offset, ps: (
-                get_sb()
-                .table(USER_INTERACTIONS)
-                .select("event_id, interaction_type")
-                .eq("user_id", user_id)
-                .order("created_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
-        ):
-            eid = row["event_id"]
-            weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-            scores[eid] = scores.get(eid, 0) + weight
-
-        _user_scores_cache[user_id] = scores
-        return scores
+    return _user_scores_cache.get_or_compute(
+        f"user_scores:{user_id}",
+        lambda: _fetch_user_event_scores(user_id),
+    )
 
 
 def get_interaction_matrix() -> list[InteractionMatrixRow]:
@@ -161,28 +151,35 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
             datetime.now(timezone.utc) - timedelta(days=INTERACTION_LOOKBACK_DAYS)
         ).isoformat()
 
-        # Aggregate per (user, event) first so we can cap each user's
+        # Aggregate per (actor, event) first so we can cap each actor's
         # contribution before summing across users.  This prevents a small
         # number of bot accounts from dominating popularity scores.
-        user_event_scores: dict[tuple[str | None, int], float] = {}
+        #
+        # R16: for anonymous rows (user_id IS NULL), bucket by session_id so
+        # N distinct anonymous browsers are counted as N distinct actors, not
+        # one synthetic super-user. Rows missing *both* user_id and session_id
+        # share the key ``(None, None, event_id)`` and keep the old behaviour.
+        actor_event_scores: dict[tuple[str | None, str | None, int], float] = {}
         for row in iter_all_pages(
             lambda offset, ps: (
                 get_sb()
                 .table(USER_INTERACTIONS)
-                .select("user_id, event_id, interaction_type")
+                .select("user_id, session_id, event_id, interaction_type")
                 .gte("created_at", cutoff)
                 .order("created_at")
                 .range(offset, offset + ps - 1)
                 .execute()
             ).data or [],
         ):
-            key = (row.get("user_id"), row["event_id"])
+            uid = row.get("user_id")
+            sid = row.get("session_id") if uid is None else None
+            key = (uid, sid, row["event_id"])
             weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
-            user_event_scores[key] = user_event_scores.get(key, 0) + weight
+            actor_event_scores[key] = actor_event_scores.get(key, 0) + weight
 
-        # Sum across users with per-user cap applied.
+        # Sum across actors with per-actor cap applied.
         scores: dict[int, float] = {}
-        for (_, eid), raw_score in user_event_scores.items():
+        for (_, _, eid), raw_score in actor_event_scores.items():
             capped = min(raw_score, POP_MAX_USER_CONTRIBUTION)
             scores[eid] = scores.get(eid, 0) + capped
 

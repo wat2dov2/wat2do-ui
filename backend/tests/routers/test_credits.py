@@ -140,6 +140,15 @@ def test_add_credits_requires_user_id(admin_client):
     assert resp.status_code == 422
 
 
+def test_add_credits_rejects_malformed_uuid(admin_client):
+    """C13: user_id must be a valid UUID; malformed strings fail at Pydantic."""
+    resp = admin_client.post(
+        "/credits/add",
+        json={"user_id": "not-a-uuid", "amount": 10},
+    )
+    assert resp.status_code == 422
+
+
 # ── GET /promotions/ ────────────────────────────────────────────────
 
 
@@ -159,6 +168,20 @@ def test_list_promotions_succeeds(authenticated_client, monkeypatch):
     data = resp.json()
     assert len(data) == 1
     assert data[0]["package"] == "featured"
+
+
+def test_list_promotions_forwards_pagination_and_active_filter(authenticated_client, monkeypatch):
+    """C14: active/limit/offset query params are forwarded to the service."""
+    db_user = _mock_db_user()
+    mock_get = MagicMock(return_value=[])
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(credit_service, "get_user_promotions", mock_get)
+
+    resp = authenticated_client.get("/promotions/?active=true&limit=25&offset=50")
+    assert resp.status_code == 200
+    mock_get.assert_called_once_with(
+        str(db_user.id), active=True, limit=25, offset=50,
+    )
 
 
 # ── POST /promotions/ ───────────────────────────────────────────────

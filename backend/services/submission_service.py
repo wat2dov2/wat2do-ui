@@ -1,24 +1,54 @@
 """Event submission persistence."""
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
-from constants import SUBMISSION_PENDING
+from core.constants import SUBMISSION_APPROVED, SUBMISSION_PENDING, SUBMISSION_REJECTED
 from core.database import get_sb
+from core.errors import INVALID_STATUS_TRANSITION
+from core.exceptions import ValidationError
 from core.tables import EVENT_SUBMISSIONS
+from schemas.event import EventCreate
 from schemas.submission import SubmissionResponse
 
+log = logging.getLogger(__name__)
 
-def create_submission(user_id: str, event_data: dict) -> SubmissionResponse:
-    """Create a new event submission."""
+
+# Allowed status transitions.  Terminal states (approved, rejected) cannot
+# be revisited.  Any admin that wants to reverse a decision must create a
+# new submission — the append-only audit trail is the design contract.
+_ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
+    SUBMISSION_PENDING: frozenset({SUBMISSION_APPROVED, SUBMISSION_REJECTED}),
+    SUBMISSION_APPROVED: frozenset(),
+    SUBMISSION_REJECTED: frozenset(),
+}
+
+
+def create_submission(user_id: str, event_data: EventCreate | dict) -> SubmissionResponse:
+    """Create a new event submission.
+
+    Accepts either a validated ``EventCreate`` (new router path) or a
+    raw ``dict`` (legacy callers / tests that predate audit S1).  The
+    dict form is normalised via ``model_dump(mode="json")`` so JSONB
+    storage receives ISO timestamps, not raw ``datetime`` objects.
+    """
+    event_dict = (
+        event_data.model_dump(mode="json", exclude_none=True)
+        if isinstance(event_data, EventCreate)
+        else event_data
+    )
     payload = {
         "id": str(uuid.uuid4()),
         "user_id": user_id,
-        "event_data": event_data,
+        "event_data": event_dict,
         "status": SUBMISSION_PENDING,
     }
     r = get_sb().table(EVENT_SUBMISSIONS).insert(payload).execute()
-    return SubmissionResponse.model_validate(r.data[0]) if r.data else SubmissionResponse(**payload)
+    if r.data:
+        return SubmissionResponse.model_validate(r.data[0])
+    log.warning("Insert returned no data for create_submission(user_id=%s), using payload fallback", user_id)
+    return SubmissionResponse(**payload, submitted_at=datetime.now(timezone.utc).isoformat())
 
 
 def get_submissions(
@@ -60,7 +90,27 @@ def update_submission(
     status: str,
     rejection_reason: str | None = None,
 ) -> SubmissionResponse | None:
-    """Update a submission's status."""
+    """Update a submission's status.
+
+    Enforces a simple state machine: ``pending`` is the only state from
+    which transitions are allowed; ``approved`` and ``rejected`` are
+    terminal.  Attempts to transition out of a terminal state raise
+    ``ValidationError`` (audit I4).
+    """
+    existing = get_submission_by_id(submission_id)
+    if existing is None:
+        return None
+    allowed = _ALLOWED_TRANSITIONS.get(existing.status, frozenset())
+    if status not in allowed and status != existing.status:
+        log.warning(
+            "Rejected submission transition %s: %s -> %s (allowed: %s)",
+            submission_id,
+            existing.status,
+            status,
+            sorted(allowed),
+        )
+        raise ValidationError(INVALID_STATUS_TRANSITION)
+
     payload: dict = {
         "status": status,
         "reviewed_at": datetime.now(timezone.utc).isoformat(),

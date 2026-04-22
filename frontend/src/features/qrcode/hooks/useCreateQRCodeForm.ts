@@ -1,15 +1,48 @@
-import { useReducer, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import type { Event } from "@/shared/types";
-import { formReducer, initialState, type FormState } from "@/features/qrcode/hooks/useCreateQRCodeForm.reducer";
+import type { Event, FilterState } from "@/shared/types";
+import { useForm } from "@/shared/hooks/useForm";
 import { getUniqueEvents, createQRCodeFromState } from "@/features/qrcode/hooks/useCreateQRCodeForm.utils";
 import { MAX_UPLOAD_SIZE_BYTES } from "@/features/qrcode/constants";
 import { isSafeUrl } from "@/shared/utils/url";
 
+type DestinationType = "event" | "events-list" | "custom-url";
+
+export interface CreateQRCodeFormData {
+  name: string;
+  description: string;
+  destinationType: DestinationType;
+  selectedEventId: number | undefined;
+  customUrl: string;
+  filters: FilterState | undefined;
+  imageUrl: string;
+  imagePreview: string;
+}
+
+const INITIAL_FORM_DATA: CreateQRCodeFormData = {
+  name: "",
+  description: "",
+  destinationType: "event",
+  selectedEventId: undefined,
+  customUrl: "",
+  filters: undefined,
+  imageUrl: "",
+  imagePreview: "",
+};
+
 export function useCreateQRCodeForm(events: Event[], userEmail: string) {
   const { t } = useTranslation();
-  const [state, dispatch] = useReducer(formReducer, initialState);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getDefaults = useCallback(() => INITIAL_FORM_DATA, []);
+  const form = useForm<CreateQRCodeFormData>({
+    isOpen: true,
+    getDefaults,
+  });
+
+  // Errors and qrCodeId are not form fields — they live alongside the form.
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [qrCodeId, setQrCodeId] = useState<string | null>(null);
 
   // Deduplicate events by ID
   const uniqueEvents = useMemo(() => getUniqueEvents(events), [events]);
@@ -19,42 +52,35 @@ export function useCreateQRCodeForm(events: Event[], userEmail: string) {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      dispatch({
-        type: "SET_ERRORS",
-        payload: { ...state.errors, image: t("qrCode.imageFileError") },
-      });
+      setErrors((prev) => ({ ...prev, image: t("qrCode.imageFileError") }));
       return;
     }
 
     if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-      dispatch({
-        type: "SET_ERRORS",
-        payload: { ...state.errors, image: t("qrCode.imageSizeError") },
-      });
+      setErrors((prev) => ({ ...prev, image: t("qrCode.imageSizeError") }));
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
-      dispatch({ type: "SET_IMAGE_URL", payload: dataUrl });
-      dispatch({ type: "SET_IMAGE_PREVIEW", payload: dataUrl });
-      const newErrors = { ...state.errors };
-      delete newErrors.image;
-      dispatch({ type: "SET_ERRORS", payload: newErrors });
+      form.updateField("imageUrl", dataUrl);
+      form.updateField("imagePreview", dataUrl);
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.image;
+        return next;
+      });
     };
     reader.onerror = () => {
-      dispatch({
-        type: "SET_ERRORS",
-        payload: { ...state.errors, image: t("qrCode.imageReadError") },
-      });
+      setErrors((prev) => ({ ...prev, image: t("qrCode.imageReadError") }));
     };
     reader.readAsDataURL(file);
   };
 
   const handleRemoveImage = () => {
-    dispatch({ type: "SET_IMAGE_URL", payload: "" });
-    dispatch({ type: "SET_IMAGE_PREVIEW", payload: "" });
+    form.updateField("imageUrl", "");
+    form.updateField("imagePreview", "");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -62,36 +88,53 @@ export function useCreateQRCodeForm(events: Event[], userEmail: string) {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!state.name.trim()) {
+    if (!form.formData.name.trim()) {
       newErrors.name = t("qrCode.nameRequired");
     }
-    if (!state.imageUrl) {
+    if (!form.formData.imageUrl) {
       newErrors.image = t("qrCode.posterImageRequired");
     }
-    if (state.destinationType === "custom-url" && !state.customUrl.trim()) {
+    if (form.formData.destinationType === "custom-url" && !form.formData.customUrl.trim()) {
       newErrors.url = t("qrCode.urlRequired");
     }
-    if (state.destinationType === "custom-url" && state.customUrl.trim()) {
-      if (!isSafeUrl(state.customUrl.trim())) {
+    if (form.formData.destinationType === "custom-url" && form.formData.customUrl.trim()) {
+      if (!isSafeUrl(form.formData.customUrl.trim())) {
         newErrors.url = t("qrCode.urlInvalid");
       }
     }
-    dispatch({ type: "SET_ERRORS", payload: newErrors });
+    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const createQRCode = () => createQRCodeFromState(state, userEmail);
+  const createQRCode = () =>
+    createQRCodeFromState(
+      {
+        name: form.formData.name,
+        description: form.formData.description,
+        destinationType: form.formData.destinationType,
+        selectedEventId: form.formData.selectedEventId,
+        customUrl: form.formData.customUrl,
+        filters: form.formData.filters as FilterState,
+        imageUrl: form.formData.imageUrl,
+      },
+      userEmail,
+    );
 
   const reset = () => {
-    dispatch({ type: "RESET" });
+    form.setFormData(INITIAL_FORM_DATA);
+    setErrors({});
+    setQrCodeId(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
   return {
-    state,
-    dispatch,
+    formData: form.formData,
+    updateField: form.updateField,
+    errors,
+    qrCodeId,
+    setQrCodeId,
     fileInputRef,
     uniqueEvents,
     handleImageUpload,

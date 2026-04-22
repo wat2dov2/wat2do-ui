@@ -25,13 +25,23 @@ import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptySt
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { useAdminContext } from "@/features/admin/context/AdminContext";
 import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
-export function AdminClubsPage() {
-  const { onBack, onAddClub, onEditClub, onDeleteClub } = useAdminContext();
+interface AdminClubsPageProps {
+  onBack: () => void;
+  onAddClub: (club: Club) => void | Promise<void>;
+  onEditClub: (club: Club) => void | Promise<void>;
+  onDeleteClub: (clubId: number) => void | Promise<void>;
+}
+
+export function AdminClubsPage({
+  onBack,
+  onAddClub,
+  onEditClub,
+  onDeleteClub,
+}: AdminClubsPageProps) {
   const { t } = useTranslation();
   const {
     searchQuery,
@@ -160,7 +170,7 @@ export function AdminClubsPage() {
                   {club.categories.slice(0, 2).map((cat) => (
                     <span
                       key={cat}
-                      className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground"
+                      className="text-xs px-2 py-0.5 bg-secondary rounded-full text-muted-foreground"
                     >
                       {cat}
                     </span>

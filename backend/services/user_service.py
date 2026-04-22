@@ -88,6 +88,47 @@ def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
     return UserResponse.model_validate(r.data[0]) if r.data else None
 
 
+def set_role(user_id: UUID, role: str) -> UserResponse | None:
+    """Admin-only role rotation.
+
+    Updates the ``role`` column directly (bypassing ``UserUpdate`` which
+    intentionally does not list ``role`` — see schema audit S2).  Clears
+    the supabase-auth-id cache so ``_check_admin`` sees the new role
+    immediately.
+    """
+    existing = get_user(user_id)
+    if existing is None:
+        return None
+    _supabase_id_cache.clear()
+    r = (
+        get_sb()
+        .table(USERS)
+        .update({"role": role})
+        .eq("id", str(user_id))
+        .execute()
+    )
+    return UserResponse.model_validate(r.data[0]) if r.data else None
+
+
+def count_admins() -> int:
+    """Return the number of users with the admin role.
+
+    Used by admin-only routes to enforce an admin-quorum invariant: the
+    system must never reach a state with zero admins (a bored admin could
+    otherwise lock the platform into a permanently un-administered state —
+    see audit A26).  Uses PostgREST's ``count="exact"`` to avoid fetching
+    the full user list.
+    """
+    r = (
+        get_sb()
+        .table(USERS)
+        .select("id", count="exact")
+        .eq("role", "admin")
+        .execute()
+    )
+    return r.count or 0
+
+
 def delete_user(user_id: UUID) -> bool:
     _supabase_id_cache.clear()
     r = get_sb().table(USERS).delete().eq("id", str(user_id)).execute()

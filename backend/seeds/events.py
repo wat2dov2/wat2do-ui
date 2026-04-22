@@ -4,7 +4,7 @@ from core.config import settings
 from core.constants import BUCKET_EVENT_IMAGES
 from core.database import get_sb
 from core.tables import EVENTS
-from constants import EVENT_CATEGORIES
+from core.constants import EVENT_CATEGORIES
 
 
 def _public_url(bucket: str, path: str) -> str | None:
@@ -105,6 +105,13 @@ for i in range(4, 31):
 
 
 def seed():
+    # Refuse to run in production — the 30 seed events use dummy titles
+    # and source image paths that do not exist in the production storage
+    # bucket (audit M11).  Operators who intentionally need to seed prod
+    # must flip the environment flag and accept responsibility.
+    if settings.is_production:
+        raise RuntimeError("refusing to seed in production")
+
     sb = get_sb()
     created = 0
     for data in SEED_EVENTS:

@@ -69,7 +69,8 @@ function ToastItem({ toast }: { toast: Toast }) {
 
   useEffect(() => {
     // Trigger animation
-    setTimeout(() => setIsVisible(true), ANIMATION_FRAME_TRIGGER_MS);
+    const id = setTimeout(() => setIsVisible(true), ANIMATION_FRAME_TRIGGER_MS);
+    return () => clearTimeout(id);
   }, []);
 
   const toneClass =

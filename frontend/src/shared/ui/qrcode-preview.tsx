@@ -35,7 +35,7 @@ export function QRCodePreview({
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-4 p-6 border border-border rounded-xl bg-muted/50">
+      <div className="flex flex-col items-center gap-4 p-6 border border-border rounded-xl bg-secondary/50">
         <div className="p-4 bg-background rounded-lg border border-border">
           <QRCodeSVG value={qrUrl} size={256} />
         </div>

@@ -26,7 +26,7 @@ export function JSONFilterEditor({
       <div className="border border-border rounded-xl overflow-hidden">
         <Suspense
           fallback={
-            <div className="flex items-center justify-center h-[250px] bg-muted">
+            <div className="flex items-center justify-center h-[250px] bg-secondary">
               <div className="text-muted-foreground text-sm">
                 {t("forms.loadingEditor")}
               </div>

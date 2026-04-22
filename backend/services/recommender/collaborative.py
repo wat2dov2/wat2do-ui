@@ -2,11 +2,12 @@
 
 import logging
 import math
-import threading
-import time
 
-from services import interaction_service, saved_event_service
+from core.cache import TTLCache
+from services import saved_event_service
+from services.recommender.interaction_scores import get_interaction_matrix
 from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT, CF_SAVE_WEIGHT, CF_MAX_USER_EVENT_SCORE, CACHE_TTL_SECONDS
+from services.recommender.utils import normalize_scores
 
 log = logging.getLogger(__name__)
 
@@ -17,61 +18,50 @@ log = logging.getLogger(__name__)
 # cache window.  Cache both so the work is done once per TTL period instead
 # of once per live-fallback request.
 # ---------------------------------------------------------------------------
-_vectors_lock = threading.Lock()
-_vectors_cache: tuple[float, dict[str, dict[int, float]], dict[int, dict[str, float]]] | None = None
+_cf_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
+
+
+def _build_cf_matrices() -> tuple[dict[str, dict[int, float]], dict[int, dict[str, float]]]:
+    """Build (user_vectors, item_vectors) from interaction matrix and saves."""
+    matrix = get_interaction_matrix()
+    saves = saved_event_service.get_all_user_saves()
+
+    user_vectors: dict[str, dict[int, float]] = {}
+    for row in matrix:
+        uid = row.user_id
+        if uid not in user_vectors:
+            user_vectors[uid] = {}
+        user_vectors[uid][row.event_id] = row.score
+
+    for s in saves:
+        uid, eid = s.user_id, s.event_id
+        if uid not in user_vectors:
+            user_vectors[uid] = {}
+        user_vectors[uid][eid] = min(
+            user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT,
+            CF_MAX_USER_EVENT_SCORE,
+        )
+
+    # Transpose: item_vectors[event_id][user_id] = score
+    item_vectors: dict[int, dict[str, float]] = {}
+    for uid, vec in user_vectors.items():
+        for eid, score in vec.items():
+            if eid not in item_vectors:
+                item_vectors[eid] = {}
+            item_vectors[eid][uid] = score
+
+    log.info(
+        "Rebuilt CF matrices: %d users, %d items, %d entries",
+        len(user_vectors),
+        len(item_vectors),
+        sum(len(v) for v in user_vectors.values()),
+    )
+    return user_vectors, item_vectors
 
 
 def _get_cf_matrices() -> tuple[dict[str, dict[int, float]], dict[int, dict[str, float]]]:
     """Return (user_vectors, item_vectors), rebuilding if the TTL has expired."""
-    global _vectors_cache
-
-    if _vectors_cache is not None:
-        expires_at, user_vecs, item_vecs = _vectors_cache
-        if time.monotonic() <= expires_at:
-            return user_vecs, item_vecs
-
-    with _vectors_lock:
-        # Double-check after acquiring lock
-        if _vectors_cache is not None:
-            expires_at, user_vecs, item_vecs = _vectors_cache
-            if time.monotonic() <= expires_at:
-                return user_vecs, item_vecs
-
-        matrix = interaction_service.get_interaction_matrix()
-        saves = saved_event_service.get_all_user_saves()
-
-        user_vectors: dict[str, dict[int, float]] = {}
-        for row in matrix:
-            uid = row.user_id
-            if uid not in user_vectors:
-                user_vectors[uid] = {}
-            user_vectors[uid][row.event_id] = row.score
-
-        for s in saves:
-            uid, eid = s.user_id, s.event_id
-            if uid not in user_vectors:
-                user_vectors[uid] = {}
-            user_vectors[uid][eid] = min(
-                user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT,
-                CF_MAX_USER_EVENT_SCORE,
-            )
-
-        # Transpose: item_vectors[event_id][user_id] = score
-        item_vectors: dict[int, dict[str, float]] = {}
-        for uid, vec in user_vectors.items():
-            for eid, score in vec.items():
-                if eid not in item_vectors:
-                    item_vectors[eid] = {}
-                item_vectors[eid][uid] = score
-
-        _vectors_cache = (time.monotonic() + CACHE_TTL_SECONDS, user_vectors, item_vectors)
-        log.info(
-            "Rebuilt CF matrices: %d users, %d items, %d entries",
-            len(user_vectors),
-            len(item_vectors),
-            sum(len(v) for v in user_vectors.values()),
-        )
-        return user_vectors, item_vectors
+    return _cf_cache.get_or_compute("cf_matrices", _build_cf_matrices)
 
 
 def get_collaborative_scores(
@@ -108,14 +98,7 @@ def get_collaborative_scores(
         i = item_scores.get(eid, 0)
         blended[eid] = CF_BLEND_WEIGHT * u + (1 - CF_BLEND_WEIGHT) * i
 
-    # Normalize to [0, 1]
-    if blended:
-        max_score = max(blended.values())
-        if max_score > 0:
-            for eid in blended:
-                blended[eid] /= max_score
-
-    return blended
+    return normalize_scores(blended)
 
 
 def _user_based_cf(
@@ -187,14 +170,16 @@ def _item_based_cf(
 def _cosine_similarity(a: dict[int, float], b: dict[int, float]) -> float:
     """
     Cosine similarity between two sparse vectors keyed by event_id.
-    Only computes over events both users have rated (a[i] > 0 && b[i] > 0).
+    Dot product is computed over events both users have rated (a[i] > 0 && b[i] > 0),
+    but magnitudes use the full vectors so that a single shared positive rating
+    does not inflate similarity to 1.0.
     """
     common = {k for k in a.keys() & b.keys() if a[k] > 0 and b[k] > 0}
     if not common:
         return 0.0
     dot = sum(a[k] * b[k] for k in common)
-    mag_a = math.sqrt(sum(a[k] ** 2 for k in common))
-    mag_b = math.sqrt(sum(b[k] ** 2 for k in common))
+    mag_a = math.sqrt(sum(v ** 2 for v in a.values()))
+    mag_b = math.sqrt(sum(v ** 2 for v in b.values()))
     if mag_a == 0 or mag_b == 0:
         return 0.0
     return dot / (mag_a * mag_b)
@@ -203,15 +188,15 @@ def _cosine_similarity(a: dict[int, float], b: dict[int, float]) -> float:
 def _cosine_similarity_generic(a: dict[str, float], b: dict[str, float]) -> float:
     """Cosine similarity between two sparse vectors keyed by string.
 
-    Magnitudes are computed over common keys only (matching _cosine_similarity)
-    so that user-based and item-based CF produce comparable score scales.
+    Dot product is over common keys; magnitudes are over the full vectors so
+    that a single overlap does not produce similarity 1.0.
     """
     common = set(a.keys()) & set(b.keys())
     if not common:
         return 0.0
     dot = sum(a[k] * b[k] for k in common)
-    mag_a = math.sqrt(sum(a[k] ** 2 for k in common))
-    mag_b = math.sqrt(sum(b[k] ** 2 for k in common))
+    mag_a = math.sqrt(sum(v ** 2 for v in a.values()))
+    mag_b = math.sqrt(sum(v ** 2 for v in b.values()))
     if mag_a == 0 or mag_b == 0:
         return 0.0
     return dot / (mag_a * mag_b)

@@ -26,7 +26,7 @@ export function AdminActivityItem({
   viewLabel,
 }: AdminActivityItemProps) {
   return (
-    <div className="w-full p-4 hover:bg-muted/50 transition-colors cursor-pointer">
+    <div className="w-full p-4 hover:bg-secondary/50 transition-colors cursor-pointer">
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
           <Icon className="w-4 h-4 text-primary" />

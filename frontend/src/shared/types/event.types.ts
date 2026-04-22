@@ -1,45 +1,36 @@
 /**
  * Event-related types
+ *
+ * `Event` is the generated backend `ApiEventResponse` shape intersected with
+ * a handful of view-only fields that `transformRawEvent` computes (date,
+ * time, dayOfWeek, eventDate, isLive, imageUrl, addedDate,
+ * requiresRegistration). Do NOT hand-write new API fields here — add them to
+ * the backend Pydantic model and regenerate via `npm run generate-types`.
  */
 
-export interface Event {
-  id: number;
-  title: string;
-  category?: string; // Can be derived from club_type
-  organization?: string; // Can use display_handle
-  location?: string;
-  // Old format (for backward compatibility)
+import type { ApiEventResponse } from "@/shared/generated";
+
+/** View-only fields computed from the API payload on the frontend. */
+interface EventViewOnlyFields {
+  /** Human-readable date string (e.g. "Jan 5, 2025") derived from dtstart_utc. */
   date?: string;
+  /** Human-readable time or range (e.g. "7 PM - 9 PM") derived from dtstart/end. */
   time?: string;
+  /** Day-of-week string derived from dtstart_utc. */
   dayOfWeek?: string;
-  // New format
-  dtstart_utc?: string; // ISO 8601 UTC datetime string
-  dtend_utc?: string; // ISO 8601 UTC datetime string
-  isLive?: boolean;
-  food?: string[] | null;
-  price?: number | null;
-  requiresRegistration?: boolean; // Old format
-  registration?: boolean; // New format
-  addedDate?: Date; // Old format
-  added_at?: string; // New format (ISO 8601)
-  description?: string;
-  // For timeline sorting - actual date object
+  /** Date object parsed from dtstart_utc for timeline/sort math. */
   eventDate?: Date;
-  imageUrl?: string; // Old format
-  source_image_url?: string; // New format
-  club_type?: string; // New format (WUSA, Athletics, etc.)
-  school?: string;
-  source_url?: string;
-  ig_handle?: string | null;
-  discord_handle?: string | null;
-  x_handle?: string | null;
-  tiktok_handle?: string | null;
-  fb_handle?: string | null;
-  other_handle?: string | null;
-  display_handle?: string;
-  /** Supabase user ID of the user who created this event (null for scraped events). */
-  created_by?: string | null;
+  /** Date object parsed from added_at. */
+  addedDate?: Date;
+  /** Convenience alias: `source_image_url` populated via transformRawEvent. */
+  imageUrl?: string;
+  /** Live/upcoming/past flag derived elsewhere. */
+  isLive?: boolean;
+  /** Legacy alias for `registration` — populated by transformRawEvent. */
+  requiresRegistration?: boolean;
 }
+
+export type Event = ApiEventResponse & EventViewOnlyFields;
 
 // Event submission data (matches EventFormData from SubmitEventModal)
 export interface EventFormData {

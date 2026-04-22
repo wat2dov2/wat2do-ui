@@ -3,11 +3,14 @@
  * All poster and scan data from backend; no localStorage.
  */
 
-import type { QRCode, QRCodeScan } from "@/shared/types";
+import type { QRCode } from "@/shared/types";
 import { api, ApiError } from "@/shared/services/apiClient";
 import { isSafeUrl } from "@/shared/utils/url";
 import { API_BASE_URL } from "@/shared/config/api";
 import { stripTrailingSlash } from "@/shared/utils/string";
+import { ROUTES } from "@/shared/constants/routes";
+import type { QrCodePosterBackend } from "@/shared/api/posters.api";
+import { normalizeBackendPoster } from "@/shared/api/posters.api";
 
 /** Response from GET /qr/{id}: backend records the scan and returns redirect config. */
 export interface QrRedirectConfig {
@@ -26,7 +29,18 @@ export async function fetchQrRedirectFromBackend(qrCodeId: string): Promise<QrRe
     return data;
   } catch (err) {
     if (err instanceof ApiError) {
-      if (err.status === 202) return { requires_location: true };
+      // Backend returns 400 {"detail": "requires_location"} when the poster
+      // is inactive and needs geolocation to activate. Match this precisely
+      // so unrelated 400s still bubble up as errors.
+      if (
+        err.status === 400 &&
+        typeof err.body === "object" &&
+        err.body !== null &&
+        "detail" in err.body &&
+        (err.body as { detail?: string }).detail === "requires_location"
+      ) {
+        return { requires_location: true };
+      }
       if (err.status === 404) return null;
     }
     console.error("Failed to fetch QR redirect config:", err);
@@ -49,13 +63,13 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
   switch (config.destination_type) {
     case "event":
       if (config.destination_id != null)
-        window.location.href = `/?eventId=${config.destination_id}`;
+        window.location.href = `${ROUTES.HOME}?eventId=${config.destination_id}`;
       break;
     case "events-list":
       if (config.filters && typeof config.filters === "object") {
-        window.location.href = `/?filters=${encodeURIComponent(JSON.stringify(config.filters))}`;
+        window.location.href = `${ROUTES.HOME}?filters=${encodeURIComponent(JSON.stringify(config.filters))}`;
       } else {
-        window.location.href = "/";
+        window.location.href = ROUTES.HOME;
       }
       break;
     case "custom-url":
@@ -64,54 +78,19 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
           window.location.href = config.destination_id;
         } else {
           console.error("Blocked unsafe redirect URL:", config.destination_id);
-          window.location.href = "/";
+          window.location.href = ROUTES.HOME;
         }
       }
       break;
     default:
-      window.location.href = "/";
+      window.location.href = ROUTES.HOME;
   }
 }
 
-/** Poster row from GET /qr/ or POST /qr/. */
-export interface QrCodePosterBackend {
-  id: string;
-  name: string;
-  description: string | null;
-  destination_type: string;
-  destination_id: string | null;
-  filters: Record<string, unknown> | unknown[] | null;
-  created_at: string;
-  created_by: string;
-  is_active: boolean;
-  image_url: string | null;
-  latitude: number;
-  longitude: number;
-}
-
-/** Map backend poster to frontend QRCode. */
-export function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
-  return {
-    id: b.id,
-    name: b.name,
-    description: b.description ?? undefined,
-    destinationType: b.destination_type as QRCode["destinationType"],
-    destinationId: b.destination_id != null ? (Number.isNaN(Number(b.destination_id)) ? b.destination_id : Number(b.destination_id)) : undefined,
-    filters: b.filters ?? undefined,
-    createdAt: b.created_at,
-    createdBy: b.created_by,
-    isActive: b.is_active,
-    imageUrl: b.image_url ?? undefined,
-    latitude: b.latitude,
-    longitude: b.longitude,
-  };
-}
-
-/** List all posters (auth). */
-export async function listPostersFromBackend(): Promise<QRCode[]> {
-  const list = await api.get<QrCodePosterBackend[]>("/qr/");
-  return (list ?? []).map(normalizeBackendPoster);
-}
+// Poster types and list function are defined in shared/api/posters.api.ts
+// and re-exported here for backward compatibility.
+export type { QrCodePosterBackend } from "@/shared/api/posters.api";
+export { normalizeBackendPoster, listPostersFromBackend } from "@/shared/api/posters.api";
 
 /** Create poster (auth). New poster is inactive until first scan provides location. */
 export async function createPosterToBackend(payload: {
@@ -180,37 +159,10 @@ export async function deletePosterFromBackend(qrCodeId: string): Promise<void> {
   await api.delete(`/qr/${encodeURIComponent(qrCodeId)}`);
 }
 
-/** Scan row from GET /qr/scans. */
-export interface QrCodeScanBackend {
-  id: string;
-  qr_code_id: string;
-  scanned_at: string;
-  user_id: string | null;
-  session_id: string;
-  conversion_actions: string[];
-  user_agent: string | null;
-}
-
-/** Fetch scans from backend (so phone scans appear in dashboard). */
-export async function getScansFromBackend(
-  qrCodeId?: string,
-): Promise<QrCodeScanBackend[]> {
-  const url = qrCodeId ? `/qr/scans?qr_code_id=${encodeURIComponent(qrCodeId)}` : "/qr/scans";
-  return api.get<QrCodeScanBackend[]>(url);
-}
-
-/** Normalize backend scan to shared QRCodeScan shape. */
-export function normalizeBackendScan(b: QrCodeScanBackend): QRCodeScan {
-  return {
-    id: b.id,
-    qrCodeId: b.qr_code_id,
-    scannedAt: b.scanned_at,
-    userId: b.user_id ?? undefined,
-    sessionId: b.session_id,
-    conversionActions: b.conversion_actions ?? [],
-    userAgent: b.user_agent ?? undefined,
-  };
-}
+// Scan types and functions are defined in shared/api/scans.api.ts
+// and re-exported here for backward compatibility.
+export type { QrCodeScanBackend } from "@/shared/api/scans.api";
+export { getScansFromBackend, normalizeBackendScan } from "@/shared/api/scans.api";
 
 /**
  * Resolve a poster image URL to an absolute URL.

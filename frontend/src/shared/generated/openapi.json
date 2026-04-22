@@ -114,6 +114,7 @@
           "auth"
         ],
         "summary": "Logout",
+        "description": "Log the user out.\n\nA11: Bearer is optional \u2014 if the access token has expired, the refresh\ncookie is still cleared so the browser doesn't hold a replayable token.\nEven if upstream revocation fails, the cookie is still cleared; we\nsurface the error via a JSONResponse that carries Set-Cookie for\n``refresh_token``.",
         "operationId": "logout_auth_logout_post",
         "responses": {
           "200": {
@@ -351,6 +352,7 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 0,
               "default": 0,
               "title": "Skip"
             }
@@ -361,6 +363,8 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
               "default": 100,
               "title": "Limit"
             }
@@ -446,6 +450,7 @@
           "users"
         ],
         "summary": "Delete User",
+        "description": "Admin-only user deletion with A26 guardrails.\n\n- **Self-delete block:** admins cannot delete their own account via\n  this endpoint.  Account deletion for the caller must be done through\n  an explicit \"delete my account\" flow (not implemented here) so that\n  the operation is intentional and separate from moderation.\n- **Admin quorum:** if the target is currently an admin, refuse the\n  delete when the system would end up with zero admins.  A bored or\n  compromised admin could otherwise demote/delete every other admin\n  and lock the system into an un-administered state.",
         "operationId": "delete_user_users__user_id__delete",
         "security": [
           {
@@ -467,6 +472,65 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_id}/role": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update User Role",
+        "description": "Admin-only: rotate a user's role ('user' <-> 'admin').\n\nSeparate from ``PATCH /users/{id}`` so the role is only mutable through\nan explicitly-admin endpoint \u2014 keeps the trust boundary bright and\ncloses audit I16.  ``user_service.set_role`` invalidates the\nsupabase-auth-id cache so the change is immediately visible in\nsubsequent role checks.\n\nA26: if the target is currently an admin and the new role is not\n``admin``, refuse the demotion when it would leave zero admins.",
+        "operationId": "update_user_role_users__user_id__role_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRoleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -517,6 +581,7 @@
           "events"
         ],
         "summary": "List Events",
+        "description": "Public list endpoint.\n\nResponse shape is fixed to ``EventSummaryResponse`` which omits\n``created_by`` \u2014 this is the IDOR/PII fix for audit I10/S16.  The\n``summary`` flag is still forwarded to the service (so the query\ncan short-circuit large column reads) but the wire shape is the\nsame either way.  FastAPI's response_model serialization will drop\nany extra fields if the service returns the fuller ``EventResponse``.",
         "operationId": "list_events_events__get",
         "parameters": [
           {
@@ -525,6 +590,7 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 0,
               "default": 0,
               "title": "Skip"
             }
@@ -536,6 +602,7 @@
             "schema": {
               "type": "integer",
               "maximum": 500,
+              "minimum": 1,
               "default": 100,
               "title": "Limit"
             }
@@ -547,7 +614,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 100
                 },
                 {
                   "type": "null"
@@ -563,7 +631,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 100
                 },
                 {
                   "type": "null"
@@ -579,7 +648,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 255
                 },
                 {
                   "type": "null"
@@ -595,7 +665,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 200
                 },
                 {
                   "type": "null"
@@ -661,7 +732,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "number"
+                  "type": "number",
+                  "minimum": 0
                 },
                 {
                   "type": "null"
@@ -685,6 +757,18 @@
               ],
               "title": "Registration"
             }
+          },
+          {
+            "name": "summary",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Return lightweight card-view fields only",
+              "default": false,
+              "title": "Summary"
+            },
+            "description": "Return lightweight card-view fields only"
           }
         ],
         "responses": {
@@ -695,7 +779,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/EventResponse"
+                    "$ref": "#/components/schemas/EventSummaryResponse"
                   },
                   "title": "Response List Events Events  Get"
                 }
@@ -765,6 +849,7 @@
           "events"
         ],
         "summary": "Get Event",
+        "description": "Public event detail.  ``created_by`` is stripped via\n``EventPublicResponse`` (audit I10 / S16); owners / admins see the\nfull shape through their dashboards via the dedicated service call.",
         "operationId": "get_event_events__event_id__get",
         "parameters": [
           {
@@ -783,7 +868,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventResponse"
+                  "$ref": "#/components/schemas/EventPublicResponse"
                 }
               }
             }
@@ -908,6 +993,7 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 0,
               "default": 0,
               "title": "Skip"
             }
@@ -919,6 +1005,7 @@
             "schema": {
               "type": "integer",
               "maximum": 500,
+              "minimum": 1,
               "default": 100,
               "title": "Limit"
             }
@@ -930,7 +1017,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 100
                 },
                 {
                   "type": "null"
@@ -946,7 +1034,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 200
                 },
                 {
                   "type": "null"
@@ -1011,6 +1100,119 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClubResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/mine": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "List My Clubs",
+        "description": "Return clubs owned by the authenticated user.",
+        "operationId": "list_my_clubs_clubs_mine_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClubResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List My Clubs Clubs Mine Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/clubs/integrations/discord/options": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Get Discord Options",
+        "operationId": "get_discord_options_clubs_integrations_discord_options_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordIntegrationOptionsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/clubs/integrations/{platform}/options": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Get Platform Options",
+        "operationId": "get_platform_options_clubs_integrations__platform__options_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "whatsapp",
+                "discord",
+                "instagram",
+                "slack",
+                "telegram",
+                "linkedin",
+                "facebook"
+              ],
+              "type": "string",
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformIntegrationOptionsResponse"
                 }
               }
             }
@@ -1149,233 +1351,6 @@
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/integrations/discord/options": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Discord Options",
-        "operationId": "get_discord_options_clubs_integrations_discord_options_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscordIntegrationOptionsResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/clubs/{club_id}/integrations/discord": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Discord Integration",
-        "operationId": "get_discord_integration_clubs__club_id__integrations_discord_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscordIntegrationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Upsert Discord Integration",
-        "operationId": "upsert_discord_integration_clubs__club_id__integrations_discord_put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DiscordIntegrationUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscordIntegrationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Disconnect Discord Integration",
-        "operationId": "disconnect_discord_integration_clubs__club_id__integrations_discord_delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscordIntegrationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/integrations/{platform}/options": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Platform Options",
-        "operationId": "get_platform_options_clubs_integrations__platform__options_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "platform",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": [
-                "whatsapp",
-                "discord",
-                "instagram",
-                "slack",
-                "telegram",
-                "linkedin",
-                "facebook"
-              ],
-              "type": "string",
-              "title": "Platform"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
           },
           "422": {
             "description": "Validation Error",
@@ -1629,7 +1604,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
               }
             }
           },
@@ -1668,7 +1645,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
               }
             }
           },
@@ -1728,7 +1707,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
               }
             }
           },
@@ -1767,7 +1748,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
               }
             }
           },
@@ -1796,27 +1779,63 @@
         ],
         "summary": "List Qr Codes",
         "operationId": "list_qr_codes_qr__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/QrCodeResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List Qr Codes Qr  Get"
+                  "$ref": "#/components/schemas/PaginatedResponse_QrCodeResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -1824,15 +1843,20 @@
         ],
         "summary": "Create Poster",
         "operationId": "create_poster_qr__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/QrCodeCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -1855,12 +1879,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/qr/scans": {
@@ -1883,7 +1902,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 128
                 },
                 {
                   "type": "null"
@@ -1931,6 +1951,34 @@
               "title": "To Time"
             },
             "description": "Scans until this time (inclusive)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
           }
         ],
         "responses": {
@@ -1939,11 +1987,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/QrCodeScanResponse"
-                  },
-                  "title": "Response List Scans Qr Scans Get"
+                  "$ref": "#/components/schemas/PaginatedResponse_QrCodeScanResponse_"
                 }
               }
             }
@@ -1985,7 +2029,9 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "number"
+                  "type": "number",
+                  "maximum": 90,
+                  "minimum": -90
                 },
                 {
                   "type": "null"
@@ -2003,7 +2049,9 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "number"
+                  "type": "number",
+                  "maximum": 180,
+                  "minimum": -180
                 },
                 {
                   "type": "null"
@@ -2020,7 +2068,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/QrCodeRedirect"
+                }
               }
             }
           },
@@ -2136,7 +2186,7 @@
           "interactions"
         ],
         "summary": "Record Interactions",
-        "description": "Record a batch of user-event interactions.\nAuth is optional \u2014 token is passed in the body (for sendBeacon compat).\nAnonymous users tracked by session_id only.",
+        "description": "Record a batch of user-event interactions.\n\nAuth is via the standard ``Authorization: Bearer <token>`` header.\nThe frontend uses ``fetch()`` with ``keepalive: true`` (instead of\n``sendBeacon``) so it can set this header even during page unload.\n\nWhen a user is authenticated:\n- Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.\n- Duplicate interactions are deduplicated within a sliding time window.\n\nWhen ``user_id`` is present in the payload it MUST match the authenticated\nuser \u2014 submitting interactions on behalf of another user is rejected.\n\nAnonymous requests (no auth at all) are still allowed for basic\nview/impression tracking, but without a ``user_id`` they cannot influence\npersonalised recommendations or collaborative filtering scores.\nAnonymous requests are IP-rate-limited to prevent abuse.",
         "operationId": "record_interactions_interactions_batch_post",
         "requestBody": {
           "content": {
@@ -2153,7 +2203,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/RecordInteractionsResponse"
+                }
               }
             }
           },
@@ -2167,7 +2219,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/saved-events/": {
@@ -2207,7 +2264,7 @@
           "saved-events"
         ],
         "summary": "Save Event",
-        "description": "Save (bookmark) an event.",
+        "description": "Save (bookmark) an event.\n\n- 404 if the referenced event does not exist (audit I9).\n- 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER`` \u2014\n  prevents a single account from growing an unbounded bookmark list\n  and OOM'ing the listing endpoint (audit I8).",
         "operationId": "save_event_saved_events__event_id__put",
         "security": [
           {
@@ -2230,7 +2287,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/SaveEventStatusResponse"
+                }
               }
             }
           },
@@ -2274,7 +2333,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/SaveEventStatusResponse"
+                }
               }
             }
           },
@@ -2312,6 +2373,7 @@
             "schema": {
               "type": "integer",
               "maximum": 50,
+              "minimum": 1,
               "default": 20,
               "title": "Limit"
             }
@@ -2351,14 +2413,16 @@
           "ab-test"
         ],
         "summary": "Get Variant",
-        "description": "Get the current user's A/B test variant.",
+        "description": "Get the current user's A/B test variant.\n\nIf the authenticated user has no DB row yet (race between signup and\nprofile creation), we still want a stable variant rather than locking\neveryone into control and biasing the treatment share downward (M5).\nHashing on ``auth_user[\"id\"]`` gives a deterministic assignment that\nwill match once a DB row exists only if the two IDs agree \u2014 but since\nthey typically don't, we instead use the auth ID directly so the\nfallback is random-by-hash, not hard-coded to control.",
         "operationId": "get_variant_ab_variant_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ABVariantResponse"
+                }
               }
             }
           }
@@ -2376,14 +2440,16 @@
           "ab-test"
         ],
         "summary": "Get Metrics",
-        "description": "Get CTR metrics by variant (admin only).",
+        "description": "Get CTR metrics by variant (admin only).\n\nResponse is cached in-process for 60 s (see\n``ABTestService.get_ctr_by_variant``) so polling dashboards don't\ntrigger a full table scan per poll.",
         "operationId": "get_metrics_ab_metrics_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ABMetricsResponse"
+                }
               }
             }
           }
@@ -2433,7 +2499,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/ai/generate-event": {
@@ -2474,7 +2545,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/credits/": {
@@ -2509,6 +2585,7 @@
           "credits"
         ],
         "summary": "Add Credits",
+        "description": "Admin-only: add credits to a target user's balance.",
         "operationId": "add_credits_credits_add_post",
         "requestBody": {
           "content": {
@@ -2556,27 +2633,80 @@
         ],
         "summary": "List Promotions",
         "operationId": "list_promotions_promotions__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "If set, filter by active (True) or expired (False) promotions.",
+              "title": "Active"
+            },
+            "description": "If set, filter by active (True) or expired (False) promotions."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PromotionResponse"
                   },
-                  "type": "array",
                   "title": "Response List Promotions Promotions  Get"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -2584,15 +2714,20 @@
         ],
         "summary": "Create Promotion",
         "operationId": "create_promotion_promotions__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PromotionCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -2615,12 +2750,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/promotions/active-ids": {
@@ -2713,7 +2843,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 30
                 },
                 {
                   "type": "null"
@@ -2721,6 +2852,34 @@
               ],
               "title": "Submission Status"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
           }
         ],
         "responses": {
@@ -2729,11 +2888,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SubmissionResponse"
-                  },
-                  "title": "Response List Submissions Submissions  Get"
+                  "$ref": "#/components/schemas/PaginatedResponse_SubmissionResponse_"
                 }
               }
             }
@@ -2955,7 +3110,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 30
                 },
                 {
                   "type": "null"
@@ -2963,6 +3119,34 @@
               ],
               "title": "Report Status"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
           }
         ],
         "responses": {
@@ -2971,11 +3155,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ReportResponse"
-                  },
-                  "title": "Response List Reports Reports  Get"
+                  "$ref": "#/components/schemas/PaginatedResponse_ReportResponse_"
                 }
               }
             }
@@ -3057,27 +3237,63 @@
         ],
         "summary": "List Scraped Events",
         "operationId": "list_scraped_events_scraped_events__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ScrapedEventResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List Scraped Events Scraped Events  Get"
+                  "$ref": "#/components/schemas/PaginatedResponse_ScrapedEventResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -3085,15 +3301,20 @@
         ],
         "summary": "Create Scraped Event",
         "operationId": "create_scraped_event_scraped_events__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ScrapedEventCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -3116,12 +3337,29 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
+        }
+      }
+    },
+    "/meta/constants": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Get Constants",
+        "description": "Return shared domain constants for frontend consumption.\n\nThis endpoint is public (no auth required) and highly cacheable.\nSets an explicit ``Cache-Control: public, max-age=60`` header so\ncheap repeat scrapes hit the CDN / browser cache rather than the\napplication process (audit M13).  The cache window is deliberately\nshort (60 s) so that category / interest changes deployed via a\nbackend-only restart propagate within a minute.",
+        "operationId": "get_constants_meta_constants_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConstantsResponse"
+                }
+              }
+            }
           }
-        ]
+        }
       }
     },
     "/health": {
@@ -3143,10 +3381,71 @@
   },
   "components": {
     "schemas": {
+      "ABMetricsResponse": {
+        "properties": {
+          "control": {
+            "$ref": "#/components/schemas/ABVariantCTR"
+          },
+          "treatment": {
+            "$ref": "#/components/schemas/ABVariantCTR"
+          }
+        },
+        "type": "object",
+        "required": [
+          "control",
+          "treatment"
+        ],
+        "title": "ABMetricsResponse",
+        "description": "GET /ab/metrics response \u2014 CTR per variant.\n\nKeyed by variant name; the backend guarantees entries for both\n``control`` and ``treatment`` even when one has zero traffic."
+      },
+      "ABVariantCTR": {
+        "properties": {
+          "impressions": {
+            "type": "integer",
+            "title": "Impressions"
+          },
+          "clicks": {
+            "type": "integer",
+            "title": "Clicks"
+          },
+          "ctr": {
+            "type": "number",
+            "title": "Ctr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "impressions",
+          "clicks",
+          "ctr"
+        ],
+        "title": "ABVariantCTR",
+        "description": "Per-variant click-through-rate breakdown."
+      },
+      "ABVariantResponse": {
+        "properties": {
+          "variant": {
+            "type": "string",
+            "enum": [
+              "control",
+              "treatment"
+            ],
+            "title": "Variant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "variant"
+        ],
+        "title": "ABVariantResponse",
+        "description": "GET /ab/variant response."
+      },
       "AIPromptRequest": {
         "properties": {
           "prompt": {
             "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
             "title": "Prompt"
           }
         },
@@ -3158,16 +3457,77 @@
       },
       "AddCreditsRequest": {
         "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id",
+            "description": "Target user ID to receive credits"
+          },
           "amount": {
             "type": "integer",
+            "maximum": 10000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount"
           }
         },
         "type": "object",
         "required": [
+          "user_id",
           "amount"
         ],
         "title": "AddCreditsRequest"
+      },
+      "AppConstantsResponse": {
+        "properties": {
+          "event_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Event Categories"
+          },
+          "interests": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Interests"
+          },
+          "interest_to_categories": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Interest To Categories"
+          },
+          "submission_statuses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Submission Statuses"
+          },
+          "report_statuses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Report Statuses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_categories",
+          "interests",
+          "interest_to_categories",
+          "submission_statuses",
+          "report_statuses"
+        ],
+        "title": "AppConstantsResponse",
+        "description": "Shared domain constants that the frontend must stay in sync with.\n\nThe frontend fetches this once on app init so both layers\nalways agree on categories, interest mappings, and status enums."
       },
       "Body_upload_avatar_uploads_avatar_post": {
         "properties": {
@@ -3229,15 +3589,20 @@
         "properties": {
           "club_name": {
             "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
             "title": "Club Name"
           },
           "categories": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
                 },
-                "type": "array"
+                "type": "array",
+                "maxItems": 20
               },
               {
                 "type": "null"
@@ -3248,7 +3613,8 @@
           "club_page": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3259,7 +3625,8 @@
           "ig": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3270,7 +3637,8 @@
           "discord": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3280,12 +3648,15 @@
           },
           "club_type": {
             "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
             "title": "Club Type"
           },
           "logo_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3294,6 +3665,7 @@
             "title": "Logo Url"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "club_name",
@@ -3338,7 +3710,8 @@
           "last_sync": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -3379,7 +3752,8 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -3402,8 +3776,10 @@
             "title": "Metadata"
           }
         },
+        "additionalProperties": false,
         "type": "object",
-        "title": "ClubIntegrationUpdate"
+        "title": "ClubIntegrationUpdate",
+        "description": "Update request for a club's integration configuration.\n\nThe ``metadata`` dict is now bounded on three axes:\n- max key count (``MAX_INTEGRATION_METADATA_KEYS``)\n- max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)\n- max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)\n\nUnknown envelope fields are rejected via ``extra=\"forbid\"`` so future\nrefactors that accidentally echo request data back to the DB do not\nintroduce a mass-assignment surface."
       },
       "ClubResponse": {
         "properties": {
@@ -3476,6 +3852,17 @@
               }
             ],
             "title": "Logo Url"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
           }
         },
         "type": "object",
@@ -3491,7 +3878,8 @@
           "club_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               {
                 "type": "null"
@@ -3503,9 +3891,12 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
                 },
-                "type": "array"
+                "type": "array",
+                "maxItems": 20
               },
               {
                 "type": "null"
@@ -3516,7 +3907,8 @@
           "club_page": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3527,7 +3919,8 @@
           "ig": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3538,7 +3931,8 @@
           "discord": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3549,7 +3943,8 @@
           "club_type": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -3560,7 +3955,8 @@
           "logo_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -3569,6 +3965,7 @@
             "title": "Logo Url"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "ClubUpdate"
       },
@@ -3624,123 +4021,6 @@
         ],
         "title": "DiscordIntegrationOptionsResponse"
       },
-      "DiscordIntegrationResponse": {
-        "properties": {
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "connected": {
-            "type": "boolean",
-            "title": "Connected"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "server_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Server Id"
-          },
-          "server_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Server Name"
-          },
-          "channel_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Channel Id"
-          },
-          "channel_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Channel Name"
-          },
-          "last_sync": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Sync"
-          }
-        },
-        "type": "object",
-        "required": [
-          "club_id",
-          "connected"
-        ],
-        "title": "DiscordIntegrationResponse"
-      },
-      "DiscordIntegrationUpdate": {
-        "properties": {
-          "connected": {
-            "type": "boolean",
-            "title": "Connected",
-            "default": true
-          },
-          "server_id": {
-            "type": "string",
-            "title": "Server Id"
-          },
-          "server_name": {
-            "type": "string",
-            "title": "Server Name"
-          },
-          "channel_id": {
-            "type": "string",
-            "title": "Channel Id"
-          },
-          "channel_name": {
-            "type": "string",
-            "title": "Channel Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "server_id",
-          "server_name",
-          "channel_id",
-          "channel_name"
-        ],
-        "title": "DiscordIntegrationUpdate"
-      },
       "DiscordServerOption": {
         "properties": {
           "id": {
@@ -3769,6 +4049,314 @@
       },
       "EventCreate": {
         "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Location"
+          },
+          "dtstart_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtstart Utc"
+          },
+          "dtend_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtend Utc"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "food": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food"
+          },
+          "registration": {
+            "type": "boolean",
+            "title": "Registration",
+            "default": false
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
+          },
+          "club_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Type"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "organization": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Organization"
+          },
+          "ig_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig Handle"
+          },
+          "discord_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discord Handle"
+          },
+          "x_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Handle"
+          },
+          "tiktok_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiktok Handle"
+          },
+          "fb_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fb Handle"
+          },
+          "other_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Other Handle"
+          },
+          "display_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Handle"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "location",
+          "organization"
+        ],
+        "title": "EventCreate"
+      },
+      "EventFormDataResponse": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "default": ""
+          },
+          "time": {
+            "type": "string",
+            "title": "Time",
+            "default": "12:00"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location",
+            "default": ""
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": ""
+          },
+          "price": {
+            "type": "number",
+            "title": "Price",
+            "default": 0
+          },
+          "food": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Food",
+            "default": []
+          },
+          "requiresRegistration": {
+            "type": "boolean",
+            "title": "Requiresregistration",
+            "default": false
+          },
+          "organization": {
+            "type": "string",
+            "title": "Organization",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "EventFormDataResponse"
+      },
+      "EventPublicResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
           "title": {
             "type": "string",
             "title": "Title"
@@ -3898,7 +4486,14 @@
             "title": "Category"
           },
           "organization": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Organization"
           },
           "ig_handle": {
@@ -3977,74 +4572,22 @@
               }
             ],
             "title": "Display Handle"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
           }
         },
         "type": "object",
         "required": [
+          "id",
           "title",
           "location",
-          "organization"
+          "added_at"
         ],
-        "title": "EventCreate"
-      },
-      "EventFormDataResponse": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title",
-            "default": ""
-          },
-          "description": {
-            "type": "string",
-            "title": "Description",
-            "default": ""
-          },
-          "date": {
-            "type": "string",
-            "title": "Date",
-            "default": ""
-          },
-          "time": {
-            "type": "string",
-            "title": "Time",
-            "default": "12:00"
-          },
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "default": ""
-          },
-          "category": {
-            "type": "string",
-            "title": "Category",
-            "default": ""
-          },
-          "price": {
-            "type": "number",
-            "title": "Price",
-            "default": 0
-          },
-          "food": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Food",
-            "default": []
-          },
-          "requiresRegistration": {
-            "type": "boolean",
-            "title": "Requiresregistration",
-            "default": false
-          },
-          "organization": {
-            "type": "string",
-            "title": "Organization",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "EventFormDataResponse"
+        "title": "EventPublicResponse",
+        "description": "Public response for GET /events/{id} \u2014 identical to EventResponse\nbut with ``created_by`` stripped to avoid leaking creator UUIDs to\nunauthenticated callers (see audit I10)."
       },
       "EventResponse": {
         "properties": {
@@ -4272,6 +4815,17 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
           }
         },
         "type": "object",
@@ -4281,41 +4835,21 @@
           "location",
           "added_at"
         ],
-        "title": "EventResponse"
+        "title": "EventResponse",
+        "description": "Full event payload returned from GET /events/{id} and used internally\nfor ownership checks.\n\n``created_by`` is retained here because the field is load-bearing for\nthe authorization layer (``get_authorized_resource`` reads it); the\npublic list endpoint hides it via ``EventSummaryResponse`` which\nomits the field entirely."
       },
-      "EventUpdate": {
+      "EventSummaryResponse": {
         "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Title"
           },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
           "location": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Location"
           },
           "dtstart_utc": {
@@ -4368,15 +4902,9 @@
             "title": "Food"
           },
           "registration": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Registration"
+            "type": "boolean",
+            "title": "Registration",
+            "default": false
           },
           "source_image_url": {
             "anyOf": [
@@ -4388,39 +4916,6 @@
               }
             ],
             "title": "Source Image Url"
-          },
-          "club_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Type"
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          },
-          "source_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Url"
           },
           "category": {
             "anyOf": [
@@ -4444,72 +4939,6 @@
             ],
             "title": "Organization"
           },
-          "ig_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ig Handle"
-          },
-          "discord_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord Handle"
-          },
-          "x_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "X Handle"
-          },
-          "tiktok_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tiktok Handle"
-          },
-          "fb_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fb Handle"
-          },
-          "other_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Other Handle"
-          },
           "display_handle": {
             "anyOf": [
               {
@@ -4520,8 +4949,284 @@
               }
             ],
             "title": "Display Handle"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
           }
         },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "location",
+          "added_at"
+        ],
+        "title": "EventSummaryResponse",
+        "description": "Lightweight payload for list/card views \u2014 omits large text fields\n(description, social handles) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\n``created_by`` is intentionally omitted \u2014 this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers (see audit I10 / S16)."
+      },
+      "EventUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "dtstart_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtstart Utc"
+          },
+          "dtend_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtend Utc"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "food": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food"
+          },
+          "registration": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration"
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
+          },
+          "club_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Type"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization"
+          },
+          "ig_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig Handle"
+          },
+          "discord_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discord Handle"
+          },
+          "x_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Handle"
+          },
+          "tiktok_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiktok Handle"
+          },
+          "fb_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fb Handle"
+          },
+          "other_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Other Handle"
+          },
+          "display_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Handle"
+          }
+        },
+        "additionalProperties": false,
         "type": "object",
         "title": "EventUpdate"
       },
@@ -4598,6 +5303,7 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "title": "Email"
           }
         },
@@ -4624,33 +5330,39 @@
         "properties": {
           "session_id": {
             "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
             "title": "Session Id"
           },
-          "token": {
+          "user_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Token"
+            "title": "User Id"
           },
           "interactions": {
             "items": {
               "$ref": "#/components/schemas/InteractionCreate"
             },
             "type": "array",
+            "maxItems": 50,
             "title": "Interactions"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "session_id",
           "interactions"
         ],
-        "title": "InteractionBatch"
+        "title": "InteractionBatch",
+        "description": "Batch of interactions submitted from a single browser session.\n\n**Trust boundary note on ``user_id``**: this field models the client's\n*claim* of which user the batch belongs to.  The server verifies the\nclaim against the authenticated identity in ``interaction_service._validate_batch``\nand 403s on mismatch (see S11).  The field is **advisory / diagnostic** \u2014\nnever trust it for authorization or identity resolution in new code;\nuse the value resolved from the Bearer token instead.\n\nTyped as ``UUID | None`` so the Pydantic boundary rejects arbitrary\nopaque strings (e.g. ``\"admin\"``) at parse time \u2014 if the router-side\nownership check is ever removed during a refactor, impersonation\nstill cannot succeed because the payload won't even deserialise."
       },
       "InteractionCreate": {
         "properties": {
@@ -4675,6 +5387,7 @@
             "title": "Metadata"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_id",
@@ -4706,10 +5419,13 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "title": "Email"
           },
           "password": {
             "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
             "title": "Password"
           }
         },
@@ -4733,6 +5449,212 @@
         ],
         "title": "MessageResponse"
       },
+      "PaginatedResponse_QrCodeResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QrCodeResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[QrCodeResponse]"
+      },
+      "PaginatedResponse_QrCodeScanResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QrCodeScanResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[QrCodeScanResponse]"
+      },
+      "PaginatedResponse_ReportResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[ReportResponse]"
+      },
+      "PaginatedResponse_ScrapedEventResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ScrapedEventResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[ScrapedEventResponse]"
+      },
+      "PaginatedResponse_SubmissionResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SubmissionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[SubmissionResponse]"
+      },
+      "PlatformIntegrationOptionsResponse": {
+        "properties": {
+          "oauth_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oauth Url"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/DiscordServerOption"
+            },
+            "type": "array",
+            "title": "Servers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "PlatformIntegrationOptionsResponse",
+        "description": "Generic options for any integration platform (audit S7).\n\nThe Discord-specific response above keeps the tightest types for the\n``/integrations/discord/options`` endpoint; this looser model lets\nthe ``/integrations/{platform}/options`` endpoint lock its OpenAPI\ncontract without over-constraining platforms whose OAuth URLs are\nstill placeholders."
+      },
       "PromotionCreate": {
         "properties": {
           "event_id": {
@@ -4741,23 +5663,18 @@
           },
           "package": {
             "type": "string",
+            "enum": [
+              "featured",
+              "email",
+              "combo"
+            ],
             "title": "Package"
-          },
-          "credits": {
-            "type": "integer",
-            "title": "Credits"
-          },
-          "duration": {
-            "type": "integer",
-            "title": "Duration"
           }
         },
         "type": "object",
         "required": [
           "event_id",
-          "package",
-          "credits",
-          "duration"
+          "package"
         ],
         "title": "PromotionCreate"
       },
@@ -4777,6 +5694,11 @@
           },
           "package": {
             "type": "string",
+            "enum": [
+              "featured",
+              "email",
+              "combo"
+            ],
             "title": "Package"
           },
           "credits_spent": {
@@ -4785,14 +5707,17 @@
           },
           "start_date": {
             "type": "string",
+            "format": "date-time",
             "title": "Start Date"
           },
           "end_date": {
             "type": "string",
+            "format": "date-time",
             "title": "End Date"
           },
           "created_at": {
             "type": "string",
+            "format": "date-time",
             "title": "Created At"
           }
         },
@@ -4813,16 +5738,22 @@
         "properties": {
           "id": {
             "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
             "title": "Id"
           },
           "name": {
             "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
             "title": "Name"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 5000
               },
               {
                 "type": "null"
@@ -4832,6 +5763,11 @@
           },
           "destination_type": {
             "type": "string",
+            "enum": [
+              "event",
+              "events-list",
+              "custom-url"
+            ],
             "title": "Destination Type"
           },
           "destination_id": {
@@ -4864,10 +5800,6 @@
             ],
             "title": "Filters"
           },
-          "created_by": {
-            "type": "string",
-            "title": "Created By"
-          },
           "is_active": {
             "type": "boolean",
             "title": "Is Active",
@@ -4876,7 +5808,8 @@
           "image_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -4886,11 +5819,15 @@
           },
           "latitude": {
             "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
             "title": "Latitude",
             "default": 0.0
           },
           "longitude": {
             "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
             "title": "Longitude",
             "default": 0.0
           }
@@ -4899,11 +5836,59 @@
         "required": [
           "id",
           "name",
-          "destination_type",
-          "created_by"
+          "destination_type"
         ],
         "title": "QrCodeCreate",
-        "description": "Payload to create or upsert a QR code (after first scan or dashboard edit)."
+        "description": "Payload to create or upsert a QR code (after first scan or dashboard edit).\n\nNote on ``is_active`` and ``created_by`` (audit S4): ``is_active`` is\naccepted for backward compatibility with existing frontend clients\nbut **ignored** \u2014 the service always starts inserts at ``is_active=False``\n(see ``qr_code_service._build_qr_payload``).  ``created_by`` is not\nmodelled here; the service sets it from the authenticated user's ID.\n``extra=\"ignore\"`` (the default) is left in place so client-supplied\n``created_by`` values are silently dropped rather than 422'ing clients\nthat still send them."
+      },
+      "QrCodeRedirect": {
+        "properties": {
+          "destination_type": {
+            "type": "string",
+            "enum": [
+              "event",
+              "events-list",
+              "custom-url"
+            ],
+            "title": "Destination Type"
+          },
+          "destination_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination Id"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "destination_type"
+        ],
+        "title": "QrCodeRedirect",
+        "description": "Public response for GET /qr/{id}: redirect config only. Scan is recorded server-side."
       },
       "QrCodeResponse": {
         "properties": {
@@ -4928,6 +5913,11 @@
           },
           "destination_type": {
             "type": "string",
+            "enum": [
+              "event",
+              "events-list",
+              "custom-url"
+            ],
             "title": "Destination Type"
           },
           "destination_id": {
@@ -5092,6 +6082,20 @@
         ],
         "title": "RecommendationItem"
       },
+      "RecordInteractionsResponse": {
+        "properties": {
+          "recorded": {
+            "type": "integer",
+            "title": "Recorded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recorded"
+        ],
+        "title": "RecordInteractionsResponse",
+        "description": "Response for ``POST /interactions/batch`` \u2014 number of rows recorded.\n\nTyped explicitly (audit S7) so future additions to the dict do not\nsilently leak internals to the client."
+      },
       "ReportCreate": {
         "properties": {
           "event_id": {
@@ -5100,9 +6104,12 @@
           },
           "reason": {
             "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
             "title": "Reason"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_id",
@@ -5130,16 +6137,23 @@
           },
           "status": {
             "type": "string",
+            "enum": [
+              "pending",
+              "resolved",
+              "dismissed"
+            ],
             "title": "Status"
           },
           "reported_at": {
             "type": "string",
+            "format": "date-time",
             "title": "Reported At"
           },
           "resolved_at": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -5163,9 +6177,15 @@
         "properties": {
           "status": {
             "type": "string",
+            "enum": [
+              "pending",
+              "resolved",
+              "dismissed"
+            ],
             "title": "Status"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "status"
@@ -5176,10 +6196,14 @@
         "properties": {
           "access_token": {
             "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
             "title": "Access Token"
           },
           "new_password": {
             "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
             "title": "New Password"
           }
         },
@@ -5189,6 +6213,24 @@
           "new_password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "SaveEventStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "saved",
+              "unsaved"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SaveEventStatusResponse",
+        "description": "Response for ``PUT /saved-events/{id}`` / ``DELETE /saved-events/{id}``.\n\nTyped explicitly (audit S7) so the response contract is locked at the\nOpenAPI boundary \u2014 future refactors that add fields to the dict will\nbe caught by the frontend type generator."
       },
       "ScrapedEventCreate": {
         "properties": {
@@ -5205,6 +6247,8 @@
           },
           "source": {
             "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
             "title": "Source"
           },
           "raw_data": {
@@ -5249,6 +6293,7 @@
           },
           "scraped_at": {
             "type": "string",
+            "format": "date-time",
             "title": "Scraped At"
           },
           "raw_data": {
@@ -5276,16 +6321,20 @@
         "properties": {
           "email": {
             "type": "string",
+            "format": "email",
             "title": "Email"
           },
           "password": {
             "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
             "title": "Password"
           },
           "username": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -5296,7 +6345,8 @@
           "full_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -5360,16 +6410,16 @@
       "SubmissionCreate": {
         "properties": {
           "event_data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Event Data"
+            "$ref": "#/components/schemas/EventCreate"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_data"
         ],
-        "title": "SubmissionCreate"
+        "title": "SubmissionCreate",
+        "description": "Incoming event submission.\n\n``event_data`` is typed as ``EventCreate`` (audit S1) so the exact\nsame validators used for real events \u2014 required ``title`` /\n``location`` / ``organization``, length caps, allow-listed\ncategories, safe URL schemes \u2014 apply to submissions.  This closes\nthe mass-assignment hole where attackers could salt the payload\nwith attacker-controlled ``created_by`` / ``id`` / ``added_at`` or\nXSS-ready strings that later reach the admin approval UI.\n\nThe byte-size cap (``MAX_EVENT_DATA_BYTES``) is retained as a\ndefense-in-depth belt-and-braces check \u2014 ``EventCreate``'s field\ncaps already bound each string, but a maliciously large food list\nor description could still approach the 32 KB JSONB column limit."
       },
       "SubmissionResponse": {
         "properties": {
@@ -5388,6 +6438,11 @@
           },
           "status": {
             "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
             "title": "Status"
           },
           "rejection_reason": {
@@ -5403,12 +6458,14 @@
           },
           "submitted_at": {
             "type": "string",
+            "format": "date-time",
             "title": "Submitted At"
           },
           "reviewed_at": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -5431,12 +6488,18 @@
         "properties": {
           "status": {
             "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
             "title": "Status"
           },
           "rejection_reason": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2000
               },
               {
                 "type": "null"
@@ -5445,6 +6508,7 @@
             "title": "Rejection Reason"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "status"
@@ -5479,12 +6543,27 @@
         ],
         "title": "TokenResponse"
       },
+      "UploadResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "UploadResponse",
+        "description": "Public URL of the freshly-uploaded object."
+      },
       "UserProfileUpdate": {
         "properties": {
           "faculty": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -5495,7 +6574,8 @@
           "school": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -5507,9 +6587,12 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
                 },
-                "type": "array"
+                "type": "array",
+                "maxItems": 50
               },
               {
                 "type": "null"
@@ -5529,6 +6612,7 @@
             "title": "Is First Year"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "UserProfileUpdate"
       },
@@ -5541,7 +6625,8 @@
           "username": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -5552,7 +6637,8 @@
           "full_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -5563,7 +6649,8 @@
           "avatar_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -5619,6 +6706,10 @@
           },
           "role": {
             "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ],
             "title": "Role",
             "default": "user"
           },
@@ -5642,12 +6733,32 @@
         ],
         "title": "UserResponse"
       },
+      "UserRoleUpdate": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ],
+            "title": "Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "UserRoleUpdate",
+        "description": "Admin-only payload for rotating a user's role.\n\nSeparate from ``UserUpdate`` so ``role`` never leaks into a self-service\nupdate path \u2014 having one shared model across trust boundaries is the\nexact defense-in-depth gap flagged in the schema audit (S2)."
+      },
       "UserUpdate": {
         "properties": {
           "username": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -5658,7 +6769,8 @@
           "full_name": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -5669,7 +6781,8 @@
           "avatar_url": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               {
                 "type": "null"
@@ -5680,7 +6793,8 @@
           "faculty": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -5691,7 +6805,8 @@
           "school": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -5703,9 +6818,12 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
                 },
-                "type": "array"
+                "type": "array",
+                "maxItems": 50
               },
               {
                 "type": "null"
@@ -5725,6 +6843,7 @@
             "title": "Is First Year"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "UserUpdate"
       },

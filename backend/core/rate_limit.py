@@ -6,15 +6,29 @@ in-memory dict with a Redis-backed store (SORTED SET + ZRANGEBYSCORE)
 without changing the public API — only ``_cleanup`` and ``_check``
 need a new backend.
 
-**Single-process limitation:** Each ``RateLimiter`` instance stores
-state in process-local memory protected by a ``threading.Lock``.
-If the app is run with multiple workers (e.g. ``uvicorn --workers N``
-or behind gunicorn), each worker has an *independent* copy of the
-rate-limit state, effectively multiplying the allowed request rate
-by the number of workers.  The current deployment uses a single
-uvicorn worker (see ``Dockerfile`` / ``docker-compose.yml``), so
-this is not an issue today.  If scaling to multiple workers, swap
-the storage backend to Redis or another shared store.
+============================================================================
+**CRITICAL — SINGLE-PROCESS ONLY (P1).**
+============================================================================
+Every ``RateLimiter`` instance keeps its state in process-local memory
+guarded by a ``threading.Lock``.  The limiter is *NOT SAFE* under any of
+the following conditions:
+
+  * Multiple workers (``uvicorn --workers N``, gunicorn -w N,
+    multiple container replicas): each worker holds an independent
+    copy of the state, so the effective cap becomes
+    ``max_requests * N_workers``.  Brute-force, credential-stuffing,
+    and scrape-rate budgets silently multiply with worker count.
+  * Process restarts / rolling deploys: state is lost, so an attacker
+    can simply wait for a redeploy to flush accumulated counts.
+
+**Before scaling past a single worker, replace the backend with Redis
+(or any shared store).** The public API is stable; only ``_cleanup``
+and ``check`` need a new implementation.
+
+A startup warning is emitted below if ``UVICORN_WORKERS`` (or gunicorn's
+``WEB_CONCURRENCY`` / ``GUNICORN_CMD_ARGS``) indicates >1 worker.  The
+warning is *best-effort* — it only detects well-known env conventions.
+============================================================================
 
 Usage (authenticated, keyed by user ID)::
 
@@ -53,11 +67,12 @@ and QR scans.
 
 import logging
 import math
+import os
 import time
 from collections import defaultdict
 from threading import Lock
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Request
 
 from core.client_ip import get_client_ip
 from core.constants import (
@@ -75,8 +90,41 @@ from core.constants import (
     RATE_LIMIT_WINDOW_SECONDS,
 )
 from core.errors import RATE_LIMIT_EXCEEDED
+from core.exceptions import RateLimitExceeded
 
 log = logging.getLogger(__name__)
+
+
+def _warn_on_multiworker_deploy() -> None:
+    """Best-effort check: warn loudly if the runtime looks multi-worker.
+
+    The in-memory limiter's state does not survive across workers (see
+    module docstring).  Inspect the usual suspects (``UVICORN_WORKERS``,
+    ``WEB_CONCURRENCY``, ``GUNICORN_WORKERS``) and log a warning so
+    operators see the footgun in stderr.
+    """
+    env_keys = ("UVICORN_WORKERS", "WEB_CONCURRENCY", "GUNICORN_WORKERS")
+    for key in env_keys:
+        raw = os.environ.get(key)
+        if not raw:
+            continue
+        try:
+            workers = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if workers > 1:
+            log.warning(
+                "%s=%d detected, but the in-memory rate limiter only shares "
+                "state within a single process. With >1 worker the effective "
+                "cap is multiplied by N_workers — swap to a Redis-backed "
+                "store before scaling (see core/rate_limit.py docstring).",
+                key,
+                workers,
+            )
+            return
+
+
+_warn_on_multiworker_deploy()
 
 
 class RateLimiter:
@@ -193,10 +241,9 @@ class RateLimiter:
                     self.window_seconds,
                     retry_after,
                 )
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=RATE_LIMIT_EXCEEDED,
-                    headers={"Retry-After": str(retry_after)},
+                raise RateLimitExceeded(
+                    RATE_LIMIT_EXCEEDED,
+                    retry_after=retry_after,
                 )
             self._requests[key].append(now)
 
@@ -246,19 +293,42 @@ class RateLimiter:
 # ---------------------------------------------------------------------------
 # Pre-built limiters (importable singletons)
 # ---------------------------------------------------------------------------
-ai_rate_limiter = RateLimiter()
+# P3: each endpoint gets its OWN limiter instance.  Using the same instance
+# for multiple endpoints (e.g. login + signup sharing one bucket) causes
+# legitimate users at shared IPs (corporate NAT, mobile carriers) to be
+# blocked across unrelated endpoints: a signup brute-force from another user
+# behind the same NAT would lock out login too.  Separating the buckets keeps
+# each endpoint's budget independent.
+ai_generate_filters_rate_limiter = RateLimiter()
+ai_generate_event_rate_limiter = RateLimiter()
+# Backward-compat alias — new code should prefer the per-endpoint limiters.
+ai_rate_limiter = ai_generate_filters_rate_limiter
 
 # Auth endpoints: stricter limits to prevent credential stuffing / brute force.
-# login & signup: 10 attempts per 60 seconds per IP.
-auth_rate_limiter = RateLimiter(
+# Separate buckets per endpoint so a signup burst does not block legitimate
+# logins from the same IP (corporate NAT, mobile carrier).
+login_rate_limiter = RateLimiter(
     max_requests=AUTH_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_RATE_LIMIT_WINDOW_SECONDS,
 )
+signup_rate_limiter = RateLimiter(
+    max_requests=AUTH_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=AUTH_RATE_LIMIT_WINDOW_SECONDS,
+)
+# Backward-compat alias — prefer login_rate_limiter / signup_rate_limiter.
+auth_rate_limiter = login_rate_limiter
 # forgot-password & reset-password: very strict to prevent email-bomb abuse.
-auth_sensitive_rate_limiter = RateLimiter(
+# Separate buckets so a forgot-password spray does not block reset-password.
+forgot_password_rate_limiter = RateLimiter(
     max_requests=AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
 )
+reset_password_rate_limiter = RateLimiter(
+    max_requests=AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
+)
+# Backward-compat alias.
+auth_sensitive_rate_limiter = forgot_password_rate_limiter
 # refresh: more generous since legitimate clients auto-refresh frequently.
 auth_refresh_rate_limiter = RateLimiter(
     max_requests=AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,

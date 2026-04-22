@@ -53,7 +53,7 @@ export function EventFormJSON() {
         <div className="border border-border rounded-xl overflow-hidden">
           <Suspense
             fallback={
-              <div className="flex items-center justify-center h-[350px] bg-muted">
+              <div className="flex items-center justify-center h-[350px] bg-secondary">
                 <div className="text-muted-foreground text-sm">
                   {t("forms.loadingEditor")}
                 </div>

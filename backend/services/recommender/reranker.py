@@ -17,11 +17,15 @@ pure Python:
    non-zero entries this turns an O(27) inner loop into O(2-3).
 """
 
+import logging
 import math
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from constants import EVENT_CATEGORIES
+from core.constants import EVENT_CATEGORIES
 from schemas.event import EventResponse
+
+log = logging.getLogger(__name__)
 from services.recommender.config import (
     DEFAULT_LAMBDA,
     DEFAULT_LIMIT,
@@ -87,6 +91,7 @@ def mmr_rerank(
     events_metadata: dict[int, EventResponse],
     lambda_param: float = DEFAULT_LAMBDA,
     k: int = DEFAULT_LIMIT,
+    user_timezone: str | None = None,
 ) -> list[int]:
     """
     Re-rank events using MMR to balance relevance with diversity.
@@ -96,6 +101,9 @@ def mmr_rerank(
         events_metadata: {event_id: EventResponse}
         lambda_param: 0=pure diversity, 1=pure relevance
         k: number of results to return
+        user_timezone: IANA timezone name (e.g. "America/Los_Angeles").
+            Used to bucket event start times into morning/afternoon/evening
+            in the user's local time.  Defaults to UTC when not provided.
 
     Returns:
         Ordered list of event_ids.
@@ -106,18 +114,30 @@ def mmr_rerank(
     vectors: dict[int, _SparseVec] = {}
     for eid, _ in scored_events:
         meta = events_metadata.get(eid)
-        vectors[eid] = _build_sparse_vector(meta)
+        vectors[eid] = _build_sparse_vector(meta, user_timezone=user_timezone)
 
     score_map = dict(scored_events)
+    # R19: detect duplicate event_ids. dict(scored_events) silently collapses
+    # duplicates (last-write-wins); surface this so upstream bugs are visible.
+    if len(score_map) != len(scored_events):
+        log.warning(
+            "mmr_rerank received %d scored events but only %d unique event_ids -- duplicates dropped",
+            len(scored_events),
+            len(score_map),
+        )
     remaining = set(score_map.keys())
     selected: list[int] = []
     neg_lambda = 1.0 - lambda_param
 
-    for _ in range(min(k, len(scored_events))):
+    for _ in range(min(k, len(score_map))):
         best_eid = None
         best_mmr = -float("inf")
 
-        for eid in remaining:
+        # R3: iterate in deterministic order so ties resolve consistently.
+        # Sort by (-relevance, event_id) so the highest-relevance item with the
+        # lowest event_id wins a tie. Using a plain `set` iteration here
+        # produces hash-order output that varies across processes.
+        for eid in sorted(remaining, key=lambda x: (-score_map[x], x)):
             relevance = score_map[eid]
             vec_eid = vectors[eid]
 
@@ -147,7 +167,11 @@ def mmr_rerank(
 # Feature vector construction (sparse)
 # ---------------------------------------------------------------------------
 
-def _build_sparse_vector(meta: EventResponse | None) -> _SparseVec:
+def _build_sparse_vector(
+    meta: EventResponse | None,
+    *,
+    user_timezone: str | None = None,
+) -> _SparseVec:
     """
     Build a sparse feature vector for diversity measurement.
 
@@ -175,7 +199,7 @@ def _build_sparse_vector(meta: EventResponse | None) -> _SparseVec:
     # Time bucket
     dtstart = meta.dtstart_utc
     dtstart_str = dtstart.isoformat() if dtstart else ""
-    bucket = _get_time_bucket(dtstart_str)
+    bucket = _get_time_bucket(dtstart_str, user_timezone=user_timezone)
     bucket_idx = _TIME_BUCKET_INDEX.get(bucket)
     if bucket_idx is not None:
         nz[NUM_CATEGORIES + 1 + bucket_idx] = 1.0
@@ -183,12 +207,29 @@ def _build_sparse_vector(meta: EventResponse | None) -> _SparseVec:
     return _SparseVec(nz)
 
 
-def _get_time_bucket(dtstart: str) -> str:
-    """Determine time bucket from ISO datetime string."""
+def _get_time_bucket(dtstart: str, *, user_timezone: str | None = None) -> str:
+    """Determine time bucket from ISO datetime string.
+
+    R13: when *user_timezone* is supplied (IANA name) the event start is
+    converted to the user's local time before bucketing so 8 AM PST events
+    land in "morning" for PST users instead of "afternoon" (16:00 UTC).
+    Falls back to UTC when no timezone is provided (preserves prior
+    behaviour) or when the timezone string is invalid.
+    """
     if not dtstart:
         return "afternoon"
     try:
         dt = datetime.fromisoformat(dtstart.replace("Z", "+00:00"))
+        if user_timezone:
+            try:
+                tz = ZoneInfo(user_timezone)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                dt = dt.astimezone(tz)
+            except ZoneInfoNotFoundError:
+                log.warning(
+                    "Unknown user_timezone %r, bucketing in UTC", user_timezone,
+                )
         if dt.weekday() >= 5:
             return "weekend"
         hour = dt.hour
@@ -198,7 +239,8 @@ def _get_time_bucket(dtstart: str) -> str:
             return "afternoon"
         else:
             return "evening"
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
+        log.warning("Failed to parse time_of_day from %s: %s", dtstart, e)
         return "afternoon"
 
 

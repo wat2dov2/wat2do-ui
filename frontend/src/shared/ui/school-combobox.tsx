@@ -26,7 +26,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="flex text-foreground items-center gap-1 px-3 h-8 bg-transparent hover:bg-secondary rounded-xl transition-colors"
+          className="flex text-white items-center gap-1 px-3 h-8 bg-transparent hover:bg-secondary rounded-xl transition-colors"
           aria-expanded={open}
         >
           <Highlighter action="highlight" color="var(--primary)">

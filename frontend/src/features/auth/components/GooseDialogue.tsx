@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { GOOSE_IMAGE_PATH } from "@/shared/constants/images";
@@ -16,11 +17,13 @@ export function GooseDialogue({
   message,
   onBack,
   onNext,
-  nextLabel = "Continue",
+  nextLabel,
   nextDisabled = false,
   showBack = true,
 }: GooseDialogueProps) {
+  const { t } = useTranslation();
   const { displayed, done, skip } = useTypewriter(message);
+  const resolvedNextLabel = nextLabel ?? t("common.continue");
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -33,7 +36,7 @@ export function GooseDialogue({
 
         <div className="flex-1 min-w-0 space-y-3">
           <div>
-            <Badge variant="new" className="w-fit text-xs font-medium px-2 py-0.5 mb-2">Mr. Goose</Badge>
+            <Badge variant="new" className="w-fit text-xs font-medium px-2 py-0.5 mb-2">{t("onboarding.gooseName")}</Badge>
             <p
               className="text-lg text-foreground leading-relaxed mt-1 cursor-pointer"
               onClick={!done ? skip : undefined}
@@ -46,7 +49,7 @@ export function GooseDialogue({
           <div className="flex items-center gap-2">
             {showBack && onBack && (
               <Button type="button" variant="secondary" size="sm" onClick={onBack}>
-                Back
+                {t("common.back")}
               </Button>
             )}
             <Button
@@ -55,7 +58,7 @@ export function GooseDialogue({
               onClick={onNext}
               disabled={nextDisabled}
             >
-              {nextLabel}
+              {resolvedNextLabel}
             </Button>
           </div>
         </div>

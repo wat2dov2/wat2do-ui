@@ -9,13 +9,89 @@ so that type-checkers (mypy / pyright) accept them inside ``Literal[]``.
 
 from typing import Final
 
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 # ---------------------------------------------------------------------------
 # User roles (must match the ``role`` column values in the ``users`` table)
 # ---------------------------------------------------------------------------
 ROLE_ADMIN: Final = "admin"
 ROLE_USER: Final = "user"
+
+# ---------------------------------------------------------------------------
+# Submission statuses (event_submissions.status column)
+# ---------------------------------------------------------------------------
+SUBMISSION_PENDING: Final = "pending"
+SUBMISSION_APPROVED: Final = "approved"
+SUBMISSION_REJECTED: Final = "rejected"
+
+SUBMISSION_STATUSES = (SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED)
+
+# ---------------------------------------------------------------------------
+# Report statuses (reported_events.status column)
+# ---------------------------------------------------------------------------
+REPORT_PENDING: Final = "pending"
+REPORT_RESOLVED: Final = "resolved"
+REPORT_DISMISSED: Final = "dismissed"
+
+REPORT_STATUSES = (REPORT_PENDING, REPORT_RESOLVED, REPORT_DISMISSED)
+
+# ---------------------------------------------------------------------------
+# Event categories & interest mappings
+# ---------------------------------------------------------------------------
+EVENT_CATEGORIES = (
+    "Academics",
+    "Studying",
+    "Career",
+    "Networking",
+    "Games",
+    "Partying",
+    "Athletics",
+    "Art",
+    "Dance",
+    "Culture",
+    "Religion",
+    "Advocacy",
+    "Technology",
+    "Design",
+    "Entrepreneurship",
+    "Health",
+    "Wellness",
+    "Mental Health",
+    "Music",
+    "Sports",
+    "Food",
+    "Volunteering",
+)
+
+# Map user profile interests to event categories.
+# User interests (12) don't map 1:1 to event categories (22).
+INTEREST_TO_CATEGORIES: dict[str, list[str]] = {
+    "Academic": ["Academics", "Studying"],
+    "Social": ["Partying", "Games", "Dance"],
+    "Career": ["Career", "Networking", "Entrepreneurship"],
+    "Sports": ["Athletics", "Sports"],
+    "Music": ["Music"],
+    "Art": ["Art", "Design"],
+    "Technology": ["Technology"],
+    "Gaming": ["Games"],
+    "Food": ["Food"],
+    "Networking": ["Networking", "Career"],
+    "Health": ["Health", "Wellness", "Mental Health"],
+    "Cultural": ["Culture", "Religion", "Advocacy"],
+}
+
+# Map legacy/old category values to canonical (for migrations and seeds).
+CATEGORY_NORMALIZE_MAP = {
+    "Academic": "Academics",
+    "Clubs": "Academics",
+    "Religious": "Religion",
+    "Cultural": "Culture",
+    "Social & Games": "Games",
+    "Sports & Fitness": "Sports",
+    "Career & Networking": "Career",
+    "Creative Arts": "Art",
+    "Arts & Crafts": "Art",
+    "Health & Wellness": "Health",
+    "Music & Performance": "Music",
+}
 
 # ---------------------------------------------------------------------------
 # Storage bucket names (must match Supabase bucket IDs)
@@ -41,6 +117,11 @@ MAX_LIST_LIMIT = 500         # upper bound enforced by Query(le=...)
 # Admin list pagination (page-based)
 DEFAULT_PAGE_SIZE = 50       # default items per page for admin endpoints
 MAX_PAGE_SIZE = 100          # upper bound for page_size query param
+# Upper bound for page number.  Combined with ``MAX_PAGE_SIZE`` this caps
+# the worst-case ``OFFSET`` at ~100k rows — large enough for legitimate
+# admin navigation, small enough to stay within sane DB scan budgets.
+# Anything deeper should use cursor pagination, not a bigger offset (P20).
+MAX_PAGE_NUMBER = 1_000
 
 # ---------------------------------------------------------------------------
 # Interaction defaults
@@ -87,6 +168,19 @@ MAX_EVENT_CATEGORY_LENGTH = 100      # category enum value
 MAX_EVENT_HANDLE_LENGTH = 255        # social-media handle or profile URL
 MAX_EVENT_FOOD_ITEM_LENGTH = 100     # single food item tag
 MAX_EVENT_FOOD_COUNT = 20            # max food items per event
+
+# Club fields
+MAX_CLUB_NAME_LENGTH = 200           # club display name
+MAX_CLUB_TYPE_LENGTH = 100           # short classification value (mirrors event)
+MAX_CLUB_CATEGORY_LENGTH = 100       # single category tag
+MAX_CLUB_CATEGORY_COUNT = 20         # max categories per club
+MAX_INTEGRATION_METADATA_KEYS = 20   # max metadata keys per integration
+MAX_INTEGRATION_METADATA_KEY_LENGTH = 64    # max key length for integration metadata
+MAX_INTEGRATION_METADATA_VALUE_LENGTH = 512 # max value length for integration metadata
+MAX_INTEGRATION_NAME_LENGTH = 200    # integration "name" field (display label)
+
+# Price bounds for events (matches max_price query guard in list_events)
+MAX_EVENT_PRICE = 100_000            # upper bound for event.price (defensive cap)
 
 # ---------------------------------------------------------------------------
 # QR / scan recording
@@ -164,14 +258,18 @@ ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS = 60
 QR_SCAN_RATE_LIMIT_MAX_REQUESTS = 30
 QR_SCAN_RATE_LIMIT_WINDOW_SECONDS = 60
 
-# ---------------------------------------------------------------------------
-# Retry decorator for Supabase operations
-# ---------------------------------------------------------------------------
-# Shared config so every retry site uses identical backoff parameters.
-RETRY_STOP = stop_after_attempt(3)
-RETRY_WAIT = wait_exponential(multiplier=0.5, max=4)
+# Submission & report creation — per-user (authenticated).  Caps how many
+# event submissions a single user can create in a window; admin review queue
+# degrades quickly under flood.  Report creation is rate-limited on the same
+# dependency to stop a single user filling the reports table.
+SUBMISSION_RATE_LIMIT_MAX_REQUESTS = 10
+SUBMISSION_RATE_LIMIT_WINDOW_SECONDS = 3600  # 10 submissions per hour per user
+REPORT_RATE_LIMIT_MAX_REQUESTS = 5
+REPORT_RATE_LIMIT_WINDOW_SECONDS = 60        # 5 reports per minute per user
 
-supabase_retry = retry(stop=RETRY_STOP, wait=RETRY_WAIT)
+# Saved events cap — hard ceiling enforced at the save endpoint to prevent
+# a single account from growing an unbounded bookmark list (DoS vector).
+MAX_SAVED_EVENTS_PER_USER = 10_000
 
 # ---------------------------------------------------------------------------
 # PostgreSQL error codes (used by error_handlers and service-level catches)

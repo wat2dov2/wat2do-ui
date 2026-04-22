@@ -3,7 +3,7 @@
  * Manages notification preferences state and operations
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   loadNotificationPreferences,
   saveNotificationPreferences,
@@ -14,9 +14,14 @@ export function useNotifications() {
   const [preferences, setPreferences] = useState<NotificationPreferences>(() => {
     return loadNotificationPreferences();
   });
+  const isInitialMount = useRef(true);
 
-  // Persist notification preferences
+  // Persist notification preferences (skip initial mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     saveNotificationPreferences(preferences);
   }, [preferences]);
 

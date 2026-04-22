@@ -48,7 +48,7 @@ export function SubmissionsTable({
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted">
+          <TableRow className="bg-secondary">
             <TableHead className="text-xs font-semibold text-foreground">
               {t("events.eventTitle")}
             </TableHead>
@@ -76,7 +76,7 @@ export function SubmissionsTable({
               <TableRow
                 key={submission.id}
                 id={`submission-${submission.id}`}
-                className={`cursor-pointer hover:bg-muted/50 ${isSelected ? "bg-primary/10" : ""}`}
+                className={`cursor-pointer hover:bg-secondary/50 ${isSelected ? "bg-primary/10" : ""}`}
                 onClick={() => handleRowClick(submission.id)}
               >
                 <TableCell>

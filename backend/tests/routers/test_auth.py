@@ -17,9 +17,11 @@ from core.errors import (
     SIGNUP_FAILED,
 )
 from core.rate_limit import (
-    auth_rate_limiter,
     auth_refresh_rate_limiter,
-    auth_sensitive_rate_limiter,
+    forgot_password_rate_limiter,
+    login_rate_limiter,
+    reset_password_rate_limiter,
+    signup_rate_limiter,
 )
 from main import app
 from schemas.auth import SignupResponse, TokenResponse
@@ -34,13 +36,17 @@ from services.auth_service import AuthResult, auth
 @pytest.fixture(autouse=True)
 def _clear_rate_limiters():
     """Reset in-memory rate limiter state between tests so they don't 429."""
-    auth_rate_limiter._requests.clear()
+    login_rate_limiter._requests.clear()
+    signup_rate_limiter._requests.clear()
     auth_refresh_rate_limiter._requests.clear()
-    auth_sensitive_rate_limiter._requests.clear()
+    forgot_password_rate_limiter._requests.clear()
+    reset_password_rate_limiter._requests.clear()
     yield
-    auth_rate_limiter._requests.clear()
+    login_rate_limiter._requests.clear()
+    signup_rate_limiter._requests.clear()
     auth_refresh_rate_limiter._requests.clear()
-    auth_sensitive_rate_limiter._requests.clear()
+    forgot_password_rate_limiter._requests.clear()
+    reset_password_rate_limiter._requests.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +292,10 @@ class TestLogin:
 class TestRefresh:
     """Tests for the token refresh endpoint."""
 
+    # A32: /auth/refresh now requires a trusted Origin/Referer.  The first
+    # configured CORS origin in the dev defaults is used for tests.
+    ALLOWED_ORIGIN = "http://localhost:5173"
+
     def test_refresh_success(self, client, monkeypatch):
         """Valid refresh token in cookie returns new tokens and rotates the cookie."""
         result = _refresh_result()
@@ -295,6 +305,7 @@ class TestRefresh:
         resp = client.post(
             "/auth/refresh",
             cookies={"refresh_token": "old-ref-tok"},
+            headers={"Origin": self.ALLOWED_ORIGIN},
         )
 
         assert resp.status_code == 200
@@ -312,7 +323,7 @@ class TestRefresh:
 
     def test_refresh_no_cookie(self, client):
         """Missing refresh_token cookie returns 401 with NO_REFRESH_TOKEN."""
-        resp = client.post("/auth/refresh")
+        resp = client.post("/auth/refresh", headers={"Origin": self.ALLOWED_ORIGIN})
 
         assert resp.status_code == 401
         assert resp.json()["detail"] == NO_REFRESH_TOKEN
@@ -333,10 +344,30 @@ class TestRefresh:
         resp = client.post(
             "/auth/refresh",
             cookies={"refresh_token": "expired-tok"},
+            headers={"Origin": self.ALLOWED_ORIGIN},
         )
 
         assert resp.status_code == 401
         assert resp.json()["detail"] == SESSION_REFRESH_FAILED
+
+    def test_refresh_blocks_missing_origin(self, client, monkeypatch):
+        """A32: refresh without Origin/Referer is rejected to prevent CSRF."""
+        monkeypatch.setattr(auth, "refresh", MagicMock())
+        resp = client.post(
+            "/auth/refresh",
+            cookies={"refresh_token": "any"},
+        )
+        assert resp.status_code == 403
+
+    def test_refresh_blocks_untrusted_origin(self, client, monkeypatch):
+        """A32: refresh with untrusted Origin is rejected."""
+        monkeypatch.setattr(auth, "refresh", MagicMock())
+        resp = client.post(
+            "/auth/refresh",
+            cookies={"refresh_token": "any"},
+            headers={"Origin": "https://evil.example.com"},
+        )
+        assert resp.status_code == 403
 
 
 # ===========================================================================
@@ -367,13 +398,22 @@ class TestLogout:
 
         auth.logout.assert_called_once_with("valid-access-tok")
 
-    def test_logout_missing_bearer_token(self, client):
-        """Logout without Authorization header returns 401 (no credentials)."""
+    def test_logout_missing_bearer_token_still_clears_cookie(self, client):
+        """A11: logout without Authorization header still succeeds and clears the cookie.
+
+        Previously the endpoint required a Bearer token, which meant that a
+        user whose access token had expired could not be logged out via this
+        endpoint — the refresh cookie was never cleared and silently survived
+        the "logout".
+        """
         resp = client.post("/auth/logout")
-        assert resp.status_code in (401, 403)  # depends on FastAPI/Starlette version
+        assert resp.status_code == 200
+        set_cookie_header = resp.headers.get("set-cookie", "")
+        assert "refresh_token" in set_cookie_header
+        assert 'max-age=0' in set_cookie_header.lower() or '""' in set_cookie_header
 
     def test_logout_invalid_token(self, client, monkeypatch):
-        """Logout with an invalid/expired access token returns 400."""
+        """Logout with an invalid/expired access token returns 400 and still clears the cookie."""
         monkeypatch.setattr(
             auth,
             "logout",
@@ -392,6 +432,9 @@ class TestLogout:
 
         assert resp.status_code == 400
         assert resp.json()["detail"] == INVALID_OR_EXPIRED_TOKEN
+        # A11: cookie should still be cleared even if upstream revocation failed.
+        set_cookie_header = resp.headers.get("set-cookie", "")
+        assert "refresh_token" in set_cookie_header
 
 
 # ===========================================================================
@@ -516,6 +559,124 @@ class TestResetPassword:
         )
         assert resp.status_code == 422
 
+    def test_reset_password_short_new_password_rejected(self, client):
+        """A7: new_password below minimum length returns 422 (not forwarded to service)."""
+        resp = client.post(
+            "/auth/reset-password",
+            json={"access_token": "reset-tok", "new_password": "short"},
+        )
+        assert resp.status_code == 422
+
+
+# ===========================================================================
+# Password / email validation (A6, A7, E7)
+# ===========================================================================
+
+
+class TestPasswordValidation:
+    """A6/A7: password and email must be validated at the Pydantic layer."""
+
+    def test_signup_rejects_short_password(self, client):
+        data = {"email": "student@uwaterloo.ca", "password": "short"}
+        resp = client.post("/auth/signup", json=data)
+        assert resp.status_code == 422
+
+    def test_signup_rejects_too_long_password(self, client):
+        data = {
+            "email": "student@uwaterloo.ca",
+            "password": "p" * 200,
+        }
+        resp = client.post("/auth/signup", json=data)
+        assert resp.status_code == 422
+
+    def test_signup_rejects_crlf_in_email(self, client):
+        """E7: EmailStr rejects CRLF-injection payloads."""
+        data = {
+            "email": "student@uwaterloo.ca\r\nWARN [auth] admin logged in",
+            "password": "Str0ngP@ss!",
+        }
+        resp = client.post("/auth/signup", json=data)
+        assert resp.status_code == 422
+
+    def test_signup_rejects_plain_non_email_string(self, client):
+        data = {"email": "not-an-email", "password": "Str0ngP@ss!"}
+        resp = client.post("/auth/signup", json=data)
+        assert resp.status_code == 422
+
+
+# ===========================================================================
+# A9 recovery-token verification in reset_password (service-level)
+# ===========================================================================
+
+
+class TestResetPasswordRecoveryGuard:
+    """A9: only recovery-scoped tokens may change the password."""
+
+    def test_non_recovery_token_rejected(self, monkeypatch):
+        """Plain session tokens are rejected even if their signature is valid."""
+        from services.auth_service import AuthService
+        from schemas.auth import ResetPasswordRequest
+        from core.exceptions import AuthenticationError
+
+        svc = AuthService(auth_client=MagicMock(), db_client=MagicMock())
+        session_payload = {"sub": "uid-1", "aud": "authenticated"}
+        monkeypatch.setattr(
+            "services.auth_service.decode_jwt_payload",
+            lambda _tok: session_payload,
+        )
+        try:
+            svc.reset_password(
+                ResetPasswordRequest(access_token="sess-tok", new_password="N3wP@ssword!")
+            )
+        except AuthenticationError:
+            pass
+        else:
+            raise AssertionError("reset_password accepted a non-recovery token")
+
+    def test_recovery_token_accepted(self, monkeypatch):
+        """A recovery-scoped token triggers the admin update path."""
+        from services.auth_service import AuthService
+        from schemas.auth import ResetPasswordRequest
+
+        mock_db = MagicMock()
+        svc = AuthService(auth_client=MagicMock(), db_client=mock_db)
+        recovery_payload = {
+            "sub": "uid-1",
+            "aud": "authenticated",
+            "email_action_type": "recovery",
+        }
+        monkeypatch.setattr(
+            "services.auth_service.decode_jwt_payload",
+            lambda _tok: recovery_payload,
+        )
+        svc.reset_password(
+            ResetPasswordRequest(access_token="rec-tok", new_password="N3wP@ssword!")
+        )
+        mock_db.auth.admin.update_user_by_id.assert_called_once_with(
+            "uid-1", {"password": "N3wP@ssword!"}
+        )
+
+    def test_amr_recovery_entry_accepted(self, monkeypatch):
+        """amr=[{method: recovery}] is treated as recovery."""
+        from services.auth_service import AuthService
+        from schemas.auth import ResetPasswordRequest
+
+        mock_db = MagicMock()
+        svc = AuthService(auth_client=MagicMock(), db_client=mock_db)
+        payload = {
+            "sub": "uid-1",
+            "aud": "authenticated",
+            "amr": [{"method": "recovery", "timestamp": 1}],
+        }
+        monkeypatch.setattr(
+            "services.auth_service.decode_jwt_payload",
+            lambda _tok: payload,
+        )
+        svc.reset_password(
+            ResetPasswordRequest(access_token="rec-tok", new_password="N3wP@ssword!")
+        )
+        mock_db.auth.admin.update_user_by_id.assert_called_once()
+
 
 # ===========================================================================
 # Cookie behavior
@@ -573,6 +734,7 @@ class TestCookieBehavior:
         resp = client.post(
             "/auth/refresh",
             cookies={"refresh_token": "old-tok"},
+            headers={"Origin": "http://localhost:5173"},
         )
 
         cookie = resp.cookies.get("refresh_token")
@@ -687,7 +849,11 @@ class TestServiceCallArgs:
         mock_refresh = MagicMock(return_value=result)
         monkeypatch.setattr(auth, "refresh", mock_refresh)
 
-        client.post("/auth/refresh", cookies={"refresh_token": "the-token"})
+        client.post(
+            "/auth/refresh",
+            cookies={"refresh_token": "the-token"},
+            headers={"Origin": "http://localhost:5173"},
+        )
 
         mock_refresh.assert_called_once_with("the-token")
 

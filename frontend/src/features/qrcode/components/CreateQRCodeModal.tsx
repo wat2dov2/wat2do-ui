@@ -41,10 +41,6 @@ import { useCreateQRCodeForm } from "@/features/qrcode/hooks/useCreateQRCodeForm
 import { useCreatePoster } from "@/features/qrcode/hooks/useCreatePoster";
 import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/shared/utils/qrGenerator";
 import { QR_CANVAS_SIZE } from "@/features/qrcode/constants";
-import {
-  CreateQRCodeModalProvider,
-  useCreateQRCodeModalContext,
-} from "@/features/qrcode/contexts/CreateQRCodeModal.context";
 
 interface CreateQRCodeModalProps {
   isOpen: boolean;
@@ -54,9 +50,14 @@ interface CreateQRCodeModalProps {
   userEmail: string;
 }
 
-function CreateQRCodeModalContent() {
+function CreateQRCodeModalContent({
+  isOpen,
+  onClose,
+  onCreate,
+  events,
+  userEmail,
+}: CreateQRCodeModalProps) {
   const { t } = useTranslation();
-  const { isOpen, onClose, onCreate, events, userEmail } = useCreateQRCodeModalContext();
   const form = useCreateQRCodeForm(events, userEmail);
   const { createPoster } = useCreatePoster();
   const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
@@ -78,23 +79,23 @@ function CreateQRCodeModalContent() {
     try {
       const id = crypto.randomUUID();
       const destId =
-        form.state.destinationType === "event"
-          ? form.state.selectedEventId
-          : form.state.destinationType === "custom-url"
-            ? form.state.customUrl.trim()
+        form.formData.destinationType === "event"
+          ? form.formData.selectedEventId
+          : form.formData.destinationType === "custom-url"
+            ? form.formData.customUrl.trim()
             : null;
       const qrCode = await createPoster({
         id,
-        name: form.state.name.trim(),
-        description: form.state.description.trim() || null,
-        destination_type: form.state.destinationType,
+        name: form.formData.name.trim(),
+        description: form.formData.description.trim() || null,
+        destination_type: form.formData.destinationType,
         destination_id: destId ?? undefined,
-        filters: form.state.destinationType === "events-list" ? form.state.filters : undefined,
+        filters: form.formData.destinationType === "events-list" ? form.formData.filters : undefined,
         created_by: userEmail,
         is_active: true,
-        image_url: form.state.imageUrl || null,
+        image_url: form.formData.imageUrl || null,
       });
-      form.dispatch({ type: "SET_QR_CODE_ID", payload: qrCode.id });
+      form.setQrCodeId(qrCode.id);
       onCreate(qrCode);
       showSuccessAlert(
         t("qrCode.posterCreated"),
@@ -109,8 +110,8 @@ function CreateQRCodeModalContent() {
   };
 
   const handleDownload = () => {
-    if (!form.state.qrCodeId) return;
-    const qrUrl = generateQRCodeUrl(form.state.qrCodeId);
+    if (!form.qrCodeId) return;
+    const qrUrl = generateQRCodeUrl(form.qrCodeId);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -123,11 +124,11 @@ function CreateQRCodeModalContent() {
       ctx.fillRect(0, 0, QR_CANVAS_SIZE, QR_CANVAS_SIZE);
       ctx.drawImage(img, 0, 0);
       const dataUrl = canvas.toDataURL("image/png");
-      downloadQRCodeAsPNG(dataUrl, form.state.name.trim() || t("qrCode.defaultFileName"));
+      downloadQRCodeAsPNG(dataUrl, form.formData.name.trim() || t("qrCode.defaultFileName"));
     };
   };
 
-  const qrUrl = form.state.qrCodeId ? generateQRCodeUrl(form.state.qrCodeId) : "";
+  const qrUrl = form.qrCodeId ? generateQRCodeUrl(form.qrCodeId) : "";
 
   const destinationOptions = [
     {
@@ -161,7 +162,7 @@ function CreateQRCodeModalContent() {
         </ModalHeaderWrapper>
 
         <ModalContentWrapper>
-          {!form.state.qrCodeId ? (
+          {!form.qrCodeId ? (
             <>
             <form>
               <FieldGroup>
@@ -173,21 +174,21 @@ function CreateQRCodeModalContent() {
                       </FieldLabel>
                       <Input
                         id="poster-name"
-                        value={form.state.name}
-                        onChange={(e) => form.dispatch({ type: "SET_NAME", payload: e.target.value })}
+                        value={form.formData.name}
+                        onChange={(e) => form.updateField("name", e.target.value)}
                         placeholder={t("forms.posterNamePlaceholder")}
-                        className={form.state.errors.name ? "border-error" : ""}
+                        className={form.errors.name ? "border-error" : ""}
                       />
-                      {form.state.errors.name && (
-                        <FieldError className="text-xs">{form.state.errors.name}</FieldError>
+                      {form.errors.name && (
+                        <FieldError className="text-xs">{form.errors.name}</FieldError>
                       )}
                     </Field>
 
                     <ImageUploadField
                       label={t("qrCode.posterImage")}
                       required
-                      imagePreview={form.state.imagePreview}
-                      error={form.state.errors.image}
+                      imagePreview={form.formData.imagePreview}
+                      error={form.errors.image}
                       onImageUpload={form.handleImageUpload}
                       onRemoveImage={form.handleRemoveImage}
                       fileInputRef={form.fileInputRef}
@@ -199,18 +200,18 @@ function CreateQRCodeModalContent() {
                       </FieldLabel>
                       <RadioOptionGroup
                         options={destinationOptions}
-                        value={form.state.destinationType}
+                        value={form.formData.destinationType}
                         onChange={(value) =>
-                          form.dispatch({
-                            type: "SET_DESTINATION_TYPE",
-                            payload: value as "event" | "events-list" | "custom-url",
-                          })
+                          form.updateField(
+                            "destinationType",
+                            value as "event" | "events-list" | "custom-url",
+                          )
                         }
                         name="destinationType"
                       />
                     </Field>
 
-                    {form.state.destinationType === "custom-url" && (
+                    {form.formData.destinationType === "custom-url" && (
                       <Field>
                         <FieldLabel htmlFor="custom-url" className="text-sm font-medium text-foreground">
                           {t("qrCode.url")} <span className="text-error">*</span>
@@ -218,13 +219,13 @@ function CreateQRCodeModalContent() {
                         <Input
                           id="custom-url"
                           type="url"
-                          value={form.state.customUrl}
-                          onChange={(e) => form.dispatch({ type: "SET_CUSTOM_URL", payload: e.target.value })}
+                          value={form.formData.customUrl}
+                          onChange={(e) => form.updateField("customUrl", e.target.value)}
                           placeholder={t("forms.urlPlaceholder")}
-                          className={form.state.errors.url ? "border-error" : ""}
+                          className={form.errors.url ? "border-error" : ""}
                         />
-                        {form.state.errors.url && (
-                          <FieldError className="text-xs">{form.state.errors.url}</FieldError>
+                        {form.errors.url && (
+                          <FieldError className="text-xs">{form.errors.url}</FieldError>
                         )}
                       </Field>
                     )}
@@ -242,21 +243,21 @@ function CreateQRCodeModalContent() {
                       </FieldLabel>
                       <Input
                         id="poster-description"
-                        value={form.state.description}
-                        onChange={(e) => form.dispatch({ type: "SET_DESCRIPTION", payload: e.target.value })}
+                        value={form.formData.description}
+                        onChange={(e) => form.updateField("description", e.target.value)}
                         placeholder={t("forms.descriptionPlaceholder")}
                       />
                     </Field>
 
-                    {form.state.destinationType === "event" && (
+                    {form.formData.destinationType === "event" && (
                       <Field>
                         <FieldLabel className="text-sm font-medium text-foreground">
                           {t("qrCode.selectEvent")}
                         </FieldLabel>
                         <Select
-                          value={form.state.selectedEventId?.toString() || undefined}
+                          value={form.formData.selectedEventId?.toString() || undefined}
                           onValueChange={(value) =>
-                            form.dispatch({ type: "SET_SELECTED_EVENT_ID", payload: parseInt(value) })
+                            form.updateField("selectedEventId", parseInt(value))
                           }
                         >
                           <SelectTrigger>
@@ -273,7 +274,7 @@ function CreateQRCodeModalContent() {
                       </Field>
                     )}
 
-                    {form.state.destinationType === "events-list" && (
+                    {form.formData.destinationType === "events-list" && (
                       <Field>
                         <FieldLabel className="text-sm font-medium text-foreground">
                           {t("qrCode.filterEvents")}
@@ -281,7 +282,7 @@ function CreateQRCodeModalContent() {
                         <FieldDescription>
                           {t("qrCode.filterEventsDesc")}
                         </FieldDescription>
-                        <div className="p-4 border border-border rounded-xl bg-muted/50">
+                        <div className="p-4 border border-border rounded-xl bg-secondary/50">
                           <p className="text-xs text-muted-foreground">
                             {t("qrCode.advancedFilteringMessage")}
                           </p>
@@ -316,7 +317,7 @@ function CreateQRCodeModalContent() {
           ) : (
             <QRCodePreview
               qrUrl={qrUrl}
-              name={form.state.name}
+              name={form.formData.name}
               onDone={onClose}
               doneLabel={t("qrCode.done")}
               successMessage={t("qrCode.qrCodeGeneratedSuccessfully")}
@@ -331,9 +332,5 @@ function CreateQRCodeModalContent() {
 }
 
 export function CreateQRCodeModal(props: CreateQRCodeModalProps) {
-  return (
-    <CreateQRCodeModalProvider value={props}>
-      <CreateQRCodeModalContent />
-    </CreateQRCodeModalProvider>
-  );
+  return <CreateQRCodeModalContent {...props} />;
 }

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { useAuthFlowState } from "@/features/auth/store/authFlow.store";
-import { loginAPI, signupAPI, login as saveEmailLocally, ApiError } from "@/features/auth/api/auth.api";
+import { loginAPI, signupAPI } from "@/features/auth/api/auth.api";
+import { ApiError } from "@/shared/services/apiClient";
 import { DOMAIN_TO_SCHOOL } from "@/shared/constants/schools";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,7 +41,8 @@ function schoolFromEmail(email: string): string {
 export type AuthMode = "login" | "signup";
 
 interface UseAuthEntryFlowOptions {
-  onContinueToOnboarding: () => void;
+  /** Invoked on successful signup with the school derived from the email domain. */
+  onContinueToOnboarding: (initialSchool: string) => void;
   onContinueToHome: () => void;
 }
 
@@ -49,17 +50,15 @@ export function useAuthEntryFlow({
   onContinueToOnboarding,
   onContinueToHome,
 }: UseAuthEntryFlowOptions) {
-  const store = useAuthFlowState();
-  const { authEntry } = store.state;
-
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isEmailValid = useMemo(
-    () => EMAIL_PATTERN.test(authEntry.email.trim()),
-    [authEntry.email],
+    () => EMAIL_PATTERN.test(email.trim()),
+    [email],
   );
 
   const isFormValid = useMemo(
@@ -67,13 +66,10 @@ export function useAuthEntryFlow({
     [isEmailValid, password],
   );
 
-  const handleEmailChange = useCallback(
-    (email: string) => {
-      store.setAuthEmail(email);
-      setError(null);
-    },
-    [store],
-  );
+  const handleEmailChange = useCallback((value: string) => {
+    setEmail(value);
+    setError(null);
+  }, []);
 
   const handlePasswordChange = useCallback((pw: string) => {
     setPassword(pw);
@@ -88,19 +84,19 @@ export function useAuthEntryFlow({
   const handleContinue = useCallback(async () => {
     if (!isFormValid || isLoading) return;
 
-    const email = authEntry.email.trim();
+    const trimmed = email.trim();
     setIsLoading(true);
     setError(null);
 
     try {
       if (authMode === "signup") {
-        await signupAPI(email, password);
-        saveEmailLocally(email);
-        store.setSchool(schoolFromEmail(email));
-        onContinueToOnboarding();
+        await signupAPI(trimmed, password);
+        // signupAPI already cached the email; hand the school to the
+        // onboarding page via navigation state so step 3's goose dialogue
+        // can greet the user by school name.
+        onContinueToOnboarding(schoolFromEmail(trimmed));
       } else {
-        await loginAPI(email, password);
-        saveEmailLocally(email);
+        await loginAPI(trimmed, password);
         onContinueToHome();
       }
     } catch (err) {
@@ -113,10 +109,10 @@ export function useAuthEntryFlow({
     } finally {
       setIsLoading(false);
     }
-  }, [isFormValid, isLoading, authEntry.email, authMode, password, store, onContinueToOnboarding, onContinueToHome]);
+  }, [isFormValid, isLoading, email, authMode, password, onContinueToOnboarding, onContinueToHome]);
 
   return {
-    email: authEntry.email,
+    email,
     password,
     authMode,
     isEmailValid,

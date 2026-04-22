@@ -9,7 +9,7 @@ import { cn } from "@/shared/lib/utils";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
-import { LightRays } from "@/shared/ui/light-rays";
+import { EventCardContent } from "@/shared/ui/event-card-content";
 import { PREVIEW_CARD_IMAGE_HEIGHT } from "@/features/auth/constants";
 
 export interface PreviewEventData {
@@ -97,38 +97,13 @@ export function PreviewStyleEventCard({
         </BadgeMask>
       </div>
 
-      <div className="relative flex flex-col flex-1 px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
-        <LightRays />
-        <div className="flex flex-col gap-3 h-full flex-1">
-          <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
-            {event.title}
-          </h3>
-
-          {/* Info + Badges - pinned to bottom */}
-          <div className="flex items-end justify-between gap-3 mt-auto">
-            <div className="space-y-0.5">
-              <span className="block text-[11px] text-muted-foreground">{event.date}</span>
-              <span className="block text-[11px] text-muted-foreground">{event.time}</span>
-              <span className="block text-[11px] text-muted-foreground truncate">
-                {event.location}
-              </span>
-            </div>
-
-            {event.badges.length > 0 && (
-              <div className="flex flex-col gap-1.5 items-end shrink-0">
-                {event.badges.map((badge) => (
-                  <span
-                    key={badge.text}
-                    className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-muted-foreground text-muted-foreground whitespace-nowrap"
-                  >
-                    {badge.text}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <EventCardContent
+        title={event.title}
+        date={event.date}
+        time={event.time}
+        location={event.location}
+        badges={event.badges}
+      />
     </div>
   );
 }

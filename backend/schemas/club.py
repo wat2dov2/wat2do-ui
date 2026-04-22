@@ -1,25 +1,105 @@
-from pydantic import BaseModel
+from datetime import datetime
 from typing import Literal
+from urllib.parse import urlparse
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from core.constants import (
+    MAX_CLUB_CATEGORY_COUNT,
+    MAX_CLUB_CATEGORY_LENGTH,
+    MAX_CLUB_NAME_LENGTH,
+    MAX_CLUB_TYPE_LENGTH,
+    MAX_INTEGRATION_METADATA_KEYS,
+    MAX_INTEGRATION_METADATA_KEY_LENGTH,
+    MAX_INTEGRATION_METADATA_VALUE_LENGTH,
+    MAX_INTEGRATION_NAME_LENGTH,
+    MAX_URL_LENGTH,
+)
+
+# ---------------------------------------------------------------------------
+# Safe-URL validator — mirrors schemas.qr_code._is_safe_url so club fields
+# that accept user-supplied URLs (club_page, logo_url) reject dangerous
+# schemes (javascript:, data:, file:) before they reach storage or FE.
+# ---------------------------------------------------------------------------
+_SAFE_URL_PROTOCOLS = {"http", "https"}
+
+
+def _is_safe_http_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        return parsed.scheme in _SAFE_URL_PROTOCOLS and bool(parsed.netloc)
+    except Exception:
+        return False
+
+
+def _validate_http_url(v: str | None) -> str | None:
+    if v is None:
+        return None
+    v = v.strip()
+    if not v:
+        return None
+    if not _is_safe_http_url(v):
+        raise ValueError("URL must use http or https scheme")
+    return v
+
+
+# Category entries are single short tags; list length is already bounded on
+# the model by ``max_length=MAX_CLUB_CATEGORY_COUNT``.
+from typing import Annotated
+
+CategoryStr = Annotated[str, Field(min_length=1, max_length=MAX_CLUB_CATEGORY_LENGTH)]
 
 
 class ClubCreate(BaseModel):
-    club_name: str
-    categories: list[str] | None = None
-    club_page: str | None = None
-    ig: str | None = None
-    discord: str | None = None
-    club_type: str
-    logo_url: str | None = None
+    model_config = ConfigDict(extra="forbid")
+
+    club_name: str = Field(..., min_length=1, max_length=MAX_CLUB_NAME_LENGTH)
+    categories: list[CategoryStr] | None = Field(default=None, max_length=MAX_CLUB_CATEGORY_COUNT)
+    club_page: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    ig: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    club_type: str = Field(..., min_length=1, max_length=MAX_CLUB_TYPE_LENGTH)
+    logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+
+    @field_validator("club_name", "club_type")
+    @classmethod
+    def _strip_non_blank(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("value cannot be blank")
+        return v
+
+    @field_validator("club_page", "logo_url")
+    @classmethod
+    def _safe_url(cls, v: str | None) -> str | None:
+        return _validate_http_url(v)
 
 
 class ClubUpdate(BaseModel):
-    club_name: str | None = None
-    categories: list[str] | None = None
-    club_page: str | None = None
-    ig: str | None = None
-    discord: str | None = None
-    club_type: str | None = None
-    logo_url: str | None = None
+    model_config = ConfigDict(extra="forbid")
+
+    club_name: str | None = Field(default=None, max_length=MAX_CLUB_NAME_LENGTH)
+    categories: list[CategoryStr] | None = Field(default=None, max_length=MAX_CLUB_CATEGORY_COUNT)
+    club_page: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    ig: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    club_type: str | None = Field(default=None, max_length=MAX_CLUB_TYPE_LENGTH)
+    logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+
+    @field_validator("club_name", "club_type")
+    @classmethod
+    def _not_blank(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        if not v:
+            raise ValueError("value cannot be blank on update")
+        return v
+
+    @field_validator("club_page", "logo_url")
+    @classmethod
+    def _safe_url(cls, v: str | None) -> str | None:
+        return _validate_http_url(v)
 
 
 class ClubResponse(BaseModel):
@@ -52,7 +132,23 @@ class DiscordIntegrationOptionsResponse(BaseModel):
     servers: list[DiscordServerOption]
 
 
+class PlatformIntegrationOptionsResponse(BaseModel):
+    """Generic options for any integration platform (audit S7).
+
+    The Discord-specific response above keeps the tightest types for the
+    ``/integrations/discord/options`` endpoint; this looser model lets
+    the ``/integrations/{platform}/options`` endpoint lock its OpenAPI
+    contract without over-constraining platforms whose OAuth URLs are
+    still placeholders.
+    """
+
+    oauth_url: str | None = None
+    servers: list[DiscordServerOption] = []
+
+
 class DiscordIntegrationUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     connected: bool = True
     server_id: str
     server_name: str
@@ -68,7 +164,7 @@ class DiscordIntegrationResponse(BaseModel):
     server_name: str | None = None
     channel_id: str | None = None
     channel_name: str | None = None
-    last_sync: str | None = None
+    last_sync: datetime | None = None
 
 
 IntegrationPlatform = Literal[
@@ -83,9 +179,43 @@ IntegrationPlatform = Literal[
 
 
 class ClubIntegrationUpdate(BaseModel):
+    """Update request for a club's integration configuration.
+
+    The ``metadata`` dict is now bounded on three axes:
+    - max key count (``MAX_INTEGRATION_METADATA_KEYS``)
+    - max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)
+    - max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)
+
+    Unknown envelope fields are rejected via ``extra="forbid"`` so future
+    refactors that accidentally echo request data back to the DB do not
+    introduce a mass-assignment surface.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     connected: bool = True
-    name: str | None = None
+    name: str | None = Field(default=None, max_length=MAX_INTEGRATION_NAME_LENGTH)
     metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _metadata_bounds(self):
+        m = self.metadata
+        if m is None:
+            return self
+        if len(m) > MAX_INTEGRATION_METADATA_KEYS:
+            raise ValueError(
+                f"metadata exceeds maximum of {MAX_INTEGRATION_METADATA_KEYS} keys"
+            )
+        for k, v in m.items():
+            if len(k) > MAX_INTEGRATION_METADATA_KEY_LENGTH:
+                raise ValueError(
+                    f"metadata key length exceeds {MAX_INTEGRATION_METADATA_KEY_LENGTH}"
+                )
+            if not isinstance(v, str) or len(v) > MAX_INTEGRATION_METADATA_VALUE_LENGTH:
+                raise ValueError(
+                    f"metadata value length exceeds {MAX_INTEGRATION_METADATA_VALUE_LENGTH}"
+                )
+        return self
 
 
 class ClubIntegrationResponse(BaseModel):
@@ -93,5 +223,5 @@ class ClubIntegrationResponse(BaseModel):
     platform: IntegrationPlatform
     connected: bool
     name: str | None = None
-    last_sync: str | None = None
+    last_sync: datetime | None = None
     metadata: dict[str, str] | None = None

@@ -1,4 +1,6 @@
+from datetime import datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +21,10 @@ class CreditBalanceResponse(BaseModel):
 
 
 class AddCreditsRequest(BaseModel):
-    user_id: str = Field(..., description="Target user ID to receive credits")
+    # C13: use UUID for type-safe validation so malformed strings are rejected
+    # at the Pydantic boundary (422) instead of surfacing as opaque Postgres
+    # errors deeper down.
+    user_id: UUID = Field(..., description="Target user ID to receive credits")
     amount: int = Field(..., gt=0, le=MAX_CREDITS_PER_ADD)
 
 
@@ -34,6 +39,8 @@ class PromotionResponse(BaseModel):
     event_id: int
     package: PromotionPackage
     credits_spent: int
-    start_date: str
-    end_date: str
-    created_at: str
+    # Datetimes parsed via Pydantic v2 (audit S9).  Column types in the
+    # DB are TIMESTAMPTZ so ISO-8601 strings round-trip cleanly.
+    start_date: datetime
+    end_date: datetime
+    created_at: datetime

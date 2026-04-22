@@ -1,5 +1,4 @@
-import { useCallback, useMemo } from "react";
-import { useAuthFlowState } from "@/features/auth/store/authFlow.store";
+import { useCallback, useMemo, useState } from "react";
 import { EVENT_CATEGORIES, type EventCategory } from "@/shared/constants/eventCategories";
 import { ONBOARDING_EVENT_CARDS } from "@/features/auth/data/onboardingImages";
 
@@ -25,95 +24,86 @@ interface UseOnboardingFlowOptions {
     faculty: string;
     isFirstYear: boolean;
   }) => void;
+  /**
+   * School name to pre-populate on mount (e.g. derived from the signup
+   * email domain and handed over via router navigation state). Defaults
+   * to an empty string.
+   */
+  initialSchool?: string;
 }
 
-export function useOnboardingFlow({ onComplete }: UseOnboardingFlowOptions) {
-  const store = useAuthFlowState();
-  const { onboarding } = store.state;
+export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFlowOptions) {
+  const [step, setStep] = useState(0);
+  const [school] = useState(initialSchool ?? "");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
+  const [faculty, setFaculty] = useState("");
+  const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
 
   const validTopics = useMemo(
-    () => onboarding.selectedTopics.filter((t) => EVENT_CATEGORIES.includes(t as EventCategory)),
-    [onboarding.selectedTopics]
+    () => selectedTopics.filter((t) => EVENT_CATEGORIES.includes(t as EventCategory)),
+    [selectedTopics]
   );
 
   // All questions optional — user can always continue
   const canContinue = true;
 
-  const toggleTopic = useCallback(
-    (category: string) => {
-      const isSelected = onboarding.selectedTopics.includes(category);
-      if (isSelected) {
-        store.setSelectedTopics(onboarding.selectedTopics.filter((t) => t !== category));
-      } else {
-        store.setSelectedTopics([...onboarding.selectedTopics, category]);
-      }
-    },
-    [onboarding.selectedTopics, store]
-  );
+  const toggleTopic = useCallback((category: string) => {
+    setSelectedTopics((prev) =>
+      prev.includes(category) ? prev.filter((t) => t !== category) : [...prev, category]
+    );
+  }, []);
 
-  const toggleEventId = useCallback(
-    (eventId: number) => {
-      const isSelected = onboarding.selectedEventIds.includes(eventId);
-      if (isSelected) {
-        store.setSelectedEventIds(onboarding.selectedEventIds.filter((id) => id !== eventId));
-      } else {
-        store.setSelectedEventIds([...onboarding.selectedEventIds, eventId]);
-      }
-    },
-    [onboarding.selectedEventIds, store]
-  );
+  const toggleEventId = useCallback((eventId: number) => {
+    setSelectedEventIds((prev) =>
+      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
+    );
+  }, []);
 
   const goNext = useCallback(() => {
     if (!canContinue) return;
 
-    if (onboarding.step >= ONBOARDING_TOTAL_STEPS - 1) {
+    if (step >= ONBOARDING_TOTAL_STEPS - 1) {
       onComplete({
-        school: onboarding.school,
+        school,
         selectedTopics: validTopics,
-        selectedEventIds: onboarding.selectedEventIds,
-        faculty: onboarding.faculty,
-        isFirstYear: onboarding.isFirstYear ?? false,
+        selectedEventIds,
+        faculty,
+        isFirstYear: isFirstYear ?? false,
       });
       return;
     }
 
-    store.setOnboardingStep(onboarding.step + 1);
+    setStep((prev) => prev + 1);
   }, [
     canContinue,
     validTopics,
-    onboarding.school,
-    onboarding.faculty,
-    onboarding.isFirstYear,
-    onboarding.step,
-    onboarding.selectedEventIds,
+    school,
+    faculty,
+    isFirstYear,
+    step,
+    selectedEventIds,
     onComplete,
-    store,
   ]);
 
   const goBack = useCallback(() => {
-    if (onboarding.step <= 0) return;
-    store.setOnboardingStep(onboarding.step - 1);
-  }, [onboarding.step, store]);
-
-  const resetOnboarding = useCallback(() => {
-    store.resetOnboarding();
-  }, [store]);
+    setStep((prev) => (prev <= 0 ? 0 : prev - 1));
+  }, []);
 
   return {
-    currentStep: onboarding.step,
+    currentStep: step,
     totalSteps: ONBOARDING_TOTAL_STEPS,
-    school: onboarding.school,
-    selectedTopics: onboarding.selectedTopics,
-    selectedEventIds: onboarding.selectedEventIds,
-    faculty: onboarding.faculty,
-    isFirstYear: onboarding.isFirstYear,
+    school,
+    selectedTopics,
+    selectedEventIds,
+    faculty,
+    isFirstYear,
     canContinue,
-    setFaculty: store.setFaculty,
-    setIsFirstYear: store.setIsFirstYear,
+    setFaculty,
+    setIsFirstYear,
     toggleTopic,
     toggleEventId,
     goNext,
     goBack,
-    resetOnboarding,
   };
 }

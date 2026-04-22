@@ -1,10 +1,6 @@
-import { useReducer, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { getScansFromBackend, normalizeBackendScan } from "@/features/qrcode/api/qrcode.api";
-import type { QRCode } from "@/shared/types";
-import {
-  qrCodeScansReducer,
-  initialState,
-} from "@/features/qrcode/hooks/useQRCodeScans.reducer";
+import type { QRCode, QRCodeScan } from "@/shared/types";
 
 interface UseQRCodeScansOptions {
   qrCode: QRCode;
@@ -15,12 +11,16 @@ interface UseQRCodeScansOptions {
  * Hook for managing QR code scans. Loads scans from backend when modal is open.
  */
 export function useQRCodeScans({ qrCode, isOpen }: UseQRCodeScansOptions) {
-  const [state, dispatch] = useReducer(qrCodeScansReducer, initialState);
+  const [scans, setScans] = useState<QRCodeScan[]>([]);
+  const [timeRange, setTimeRange] = useState<string>("30");
 
   const loadScans = useCallback(() => {
     getScansFromBackend(qrCode.id)
-      .then((raw) => dispatch({ type: "SET_SCANS", payload: raw.map(normalizeBackendScan) }))
-      .catch((err) => { console.error("Failed to load QR scans:", err); dispatch({ type: "SET_SCANS", payload: [] }); });
+      .then((raw) => setScans(raw.map(normalizeBackendScan)))
+      .catch((err) => {
+        console.error("Failed to load QR scans:", err);
+        setScans([]);
+      });
   }, [qrCode.id]);
 
   useEffect(() => {
@@ -28,10 +28,9 @@ export function useQRCodeScans({ qrCode, isOpen }: UseQRCodeScansOptions) {
   }, [isOpen, qrCode.id, loadScans]);
 
   return {
-    scans: state.scans,
-    timeRange: state.timeRange,
-    setTimeRange: (range: string) =>
-      dispatch({ type: "SET_TIME_RANGE", payload: range }),
+    scans,
+    timeRange,
+    setTimeRange,
     loadScans,
   };
 }

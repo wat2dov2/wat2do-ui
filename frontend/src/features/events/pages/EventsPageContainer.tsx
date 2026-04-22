@@ -1,75 +1,51 @@
-import React, { useMemo, useCallback, useState, useEffect } from "react";
+import React, { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { Utensils, Heart } from "lucide-react";
-import { EventList, EventCount, useLatestAddedEvent } from "@/features/events";
-import { useRecommendations } from "@/features/recommendations";
+import { EventList, EventCount } from "@/features/events";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { EventsProvider } from "@/features/events/context/EventsContext";
-import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown, useSearch } from "@/features/search";
+import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
-import { useUIContext } from "@/contexts/UIContext";
-import { useUserContext } from "@/contexts/UserContext";
-import { getUserId } from "@/features/auth";
-import { useEventsStore } from "@/features/events/store/events.store";
-import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { usePromotionsStore } from "@/features/credits/store/promotions.store";
-import type { Event, ViewMode, QuickFilterConfig } from "@/shared/types";
+import { useAppPrefsStore } from "@/shared/store/appPrefs.store";
+import { useModalStore } from "@/shared/store/modal.store";
+import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { useDarkMode } from "@/shared/hooks";
+import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
+import type { ViewMode, QuickFilterConfig } from "@/shared/types";
 
 export function EventsPageContainer() {
-  const { viewMode, setViewMode, filterViewMode, setFilterViewMode, isDarkMode } = useUIContext();
-  const { profileCompleted, isAdmin } = useUserContext();
+  const viewMode = useAppPrefsStore((s) => s.viewMode);
+  const setViewMode = useAppPrefsStore((s) => s.setViewMode);
+  const filterViewMode = useAppPrefsStore((s) => s.filterViewMode);
+  const setFilterViewMode = useAppPrefsStore((s) => s.setFilterViewMode);
+  // Filter dropdown open/close lives in the modal store (shared with the
+  // command palette) rather than the search filter-value store.
+  const showFilterDropdown = useModalStore((s) => s.showFilterDropdown);
+  const setShowFilterDropdown = useModalStore((s) => s.setShowFilterDropdown);
+  const { isDarkMode } = useDarkMode();
+  const profileCompleted = useProfileCompleted();
   const { t } = useTranslation();
   const { activeEasterEgg, clearEasterEgg, checkSearchQuery } = useEasterEggs();
 
-  // Read from stores (single source of truth — no duplicate fetches)
-  const events = useEventsStore((s) => s.events);
-  const isLoading = useEventsStore((s) => s.isLoading);
-  const deleteEvent = useEventsStore((s) => s.deleteEvent);
-  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
-  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
-  const activePromotedEventIds = usePromotionsStore((s) => s.activePromotedEventIds);
-
-  const { latest: latestAddedEvent } = useLatestAddedEvent();
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!latestAddedEvent) return;
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, [latestAddedEvent]);
-
-  const { recommendations, isLoading: recsLoading } = useRecommendations();
-
-  const filters = useSearch({
-    events,
-    profileCompleted,
+  const {
+    isLoading,
     savedEventIds,
-  });
-
-  // Re-order filtered events: recommended first, then the rest in original order
-  const orderedEvents = useMemo(() => {
-    if (recommendations.length === 0) return filters.filteredEvents;
-    const scoreMap = new Map(recommendations.map((r) => [r.event_id, r.score]));
-    return [...filters.filteredEvents].sort((a, b) => {
-      const sa = scoreMap.get(a.id) ?? -1;
-      const sb = scoreMap.get(b.id) ?? -1;
-      if (sa >= 0 && sb < 0) return -1;
-      if (sa < 0 && sb >= 0) return 1;
-      if (sa >= 0 && sb >= 0) return sb - sa;
-      return 0; // preserve original order for non-recommended
-    });
-  }, [filters.filteredEvents, recommendations]);
-
-  const handleDeleteEvent = async (eventId: number) => {
-    await deleteEvent(eventId);
-  };
+    latestAddedEvent,
+    recsLoading,
+    filters,
+    orderedEvents,
+    handleDeleteEvent,
+  } = useEventsPageData({ profileCompleted });
 
   // Memoize view mode change handler to ensure stable reference
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
   }, [setViewMode]);
 
-  // Build filter config array
+  // Build filter config array. `filters` is the aggregate returned by
+  // useSearch; React Compiler infers it as a single dep rather than the
+  // narrow property list, so depend on the whole object for consistency
+  // with the compiler's preservation check.
   const filterConfigs: QuickFilterConfig[] = useMemo(
     () =>
       [
@@ -78,10 +54,7 @@ export function EventsPageContainer() {
           icon: <Utensils className="w-3.5 h-3.5" />,
           labelKey: "common.freeFood",
           active: filters.freeFoodFilter,
-          onClick: () => {
-            filters.setFreeFoodFilter(!filters.freeFoodFilter);
-            if (!filters.freeFoodFilter) filters.setFreeFilter(false);
-          },
+          onClick: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
           badge:
             filters.freeFoodEventsCount > 0
               ? filters.freeFoodEventsCount
@@ -97,35 +70,32 @@ export function EventsPageContainer() {
           visible: profileCompleted,
         },
       ].filter((config) => config.visible !== false),
-    [
-      filters.freeFoodFilter,
-      filters.freeFoodEventsCount,
-      filters.savedFilter,
-      filters.setFreeFoodFilter,
-      filters.setFreeFilter,
-      filters.setSavedFilter,
-      profileCompleted,
-      savedEventIds.length,
-    ]
+    [filters, profileCompleted, savedEventIds.length]
   );
 
   return (
-    <div className="space-y-5">
-      {/* Search Bar - always visible */}
-      <SearchBar
-        searchQuery={filters.searchQuery}
-        onSearchChange={(query) => {
-          filters.setSearchQuery(query);
-          checkSearchQuery(query);
-        }}
-        onSearchClear={() => filters.setSearchQuery("")}
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-      />
+    // Cancel the AppLayout scroll container's p-6 so the sticky toolbar can
+    // sit flush against the scrollport edges. Re-add equivalent padding on
+    // the sticky inner content and <main> so the visible layout is unchanged.
+    <div className="-m-6 isolate">
+      {/* Sticky toolbar: search + filter row stay pinned as the user scrolls.
+          -top-6 + pt-10 covers the scroll container's p-6 top padding so event
+          cards scrolling up don't bleed through the gap between the fixed
+          TopNav and the toolbar. */}
+      <div className="sticky -top-6 z-20 bg-background px-6 pt-7 pb-3 space-y-5">
+        <SearchBar
+          searchQuery={filters.searchQuery}
+          onSearchChange={(query) => {
+            filters.setSearchQuery(query);
+            checkSearchQuery(query);
+          }}
+          onSearchClear={() => filters.setSearchQuery("")}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+        />
 
-      {/* Filters - only show when events and recommendations are loaded */}
-      {!isLoading && !recsLoading && (
-        <div className="space-y-5">
+        {/* Filters - only show when events and recommendations are loaded */}
+        {!isLoading && !recsLoading && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-baseline gap-3">
               <EventCount count={filters.filteredEvents.length} />
@@ -160,8 +130,8 @@ export function EventsPageContainer() {
                   />
                 ))}
               <MoreFiltersButton
-                open={filters.showFilterDropdown}
-                onOpenChange={filters.setShowFilterDropdown}
+                open={showFilterDropdown}
+                onOpenChange={setShowFilterDropdown}
                 filterCount={filters.filterCount}
                 onClearFilters={filters.handleClearAllFilters}
               >
@@ -174,29 +144,20 @@ export function EventsPageContainer() {
               </MoreFiltersButton>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Main Content */}
-      <main className="w-full" role="main" aria-label={t("search.ariaLabel")}>
+      <main className="w-full px-6 pt-5 pb-6" role="main" aria-label={t("search.ariaLabel")}>
         {isLoading || recsLoading ? (
           <LoadingPage />
         ) : (
-          <EventsProvider
-            savedEventIds={savedEventIds}
-            toggleSaveEvent={toggleSaveEvent}
-            activePromotedEventIds={activePromotedEventIds}
-            isAdmin={isAdmin}
-            currentUserId={getUserId()}
+          <EventList
+            events={orderedEvents}
+            viewMode={viewMode}
             onDelete={handleDeleteEvent}
-            allEvents={events}
             onClearFilters={filters.handleClearAllFilters}
-          >
-            <EventList
-              events={orderedEvents}
-              viewMode={viewMode}
-            />
-          </EventsProvider>
+          />
         )}
       </main>
     </div>

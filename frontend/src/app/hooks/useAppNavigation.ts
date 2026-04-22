@@ -1,31 +1,22 @@
 /**
  * Hook for managing navigation, routing, URL params, and QR redirects
- * Refactored to minimize useEffect usage
- * 
- * Improvements:
- * - pageMode is derived state (useMemo) - no useEffect needed
- * - Combined URL param handling into single useEffect
- * - QR redirect handled efficiently
+ *
+ * - pageMode is derived state (useMemo) — no useEffect needed
+ * - Combined URL param handling into a single useEffect
+ * - QR redirect handled by QRRedirectPage at /qr/:id
  */
 
-import { useMemo, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import type { PageMode, FilterState, Event } from "@/shared/types";
+import type { FilterState, Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
+import { derivePageMode } from "@/shared/utils/pageMode";
+import { parseFilterQueryString } from "@/features/search/api/filterService";
 
 interface FilterSetters {
-  setSearchQuery: (query: string) => void;
-  setSelectedCategories: (categories: string[]) => void;
-  setSelectedLocations: (locations: string[]) => void;
-  setSelectedFoods: (foods: string[]) => void;
-  setSelectedDays: (days: string[]) => void;
-  setPriceRange: (range: { min: string; max: string }) => void;
-  setDateRange: (date: Date | undefined) => void;
-  setAddedSince: (date: Date | undefined) => void;
-  setRequiresRegistration: (value: boolean) => void;
-  setFilterStateFromURL?: (filters: FilterState) => void;
+  setFilterStateFromURL: (filters: FilterState) => void;
 }
 
 interface UseAppNavigationOptions {
@@ -43,33 +34,23 @@ export function useAppNavigation({
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  
-  // Track if we've already processed initial URL params to avoid re-processing
-  const hasProcessedInitialParams = useRef(false);
 
-  // Derived state: Determine current page from route (no useEffect needed)
-  const pageMode: PageMode = useMemo(() => {
-    const currentPath = location.pathname;
-    if (currentPath === ROUTES.CLUBS) return "clubs";
-    if (currentPath === ROUTES.ABOUT) return "about";
-    if (currentPath === ROUTES.SETTINGS) return "settings";
-    if (currentPath.startsWith(ROUTES.ADMIN_EVENTS)) return "admin-events";
-    if (currentPath.startsWith(ROUTES.ADMIN_CLUBS)) return "admin-clubs";
-    if (currentPath.startsWith(ROUTES.ADMIN_SUBMISSIONS)) return "admin-submissions";
-    if (currentPath.startsWith(ROUTES.ADMIN_POSTERS)) return "admin-posters";
-    if (currentPath.startsWith(ROUTES.ADMIN)) return "admin";
-    if (currentPath === ROUTES.MARKETING) return "marketing";
-    return "events";
-  }, [location.pathname]);
+  // Track if we've already processed initial URL params to avoid re-processing.
+  // Split by concern: filters/pageMode process once, but scroll-to-event must
+  // wait for the events array to be non-empty (cold-load race).
+  const hasProcessedInitialFilters = useRef(false);
+  const hasProcessedInitialScroll = useRef(false);
 
-  // Combined effect: Handle URL parameters (QR redirect is handled by QRRedirectPage at /qr/:id)
+  // Derive pageMode directly from the current pathname (pure function).
+  const pageMode = derivePageMode(location.pathname);
+
   useEffect(() => {
-    // Handle URL parameters (only process once on initial load)
-    if (!hasProcessedInitialParams.current) {
-      const eventId = searchParams.get(QP.EVENT_ID);
-      const filtersParam = searchParams.get(QP.FILTERS);
-      const pageModeParam = searchParams.get(QP.PAGE_MODE);
+    const eventId = searchParams.get(QP.EVENT_ID);
+    const filtersParam = searchParams.get(QP.FILTERS);
+    const pageModeParam = searchParams.get(QP.PAGE_MODE);
 
+    // Process filters + pageMode exactly once on initial mount.
+    if (!hasProcessedInitialFilters.current) {
       // Handle pageMode redirect
       if (pageModeParam) {
         if (pageModeParam === "marketing") {
@@ -77,49 +58,53 @@ export function useAppNavigation({
         } else if (pageModeParam === "events") {
           navigate(ROUTES.HOME, { replace: true });
         }
-        hasProcessedInitialParams.current = true;
+        hasProcessedInitialFilters.current = true;
+        hasProcessedInitialScroll.current = true;
         return;
       }
 
-      // Handle filters from URL only when explicitly present (e.g. shared link or QR redirect)
-      if (filtersParam && filtersParam.length > 2) {
-        try {
-          const parsedFilters: FilterState = JSON.parse(decodeURIComponent(filtersParam));
-          if (filters.setFilterStateFromURL) {
-            filters.setFilterStateFromURL(parsedFilters);
-          } else {
-            if (parsedFilters.categories?.length) filters.setSelectedCategories(parsedFilters.categories);
-            if (parsedFilters.locations?.length) filters.setSelectedLocations(parsedFilters.locations);
-            if (parsedFilters.foods?.length) filters.setSelectedFoods(parsedFilters.foods);
-            if (parsedFilters.days?.length) filters.setSelectedDays(parsedFilters.days);
-            if (parsedFilters.priceRange) filters.setPriceRange(parsedFilters.priceRange);
-            if (parsedFilters.dateRange) filters.setDateRange(new Date(parsedFilters.dateRange));
-            if (parsedFilters.addedSince) filters.setAddedSince(new Date(parsedFilters.addedSince));
-            if (parsedFilters.requiresRegistration !== undefined)
-              filters.setRequiresRegistration(parsedFilters.requiresRegistration);
-            if (parsedFilters.searchQuery) filters.setSearchQuery(parsedFilters.searchQuery);
-          }
-        } catch (err) {
-          console.error("Failed to parse filters from URL:", err);
+      // Handle filters from URL only when explicitly present (e.g. shared link
+      // or QR redirect). Cap length to protect against oversized/attacker-
+      // controlled blobs.
+      const MAX_FILTERS_PARAM_BYTES = 4096;
+      if (
+        filtersParam &&
+        filtersParam.length > 2 &&
+        filtersParam.length <= MAX_FILTERS_PARAM_BYTES
+      ) {
+        const parsed = parseFilterQueryString(`${QP.FILTERS}=${filtersParam}`);
+        if (parsed) {
+          filters.setFilterStateFromURL(parsed);
         }
       }
+      hasProcessedInitialFilters.current = true;
+    }
 
-      // Handle eventId scroll
-      if (eventId) {
-        const event = events.find((e) => e.id === parseInt(eventId));
-        if (event) {
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              const eventCard = document.querySelector(
-                `[data-event-id="${eventId}"]`
-              );
-              eventCard?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, SCROLL_INTO_VIEW_DELAY_MS);
-          });
-        }
+    // Handle eventId scroll. Only mark processed once we've actually found the
+    // event in the loaded events array (cold-load deep-link support).
+    if (!hasProcessedInitialScroll.current && eventId) {
+      if (events.length === 0) {
+        // Wait for events to load; effect will re-run when events changes.
+        return;
       }
-
-      hasProcessedInitialParams.current = true;
+      const event = events.find((e) => e.id === parseInt(eventId, 10));
+      if (event) {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const eventCard = document.querySelector(
+              `[data-event-id="${eventId}"]`,
+            );
+            eventCard?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, SCROLL_INTO_VIEW_DELAY_MS);
+        });
+        hasProcessedInitialScroll.current = true;
+      } else {
+        // Events are loaded but this event is not in the list — don't keep
+        // re-entering. Mark as processed.
+        hasProcessedInitialScroll.current = true;
+      }
+    } else if (!eventId) {
+      hasProcessedInitialScroll.current = true;
     }
   }, [location.pathname, searchParams, navigate, filters, events]);
 

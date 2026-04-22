@@ -23,17 +23,8 @@ import { MultiSelect } from "@/shared/ui/multi-select";
 import { useProfile } from "@/features/settings/hooks/useProfile";
 import { availableSchools } from "@/shared/constants/schools";
 import { getAvailableInterests } from "@/shared/data/interests";
-import { toFacultyKey } from "@/shared/utils/string";
-
-const availableFaculties = [
-  "Engineering",
-  "Mathematics",
-  "Science",
-  "Arts",
-  "Environment",
-  "Health",
-  "Applied Health Sciences",
-];
+import { toFacultyTranslationKey } from "@/shared/utils/string";
+import { FACULTY_OPTIONS } from "@/features/auth";
 
 interface ProfileTabProps {
   userEmail: string | null;
@@ -68,7 +59,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-2 border-border">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -138,19 +129,11 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
                 <SelectValue placeholder={t("settings.profile.selectFaculty")} />
               </SelectTrigger>
               <SelectContent>
-                {availableFaculties.map((faculty) => {
-                  const facultyKey = toFacultyKey(faculty);
-                  const translationKey = `onboarding.faculties.${
-                    facultyKey === "appliedhealthsciences"
-                      ? "appliedHealthSciences"
-                      : facultyKey
-                  }`;
-                  return (
-                    <SelectItem key={faculty} value={faculty}>
-                      {t(translationKey) || faculty}
-                    </SelectItem>
-                  );
-                })}
+                {FACULTY_OPTIONS.map((faculty) => (
+                  <SelectItem key={faculty} value={faculty}>
+                    {t(toFacultyTranslationKey(faculty)) || faculty}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

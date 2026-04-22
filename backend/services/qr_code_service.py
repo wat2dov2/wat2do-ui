@@ -4,13 +4,18 @@ import logging
 import uuid
 from datetime import datetime
 
+from postgrest.exceptions import APIError
+
+from core.constants import PG_UNIQUE_VIOLATION
 from core.database import get_sb
-from core.exceptions import NotFoundError, ValidationError
+from core.exceptions import ConflictError, NotFoundError, ValidationError
 
 log = logging.getLogger(__name__)
 from core.errors import POSTER_NOT_FOUND, REQUIRES_LOCATION
 from core.tables import QR_CODES, QR_CODE_SCANS
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
+
+POSTER_ALREADY_EXISTS = "Poster with this ID already exists"
 
 
 def _coerce_destination_id(
@@ -39,11 +44,20 @@ def get_qr_code_by_id(qr_code_id: str) -> QrCodeResponse | None:
     return QrCodeResponse.model_validate(r.data[0])
 
 
-def upsert_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
-    sb = get_sb()
-    existing = get_qr_code_by_id(data.id)
+def _build_qr_payload(
+    data: QrCodeCreate,
+    *,
+    created_by: str,
+    is_active: bool,
+) -> dict:
+    """Assemble the PostgREST payload for a QR row.
+
+    ``is_active`` is passed in explicitly: inserts always start
+    inactive, updates preserve the existing value (see
+    ``update_qr_code``).
+    """
     dest_id = str(data.destination_id) if data.destination_id is not None else None
-    payload = {
+    return {
         "id": data.id,
         "name": data.name,
         "description": data.description,
@@ -51,16 +65,73 @@ def upsert_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
         "destination_id": dest_id,
         "filters": data.filters,
         "created_by": created_by,
-        "is_active": existing.is_active if existing else False,
+        "is_active": is_active,
         "image_url": data.image_url,
         "latitude": data.latitude,
         "longitude": data.longitude,
     }
-    if existing:
-        sb.table(QR_CODES).update(payload).eq("id", data.id).execute()
-        return get_qr_code_by_id(data.id)
-    sb.table(QR_CODES).insert(payload).execute()
+
+
+def create_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
+    """Insert a new QR code row.
+
+    Raises ``ConflictError`` (mapped to 409) if *data.id* already exists.
+
+    D18: the explicit pre-check + INSERT is TOCTOU-vulnerable — two
+    parallel POSTs with the same client-supplied ``id`` both see no
+    existing row and both proceed to INSERT.  The second insert raises
+    ``APIError`` with ``PG_UNIQUE_VIOLATION``.  We catch that and map it
+    to ``ConflictError`` with the POSTER_ALREADY_EXISTS message so the
+    race surfaces as a clean 409 with the poster-specific detail
+    instead of the generic "Resource already exists" from the global
+    PostgREST error handler.
+    """
+    existing = get_qr_code_by_id(data.id)
+    if existing is not None:
+        raise ConflictError(POSTER_ALREADY_EXISTS)
+    payload = _build_qr_payload(data, created_by=created_by, is_active=False)
+    try:
+        get_sb().table(QR_CODES).insert(payload).execute()
+    except APIError as e:
+        if e.code == PG_UNIQUE_VIOLATION:
+            log.warning(
+                "QR code insert raced with concurrent create for id=%s: %s",
+                data.id, e,
+            )
+            raise ConflictError(POSTER_ALREADY_EXISTS) from e
+        raise
     return get_qr_code_by_id(data.id)
+
+
+def update_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
+    """Update an existing QR code row.
+
+    Caller MUST have verified ownership (or admin status) before calling
+    this.  *created_by* is the trusted value that will be written to the
+    row — the PATCH router passes ``existing.created_by`` so the
+    original owner cannot be overwritten.  Raises ``NotFoundError`` if
+    the row does not exist.
+    """
+    existing = get_qr_code_by_id(data.id)
+    if existing is None:
+        raise NotFoundError(POSTER_NOT_FOUND)
+    payload = _build_qr_payload(data, created_by=created_by, is_active=existing.is_active)
+    get_sb().table(QR_CODES).update(payload).eq("id", data.id).execute()
+    return get_qr_code_by_id(data.id)
+
+
+def upsert_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
+    """Backward-compatible upsert.
+
+    Prefer ``create_qr_code`` for POST and ``update_qr_code`` for PATCH
+    so the caller's intent is explicit.  Left in place for any internal
+    callers (e.g. tests / seeds) that rely on idempotent upsert
+    semantics.
+    """
+    existing = get_qr_code_by_id(data.id)
+    if existing is not None:
+        return update_qr_code(data, created_by=created_by)
+    return create_qr_code(data, created_by=created_by)
 
 
 def activate_poster_and_record_scan(

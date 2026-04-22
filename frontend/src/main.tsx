@@ -9,8 +9,18 @@ import { loadLanguage } from '@/shared/lib/loadLanguage'
 import { getStoredLanguage } from '@/shared/lib/i18n'
 import App from '@/App.tsx'
 import ErrorBoundary from '@/app/ErrorBoundary'
-import { initializeAuth } from '@/features/auth/api/auth.api'
+import { fetchProfileAPI, initializeAuth } from '@/features/auth/api/auth.api'
+import { setOnAfterRefresh } from '@/shared/services/apiClient'
 import { loadAppConstants } from '@/shared/api/metaApi'
+
+// After a silent 401 token refresh, re-fetch /users/me so cached
+// role/hasClub stay in sync with the backend (AUTH-010). The main.tsx
+// bootstrap is the single place wiring this — no cycle with auth.api.ts.
+setOnAfterRefresh(() => {
+  fetchProfileAPI().catch((err) =>
+    console.error('Post-refresh profile fetch failed:', err),
+  )
+})
 
 if (import.meta.env.DEV) {
   try {
@@ -40,10 +50,19 @@ async function initApp() {
     console.error("App constants initialization failed, using fallbacks:", err);
   }
 
+  // A14: cap the auth bootstrap on a hard 5 s timeout so a hanging refresh
+  // request (Supabase slowness, DNS weirdness, etc.) cannot stall the whole
+  // splash screen indefinitely.  Errors/timeouts are swallowed — the app still
+  // renders in an unauthenticated state.
   try {
-    await initializeAuth();
+    await Promise.race([
+      initializeAuth(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("initializeAuth timed out")), 5000),
+      ),
+    ]);
   } catch (err) {
-    console.error("Auth initialization failed, continuing without session:", err);
+    console.error("Auth initialization failed or timed out, continuing without session:", err);
   }
 
   // Always render — a degraded app is better than a white screen.

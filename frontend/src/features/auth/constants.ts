@@ -5,9 +5,6 @@
 /** Number of digits in an OTP verification code. */
 export const OTP_LENGTH = 6;
 
-/** Delay (ms) for the OTP verification animation before completing. */
-export const OTP_VERIFICATION_DELAY_MS = 800;
-
 /** Duration (ms) for the faculty selection splash animation. */
 export const SPLASH_ANIMATION_MS = 800;
 

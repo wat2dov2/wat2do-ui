@@ -44,7 +44,7 @@ export function OnboardingCompleteStep({
       </DialogHeader>
 
       {(emailUsername || selectedFaculty || selectedInterests.length > 0) && (
-        <div className="w-full rounded-xl p-4 mb-6 text-left text-sm bg-muted">
+        <div className="w-full rounded-xl p-4 mb-6 text-left text-sm bg-secondary">
           {emailUsername && (
             <p className="mb-1 text-foreground">
               <span className="text-muted-foreground">{t("settings.profile.email")}:</span>{" "}

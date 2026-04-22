@@ -1,9 +1,7 @@
-import { useState, useCallback, useMemo, startTransition } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import { useTranslation } from "react-i18next";
-import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "lucide-react";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { useSearchStore } from "@/features/search/store/search.store";
-import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
 import { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";
 import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
@@ -11,17 +9,11 @@ import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 
 /**
- * Hook for search and filtering orchestration
- * 
- * Refactored to:
- * - Remove UI state (expanded sections, popups) - moved to components
- * - Remove useEffect for click outside - handled by components
- * - Focus on business logic only
- * 
- * Separation of concerns:
- * - State management → useFilterState
+ * Hook for search and filtering orchestration.
+ *
+ * - State management → useFilterState (shallow-subscribed to the store)
  * - Business logic → searchService
- * - UI orchestration → components (not this hook)
+ * - UI state (pie menus, expanded sections) lives in components
  */
 export interface UseSearchOptions {
   events: Event[];
@@ -35,82 +27,58 @@ export function useSearch({
   savedEventIds,
 }: UseSearchOptions) {
   const { t } = useTranslation();
-  
-  // Use base filter state hook
+
   const filterState = useFilterState(profileCompleted);
 
-  // Sort states (business logic, not UI)
+  // Sort state (local to the page)
   const [sortBy, setSortBy] = useState<string>("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  // Saved filter — shared via store so command palette clear-all resets it
+  // Saved filter lives in the search store (it's a filter value).
+  // Dropdown open/closed state is UI-only and lives in the modal store —
+  // read directly by the page container and command palette.
   const savedFilter = useSearchStore((s) => s.savedFilter);
   const setSavedFilter = useSearchStore((s) => s.setSavedFilter);
 
-  // Filter dropdown state — shared via store so command palette can toggle it
-  const showFilterDropdown = useSearchStore((s) => s.showFilterDropdown);
-  const setShowFilterDropdown = useSearchStore((s) => s.setShowFilterDropdown);
+  // clearAllFilters already wraps its set() in startTransition internally,
+  // so we pass the stable store ref directly — no wrapper needed.
+  const handleClearAllFilters = filterState.clearAllFilters;
 
-  // Clear all filters handler (use startTransition to keep UI responsive)
-  const handleClearAllFilters = useCallback(() => {
-    startTransition(() => {
-      filterState.clearAllFilters();
-    });
-  }, [filterState]);
+  // Defer the text query so typing stays responsive while filterEvents runs
+  // on an interruptible boundary.
+  const deferredSearchQuery = useDeferredValue(filterState.searchQuery);
 
-  const todayEventsCount = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return events.filter((event) => {
-      const raw = event.dtstart_utc || event.eventDate || event.date;
-      if (!raw) return false;
-      const d = new Date(raw);
-      return !isNaN(d.getTime()) && d >= today && d < tomorrow;
-    }).length;
-  }, [events]);
+  const freeFoodEventsCount = useMemo(
+    () =>
+      events.filter(
+        (event) => (event.food ?? []).length > 0 && (event.price ?? 0) === 0,
+      ).length,
+    [events],
+  );
 
-  const freeFoodEventsCount = useMemo(() => {
-    return events.filter((event) => ((event.food ?? []).length > 0) && (event.price ?? 0) === 0)
-      .length;
-  }, [events]);
-
-  // Filter events using the service
+  // Filter + sort events.
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
-      searchQuery: filterState.searchQuery,
+      searchQuery: deferredSearchQuery,
       savedFilter,
-      todayFilter: filterState.todayFilter,
-      freeFilter: filterState.freeFilter,
       freeFoodFilter: filterState.freeFoodFilter,
-      forYouFilter: filterState.forYouFilter,
-      thisWeekFilter: filterState.thisWeekFilter,
       selectedDays: filterState.selectedDays,
       priceRange: filterState.priceRange,
       selectedLocations: filterState.selectedLocations,
-      includeFoods: filterState.includeFoods,
       selectedFoods: filterState.selectedFoods,
       selectedCategories: filterState.selectedCategories,
       requiresRegistration: filterState.requiresRegistration,
       profileCompleted,
       savedEventIds,
     });
-
-    // Sort events
     return sortEvents(filtered, { sortBy, sortOrder });
   }, [
     events,
-    filterState.searchQuery,
-    filterState.todayFilter,
-    filterState.freeFilter,
+    deferredSearchQuery,
     filterState.freeFoodFilter,
-    filterState.forYouFilter,
-    filterState.thisWeekFilter,
     filterState.selectedDays,
     filterState.priceRange,
     filterState.selectedLocations,
-    filterState.includeFoods,
     filterState.selectedFoods,
     filterState.selectedCategories,
     filterState.requiresRegistration,
@@ -130,7 +98,6 @@ export function useSearch({
         selectedFoods: filterState.selectedFoods,
         selectedDays: filterState.selectedDays,
         priceRange: filterState.priceRange,
-        dateRange: filterState.dateRange,
         requiresRegistration: filterState.requiresRegistration,
       }),
     [
@@ -139,9 +106,8 @@ export function useSearch({
       filterState.selectedFoods,
       filterState.selectedDays,
       filterState.priceRange,
-      filterState.dateRange,
       filterState.requiresRegistration,
-    ]
+    ],
   );
 
   const categoryPieItems = useMemo(
@@ -149,9 +115,9 @@ export function useSearch({
       availableCategories.map((cat) => ({
         id: cat,
         label: translateCategory(cat, t),
-        icon: <Tag className="w-4 h-4" />,
+        iconName: "Tag" as const,
       })),
-    [t]
+    [t],
   );
 
   const foodPieItems = useMemo(
@@ -163,10 +129,10 @@ export function useSearch({
         return {
           id: food,
           label,
-          icon: <Utensils className="w-4 h-4" />,
+          iconName: "Utensils" as const,
         };
       }),
-    [t]
+    [t],
   );
 
   const dayPieItems = useMemo(
@@ -174,35 +140,19 @@ export function useSearch({
       availableDays.map((day) => ({
         id: day,
         label: t(`days.${day.toLowerCase()}`) || day,
-        icon: <Calendar className="w-4 h-4" />,
+        iconName: "Calendar" as const,
       })),
-    [t]
+    [t],
   );
 
   const sortPieItems = useMemo(
     () => [
-      {
-        id: "date",
-        label: t("filters.date"),
-        icon: <CalendarDays className="w-4 h-4" />,
-      },
-      {
-        id: "title",
-        label: t("filters.title"),
-        icon: <Tag className="w-4 h-4" />,
-      },
-      {
-        id: "location",
-        label: t("filters.location"),
-        icon: <MapPin className="w-4 h-4" />,
-      },
-      {
-        id: "price",
-        label: t("filters.price"),
-        icon: <ArrowUpDown className="w-4 h-4" />,
-      },
+      { id: "date", label: t("filters.date"), iconName: "CalendarDays" as const },
+      { id: "title", label: t("filters.title"), iconName: "Tag" as const },
+      { id: "location", label: t("filters.location"), iconName: "MapPin" as const },
+      { id: "price", label: t("filters.price"), iconName: "ArrowUpDown" as const },
     ],
-    [t]
+    [t],
   );
 
   return {
@@ -219,17 +169,7 @@ export function useSearch({
     savedFilter,
     setSavedFilter,
 
-    // Filter dropdown (UI state - needed for command palette)
-    showFilterDropdown,
-    setShowFilterDropdown,
-
-    // Pie menus (UI state - but needed for pie menu functionality)
-    categoryPieMenu: usePieMenu(),
-    foodPieMenu: usePieMenu(),
-    dayPieMenu: usePieMenu(),
-    sortPieMenu: usePieMenu(),
-
-    // Pie menu items
+    // Pie menu items (data only; menu state lives inside VisualFilters)
     categoryPieItems,
     foodPieItems,
     dayPieItems,
@@ -242,7 +182,6 @@ export function useSearch({
     filterCount,
 
     // Quick filter counts
-    todayEventsCount,
     freeFoodEventsCount,
 
     // Clear all filters

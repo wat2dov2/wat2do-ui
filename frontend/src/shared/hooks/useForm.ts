@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 interface UseFormOptions<T extends Record<string, unknown>> {
   initialData?: T;
@@ -39,7 +39,6 @@ export function useForm<T extends Record<string, unknown>>(
   }, [isEditMode, getDefaults]);
 
   const [formData, setFormData] = useState<T>(getInitialFormData);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const prevIsOpenRef = useRef(isOpen);
 
@@ -48,11 +47,10 @@ export function useForm<T extends Record<string, unknown>>(
   useEffect(() => {
     const wasClosed = !prevIsOpenRef.current && isOpen;
     if (wasClosed) {
-      const newData = isEditMode && initialData 
-        ? initialData 
+      const newData = isEditMode && initialData
+        ? initialData
         : (getDefaults ? getDefaults() : {} as T);
       setFormData(newData);
-      setErrors({});
       setTouched({});
     }
     prevIsOpenRef.current = isOpen;
@@ -60,13 +58,16 @@ export function useForm<T extends Record<string, unknown>>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Validate on change
-  useEffect(() => {
-    if (validate) {
-      const newErrors = validate(formData, touched);
-      setErrors(newErrors);
-    }
-  }, [formData, touched, validate]);
+  // Compute errors via useMemo to avoid infinite loops when `validate` is not
+  // memoized by the caller. This is the same pattern used in useEventForm.
+  const errors = useMemo<Record<string, string>>(() => {
+    if (!validate) return {};
+    return validate(formData, touched);
+    // We intentionally avoid depending on `validate` directly because callers
+    // often pass an inline closure. The computed value only needs to refresh
+    // when formData or touched changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, touched]);
 
   const handleBlur = useCallback((field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -82,14 +83,11 @@ export function useForm<T extends Record<string, unknown>>(
   const reset = useCallback(() => {
     const newData = getInitialFormData();
     setFormData(newData);
-    setErrors({});
     setTouched({});
   }, [getInitialFormData]);
 
   // Check if form is valid
-  const isValid = validate
-    ? Object.keys(validate(formData, touched)).length === 0
-    : true;
+  const isValid = Object.keys(errors).length === 0;
 
   return {
     formData,

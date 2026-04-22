@@ -63,7 +63,7 @@ export function AIGenerationInput({
             if (aiPrompt.trim() && !aiGenerating) onAiGenerate();
           }}
           disabled={aiGenerating}
-          className="bg-muted text-xs pr-8"
+          className="bg-secondary text-xs pr-8"
         />
         {aiPrompt && !aiGenerating && (
           <button

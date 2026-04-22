@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import (
     MAX_AVATAR_URL_LENGTH,
@@ -30,6 +30,8 @@ class UserBase(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     username: str | None = Field(default=None, max_length=MAX_USERNAME_LENGTH)
     full_name: str | None = Field(default=None, max_length=MAX_FULL_NAME_LENGTH)
     avatar_url: str | None = Field(default=None, max_length=MAX_AVATAR_URL_LENGTH)
@@ -40,10 +42,25 @@ class UserUpdate(BaseModel):
 
 
 class UserProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     faculty: str | None = Field(default=None, max_length=MAX_FACULTY_LENGTH)
     school: str | None = Field(default=None, max_length=MAX_SCHOOL_LENGTH)
     interests: list[InterestStr] | None = Field(default=None, max_length=MAX_INTERESTS_COUNT)
     is_first_year: bool | None = None
+
+
+class UserRoleUpdate(BaseModel):
+    """Admin-only payload for rotating a user's role.
+
+    Separate from ``UserUpdate`` so ``role`` never leaks into a self-service
+    update path — having one shared model across trust boundaries is the
+    exact defense-in-depth gap flagged in the schema audit (S2).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    role: UserRole
 
 
 class UserResponse(UserBase):

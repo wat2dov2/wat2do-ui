@@ -1,59 +1,71 @@
 import { useState, useCallback } from "react";
-import { updateEventSubmission } from "@/features/admin/api/admin.api";
-import { SUBMISSION_APPROVED, SUBMISSION_REJECTED } from "@/shared/constants/statuses";
+import { useAdminStore } from "@/features/admin/store/admin.store";
 import type { EventSubmission } from "@/shared/types";
 import { QP } from "@/shared/constants/queryParams";
 
 interface UseAdminSubmissionsActionsOptions {
-  onApprove?: (submission: EventSubmission) => void;
   searchParams: URLSearchParams;
-  setSearchParams: (params: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams)) => void;
-  setRefreshKey: (key: number | ((prev: number) => number)) => void;
+  setSearchParams: (
+    params: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
+  ) => void;
 }
 
 /**
- * Hook for managing submission actions (approve/reject) in AdminSubmissionsPage
+ * Hook for managing submission actions (approve/reject) in AdminSubmissionsPage.
+ *
+ * Delegates mutations to the admin store, which patches the local submissions
+ * list on success — no refreshKey needed. All API calls are wrapped in
+ * try/catch and errors are logged per CLAUDE.md.
  */
 export function useAdminSubmissionsActions({
-  onApprove,
   searchParams,
   setSearchParams,
-  setRefreshKey,
 }: UseAdminSubmissionsActionsOptions) {
   const [rejectSubmissionId, setRejectSubmissionId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const approveSubmission = useAdminStore((s) => s.approveSubmission);
+  const rejectSubmission = useAdminStore((s) => s.rejectSubmission);
 
-  const handleApprove = useCallback(async (submission: EventSubmission) => {
-    await updateEventSubmission(submission.id, SUBMISSION_APPROVED);
-    if (onApprove) {
-      onApprove(submission);
-    }
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete(QP.SUBMISSION_ID);
-    setSearchParams(newParams);
-    setRefreshKey((prev) => prev + 1);
-  }, [onApprove, searchParams, setSearchParams, setRefreshKey]);
+  const handleApprove = useCallback(
+    async (submission: EventSubmission) => {
+      try {
+        await approveSubmission(submission.id);
+      } catch (err) {
+        console.error("Failed to approve submission:", err);
+        return;
+      }
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete(QP.SUBMISSION_ID);
+      setSearchParams(newParams);
+    },
+    [approveSubmission, searchParams, setSearchParams],
+  );
 
   const handleRejectClick = useCallback((submission: EventSubmission) => {
     setRejectSubmissionId(submission.id);
     setRejectionReason("");
   }, []);
 
-  const handleRejectConfirm = useCallback(async (submissionIdParam: string | null) => {
-    if (rejectSubmissionId && rejectionReason.trim()) {
-      await updateEventSubmission(rejectSubmissionId, SUBMISSION_REJECTED, rejectionReason.trim());
+  const handleRejectConfirm = useCallback(
+    async (submissionIdParam: string | null) => {
+      if (!rejectSubmissionId || !rejectionReason.trim()) return;
+      try {
+        await rejectSubmission(rejectSubmissionId, rejectionReason.trim());
+      } catch (err) {
+        console.error("Failed to reject submission:", err);
+        return;
+      }
+      const rejectedId = rejectSubmissionId;
       setRejectSubmissionId(null);
       setRejectionReason("");
-      setRefreshKey((prev) => prev + 1);
-
-      // Close modal if the rejected submission was open
-      if (submissionIdParam === rejectSubmissionId) {
+      if (submissionIdParam === rejectedId) {
         const newParams = new URLSearchParams(searchParams);
         newParams.delete(QP.SUBMISSION_ID);
         setSearchParams(newParams);
       }
-    }
-  }, [rejectSubmissionId, rejectionReason, searchParams, setSearchParams, setRefreshKey]);
+    },
+    [rejectSubmissionId, rejectionReason, rejectSubmission, searchParams, setSearchParams],
+  );
 
   return {
     rejectSubmissionId,

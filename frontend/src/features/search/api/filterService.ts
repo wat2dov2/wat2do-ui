@@ -3,23 +3,54 @@ import { QP } from "@/shared/constants/queryParams";
 
 /**
  * Filter Service
- * Handles filter state management and transformations
+ * Serializer/parser used by the JSON editor and URL hydration.
  */
 
+const EMPTY_FILTER_STATE: FilterState = {
+  searchQuery: "",
+  categories: [],
+  locations: [],
+  foods: [],
+  days: [],
+  priceRange: { min: "", max: "" },
+  requiresRegistration: false,
+};
+
 /**
- * Create default filter state
+ * Shape of the search-store filter values consumed by the UI.
+ * Intentionally independent from the store module so this mapping
+ * stays a pure data transform (no Zustand imports here).
  */
-export function createFilterState(): FilterState {
+export interface SearchStoreFilterValues {
+  searchQuery: string;
+  selectedCategories: string[];
+  selectedLocations: string[];
+  selectedFoods: string[];
+  selectedDays: string[];
+  priceRange: { min: string; max: string };
+  requiresRegistration: boolean;
+}
+
+/**
+ * Map Zustand search-store filter values to the shared `FilterState`
+ * shape used by the JSON editor and URL params.
+ *
+ * Key rename: the store uses `selectedCategories`/`selectedLocations`/
+ * `selectedFoods`/`selectedDays` (UI-oriented naming), while `FilterState`
+ * uses shorter `categories`/`locations`/`foods`/`days` keys (URL/JSON
+ * friendly). All other keys pass through unchanged.
+ */
+export function storeStatesToFilterState(
+  values: SearchStoreFilterValues,
+): FilterState {
   return {
-    searchQuery: "",
-    categories: [],
-    locations: [],
-    foods: [],
-    days: [],
-    priceRange: { min: "", max: "" },
-    dateRange: "",
-    addedSince: "",
-    requiresRegistration: false,
+    searchQuery: values.searchQuery,
+    categories: values.selectedCategories,
+    locations: values.selectedLocations,
+    foods: values.selectedFoods,
+    days: values.selectedDays,
+    priceRange: values.priceRange,
+    requiresRegistration: values.requiresRegistration,
   };
 }
 
@@ -34,10 +65,14 @@ export function serializeFiltersToJSON(filters: FilterState): string {
  * Parse filter state from JSON string
  */
 export function parseFiltersFromJSON(
-  jsonString: string
+  jsonString: string,
 ): { filters: FilterState; error: string | null } {
   try {
     const parsed = JSON.parse(jsonString);
+    const priceRaw =
+      typeof parsed.priceRange === "object" && parsed.priceRange
+        ? (parsed.priceRange as Record<string, unknown>)
+        : null;
     const filters: FilterState = {
       searchQuery: typeof parsed.searchQuery === "string" ? parsed.searchQuery : "",
       categories: Array.isArray(parsed.categories)
@@ -53,21 +88,9 @@ export function parseFiltersFromJSON(
         ? parsed.days.filter((d): d is string => typeof d === "string")
         : [],
       priceRange: {
-        min:
-          typeof parsed.priceRange === "object" &&
-          parsed.priceRange &&
-          typeof (parsed.priceRange as Record<string, unknown>).min === "string"
-            ? ((parsed.priceRange as Record<string, unknown>).min as string)
-            : "",
-        max:
-          typeof parsed.priceRange === "object" &&
-          parsed.priceRange &&
-          typeof (parsed.priceRange as Record<string, unknown>).max === "string"
-            ? ((parsed.priceRange as Record<string, unknown>).max as string)
-            : "",
+        min: priceRaw && typeof priceRaw.min === "string" ? priceRaw.min : "",
+        max: priceRaw && typeof priceRaw.max === "string" ? priceRaw.max : "",
       },
-      dateRange: typeof parsed.dateRange === "string" ? parsed.dateRange : "",
-      addedSince: typeof parsed.addedSince === "string" ? parsed.addedSince : "",
       requiresRegistration:
         typeof parsed.requiresRegistration === "boolean"
           ? parsed.requiresRegistration
@@ -77,20 +100,18 @@ export function parseFiltersFromJSON(
   } catch (err) {
     console.error("Failed to parse filters from JSON:", err);
     return {
-      filters: createFilterState(),
+      filters: { ...EMPTY_FILTER_STATE },
       error: "Invalid JSON format",
     };
   }
 }
 
-// Canonical home: shared/utils/filter.ts — re-exported for feature consumers
-export { buildFilterQueryString } from "@/shared/utils/filter";
-
 /**
- * Parse filter state from URL query string
+ * Parse filter state from a URL query string fragment (e.g. "filters=…").
+ * Returns null for missing or malformed payloads.
  */
 export function parseFilterQueryString(
-  queryString: string
+  queryString: string,
 ): FilterState | null {
   try {
     const params = new URLSearchParams(queryString);
@@ -98,20 +119,11 @@ export function parseFilterQueryString(
     if (!filtersParam) return null;
 
     const decoded = decodeURIComponent(filtersParam);
-    const { filters } = parseFiltersFromJSON(decoded);
+    const { filters, error } = parseFiltersFromJSON(decoded);
+    if (error) return null;
     return filters;
   } catch (err) {
     console.error("Failed to parse filter query string:", err);
     return null;
   }
-}
-
-// Canonical home: shared/utils/filter.ts — re-exported for backward compat
-export { hasActiveFilters } from "@/shared/utils/filter";
-
-/**
- * Clear all filters (return to default state)
- */
-export function clearFilters(): FilterState {
-  return createFilterState();
 }

@@ -4,14 +4,13 @@
  * Uses useReducer for complex state management
  */
 
-import { useReducer, useMemo, useEffect, useRef, useState, startTransition } from "react";
+import { useReducer, useMemo, useEffect, useRef, startTransition } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   filterAdminEvents,
   getEventCategories,
-  getReportedEvents,
 } from "@/features/admin/api/admin.api";
-import { REPORT_PENDING } from "@/shared/constants/statuses";
+import { useAdminStore } from "@/features/admin/store/admin.store";
 import type { Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
@@ -78,24 +77,20 @@ export function useAdminEventsPage({
 }: UseAdminEventsPageOptions) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [reportedEventIds, setReportedEventIds] = useState<Set<number>>(new Set());
+  const reportedEventIds = useAdminStore((s) => s.reportedEventIds);
+  const fetchReportedEventIds = useAdminStore((s) => s.fetchReportedEventIds);
   const prevFiltersRef = useRef({
     searchQuery: state.searchQuery,
     selectedCategory: state.selectedCategory,
     showReportedOnly: state.showReportedOnly,
   });
 
-  // Fetch reported events on mount
+  // Defer to the admin store (TTL-cached) for reported event IDs.
   useEffect(() => {
-    getReportedEvents()
-      .then((reports) => {
-        const pendingIds = new Set(
-          reports.filter((r) => r.status === REPORT_PENDING).map((r) => r.eventId),
-        );
-        setReportedEventIds(pendingIds);
-      })
-      .catch((err) => console.error("Failed to fetch reported events:", err));
-  }, []);
+    fetchReportedEventIds().catch((err) =>
+      console.error("Failed to fetch reported events:", err),
+    );
+  }, [fetchReportedEventIds]);
 
   // Get eventId from URL
   const eventIdParam = searchParams.get(QP.EVENT_ID);

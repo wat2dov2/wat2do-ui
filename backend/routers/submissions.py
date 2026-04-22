@@ -1,10 +1,16 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_current_user, get_admin_user, resolve_db_user
-from core.constants import MAX_STATUS_FILTER_LENGTH
+from core.auth import get_admin_user, get_current_user, get_db_user
+from core.constants import (
+    MAX_STATUS_FILTER_LENGTH,
+    SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
+    SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
+)
+from core.exceptions import get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
+from core.rate_limit import RateLimiter
 from schemas.submission import SubmissionCreate, SubmissionUpdate, SubmissionResponse
 from core.errors import SUBMISSION_NOT_FOUND
 from services import submission_service
@@ -13,9 +19,25 @@ router = APIRouter(prefix="/submissions", tags=["submissions"])
 log = logging.getLogger(__name__)
 
 
+# Per-user rate limit on submission creation.  Stops a single account from
+# flooding the admin review queue (audit I3).  Keyed on the authenticated
+# user's supabase-auth id.
+_submission_create_limiter = RateLimiter(
+    max_requests=SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
+)
+
+
+def _submission_rate_key(auth_user: dict = Depends(get_current_user)) -> str:
+    return auth_user["id"]
+
+
 @router.post("/", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
-def create_submission(data: SubmissionCreate, auth_user: dict = Depends(get_current_user)):
-    user = resolve_db_user(auth_user)
+def create_submission(
+    data: SubmissionCreate,
+    user=Depends(get_db_user),
+    _rl: None = Depends(_submission_create_limiter.dependency(key_func=_submission_rate_key)),
+):
     return submission_service.create_submission(str(user.id), data.event_data)
 
 
@@ -35,10 +57,7 @@ def list_submissions(
 
 @router.get("/{submission_id}", response_model=SubmissionResponse)
 def get_submission(submission_id: str, _: dict = Depends(get_admin_user)):
-    row = submission_service.get_submission_by_id(submission_id)
-    if not row:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=SUBMISSION_NOT_FOUND)
-    return row
+    return get_or_404(submission_service.get_submission_by_id(submission_id), SUBMISSION_NOT_FOUND)
 
 
 @router.patch("/{submission_id}", response_model=SubmissionResponse)
@@ -47,15 +66,12 @@ def update_submission(
     data: SubmissionUpdate,
     _: dict = Depends(get_admin_user),
 ):
-    row = submission_service.update_submission(
-        submission_id, data.status, data.rejection_reason,
+    return get_or_404(
+        submission_service.update_submission(submission_id, data.status, data.rejection_reason),
+        SUBMISSION_NOT_FOUND,
     )
-    if not row:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=SUBMISSION_NOT_FOUND)
-    return row
 
 
 @router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_submission(submission_id: str, _: dict = Depends(get_admin_user)):
-    if not submission_service.delete_submission(submission_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=SUBMISSION_NOT_FOUND)
+    get_or_404(submission_service.delete_submission(submission_id), SUBMISSION_NOT_FOUND)

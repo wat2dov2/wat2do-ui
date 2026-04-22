@@ -6,7 +6,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from core.auth import get_current_user, is_admin, require_owner_or_admin
+from core.auth import get_authorized_resource, get_current_user, is_admin
 from core.constants import MAX_SESSION_ID_LENGTH, MAX_USER_AGENT_LENGTH
 
 log = logging.getLogger(__name__)
@@ -21,11 +21,9 @@ router = APIRouter(prefix="/qr", tags=["qr"])
 
 def _get_poster_or_404_authorized(qr_code_id: str, user: dict) -> QrCodeResponse:
     """Fetch a poster by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
-    existing = qr_code_service.get_qr_code_by_id(qr_code_id)
-    if not existing:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=POSTER_NOT_FOUND)
-    require_owner_or_admin(user, existing.created_by)
-    return existing
+    return get_authorized_resource(
+        lambda: qr_code_service.get_qr_code_by_id(qr_code_id), POSTER_NOT_FOUND, user,
+    )
 
 
 @router.get("/", response_model=PaginatedResponse[QrCodeResponse])
@@ -96,7 +94,11 @@ def create_poster(
     data: QrCodeCreate,
     user: dict = Depends(get_current_user),
 ):
-    return qr_code_service.upsert_qr_code(data, created_by=user["id"])
+    # INSERT-only: if the id already exists, create_qr_code raises
+    # ConflictError -> 409.  Previously this was an upsert which allowed
+    # any authenticated user to hijack an existing poster by guessing its
+    # id and reposting with their own destination_id.
+    return qr_code_service.create_qr_code(data, created_by=user["id"])
 
 
 @router.patch("/{qr_code_id}", response_model=QrCodeResponse)
@@ -108,7 +110,9 @@ def update_poster(
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
     existing = _get_poster_or_404_authorized(qr_code_id, user)
-    return qr_code_service.upsert_qr_code(data, created_by=existing.created_by)
+    # Pass the trusted original created_by so a PATCH body cannot
+    # transfer ownership to a different user.
+    return qr_code_service.update_qr_code(data, created_by=existing.created_by)
 
 
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)

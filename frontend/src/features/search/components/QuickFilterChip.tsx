@@ -15,7 +15,7 @@ export function QuickFilterChip({ icon, label, active, onClick, badge }: QuickFi
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
         active
           ? "bg-primary/80 text-primary-foreground"
-          : "bg-muted text-muted-foreground hover:bg-accent/60 dark:hover:bg-accent/60"
+          : "bg-secondary text-muted-foreground hover:bg-accent/60 dark:hover:bg-accent/60"
       }`}
     >
       {icon}

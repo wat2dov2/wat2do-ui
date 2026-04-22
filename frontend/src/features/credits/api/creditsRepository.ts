@@ -18,18 +18,21 @@ export async function fetchBalance(): Promise<number> {
 }
 
 /**
- * Add credits via the backend
+ * Add credits via the backend.
+ *
+ * Backend contract (admin-only): POST /credits/add { user_id, amount }.
+ * The frontend must send both fields — passing only `{ amount }` fails
+ * Pydantic validation with a 422. Non-admin callers will receive a 403.
  */
-export async function addCreditsAPI(amount: number): Promise<number> {
-  const res = await api.post<CreditBalanceResponse>("/credits/add", { amount });
+export async function addCreditsAPI(
+  userId: string,
+  amount: number,
+): Promise<number> {
+  const res = await api.post<CreditBalanceResponse>("/credits/add", {
+    user_id: userId,
+    amount,
+  });
   return res.balance;
-}
-
-/**
- * Fetch user's promotions from the backend
- */
-export async function fetchPromotions(): Promise<PromotionResponse[]> {
-  return api.get<PromotionResponse[]>("/promotions/");
 }
 
 /**
@@ -47,7 +50,7 @@ export async function createPromotionAPI(
 }
 
 /**
- * Fetch all currently active promoted event IDs (public endpoint)
+ * Fetch all currently active promoted event IDs (public endpoint — no auth).
  */
 export async function fetchActivePromotedEventIds(): Promise<number[]> {
   return api.get<number[]>("/promotions/active-ids");

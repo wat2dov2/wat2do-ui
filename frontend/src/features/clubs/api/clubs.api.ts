@@ -42,21 +42,22 @@ export function filterClubs(
   return filtered;
 }
 
-export async function getClubCategories(): Promise<string[]> {
-  const clubs = await getAllClubs();
+export async function getClubCategories(existingClubs?: Club[]): Promise<string[]> {
+  const clubs = existingClubs ?? await getAllClubs();
   const cats = new Set<string>();
   clubs.forEach((c) => c.categories.forEach((cat) => cats.add(cat)));
   return Array.from(cats).sort();
 }
 
-export async function getClubTypes(): Promise<string[]> {
-  const clubs = await getAllClubs();
+export async function getClubTypes(existingClubs?: Club[]): Promise<string[]> {
+  const clubs = existingClubs ?? await getAllClubs();
   const types = new Set<string>();
   clubs.forEach((c) => types.add(c.club_type));
   return Array.from(types).sort();
 }
 
 export async function loadClubsData(): Promise<{ clubs: Club[]; categories: string[] }> {
-  const [clubs, categories] = await Promise.all([getAllClubs(), getClubCategories()]);
+  const clubs = await getAllClubs();
+  const categories = await getClubCategories(clubs);
   return { clubs, categories };
 }

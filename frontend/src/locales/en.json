@@ -179,6 +179,30 @@
       "verifyEmail": "Verify your email"
     }
   },
+  "auth": {
+    "tagline": "Campus events",
+    "heading": "Discover what's happening on campus.",
+    "signupDescription": "Create your account to save events, personalize your feed, and get recommendations for your school.",
+    "loginDescription": "Sign in to access your saved events and personalized feed.",
+    "emailPlaceholder": "you@uwaterloo.ca",
+    "passwordPlaceholderSignup": "Create a password (min 6 chars)",
+    "passwordPlaceholderLogin": "Password",
+    "createAccount": "Create account",
+    "signIn": "Sign in",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "signInLink": "Sign in",
+    "createOneLink": "Create one",
+    "termsNotice": "By continuing, you agree to the platform terms and event community guidelines.",
+    "consentHeading": "Data, safety, and your campus feed",
+    "consentDescription": "How we keep event discovery safe and useful for students.",
+    "consentControlData": "You control your profile data and can update or delete your account anytime.",
+    "consentNoSell": "We do not sell your data to third parties or data brokers.",
+    "consentAnonymized": "We may review anonymized usage patterns to improve event recommendations.",
+    "consentAgreeTerms": "I agree to the platform terms and acceptable use policy for campus event discovery.",
+    "consentSubscribeUpdates": "Subscribe to occasional updates about new features and campus event highlights.",
+    "signedInAs": "Signed in as"
+  },
   "onboarding": {
     "faculties": {
       "engineering": "Engineering",
@@ -189,7 +213,28 @@
       "health": "Health",
       "appliedHealthSciences": "Applied Health Sciences"
     },
-    "stepProgress": "Step {{step}} of {{total}}"
+    "stepProgress": "Step {{step}} of {{total}}",
+    "safetyTitle": "Welcome to your campus events home.",
+    "safetyDescription": "We help you discover what is happening around your school and connect with communities that match your interests.",
+    "safetySaveEvents": "Save events, track deadlines, and quickly filter by what matters to you.",
+    "safetySafeguards": "Community and safety safeguards help keep submissions high quality and trustworthy.",
+    "doneTitle": "You're all set!",
+    "doneDescription": "Your personalized campus feed is ready. Time to discover what's happening around you.",
+    "doneButton": "Let's explore",
+    "gooseName": "Mr. Goose",
+    "searchPlaceholder": "Search or select event types...",
+    "doneNextLabel": "Take me to Wat2Do!",
+    "gooseStep0": "Hey there!",
+    "gooseStep1": "Welcome to the Wat2Do family! We're a collective with 1 goal: to create as many memories as possible in our short time in university",
+    "gooseStep2": "Everyone here is into something different. What kind of events are you into?",
+    "gooseStep3WithSchool": "5 other students have the exact same interests! Now, which of these from {{school}} catch your eye?",
+    "gooseStep3Default": "Love it, this is how we find the good stuff. Which of these catch your eye?",
+    "gooseStep4": "Gotcha, and which faculty are you in?",
+    "gooseStep5": "Ding! Your personalized feed is hot, fresh, and ready to serve!",
+    "year": {
+      "yesFirstYear": "Yep, brand new!",
+      "noReturning": "Nope, been here"
+    }
   },
   "filters": {
     "filtersHeader": "Filters",
@@ -220,6 +265,9 @@
     "descending": "Descending",
     "aiFilterGeneration": "AI Filter Generation",
     "aiFilterPlaceholder": "Describe filters (e.g. 'free food events this week')...",
+    "aiSignInRequired": "Sign in to use AI filter generation.",
+    "aiNotAvailable": "AI generation is not available. Please check server configuration.",
+    "aiGenerateFailed": "Failed to generate filters. Please try again.",
     "editJsonDirectly": "Edit JSON directly. Changes apply automatically."
   },
   "commands": {

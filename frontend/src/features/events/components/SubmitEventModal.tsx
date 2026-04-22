@@ -1,44 +1,26 @@
-import React, { useReducer, useMemo, useCallback, useState, useEffect } from "react";
+import React, { useReducer, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
-  DialogClose,
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { Button } from "@/shared/ui/button";
-import { LoadingButton } from "@/shared/ui/loading-button";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import {
-  Field,
-  FieldGroup,
-  FieldSeparator,
-} from "@/shared/ui/field";
-import { AIGenerationInput } from "@/features/search";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
 import { useEventFormAI } from "@/features/events/hooks/useEventFormAI";
 import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromotion";
+import { useSubmitEvent } from "@/features/events/hooks/useSubmitEvent";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
-import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
-import { useConfetti } from "@/shared/hooks/useConfetti";
 import { useModalState } from "@/shared/hooks/useModalState";
-import { EventSuccessScreen } from "@/features/events/components/EventForm/EventForm/EventSuccessScreen";
+import { EventFormStep } from "@/features/events/components/EventFormStep";
+import { SubmitSuccessStep } from "@/features/events/components/SubmitSuccessStep";
 import { PromotionUpsell } from "@/features/events/components/EventForm/EventForm/PromotionUpsell";
 import { PromotionSuccessScreen } from "@/features/events/components/EventForm/EventForm/PromotionSuccessScreen";
-import { EventFormPreview } from "@/features/events/components/EventForm/EventForm/EventFormPreview";
-import { EventFormJSON } from "@/features/events/components/EventForm/EventFormJSON";
-import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
-import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import {
   submitEventModalReducer,
   initialSubmitEventModalState,
   type ViewMode,
 } from "@/features/events/components/SubmitEventModal.reducer";
-import {
-  SubmitEventModalProvider,
-  useSubmitEventModalContext,
-} from "@/features/events/context/SubmitEventModal.context";
 import type { EventFormData } from "@/shared/types";
 
 interface SubmitEventModalProps {
@@ -49,7 +31,7 @@ interface SubmitEventModalProps {
   onPromote?: (
     eventId: number,
     packageId: string,
-  ) => boolean;
+  ) => Promise<boolean>;
   onBuyCredits?: () => void;
   editEventId?: number;
   initialData?: EventFormData;
@@ -58,30 +40,39 @@ interface SubmitEventModalProps {
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
 }
 
+interface SubmitEventModalFormBodyProps {
+  formInitialData: EventFormData | undefined;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (event: EventFormData) => number | Promise<number>;
+  userCredits: number;
+  onPromote?: (eventId: number, packageId: string) => Promise<boolean>;
+  onBuyCredits?: () => void;
+  editEventId?: number;
+  onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
+  isEditMode: boolean;
+}
+
 /** Form body: mounts with formInitialData so edit form is always populated when opened from admin. */
-function SubmitEventModalFormBody({ formInitialData }: { formInitialData: EventFormData | undefined }) {
+function SubmitEventModalFormBody({
+  formInitialData,
+  isOpen,
+  onClose,
+  onSubmit,
+  userCredits,
+  onPromote,
+  onBuyCredits,
+  editEventId,
+  onUpdate,
+  isEditMode,
+}: SubmitEventModalFormBodyProps) {
   const { t } = useTranslation();
-  const context = useSubmitEventModalContext();
-  const {
-    isOpen,
-    onClose,
-    onSubmit,
-    userCredits,
-    onPromote,
-    onBuyCredits,
-    editEventId,
-    onUpdate,
-    isEditMode,
-  } = context;
   const { isDarkMode } = useDarkMode();
 
   const [state, dispatch] = useReducer(
     submitEventModalReducer,
     initialSubmitEventModalState
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
-  const { trigger: triggerConfetti } = useConfetti();
 
   const eventForm = useEventForm({
     initialData: formInitialData,
@@ -100,6 +91,21 @@ function SubmitEventModalFormBody({ formInitialData }: { formInitialData: EventF
     createdEventId: state.createdEventId,
     userCredits,
     onPromote,
+  });
+
+  const handleCreated = useCallback((eventId: number) => {
+    dispatch({ type: "SET_CREATED_EVENT_ID", payload: eventId });
+    dispatch({ type: "SET_IS_SUBMITTED", payload: true });
+  }, []);
+
+  const { isSubmitting, handleSubmit: submitEvent, showSuccessAlert, SuccessAlertComponent } = useSubmitEvent({
+    isEditMode,
+    editEventId,
+    onSubmit,
+    onUpdate,
+    onClose,
+    showPromotion: eventFormPromotion.showPromotion,
+    onCreated: handleCreated,
   });
 
   const resetState = useCallback(() => {
@@ -136,56 +142,29 @@ function SubmitEventModalFormBody({ formInitialData }: { formInitialData: EventF
     [eventForm]
   );
 
-  const handleSubmit = useCallback(async () => {
-    eventForm.markAllFieldsTouched();
-    if (!eventForm.isValid) return;
-    setIsSubmitting(true);
-    try {
-      if (isEditMode && editEventId && onUpdate) {
-        await onUpdate(editEventId, eventForm.formData);
-        showSuccessAlert(
-          t("events.eventUpdated"),
-          t("events.eventUpdatedMessage", { title: eventForm.formData.title })
-        );
-        return;
-      }
-      const eventId = await onSubmit(eventForm.formData);
-      dispatch({ type: "SET_CREATED_EVENT_ID", payload: eventId });
-      dispatch({ type: "SET_IS_SUBMITTED", payload: true });
-      if (eventForm.imageFile && eventId) {
-        import("@/shared/services/uploadService").then(({ uploadEventImage }) => {
-          uploadEventImage(eventId, eventForm.imageFile!).catch((err) => console.error("Failed to upload event image:", err));
-        });
-      }
-      if (!eventFormPromotion.showPromotion) {
-        triggerConfetti();
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [
-    eventForm,
-    isEditMode,
-    editEventId,
-    onUpdate,
-    onSubmit,
-    showSuccessAlert,
-    t,
-    eventFormPromotion.showPromotion,
-    triggerConfetti,
-  ]);
+  const handleSubmit = useCallback(() => {
+    return submitEvent(eventForm.formData, eventForm.imageFile, eventForm.markAllFieldsTouched, eventForm.isValid);
+  }, [submitEvent, eventForm.formData, eventForm.imageFile, eventForm.markAllFieldsTouched, eventForm.isValid]);
 
-  if (eventFormPromotion.promotionSuccess) {
-    return (
+  // Step dispatcher: determine which step to render based on state
+  type ModalStep = "promotion-success" | "promotion-upsell" | "submit-success" | "form";
+  const currentStep: ModalStep = eventFormPromotion.promotionSuccess
+    ? "promotion-success"
+    : eventFormPromotion.showPromotion
+      ? "promotion-upsell"
+      : state.isSubmitted && !isEditMode
+        ? "submit-success"
+        : "form";
+
+  const stepRenderers: Record<ModalStep, () => React.ReactElement> = {
+    "promotion-success": () => (
       <PromotionSuccessScreen
         isOpen={isOpen}
         onClose={handleClose}
         userCredits={userCredits}
       />
-    );
-  }
-  if (eventFormPromotion.showPromotion) {
-    return (
+    ),
+    "promotion-upsell": () => (
       <PromotionUpsell
         isOpen={isOpen}
         onClose={handleClose}
@@ -195,11 +174,9 @@ function SubmitEventModalFormBody({ formInitialData }: { formInitialData: EventF
         selectedPromotion={eventFormPromotion.selectedPromotion}
         onSelectPromotion={eventFormPromotion.setSelectedPromotion}
       />
-    );
-  }
-  if (state.isSubmitted && !isEditMode) {
-    return (
-      <EventSuccessScreen
+    ),
+    "submit-success": () => (
+      <SubmitSuccessStep
         isOpen={isOpen}
         onClose={handleClose}
         onPromote={() => eventFormPromotion.setShowPromotion(true)}
@@ -211,154 +188,68 @@ function SubmitEventModalFormBody({ formInitialData }: { formInitialData: EventF
           );
         }}
       />
-    );
-  }
-
-  return (
-    <>
-      <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-        <DialogContent
-          className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col outline-none focus:outline-none focus-visible:outline-none"
-          showCloseButton={true}
-          aria-describedby={undefined}
-        >
-          <DialogHeader className="sr-only">
-            <DialogTitle>
-              {isEditMode ? t("events.updateEvent") : t("events.createEvent")}
-            </DialogTitle>
-          </DialogHeader>
-          <EventFormProvider
-            value={{
-              formData: eventForm.formData,
-              updateField: eventForm.updateField,
-              errors: eventForm.errors,
-              touched: eventForm.touched,
-              handleBlur: eventForm.handleBlur,
-              selectedDate: eventForm.selectedDate,
-              handleDateChange: eventForm.handleDateChange,
-              foodInput: eventForm.foodInput,
-              setFoodInput: eventForm.setFoodInput,
-              addFood: eventForm.addFood,
-              removeFood: eventForm.removeFood,
-              jsonValue: eventForm.jsonValue,
-              jsonError: eventForm.jsonError,
-              handleJsonChange: eventForm.handleJsonChange,
-              syncToJSON: eventForm.syncToJSON,
-              imagePreview: eventForm.imagePreview,
-              imageFile: eventForm.imageFile,
-              onImageUpload: eventForm.onImageUpload,
-              onRemoveImage: eventForm.onRemoveImage,
-              aiPrompt: eventFormAI.aiPrompt,
-              setAiPrompt: eventFormAI.setAiPrompt,
-              aiGenerating: eventFormAI.aiGenerating,
-              handleAiGenerate: eventFormAI.handleAiGenerate,
-              isDarkMode,
-            }}
+    ),
+    "form": () => (
+      <>
+        <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
+          <DialogContent
+            className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col outline-none focus:outline-none focus-visible:outline-none"
+            showCloseButton={true}
+            aria-describedby={undefined}
           >
-            <div className="flex flex-1 min-h-0 overflow-hidden">
-              {/* Form Panel */}
-              <div className="flex-1 p-6 overflow-y-auto min-h-0">
-                {/* Header with Tabs */}
-                <div className="mb-7">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-xl font-bold text-foreground">
-                        {isEditMode ? t("events.updateEvent") : t("events.createEvent")}
-                      </h2>
-                    </div>
-                    <div className="shrink-0">
-                      <Tabs
-                        value={state.viewMode}
-                        onValueChange={(value) => handleViewModeChange(value as ViewMode)}
-                        className="w-fit"
-                      >
-                        <TabsList variant="default" className="h-8">
-                          <TabsTrigger
-                            value="visual"
-                            className="text-[11px] font-medium px-3 py-1"
-                          >
-                            {t("settings.appearance.visual")}
-                          </TabsTrigger>
-                          <TabsTrigger
-                            value="json"
-                            className="text-[11px] font-medium px-3 py-1"
-                          >
-                            {t("settings.appearance.json")}
-                          </TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
-                  </div>
-                </div>
+            <DialogHeader className="sr-only">
+              <DialogTitle>
+                {isEditMode ? t("events.updateEvent") : t("events.createEvent")}
+              </DialogTitle>
+            </DialogHeader>
+            <EventFormStep
+              isEditMode={isEditMode}
+              viewMode={state.viewMode}
+              onViewModeChange={handleViewModeChange}
+              isSubmitting={isSubmitting}
+              onSubmit={handleSubmit}
+              eventForm={eventForm}
+              eventFormAI={eventFormAI}
+              isDarkMode={isDarkMode}
+            />
+          </DialogContent>
+        </Dialog>
+        <SuccessAlertComponent />
+      </>
+    ),
+  };
 
-                {state.viewMode === "visual" ? (
-                  <FieldGroup>
-                    {/* AI Generation Input */}
-                    <Field>
-                      <AIGenerationInput
-                        aiPrompt={eventFormAI.aiPrompt}
-                        onAiPromptChange={eventFormAI.setAiPrompt}
-                        onAiPromptClear={() => eventFormAI.setAiPrompt("")}
-                        aiGenerating={eventFormAI.aiGenerating}
-                        onAiGenerate={eventFormAI.handleAiGenerate}
-                        error={eventForm.jsonError}
-                        title={t("forms.aiEventGeneration")}
-                        placeholder={t("forms.aiPromptPlaceholder")}
-                        generatingText={t("common.generating")}
-                        className="space-y-2"
-                      />
-                    </Field>
-                    <FieldSeparator />
-                    <form>
-                      <EventFormFields />
-                      <Field orientation="horizontal" className="mt-6">
-                        <DialogClose asChild>
-                          <Button variant="outline" type="button">
-                            {t("common.cancel")}
-                          </Button>
-                        </DialogClose>
-                        <LoadingButton
-                          type="button"
-                          onClick={handleSubmit}
-                          disabled={!eventForm.isValid}
-                          isLoading={isSubmitting}
-                          loadingText={t("common.pleaseWait") || "Please wait..."}
-                        >
-                          {isEditMode
-                            ? t("events.updateEvent")
-                            : t("events.createEvent")}
-                        </LoadingButton>
-                      </Field>
-                    </form>
-                  </FieldGroup>
-                ) : (
-                  /* JSON View */
-                  <EventFormJSON />
-                )}
-              </div>
-
-              {/* Live Preview Panel */}
-              <EventFormPreview />
-            </div>
-          </EventFormProvider>
-        </DialogContent>
-      </Dialog>
-      <SuccessAlertComponent />
-    </>
-  );
+  return stepRenderers[currentStep]();
 }
 
-function SubmitEventModalContent() {
+interface SubmitEventModalContentProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (event: EventFormData) => number | Promise<number>;
+  userCredits: number;
+  onPromote?: (eventId: number, packageId: string) => Promise<boolean>;
+  onBuyCredits?: () => void;
+  editEventId?: number;
+  initialData?: EventFormData;
+  loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
+  onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
+  isEditMode: boolean;
+}
+
+function SubmitEventModalContent({
+  isOpen,
+  onClose,
+  onSubmit,
+  userCredits,
+  onPromote,
+  onBuyCredits,
+  editEventId,
+  initialData,
+  loadEventForEdit,
+  onUpdate,
+  isEditMode,
+}: SubmitEventModalContentProps) {
   const { t } = useTranslation();
-  const context = useSubmitEventModalContext();
-  const {
-    isOpen,
-    onClose,
-    editEventId,
-    initialData,
-    loadEventForEdit,
-    isEditMode,
-  } = context;
 
   const [resolvedInitialData, setResolvedInitialData] = useState<EventFormData | undefined>(undefined);
   useEffect(() => {
@@ -366,10 +257,19 @@ function SubmitEventModalContent() {
       setResolvedInitialData(undefined);
       return;
     }
+    let cancelled = false;
     setResolvedInitialData(undefined);
     loadEventForEdit(editEventId)
-      .then((data) => setResolvedInitialData(data))
-      .catch((err) => { console.error("Failed to load event for edit:", err); setResolvedInitialData(undefined); });
+      .then((data) => {
+        if (!cancelled) setResolvedInitialData(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load event for edit:", err);
+        if (!cancelled) setResolvedInitialData(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, editEventId, loadEventForEdit]);
 
   if (isOpen && editEventId && loadEventForEdit && resolvedInitialData === undefined) {
@@ -395,6 +295,15 @@ function SubmitEventModalContent() {
     <SubmitEventModalFormBody
       key={formBodyKey}
       formInitialData={formInitialData}
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      userCredits={userCredits}
+      onPromote={onPromote}
+      onBuyCredits={onBuyCredits}
+      editEventId={editEventId}
+      onUpdate={onUpdate}
+      isEditMode={isEditMode}
     />
   );
 }
@@ -405,15 +314,12 @@ export function SubmitEventModal(props: SubmitEventModalProps) {
   const formKey = props.isOpen && props.editEventId ? `edit-${props.editEventId}` : "create";
 
   return (
-    <SubmitEventModalProvider
-      value={{
-        ...props,
-        userCredits: props.userCredits ?? 0,
-        isEditMode,
-      }}
-    >
-      <SubmitEventModalContent key={formKey} />
-    </SubmitEventModalProvider>
+    <SubmitEventModalContent
+      key={formKey}
+      {...props}
+      userCredits={props.userCredits ?? 0}
+      isEditMode={isEditMode}
+    />
   );
 }
 

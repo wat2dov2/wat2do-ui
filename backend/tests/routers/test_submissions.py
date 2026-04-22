@@ -34,9 +34,16 @@ def _mock_submission(**overrides) -> SubmissionResponse:
 # POST /submissions/ -- requires get_current_user (any authenticated user)
 # ---------------------------------------------------------------------------
 
+_VALID_EVENT_DATA = {
+    "title": "X",
+    "location": "Loc",
+    "organization": "Org",
+}
+
+
 def test_create_submission_requires_auth(client):
     """POST /submissions/ without auth returns 401."""
-    resp = client.post("/submissions/", json={"event_data": {"title": "X"}})
+    resp = client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
     assert resp.status_code == 401
 
 
@@ -46,7 +53,7 @@ def test_create_submission_authenticated(authenticated_client, monkeypatch):
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER))
     monkeypatch.setattr(submission_service, "create_submission", MagicMock(return_value=submission))
 
-    resp = authenticated_client.post("/submissions/", json={"event_data": {"title": "X"}})
+    resp = authenticated_client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
     assert resp.status_code == 201
     assert resp.json()["id"] == "sub-001"
 
@@ -189,3 +196,68 @@ def test_delete_submission_admin(admin_client, monkeypatch):
 
     resp = admin_client.delete("/submissions/sub-001")
     assert resp.status_code == 204
+
+
+# ---------------------------------------------------------------------------
+# Status-transition state machine (audit I4)
+# ---------------------------------------------------------------------------
+
+
+def test_submission_service_rejects_terminal_to_pending(monkeypatch):
+    """submission_service.update_submission rejects approved -> pending."""
+    from core.exceptions import ValidationError
+
+    existing = _mock_submission(status="approved")
+    monkeypatch.setattr(
+        submission_service,
+        "get_submission_by_id",
+        MagicMock(return_value=existing),
+    )
+
+    try:
+        submission_service.update_submission("sub-001", "pending")
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("expected ValidationError for approved -> pending")
+
+
+def test_submission_service_rejects_rejected_to_approved(monkeypatch):
+    """submission_service.update_submission rejects rejected -> approved."""
+    from core.exceptions import ValidationError
+
+    existing = _mock_submission(status="rejected")
+    monkeypatch.setattr(
+        submission_service,
+        "get_submission_by_id",
+        MagicMock(return_value=existing),
+    )
+
+    try:
+        submission_service.update_submission("sub-001", "approved")
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("expected ValidationError for rejected -> approved")
+
+
+def test_submission_service_allows_pending_to_approved(monkeypatch):
+    """submission_service.update_submission allows pending -> approved."""
+    existing = _mock_submission(status="pending")
+    approved = _mock_submission(status="approved")
+    monkeypatch.setattr(
+        submission_service,
+        "get_submission_by_id",
+        MagicMock(return_value=existing),
+    )
+
+    # Mock the DB call so the test doesn't actually hit Supabase
+    mock_sb = MagicMock()
+    mock_sb.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [
+        approved.model_dump()
+    ]
+    monkeypatch.setattr("services.submission_service.get_sb", lambda: mock_sb)
+
+    result = submission_service.update_submission("sub-001", "approved")
+    assert result is not None
+    assert result.status == "approved"

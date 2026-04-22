@@ -1,34 +1,18 @@
-import { useState, useMemo, useEffect } from "react";
-import { getEventSubmissions } from "@/features/admin/api/admin.api";
-import type { EventSubmission, SubmissionStatus } from "@/shared/types";
-
-interface UseAdminSubmissionsFiltersOptions {
-  refreshKey: number;
-}
+import { useState, useMemo } from "react";
+import { useAdminStore } from "@/features/admin/store/admin.store";
+import type { SubmissionStatus } from "@/shared/types";
 
 /**
- * Hook for managing filters in AdminSubmissionsPage
+ * Hook for managing filters in AdminSubmissionsPage.
+ *
+ * Reads the submissions list from the admin store, which owns the fetch
+ * + TTL. The store's mutation actions (approve/reject) patch the local
+ * list on success so no refreshKey is needed.
  */
-export function useAdminSubmissionsFilters({ refreshKey }: UseAdminSubmissionsFiltersOptions) {
+export function useAdminSubmissionsFilters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SubmissionStatus>("all");
-  const [allSubmissions, setAllSubmissions] = useState<EventSubmission[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch submissions from backend
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    getEventSubmissions()
-      .then((data) => {
-        if (!cancelled) setAllSubmissions(data);
-      })
-      .catch((err) => console.error("Failed to fetch submissions:", err))
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [refreshKey]);
+  const allSubmissions = useAdminStore((s) => s.submissions);
 
   // Filter submissions
   const filteredSubmissions = useMemo(() => {
@@ -50,7 +34,7 @@ export function useAdminSubmissionsFilters({ refreshKey }: UseAdminSubmissionsFi
     }
 
     // Sort by submittedAt (newest first)
-    return filtered.sort(
+    return [...filtered].sort(
       (a, b) =>
         new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
     );
@@ -63,6 +47,5 @@ export function useAdminSubmissionsFilters({ refreshKey }: UseAdminSubmissionsFi
     setStatusFilter,
     allSubmissions,
     filteredSubmissions,
-    isLoading,
   };
 }

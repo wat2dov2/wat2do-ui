@@ -20,7 +20,6 @@ export { GenerateQRAssetsWizard } from "./components/GenerateQRAssetsWizard";
 // Hooks
 export { useQRCodeScans } from "./hooks/useQRCodeScans";
 export { useQRCodeStats } from "./hooks/useQRCodeStats";
-export { useQRCodeImage } from "./hooks/useQRCodeImage";
 export { useCreateQRCodeForm } from "./hooks/useCreateQRCodeForm";
 export { useBackendScans } from "./hooks/useBackendScans";
 export { useBackendPosters } from "./hooks/useBackendPosters";

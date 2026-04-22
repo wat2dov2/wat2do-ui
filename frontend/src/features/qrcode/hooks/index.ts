@@ -5,4 +5,3 @@
 
 export { useQRCodeScans } from "./useQRCodeScans";
 export { useQRCodeStats } from "./useQRCodeStats";
-export { useQRCodeImage } from "./useQRCodeImage";

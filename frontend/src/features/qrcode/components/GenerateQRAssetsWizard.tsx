@@ -12,7 +12,6 @@ import {
   FieldSet,
   FieldError,
 } from "@/shared/ui/field";
-import { useAdminContext } from "@/features/admin";
 import { useCreatePoster } from "@/features/qrcode/hooks/useCreatePoster";
 import { generateAssetPdf, sanitizeFilename } from "@/features/qrcode/utils/generateAssetPdf";
 import { Spinner } from "@/shared/ui/spinner";
@@ -106,13 +105,13 @@ interface QRAsset {
 
 interface GenerateQRAssetsWizardProps {
   onClose?: () => void;
+  userEmail?: string;
 }
 
-export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps) {
+export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: GenerateQRAssetsWizardProps) {
   const { t } = useTranslation();
-  const { userEmail: contextUserEmail } = useAdminContext();
   const { resolveEmail, createPoster } = useCreatePoster();
-  const userEmail = resolveEmail(contextUserEmail);
+  const userEmail = resolveEmail(userEmailProp);
   const [step, setStep] = useState<WizardStep>(1);
   const [assets, setAssets] = useState<QRAsset[]>([]);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
@@ -401,7 +400,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
           <FieldGroup>
             <FieldSet>
               <div className="mt-3 grid gap-3">
-                <div className="border border-dashed border-border rounded-xl p-4 bg-muted/40">
+                <div className="border border-dashed border-border rounded-xl p-4 bg-secondary/40">
                   <ImageUploadField
                     label={t("admin.qrAssets.uploadFieldLabel")}
                     imagePreview={null}
@@ -435,9 +434,9 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                 {assets.map((asset) => (
                   <div
                     key={asset.id}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3"
+                    className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-3"
                   >
-                    <div className="w-20 h-20 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
                       <img
                         src={asset.imagePreview}
                         alt={asset.name}
@@ -495,7 +494,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                 className={`rounded-lg border px-2 py-1 text-xs shrink-0 ${
                   selectedAsset?.id === asset.id
                     ? "border-primary bg-primary/10 text-primary-foreground"
-                    : "border-border bg-muted text-foreground"
+                    : "border-border bg-secondary text-foreground"
                 }`}
               >
                 {asset.name}
@@ -510,7 +509,7 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
                 </p>
                 <div
                   ref={imageContainerRef}
-                  className="relative w-full max-w-md mx-auto aspect-3/4 rounded-lg overflow-hidden border border-border bg-muted select-none"
+                  className="relative w-full max-w-md mx-auto aspect-3/4 rounded-lg overflow-hidden border border-border bg-secondary select-none"
                 >
                   <img
                     src={selectedAsset.imagePreview}
@@ -560,10 +559,10 @@ export function GenerateQRAssetsWizard({ onClose }: GenerateQRAssetsWizardProps)
               {assets.map((asset) => (
                 <div
                   key={asset.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 px-3 py-2"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
                       <img
                         src={asset.imagePreview}
                         alt={asset.name}

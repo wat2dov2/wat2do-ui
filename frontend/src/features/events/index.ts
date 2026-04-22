@@ -12,7 +12,6 @@
 
 // Pages
 export { EventsPageContainer } from "./pages/EventsPageContainer";
-export { EventsPage } from "./pages/EventsPage";
 
 // Components
 export { EventCard } from "./components/EventCard";
@@ -26,8 +25,6 @@ export { SubmitEventModal } from "./components/SubmitEventModal";
 export { SidebarEventsSection } from "./components/SidebarEventsSection";
 
 // Hooks
-export { useAppEvents } from "./hooks/useAppEvents";
-export { useSavedEvents } from "./hooks/useSavedEvents";
 export { useLatestAddedEvent } from "./hooks/useLatestAddedEvent";
 
 // Utils (public API for cross-feature use)
@@ -35,4 +32,7 @@ export { computeEventBadges } from "./hooks/useEventBadges";
 
 // API (public API for cross-feature use)
 export { fetchAllEvents, fetchEventById } from "./api/events.api";
+
+// Store (public surface for cross-feature read access)
+export { useEventsStore } from "./store/events.store";
 

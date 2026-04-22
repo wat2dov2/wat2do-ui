@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
 import type { AuthMode } from "@/features/auth/hooks/useAuthEntryFlow";
@@ -27,6 +28,7 @@ export function AuthEmailFormCard({
   isLoading,
   error,
 }: AuthEmailFormCardProps) {
+  const { t } = useTranslation();
   const isSignup = authMode === "signup";
 
   return (
@@ -35,7 +37,7 @@ export function AuthEmailFormCard({
         type="email"
         value={email}
         onChange={(e) => onEmailChange(e.target.value)}
-        placeholder="you@uwaterloo.ca"
+        placeholder={t("auth.emailPlaceholder")}
         onKeyDown={(e) => e.key === "Enter" && canContinue && onContinue()}
       />
 
@@ -43,7 +45,7 @@ export function AuthEmailFormCard({
         type="password"
         value={password}
         onChange={(e) => onPasswordChange(e.target.value)}
-        placeholder={isSignup ? "Create a password (min 6 chars)" : "Password"}
+        placeholder={isSignup ? t("auth.passwordPlaceholderSignup") : t("auth.passwordPlaceholderLogin")}
         onKeyDown={(e) => e.key === "Enter" && canContinue && onContinue()}
       />
 
@@ -56,25 +58,25 @@ export function AuthEmailFormCard({
         onClick={onContinue}
         disabled={!canContinue}
         isLoading={isLoading}
-        loadingText="Please wait..."
+        loadingText={t("common.pleaseWait")}
         className="w-full"
       >
-        {isSignup ? "Create account" : "Sign in"}
+        {isSignup ? t("auth.createAccount") : t("auth.signIn")}
       </LoadingButton>
 
       <p className="text-[11px] text-center text-muted-foreground">
-        {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
+        {isSignup ? t("auth.alreadyHaveAccount") : t("auth.dontHaveAccount")}{" "}
         <button
           type="button"
           onClick={onToggleMode}
           className="underline underline-offset-2 hover:text-foreground transition-colors"
         >
-          {isSignup ? "Sign in" : "Create one"}
+          {isSignup ? t("auth.signInLink") : t("auth.createOneLink")}
         </button>
       </p>
 
       <p className="text-[11px] text-center text-muted-foreground">
-        By continuing, you agree to the platform terms and event community guidelines.
+        {t("auth.termsNotice")}
       </p>
     </div>
   );

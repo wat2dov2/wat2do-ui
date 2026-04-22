@@ -1,7 +1,7 @@
-import { useReducer, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { generateEventWithAI } from "@/shared/lib/openai";
 import type { EventFormData } from "@/shared/types";
-import { aiReducer, initialAIState } from "@/features/events/hooks/useEventFormAI.reducer";
+import { mapAiResponseToFormData } from "@/features/events/hooks/useEventForm.utils";
 
 interface UseEventFormAIOptions {
   formData: EventFormData;
@@ -19,52 +19,44 @@ export function useEventFormAI({
   setJsonValue,
   setJsonError,
 }: UseEventFormAIOptions) {
-  const [state, dispatch] = useReducer(aiReducer, initialAIState);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   const handleAiGenerate = useCallback(async () => {
-    if (!state.aiPrompt.trim()) return;
+    if (!aiPrompt.trim()) return;
 
-    dispatch({ type: "SET_AI_GENERATING", payload: true });
+    setAiGenerating(true);
     setJsonError("");
 
     try {
-      const newEvent = await generateEventWithAI(state.aiPrompt, (partialJson: string) => {
+      const newEvent = await generateEventWithAI(aiPrompt, (partialJson: string) => {
         setJsonValue(partialJson);
       });
 
       const generatedJson = JSON.stringify(newEvent, null, 2);
       setJsonValue(generatedJson);
-      
+
       // Update form data from generated event
-      setFormData({
-        title: newEvent.title || "",
-        description: newEvent.description || "",
-        date: newEvent.date || formData.date,
-        time: newEvent.time || formData.time,
-        location: newEvent.location || "",
-        category: newEvent.category || "",
-        price: typeof newEvent.price === "number" ? newEvent.price : 0,
-        food: Array.isArray(newEvent.food) ? newEvent.food : [],
-        requiresRegistration: typeof newEvent.requiresRegistration === "boolean"
-          ? newEvent.requiresRegistration
-          : false,
-        organization: newEvent.organization || "",
-      });
+      setFormData(
+        mapAiResponseToFormData(newEvent as Record<string, unknown>, {
+          date: formData.date,
+          time: formData.time,
+        }),
+      );
     } catch (error) {
       console.error("AI event generation failed:", error);
       setJsonError(
         error instanceof Error ? error.message : "Failed to generate event"
       );
     } finally {
-      dispatch({ type: "SET_AI_GENERATING", payload: false });
+      setAiGenerating(false);
     }
-  }, [state.aiPrompt, setFormData, setJsonValue, setJsonError, formData]);
+  }, [aiPrompt, setFormData, setJsonValue, setJsonError, formData]);
 
   return {
-    aiPrompt: state.aiPrompt,
-    setAiPrompt: (value: string) =>
-      dispatch({ type: "SET_AI_PROMPT", payload: value }),
-    aiGenerating: state.aiGenerating,
+    aiPrompt,
+    setAiPrompt,
+    aiGenerating,
     handleAiGenerate,
   };
 }

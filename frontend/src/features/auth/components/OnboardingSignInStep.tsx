@@ -86,7 +86,7 @@ export function OnboardingSignInStep({
               placeholder={t("modals.signIn.username")}
               className="flex-1 h-10 text-sm rounded-l-md rounded-r-none border-r-0"
             />
-            <div className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border border-l-0 border-border bg-muted text-muted-foreground">
+            <div className="h-10 px-3 flex items-center text-sm font-medium rounded-r-md border border-l-0 border-border bg-secondary text-muted-foreground">
               @gmail.com
             </div>
           </div>

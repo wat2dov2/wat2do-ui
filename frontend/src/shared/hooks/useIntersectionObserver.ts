@@ -14,6 +14,10 @@ export function useIntersectionObserver<T extends HTMLElement = HTMLDivElement>(
   const [isIntersecting, setIsIntersecting] = useState(false);
   const [hasIntersected, setHasIntersected] = useState(false);
   const elementRef = useRef<T>(null);
+  // Mirror hasIntersected into a ref so the effect can read it without
+  // re-subscribing when the state flips.
+  const hasIntersectedRef = useRef(hasIntersected);
+  hasIntersectedRef.current = hasIntersected;
 
   useEffect(() => {
     const element = elementRef.current;
@@ -23,7 +27,7 @@ export function useIntersectionObserver<T extends HTMLElement = HTMLDivElement>(
       ([entry]) => {
         const isElementIntersecting = entry.isIntersecting;
         setIsIntersecting(isElementIntersecting);
-        if (isElementIntersecting && !hasIntersected) {
+        if (isElementIntersecting && !hasIntersectedRef.current) {
           setHasIntersected(true);
         }
       },
@@ -35,7 +39,8 @@ export function useIntersectionObserver<T extends HTMLElement = HTMLDivElement>(
     return () => {
       observer.disconnect();
     };
-  }, [threshold, rootMargin, enabled, hasIntersected]);
+    // hasIntersected is intentionally read via ref to avoid observer churn.
+  }, [threshold, rootMargin, enabled]);
 
   return { ref: elementRef, isIntersecting, hasIntersected };
 }

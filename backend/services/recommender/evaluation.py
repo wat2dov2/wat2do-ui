@@ -5,6 +5,10 @@ import math
 import random
 
 from services import interaction_service, user_service
+from services.recommender.interaction_scores import (
+    get_interaction_matrix,
+    get_user_event_scores,
+)
 
 log = logging.getLogger(__name__)
 from schemas.event import EventResponse
@@ -71,7 +75,7 @@ def evaluate_all_users(
             Each user's held-out event is always included in the candidate
             set to preserve evaluation correctness.
     """
-    matrix = interaction_service.get_interaction_matrix()
+    matrix = get_interaction_matrix()
 
     # Group by user
     user_events: dict[str, list[tuple[int, float]]] = {}
@@ -156,9 +160,21 @@ def evaluate_all_users(
                 warm_threshold=warm_threshold,
             )
 
+            # Mirror the live pipeline: content scorer needs per-user
+            # interaction scores to compute org affinity (worth up to
+            # CB_ORG_AFFINITY of the content score). Without these, offline
+            # metrics measure a weaker model than what production serves.
+            try:
+                user_scores = get_user_event_scores(uid)
+            except Exception as e:
+                log.warning("Failed to fetch user event scores for %s during eval: %s", uid, e)
+                user_scores = {}
+
             # Pass pre-fetched user to avoid redundant DB lookup inside
             # get_content_scores.
-            content = get_content_scores(uid, all_events_data, user=user)
+            content = get_content_scores(
+                uid, all_events_data, user=user, user_scores=user_scores,
+            )
             collab = get_collaborative_scores(uid, all_event_ids)
 
             blended = blend_scores(
@@ -166,8 +182,9 @@ def evaluate_all_users(
                 exclude={held_out_eid},
             )
 
-            # Apply MMR re-ranking matching production
-            scored_list = sorted(blended.items(), key=lambda x: x[1], reverse=True)
+            # Apply MMR re-ranking matching production.
+            # R18: explicit tie-break on event_id so ordering is reproducible.
+            scored_list = sorted(blended.items(), key=lambda x: (-x[1], x[0]))
             recommended = mmr_rerank(
                 scored_events=scored_list,
                 events_metadata=events_by_id,

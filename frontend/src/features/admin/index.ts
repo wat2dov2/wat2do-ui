@@ -6,8 +6,8 @@
 // API
 export * from "./api/admin.api";
 
-// Context
-export { AdminProvider, useAdminContext } from "./context/AdminContext";
+// Store
+export { useAdminStore } from "./store/admin.store";
 
 // Pages
 export { AdminPanel } from "./pages/AdminPanel";

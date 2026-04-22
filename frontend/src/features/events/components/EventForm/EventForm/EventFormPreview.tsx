@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Users, ImageOff } from "lucide-react";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LazyImage } from "@/shared/ui/lazy-image";
-import { LightRays } from "@/shared/ui/light-rays";
+import { EventCardContent } from "@/shared/ui/event-card-content";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
@@ -92,44 +92,13 @@ export function EventFormPreview() {
         </div>
 
         {/* Event Content */}
-        <div className="relative flex flex-col flex-1 px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
-          <LightRays />
-          <div className="flex flex-col gap-3 h-full flex-1">
-            <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
-              {formData.title || t("events.eventTitle")}
-            </h3>
-
-            {/* Info + Badges - pinned to bottom */}
-            <div className="flex items-end justify-between gap-3 mt-auto">
-              <div className="space-y-0.5">
-                {cardDate && (
-                  <span className="block text-[11px] text-muted-foreground">{cardDate}</span>
-                )}
-                {cardTime && (
-                  <span className="block text-[11px] text-muted-foreground">{cardTime}</span>
-                )}
-                {formData.location && (
-                  <span className="block text-[11px] text-muted-foreground truncate">
-                    {formData.location}
-                  </span>
-                )}
-              </div>
-
-              {badges.length > 0 && (
-                <div className="flex flex-col gap-1.5 items-end shrink-0">
-                  {badges.map((badge) => (
-                    <span
-                      key={badge.text}
-                      className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-muted-foreground text-muted-foreground whitespace-nowrap"
-                    >
-                      {badge.text}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <EventCardContent
+          title={formData.title || t("events.eventTitle")}
+          date={cardDate || undefined}
+          time={cardTime || undefined}
+          location={formData.location || undefined}
+          badges={badges}
+        />
       </article>
 
       <p className="text-[10px] text-muted-foreground text-center">

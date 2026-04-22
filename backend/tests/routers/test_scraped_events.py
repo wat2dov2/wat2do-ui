@@ -97,3 +97,39 @@ def test_create_scraped_event_admin(admin_client, monkeypatch):
     )
     assert resp.status_code == 201
     assert resp.json()["source"] == "test-scraper"
+
+
+# ---------------------------------------------------------------------------
+# M9 — source field length cap & non-empty
+# ---------------------------------------------------------------------------
+
+def test_create_scraped_event_rejects_empty_source(admin_client):
+    """Empty source is rejected with 422 (audit M9)."""
+    resp = admin_client.post(
+        "/scraped-events/",
+        json={"source": "", "raw_data": {"x": 1}},
+    )
+    assert resp.status_code == 422
+
+
+def test_create_scraped_event_rejects_oversize_source(admin_client):
+    """Source longer than 255 chars is rejected with 422 (audit M9)."""
+    resp = admin_client.post(
+        "/scraped-events/",
+        json={"source": "a" * 300, "raw_data": {"x": 1}},
+    )
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# M9 / M12 — raw_data size cap
+# ---------------------------------------------------------------------------
+
+def test_create_scraped_event_rejects_oversize_raw_data(admin_client):
+    """raw_data larger than MAX_RAW_DATA_BYTES is rejected (audit M9/M12)."""
+    big_blob = {"payload": "x" * 40_000}
+    resp = admin_client.post(
+        "/scraped-events/",
+        json={"source": "test-scraper", "raw_data": big_blob},
+    )
+    assert resp.status_code == 422

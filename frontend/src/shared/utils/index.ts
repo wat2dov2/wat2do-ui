@@ -9,3 +9,4 @@ export * from "./shareEvent";
 export * from "./translateInterest";
 export * from "./string";
 export * from "./url";
+export * from "./categoryTranslation";

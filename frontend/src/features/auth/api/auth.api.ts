@@ -14,57 +14,41 @@ import {
   saveUserProfile,
   saveAccessToken,
   clearAllAuthData,
-  hasTokens,
+  hasAccessToken,
   type UserProfile,
 } from "@/features/auth/api/userRepository";
+import type {
+  ApiTokenResponse,
+  ApiSignupResponse,
+  ApiUserResponse,
+  ApiClubResponse,
+} from "@/shared/generated";
 
 export type { UserProfile };
 
-// ── Backend response shapes ──────────────────────────────────────────
-
-interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  user_id: string;
-}
-
-interface SignupResponse {
-  user_id: string;
-  access_token?: string | null;
-  token_type: string;
-  expires_in?: number | null;
-  confirmation_required: boolean;
-}
-
-interface BackendUserProfile {
-  id: string;
-  email: string;
-  username?: string | null;
-  full_name?: string | null;
-  avatar_url?: string | null;
-  faculty?: string | null;
-  school?: string | null;
-  interests?: string[] | null;
-  is_first_year: boolean;
-  role?: "user" | "admin";
-  created_at: string;
-  updated_at: string;
-}
-
-interface BackendClubResponse {
-  id: number;
-  club_name: string;
+/**
+ * Dispatch a same-tab "auth-user-login" event so per-user stores (saved
+ * events, promotions, etc.) can refetch after a successful login/signup.
+ * Mirrors the "auth-user-logout" broadcast in logoutAPI.
+ */
+function dispatchAuthUserLogin(): void {
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("auth-user-login"));
+    } catch (err) {
+      console.error("Failed to dispatch auth-user-login event:", err);
+    }
+  }
 }
 
 // ── Sync helpers (read from localStorage / memory) ───────────────────
 
-export function getSession(): { email: string | null } {
-  return { email: loadUserEmail() };
+export function getSessionEmail(): string | null {
+  return loadUserEmail();
 }
 
 export function isAuthenticated(): boolean {
-  return hasTokens() && loadUserEmail() !== null;
+  return hasAccessToken() && loadUserEmail() !== null;
 }
 
 export function getUserProfile(): UserProfile | null {
@@ -72,8 +56,7 @@ export function getUserProfile(): UserProfile | null {
 }
 
 export function isProfileCompleted(): boolean {
-  const profile = loadUserProfile();
-  return profile !== null && profile.faculty !== "" && profile.interests.length > 0;
+  return isAuthenticated();
 }
 
 export function getUserRole(): "user" | "admin" {
@@ -91,16 +74,6 @@ export function getUserHasClub(): boolean {
   return profile?.hasClub ?? false;
 }
 
-// ── Legacy sync login (kept for backward compat within onboarding) ──
-
-export function login(email: string): void {
-  saveUserEmail(email);
-}
-
-export function logout(): void {
-  clearAllAuthData();
-}
-
 export function updateUserProfile(profile: UserProfile): void {
   saveUserProfile(profile);
 }
@@ -113,7 +86,7 @@ export async function signupAPI(
   username?: string,
   fullName?: string,
 ): Promise<{ userId: string; confirmationRequired: boolean }> {
-  const res = await api.post<SignupResponse>("/auth/signup", {
+  const res = await api.post<ApiSignupResponse>("/auth/signup", {
     email,
     password,
     username: username ?? undefined,
@@ -125,6 +98,10 @@ export async function signupAPI(
   }
   saveUserEmail(email);
 
+  // Broadcast login so per-user stores (saved events, promotions) can
+  // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
+  dispatchAuthUserLogin();
+
   return {
     userId: res.user_id,
     confirmationRequired: res.confirmation_required,
@@ -135,13 +112,17 @@ export async function loginAPI(
   email: string,
   password: string,
 ): Promise<{ userId: string }> {
-  const res = await api.post<TokenResponse>("/auth/login", {
+  const res = await api.post<ApiTokenResponse>("/auth/login", {
     email,
     password,
   });
 
   saveAccessToken(res.access_token);
   saveUserEmail(email);
+
+  // Broadcast login so per-user stores (saved events, promotions) can
+  // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
+  dispatchAuthUserLogin();
 
   return { userId: res.user_id };
 }
@@ -153,17 +134,29 @@ export async function logoutAPI(): Promise<void> {
     console.error("Logout API call failed, clearing local state anyway:", err);
   }
   clearAllAuthData();
+  // Reset freshness timestamp so the next admin route forces a re-fetch.
+  lastProfileFetchAt = 0;
+  // Broadcast logout so per-user stores (saved events, promotions) reset
+  // via the "auth-user-logout" event.
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("auth-user-logout"));
+    } catch (err) {
+      console.error("Failed to dispatch auth-user-logout event:", err);
+    }
+  }
 }
 
 export async function refreshTokenAPI(): Promise<boolean> {
   // Refresh token is sent automatically as an httpOnly cookie
   try {
-    const res = await api.post<TokenResponse>("/auth/refresh");
+    const res = await api.post<ApiTokenResponse>("/auth/refresh");
     saveAccessToken(res.access_token);
     return true;
   } catch (err) {
     console.error("Token refresh failed, clearing auth data:", err);
     clearAllAuthData();
+    lastProfileFetchAt = 0;
     return false;
   }
 }
@@ -194,18 +187,24 @@ export async function initializeAuth(): Promise<boolean> {
   return true;
 }
 
+/** Timestamp (ms since epoch) of the last successful fetchProfileAPI. */
+let lastProfileFetchAt = 0;
+
+export function getLastProfileFetchAt(): number {
+  return lastProfileFetchAt;
+}
+
 export async function fetchProfileAPI(): Promise<UserProfile | null> {
   try {
-    const data = await api.get<BackendUserProfile>("/users/me");
-
-    // Check club ownership in parallel — gracefully default to false on failure.
-    let hasClub = false;
-    try {
-      const clubs = await api.get<BackendClubResponse[]>("/clubs/mine");
-      hasClub = clubs.length > 0;
-    } catch (err) {
-      console.error("Failed to fetch user clubs, defaulting hasClub to false:", err);
-    }
+    // Fetch profile and club ownership in parallel.
+    // Club fetch failures degrade gracefully to hasClub=false.
+    const [data, clubs] = await Promise.all([
+      api.get<ApiUserResponse>("/users/me"),
+      api.get<ApiClubResponse[]>("/clubs/mine").catch((err) => {
+        console.error("Failed to fetch user clubs, defaulting hasClub to false:", err);
+        return [] as ApiClubResponse[];
+      }),
+    ]);
 
     const profile: UserProfile = {
       id: data.id,
@@ -214,13 +213,15 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       interests: data.interests ?? [],
       isFirstYear: data.is_first_year ?? false,
       role: data.role ?? "user",
-      hasClub,
+      hasClub: clubs.length > 0,
     };
     saveUserProfile(profile);
     if (data.email) saveUserEmail(data.email);
+    lastProfileFetchAt = Date.now();
     return profile;
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
+      console.warn("No profile row for current auth user:", err);
       return null;
     }
     throw err;
@@ -234,7 +235,10 @@ export async function updateProfileAPI(profile: UserProfile): Promise<void> {
     interests: profile.interests,
     is_first_year: profile.isFirstYear,
   });
-  saveUserProfile(profile);
+  // Caller is expected to sync localStorage (via updateUserProfile) before
+  // invoking us. The PATCH does not return a new shape, so there is nothing
+  // to reconcile here — re-saving would just fire another redundant
+  // auth-state-refresh event.
 }
 
-export { ApiError };
+export { AUTH_STATE_REFRESH_EVENT } from "@/features/auth/api/userRepository";

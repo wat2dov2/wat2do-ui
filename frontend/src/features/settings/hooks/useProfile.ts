@@ -1,6 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { loadProfile, saveProfile, type UserProfile } from "@/features/settings/api/settings.api";
+import { fetchProfileAPI, getLastProfileFetchAt, updateProfileAPI } from "@/features/auth";
 import { availableSchools } from "@/shared/constants/schools";
+
+/**
+ * How long a `/users/me` fetch remains fresh before Settings will re-fetch.
+ * Paired with `initializeAuth()` + the silent-refresh `onAfterRefresh` hook
+ * in `main.tsx`, most Settings mounts hit the cache.
+ */
+const PROFILE_STALE_TTL_MS = 60_000;
 
 export type { UserProfile };
 
@@ -19,44 +27,71 @@ export function useProfile() {
     return saved || DEFAULT_PROFILE;
   });
   const [syncing, setSyncing] = useState(false);
-  const initialLoad = useRef(true);
+  // Tracks whether the user has started editing locally. Once true, the
+  // background fetch must not overwrite local edits.
+  const hasLocalEditsRef = useRef(false);
+  // Serialize PATCH requests so concurrent edits reach the backend in the
+  // order they were issued (out-of-order processing would clobber fields).
+  // Also track the in-flight count so `syncing` only clears when the queue
+  // is fully drained.
+  const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const pendingSyncsRef = useRef(0);
 
   useEffect(() => {
+    // Skip the network round-trip if a recent fetchProfileAPI is cached.
+    // initializeAuth + the silent-refresh hook already populate this on
+    // startup, so most Settings mounts hit the cache.
+    const stale = Date.now() - getLastProfileFetchAt() > PROFILE_STALE_TTL_MS;
+    if (!stale) return;
+
     let cancelled = false;
-    import("@/features/auth/api/auth.api").then(({ fetchProfileAPI }) => {
-      fetchProfileAPI()
-        .then((remote) => {
-          if (!cancelled && remote) setProfile(remote);
-        })
-        .catch((err) => console.error("Failed to fetch profile:", err));
-    });
-    return () => { cancelled = true; };
+    fetchProfileAPI()
+      .then((remote) => {
+        if (cancelled) return;
+        if (hasLocalEditsRef.current) return;
+        if (remote) setProfile(remote);
+      })
+      .catch((err) => console.error("Failed to fetch profile:", err));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      return;
-    }
-    saveProfile(profile);
+  const syncProfile = useCallback((updated: UserProfile) => {
+    saveProfile(updated);
+    pendingSyncsRef.current += 1;
     setSyncing(true);
-    import("@/features/auth/api/auth.api")
-      .then(({ updateProfileAPI }) => updateProfileAPI(profile))
-      .catch((err) => console.error("Failed to sync profile:", err))
-      .finally(() => setSyncing(false));
-  }, [profile]);
+    syncQueueRef.current = syncQueueRef.current.then(() =>
+      updateProfileAPI(updated)
+        .catch((err) => console.error("Failed to sync profile:", err))
+        .finally(() => {
+          pendingSyncsRef.current -= 1;
+          if (pendingSyncsRef.current === 0) setSyncing(false);
+        }),
+    );
+  }, []);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
-    setProfile((prev) => ({ ...prev, ...updates }));
+    hasLocalEditsRef.current = true;
+    setProfile((prev) => {
+      const updated = { ...prev, ...updates };
+      syncProfile(updated);
+      return updated;
+    });
   };
 
   const toggleInterest = (interest: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
+    hasLocalEditsRef.current = true;
+    setProfile((prev) => {
+      const updated = {
+        ...prev,
+        interests: prev.interests.includes(interest)
+          ? prev.interests.filter((i) => i !== interest)
+          : [...prev.interests, interest],
+      };
+      syncProfile(updated);
+      return updated;
+    });
   };
 
   return { profile, updateProfile, toggleInterest, syncing };

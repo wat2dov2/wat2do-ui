@@ -28,7 +28,7 @@ export function AdminTable({ children, headers, className }: AdminTableProps) {
     <div className={`bg-card border border-border rounded-xl overflow-hidden ${className || ""}`}>
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted">
+          <TableRow className="bg-secondary">
             {headers.map((header, index) => (
               <TableHead
                 key={index}

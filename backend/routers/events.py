@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_current_user, require_owner_or_admin
+from core.auth import get_authorized_resource, get_current_user
+from core.exceptions import get_or_404
 from core.constants import (
     DEFAULT_LIST_LIMIT,
     MAX_LIST_LIMIT,
@@ -11,11 +12,25 @@ from core.constants import (
     MAX_EVENT_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
 )
-from schemas.event import EventCreate, EventUpdate, EventResponse, EventSummaryResponse, LatestEventResponse
+from schemas.event import (
+    EventCreate,
+    EventUpdate,
+    EventResponse,
+    EventPublicResponse,
+    EventSummaryResponse,
+    LatestEventResponse,
+)
 from core.errors import EVENT_NOT_FOUND
 from services import event_service
 
 router = APIRouter(prefix="/events", tags=["events"])
+
+
+def _get_event_or_404_authorized(event_id: int, auth_user: dict) -> EventResponse:
+    """Fetch an event by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
+    return get_authorized_resource(
+        lambda: event_service.get_event(event_id), EVENT_NOT_FOUND, auth_user,
+    )
 
 
 @router.get("/latest-added", response_model=LatestEventResponse | None)
@@ -24,7 +39,7 @@ def get_latest_added():
     return event_service.get_latest_added_event()
 
 
-@router.get("/", response_model=list[EventSummaryResponse] | list[EventResponse])
+@router.get("/", response_model=list[EventSummaryResponse])
 def list_events(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
@@ -39,6 +54,15 @@ def list_events(
     registration: bool | None = None,
     summary: bool = Query(default=False, description="Return lightweight card-view fields only"),
 ):
+    """Public list endpoint.
+
+    Response shape is fixed to ``EventSummaryResponse`` which omits
+    ``created_by`` — this is the IDOR/PII fix for audit I10/S16.  The
+    ``summary`` flag is still forwarded to the service (so the query
+    can short-circuit large column reads) but the wire shape is the
+    same either way.  FastAPI's response_model serialization will drop
+    any extra fields if the service returns the fuller ``EventResponse``.
+    """
     return event_service.list_events(
         skip=skip,
         limit=limit,
@@ -55,12 +79,13 @@ def list_events(
     )
 
 
-@router.get("/{event_id}", response_model=EventResponse)
+@router.get("/{event_id}", response_model=EventPublicResponse)
 def get_event(event_id: int):
-    event = event_service.get_event(event_id)
-    if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=EVENT_NOT_FOUND)
-    return event
+    """Public event detail.  ``created_by`` is stripped via
+    ``EventPublicResponse`` (audit I10 / S16); owners / admins see the
+    full shape through their dashboards via the dedicated service call.
+    """
+    return get_or_404(event_service.get_event(event_id), EVENT_NOT_FOUND)
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -77,12 +102,8 @@ def update_event(
     data: EventUpdate,
     auth_user: dict = Depends(get_current_user),
 ):
-    event = event_service.get_event(event_id)
-    if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=EVENT_NOT_FOUND)
-    require_owner_or_admin(auth_user, event.created_by)
-    updated = event_service.update_event(event_id, data)
-    return updated
+    _get_event_or_404_authorized(event_id, auth_user)
+    return get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -90,8 +111,5 @@ def delete_event(
     event_id: int,
     auth_user: dict = Depends(get_current_user),
 ):
-    event = event_service.get_event(event_id)
-    if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=EVENT_NOT_FOUND)
-    require_owner_or_admin(auth_user, event.created_by)
+    _get_event_or_404_authorized(event_id, auth_user)
     event_service.delete_event(event_id)

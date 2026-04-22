@@ -2,8 +2,9 @@ import React, { useMemo } from "react";
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
-import { useEventsContext } from "@/features/events/context/EventsContext";
-import { getUniqueEvents } from "@/shared/utils/event";
+import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { usePromotionsStore } from "@/features/credits";
+import { idArrayEqual } from "@/shared/hooks/useShallowIdArrayEquality";
 import type { Event } from "@/shared/types";
 
 interface EventListProps {
@@ -11,40 +12,48 @@ interface EventListProps {
   viewMode: "grid" | "calendar" | "map";
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
+  /** Called when the user confirms deletion on an owned/admin event card. */
+  onDelete?: (eventId: number) => void;
+  /** Called when the empty-state "Clear filters" button is pressed. */
+  onClearFilters?: () => void;
 }
 
 /**
- * Event list component
- * Follows Vercel React best practices for rendering performance
- * Uses content-visibility CSS for performance boost
- * Uses EventsContext to reduce prop drilling
+ * Event list component.
+ *
+ * Reads saved/promoted IDs directly from their respective stores so that any
+ * card — including cards rendered inside `EventDetailsModal`'s similar-events
+ * grid — stays in sync without needing a context wrapper.
+ * Ordering (promoted first, recommended score) happens upstream in
+ * `useEventsPageData.orderedEvents`; this component only renders.
  */
 export function EventList({
   events,
   viewMode,
   onEventClick,
   disableModal,
+  onDelete,
+  onClearFilters,
 }: EventListProps) {
   const { t } = useTranslation();
-  const {
-    savedEventIds,
-    activePromotedEventIds,
-    onClearFilters,
-  } = useEventsContext();
+  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+  // Custom equality: the store re-sets this array on every reconcile, so the
+  // reference changes even when the ID set is identical. Compare element-wise
+  // to avoid unnecessary re-renders.
+  const activePromotedEventIds = usePromotionsStore(
+    (s) => s.activePromotedEventIds,
+    idArrayEqual,
+  );
 
-  // Deduplicate and sort promoted events to the top - MUST be called before any early returns
-  const sortedEvents = useMemo(() => {
-    // First deduplicate events by ID to prevent duplicate key warnings
-    const uniqueEvents = getUniqueEvents(events);
-    // Then sort promoted events to the top
-    return [...uniqueEvents].sort((a, b) => {
-      const aPromoted = activePromotedEventIds.includes(a.id);
-      const bPromoted = activePromotedEventIds.includes(b.id);
-      if (aPromoted && !bPromoted) return -1;
-      if (!aPromoted && bPromoted) return 1;
-      return 0;
-    });
-  }, [events, activePromotedEventIds]);
+  // Wrap id arrays in Sets for O(1) membership lookups per card.
+  const savedSet = useMemo(
+    () => new Set(savedEventIds),
+    [savedEventIds],
+  );
+  const promotedSet = useMemo(
+    () => new Set(activePromotedEventIds),
+    [activePromotedEventIds],
+  );
 
   // Early returns AFTER all hooks
   if (viewMode === "calendar") {
@@ -66,7 +75,7 @@ export function EventList({
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 px-4">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
           <Search className="w-8 h-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -94,7 +103,7 @@ export function EventList({
       role="list"
       aria-label={`${events.length} events found`}
     >
-      {sortedEvents.map((event) => (
+      {events.map((event) => (
         <div
           key={event.id}
           role="listitem"
@@ -104,10 +113,11 @@ export function EventList({
         >
           <EventCard
             event={event}
-            isSaved={savedEventIds.includes(event.id)}
-            isPromoted={activePromotedEventIds.includes(event.id)}
+            isSaved={savedSet.has(event.id)}
+            isPromoted={promotedSet.has(event.id)}
             onEventClick={onEventClick}
             disableModal={disableModal}
+            onDelete={onDelete}
           />
         </div>
       ))}

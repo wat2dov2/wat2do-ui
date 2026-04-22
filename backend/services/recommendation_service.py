@@ -7,19 +7,24 @@ Two modes:
 """
 
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+from collections.abc import Iterator
+from concurrent.futures import Executor, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
+from typing import Callable
 
 from postgrest.exceptions import APIError
 
 from core.cache import TTLCache
-from core.constants import supabase_retry
+from core.retry import supabase_retry
 from core.database import get_sb
-from core.pagination import fetch_all_pages
+from core.pagination import iter_all_pages
 from core.tables import EVENTS, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
 from schemas.recommendation import RecommendationItem
 from services import user_service, interaction_service
+from services.ab_test_service import ab_test
+from services.recommender.interaction_scores import get_user_event_scores
 from services.recommender.content_based import get_content_scores
 from services.recommender.collaborative import get_collaborative_scores
 from services.recommender.popularity import get_popularity_scores
@@ -46,6 +51,36 @@ log = logging.getLogger(__name__)
 _candidates_cache = TTLCache(default_ttl=CANDIDATE_EVENTS_CACHE_TTL)
 
 
+def invalidate_candidates_cache() -> None:
+    """Invalidate the shared candidate-events cache.
+
+    Callers (event_service create/update/delete paths) should invoke this so
+    that newly-published or mutated events show up in recommendations before
+    the TTL expires.
+    """
+    _candidates_cache.clear()
+
+
+# ---------------------------------------------------------------------------
+# Per-user locks for the upsert-then-delete sequence inside _store_user_recs.
+# Two concurrent compute_and_store calls for the same user_id would otherwise
+# race on the trailing `.lt(computed_at)` delete; serializing per user ensures
+# call A's delete never wipes call B's freshly-written rows.
+# A module-level dict of locks is fine for single-process deployments.
+# ---------------------------------------------------------------------------
+_store_locks_guard = threading.Lock()
+_store_locks: dict[str, threading.Lock] = {}
+
+
+def _get_store_lock(user_id: str) -> threading.Lock:
+    with _store_locks_guard:
+        lock = _store_locks.get(user_id)
+        if lock is None:
+            lock = threading.Lock()
+            _store_locks[user_id] = lock
+        return lock
+
+
 class RecommendationEngine:
     def __init__(
         self,
@@ -54,6 +89,7 @@ class RecommendationEngine:
         collab_scorer=None,
         popularity_scorer=None,
         reranker=None,
+        executor_factory: Callable[..., Executor] | None = None,
         hot_threshold: int = HOT_THRESHOLD,
         warm_threshold: int = WARM_THRESHOLD,
         default_lambda: float = DEFAULT_LAMBDA,
@@ -62,9 +98,14 @@ class RecommendationEngine:
         self._collab_scorer = collab_scorer or get_collaborative_scores
         self._popularity_scorer = popularity_scorer or get_popularity_scores
         self._reranker = reranker or mmr_rerank
+        self._executor_factory = executor_factory or (lambda max_workers: ThreadPoolExecutor(max_workers=max_workers))
         self.hot_threshold = hot_threshold
         self.warm_threshold = warm_threshold
         self.default_lambda = default_lambda
+
+    def make_executor(self, max_workers: int = 2) -> Executor:
+        """Create an executor using the injected factory."""
+        return self._executor_factory(max_workers=max_workers)
 
     # ---------------------------------------------------------------------------
     # Online: thin serving layer — reads pre-computed recs, applies real-time filters
@@ -100,9 +141,10 @@ class RecommendationEngine:
             #    instead of scanning all future events)
             exclude: set[int] = set()
             future_ids: set[int] | None = None
+            future_lookup_failed = False
             now = datetime.now(timezone.utc).isoformat()
 
-            with ThreadPoolExecutor(max_workers=2) as pool:
+            with self.make_executor(max_workers=2) as pool:
                 actions_future = pool.submit(
                     self._fetch_recent_actions, user_id, computed_at
                 )
@@ -119,6 +161,13 @@ class RecommendationEngine:
                     future_ids = future_future.result()
                 except APIError as e:
                     log.warning("Failed to check future events: %s", e)
+                    future_lookup_failed = True
+
+            # Fail closed: if we couldn't verify which pre-computed events are
+            # still in the future, fall through to live computation rather than
+            # leak past events.
+            if future_lookup_failed:
+                return self._compute_live(user_id, limit)
 
             results: list[RecommendationItem] = []
             for rec in recs.data:
@@ -134,6 +183,25 @@ class RecommendationEngine:
                 ))
                 if len(results) >= limit:
                     break
+
+            # R17: top up with live compute when pre-computed filtering left
+            # fewer than `limit` results. Dedup by event_id so we don't emit
+            # an event twice.
+            if results and len(results) < limit:
+                seen = {r.event_id for r in results}
+                try:
+                    topup = self._compute_live(user_id, limit)
+                except Exception as e:
+                    log.warning("Live top-up failed for user %s: %s", user_id, e)
+                    topup = []
+                for item in topup:
+                    if item.event_id in seen:
+                        continue
+                    results.append(item)
+                    seen.add(item.event_id)
+                    if len(results) >= limit:
+                        break
+                return results
 
             if results:
                 return results
@@ -176,6 +244,7 @@ class RecommendationEngine:
         if not candidates:
             return []
 
+        pop_scores: dict[int, float] = {}
         try:
             pop_scores = self._popularity_scorer([e.id for e in candidates])
             candidates.sort(key=lambda e: pop_scores.get(e.id, 0), reverse=True)
@@ -184,10 +253,34 @@ class RecommendationEngine:
             log.warning("Popularity scoring failed, falling back to recency: %s", e)
             reason = "Happening soon"
 
+        # R20: emit the real popularity score so downstream analytics (AB test
+        # metrics, CTR) can rank/compare rather than seeing a uniform 0.0.
         return [
-            RecommendationItem(event_id=e.id, score=0.0, reason=reason)
+            RecommendationItem(
+                event_id=e.id,
+                score=round(pop_scores.get(e.id, 0.0), 4),
+                reason=reason,
+            )
             for e in candidates[:limit]
         ]
+
+    def get_personalized_recommendations(
+        self, user_id: str, limit: int = DEFAULT_LIMIT,
+    ) -> list[RecommendationItem]:
+        """Full personalized flow: get recs, resolve AB variant, record impressions.
+
+        Orchestrates the AB test integration so routers make a single call.
+        Falls back to popular recommendations on failure.
+        """
+        variant = ab_test.get_user_variant(user_id)
+        recs = self.get_recommendations(user_id=user_id, limit=limit)
+        try:
+            ab_test.record_impressions(
+                user_id, [r.event_id for r in recs], variant
+            )
+        except Exception:
+            log.warning("Failed to record AB impressions for user %s", user_id, exc_info=True)
+        return recs
 
     # ---------------------------------------------------------------------------
     # Offline: full pipeline — runs nightly, writes to user_recommendations
@@ -227,85 +320,27 @@ class RecommendationEngine:
     @supabase_retry
     def _store_user_recs(self, user_id: str, rows: list[dict]) -> None:
         """Upsert new recs then remove stale entries, so a failed insert never
-        wipes existing recommendations."""
-        if not rows:
-            get_sb().table(USER_RECOMMENDATIONS).delete().eq("user_id", user_id).execute()
-            return
-        computed_at = rows[0]["computed_at"]
-        get_sb().table(USER_RECOMMENDATIONS).upsert(
-            rows, on_conflict="user_id,event_id"
-        ).execute()
-        # Remove stale rows from previous computes
-        (get_sb()
-         .table(USER_RECOMMENDATIONS)
-         .delete()
-         .eq("user_id", user_id)
-         .lt("computed_at", computed_at)
-         .execute())
+        wipes existing recommendations.
 
-    def compute_all_users(
-        self,
-        limit: int = DEFAULT_LIMIT,
-        lambda_param: float | None = None,
-        max_workers: int = 6,
-    ) -> dict:
-        """Run compute_and_store for every user in parallel. Returns stats dict.
-
-        Uses ThreadPoolExecutor to process users concurrently. Each user's
-        computation is independent (no shared mutable state, DB writes are
-        scoped by user_id). max_workers is kept moderate to respect Supabase
-        API rate limits — each worker issues multiple HTTP requests per user.
+        Serialized per-user so two overlapping compute_and_store calls for the
+        same user can't race on the trailing delete (where call A's delete
+        could otherwise erase rows call B just upserted).
         """
-        users = self._fetch_all_user_ids()
-        total = len(users)
-        processed = 0
-        failed = 0
-        failed_ids: list[str] = []
-
-        log.info("Starting recommendation batch for %d users (max_workers=%d)", total, max_workers)
-
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            future_to_uid = {
-                pool.submit(self.compute_and_store, user["id"], limit, lambda_param): user["id"]
-                for user in users
-            }
-
-            for future in as_completed(future_to_uid):
-                uid = future_to_uid[future]
-                try:
-                    future.result()
-                    processed += 1
-                except Exception:
-                    failed += 1
-                    failed_ids.append(str(uid))
-                    log.warning("Failed to compute recs for user %s", uid, exc_info=True)
-
-                done = processed + failed
-                if done % 100 == 0 or done == total:
-                    log.info("Batch progress: %d/%d done (%d failed)", done, total, failed)
-
-        stats = {
-            "total_users": total,
-            "processed": processed,
-            "failed": failed,
-            "failed_ids": failed_ids,
-        }
-        log.info("Recommendation batch complete: %s", {k: v for k, v in stats.items() if k != "failed_ids"})
-        return stats
-
-    @supabase_retry
-    def _fetch_all_user_ids(self) -> list[dict]:
-        """Fetch all user IDs, with retry on transient failures."""
-        return fetch_all_pages(
-            lambda offset, ps: (
-                get_sb()
-                .table(USERS)
-                .select("id")
-                .order("id")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
-        )
+        with _get_store_lock(user_id):
+            if not rows:
+                get_sb().table(USER_RECOMMENDATIONS).delete().eq("user_id", user_id).execute()
+                return
+            computed_at = rows[0]["computed_at"]
+            get_sb().table(USER_RECOMMENDATIONS).upsert(
+                rows, on_conflict="user_id,event_id"
+            ).execute()
+            # Remove stale rows from previous computes
+            (get_sb()
+             .table(USER_RECOMMENDATIONS)
+             .delete()
+             .eq("user_id", user_id)
+             .lt("computed_at", computed_at)
+             .execute())
 
     # ---------------------------------------------------------------------------
     # Core pipeline (shared by live and offline)
@@ -326,12 +361,15 @@ class RecommendationEngine:
         candidate_ids = [e.id for e in candidates]
         events_by_id = {e.id: e for e in candidates}
 
-        # Parallelize independent DB lookups: user profile + interaction count
+        # Parallelize independent DB lookups: user profile, interaction count,
+        # and per-user interaction scores (needed by content-based scorer).
         user = None
         interaction_count = 0
-        with ThreadPoolExecutor(max_workers=2) as pool:
+        user_scores: dict[int, float] = {}
+        with self.make_executor(max_workers=3) as pool:
             user_future = pool.submit(user_service.get_user, user_id)
             count_future = pool.submit(interaction_service.get_user_interaction_count, user_id)
+            scores_future = pool.submit(get_user_event_scores, user_id)
 
             try:
                 user = user_future.result()
@@ -343,6 +381,11 @@ class RecommendationEngine:
             except Exception as e:
                 log.warning("Failed to get interaction count for user %s: %s", user_id, e)
 
+            try:
+                user_scores = scores_future.result()
+            except Exception as e:
+                log.warning("Failed to get user event scores for user %s: %s", user_id, e)
+
         has_profile = bool(user and user.interests)
 
         content_scores: dict[int, float] = {}
@@ -351,12 +394,15 @@ class RecommendationEngine:
 
         # Parallelize scoring strategies: popularity always runs; content and
         # collaborative run conditionally but are independent of each other.
-        with ThreadPoolExecutor(max_workers=3) as pool:
+        with self.make_executor(max_workers=3) as pool:
             futures: dict[str, object] = {}
             futures["pop"] = pool.submit(self._popularity_scorer, candidate_ids)
 
             if has_profile:
-                futures["content"] = pool.submit(self._content_scorer, user_id, candidates, user=user)
+                futures["content"] = pool.submit(
+                    self._content_scorer, user_id, candidates,
+                    user=user, user_scores=user_scores,
+                )
 
             if interaction_count >= self.warm_threshold:
                 futures["collab"] = pool.submit(self._collab_scorer, user_id, candidate_ids)
@@ -388,12 +434,17 @@ class RecommendationEngine:
         )
 
         if not blended:
-            return [
-                RecommendationItem(event_id=e.id, score=0.0, reason="Happening soon")
-                for e in candidates[:limit]
-            ]
+            # R8/R22: fall through to popular recommendations rather than
+            # returning dtstart-sorted candidates with score=0.0.
+            log.warning(
+                "Blend empty for user %s (candidates=%d); falling back to popular recs",
+                user_id, len(candidate_ids),
+            )
+            return self.get_popular_recommendations(limit)
 
-        scored_list = sorted(blended.items(), key=lambda x: x[1], reverse=True)
+        # R18: explicit tie-break by event_id so ordering is reproducible when
+        # two events end up with identical blended scores.
+        scored_list = sorted(blended.items(), key=lambda x: (-x[1], x[0]))
         reranked_ids = self._reranker(
             scored_events=scored_list,
             events_metadata=events_by_id,
@@ -468,3 +519,117 @@ class RecommendationEngine:
 
 
 engine = RecommendationEngine()
+
+
+class BatchRecommendationRunner:
+    """Batch orchestration: runs compute_and_store for all users in parallel.
+
+    Separated from RecommendationEngine so the engine stays focused on
+    scoring/blending logic while the runner owns threading, progress
+    logging, retry, and stats aggregation.
+    """
+
+    def __init__(self, rec_engine: RecommendationEngine | None = None):
+        self._engine = rec_engine or engine
+
+    def compute_all_users(
+        self,
+        limit: int = DEFAULT_LIMIT,
+        lambda_param: float | None = None,
+        max_workers: int = 6,
+    ) -> dict:
+        """Run compute_and_store for every user in parallel. Returns stats dict.
+
+        Uses ThreadPoolExecutor to process users concurrently. Each user's
+        computation is independent (no shared mutable state, DB writes are
+        scoped by user_id). max_workers is kept moderate to respect Supabase
+        API rate limits — each worker issues multiple HTTP requests per user.
+
+        R6: streams users page-by-page from the DB and caps the number of
+        in-flight futures at ``max_workers * IN_FLIGHT_MULT`` so memory is
+        O(pool) rather than O(total_users).
+        """
+        processed = 0
+        failed = 0
+        failed_ids: list[str] = []
+
+        # Producer/consumer: keep at most `in_flight_cap` futures pending.
+        # Larger than max_workers so the pool always has work to pick up, but
+        # small enough that we don't materialise all futures upfront.
+        in_flight_cap = max(max_workers * 4, max_workers + 2)
+
+        log.info("Starting recommendation batch (max_workers=%d, in_flight_cap=%d)", max_workers, in_flight_cap)
+
+        user_iter: Iterator[dict] = self._iter_all_user_ids()
+
+        with self._engine.make_executor(max_workers=max_workers) as pool:
+            future_to_uid: dict = {}
+
+            def _drain_one() -> None:
+                nonlocal processed, failed
+                # Wait for at least one future to complete, then drain every
+                # future that's already done.
+                done_iter = as_completed(future_to_uid)
+                done_future = next(done_iter)
+                finished = [done_future]
+                # Also pick up any others that happen to be done already.
+                for f in list(future_to_uid):
+                    if f is done_future:
+                        continue
+                    if f.done():
+                        finished.append(f)
+                for f in finished:
+                    uid = future_to_uid.pop(f)
+                    try:
+                        f.result()
+                        processed += 1
+                    except Exception:
+                        failed += 1
+                        failed_ids.append(str(uid))
+                        log.warning("Failed to compute recs for user %s", uid, exc_info=True)
+                    done = processed + failed
+                    if done % 100 == 0:
+                        log.info("Batch progress: %d done (%d failed)", done, failed)
+
+            for user in user_iter:
+                if len(future_to_uid) >= in_flight_cap:
+                    _drain_one()
+                fut = pool.submit(
+                    self._engine.compute_and_store, user["id"], limit, lambda_param,
+                )
+                future_to_uid[fut] = user["id"]
+
+            # Drain remaining futures.
+            while future_to_uid:
+                _drain_one()
+
+        total = processed + failed
+        stats = {
+            "total_users": total,
+            "processed": processed,
+            "failed": failed,
+            "failed_ids": failed_ids,
+        }
+        log.info("Recommendation batch complete: %s", {k: v for k, v in stats.items() if k != "failed_ids"})
+        return stats
+
+    @staticmethod
+    def _iter_all_user_ids() -> Iterator[dict]:
+        """Yield users one page at a time to bound memory during batch runs.
+
+        Uses the existing `iter_all_pages` streaming helper from core.pagination
+        so we never materialise the full user table at once.
+        """
+        return iter_all_pages(
+            lambda offset, ps: (
+                get_sb()
+                .table(USERS)
+                .select("id")
+                .order("id")
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data or [],
+        )
+
+
+batch_runner = BatchRecommendationRunner()

@@ -1,21 +1,5 @@
 /**
- * Admin Posters Page Hook
- * Manages local state for AdminPostersPage to reduce component complexity
+ * Backward-compatible re-export.
+ * The canonical hook now lives in @/shared/hooks/usePostersPage.
  */
-
-import { useState } from "react";
-
-export function useAdminPostersPage() {
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  return {
-    deleteConfirmId,
-    setDeleteConfirmId,
-    refreshKey,
-    setRefreshKey,
-    showCreateModal,
-    setShowCreateModal,
-  };
-}
+export { usePostersPage as useAdminPostersPage } from "@/shared/hooks/usePostersPage";

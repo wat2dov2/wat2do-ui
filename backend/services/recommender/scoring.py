@@ -56,11 +56,41 @@ def blend_scores(
 ) -> dict[int, float]:
     """Compute weighted blend of content, collaborative, and popularity scores.
 
-    Returns {event_id: blended_score} for all candidates with score > 0.
+    Returns {event_id: blended_score} for the given candidates.
     Events in *exclude* are skipped.
+
+    When a scorer dict is empty, the corresponding weight is redistributed
+    across the remaining non-empty scorers (proportional renormalization) so
+    that a failed or skipped scorer does not scale the final score down.
+    (R9)
+
+    Zero-scored items are retained in the blend as long as at least one
+    scorer produced data; only when all scorers are empty do we drop items.
+    This preserves candidates with zero preference signal rather than
+    silently collapsing the blend. (R10)
     """
     w_content, w_collab, w_pop = weights
     skip = exclude or set()
+
+    # R9: renormalize weights across scorers that actually produced data.
+    scorer_present = (
+        bool(content_scores),
+        bool(collab_scores),
+        bool(pop_scores),
+    )
+    effective_weights = [
+        w_content if scorer_present[0] else 0.0,
+        w_collab if scorer_present[1] else 0.0,
+        w_pop if scorer_present[2] else 0.0,
+    ]
+    total_weight = sum(effective_weights)
+    if total_weight > 0:
+        w_content, w_collab, w_pop = (w / total_weight for w in effective_weights)
+    else:
+        w_content, w_collab, w_pop = 0.0, 0.0, 0.0
+
+    any_scorer_present = any(scorer_present)
+
     blended: dict[int, float] = {}
     for eid in candidate_ids:
         if eid in skip:
@@ -70,6 +100,8 @@ def blend_scores(
             + w_collab * collab_scores.get(eid, 0)
             + w_pop * pop_scores.get(eid, 0)
         )
-        if score > 0:
+        # R10: keep zero-scored items when any scorer produced data so the
+        # blend doesn't silently go empty (which triggers a fallback path).
+        if score > 0 or any_scorer_present:
             blended[eid] = score
     return blended

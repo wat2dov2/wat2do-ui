@@ -1,10 +1,16 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_current_user, get_admin_user, resolve_db_user
-from core.constants import MAX_STATUS_FILTER_LENGTH
+from core.auth import get_admin_user, get_current_user, get_db_user
+from core.constants import (
+    MAX_STATUS_FILTER_LENGTH,
+    REPORT_RATE_LIMIT_MAX_REQUESTS,
+    REPORT_RATE_LIMIT_WINDOW_SECONDS,
+)
+from core.exceptions import get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
+from core.rate_limit import RateLimiter
 from schemas.report import ReportCreate, ReportUpdate, ReportResponse
 from core.errors import REPORT_NOT_FOUND
 from services import report_service
@@ -13,9 +19,25 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 log = logging.getLogger(__name__)
 
 
+# Per-user rate limit on report creation — complement to the event-exists
+# check in report_service.create_report (audit I2).  Together they close
+# the "fill the reports table with forged event IDs" attack.
+_report_create_limiter = RateLimiter(
+    max_requests=REPORT_RATE_LIMIT_MAX_REQUESTS,
+    window_seconds=REPORT_RATE_LIMIT_WINDOW_SECONDS,
+)
+
+
+def _report_rate_key(auth_user: dict = Depends(get_current_user)) -> str:
+    return auth_user["id"]
+
+
 @router.post("/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
-def create_report(data: ReportCreate, auth_user: dict = Depends(get_current_user)):
-    user = resolve_db_user(auth_user)
+def create_report(
+    data: ReportCreate,
+    user=Depends(get_db_user),
+    _rl: None = Depends(_report_create_limiter.dependency(key_func=_report_rate_key)),
+):
     return report_service.create_report(str(user.id), data.event_id, data.reason)
 
 
@@ -39,7 +61,4 @@ def update_report(
     data: ReportUpdate,
     _: dict = Depends(get_admin_user),
 ):
-    row = report_service.update_report(report_id, data.status)
-    if not row:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=REPORT_NOT_FOUND)
-    return row
+    return get_or_404(report_service.update_report(report_id, data.status), REPORT_NOT_FOUND)

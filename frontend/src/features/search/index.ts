@@ -1,6 +1,6 @@
 /**
  * Search Feature - Public API
- * 
+ *
  * This is the public interface for the search feature.
  * Other features should import from here, not from internal files.
  */
@@ -16,13 +16,9 @@ export {
 
 // API - Filter state management
 export {
-  createFilterState,
   serializeFiltersToJSON,
   parseFiltersFromJSON,
-  buildFilterQueryString,
   parseFilterQueryString,
-  hasActiveFilters,
-  clearFilters,
 } from "./api/search.api";
 
 // Components
@@ -37,6 +33,7 @@ export { QuickFilterChip } from "./components/QuickFilterChip";
 
 // Hooks
 export { useSearch } from "./hooks/useSearch";
+export { useFilterState } from "./hooks/useFilterState";
 
 // Store
 export { useSearchStore } from "./store/search.store";

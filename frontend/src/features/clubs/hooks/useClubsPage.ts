@@ -3,7 +3,7 @@
  * Manages data loading and filtering for ClubsPage
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Club } from "@/shared/types";
 import {
   loadClubsData,
@@ -16,7 +16,6 @@ export function useClubsPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filteredClubs, setFilteredClubs] = useState<Club[]>([]);
 
   // Load clubs and categories
   useEffect(() => {
@@ -35,18 +34,13 @@ export function useClubsPage() {
     loadData();
   }, []);
 
-  // Filter clubs
-  useEffect(() => {
-    if (isLoading) {
-      setFilteredClubs([]);
-      return;
-    }
-
-    const filtered = filterClubs(clubs, {
+  // Derive filtered clubs from source data (no useState+useEffect sync needed)
+  const filteredClubs = useMemo(() => {
+    if (isLoading) return [];
+    return filterClubs(clubs, {
       searchQuery,
       categories: selectedCategories,
     });
-    setFilteredClubs(filtered);
   }, [clubs, searchQuery, selectedCategories, isLoading]);
 
   const toggleCategory = (category: string) => {

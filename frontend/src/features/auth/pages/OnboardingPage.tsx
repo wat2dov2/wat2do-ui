@@ -1,9 +1,10 @@
 import { useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import { AnimatePresence, motion } from "framer-motion";
-import { getSession, updateUserProfile } from "@/features/auth/api/auth.api";
 import { useOnboardingFlow } from "@/features/auth/hooks/useOnboardingFlow";
+import { useUpdateProfile } from "@/features/auth/hooks/useUpdateProfile";
 import { OnboardingEventGrid } from "@/features/auth/components/OnboardingEventGrid";
 import { OnboardingInterestsCombobox } from "@/features/auth/components/OnboardingInterestsCombobox";
 import { OnboardingFacultyStep } from "@/features/auth/components/OnboardingFacultyStep";
@@ -11,7 +12,6 @@ import { GooseDialogue } from "@/features/auth/components/GooseDialogue";
 import { OnboardingProgressDots } from "@/features/auth/components/OnboardingProgressDots";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
-import { useUserContext } from "@/contexts/UserContext";
 
 const stepVariants = {
   enter: { opacity: 0, y: 20 },
@@ -19,36 +19,26 @@ const stepVariants = {
   exit: { opacity: 0, y: -20 },
 };
 
-/** Goose dialogue messages by step. Extracted for easy future i18n migration. */
-const GOOSE_MESSAGES: Record<number, string> = {
-  0: "Hey there!",
-  1: "Welcome to the Wat2Do family! We're a collective with 1 goal: to create as many memories as possible in our short time in university",
-  2: "Everyone here is into something different. What kind of events are you into?",
-  4: "Gotcha, and which faculty are you in?",
-  5: "Ding! Your personalized feed is hot, fresh, and ready to serve!",
+const GOOSE_MESSAGE_KEYS: Record<number, string> = {
+  0: "onboarding.gooseStep0",
+  1: "onboarding.gooseStep1",
+  2: "onboarding.gooseStep2",
+  4: "onboarding.gooseStep4",
+  5: "onboarding.gooseStep5",
 };
-
-const GOOSE_MESSAGE_STEP3_WITH_SCHOOL = (school: string) =>
-  `5 other students have the exact same interests! Now, which of these from ${school} catch your eye?`;
-const GOOSE_MESSAGE_STEP3_DEFAULT =
-  "Love it, this is how we find the good stuff. Which of these catch your eye?";
-
-const ONBOARDING_LABELS = {
-  searchPlaceholder: "Search or select event types...",
-  doneNextLabel: "Take me to Wat2Do!",
-  defaultNextLabel: "Continue",
-} as const;
-
-function getGooseMessage(step: number, school: string): string {
-  if (step === 3) {
-    return school ? GOOSE_MESSAGE_STEP3_WITH_SCHOOL(school) : GOOSE_MESSAGE_STEP3_DEFAULT;
-  }
-  return GOOSE_MESSAGES[step] ?? "";
-}
 
 export function OnboardingPage() {
   const navigate = useNavigate();
-  const { setProfileCompleted, setUserEmail } = useUserContext();
+  const location = useLocation();
+  const { t } = useTranslation();
+  const { persistProfile } = useUpdateProfile();
+
+  // Signup flow hands the school over via router state so we can greet the
+  // user by their institution on step 3 instead of the generic fallback.
+  const initialSchool = useMemo(() => {
+    const state = location.state as { school?: string } | null;
+    return state?.school ?? "";
+  }, [location.state]);
 
   const handleComplete = useCallback(
     (data: {
@@ -67,23 +57,17 @@ export function OnboardingPage() {
         hasClub: false,
       };
 
-      // Redirect to events immediately so the user isn't stuck on a slow transition
+      // Sync to localStorage first so `isProfileCompleted()` returns true
+      // before the next render triggered by `navigate`. This replaces the old
+      // monotonic-flip workaround in UserContext.
+      persistProfile(profile);
+
       navigate(ROUTES.HOME);
-      setProfileCompleted(true);
-
-      const session = getSession();
-      setUserEmail(session.email);
-      updateUserProfile(profile);
-
-      // Persist to backend in background (fire-and-forget)
-      import("@/features/auth/api/auth.api").then(({ updateProfileAPI }) =>
-        updateProfileAPI(profile).catch((err) => console.error("Failed to persist onboarding profile:", err))
-      );
     },
-    [navigate, setProfileCompleted, setUserEmail]
+    [navigate, persistProfile]
   );
 
-  const flow = useOnboardingFlow({ onComplete: handleComplete });
+  const flow = useOnboardingFlow({ onComplete: handleComplete, initialSchool });
 
   const isDoneStep = flow.currentStep === 5;
 
@@ -94,7 +78,7 @@ export function OnboardingPage() {
       <OnboardingInterestsCombobox
         selected={flow.selectedTopics}
         onToggle={flow.toggleTopic}
-        placeholder={ONBOARDING_LABELS.searchPlaceholder}
+        placeholder={t("onboarding.searchPlaceholder")}
       />
     ),
     3: (
@@ -112,10 +96,15 @@ export function OnboardingPage() {
     5: <div className="w-full min-h-[120px]" aria-hidden />,
   };
 
-  const gooseMessage = useMemo(
-    () => getGooseMessage(flow.currentStep, flow.school),
-    [flow.currentStep, flow.school]
-  );
+  const gooseMessage = useMemo(() => {
+    if (flow.currentStep === 3) {
+      return flow.school
+        ? t("onboarding.gooseStep3WithSchool", { school: flow.school })
+        : t("onboarding.gooseStep3Default");
+    }
+    const key = GOOSE_MESSAGE_KEYS[flow.currentStep];
+    return key ? t(key) : "";
+  }, [flow.currentStep, flow.school, t]);
 
   return (
     <main className="min-h-screen bg-background flex flex-col">
@@ -156,7 +145,7 @@ export function OnboardingPage() {
           onNext={flow.goNext}
           nextDisabled={!flow.canContinue}
           showBack={flow.currentStep > 0}
-          nextLabel={isDoneStep ? ONBOARDING_LABELS.doneNextLabel : ONBOARDING_LABELS.defaultNextLabel}
+          nextLabel={isDoneStep ? t("onboarding.doneNextLabel") : undefined}
         />
       </div>
     </main>

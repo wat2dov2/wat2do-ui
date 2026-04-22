@@ -62,7 +62,7 @@ export function EventSuccessScreen({
             "{formData.title}" {isEditMode ? t("events.eventUpdatedDesc") : t("events.eventCreatedDesc")}
           </p>
 
-          <div className="w-full rounded-lg p-4 text-left bg-muted space-y-1">
+          <div className="w-full rounded-lg p-4 text-left bg-secondary space-y-1">
             <p className="font-medium text-foreground">{formData.title}</p>
             <p className="text-sm text-muted-foreground">
               {formData.organization}

@@ -1,20 +1,15 @@
 /**
  * Auth Feature
  * Public API for authentication and onboarding
- * 
+ *
  * This is the feature's public interface.
  * Other features should only import from here.
  */
 
 // Components
-/** @deprecated Use `OnboardingPage` route-based flow instead. */
-export { OnboardingModal } from "./components/OnboardingModal";
 export { AuthHeroPanel } from "./components/AuthHeroPanel";
 export { AuthEmailFormCard } from "./components/AuthEmailFormCard";
-export { OnboardingTopicsStep } from "./components/OnboardingTopicsStep";
 export { OnboardingFacultyStep } from "./components/OnboardingFacultyStep";
-export { OnboardingYearStep } from "./components/OnboardingYearStep";
-export { OnboardingDoneStep } from "./components/OnboardingDoneStep";
 export { GooseDialogue } from "./components/GooseDialogue";
 
 // Pages
@@ -28,15 +23,18 @@ export {
   FACULTY_OPTIONS,
   ONBOARDING_TOTAL_STEPS,
 } from "./hooks/useOnboardingFlow";
-
-// Hooks (auth)
-export { useAuth } from "./hooks/useAuth";
+export {
+  useAuthState,
+  useUserEmail,
+  useProfileCompleted,
+  useIsAdmin,
+  useHasClub,
+  type AuthState,
+} from "./hooks/useAuthState";
 
 // API (public interface)
 export {
-  login,
-  logout,
-  getSession,
+  getSessionEmail,
   getUserProfile,
   getUserId,
   getUserRole,
@@ -49,5 +47,7 @@ export {
   logoutAPI,
   fetchProfileAPI,
   updateProfileAPI,
+  getLastProfileFetchAt,
+  AUTH_STATE_REFRESH_EVENT,
   type UserProfile,
 } from "./api/auth.api";

@@ -35,7 +35,7 @@ export function ClubPanelMembersPage() {
       {/* Members Table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full">
-          <thead className="bg-muted/50 border-b border-border">
+          <thead className="bg-secondary/50 border-b border-border">
             <tr>
               <th className="text-left text-sm font-medium text-muted-foreground px-6 py-3">
                 Name

@@ -52,7 +52,7 @@ export function RejectSubmissionDialog({
               value={rejectionReason}
               onChange={(e) => onRejectionReasonChange(e.target.value)}
               placeholder={t("admin.enterRejectionReason")}
-              className="w-full min-h-[100px] px-3 py-2 text-sm border border-border bg-muted text-foreground rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              className="w-full min-h-[100px] px-3 py-2 text-sm border border-border bg-secondary text-foreground rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
               required
             />
           </div>

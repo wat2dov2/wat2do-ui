@@ -4,10 +4,6 @@ This module is a thin CRUD/dedup layer.  Recommendation-specific scoring
 (get_user_event_scores, get_interaction_matrix, get_event_popularity, and
 cache infrastructure) lives in services.recommender.interaction_scores so
 that this service has no dependency on recommender config.
-
-The four scoring functions are re-exported here so existing call sites
-(popularity.py, collaborative.py, content_based.py, evaluation.py) that
-access them via `interaction_service.<name>` continue to work unchanged.
 """
 
 import logging
@@ -16,6 +12,10 @@ from datetime import datetime, timedelta, timezone
 
 from core.constants import (
     DEDUP_WINDOW_MINUTES,
+    INTERACTION_CLICK,
+    INTERACTION_DETAIL_VIEW,
+    INTERACTION_SAVE,
+    INTERACTION_SHARE,
     MAX_DUPLICATE_INTERACTIONS,
     MAX_INTERACTION_BATCH_SIZE,
     MAX_USER_INTERACTIONS_PER_WINDOW,
@@ -24,30 +24,21 @@ from core.database import get_sb
 from core.exceptions import AuthenticationError, AuthorizationError, ValidationError
 from core.pagination import iter_all_pages
 from core.tables import USER_INTERACTIONS
-from schemas.interaction import InteractionCreate, InteractionMatrixRow, EventPopularity
-from services.recommender.interaction_scores import (
-    clear_user_scores_cache,
-    get_event_popularity,
-    get_interaction_matrix,
-    get_user_event_scores,
-)
+from schemas.interaction import InteractionCreate
 
 log = logging.getLogger(__name__)
 
-# Re-export scoring helpers so callers that do
-#   `interaction_service.get_interaction_matrix()`
-# continue to work without modification.
-__all__ = [
-    "clear_user_scores_cache",
-    "get_event_popularity",
-    "get_interaction_matrix",
-    "get_user_event_scores",
-    "record_interactions",
-    "record_interactions_batch",
-    "check_duplicate_interactions",
-    "get_user_interaction_count",
-    "get_user_interaction_counts",
-]
+
+# Anonymous interactions are accepted only for the low-signal ``view``
+# (and ``unsave``) types.  High-signal types (save/click/share/detail_view)
+# feed popularity + collaborative-filtering scoring and would otherwise let
+# a rotating-IP attacker inflate any event's ranking for free (audit I18).
+_ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset({
+    INTERACTION_SAVE,
+    INTERACTION_CLICK,
+    INTERACTION_SHARE,
+    INTERACTION_DETAIL_VIEW,
+})
 
 
 def record_interactions(
@@ -110,15 +101,39 @@ def record_interactions_batch(
     - If the payload contains a ``user_id`` it must match the authenticated
       user.  Unauthenticated requests may not send a ``user_id``.
     - Authenticated users get deduplication; anonymous users do not.
-    - DB errors are caught and logged; the method returns 0 in that case.
+    - DB errors propagate — the global APIError handler returns 502 so
+      clients can retry rather than silently receiving ``{"recorded": 0}``
+      (which is indistinguishable from "successfully deduped to empty").
+      See audit finding D11.
 
     Raises ``ValidationError``, ``AuthenticationError``, or
     ``AuthorizationError`` on validation/auth failures.
     Returns the number of interactions recorded.
     """
-    from postgrest.exceptions import APIError
-
     _validate_batch(user_id, payload_user_id, interactions)
+
+    # ── Anonymous: filter out high-signal interaction types (audit I18) ──
+    # Anonymous callers can still record ``view`` impressions for basic
+    # telemetry, but ``save``/``click``/``share``/``detail_view`` feed
+    # popularity + collaborative-filtering scores; letting them through
+    # unauthenticated would allow a rotating-IP attacker to inflate any
+    # event's ranking.  Dedup is also skipped for anonymous users, so the
+    # only defensible posture is to reject these types outright.
+    if user_id is None:
+        filtered = [
+            item for item in interactions
+            if item.interaction_type not in _ANON_DISALLOWED_INTERACTION_TYPES
+        ]
+        dropped = len(interactions) - len(filtered)
+        if dropped:
+            log.warning(
+                "Dropped %d anonymous interactions of restricted types (session=%s)",
+                dropped,
+                session_id,
+            )
+        interactions = filtered
+        if not interactions:
+            return 0
 
     # ── Deduplication (authenticated users only) ─────────────────────
     if user_id is not None:
@@ -130,15 +145,16 @@ def record_interactions_batch(
             return 0
 
     # ── Persist ──────────────────────────────────────────────────────
-    try:
-        return record_interactions(
-            user_id=user_id,
-            session_id=session_id,
-            interactions=interactions,
-        )
-    except APIError as e:
-        log.warning("interactions table unavailable: %s", e)
-        return 0
+    # D11: do NOT swallow APIError here.  A transient table/RLS/network
+    # failure used to return 0 (identical to a successful empty-after-dedup
+    # batch) so the frontend thought tracking was healthy while interactions
+    # silently dropped on the floor.  Propagating lets the global handler
+    # map the error to 502 with a clear logline for observability.
+    return record_interactions(
+        user_id=user_id,
+        session_id=session_id,
+        interactions=interactions,
+    )
 
 
 def get_user_interaction_count(user_id: str) -> int:
@@ -204,17 +220,24 @@ def check_duplicate_interactions(
 
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=DEDUP_WINDOW_MINUTES)).isoformat()
 
-    # Fetch recent interactions for this user within the window
+    # Fetch recent interactions for this user within the window.
+    # R14: pagination via iter_all_pages so heavy users (> 1000 interactions
+    # within the dedup window) aren't silently truncated by PostgREST's
+    # default max-rows limit, which would cause the per-event and global
+    # caps to stop firing.
     try:
-        r = (
-            get_sb()
-            .table(USER_INTERACTIONS)
-            .select("event_id, interaction_type")
-            .eq("user_id", user_id)
-            .gte("created_at", cutoff)
-            .execute()
-        )
-        existing = r.data or []
+        existing: list[dict] = list(iter_all_pages(
+            lambda offset, ps: (
+                get_sb()
+                .table(USER_INTERACTIONS)
+                .select("event_id, interaction_type")
+                .eq("user_id", user_id)
+                .gte("created_at", cutoff)
+                .order("created_at")
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data or [],
+        ))
     except Exception as e:
         log.error("Dedup check failed, rejecting batch to prevent gaming: %s", e)
         return []

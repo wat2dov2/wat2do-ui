@@ -6,56 +6,12 @@
 
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { PreviewStyleEventCard, type PreviewEventData } from "@/features/auth/components/PreviewStyleEventCard";
-import { useEventsStore } from "@/features/events/store/events.store";
-import { formatCardDate, formatCardTime } from "@/shared/utils/date";
-import type { Event } from "@/shared/types";
-import type { TFunction } from "i18next";
+import { PreviewStyleEventCard } from "@/features/auth/components/PreviewStyleEventCard";
+import { useEventsStore } from "@/features/events";
 import { cn } from "@/shared/lib/utils";
 import { HERO_CARD_PLACEHOLDER_HEIGHT } from "@/features/auth/constants";
-import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
-
-function shuffle<T>(arr: T[]): T[] {
-  const out = [...arr];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
-
-function eventToPreview(event: Event, locale: string, t: TFunction): PreviewEventData {
-  const badges: Array<{ text: string; bgClass: string; textClass: string }> = [];
-  const price = event.price ?? 0;
-  if (price === 0) {
-    badges.push({ text: t("common.free"), bgClass: "bg-success/20", textClass: "text-success" });
-  } else if (price != null) {
-    badges.push({ text: `$${price}`, bgClass: "bg-primary/20", textClass: "text-primary" });
-  }
-  const food = event.food || [];
-  if (food.length > 0) {
-    badges.push({ text: t("common.freeFood"), bgClass: "bg-warning/20", textClass: "text-warning" });
-  }
-  const requiresRegistration = event.requiresRegistration ?? event.registration ?? false;
-  if (requiresRegistration) {
-    badges.push({
-      text: t("common.registration"),
-      bgClass: "bg-purple-500/20",
-      textClass: "text-purple-500",
-    });
-  }
-
-  return {
-    title: event.title,
-    org: event.organization ?? event.display_handle ?? "",
-    category: event.category ?? DEFAULT_EVENT_CATEGORY,
-    image: event.imageUrl ?? event.source_image_url ?? "",
-    date: formatCardDate(event, locale),
-    time: formatCardTime(event),
-    location: event.location ?? "",
-    badges,
-  };
-}
+import { eventToPreview } from "@/features/auth/utils/eventPreview";
+import { shuffle } from "@/features/auth/utils/shuffle";
 
 interface OnboardingEventGridProps {
   selectedEventIds: number[];
@@ -76,12 +32,15 @@ export function OnboardingEventGrid({
 
   const locale = i18n.language || "en-US";
 
-  // Pick 8 random events for onboarding (stable until events change)
-  const previewEvents = useMemo(() => {
-    if (allEvents.length === 0) return [];
-    const shuffled = shuffle(allEvents);
-    return shuffled.slice(0, 8).map((e) => ({ event: e, preview: eventToPreview(e, locale, t) }));
-  }, [allEvents, locale, t]);
+  // Memoize the "pick top 8 random events" step so it only recomputes when
+  // the underlying events array changes — not on every locale/translation
+  // change. Documents intent: only the first 8 shuffled events are needed.
+  const topEvents = useMemo(() => shuffle(allEvents).slice(0, 8), [allEvents]);
+
+  const previewEvents = useMemo(
+    () => topEvents.map((e) => ({ event: e, preview: eventToPreview(e, locale, t) })),
+    [topEvents, locale, t],
+  );
 
   if (loading) {
     return (
@@ -95,7 +54,7 @@ export function OnboardingEventGrid({
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-xl overflow-hidden bg-muted/60 animate-pulse"
+            className="rounded-xl overflow-hidden bg-secondary/60 animate-pulse"
             style={{ height: HERO_CARD_PLACEHOLDER_HEIGHT }}
           />
         ))}
@@ -111,7 +70,7 @@ export function OnboardingEventGrid({
           className
         )}
       >
-        No events right now. You can continue without selecting.
+        {t("onboarding.events.noEventsAvailable", "No events right now. You can continue without selecting.")}
       </div>
     );
   }
@@ -123,7 +82,7 @@ export function OnboardingEventGrid({
         className
       )}
       role="list"
-      aria-label="Select events that catch your eye"
+      aria-label={t("onboarding.events.selectAriaLabel", "Select events that catch your eye")}
     >
       {previewEvents.map(({ event, preview }) => {
         const isSelected = selectedEventIds.includes(event.id);

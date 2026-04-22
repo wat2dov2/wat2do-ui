@@ -2,14 +2,6 @@
  * Promotion-related types
  */
 
-// Promotion types
-export interface PromotedEvent {
-  eventId: number;
-  package: PromotionPackage;
-  startDate: string;
-  endDate: string;
-}
-
 export type PromotionPackage = "featured" | "email" | "combo";
 
 export interface PromotionPackageInfo {

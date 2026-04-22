@@ -1,6 +1,5 @@
 /**
  * Admin feature constants.
+ * ADMIN_MAP_HEIGHT re-exported for backward compatibility.
  */
-
-/** Height of the scan-locations map on the posters page. */
-export const ADMIN_MAP_HEIGHT = "600px";
+export { POSTER_MAP_HEIGHT as ADMIN_MAP_HEIGHT } from "@/shared/constants/ui";

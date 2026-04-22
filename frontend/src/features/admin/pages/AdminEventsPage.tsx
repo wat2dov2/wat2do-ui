@@ -16,7 +16,8 @@ import {
 } from "@/shared/ui/table";
 import { EventDetailsModal } from "@/features/events";
 import { useAdminEventsPage } from "@/features/admin/hooks/useAdminEventsPage";
-import { useAdminContext } from "@/features/admin/context/AdminContext";
+import { useEventsStore } from "@/features/events/store/events.store";
+import type { Event } from "@/shared/types";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
@@ -30,8 +31,20 @@ import { QP } from "@/shared/constants/queryParams";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
-export function AdminEventsPage() {
-  const { events, onEditEvent, onDeleteEvent, onBack, onCreateEvent } = useAdminContext();
+interface AdminEventsPageProps {
+  onEditEvent: (event: Event) => void | Promise<void>;
+  onDeleteEvent: (eventId: number) => void | Promise<void>;
+  onCreateEvent: () => void;
+  onBack: () => void;
+}
+
+export function AdminEventsPage({
+  onEditEvent,
+  onDeleteEvent,
+  onCreateEvent,
+  onBack,
+}: AdminEventsPageProps) {
+  const events = useEventsStore((s) => s.events);
   const { t } = useTranslation();
   const {
     searchQuery,
@@ -117,7 +130,7 @@ export function AdminEventsPage() {
             "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
             showReportedOnly
               ? "bg-primary/80! text-primary-foreground! hover:bg-primary/80! hover:text-primary-foreground! [&_svg]:text-primary-foreground!"
-              : "bg-muted text-muted-foreground hover:bg-secondary"
+              : "bg-secondary text-muted-foreground hover:bg-secondary"
           )}
         >
           <AlertTriangle className="size-4" />
@@ -151,7 +164,7 @@ export function AdminEventsPage() {
                   <TableRow
                     key={event.id}
                     id={`event-${event.id}`}
-                    className={`cursor-pointer hover:bg-muted/50 ${isHighlighted ? "bg-primary/10" : ""}`}
+                    className={`cursor-pointer hover:bg-secondary/50 ${isHighlighted ? "bg-primary/10" : ""}`}
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams);
                       newParams.set(QP.EVENT_ID, event.id.toString());

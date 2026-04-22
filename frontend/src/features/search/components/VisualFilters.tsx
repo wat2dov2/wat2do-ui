@@ -4,9 +4,9 @@ import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "luci
 import type { LucideIcon } from "lucide-react";
 import { FilterSection } from "@/features/search/components/FilterSection";
 import { translateCategory } from "@/shared/utils/event";
-import { DatePicker } from "@/features/search/components/DatePicker";
 import { PieMenu } from "@/shared/ui/pie-menu";
 import { Switch } from "@/shared/ui/switch";
+import { usePieMenu } from "@/shared/hooks/usePieMenu";
 
 const PIE_ICON_MAP: Record<string, LucideIcon> = {
   Tag,
@@ -28,40 +28,18 @@ interface VisualFiltersProps {
   filters: {
     selectedCategories: string[];
     setSelectedCategories: (categories: string[]) => void;
-    categoryPieMenu: {
-      isOpen: boolean;
-      position: { x: number; y: number } | null;
-      open: (e: React.MouseEvent) => void;
-      close: () => void;
-    };
     categoryPieItems: Array<{ id: string; label: string; iconName: string }>;
     toggleCategory: (id: string) => void;
     selectedLocations: string[];
     setSelectedLocations: (locations: string[]) => void;
     selectedFoods: string[];
     setSelectedFoods: (foods: string[]) => void;
-    foodPieMenu: {
-      isOpen: boolean;
-      position: { x: number; y: number } | null;
-      open: (e: React.MouseEvent) => void;
-      close: () => void;
-    };
     foodPieItems: Array<{ id: string; label: string; iconName: string }>;
     toggleFood: (id: string) => void;
     selectedDays: string[];
     setSelectedDays: (days: string[]) => void;
-    dayPieMenu: {
-      isOpen: boolean;
-      position: { x: number; y: number } | null;
-      open: (e: React.MouseEvent) => void;
-      close: () => void;
-    };
     dayPieItems: Array<{ id: string; label: string; iconName: string }>;
     toggleDay: (id: string) => void;
-    dateRange: Date | undefined;
-    setDateRange: (date: Date | undefined) => void;
-    addedSince: Date | undefined;
-    setAddedSince: (date: Date | undefined) => void;
     priceRange: { min: string; max: string };
     setPriceRange: (range: { min: string; max: string }) => void;
     requiresRegistration: boolean;
@@ -70,12 +48,6 @@ interface VisualFiltersProps {
     setSortBy: (sortBy: string) => void;
     sortOrder: "asc" | "desc";
     setSortOrder: (order: "asc" | "desc") => void;
-    sortPieMenu: {
-      isOpen: boolean;
-      position: { x: number; y: number } | null;
-      open: (e: React.MouseEvent) => void;
-      close: () => void;
-    };
     sortPieItems: Array<{ id: string; label: string; iconName: string }>;
   };
 }
@@ -83,21 +55,37 @@ interface VisualFiltersProps {
 export function VisualFilters({ filters }: VisualFiltersProps) {
   const { t } = useTranslation();
 
-  // Map icon-name data from hook into JSX for PieMenu rendering
-  const categoryPieItemsWithIcons = useMemo(() => mapPieItems(filters.categoryPieItems), [filters.categoryPieItems]);
-  const foodPieItemsWithIcons = useMemo(() => mapPieItems(filters.foodPieItems), [filters.foodPieItems]);
-  const dayPieItemsWithIcons = useMemo(() => mapPieItems(filters.dayPieItems), [filters.dayPieItems]);
-  const sortPieItemsWithIcons = useMemo(() => mapPieItems(filters.sortPieItems), [filters.sortPieItems]);
+  // Pie-menu UI state lives here, alongside the components that render the menus.
+  const categoryPieMenu = usePieMenu();
+  const foodPieMenu = usePieMenu();
+  const dayPieMenu = usePieMenu();
+  const sortPieMenu = usePieMenu();
+
+  // Map icon-name data into JSX for PieMenu rendering
+  const categoryPieItemsWithIcons = useMemo(
+    () => mapPieItems(filters.categoryPieItems),
+    [filters.categoryPieItems],
+  );
+  const foodPieItemsWithIcons = useMemo(
+    () => mapPieItems(filters.foodPieItems),
+    [filters.foodPieItems],
+  );
+  const dayPieItemsWithIcons = useMemo(
+    () => mapPieItems(filters.dayPieItems),
+    [filters.dayPieItems],
+  );
+  const sortPieItemsWithIcons = useMemo(
+    () => mapPieItems(filters.sortPieItems),
+    [filters.sortPieItems],
+  );
 
   // Manage expanded sections state locally (UI state, not business logic)
   const [expandedSections, setExpandedSections] = useState({
     category: true,
-    dateRange: false,
     location: false,
     priceRange: false,
     food: false,
     dayOfWeek: false,
-    addedSince: false,
     registration: false,
     sort: false,
   });
@@ -122,7 +110,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
       >
         <div className="relative">
           <button
-            onClick={filters.categoryPieMenu.open}
+            onClick={categoryPieMenu.open}
             className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
@@ -136,9 +124,9 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           </button>
           <PieMenu
             items={categoryPieItemsWithIcons}
-            isOpen={filters.categoryPieMenu.isOpen}
-            position={filters.categoryPieMenu.position}
-            onClose={filters.categoryPieMenu.close}
+            isOpen={categoryPieMenu.isOpen}
+            position={categoryPieMenu.position}
+            onClose={categoryPieMenu.close}
             onSelect={(item) => filters.toggleCategory(item.id)}
             selectedIds={filters.selectedCategories}
             closeOnSelect={false}
@@ -164,7 +152,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           value={filters.selectedLocations[0] ?? ""}
           onChange={(e) =>
             filters.setSelectedLocations(
-              e.target.value.trim() ? [e.target.value.trim()] : []
+              e.target.value.trim() ? [e.target.value.trim()] : [],
             )
           }
           className="bg-secondary text-foreground text-xs px-3 py-2.5 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border placeholder:text-muted-foreground"
@@ -185,7 +173,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
       >
         <div className="relative">
           <button
-            onClick={filters.foodPieMenu.open}
+            onClick={foodPieMenu.open}
             className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
@@ -193,7 +181,6 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
                 ? filters.selectedFoods
                     .map((food) => {
                       const translation = t(`foods.${food}`);
-                      // If translation returns the key itself (missing translation), use the food value
                       return translation.startsWith("foods.") ? food : translation;
                     })
                     .join(", ")
@@ -203,9 +190,9 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           </button>
           <PieMenu
             items={foodPieItemsWithIcons}
-            isOpen={filters.foodPieMenu.isOpen}
-            position={filters.foodPieMenu.position}
-            onClose={filters.foodPieMenu.close}
+            isOpen={foodPieMenu.isOpen}
+            position={foodPieMenu.position}
+            onClose={foodPieMenu.close}
             onSelect={(item) => filters.toggleFood(item.id)}
             selectedIds={filters.selectedFoods}
             closeOnSelect={false}
@@ -229,7 +216,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
       >
         <div className="relative">
           <button
-            onClick={filters.dayPieMenu.open}
+            onClick={dayPieMenu.open}
             className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
@@ -243,9 +230,9 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           </button>
           <PieMenu
             items={dayPieItemsWithIcons}
-            isOpen={filters.dayPieMenu.isOpen}
-            position={filters.dayPieMenu.position}
-            onClose={filters.dayPieMenu.close}
+            isOpen={dayPieMenu.isOpen}
+            position={dayPieMenu.position}
+            onClose={dayPieMenu.close}
             onSelect={(item) => filters.toggleDay(item.id)}
             selectedIds={filters.selectedDays}
             closeOnSelect={false}
@@ -253,34 +240,6 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             innerRadius={20}
           />
         </div>
-      </FilterSection>
-
-      {/* Date Range Filter */}
-      <FilterSection
-        title={t("filters.dateRange")}
-        expanded={expandedSections.dateRange}
-        onToggle={() => toggleSection("dateRange")}
-        indicator={filters.dateRange ? "1" : undefined}
-        onClear={() => filters.setDateRange(undefined)}
-      >
-        <DatePicker
-          value={filters.dateRange}
-          onChange={(date) => filters.setDateRange(date)}
-        />
-      </FilterSection>
-
-      {/* Added Since Filter */}
-      <FilterSection
-        title={t("filters.addedSince")}
-        expanded={expandedSections.addedSince}
-        onToggle={() => toggleSection("addedSince")}
-        indicator={filters.addedSince ? "1" : undefined}
-        onClear={() => filters.setAddedSince(undefined)}
-      >
-        <DatePicker
-          value={filters.addedSince}
-          onChange={(date) => filters.setAddedSince(date)}
-        />
       </FilterSection>
 
       {/* Price Range Filter */}
@@ -354,7 +313,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="space-y-2">
           <div className="relative">
             <button
-              onClick={filters.sortPieMenu.open}
+              onClick={sortPieMenu.open}
               className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
             >
               <span>
@@ -365,12 +324,12 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             </button>
             <PieMenu
               items={sortPieItemsWithIcons}
-              isOpen={filters.sortPieMenu.isOpen}
-              position={filters.sortPieMenu.position}
-              onClose={filters.sortPieMenu.close}
+              isOpen={sortPieMenu.isOpen}
+              position={sortPieMenu.position}
+              onClose={sortPieMenu.close}
               onSelect={(item) => {
                 filters.setSortBy(item.id);
-                filters.sortPieMenu.close();
+                sortPieMenu.close();
               }}
               selectedIds={[filters.sortBy]}
               closeOnSelect={true}
@@ -382,7 +341,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             <button
               onClick={() =>
                 filters.setSortOrder(
-                  filters.sortOrder === "asc" ? "desc" : "asc"
+                  filters.sortOrder === "asc" ? "desc" : "asc",
                 )
               }
               className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-xl hover:bg-accent/60 transition-colors flex items-center gap-1.5"

@@ -66,7 +66,7 @@ export function PostersTable({
                       className="w-10 h-10 rounded object-cover shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded bg-muted shrink-0" />
+                    <div className="w-10 h-10 rounded bg-secondary shrink-0" />
                   )}
                   <div>
                     <div className="font-medium text-foreground">{qr.name}</div>

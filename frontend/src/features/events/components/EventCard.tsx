@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -11,29 +11,23 @@ import {
   MoreHorizontal,
   Share2,
   Flag,
-  Edit,
   Trash2,
 } from "lucide-react";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { LightRays } from "@/shared/ui/light-rays";
 import { LazyImage } from "@/shared/ui/lazy-image";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
-import { Button } from "@/shared/ui/button";
-import { LoadingButton } from "@/shared/ui/loading-button";
+import { EventCardContent } from "@/shared/ui/event-card-content";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
-import { useEventsContextOptional } from "@/features/events/context/EventsContext";
-import { useUserContext } from "@/contexts/UserContext";
+import { DeleteEventDialog } from "@/features/events/components/DeleteEventDialog";
+import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { useEventsStore } from "@/features/events/store/events.store";
+import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
+import { getUserId } from "@/features/auth";
 import { shareEvent } from "@/shared/utils/shareEvent";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
+import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
@@ -45,68 +39,53 @@ interface EventCardProps {
   isPromoted?: boolean;
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
+  /** Called when the user confirms deletion (shown only to owners/admins). */
+  onDelete?: (eventId: number) => void;
 }
 
 
+/**
+ * Data flow:
+ * 1. Explicit props (onEventClick, disableModal, onDelete) come from the
+ *    page-level container (EventsPageContainer) via EventList.
+ * 2. Stores supply global data:
+ *    - `useSavedEventsStore` for the save/unsave action.
+ *    - `useEventsStore` for `allEvents` (similar-events grid in modal).
+ * 3. Narrow auth-slice hooks supply `isAdmin`, `profileCompleted`, and
+ *    `getUserId()` the current user identity.
+ */
 export function EventCard({
   event,
   isSaved = false,
   isPromoted = false,
-  onEventClick: propOnEventClick,
-  disableModal: propDisableModal,
+  onEventClick,
+  disableModal,
+  onDelete,
 }: EventCardProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const { t, i18n } = useTranslation();
-  
-  // Get values from context (with prop overrides)
-  // Use optional context - returns null when not inside EventsProvider
-  const context = useEventsContextOptional();
-  const { profileCompleted } = useUserContext();
 
-  // Provide fallback defaults when context is null
-  const toggleSaveEvent = context?.toggleSaveEvent ?? (() => {});
-  const isAdmin = context?.isAdmin ?? false;
-  const currentUserId = context?.currentUserId;
-  const onEdit = context?.onEdit;
-  const onDelete = context?.onDelete;
-  const allEvents = context?.allEvents ?? [];
-  const contextOnEventClick = context?.onEventClick;
-  const contextDisableModal = context?.disableModal;
+  const profileCompleted = useProfileCompleted();
+  const isAdmin = useIsAdmin();
+  const currentUserId = getUserId();
 
-  // Show edit/delete only if the user is an admin or the event owner
+  // Mutations go through stores directly.
+  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
+  // All events feed the similar-events grid in EventDetailsModal.
+  const allEvents = useEventsStore((s) => s.events);
+
+  // Show delete only if the user is an admin or the event owner.
   const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
   const canManageEvent = isAdmin || isOwner;
-  
-  // Use prop values if provided, otherwise fall back to context
-  const onEventClick = propOnEventClick ?? contextOnEventClick;
-  const disableModal = propDisableModal ?? contextDisableModal;
   
   // Check if this event should be shown in modal based on URL
   const eventIdParam = searchParams.get(QP.EVENT_ID);
   const showDetailsModal = !disableModal && eventIdParam === event.id.toString();
 
   // Track card visibility (view impression)
-  const cardRef = useRef<HTMLElement>(null);
-  const trackedRef = useRef(false);
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el || trackedRef.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !trackedRef.current) {
-          trackedRef.current = true;
-          tracker.track(event.id, "view");
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [event.id]);
+  const cardRef = useViewTracking(event.id);
 
   // Use extracted hook for badges
   const badges = useEventBadges(event);
@@ -193,7 +172,7 @@ export function EventCard({
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
+                  className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="w-3.5 h-3.5" />
@@ -258,16 +237,6 @@ export function EventCard({
                     <>
                       <div className="h-px bg-border my-0.5" />
                       <button
-                        className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-primary/10 text-primary transition-colors text-left"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit?.(event);
-                        }}
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        {t("common.edit")}
-                      </button>
-                      <button
                         className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-error/10 text-error transition-colors text-left"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -296,42 +265,13 @@ export function EventCard({
         </div>
 
         {/* Event Content */}
-        <div className="relative flex flex-col flex-1 px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
-          <LightRays />
-          <div className="flex flex-col gap-3 h-full flex-1">
-            <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
-              {event.title}
-            </h3>
-
-            {/* Info + Badges - pinned to bottom */}
-            <div className="flex items-end justify-between gap-3 mt-auto">
-              <div className="space-y-0.5">
-                <span className="block text-[11px] text-muted-foreground">
-                  {cardDate}
-                </span>
-                <span className="block text-[11px] text-muted-foreground">
-                  {cardTime}
-                </span>
-                <span className="block text-[11px] text-muted-foreground truncate">
-                  {event.location}
-                </span>
-              </div>
-
-              {badges.length > 0 && (
-                <div className="flex flex-col gap-1.5 items-end shrink-0">
-                  {badges.map((badge) => (
-                    <span
-                      key={badge.text}
-                      className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-muted-foreground text-muted-foreground whitespace-nowrap"
-                    >
-                      {badge.text}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <EventCardContent
+          title={event.title}
+          date={cardDate}
+          time={cardTime}
+          location={event.location}
+          badges={badges}
+        />
       </article>
 
       {/* Event Details Modal */}
@@ -348,44 +288,12 @@ export function EventCard({
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
+      <DeleteEventDialog
         open={showDeleteConfirm}
-        onOpenChange={(open) => !open && setShowDeleteConfirm(false)}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("events.deleteEventTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("events.deleteEventConfirm", { title: event.title })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(false)}
-              disabled={isDeleting}
-            >
-              {t("common.cancel")}
-            </Button>
-            <LoadingButton
-              variant="destructive"
-              onClick={async () => {
-                setIsDeleting(true);
-                try {
-                  await Promise.resolve(onDelete?.(event.id));
-                  setShowDeleteConfirm(false);
-                } finally {
-                  setIsDeleting(false);
-                }
-              }}
-              isLoading={isDeleting}
-              loadingText={t("common.pleaseWait") || "Please wait..."}
-            >
-              {t("common.delete")}
-            </LoadingButton>
-          </div>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setShowDeleteConfirm}
+        eventTitle={event.title}
+        onConfirm={() => onDelete?.(event.id)}
+      />
     </>
   );
 }

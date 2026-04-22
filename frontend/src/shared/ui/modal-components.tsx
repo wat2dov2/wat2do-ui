@@ -132,7 +132,7 @@ export function StatusBadge({
         "text-xs px-2 py-1 rounded-full",
         isActive
           ? "bg-success/20 text-success"
-          : "bg-muted text-muted-foreground",
+          : "bg-secondary text-muted-foreground",
         className
       )}
       {...props}

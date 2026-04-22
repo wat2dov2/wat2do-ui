@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { AdminCard } from "@/features/admin/components/shared/AdminCard";
-import { useAdminPanel, type ActivityItem } from "@/features/admin/hooks/useAdminPanel";
+import { AdminCard } from "@/shared/ui/AdminCard";
+import { useAdminPanel, mapActivityDisplay, type ActivityDisplay } from "@/features/admin/hooks/useAdminPanel";
 import type { Event } from "@/shared/types";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import { QP } from "@/shared/constants/queryParams";
@@ -17,7 +17,7 @@ interface AdminPanelProps {
   onNavigate: (page: "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters") => void;
 }
 
-type ActivityType = ActivityItem["type"];
+type ActivityType = ActivityDisplay["type"];
 
 const activityIconMap: Record<ActivityType, ReactNode> = {
   submission: <FileText className="w-4 h-4 text-primary" />,
@@ -25,44 +25,34 @@ const activityIconMap: Record<ActivityType, ReactNode> = {
   scraped: <Calendar className="w-4 h-4 text-primary" />,
 };
 
-/** Extract the display strings from an activity item to avoid deep traversal in JSX. */
-function getActivityDisplay(
-  activity: ActivityItem,
-  events: Event[],
-  t: (key: string) => string,
-): { label: string; detail: string; submittedBy?: string } {
-  if (activity.type === "submission") {
-    return {
-      label: t("admin.newEventSubmission"),
-      detail: activity.data.eventData.title,
-      submittedBy: activity.data.submittedBy,
-    };
-  }
-  if (activity.type === "scraped") {
-    const event = events.find((e) => e.id === Number(activity.data.eventId));
-    const clubName = event?.organization || event?.display_handle || "Unknown";
-    const detail = event
-      ? `${event.title} (${clubName})`
-      : `Event ID ${activity.data.eventId}`;
-    return { label: t("admin.eventScraped"), detail };
-  }
-  // poster
-  return { label: "Created poster", detail: activity.data.name };
-}
+/** Navigation route map for activity types. */
+const activityRouteMap: Record<ActivityType, string> = {
+  submission: ROUTES.ADMIN_SUBMISSIONS,
+  scraped: ROUTES.ADMIN_EVENTS,
+  poster: ROUTES.ADMIN_POSTERS,
+};
+
+const activityQueryParamMap: Record<ActivityType, string> = {
+  submission: QP.SUBMISSION_ID,
+  scraped: QP.EVENT_ID,
+  poster: QP.QR_CODE_ID,
+};
 
 export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { recentActivities, recentActivityLoading } = useAdminPanel();
 
-  const handleActivityClick = (activity: (typeof recentActivities)[0]) => {
-    if (activity.type === "submission") {
-      navigate(`${ROUTES.ADMIN_SUBMISSIONS}?${QP.SUBMISSION_ID}=${activity.data.id}`);
-    } else if (activity.type === "scraped") {
-      navigate(`${ROUTES.ADMIN_EVENTS}?${QP.EVENT_ID}=${activity.data.eventId}`);
-    } else if (activity.type === "poster") {
-      navigate(`${ROUTES.ADMIN_POSTERS}?${QP.QR_CODE_ID}=${activity.data.id}`);
-    }
+  // Pre-map activity data to display objects so the JSX doesn't traverse nested structures
+  const displayActivities = useMemo(
+    () => recentActivities.map((activity) => mapActivityDisplay(activity, events, t)),
+    [recentActivities, events, t]
+  );
+
+  const handleActivityClick = (display: ActivityDisplay) => {
+    const route = activityRouteMap[display.type];
+    const param = activityQueryParamMap[display.type];
+    navigate(`${route}?${param}=${display.id}`);
   };
 
   return (
@@ -121,43 +111,36 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <LoadingPage />
           </div>
-        ) : recentActivities.length > 0 ? (
+        ) : displayActivities.length > 0 ? (
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <div className="divide-y divide-border">
-              {recentActivities.map((activity) => (
+              {displayActivities.map((display) => (
                 <div
-                  key={`${activity.type}-${activity.data.id}`}
-                  className="w-full p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleActivityClick(activity)}
+                  key={`${display.type}-${display.id}`}
+                  className="w-full p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+                  onClick={() => handleActivityClick(display)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      {activityIconMap[activity.type]}
+                      {activityIconMap[display.type]}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          {(() => {
-                            const { label, detail, submittedBy } = getActivityDisplay(activity, events, t);
-                            return (
+                          <p className="text-sm text-foreground mb-1">
+                            <span className="font-bold">{display.label}</span>
+                            <span className="font-normal text-muted-foreground">: {display.detail}</span>
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span>{formatRelativeTime(display.timestamp)}</span>
+                            {display.submittedBy && (
                               <>
-                                <p className="text-sm text-foreground mb-1">
-                                  <span className="font-bold">{label}</span>
-                                  <span className="font-normal text-muted-foreground">: {detail}</span>
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{formatRelativeTime(activity.timestamp)}</span>
-                                  {submittedBy && (
-                                    <>
-                                      <span>•</span>
-                                      <span>{t("admin.submittedBy")}: {submittedBy}</span>
-                                    </>
-                                  )}
-                                </div>
+                                <span>&bull;</span>
+                                <span>{t("admin.submittedBy")}: {display.submittedBy}</span>
                               </>
-                            );
-                          })()}
+                            )}
+                          </div>
                         </div>
                         <Button
                           variant="secondary"
@@ -165,7 +148,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                           className="shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleActivityClick(activity);
+                            handleActivityClick(display);
                           }}
                         >
                           {t("common.view")}

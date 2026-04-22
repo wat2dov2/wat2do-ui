@@ -3,20 +3,17 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from schemas.user import UserResponse
 
-from postgrest.exceptions import APIError
-
-from constants import INTEREST_TO_CATEGORIES
+from core.constants import INTEREST_TO_CATEGORIES
 from core.database import get_sb
 from core.tables import EVENTS
 from schemas.event import EventResponse
-from services import user_service, interaction_service
+from services.recommender.utils import normalize_scores
 from services.recommender.config import (
     CB_CATEGORY_MATCH,
     CB_CATEGORY_NO_PROFILE,
@@ -38,6 +35,7 @@ def get_content_scores(
     candidate_events: list[EventResponse],
     *,
     user: UserResponse | None = None,
+    user_scores: dict[int, float] | None = None,
 ) -> dict[int, float]:
     """
     Score each candidate event based on how well it matches the user profile.
@@ -49,44 +47,13 @@ def get_content_scores(
         user: Optional pre-fetched user profile. When provided the DB lookup
               for the user row is skipped, avoiding a redundant round-trip
               when the caller already has the profile (e.g. batch evaluation).
+        user_scores: Optional pre-fetched interaction scores {event_id: score}.
+              When provided the DB lookup for interaction scores is skipped.
+              The caller is responsible for fetching these (and can parallelise
+              the fetch with other lookups).
     """
-    # Parallelize independent DB lookups: user profile (when not pre-supplied)
-    # and interaction scores are independent — neither result feeds the other.
-    user_scores: dict[int, float] = {}
-    needs_user_fetch = user is None
-
-    if needs_user_fetch:
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            user_future = pool.submit(user_service.get_user, user_id)
-            scores_future = pool.submit(
-                interaction_service.get_user_event_scores, user_id,
-            )
-
-            try:
-                user = user_future.result()
-            except Exception as e:
-                log.warning("Failed to fetch user profile for %s: %s", user_id, e)
-
-            try:
-                user_scores = scores_future.result()
-            except APIError as e:
-                log.error(
-                    "DB error fetching event scores for user %s: %s (code=%s)",
-                    user_id, e.message, e.code,
-                )
-            except Exception as e:
-                log.error("Unexpected error fetching event scores for user %s: %s", user_id, e)
-    else:
-        # User already supplied; only need interaction scores.
-        try:
-            user_scores = interaction_service.get_user_event_scores(user_id)
-        except APIError as e:
-            log.error(
-                "DB error fetching event scores for user %s: %s (code=%s)",
-                user_id, e.message, e.code,
-            )
-        except Exception as e:
-            log.error("Unexpected error fetching event scores for user %s: %s", user_id, e)
+    if user_scores is None:
+        user_scores = {}
 
     if not user:
         return {}
@@ -161,14 +128,7 @@ def get_content_scores(
 
         scores[eid] = score
 
-    # Normalize to [0, 1] for consistent blending with other scoring strategies
-    if scores:
-        max_score = max(scores.values())
-        if max_score > 0:
-            for eid in scores:
-                scores[eid] /= max_score
-
-    return scores
+    return normalize_scores(scores)
 
 
 def _compute_org_affinity(
@@ -185,19 +145,23 @@ def _compute_org_affinity(
         if org:
             id_to_org[e.id] = org
 
-    # Also load past events the user interacted with
-    interacted_ids = list(user_scores.keys())
-    if interacted_ids:
-        r = (
-            get_sb()
-            .table(EVENTS)
-            .select("id, organization")
-            .in_("id", interacted_ids)
-            .execute()
-        )
-        for row in r.data or []:
-            if row.get("organization"):
-                id_to_org[row["id"]] = row["organization"]
+    # Load organization data only for interacted events NOT already in the
+    # candidate set — avoids a redundant DB call when the overlap is complete.
+    missing_ids = [eid for eid in user_scores if eid not in id_to_org]
+    if missing_ids:
+        try:
+            r = (
+                get_sb()
+                .table(EVENTS)
+                .select("id, organization")
+                .in_("id", missing_ids)
+                .execute()
+            )
+            for row in r.data or []:
+                if row.get("organization"):
+                    id_to_org[row["id"]] = row["organization"]
+        except Exception as e:
+            log.warning("Failed to load org data for interacted events: %s", e)
 
     # Aggregate scores per org
     org_scores: dict[str, float] = {}

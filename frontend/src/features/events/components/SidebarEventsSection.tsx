@@ -1,4 +1,6 @@
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   CalendarDays,
@@ -6,8 +8,8 @@ import {
   Plus,
 } from "lucide-react";
 import type { PageMode } from "@/shared/types";
-import { useSidebar } from "@/app/hooks/useSidebar";
 import { SidebarButton } from "@/shared/ui/sidebar-button";
+import { ROUTES } from "@/shared/constants/routes";
 import { cn } from "@/shared/lib/utils";
 
 interface SidebarEventsSectionProps {
@@ -18,35 +20,27 @@ interface SidebarEventsSectionProps {
   setShowSubmitEvent: (show: boolean) => void;
 }
 
-function areEventsSectionPropsEqual(
-  prevProps: SidebarEventsSectionProps,
-  nextProps: SidebarEventsSectionProps
-) {
-  return (
-    prevProps.pageMode === nextProps.pageMode &&
-    prevProps.eventsExpanded === nextProps.eventsExpanded &&
-    prevProps.profileCompleted === nextProps.profileCompleted &&
-    prevProps.setEventsExpanded === nextProps.setEventsExpanded &&
-    prevProps.setShowSubmitEvent === nextProps.setShowSubmitEvent
-  );
-}
-
-export const SidebarEventsSection = React.memo(function SidebarEventsSection({
+export function SidebarEventsSection({
   pageMode,
   eventsExpanded,
   setEventsExpanded,
   profileCompleted,
   setShowSubmitEvent,
 }: SidebarEventsSectionProps) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
   const handleEventsToggle = useCallback(() => {
     setEventsExpanded(!eventsExpanded);
   }, [eventsExpanded, setEventsExpanded]);
 
-  const {
-    handleExploreClick,
-    handleCreateClick,
-    translations,
-  } = useSidebar();
+  const handleExploreClick = useCallback(() => {
+    navigate(ROUTES.HOME);
+  }, [navigate]);
+
+  const handleCreateClick = useCallback(() => {
+    setShowSubmitEvent(true);
+  }, [setShowSubmitEvent]);
 
   if (profileCompleted) {
     // Logged In: Expandable Events with sublinks
@@ -54,7 +48,7 @@ export const SidebarEventsSection = React.memo(function SidebarEventsSection({
       <div
         className={cn(
           "rounded-xl",
-          pageMode === "events" && "bg-muted"
+          pageMode === "events" && "bg-secondary"
         )}
       >
         <button
@@ -73,7 +67,7 @@ export const SidebarEventsSection = React.memo(function SidebarEventsSection({
             strokeWidth={2}
           />
           <span className="flex-1 whitespace-nowrap transition-opacity duration-150 opacity-0 group-hover/sidebar:opacity-100">
-            {translations.events}
+            {t("navigation.events")}
           </span>
           <ChevronDown
             className={cn(
@@ -98,13 +92,13 @@ export const SidebarEventsSection = React.memo(function SidebarEventsSection({
           )}>
             <SidebarButton
               icon={Compass}
-              label={translations.explore}
+              label={t("navigation.explore")}
               isActive={pageMode === "events"}
               onClick={handleExploreClick}
             />
             <SidebarButton
               icon={Plus}
-              label={translations.create}
+              label={t("navigation.create")}
               onClick={handleCreateClick}
             />
           </div>
@@ -117,9 +111,9 @@ export const SidebarEventsSection = React.memo(function SidebarEventsSection({
   return (
     <SidebarButton
       icon={CalendarDays}
-      label={translations.events}
+      label={t("navigation.events")}
       isActive={pageMode === "events"}
       onClick={handleExploreClick}
     />
   );
-}, areEventsSectionPropsEqual);
+}

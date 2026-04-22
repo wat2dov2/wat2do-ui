@@ -147,8 +147,8 @@ def test_resolve_inactive_qr_with_location_activates_and_returns_config(client):
 def test_create_poster_sets_created_by(authenticated_client, monkeypatch):
     """create_poster overrides created_by with the authenticated user's ID."""
     qr = _mock_qr()
-    mock_upsert = MagicMock(return_value=qr)
-    monkeypatch.setattr(qr_code_service, "upsert_qr_code", mock_upsert)
+    mock_create = MagicMock(return_value=qr)
+    monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
 
     resp = authenticated_client.post(
         "/qr/",
@@ -160,7 +160,7 @@ def test_create_poster_sets_created_by(authenticated_client, monkeypatch):
         },
     )
     assert resp.status_code == 201
-    _, kwargs = mock_upsert.call_args
+    _, kwargs = mock_create.call_args
     assert kwargs["created_by"] == FAKE_USER["id"]
 
 
@@ -200,8 +200,8 @@ def test_create_poster_rejects_data_url(authenticated_client):
 def test_create_poster_accepts_https_url(authenticated_client, monkeypatch):
     """POST /qr/ with a valid https URL succeeds."""
     qr = _mock_qr(destination_id="https://example.com")
-    mock_upsert = MagicMock(return_value=qr)
-    monkeypatch.setattr(qr_code_service, "upsert_qr_code", mock_upsert)
+    mock_create = MagicMock(return_value=qr)
+    monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
 
     resp = authenticated_client.post(
         "/qr/",
@@ -240,8 +240,8 @@ def test_update_poster_rejects_javascript_url(authenticated_client, monkeypatch)
 def test_create_poster_allows_custom_url_without_destination_id(authenticated_client, monkeypatch):
     """POST /qr/ with custom-url but no destination_id (null) is allowed."""
     qr = _mock_qr()
-    mock_upsert = MagicMock(return_value=qr)
-    monkeypatch.setattr(qr_code_service, "upsert_qr_code", mock_upsert)
+    mock_create = MagicMock(return_value=qr)
+    monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
 
     resp = authenticated_client.post(
         "/qr/",
@@ -254,6 +254,83 @@ def test_create_poster_allows_custom_url_without_destination_id(authenticated_cl
         },
     )
     assert resp.status_code == 201
+
+
+# ── Regression: audit U5 — POST must not allow hijacking an existing poster ──
+
+
+def test_create_poster_refuses_to_hijack_existing_id(authenticated_client, monkeypatch):
+    """POST /qr/ with an id that already exists returns 409, not silent upsert.
+
+    Audit U5: previously this handler called ``upsert_qr_code`` which did
+    a blind update if the row existed.  Any authenticated user could
+    guess / observe another user's poster id and POST a new destination
+    to hijack it.  The fix splits create vs update — POST inserts only.
+    """
+    existing = _mock_qr(id="victim-qr", created_by=OTHER_USER["id"])
+    # create_qr_code performs the existence check itself by calling
+    # get_qr_code_by_id — mock it to return the pre-existing row.
+    monkeypatch.setattr(
+        qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing),
+    )
+
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "victim-qr",
+            "name": "Hijack attempt",
+            "destination_type": "custom-url",
+            "destination_id": "https://evil.example",
+        },
+    )
+    assert resp.status_code == 409
+    assert "already exists" in resp.json()["detail"].lower()
+
+
+# ── Regression: audit U11 — QrCodeCreate field size caps ───────────────
+
+
+def test_create_poster_rejects_oversized_name(authenticated_client):
+    """POST /qr/ with a 10 MB name is rejected by Pydantic (422)."""
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "normal-id",
+            "name": "x" * 10_000_000,
+            "destination_type": "custom-url",
+            "destination_id": "https://example.com",
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_create_poster_rejects_oversized_description(authenticated_client):
+    """POST /qr/ with a huge description is rejected (422)."""
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "normal-id",
+            "name": "ok",
+            "description": "x" * 10_000_000,
+            "destination_type": "custom-url",
+            "destination_id": "https://example.com",
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_create_poster_rejects_oversized_id(authenticated_client):
+    """POST /qr/ with a 100k-char id is rejected (422)."""
+    resp = authenticated_client.post(
+        "/qr/",
+        json={
+            "id": "x" * 100_000,
+            "name": "ok",
+            "destination_type": "custom-url",
+            "destination_id": "https://example.com",
+        },
+    )
+    assert resp.status_code == 422
 
 
 def test_update_poster_non_owner_rejected(other_user_client, monkeypatch):
@@ -411,7 +488,7 @@ def test_update_poster_owner_allowed(authenticated_client, monkeypatch):
     existing = _mock_qr(created_by=FAKE_USER["id"])
     updated = _mock_qr(name="Updated Name", created_by=FAKE_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
-    monkeypatch.setattr(qr_code_service, "upsert_qr_code", MagicMock(return_value=updated))
+    monkeypatch.setattr(qr_code_service, "update_qr_code", MagicMock(return_value=updated))
 
     from services import user_service
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
@@ -437,7 +514,7 @@ def test_admin_can_update_non_owned_qr(admin_client, monkeypatch):
     existing = _mock_qr(created_by=OTHER_USER["id"])
     updated = _mock_qr(name="Admin Fix", created_by=OTHER_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
-    monkeypatch.setattr(qr_code_service, "upsert_qr_code", MagicMock(return_value=updated))
+    monkeypatch.setattr(qr_code_service, "update_qr_code", MagicMock(return_value=updated))
 
     from services import user_service
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))

@@ -3,7 +3,7 @@
  * Manages privacy preferences state and operations
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   loadPrivacyPreferences,
   savePrivacyPreferences,
@@ -14,9 +14,14 @@ export function usePrivacy() {
   const [preferences, setPreferences] = useState<PrivacyPreferences>(() => {
     return loadPrivacyPreferences();
   });
+  const isInitialMount = useRef(true);
 
-  // Persist privacy preferences
+  // Persist privacy preferences (skip initial mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     savePrivacyPreferences(preferences);
   }, [preferences]);
 

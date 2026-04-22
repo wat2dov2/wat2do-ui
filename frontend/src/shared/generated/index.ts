@@ -17,6 +17,9 @@ export type ApiForgotPasswordRequest = components["schemas"]["ForgotPasswordRequ
 export type ApiResetPasswordRequest = components["schemas"]["ResetPasswordRequest"];
 export type ApiMessageResponse = components["schemas"]["MessageResponse"];
 
+// ── Users ───────────────────────────────────────────────────────────
+export type ApiUserResponse = components["schemas"]["UserResponse"];
+
 // ── Events ──────────────────────────────────────────────────────────
 export type ApiEventCreate = components["schemas"]["EventCreate"];
 export type ApiEventUpdate = components["schemas"]["EventUpdate"];
@@ -34,8 +37,6 @@ export type ApiClubIntegrationUpdate = components["schemas"]["ClubIntegrationUpd
 export type ApiDiscordChannelOption = components["schemas"]["DiscordChannelOption"];
 export type ApiDiscordServerOption = components["schemas"]["DiscordServerOption"];
 export type ApiDiscordIntegrationOptionsResponse = components["schemas"]["DiscordIntegrationOptionsResponse"];
-export type ApiDiscordIntegrationResponse = components["schemas"]["DiscordIntegrationResponse"];
-export type ApiDiscordIntegrationUpdate = components["schemas"]["DiscordIntegrationUpdate"];
 
 // ── Credits & Promotions ────────────────────────────────────────────
 export type ApiCreditBalanceResponse = components["schemas"]["CreditBalanceResponse"];

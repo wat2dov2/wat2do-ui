@@ -20,10 +20,6 @@ import { QRCodeScansChart } from "@/features/qrcode/components/QRCode/QRCodeScan
 import type { QRCode, Event } from "@/shared/types";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
 import { getQRImageUrl } from "@/features/qrcode/api/qrcode.api";
-import {
-  QRCodeDetailsModalProvider,
-  useQRCodeDetailsModalContext,
-} from "@/features/qrcode/contexts/QRCodeDetailsModal.context";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { ModalContentWrapper, EmptyState } from "@/shared/ui/modal-components";
 
@@ -34,9 +30,8 @@ interface QRCodeDetailsModalProps {
   events: Event[];
 }
 
-function QRCodeDetailsModalContent() {
+function QRCodeDetailsModalContent({ isOpen, onClose, qrCode }: QRCodeDetailsModalProps) {
   const { t } = useTranslation();
-  const { isOpen, onClose, qrCode } = useQRCodeDetailsModalContext();
   const qrCodeScans = useQRCodeScans({ qrCode, isOpen });
   const qrCodeStats = useQRCodeStats({
     scans: qrCodeScans.scans,
@@ -68,7 +63,7 @@ function QRCodeDetailsModalContent() {
             {/* Poster image + QR preview: same outer size, QR has padding so it isn't cropped */}
             <div className="flex items-start gap-4">
               <div
-                className="shrink-0 rounded-lg overflow-hidden border border-border bg-muted"
+                className="shrink-0 rounded-lg overflow-hidden border border-border bg-secondary"
                 style={{ width: previewSize, height: previewSize }}
               >
                 {posterImageSrc ? (
@@ -124,9 +119,5 @@ function QRCodeDetailsModalContent() {
 }
 
 export function QRCodeDetailsModal(props: QRCodeDetailsModalProps) {
-  return (
-    <QRCodeDetailsModalProvider value={props}>
-      <QRCodeDetailsModalContent />
-    </QRCodeDetailsModalProvider>
-  );
+  return <QRCodeDetailsModalContent {...props} />;
 }

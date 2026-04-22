@@ -64,7 +64,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Logout */
+        /**
+         * Logout
+         * @description Log the user out.
+         *
+         *     A11: Bearer is optional — if the access token has expired, the refresh
+         *     cookie is still cleared so the browser doesn't hold a replayable token.
+         *     Even if upstream revocation fails, the cookie is still cleared; we
+         *     surface the error via a JSONResponse that carries Set-Cookie for
+         *     ``refresh_token``.
+         */
         post: operations["logout_auth_logout_post"];
         delete?: never;
         options?: never;
@@ -169,11 +178,52 @@ export interface paths {
         get: operations["get_user_users__user_id__get"];
         put?: never;
         post?: never;
-        /** Delete User */
+        /**
+         * Delete User
+         * @description Admin-only user deletion with A26 guardrails.
+         *
+         *     - **Self-delete block:** admins cannot delete their own account via
+         *       this endpoint.  Account deletion for the caller must be done through
+         *       an explicit "delete my account" flow (not implemented here) so that
+         *       the operation is intentional and separate from moderation.
+         *     - **Admin quorum:** if the target is currently an admin, refuse the
+         *       delete when the system would end up with zero admins.  A bored or
+         *       compromised admin could otherwise demote/delete every other admin
+         *       and lock the system into an un-administered state.
+         */
         delete: operations["delete_user_users__user_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/users/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update User Role
+         * @description Admin-only: rotate a user's role ('user' <-> 'admin').
+         *
+         *     Separate from ``PATCH /users/{id}`` so the role is only mutable through
+         *     an explicitly-admin endpoint — keeps the trust boundary bright and
+         *     closes audit I16.  ``user_service.set_role`` invalidates the
+         *     supabase-auth-id cache so the change is immediately visible in
+         *     subsequent role checks.
+         *
+         *     A26: if the target is currently an admin and the new role is not
+         *     ``admin``, refuse the demotion when it would leave zero admins.
+         */
+        patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
     };
     "/events/latest-added": {
@@ -203,7 +253,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Events */
+        /**
+         * List Events
+         * @description Public list endpoint.
+         *
+         *     Response shape is fixed to ``EventSummaryResponse`` which omits
+         *     ``created_by`` — this is the IDOR/PII fix for audit I10/S16.  The
+         *     ``summary`` flag is still forwarded to the service (so the query
+         *     can short-circuit large column reads) but the wire shape is the
+         *     same either way.  FastAPI's response_model serialization will drop
+         *     any extra fields if the service returns the fuller ``EventResponse``.
+         */
         get: operations["list_events_events__get"];
         put?: never;
         /** Create Event */
@@ -221,7 +281,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Event */
+        /**
+         * Get Event
+         * @description Public event detail.  ``created_by`` is stripped via
+         *     ``EventPublicResponse`` (audit I10 / S16); owners / admins see the
+         *     full shape through their dashboards via the dedicated service call.
+         */
         get: operations["get_event_events__event_id__get"];
         put?: never;
         post?: never;
@@ -251,23 +316,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/clubs/{club_id}": {
+    "/clubs/mine": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Club */
-        get: operations["get_club_clubs__club_id__get"];
+        /**
+         * List My Clubs
+         * @description Return clubs owned by the authenticated user.
+         */
+        get: operations["list_my_clubs_clubs_mine_get"];
         put?: never;
         post?: never;
-        /** Delete Club */
-        delete: operations["delete_club_clubs__club_id__delete"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** Update Club */
-        patch: operations["update_club_clubs__club_id__patch"];
+        patch?: never;
         trace?: never;
     };
     "/clubs/integrations/discord/options": {
@@ -282,25 +348,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clubs/{club_id}/integrations/discord": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Discord Integration */
-        get: operations["get_discord_integration_clubs__club_id__integrations_discord_get"];
-        /** Upsert Discord Integration */
-        put: operations["upsert_discord_integration_clubs__club_id__integrations_discord_put"];
-        post?: never;
-        /** Disconnect Discord Integration */
-        delete: operations["disconnect_discord_integration_clubs__club_id__integrations_discord_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -321,6 +368,25 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Club */
+        get: operations["get_club_clubs__club_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Club */
+        delete: operations["delete_club_clubs__club_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Club */
+        patch: operations["update_club_clubs__club_id__patch"];
         trace?: never;
     };
     "/clubs/{club_id}/integrations/{platform}": {
@@ -476,8 +542,22 @@ export interface paths {
         /**
          * Record Interactions
          * @description Record a batch of user-event interactions.
-         *     Auth is optional — token is passed in the body (for sendBeacon compat).
-         *     Anonymous users tracked by session_id only.
+         *
+         *     Auth is via the standard ``Authorization: Bearer <token>`` header.
+         *     The frontend uses ``fetch()`` with ``keepalive: true`` (instead of
+         *     ``sendBeacon``) so it can set this header even during page unload.
+         *
+         *     When a user is authenticated:
+         *     - Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.
+         *     - Duplicate interactions are deduplicated within a sliding time window.
+         *
+         *     When ``user_id`` is present in the payload it MUST match the authenticated
+         *     user — submitting interactions on behalf of another user is rejected.
+         *
+         *     Anonymous requests (no auth at all) are still allowed for basic
+         *     view/impression tracking, but without a ``user_id`` they cannot influence
+         *     personalised recommendations or collaborative filtering scores.
+         *     Anonymous requests are IP-rate-limited to prevent abuse.
          */
         post: operations["record_interactions_interactions_batch_post"];
         delete?: never;
@@ -517,6 +597,11 @@ export interface paths {
         /**
          * Save Event
          * @description Save (bookmark) an event.
+         *
+         *     - 404 if the referenced event does not exist (audit I9).
+         *     - 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER`` —
+         *       prevents a single account from growing an unbounded bookmark list
+         *       and OOM'ing the listing endpoint (audit I8).
          */
         put: operations["save_event_saved_events__event_id__put"];
         post?: never;
@@ -560,6 +645,14 @@ export interface paths {
         /**
          * Get Variant
          * @description Get the current user's A/B test variant.
+         *
+         *     If the authenticated user has no DB row yet (race between signup and
+         *     profile creation), we still want a stable variant rather than locking
+         *     everyone into control and biasing the treatment share downward (M5).
+         *     Hashing on ``auth_user["id"]`` gives a deterministic assignment that
+         *     will match once a DB row exists only if the two IDs agree — but since
+         *     they typically don't, we instead use the auth ID directly so the
+         *     fallback is random-by-hash, not hard-coded to control.
          */
         get: operations["get_variant_ab_variant_get"];
         put?: never;
@@ -580,6 +673,10 @@ export interface paths {
         /**
          * Get Metrics
          * @description Get CTR metrics by variant (admin only).
+         *
+         *     Response is cached in-process for 60 s (see
+         *     ``ABTestService.get_ctr_by_variant``) so polling dashboards don't
+         *     trigger a full table scan per poll.
          */
         get: operations["get_metrics_ab_metrics_get"];
         put?: never;
@@ -650,7 +747,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Add Credits */
+        /**
+         * Add Credits
+         * @description Admin-only: add credits to a target user's balance.
+         */
         post: operations["add_credits_credits_add_post"];
         delete?: never;
         options?: never;
@@ -786,6 +886,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/meta/constants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Constants
+         * @description Return shared domain constants for frontend consumption.
+         *
+         *     This endpoint is public (no auth required) and highly cacheable.
+         *     Sets an explicit ``Cache-Control: public, max-age=60`` header so
+         *     cheap repeat scrapes hit the CDN / browser cache rather than the
+         *     application process (audit M13).  The cache window is deliberately
+         *     short (60 s) so that category / interest changes deployed via a
+         *     backend-only restart propagate within a minute.
+         */
+        get: operations["get_constants_meta_constants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -807,6 +934,40 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ABMetricsResponse
+         * @description GET /ab/metrics response — CTR per variant.
+         *
+         *     Keyed by variant name; the backend guarantees entries for both
+         *     ``control`` and ``treatment`` even when one has zero traffic.
+         */
+        ABMetricsResponse: {
+            control: components["schemas"]["ABVariantCTR"];
+            treatment: components["schemas"]["ABVariantCTR"];
+        };
+        /**
+         * ABVariantCTR
+         * @description Per-variant click-through-rate breakdown.
+         */
+        ABVariantCTR: {
+            /** Impressions */
+            impressions: number;
+            /** Clicks */
+            clicks: number;
+            /** Ctr */
+            ctr: number;
+        };
+        /**
+         * ABVariantResponse
+         * @description GET /ab/variant response.
+         */
+        ABVariantResponse: {
+            /**
+             * Variant
+             * @enum {string}
+             */
+            variant: "control" | "treatment";
+        };
         /** AIPromptRequest */
         AIPromptRequest: {
             /** Prompt */
@@ -814,8 +975,35 @@ export interface components {
         };
         /** AddCreditsRequest */
         AddCreditsRequest: {
+            /**
+             * User Id
+             * Format: uuid
+             * @description Target user ID to receive credits
+             */
+            user_id: string;
             /** Amount */
             amount: number;
+        };
+        /**
+         * AppConstantsResponse
+         * @description Shared domain constants that the frontend must stay in sync with.
+         *
+         *     The frontend fetches this once on app init so both layers
+         *     always agree on categories, interest mappings, and status enums.
+         */
+        AppConstantsResponse: {
+            /** Event Categories */
+            event_categories: string[];
+            /** Interests */
+            interests: string[];
+            /** Interest To Categories */
+            interest_to_categories: {
+                [key: string]: string[];
+            };
+            /** Submission Statuses */
+            submission_statuses: string[];
+            /** Report Statuses */
+            report_statuses: string[];
         };
         /** Body_upload_avatar_uploads_avatar_post */
         Body_upload_avatar_uploads_avatar_post: {
@@ -874,7 +1062,19 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
-        /** ClubIntegrationUpdate */
+        /**
+         * ClubIntegrationUpdate
+         * @description Update request for a club's integration configuration.
+         *
+         *     The ``metadata`` dict is now bounded on three axes:
+         *     - max key count (``MAX_INTEGRATION_METADATA_KEYS``)
+         *     - max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)
+         *     - max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)
+         *
+         *     Unknown envelope fields are rejected via ``extra="forbid"`` so future
+         *     refactors that accidentally echo request data back to the DB do not
+         *     introduce a mass-assignment surface.
+         */
         ClubIntegrationUpdate: {
             /**
              * Connected
@@ -906,6 +1106,8 @@ export interface components {
             club_type: string;
             /** Logo Url */
             logo_url?: string | null;
+            /** Created By */
+            created_by?: string | null;
         };
         /** ClubUpdate */
         ClubUpdate: {
@@ -942,41 +1144,6 @@ export interface components {
             oauth_url: string;
             /** Servers */
             servers: components["schemas"]["DiscordServerOption"][];
-        };
-        /** DiscordIntegrationResponse */
-        DiscordIntegrationResponse: {
-            /** Club Id */
-            club_id: number;
-            /** Connected */
-            connected: boolean;
-            /** Name */
-            name?: string | null;
-            /** Server Id */
-            server_id?: string | null;
-            /** Server Name */
-            server_name?: string | null;
-            /** Channel Id */
-            channel_id?: string | null;
-            /** Channel Name */
-            channel_name?: string | null;
-            /** Last Sync */
-            last_sync?: string | null;
-        };
-        /** DiscordIntegrationUpdate */
-        DiscordIntegrationUpdate: {
-            /**
-             * Connected
-             * @default true
-             */
-            connected: boolean;
-            /** Server Id */
-            server_id: string;
-            /** Server Name */
-            server_name: string;
-            /** Channel Id */
-            channel_id: string;
-            /** Channel Name */
-            channel_name: string;
         };
         /** DiscordServerOption */
         DiscordServerOption: {
@@ -1088,7 +1255,76 @@ export interface components {
              */
             organization: string;
         };
-        /** EventResponse */
+        /**
+         * EventPublicResponse
+         * @description Public response for GET /events/{id} — identical to EventResponse
+         *     but with ``created_by`` stripped to avoid leaking creator UUIDs to
+         *     unauthenticated callers (see audit I10).
+         */
+        EventPublicResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location: string;
+            /** Dtstart Utc */
+            dtstart_utc?: string | null;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Club Type */
+            club_type?: string | null;
+            /** School */
+            school?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Organization */
+            organization?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /** Discord Handle */
+            discord_handle?: string | null;
+            /** X Handle */
+            x_handle?: string | null;
+            /** Tiktok Handle */
+            tiktok_handle?: string | null;
+            /** Fb Handle */
+            fb_handle?: string | null;
+            /** Other Handle */
+            other_handle?: string | null;
+            /** Display Handle */
+            display_handle?: string | null;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+        };
+        /**
+         * EventResponse
+         * @description Full event payload returned from GET /events/{id} and used internally
+         *     for ownership checks.
+         *
+         *     ``created_by`` is retained here because the field is load-bearing for
+         *     the authorization layer (``get_authorized_resource`` reads it); the
+         *     public list endpoint hides it via ``EventSummaryResponse`` which
+         *     omits the field entirely.
+         */
         EventResponse: {
             /** Id */
             id: number;
@@ -1135,6 +1371,52 @@ export interface components {
             fb_handle?: string | null;
             /** Other Handle */
             other_handle?: string | null;
+            /** Display Handle */
+            display_handle?: string | null;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Created By */
+            created_by?: string | null;
+        };
+        /**
+         * EventSummaryResponse
+         * @description Lightweight payload for list/card views — omits large text fields
+         *     (description, social handles) that are only needed in detail views.
+         *     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
+         *
+         *     ``created_by`` is intentionally omitted — this response is returned on
+         *     public GET /events/ and would otherwise leak the creator's Supabase
+         *     auth UID to anonymous callers (see audit I10 / S16).
+         */
+        EventSummaryResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Location */
+            location: string;
+            /** Dtstart Utc */
+            dtstart_utc?: string | null;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Organization */
+            organization?: string | null;
             /** Display Handle */
             display_handle?: string | null;
             /**
@@ -1243,7 +1525,10 @@ export interface components {
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             */
             email: string;
         };
         /** HTTPValidationError */
@@ -1251,12 +1536,27 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** InteractionBatch */
+        /**
+         * InteractionBatch
+         * @description Batch of interactions submitted from a single browser session.
+         *
+         *     **Trust boundary note on ``user_id``**: this field models the client's
+         *     *claim* of which user the batch belongs to.  The server verifies the
+         *     claim against the authenticated identity in ``interaction_service._validate_batch``
+         *     and 403s on mismatch (see S11).  The field is **advisory / diagnostic** —
+         *     never trust it for authorization or identity resolution in new code;
+         *     use the value resolved from the Bearer token instead.
+         *
+         *     Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
+         *     opaque strings (e.g. ``"admin"``) at parse time — if the router-side
+         *     ownership check is ever removed during a refactor, impersonation
+         *     still cannot succeed because the payload won't even deserialise.
+         */
         InteractionBatch: {
             /** Session Id */
             session_id: string;
-            /** Token */
-            token?: string | null;
+            /** User Id */
+            user_id?: string | null;
             /** Interactions */
             interactions: components["schemas"]["InteractionCreate"][];
         };
@@ -1286,7 +1586,10 @@ export interface components {
         };
         /** LoginRequest */
         LoginRequest: {
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             */
             email: string;
             /** Password */
             password: string;
@@ -1296,16 +1599,99 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** PaginatedResponse[QrCodeResponse] */
+        PaginatedResponse_QrCodeResponse_: {
+            /** Items */
+            items: components["schemas"]["QrCodeResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[QrCodeScanResponse] */
+        PaginatedResponse_QrCodeScanResponse_: {
+            /** Items */
+            items: components["schemas"]["QrCodeScanResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[ReportResponse] */
+        PaginatedResponse_ReportResponse_: {
+            /** Items */
+            items: components["schemas"]["ReportResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[ScrapedEventResponse] */
+        PaginatedResponse_ScrapedEventResponse_: {
+            /** Items */
+            items: components["schemas"]["ScrapedEventResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[SubmissionResponse] */
+        PaginatedResponse_SubmissionResponse_: {
+            /** Items */
+            items: components["schemas"]["SubmissionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /**
+         * PlatformIntegrationOptionsResponse
+         * @description Generic options for any integration platform (audit S7).
+         *
+         *     The Discord-specific response above keeps the tightest types for the
+         *     ``/integrations/discord/options`` endpoint; this looser model lets
+         *     the ``/integrations/{platform}/options`` endpoint lock its OpenAPI
+         *     contract without over-constraining platforms whose OAuth URLs are
+         *     still placeholders.
+         */
+        PlatformIntegrationOptionsResponse: {
+            /** Oauth Url */
+            oauth_url?: string | null;
+            /**
+             * Servers
+             * @default []
+             */
+            servers: components["schemas"]["DiscordServerOption"][];
+        };
         /** PromotionCreate */
         PromotionCreate: {
             /** Event Id */
             event_id: number;
-            /** Package */
-            package: string;
-            /** Credits */
-            credits: number;
-            /** Duration */
-            duration: number;
+            /**
+             * Package
+             * @enum {string}
+             */
+            package: "featured" | "email" | "combo";
         };
         /** PromotionResponse */
         PromotionResponse: {
@@ -1315,20 +1701,41 @@ export interface components {
             user_id: string;
             /** Event Id */
             event_id: number;
-            /** Package */
-            package: string;
+            /**
+             * Package
+             * @enum {string}
+             */
+            package: "featured" | "email" | "combo";
             /** Credits Spent */
             credits_spent: number;
-            /** Start Date */
+            /**
+             * Start Date
+             * Format: date-time
+             */
             start_date: string;
-            /** End Date */
+            /**
+             * End Date
+             * Format: date-time
+             */
             end_date: string;
-            /** Created At */
+            /**
+             * Created At
+             * Format: date-time
+             */
             created_at: string;
         };
         /**
          * QrCodeCreate
          * @description Payload to create or upsert a QR code (after first scan or dashboard edit).
+         *
+         *     Note on ``is_active`` and ``created_by`` (audit S4): ``is_active`` is
+         *     accepted for backward compatibility with existing frontend clients
+         *     but **ignored** — the service always starts inserts at ``is_active=False``
+         *     (see ``qr_code_service._build_qr_payload``).  ``created_by`` is not
+         *     modelled here; the service sets it from the authenticated user's ID.
+         *     ``extra="ignore"`` (the default) is left in place so client-supplied
+         *     ``created_by`` values are silently dropped rather than 422'ing clients
+         *     that still send them.
          */
         QrCodeCreate: {
             /** Id */
@@ -1337,16 +1744,17 @@ export interface components {
             name: string;
             /** Description */
             description?: string | null;
-            /** Destination Type */
-            destination_type: string;
+            /**
+             * Destination Type
+             * @enum {string}
+             */
+            destination_type: "event" | "events-list" | "custom-url";
             /** Destination Id */
             destination_id?: string | number | null;
             /** Filters */
             filters?: {
                 [key: string]: unknown;
             } | unknown[] | null;
-            /** Created By */
-            created_by: string;
             /**
              * Is Active
              * @default true
@@ -1366,6 +1774,23 @@ export interface components {
             longitude: number;
         };
         /**
+         * QrCodeRedirect
+         * @description Public response for GET /qr/{id}: redirect config only. Scan is recorded server-side.
+         */
+        QrCodeRedirect: {
+            /**
+             * Destination Type
+             * @enum {string}
+             */
+            destination_type: "event" | "events-list" | "custom-url";
+            /** Destination Id */
+            destination_id?: string | number | null;
+            /** Filters */
+            filters?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
+        };
+        /**
          * QrCodeResponse
          * @description Full QR code for list/dashboard.
          */
@@ -1376,8 +1801,11 @@ export interface components {
             name: string;
             /** Description */
             description: string | null;
-            /** Destination Type */
-            destination_type: string;
+            /**
+             * Destination Type
+             * @enum {string}
+             */
+            destination_type: "event" | "events-list" | "custom-url";
             /** Destination Id */
             destination_id: string | null;
             /** Filters */
@@ -1435,6 +1863,17 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /**
+         * RecordInteractionsResponse
+         * @description Response for ``POST /interactions/batch`` — number of rows recorded.
+         *
+         *     Typed explicitly (audit S7) so future additions to the dict do not
+         *     silently leak internals to the client.
+         */
+        RecordInteractionsResponse: {
+            /** Recorded */
+            recorded: number;
+        };
         /** ReportCreate */
         ReportCreate: {
             /** Event Id */
@@ -1452,17 +1891,26 @@ export interface components {
             user_id: string;
             /** Reason */
             reason: string;
-            /** Status */
-            status: string;
-            /** Reported At */
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "resolved" | "dismissed";
+            /**
+             * Reported At
+             * Format: date-time
+             */
             reported_at: string;
             /** Resolved At */
             resolved_at?: string | null;
         };
         /** ReportUpdate */
         ReportUpdate: {
-            /** Status */
-            status: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "resolved" | "dismissed";
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -1470,6 +1918,21 @@ export interface components {
             access_token: string;
             /** New Password */
             new_password: string;
+        };
+        /**
+         * SaveEventStatusResponse
+         * @description Response for ``PUT /saved-events/{id}`` / ``DELETE /saved-events/{id}``.
+         *
+         *     Typed explicitly (audit S7) so the response contract is locked at the
+         *     OpenAPI boundary — future refactors that add fields to the dict will
+         *     be caught by the frontend type generator.
+         */
+        SaveEventStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "saved" | "unsaved";
         };
         /** ScrapedEventCreate */
         ScrapedEventCreate: {
@@ -1490,7 +1953,10 @@ export interface components {
             event_id?: number | null;
             /** Source */
             source: string;
-            /** Scraped At */
+            /**
+             * Scraped At
+             * Format: date-time
+             */
             scraped_at: string;
             /** Raw Data */
             raw_data?: {
@@ -1499,7 +1965,10 @@ export interface components {
         };
         /** SignupRequest */
         SignupRequest: {
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             */
             email: string;
             /** Password */
             password: string;
@@ -1527,12 +1996,25 @@ export interface components {
              */
             confirmation_required: boolean;
         };
-        /** SubmissionCreate */
+        /**
+         * SubmissionCreate
+         * @description Incoming event submission.
+         *
+         *     ``event_data`` is typed as ``EventCreate`` (audit S1) so the exact
+         *     same validators used for real events — required ``title`` /
+         *     ``location`` / ``organization``, length caps, allow-listed
+         *     categories, safe URL schemes — apply to submissions.  This closes
+         *     the mass-assignment hole where attackers could salt the payload
+         *     with attacker-controlled ``created_by`` / ``id`` / ``added_at`` or
+         *     XSS-ready strings that later reach the admin approval UI.
+         *
+         *     The byte-size cap (``MAX_EVENT_DATA_BYTES``) is retained as a
+         *     defense-in-depth belt-and-braces check — ``EventCreate``'s field
+         *     caps already bound each string, but a maliciously large food list
+         *     or description could still approach the 32 KB JSONB column limit.
+         */
         SubmissionCreate: {
-            /** Event Data */
-            event_data: {
-                [key: string]: unknown;
-            };
+            event_data: components["schemas"]["EventCreate"];
         };
         /** SubmissionResponse */
         SubmissionResponse: {
@@ -1544,19 +2026,28 @@ export interface components {
             event_data: {
                 [key: string]: unknown;
             };
-            /** Status */
-            status: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
             /** Rejection Reason */
             rejection_reason?: string | null;
-            /** Submitted At */
+            /**
+             * Submitted At
+             * Format: date-time
+             */
             submitted_at: string;
             /** Reviewed At */
             reviewed_at?: string | null;
         };
         /** SubmissionUpdate */
         SubmissionUpdate: {
-            /** Status */
-            status: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
             /** Rejection Reason */
             rejection_reason?: string | null;
         };
@@ -1573,6 +2064,14 @@ export interface components {
             expires_in: number;
             /** User Id */
             user_id: string;
+        };
+        /**
+         * UploadResponse
+         * @description Public URL of the freshly-uploaded object.
+         */
+        UploadResponse: {
+            /** Url */
+            url: string;
         };
         /** UserProfileUpdate */
         UserProfileUpdate: {
@@ -1614,8 +2113,9 @@ export interface components {
             /**
              * Role
              * @default user
+             * @enum {string}
              */
-            role: string;
+            role: "user" | "admin";
             /**
              * Created At
              * Format: date-time
@@ -1626,6 +2126,21 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * UserRoleUpdate
+         * @description Admin-only payload for rotating a user's role.
+         *
+         *     Separate from ``UserUpdate`` so ``role`` never leaks into a self-service
+         *     update path — having one shared model across trust boundaries is the
+         *     exact defense-in-depth gap flagged in the schema audit (S2).
+         */
+        UserRoleUpdate: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "admin";
         };
         /** UserUpdate */
         UserUpdate: {
@@ -2016,6 +2531,41 @@ export interface operations {
             };
         };
     };
+    update_user_role_users__user_id__role_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserRoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_latest_added_events_latest_added_get: {
         parameters: {
             query?: never;
@@ -2050,6 +2600,8 @@ export interface operations {
                 has_food?: boolean | null;
                 max_price?: number | null;
                 registration?: boolean | null;
+                /** @description Return lightweight card-view fields only */
+                summary?: boolean;
             };
             header?: never;
             path?: never;
@@ -2063,7 +2615,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EventResponse"][];
+                    "application/json": components["schemas"]["EventSummaryResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -2127,7 +2679,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EventResponse"];
+                    "application/json": components["schemas"]["EventPublicResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2272,6 +2824,77 @@ export interface operations {
             };
         };
     };
+    list_my_clubs_clubs_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"][];
+                };
+            };
+        };
+    };
+    get_discord_options_clubs_integrations_discord_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscordIntegrationOptionsResponse"];
+                };
+            };
+        };
+    };
+    get_platform_options_clubs_integrations__platform__options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformIntegrationOptionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_club_clubs__club_id__get: {
         parameters: {
             query?: never;
@@ -2354,154 +2977,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_discord_options_clubs_integrations_discord_options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscordIntegrationOptionsResponse"];
-                };
-            };
-        };
-    };
-    get_discord_integration_clubs__club_id__integrations_discord_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscordIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upsert_discord_integration_clubs__club_id__integrations_discord_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DiscordIntegrationUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscordIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    disconnect_discord_integration_clubs__club_id__integrations_discord_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscordIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_platform_options_clubs_integrations__platform__options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -2636,7 +3111,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2669,7 +3144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2704,7 +3179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2737,7 +3212,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2753,7 +3228,12 @@ export interface operations {
     };
     list_qr_codes_qr__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2766,7 +3246,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QrCodeResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QrCodeResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2813,6 +3302,10 @@ export interface operations {
                 from_time?: string | null;
                 /** @description Scans until this time (inclusive) */
                 to_time?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -2826,7 +3319,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QrCodeScanResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_QrCodeScanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -2862,7 +3355,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["QrCodeRedirect"];
                 };
             };
             /** @description Validation Error */
@@ -2959,7 +3452,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["RecordInteractionsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3010,7 +3503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SaveEventStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3041,7 +3534,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SaveEventStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3101,7 +3594,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ABVariantResponse"];
                 };
             };
         };
@@ -3121,7 +3614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ABMetricsResponse"];
                 };
             };
         };
@@ -3247,7 +3740,12 @@ export interface operations {
     };
     list_promotions_promotions__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description If set, filter by active (True) or expired (False) promotions. */
+                active?: boolean | null;
+                limit?: number;
+                offset?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3261,6 +3759,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromotionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3322,6 +3829,10 @@ export interface operations {
         parameters: {
             query?: {
                 submission_status?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -3335,7 +3846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubmissionResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_SubmissionResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -3481,6 +3992,10 @@ export interface operations {
         parameters: {
             query?: {
                 report_status?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -3494,7 +4009,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReportResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ReportResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -3578,7 +4093,12 @@ export interface operations {
     };
     list_scraped_events_scraped_events__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3591,7 +4111,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScrapedEventResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ScrapedEventResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3625,6 +4154,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_constants_meta_constants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppConstantsResponse"];
                 };
             };
         };

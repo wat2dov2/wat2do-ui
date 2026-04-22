@@ -49,6 +49,10 @@ SIGNUP_FAILED = "Unable to create account — check email/password requirements"
 PASSWORD_RESET_FAILED = "Unable to reset password — please try again"
 EMAIL_OR_USERNAME_TAKEN = "Email or username already taken"
 INSUFFICIENT_CREDITS = "Insufficient credits"
+# C11: machine-readable error code for frontend to branch on without
+# relying on the human-readable ``INSUFFICIENT_CREDITS`` message.  Kept
+# snake_case so it stays stable across i18n / wording changes.
+INSUFFICIENT_CREDITS_CODE = "insufficient_credits"
 INVALID_PROMOTION_PACKAGE = "Invalid promotion package"
 ID_MISMATCH = "ID mismatch"
 REQUIRES_LOCATION = "requires_location"
@@ -56,6 +60,12 @@ INVALID_CUSTOM_URL = "custom-url destination_id must be a valid http or https UR
 BATCH_TOO_LARGE = "Batch exceeds maximum size of {limit} interactions"
 USER_ID_MISMATCH = "Cannot submit interactions on behalf of another user"
 DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same event"
+INVALID_STATUS_TRANSITION = "Invalid status transition"
+EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted"
+SAVED_EVENTS_CAP_REACHED = "Maximum saved events limit reached"
+INVALID_ROLE = "Role must be 'user' or 'admin'"
+CANNOT_DELETE_SELF = "Admins cannot delete their own account"
+LAST_ADMIN_REQUIRED = "Cannot remove the last remaining admin"
 
 # ---------------------------------------------------------------------------
 # 502 / 503 – Upstream / AI errors

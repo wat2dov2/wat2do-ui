@@ -7,8 +7,9 @@ from datetime import datetime, timezone
 from core.database import get_sb
 from core.tables import EVENTS
 from schemas.event import EventTimeMeta
-from services import interaction_service
 from services.recommender.config import POP_HALF_LIFE_DAYS, POP_FALLBACK_SCORE, POP_CANDIDATE_LIMIT
+from services.recommender.interaction_scores import get_event_popularity
+from services.recommender.utils import normalize_scores
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
     Events with zero interactions fall back to recency of added_at.
     Returns {event_id: score} normalized to [0, 1].
     """
-    popular = interaction_service.get_event_popularity(limit=POP_CANDIDATE_LIMIT)
+    popular = get_event_popularity(limit=POP_CANDIDATE_LIMIT)
     pop_map = {item.event_id: item.score for item in popular}
 
     candidate_set = set(candidate_event_ids)
@@ -32,8 +33,12 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
         raw_pop = pop_map.get(eid, 0)
         meta = events_meta.get(eid)
 
-        # Apply time decay based on event start time or added_at
-        dt_str = (meta.dtstart_utc or meta.added_at) if meta else None
+        # Apply time decay based on recency of when the event was added to the
+        # catalog -- interactions on newer events are fresher signal than
+        # interactions on events that have been sitting around for weeks.
+        # Using dtstart_utc here would make decay negative for future events
+        # (every candidate), so the decay would always collapse to 1.0.
+        dt_str = meta.added_at if meta else None
         decay = 1.0
         if dt_str:
             try:
@@ -51,14 +56,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
             # No interactions: use recency as proxy (small base score)
             scores[eid] = POP_FALLBACK_SCORE * decay
 
-    # Normalize to [0, 1]
-    if scores:
-        max_score = max(scores.values())
-        if max_score > 0:
-            for eid in scores:
-                scores[eid] /= max_score
-
-    return scores
+    return normalize_scores(scores)
 
 
 def _load_events_meta(event_ids: list[int]) -> dict[int, EventTimeMeta]:

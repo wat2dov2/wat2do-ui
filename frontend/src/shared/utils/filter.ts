@@ -1,13 +1,13 @@
-import type { FilterState } from "@/shared/types";
-import { QP } from "@/shared/constants/queryParams";
-
 /**
  * Filter Utilities
  * Helper functions for filter operations
  */
 
 /**
- * Get filter counts for UI display
+ * Get filter counts for UI display.
+ *
+ * Counts only fields that actually drive filterEvents — dateRange /
+ * addedSince were removed because they never influenced the result.
  */
 export function getFilterCounts(filters: {
   selectedCategories: string[];
@@ -15,7 +15,6 @@ export function getFilterCounts(filters: {
   selectedFoods: string[];
   selectedDays: string[];
   priceRange: { min: string; max: string };
-  dateRange?: Date;
   requiresRegistration: boolean;
 }): number {
   return (
@@ -24,60 +23,6 @@ export function getFilterCounts(filters: {
     filters.selectedFoods.length +
     filters.selectedDays.length +
     (filters.priceRange.min || filters.priceRange.max ? 1 : 0) +
-    (filters.dateRange ? 1 : 0) +
     (filters.requiresRegistration ? 1 : 0)
   );
-}
-
-/**
- * Check if any filters are active
- */
-export function hasActiveFilters(filters: FilterState): boolean {
-  return (
-    filters.searchQuery.trim() !== "" ||
-    filters.categories.length > 0 ||
-    filters.locations.length > 0 ||
-    filters.foods.length > 0 ||
-    filters.days.length > 0 ||
-    filters.priceRange.min !== "" ||
-    filters.priceRange.max !== "" ||
-    filters.dateRange !== "" ||
-    filters.addedSince !== "" ||
-    filters.requiresRegistration
-  );
-}
-
-export const hasFilters = hasActiveFilters;
-
-/**
- * Build filter query string for URL
- */
-export function buildFilterQueryString(filters: FilterState): string {
-  try {
-    const encoded = encodeURIComponent(JSON.stringify(filters));
-    return `${QP.FILTERS}=${encoded}`;
-  } catch (error) {
-    console.error("Failed to build filter query string:", error);
-    return "";
-  }
-}
-
-/**
- * Parse filter query string from URL
- */
-export function parseFilterQueryString(
-  queryString: string
-): FilterState | null {
-  try {
-    const params = new URLSearchParams(queryString);
-    const filtersParam = params.get(QP.FILTERS);
-    if (!filtersParam) return null;
-
-    const decoded = decodeURIComponent(filtersParam);
-    const parsed = JSON.parse(decoded) as FilterState;
-    return parsed;
-  } catch (error) {
-    console.error("Failed to parse filter query string:", error);
-    return null;
-  }
 }

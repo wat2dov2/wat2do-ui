@@ -1,14 +1,18 @@
-import { useState, useReducer, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { EventFormData } from "@/shared/types";
 import {
   validateEventForm,
   isEventFormValid,
-  markAllFieldsTouched,
+  markAllFieldsTouched as markAllFieldsTouchedFn,
 } from "@/shared/services/validationService";
-import { generateEventWithAI } from "@/shared/lib/openai";
-import { formReducer, type FormState } from "@/features/events/hooks/useEventForm.reducer";
-import { getInitialState, getSmartDefaults } from "@/features/events/hooks/useEventForm.utils";
+import { useForm } from "@/shared/hooks/useForm";
+import { useTagInput } from "@/shared/hooks/useTagInput";
+import {
+  getInitialState,
+  getSmartDefaults,
+  mapAiResponseToFormData,
+} from "@/features/events/hooks/useEventForm.utils";
 
 interface UseEventFormOptions {
   initialData?: EventFormData;
@@ -24,160 +28,62 @@ interface UseEventFormOptions {
 export function useEventForm(options: UseEventFormOptions) {
   const { initialData, isEditMode = false, isOpen, editDataReady = 0 } = options;
   const { t } = useTranslation();
-  const prevIsOpenRef = useRef(isOpen);
-  const prevInitialDataRef = useRef<EventFormData | undefined>(undefined);
-  const prevEditDataReadyRef = useRef(editDataReady);
 
-  const [state, dispatch] = useReducer(
-    formReducer,
-    { initialData, isEditMode },
-    (arg) => getInitialState(arg.initialData, arg.isEditMode)
-  );
-
-  // Reset form when modal opens (isOpen transitions false → true)
-  useEffect(() => {
-    if (isOpen && !prevIsOpenRef.current) {
-      const resetState = getInitialState(initialData, isEditMode);
-      dispatch({
-        type: "RESET",
-        payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
-      });
-      prevInitialDataRef.current = initialData;
-      prevEditDataReadyRef.current = editDataReady;
-    }
-    prevIsOpenRef.current = isOpen;
-
-    if (!isOpen) {
-      prevInitialDataRef.current = undefined;
-      prevEditDataReadyRef.current = 0;
-    }
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Reset form when initialData arrives after opening (e.g. fetched in modal when editing from admin)
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const fetchedDataJustReady =
-      isEditMode &&
-      editDataReady === 1 &&
-      prevEditDataReadyRef.current !== 1 &&
-      initialData;
-    if (fetchedDataJustReady) {
-      const resetState = getInitialState(initialData, isEditMode);
-      dispatch({
-        type: "RESET",
-        payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
-      });
-      prevInitialDataRef.current = initialData;
-      prevEditDataReadyRef.current = 1;
-    } else if (isEditMode && initialData && initialData !== prevInitialDataRef.current) {
-      const resetState = getInitialState(initialData, isEditMode);
-      dispatch({
-        type: "RESET",
-        payload: { formData: resetState.formData, selectedDate: resetState.selectedDate },
-      });
-      prevInitialDataRef.current = initialData;
-    }
-    if (editDataReady === 1) prevEditDataReadyRef.current = 1;
-  }, [isOpen, isEditMode, editDataReady, initialData]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Validate on change - use useMemo instead of useEffect
-  const errors = useMemo(
-    () => validateEventForm(state.formData, state.touched),
-    [state.formData, state.touched]
-  );
-
-  const handleBlur = useCallback((field: string) => {
-    dispatch({ type: "TOUCH_FIELD", payload: field });
-  }, []);
-
-  // Handle JSON changes
-  const handleJsonChange = useCallback(
-    (value: string | undefined) => {
-      if (!value) return;
-      dispatch({ type: "SET_JSON_VALUE", payload: value });
-
-      try {
-        const parsed = JSON.parse(value);
-        dispatch({ type: "SET_JSON_ERROR", payload: "" });
-
-        const smartDefaults = getSmartDefaults();
-        dispatch({
-          type: "SET_FORM_DATA",
-          payload: {
-            title: parsed.title || "",
-            description: parsed.description || "",
-            date: parsed.date || smartDefaults.date,
-            time: parsed.time || smartDefaults.time,
-            location: parsed.location || "",
-            category: parsed.category || "",
-            price: typeof parsed.price === "number" ? parsed.price : 0,
-            food: Array.isArray(parsed.food) ? parsed.food : [],
-            requiresRegistration:
-              typeof parsed.requiresRegistration === "boolean"
-                ? parsed.requiresRegistration
-                : false,
-            organization: parsed.organization || "",
-          },
-        });
-      } catch (err) {
-        console.error("Failed to parse event form JSON:", err);
-        dispatch({ type: "SET_JSON_ERROR", payload: t("forms.invalidJsonFormat") });
-      }
-    },
-    [t]
-  );
-
-  // Handle AI generation
-  const handleAiGenerate = useCallback(async () => {
-    if (!state.aiPrompt.trim()) return;
-
-    dispatch({ type: "SET_AI_GENERATING", payload: true });
-    dispatch({ type: "SET_JSON_ERROR", payload: "" });
-
-    try {
-      const newEvent = await generateEventWithAI(state.aiPrompt, (partialJson) => {
-        dispatch({ type: "SET_JSON_VALUE", payload: partialJson });
-      });
-
-      const generatedJson = JSON.stringify(newEvent, null, 2);
-      dispatch({ type: "SET_JSON_VALUE", payload: generatedJson });
-      handleJsonChange(generatedJson);
-    } catch (error) {
-      console.error("AI event generation failed:", error);
-      dispatch({
-        type: "SET_JSON_ERROR",
-        payload: error instanceof Error ? error.message : t("forms.aiGenerationFailed"),
-      });
-    } finally {
-      dispatch({ type: "SET_AI_GENERATING", payload: false });
-    }
-  }, [state.aiPrompt, handleJsonChange, t]);
-
-  // Add food item
-  const addFood = useCallback(() => {
-    if (state.foodInput.trim()) {
-      dispatch({ type: "ADD_FOOD", payload: state.foodInput.trim() });
-    }
-  }, [state.foodInput]);
-
-  // Remove food item
-  const removeFood = useCallback((index: number) => {
-    dispatch({ type: "REMOVE_FOOD", payload: index });
-  }, []);
-
-  // Update form field
-  const updateField = useCallback(
-    <K extends keyof EventFormData>(field: K, value: EventFormData[K]) => {
-      dispatch({ type: "UPDATE_FIELD", payload: { field, value } });
-    },
+  // Use the shared useForm hook for core form state (formData, touched, updateField,
+  // handleBlur, reset). We supply a validate callback so `errors` is derived inside
+  // the hook — but we still re-expose it with the EventFormData-specific ValidationErrors
+  // shape below.
+  const getDefaults = useCallback(() => getInitialState(initialData, isEditMode).formData, [
+    initialData,
+    isEditMode,
+  ]);
+  const validate = useCallback(
+    (data: EventFormData, touched: Record<string, boolean>) =>
+      validateEventForm(data, touched) as Record<string, string>,
     []
   );
+  const form = useForm<EventFormData>({
+    initialData,
+    isEditMode,
+    isOpen,
+    getDefaults,
+    validate,
+  });
 
-  // Sync selectedDate with formData.date
+  // Re-typed errors for EventForm consumers
+  const errors = form.errors as import("@/shared/types").ValidationErrors;
+
+  // Date picker state (tracks Date object; formData.date holds the ISO string)
+  const initialSelectedDate = useMemo(
+    () => getInitialState(initialData, isEditMode).selectedDate,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialSelectedDate);
+
   const handleDateChange = useCallback((date: Date | undefined) => {
-    dispatch({ type: "SET_SELECTED_DATE", payload: date });
-  }, []);
+    setSelectedDate(date);
+    const dateStr = date ? date.toISOString().split("T")[0] : "";
+    form.updateField("date", dateStr);
+  }, [form]);
+
+  // JSON editor state
+  const [jsonValue, setJsonValue] = useState("");
+  const [jsonError, setJsonError] = useState("");
+
+  // Food tag input (manages its own input string; commits to formData.food)
+  const foodTag = useTagInput({
+    onAdd: (value) => {
+      form.updateField("food", [...form.formData.food, value]);
+    },
+  });
+
+  const removeFood = useCallback((index: number) => {
+    form.updateField(
+      "food",
+      form.formData.food.filter((_, i) => i !== index)
+    );
+  }, [form]);
 
   // Image upload state
   const [imagePreview, setImagePreview] = useState("");
@@ -197,47 +103,123 @@ export function useEventForm(options: UseEventFormOptions) {
     setImageFile(null);
   }, []);
 
-  // Check if form is valid
-  const isValid = useMemo(
-    () => isEventFormValid(state.formData, errors),
-    [state.formData, errors],
+  // Reset extras (date/json/food/image) on modal open or when initialData is re-seeded.
+  // useForm handles formData/touched reset on isOpen transition; we mirror that here for
+  // the fields that live outside useForm.
+  const prevIsOpenRef = useRef(isOpen);
+  const prevInitialDataRef = useRef<EventFormData | undefined>(undefined);
+  const prevEditDataReadyRef = useRef(editDataReady);
+
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      const resetState = getInitialState(initialData, isEditMode);
+      setSelectedDate(resetState.selectedDate);
+      setJsonValue("");
+      setJsonError("");
+      foodTag.reset();
+      setImagePreview("");
+      setImageFile(null);
+      prevInitialDataRef.current = initialData;
+      prevEditDataReadyRef.current = editDataReady;
+    }
+    prevIsOpenRef.current = isOpen;
+
+    if (!isOpen) {
+      prevInitialDataRef.current = undefined;
+      prevEditDataReadyRef.current = 0;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Re-seed when initialData arrives after opening (e.g. fetched for admin edit).
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchedDataJustReady =
+      isEditMode &&
+      editDataReady === 1 &&
+      prevEditDataReadyRef.current !== 1 &&
+      initialData;
+
+    const shouldReseed =
+      fetchedDataJustReady ||
+      (isEditMode && initialData && initialData !== prevInitialDataRef.current);
+
+    if (shouldReseed && initialData) {
+      const resetState = getInitialState(initialData, isEditMode);
+      form.setFormData(resetState.formData);
+      setSelectedDate(resetState.selectedDate);
+      prevInitialDataRef.current = initialData;
+    }
+    if (editDataReady === 1) prevEditDataReadyRef.current = 1;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isEditMode, editDataReady, initialData]);
+
+  // Handle JSON changes
+  const handleJsonChange = useCallback(
+    (value: string | undefined) => {
+      if (!value) return;
+      setJsonValue(value);
+
+      try {
+        const parsed = JSON.parse(value);
+        setJsonError("");
+
+        const smartDefaults = getSmartDefaults();
+        form.setFormData(mapAiResponseToFormData(parsed, smartDefaults));
+      } catch (err) {
+        console.error("Failed to parse event form JSON:", err);
+        setJsonError(t("forms.invalidJsonFormat"));
+      }
+    },
+    [t, form]
   );
 
   // Sync formData to JSON when needed
   const syncToJSON = useCallback(() => {
-    dispatch({
-      type: "SET_JSON_VALUE",
-      payload: JSON.stringify(state.formData, null, 2),
-    });
-  }, [state.formData]);
+    setJsonValue(JSON.stringify(form.formData, null, 2));
+  }, [form.formData]);
+
+  // isValid is derived from the domain-specific isEventFormValid (stronger than
+  // useForm.isValid which only checks "errors is empty").
+  const isValid = useMemo(
+    () => isEventFormValid(form.formData, errors),
+    [form.formData, errors],
+  );
+
+  const markAllFieldsTouched = useCallback(() => {
+    // useForm does not expose setTouched directly. Touch each required field via handleBlur.
+    const allTouched = markAllFieldsTouchedFn();
+    Object.keys(allTouched).forEach((field) => form.handleBlur(field));
+  }, [form]);
 
   return {
     // Form data
-    formData: state.formData,
-    setFormData: (data: EventFormData) => dispatch({ type: "SET_FORM_DATA", payload: data }),
-    updateField,
+    formData: form.formData,
+    setFormData: form.setFormData,
+    updateField: form.updateField,
 
     // Date picker
-    selectedDate: state.selectedDate,
+    selectedDate,
     handleDateChange,
 
     // Food management
-    foodInput: state.foodInput,
-    setFoodInput: (value: string) => dispatch({ type: "SET_FOOD_INPUT", payload: value }),
-    addFood,
+    foodInput: foodTag.inputValue,
+    setFoodInput: foodTag.setInputValue,
+    addFood: foodTag.handleAdd,
     removeFood,
 
     // Validation
     errors,
-    touched: state.touched,
-    handleBlur,
+    touched: form.touched,
+    handleBlur: form.handleBlur,
     isValid,
 
     // JSON editor
-    jsonValue: state.jsonValue,
-    setJsonValue: (value: string) => dispatch({ type: "SET_JSON_VALUE", payload: value }),
-    jsonError: state.jsonError,
-    setJsonError: (error: string) => dispatch({ type: "SET_JSON_ERROR", payload: error }),
+    jsonValue,
+    setJsonValue,
+    jsonError,
+    setJsonError,
     handleJsonChange,
     syncToJSON,
 
@@ -247,16 +229,7 @@ export function useEventForm(options: UseEventFormOptions) {
     onImageUpload,
     onRemoveImage,
 
-    // AI generation
-    aiPrompt: state.aiPrompt,
-    setAiPrompt: (prompt: string) => dispatch({ type: "SET_AI_PROMPT", payload: prompt }),
-    aiGenerating: state.aiGenerating,
-    handleAiGenerate,
-
     // Utilities
-    markAllFieldsTouched: () => {
-      const allTouched = markAllFieldsTouched();
-      dispatch({ type: "SET_TOUCHED", payload: allTouched });
-    },
+    markAllFieldsTouched,
   };
 }

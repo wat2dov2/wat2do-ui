@@ -182,3 +182,56 @@ def test_search_normal_term(client, monkeypatch):
     assert mock_list.call_count == 1
     _, kwargs = mock_list.call_args
     assert kwargs["search"] == "pizza"
+
+
+# ---------------------------------------------------------------------------
+# I10 / S16 — public responses must not leak created_by
+# ---------------------------------------------------------------------------
+
+
+def test_get_event_public_hides_created_by(client, monkeypatch):
+    """GET /events/{id} must not include created_by in the response body."""
+    event = _mock_event(created_by="secret-uid-1234")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+
+    resp = client.get("/events/1")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "created_by" not in body
+
+
+def test_list_events_public_hides_created_by(client, monkeypatch):
+    """GET /events/ must not include created_by in any item."""
+    events = [_mock_event(created_by="secret-uid-1234")]
+    monkeypatch.setattr(event_service, "list_events", MagicMock(return_value=events))
+
+    resp = client.get("/events/")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert all("created_by" not in item for item in body)
+
+
+# ---------------------------------------------------------------------------
+# I12 — past-event freezing on update
+# ---------------------------------------------------------------------------
+
+
+def test_update_past_event_rejected(authenticated_client, monkeypatch):
+    """PATCH to an already-past event returns 400 / validation error."""
+    from datetime import datetime, timedelta, timezone
+    from core.exceptions import ValidationError
+
+    past = datetime.now(timezone.utc) - timedelta(days=2)
+    event = _mock_event(created_by=FAKE_USER["id"], dtstart_utc=past, dtend_utc=past)
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+
+    from services import user_service
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
+
+    # Drive the service call directly so we get the ValidationError
+    try:
+        event_service.update_event(1, type("D", (), {"model_dump": lambda *_, **__: {"title": "x"}})())
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("expected ValidationError for past-event update")

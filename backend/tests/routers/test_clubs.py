@@ -140,10 +140,13 @@ def test_integration_non_owner_rejected(other_user_client, monkeypatch):
         "/clubs/1/integrations/discord",
         json={
             "connected": True,
-            "server_id": "1",
-            "server_name": "S",
-            "channel_id": "101",
-            "channel_name": "#e",
+            "name": "TestClub - #events",
+            "metadata": {
+                "server_id": "1",
+                "server_name": "S",
+                "channel_id": "101",
+                "channel_name": "#e",
+            },
         },
     )
     assert resp.status_code == 403

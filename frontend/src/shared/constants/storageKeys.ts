@@ -6,7 +6,8 @@
  *
  * Allowed per CLAUDE.md localStorage policy:
  *   theme, userEmail, userProfile, viewMode, filterViewMode,
- *   i18n-language, notificationPreferences, privacyPreferences
+ *   i18n-language, notificationPreferences, privacyPreferences,
+ *   wat2do-app-prefs (composite of viewMode + filterViewMode via Zustand persist)
  */
 
 export const STORAGE_KEYS = {
@@ -16,8 +17,6 @@ export const STORAGE_KEYS = {
 
   // Appearance / device preferences
   THEME: "theme",
-  VIEW_MODE: "viewMode",
-  FILTER_VIEW_MODE: "filterViewMode",
   LANGUAGE: "i18n-language",
 
   // Settings

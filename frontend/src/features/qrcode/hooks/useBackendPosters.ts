@@ -1,41 +1,6 @@
-import { useState, useEffect } from "react";
-import { listPostersFromBackend } from "@/features/qrcode/api/qrcode.api";
-import type { QRCode } from "@/shared/types";
-
 /**
- * Fetches posters from the backend (GET /qr/). Use for dashboard and admin.
+ * useBackendPosters
+ * Re-export from shared/hooks for backward compatibility within qrcode feature.
  */
-export function useBackendPosters(refreshKey?: number): {
-  posters: QRCode[];
-  loading: boolean;
-  error: Error | null;
-} {
-  const [posters, setPosters] = useState<QRCode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    listPostersFromBackend()
-      .then((list) => {
-        if (!cancelled) setPosters(list);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch backend posters:", err);
-        if (!cancelled) {
-          setError(err instanceof Error ? err : new Error(String(err)));
-          setPosters([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
-
-  return { posters, loading, error };
-}
+export { useBackendPosters } from "@/shared/hooks/useBackendPosters";

@@ -300,8 +300,16 @@ def test_anon_rate_limit_does_not_affect_user_keyed_limiter(client, monkeypatch)
 # ── Edge cases ────────────────────────────────────────────────────────
 
 
-def test_batch_handles_db_error_gracefully(client, monkeypatch):
-    """If the interactions table is unavailable, returns recorded=0."""
+def test_batch_propagates_db_error(client, monkeypatch):
+    """Audit D11: DB errors must surface as 5xx, not be masked as recorded=0.
+
+    Previously ``record_interactions_batch`` swallowed ``APIError`` and
+    returned 0 — identical to a successful empty-after-dedup batch.  The
+    frontend treated this as "tracking is fine" while interactions
+    silently dropped.  The fix propagates the error; the global
+    PostgREST handler maps unknown error codes to 502 so clients can
+    retry.
+    """
     from services import interaction_service
     from postgrest.exceptions import APIError
 
@@ -316,8 +324,7 @@ def test_batch_handles_db_error_gracefully(client, monkeypatch):
     )
 
     resp = client.post("/interactions/batch", json=_batch_payload())
-    assert resp.status_code == 202
-    assert resp.json()["recorded"] == 0
+    assert resp.status_code == 502
 
 
 def test_batch_rejects_invalid_interaction_type(client):

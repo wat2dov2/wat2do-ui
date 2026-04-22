@@ -15,6 +15,7 @@ export function useLatestAddedEvent() {
       .then((data) => {
         if (!cancelled && data) setLatest(data);
       })
+      .catch((err) => console.error("Failed to fetch latest added event:", err))
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });

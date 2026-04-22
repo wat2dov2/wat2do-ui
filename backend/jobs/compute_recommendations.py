@@ -26,7 +26,7 @@ load_dotenv()
 
 import core.logging  # noqa: F401 — triggers basicConfig for standalone execution
 
-from services.recommendation_service import engine as recommendation_engine
+from services.recommendation_service import batch_runner
 from services.recommender.evaluation import evaluate_all_users
 from services.recommender.config import DEFAULT_LIMIT, DEFAULT_LAMBDA, EVAL_K
 
@@ -49,7 +49,7 @@ def main():
 
     # --- Compute ---
     start = time.time()
-    stats = recommendation_engine.compute_all_users(limit=args.limit, lambda_param=args.lambda_param)
+    stats = batch_runner.compute_all_users(limit=args.limit, lambda_param=args.lambda_param)
     elapsed = time.time() - start
 
     log.info("  Total users:     %s", stats["total_users"])

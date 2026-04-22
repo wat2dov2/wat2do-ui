@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request, status
 from core.auth import get_optional_user, resolve_db_user
 from core.client_ip import get_client_ip
 from core.rate_limit import RateLimiter, anon_interaction_rate_limiter
-from schemas.interaction import InteractionBatch
+from schemas.interaction import InteractionBatch, RecordInteractionsResponse
 from services import interaction_service
 
 # Rate limiter for authenticated interaction submissions.
@@ -16,7 +16,11 @@ router = APIRouter(prefix="/interactions", tags=["interactions"])
 log = logging.getLogger(__name__)
 
 
-@router.post("/batch", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/batch",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=RecordInteractionsResponse,
+)
 def record_interactions(
     data: InteractionBatch,
     request: Request,
@@ -54,9 +58,14 @@ def record_interactions(
         anon_interaction_rate_limiter.check(get_client_ip(request))
 
     # ── Delegate business logic to service ────────────────────────────
+    # ``data.user_id`` is a UUID (or None) after Pydantic parsing; the
+    # service compares it to ``user_id: str | None`` from the auth layer,
+    # so stringify here.  See audit S11 for the rationale behind typing
+    # the payload field as UUID rather than str.
+    payload_user_id = str(data.user_id) if data.user_id is not None else None
     count = interaction_service.record_interactions_batch(
         user_id=user_id,
-        payload_user_id=data.user_id,
+        payload_user_id=payload_user_id,
         session_id=data.session_id,
         interactions=data.interactions,
     )

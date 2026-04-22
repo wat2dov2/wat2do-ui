@@ -4,7 +4,9 @@
  * Reduced Tailwind classes via reusable components
  */
 
-import React from "react";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Search,
   Shield,
@@ -14,24 +16,21 @@ import {
 } from "lucide-react";
 import { SidebarButton } from "@/shared/ui/sidebar-button";
 import { SidebarEventsSection } from "@/features/events";
-import { useSidebar } from "@/app/hooks/useSidebar";
-import { useUIContext } from "@/contexts/UIContext";
-import { useUserContext } from "@/contexts/UserContext";
-import { useModalContext } from "@/contexts/ModalContext";
+import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { useModalStore } from "@/shared/store/modal.store";
+import { ROUTES } from "@/shared/constants/routes";
+import { derivePageMode } from "@/shared/utils/pageMode";
 import { cn } from "@/shared/lib/utils";
 
 export function Sidebar() {
-  const { pageMode, eventsExpanded, setEventsExpanded } = useUIContext();
-  const { profileCompleted } = useUserContext();
-  const { setShowCommandPalette, setShowSubmitEvent } = useModalContext();
-
-  const {
-    handleCommandPaletteClick,
-    handleClubsClick,
-    handleMissionClick,
-    handleSettingsClick,
-    translations,
-  } = useSidebar();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const pageMode = derivePageMode(location.pathname);
+  const [eventsExpanded, setEventsExpanded] = useState(true);
+  const profileCompleted = useProfileCompleted();
+  const setShowCommandPalette = useModalStore((s) => s.setShowCommandPalette);
+  const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
 
   return (
     <aside
@@ -46,14 +45,14 @@ export function Sidebar() {
           {/* Command Palette Trigger */}
           <SidebarButton
             icon={Search}
-            label={translations.search}
-            onClick={handleCommandPaletteClick}
+            label={t("common.search")}
+            onClick={() => setShowCommandPalette(true)}
             badge={
               <div className="flex items-center gap-0.5 opacity-0 group-hover/sidebar:opacity-100 transition-opacity">
-                <span className="flex items-center justify-center w-[18px] h-[18px] bg-muted border border-border rounded shadow-sm text-[9px] text-muted-foreground">
+                <span className="flex items-center justify-center w-[18px] h-[18px] bg-secondary border border-border rounded shadow-sm text-[9px] text-muted-foreground">
                   ⌘
                 </span>
-                <span className="flex items-center justify-center w-[18px] h-[18px] bg-muted border border-border rounded shadow-sm text-[9px] text-muted-foreground">
+                <span className="flex items-center justify-center w-[18px] h-[18px] bg-secondary border border-border rounded shadow-sm text-[9px] text-muted-foreground">
                   K
                 </span>
               </div>
@@ -71,19 +70,19 @@ export function Sidebar() {
 
           <SidebarButton
             icon={Shield}
-            label={translations.clubs}
+            label={t("navigation.clubs")}
             isActive={pageMode === "clubs"}
-            onClick={handleClubsClick}
+            onClick={() => navigate(ROUTES.CLUBS)}
           />
           <SidebarButton
             icon={Target}
-            label={translations.mission}
+            label={t("navigation.mission")}
             isActive={pageMode === "about"}
-            onClick={handleMissionClick}
+            onClick={() => navigate(ROUTES.ABOUT)}
           />
           <SidebarButton
             icon={Mail}
-            label={translations.contact}
+            label={t("navigation.contact")}
           />
         </nav>
       </div>
@@ -93,8 +92,8 @@ export function Sidebar() {
         <div className="mt-auto p-2 border-t border-border">
           <SidebarButton
             icon={Settings}
-            label={translations.settings}
-            onClick={handleSettingsClick}
+            label={t("navigation.settings")}
+            onClick={() => navigate(ROUTES.SETTINGS)}
           />
         </div>
       )}

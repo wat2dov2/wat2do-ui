@@ -102,7 +102,11 @@ CACHE_TTL_SECONDS: int = 1800         # 30-minute TTL for shared recommendation 
 # Per-user interaction scores: shorter TTL because scores change when the user
 # interacts, and the cache is per-user (memory scales with active users).
 USER_SCORES_CACHE_TTL: int = 300      # 5-minute TTL for per-user event scores
-USER_SCORES_CACHE_MAX: int = 512      # max users cached (LRU eviction)
+
+# P5: bound the per-user score cache with LRU eviction so memory stays
+# proportional to the *most recently active* users rather than every user
+# who ever hit recommendations.  Tune upward if the active cohort is larger.
+USER_SCORES_CACHE_MAX: int = 512      # max users cached simultaneously
 
 # Candidate events (future events query): identical for all users within a
 # time window, so a short global TTL avoids redundant DB hits during batch

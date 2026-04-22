@@ -1,10 +1,14 @@
 """Scraped events persistence."""
 
+import logging
 import uuid
+from datetime import datetime, timezone
 
 from core.database import get_sb
 from core.tables import SCRAPED_EVENTS
 from schemas.scraped_event import ScrapedEventResponse
+
+log = logging.getLogger(__name__)
 
 
 def create_scraped_event(
@@ -20,7 +24,18 @@ def create_scraped_event(
         "raw_data": raw_data,
     }
     r = get_sb().table(SCRAPED_EVENTS).insert(payload).execute()
-    return ScrapedEventResponse.model_validate(r.data[0]) if r.data else ScrapedEventResponse(**payload)
+    if r.data:
+        return ScrapedEventResponse.model_validate(r.data[0])
+    # E9: the fallback constructor must supply ``scraped_at`` since the
+    # DB default (``now()``) is not included in ``payload``.  Without this
+    # Pydantic raises ``ValidationError("Field required: scraped_at")`` →
+    # global handler returns 500.  Matches the pattern used by
+    # submission_service / report_service.
+    log.warning(
+        "Insert returned no data for create_scraped_event(source=%s), using payload fallback",
+        source,
+    )
+    return ScrapedEventResponse(**payload, scraped_at=datetime.now(timezone.utc))
 
 
 def get_scraped_events(

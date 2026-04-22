@@ -126,3 +126,62 @@ def test_update_report_admin(admin_client, monkeypatch):
     resp = admin_client.patch("/reports/rpt-001", json={"status": "resolved"})
     assert resp.status_code == 200
     assert resp.json()["status"] == "resolved"
+
+
+# ---------------------------------------------------------------------------
+# POST /reports/ — event existence check (audit I2)
+# ---------------------------------------------------------------------------
+
+
+def test_create_report_rejects_nonexistent_event(authenticated_client, monkeypatch):
+    """POST /reports/ returns 404 when event_id references a missing event."""
+    from services import event_service
+
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER))
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=None))
+
+    resp = authenticated_client.post("/reports/", json={"event_id": 99999, "reason": "Spam"})
+    assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Status-transition state machine (audit I5 / E6)
+# ---------------------------------------------------------------------------
+
+
+def test_report_service_rejects_terminal_to_pending(monkeypatch):
+    """report_service.update_report rejects resolved -> pending."""
+    from core.exceptions import ValidationError
+
+    existing = _mock_report(status="resolved")
+    monkeypatch.setattr(
+        report_service,
+        "_get_report_by_id",
+        MagicMock(return_value=existing),
+    )
+
+    try:
+        report_service.update_report("rpt-001", "pending")
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("expected ValidationError for resolved -> pending")
+
+
+def test_report_service_rejects_dismissed_to_resolved(monkeypatch):
+    """report_service.update_report rejects dismissed -> resolved."""
+    from core.exceptions import ValidationError
+
+    existing = _mock_report(status="dismissed")
+    monkeypatch.setattr(
+        report_service,
+        "_get_report_by_id",
+        MagicMock(return_value=existing),
+    )
+
+    try:
+        report_service.update_report("rpt-001", "resolved")
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("expected ValidationError for dismissed -> resolved")

@@ -19,24 +19,17 @@ import {
 } from "@/shared/ui/select";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
-import { useAppearance } from "@/features/settings/hooks/useAppearance";
-import type { ViewMode, FilterViewMode } from "@/shared/types";
+import { useAppPrefsStore } from "@/shared/store/appPrefs.store";
+import type { ViewMode } from "@/shared/types";
 
-interface AppearanceTabProps {
-  viewMode: ViewMode;
-  setViewMode: (mode: ViewMode) => void;
-  filterViewMode: FilterViewMode;
-  setFilterViewMode: (mode: FilterViewMode) => void;
-}
-
-export function AppearanceTab({
-  viewMode,
-  setViewMode,
-  filterViewMode,
-  setFilterViewMode,
-}: AppearanceTabProps) {
+export function AppearanceTab() {
   const { t } = useTranslation();
-  useAppearance({ viewMode, setViewMode, filterViewMode, setFilterViewMode });
+  // Subscribe directly to avoid a middleman prop-drill through SettingsPage.
+  // Each selector is narrow so only the consuming slot re-renders.
+  const viewMode = useAppPrefsStore((s) => s.viewMode);
+  const setViewMode = useAppPrefsStore((s) => s.setViewMode);
+  const filterViewMode = useAppPrefsStore((s) => s.filterViewMode);
+  const setFilterViewMode = useAppPrefsStore((s) => s.setFilterViewMode);
 
   return (
     <div className="space-y-6">

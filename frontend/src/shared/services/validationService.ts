@@ -5,33 +5,48 @@ import type { EventFormData, ValidationErrors } from "@/shared/types";
  * Handles form validation logic
  */
 
+/** Default validation error message keys — can be overridden with translated strings. */
+export const VALIDATION_MESSAGES = {
+  titleRequired: "Title is required",
+  organizationRequired: "Organization is required",
+  dateRequired: "Date is required",
+  timeRequired: "Time is required",
+  locationRequired: "Location is required",
+  jsonEmpty: "JSON cannot be empty",
+  jsonInvalid: "Invalid JSON format",
+} as const;
+
+export type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGES, string>>;
+
 /**
  * Validate event form data
  */
 export function validateEventForm(
   formData: EventFormData,
-  touched: Record<string, boolean>
+  touched: Record<string, boolean>,
+  messages?: ValidationMessageOverrides,
 ): ValidationErrors {
+  const m = { ...VALIDATION_MESSAGES, ...messages };
   const errors: ValidationErrors = {};
 
   if (touched.title && !formData.title.trim()) {
-    errors.title = "Title is required";
+    errors.title = m.titleRequired;
   }
 
   if (touched.organization && !formData.organization.trim()) {
-    errors.organization = "Organization is required";
+    errors.organization = m.organizationRequired;
   }
 
   if (touched.date && !formData.date) {
-    errors.date = "Date is required";
+    errors.date = m.dateRequired;
   }
 
   if (touched.time && !formData.time) {
-    errors.time = "Time is required";
+    errors.time = m.timeRequired;
   }
 
   if (touched.location && !formData.location) {
-    errors.location = "Location is required";
+    errors.location = m.locationRequired;
   }
 
   return errors;
@@ -57,12 +72,16 @@ export function isEventFormValid(
 /**
  * Validate filter JSON
  */
-export function validateFilterJSON(jsonString: string): {
+export function validateFilterJSON(
+  jsonString: string,
+  messages?: ValidationMessageOverrides,
+): {
   valid: boolean;
   error: string | null;
 } {
+  const m = { ...VALIDATION_MESSAGES, ...messages };
   if (!jsonString.trim()) {
-    return { valid: false, error: "JSON cannot be empty" };
+    return { valid: false, error: m.jsonEmpty };
   }
 
   try {
@@ -71,7 +90,7 @@ export function validateFilterJSON(jsonString: string): {
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof Error ? error.message : "Invalid JSON format",
+      error: error instanceof Error ? error.message : m.jsonInvalid,
     };
   }
 }

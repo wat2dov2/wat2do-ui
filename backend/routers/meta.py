@@ -5,9 +5,9 @@ categories, interest mappings, and status enums always come from
 one source of truth (the backend).
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 
-from constants import (
+from core.constants import (
     EVENT_CATEGORIES,
     INTEREST_TO_CATEGORIES,
     SUBMISSION_STATUSES,
@@ -19,11 +19,17 @@ router = APIRouter(prefix="/meta", tags=["meta"])
 
 
 @router.get("/constants", response_model=AppConstantsResponse)
-def get_constants():
+def get_constants(response: Response):
     """Return shared domain constants for frontend consumption.
 
     This endpoint is public (no auth required) and highly cacheable.
+    Sets an explicit ``Cache-Control: public, max-age=60`` header so
+    cheap repeat scrapes hit the CDN / browser cache rather than the
+    application process (audit M13).  The cache window is deliberately
+    short (60 s) so that category / interest changes deployed via a
+    backend-only restart propagate within a minute.
     """
+    response.headers["Cache-Control"] = "public, max-age=60"
     return AppConstantsResponse(
         event_categories=list(EVENT_CATEGORIES),
         interests=list(INTEREST_TO_CATEGORIES.keys()),

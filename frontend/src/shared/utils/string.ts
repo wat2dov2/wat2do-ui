@@ -15,6 +15,19 @@ export function toFacultyKey(faculty: string): string {
 }
 
 /**
+ * Build the i18n translation key for a faculty name.
+ *
+ * Handles the special case where "Applied Health Sciences" maps to
+ * `onboarding.faculties.appliedHealthSciences` (camelCase) while all
+ * other faculties use their simple lowercase key.
+ */
+export function toFacultyTranslationKey(faculty: string): string {
+  const key = toFacultyKey(faculty);
+  const translationSuffix = key === "appliedhealthsciences" ? "appliedHealthSciences" : key;
+  return `onboarding.faculties.${translationSuffix}`;
+}
+
+/**
  * Strip characters that are not valid in an email username (local part).
  * Keeps alphanumeric characters, dots, underscores, and hyphens.
  *
@@ -40,26 +53,26 @@ export function stripTrailingSlash(url: string): string {
  * Use this whenever translation strings are rendered via dangerouslySetInnerHTML
  * as defense-in-depth against stored XSS if translation sources are ever
  * compromised.
+ *
+ * The sanitizer rejects any attributes on allowed tags (so `<strong onclick>` is
+ * stripped), tolerates extra whitespace (`<strong >`), and is immune to nul-byte
+ * placeholder forgery: nul bytes are removed from input up front.
  */
 export function sanitizeTranslationHTML(html: string): string {
-  // Replace allowed tags with unique placeholders, strip all remaining tags,
-  // then restore the placeholders.
-  const ALLOWED: [RegExp, string, string][] = [
-    [/<strong>/gi, "\x00STRONG_OPEN\x00", "<strong>"],
-    [/<\/strong>/gi, "\x00STRONG_CLOSE\x00", "</strong>"],
-    [/<em>/gi, "\x00EM_OPEN\x00", "<em>"],
-    [/<\/em>/gi, "\x00EM_CLOSE\x00", "</em>"],
-  ];
-
-  let safe = html;
-  for (const [re, placeholder] of ALLOWED) {
-    safe = safe.replace(re, placeholder);
-  }
-  // Strip all remaining HTML tags
-  safe = safe.replace(/<[^>]*>/g, "");
-  // Restore allowed tags
-  for (const [, placeholder, tag] of ALLOWED) {
-    safe = safe.split(placeholder).join(tag);
-  }
-  return safe;
+  // Drop nul bytes so an attacker cannot inject placeholder tokens that the
+  // old regex-based approach used internally.
+  const cleaned = html.replace(/\x00/g, "");
+  // Match any tag-like token `<...>`. Only replace with the canonical form when
+  // the token is exactly one of our allowed tags (ignoring case and surrounding
+  // whitespace, and rejecting attributes). All other tag-like tokens are stripped.
+  // Anything that doesn't look like a tag (e.g. "a < b") is left untouched.
+  return cleaned.replace(/<[^>]*>/g, (match) => {
+    const inner = match.slice(1, -1).trim();
+    const lower = inner.toLowerCase();
+    if (lower === "strong") return "<strong>";
+    if (lower === "/strong") return "</strong>";
+    if (lower === "em") return "<em>";
+    if (lower === "/em") return "</em>";
+    return "";
+  });
 }

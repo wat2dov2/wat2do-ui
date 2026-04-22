@@ -3,20 +3,16 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  Tag,
   SlidersHorizontal,
   Grid3x3,
   Calendar,
   Plus,
   X,
-  Heart,
-  LogIn,
   User,
   Bell,
   Palette,
   Shield,
   HelpCircle,
-  Settings,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -28,9 +24,8 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/shared/ui/command";
-import { useUserContext } from "@/contexts/UserContext";
-import { useUIContext } from "@/contexts/UIContext";
-import { useModalContext } from "@/contexts/ModalContext";
+import { useAppPrefsStore } from "@/shared/store/appPrefs.store";
+import { useModalStore } from "@/shared/store/modal.store";
 import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
 
 interface CommandPaletteProps {
@@ -38,8 +33,8 @@ interface CommandPaletteProps {
   onOpenChange: (open: boolean) => void;
   setShowFilterDropdown: (show: boolean) => void;
   onClearAllFilters: () => void;
-  onSetFreeFilter: () => void;
-  onShowOnboarding: () => void;
+  personalItems: React.ReactNode;
+  profileLabel: string;
 }
 
 export function CommandPalette({
@@ -47,14 +42,13 @@ export function CommandPalette({
   onOpenChange,
   setShowFilterDropdown,
   onClearAllFilters,
-  onSetFreeFilter,
-  onShowOnboarding,
+  personalItems,
+  profileLabel,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { profileCompleted } = useUserContext();
-  const { viewMode, setViewMode } = useUIContext();
-  const { setShowSubmitEvent } = useModalContext();
+  const setViewMode = useAppPrefsStore((s) => s.setViewMode);
+  const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onOpenChange} title={t("commands.commandPalette")} description={t("commands.commandPaletteDescription")}>
@@ -77,15 +71,6 @@ export function CommandPalette({
             <Search className="mr-2 h-4 w-4" />
             <span>{t("commands.searchEvents")}</span>
             <CommandShortcut>/</CommandShortcut>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              onSetFreeFilter();
-              onOpenChange(false);
-            }}
-          >
-            <Tag className="mr-2 h-4 w-4" />
-            <span>{t("commands.showFreeEvents")}</span>
           </CommandItem>
         </CommandGroup>
 
@@ -155,29 +140,7 @@ export function CommandPalette({
 
         {/* Personal Section */}
         <CommandGroup heading={t("commands.personal")}>
-          {profileCompleted ? (
-              <>
-              <CommandItem
-                onSelect={() => {
-                  // Navigate to saved events (placeholder)
-                  onOpenChange(false);
-                }}
-              >
-                <Heart className="mr-2 h-4 w-4" />
-                <span>{t("commands.savedEvents")}</span>
-              </CommandItem>
-            </>
-          ) : (
-            <CommandItem
-              onSelect={() => {
-                onShowOnboarding();
-                onOpenChange(false);
-              }}
-            >
-              <LogIn className="mr-2 h-4 w-4" />
-              <span>{t("commands.signInToUnlockFeatures")}</span>
-            </CommandItem>
-          )}
+          {personalItems}
         </CommandGroup>
 
         <CommandSeparator />
@@ -191,9 +154,7 @@ export function CommandPalette({
             }}
           >
             <User className="mr-2 h-4 w-4" />
-            <span>
-              {profileCompleted ? t("commands.editProfile") : t("commands.createProfile")}
-            </span>
+            <span>{profileLabel}</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {

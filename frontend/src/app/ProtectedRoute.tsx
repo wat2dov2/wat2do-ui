@@ -1,7 +1,13 @@
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { isAuthenticated, getUserRole, getUserHasClub } from "@/features/auth";
+import {
+  fetchProfileAPI,
+  getLastProfileFetchAt,
+} from "@/features/auth";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { ROLE_ADMIN, ROLE_CLUB, type Role } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
+import { LoadingPage } from "@/shared/ui/loading-page";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,16 +15,66 @@ interface ProtectedRouteProps {
   requiredRole?: Role;
 }
 
+/**
+ * Maximum age (ms) for a cached profile when gating admin routes. If the
+ * last successful /users/me has returned more than this ago, we block
+ * admin-chunk rendering until a fresh profile is fetched. This prevents a
+ * demoted admin from continuing to see admin UI indefinitely.
+ */
+const ADMIN_ROLE_FRESHNESS_TTL_MS = 5 * 60 * 1000;
+
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  if (!isAuthenticated()) {
+  // Subscribe to the same reactive auth snapshot the rest of the app reads
+  // so role demotion / logout / silent-refresh updates propagate to both the
+  // route gate and the TopNav button in a single render tick.
+  const { isAuthenticated: authed, role, hasClub } = useAuthState();
+
+  // For admin routes, ensure the cached role is fresh (<5 min old) before
+  // rendering admin chunks. Demoted-admin attacks / stale role leaks are
+  // blocked at the UI gate.
+  const needsFreshRole = requiredRole === ROLE_ADMIN;
+  const [refreshing, setRefreshing] = useState<boolean>(() => {
+    if (!needsFreshRole) return false;
+    const stale = Date.now() - getLastProfileFetchAt() > ADMIN_ROLE_FRESHNESS_TTL_MS;
+    return stale;
+  });
+
+  useEffect(() => {
+    if (!needsFreshRole) return;
+    const stale = Date.now() - getLastProfileFetchAt() > ADMIN_ROLE_FRESHNESS_TTL_MS;
+    if (!stale) {
+      setRefreshing(false);
+      return;
+    }
+
+    let cancelled = false;
+    setRefreshing(true);
+    fetchProfileAPI()
+      .catch((err) => {
+        console.error("ProtectedRoute: failed to refresh profile for admin gate:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setRefreshing(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsFreshRole]);
+
+  if (!authed) {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
-  if (requiredRole === ROLE_ADMIN && getUserRole() !== "admin") {
+  // Block admin UI until we have a fresh /users/me result within TTL.
+  if (needsFreshRole && refreshing) {
+    return <LoadingPage />;
+  }
+
+  if (requiredRole === ROLE_ADMIN && role !== "admin") {
     return <Navigate to={ROUTES.HOME} replace />;
   }
 
-  if (requiredRole === ROLE_CLUB && !getUserHasClub() && getUserRole() !== "admin") {
+  if (requiredRole === ROLE_CLUB && !hasClub && role !== "admin") {
     return <Navigate to={ROUTES.HOME} replace />;
   }
 

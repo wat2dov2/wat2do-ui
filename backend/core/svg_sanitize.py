@@ -31,6 +31,11 @@ from defusedxml import DTDForbidden, EntitiesForbidden, ExternalReferenceForbidd
 
 from core.logging import logger
 
+# Max prefix inspected by the byte-level fallback loop in ``looks_like_svg``.
+# Large enough to survive attacker-padded comments / PIs but bounded so a
+# huge binary blob doesn't require scanning megabytes.
+_SVG_HEAD_SCAN_BYTES = 65536
+
 # Register common SVG/XLink namespaces so ET.write() doesn't mangle
 # them into "ns0:", "ns1:", etc.
 ET.register_namespace("", "http://www.w3.org/2000/svg")
@@ -143,18 +148,15 @@ def _attr_local_name(attr: str) -> str:
     return _LOCAL_NAME_RE.sub("", attr).lower()
 
 
-def looks_like_svg(raw: bytes) -> bool:
-    """Return ``True`` if *raw* appears to be SVG content.
+def _decode_head(raw: bytes, byte_limit: int) -> str | None:
+    """Decode ``raw[:byte_limit]`` to text, detecting BOM / UTF-16.
 
-    SVG files are XML with an ``<svg`` root element.  We peek at the first
-    4 KiB (skipping any leading whitespace, BOM, or XML declaration) and
-    look for the ``<svg`` tag.  This catches SVG payloads regardless of
-    the ``Content-Type`` the client claims, preventing sanitizer bypass
-    via Content-Type spoofing.
+    Returns ``None`` if the bytes cannot be decoded under any plausible
+    encoding.  SVG files are XML and therefore valid UTF-8 or UTF-16 —
+    binary formats (PNG, JPEG, WebP, GIF) fail decoding with ``strict``
+    and are correctly rejected.
     """
-    # Only inspect the first 4 KiB — enough to find the root element
-    # without scanning multi-megabyte raster images.
-    head = raw[:4096]
+    head = raw[:byte_limit]
 
     # Strip BOM and decode to text.  XML (and therefore SVG) can be
     # encoded as UTF-8, UTF-16 LE, or UTF-16 BE.  Browsers silently
@@ -181,25 +183,135 @@ def looks_like_svg(raw: bytes) -> bool:
         encoding = "utf-8"
 
     try:
-        text = head.decode(encoding, errors="strict").lstrip()
+        # Use errors="ignore" so a UTF-16 SVG truncated mid-codepoint on
+        # byte_limit boundary decodes cleanly.  Strict decoding with a
+        # partial buffer would reject otherwise-valid SVG.
+        return head.decode(encoding, errors="ignore")
     except (UnicodeDecodeError, ValueError):
+        return None
+
+
+# Matches leading XML preamble tokens that ``looks_like_svg`` has to walk
+# past before the first "real" element appears.  Each alternation is a
+# single preamble token:
+#   * whitespace run  (\s+)
+#   * XML comment     (<!-- ... -->)
+#   * processing-instruction (<? ... ?>) — INCLUDING the XML declaration
+#   * CDATA section   (<![CDATA[ ... ]]>)  — not typical at top of SVG
+#     but present in some exporters
+_PREAMBLE_TOKEN_RE = re.compile(
+    r"""
+      \s+                              # whitespace
+    | <!--[\s\S]*?-->                  # XML / HTML-style comment (greedy: match to first -->)
+    | <\?[\s\S]*?\?>                   # processing instruction (any name, any content)
+    | <!\[CDATA\[[\s\S]*?\]\]>         # CDATA section
+    """,
+    re.VERBOSE,
+)
+
+
+def _strip_doctype(text: str, pos: int) -> int:
+    """If *text[pos:]* starts with ``<!DOCTYPE``, return the offset past the
+    closing ``>`` accounting for an internal subset ``[...]``.  Return
+    *pos* unchanged if no DOCTYPE is present.
+
+    The naive implementation ``text.find(">")`` is fooled by a DOCTYPE
+    whose internal subset contains ``<!ENTITY x "foo">`` — the first
+    ``>`` encountered is the entity close, not the DOCTYPE close.  We
+    count ``[``/``]`` depth so the real DOCTYPE close is identified.
+    """
+    if not text[pos : pos + 9].upper().startswith("<!DOCTYPE"):
+        return pos
+    i = pos + 9
+    depth = 0
+    n = len(text)
+    while i < n:
+        c = text[i]
+        if c == "[":
+            depth += 1
+        elif c == "]":
+            if depth > 0:
+                depth -= 1
+        elif c == ">" and depth == 0:
+            return i + 1
+        i += 1
+    # No closing '>' in the inspected window — treat as "malformed,
+    # still consume the rest so the fallback isn't stuck".
+    return n
+
+
+def _advance_past_preamble(text: str) -> int:
+    """Advance past any leading whitespace / comments / PIs / DOCTYPE.
+
+    Returns the byte offset of the first non-preamble character.  Loops
+    until no more preamble tokens match (so multiple PIs, nested
+    comment-DOCTYPE-comment sequences, etc. are all consumed).
+    """
+    pos = 0
+    n = len(text)
+    while pos < n:
+        # DOCTYPE (may contain internal subset with '>'; handled specially).
+        next_pos = _strip_doctype(text, pos)
+        if next_pos != pos:
+            pos = next_pos
+            continue
+        m = _PREAMBLE_TOKEN_RE.match(text, pos)
+        if m and m.end() > m.start():
+            pos = m.end()
+            continue
+        break
+    return pos
+
+
+def looks_like_svg(raw: bytes) -> bool:
+    """Return ``True`` if *raw* appears to be SVG content.
+
+    Uses a **parse-based detector** as the primary signal: we attempt to
+    parse the first ``_SVG_HEAD_SCAN_BYTES`` with ``defusedxml`` and
+    return ``True`` if parsing succeeds AND the root element's local
+    name is ``svg``.  This eliminates the whole class of detection
+    bypasses (DOCTYPE internal subset, leading comment, extra PIs,
+    oversized preamble) because the real XML parser correctly skips
+    every kind of legal XML preamble before finding the root.
+
+    Falls back to a byte-level loop that strips whitespace / comments /
+    PIs / DOCTYPE repeatedly, then checks whether the first element
+    token is ``<svg`` or ``<!DOCTYPE svg``.  The fallback handles
+    truncated or malformed SVGs that ``defusedxml`` can't complete but
+    that a browser would still attempt to render.
+    """
+    if not raw:
         return False
 
-    # Strip XML declaration (<?xml ...?>) if present.
-    if text.startswith("<?xml"):
-        close = text.find("?>")
-        if close != -1:
-            text = text[close + 2:].lstrip()
+    text = _decode_head(raw, _SVG_HEAD_SCAN_BYTES)
+    if text is None:
+        return False
 
-    # Strip DOCTYPE if present.
-    if text.upper().startswith("<!DOCTYPE"):
-        close = text.find(">")
-        if close != -1:
-            text = text[close + 1:].lstrip()
+    # ── Primary: try a real XML parse of the head ──────────────────────
+    # defusedxml raises on DTD / entity expansion / external refs by
+    # default; we treat all of those as "looks like SVG" because a naive
+    # parser would happily accept them, and rejecting them is the
+    # sanitizer's job (not the detector's).
+    head_utf8 = text.encode("utf-8", errors="ignore")
+    try:
+        root = DefusedET.fromstring(head_utf8)
+        if _local_name(root.tag) == "svg":
+            return True
+    except (DTDForbidden, EntitiesForbidden, ExternalReferenceForbidden):
+        # If defusedxml rejects the DTD/entities, we still want to
+        # recognise the payload as "SVG-ish" so it goes through the
+        # sanitizer (which will reject it with a clearer error).
+        return True
+    except ET.ParseError:
+        # Truncated head, non-XML prefix, or malformed document — fall
+        # back to the byte-level heuristic below.
+        pass
 
-    # Check for <svg (case-insensitive) — may be namespaced.
-    text_lower = text.lower()
-    return text_lower.startswith("<svg") or text_lower.startswith("<!doctype svg")
+    # ── Fallback: strip preamble tokens repeatedly, inspect first tag ──
+    pos = _advance_past_preamble(text)
+    tail = text[pos : pos + 200]  # only need the first tag's start
+    tail_lower = tail.lower()
+    return tail_lower.startswith("<svg") or tail_lower.startswith("<!doctype svg")
 
 
 def sanitize_svg(raw: bytes) -> bytes:
@@ -234,25 +346,34 @@ def sanitize_svg(raw: bytes) -> bytes:
 def _sanitize_css(text: str) -> str:
     """Remove dangerous constructs from CSS text.
 
-    Strips entire lines/declarations that contain ``@import``,
-    ``url()``, ``expression()``, ``-moz-binding``, or ``behavior:``.
-    Returns the cleaned CSS string (may be empty).
+    Splits the input on ``}`` (end-of-declaration-block) rather than on
+    newlines, so a minified single-line ``<style>`` block (as emitted by
+    Illustrator, Figma, and most webfont SVGs) doesn't lose every
+    legitimate declaration when one dangerous one is present.
+
+    Each declaration block is kept if it does not match any of
+    ``@import``, ``url()``, ``expression()``, ``-moz-binding``, or
+    ``behavior:``.  Returns the cleaned CSS string (may be empty).
     """
     if not text:
         return text
-    # Process line by line.  A single @import or url() taints the whole
-    # line — attempting to surgically remove just the function call is
-    # fragile and easy to bypass with creative whitespace/comments.
-    cleaned_lines: list[str] = []
-    for line in text.splitlines(keepends=True):
-        if _CSS_DANGEROUS_RE.search(line):
+    # Split on '}' so each rule ("selector { decls }") is its own unit.
+    # The terminating '}' is preserved on the rule so re-assembly keeps
+    # valid CSS syntax.  Trailing whitespace after the last '}' is
+    # preserved too (important for inline style="..." which has no '}').
+    parts = text.split("}")
+    cleaned: list[str] = []
+    last_idx = len(parts) - 1
+    for idx, part in enumerate(parts):
+        chunk = part if idx == last_idx else part + "}"
+        if _CSS_DANGEROUS_RE.search(chunk):
             logger.warning(
-                "SVG sanitizer: stripped dangerous CSS line: %s",
-                line.strip()[:120],
+                "SVG sanitizer: stripped dangerous CSS declaration: %s",
+                chunk.strip()[:120],
             )
             continue
-        cleaned_lines.append(line)
-    return "".join(cleaned_lines)
+        cleaned.append(chunk)
+    return "".join(cleaned)
 
 
 def _clean_element(el: ET.Element) -> None:

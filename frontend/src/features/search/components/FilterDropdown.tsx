@@ -6,17 +6,10 @@ import { VisualFilters } from "@/features/search/components/VisualFilters";
 import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
 import type { FilterViewMode } from "@/shared/types";
 
-interface PieMenuState {
-  isOpen: boolean;
-  position: { x: number; y: number } | null;
-  open: (e: React.MouseEvent) => void;
-  close: () => void;
-}
-
 interface PieMenuItem {
   id: string;
   label: string;
-  icon: React.ReactNode;
+  iconName: string;
 }
 
 interface FilterDropdownFilters {
@@ -32,7 +25,6 @@ interface FilterDropdownFilters {
   // Category filters
   selectedCategories: string[];
   setSelectedCategories: (categories: string[]) => void;
-  categoryPieMenu: PieMenuState;
   categoryPieItems: PieMenuItem[];
   toggleCategory: (id: string) => void;
   // Location filters
@@ -41,20 +33,13 @@ interface FilterDropdownFilters {
   // Food filters
   selectedFoods: string[];
   setSelectedFoods: (foods: string[]) => void;
-  foodPieMenu: PieMenuState;
   foodPieItems: PieMenuItem[];
   toggleFood: (id: string) => void;
   // Day of week filters
   selectedDays: string[];
   setSelectedDays: (days: string[]) => void;
-  dayPieMenu: PieMenuState;
   dayPieItems: PieMenuItem[];
   toggleDay: (id: string) => void;
-  // Date filters
-  dateRange: Date | undefined;
-  setDateRange: (date: Date | undefined) => void;
-  addedSince: Date | undefined;
-  setAddedSince: (date: Date | undefined) => void;
   // Price & registration
   priceRange: { min: string; max: string };
   setPriceRange: (range: { min: string; max: string }) => void;
@@ -65,7 +50,6 @@ interface FilterDropdownFilters {
   setSortBy: (sortBy: string) => void;
   sortOrder: "asc" | "desc";
   setSortOrder: (order: "asc" | "desc") => void;
-  sortPieMenu: PieMenuState;
   sortPieItems: PieMenuItem[];
 }
 

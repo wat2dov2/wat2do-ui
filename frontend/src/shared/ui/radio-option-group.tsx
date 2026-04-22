@@ -27,7 +27,7 @@ export function RadioOptionGroup({
       {options.map((option) => (
         <label
           key={option.value}
-          className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted"
+          className="flex items-center gap-2 p-3 border border-border rounded-xl cursor-pointer hover:bg-secondary"
         >
           <div className="relative">
             <input

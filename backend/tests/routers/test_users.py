@@ -116,6 +116,47 @@ def test_delete_user_forbidden_for_non_admin(authenticated_client):
     assert resp.status_code == 403
 
 
+# ── PATCH /users/{user_id}/role (admin-only, audit I16) ──────────────
+
+
+def test_update_user_role_requires_auth(client):
+    response = client.patch(
+        "/users/00000000-0000-0000-0000-000000000000/role",
+        json={"role": "admin"},
+    )
+    assert response.status_code == 401
+
+
+def test_update_user_role_forbidden_for_non_admin(authenticated_client):
+    resp = authenticated_client.patch(
+        "/users/00000000-0000-0000-0000-000000000000/role",
+        json={"role": "admin"},
+    )
+    assert resp.status_code == 403
+
+
+def test_update_user_role_admin_promotes(admin_client, monkeypatch):
+    """Admin can promote a user to admin via PATCH /users/{id}/role."""
+    promoted = _mock_user(role="admin")
+    monkeypatch.setattr(user_service, "set_role", MagicMock(return_value=promoted))
+
+    resp = admin_client.patch(
+        "/users/00000000-0000-0000-0000-000000000001/role",
+        json={"role": "admin"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["role"] == "admin"
+
+
+def test_update_user_role_rejects_invalid_role(admin_client):
+    """Role not in {'user', 'admin'} is rejected by schema (422)."""
+    resp = admin_client.patch(
+        "/users/00000000-0000-0000-0000-000000000001/role",
+        json={"role": "superuser"},
+    )
+    assert resp.status_code == 422
+
+
 # ── Health check ─────────────────────────────────────────────────────
 
 

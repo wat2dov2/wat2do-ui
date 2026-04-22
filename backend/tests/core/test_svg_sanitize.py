@@ -491,22 +491,55 @@ class TestSanitizeSvg:
         assert b"stroke: #000" in result
 
     def test_partially_sanitizes_style_element(self):
-        """<style> with mixed safe/dangerous lines keeps only safe lines."""
+        """<style> with mixed safe/dangerous rule blocks keeps only safe rule blocks.
+
+        The sanitizer splits on ``}`` so minified CSS (Illustrator / Figma
+        exports) can retain legitimate declarations when one block is
+        dangerous.  Note: ``@import`` is not wrapped in braces, so it
+        attaches to the next ``}``-terminated chunk — that whole chunk
+        is dropped.  Safe blocks with their own ``}`` terminator (the
+        ``.safe`` block before ``@import``) are retained.
+        """
         svg = (
             b'<svg xmlns="http://www.w3.org/2000/svg">'
             b"<style>\n"
             b".safe { fill: blue; }\n"
-            b"@import url('https://evil.com/steal.css');\n"
-            b".also-safe { stroke: red; }\n"
+            b".middle { stroke: red; }\n"
+            b".bad { background: url('https://evil.com/track.gif'); }\n"
+            b".also-safe { opacity: 0.5; }\n"
             b"</style>"
             b'<rect width="50" height="50"/>'
             b"</svg>"
         )
         result = sanitize_svg(svg)
+        # Declarations in their own { ... } blocks before and after the
+        # dangerous one survive — only .bad (which is surrounded by `}`
+        # on both sides) is stripped.
         assert b"fill: blue" in result
         assert b"stroke: red" in result
-        assert b"@import" not in result
+        assert b"opacity: 0.5" in result
+        assert b"url(" not in result
         assert b"evil.com" not in result
+
+    def test_minified_style_preserves_safe_declarations(self):
+        """Regression for audit U13: a minified single-line <style> keeps
+        the legitimate ``text{fill:red}`` even when a sibling rule is
+        stripped for a dangerous ``url(...)``.
+
+        Under the old line-based sanitizer the whole line died and
+        Illustrator / Figma exports came out blank — that's what U13
+        flagged as a functional regression.
+        """
+        svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<style>text{fill:red}body{background:url(http://attacker.com/x.png)}</style>"
+            b'<rect width="50" height="50"/>'
+            b"</svg>"
+        )
+        result = sanitize_svg(svg)
+        assert b"text{fill:red}" in result
+        assert b"url(" not in result
+        assert b"attacker.com" not in result
 
     def test_removes_fully_dangerous_style_element(self):
         """<style> with only dangerous CSS is removed entirely."""
@@ -676,3 +709,97 @@ class TestLooksLikeSvg:
         result = sanitize_svg(raw)
         assert b"<script" not in result
         assert b"alert" not in result
+
+    # ── Regression: audit U1 – DOCTYPE internal subset ───────────────
+
+    def test_detects_svg_with_doctype_internal_subset(self):
+        """Audit U1: a DOCTYPE with an internal subset that contains
+        ``<!ENTITY ... >`` must not trick the detector into thinking the
+        DOCTYPE ended at the entity's ``>``.  The parse-based detector
+        correctly skips the whole DOCTYPE and finds ``<svg>`` beyond.
+        """
+        malicious = (
+            b"<!DOCTYPE svg [\n"
+            b'<!ENTITY x "foo">\n'
+            b"]>\n"
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<script>alert(1)</script>"
+            b"</svg>"
+        )
+        assert looks_like_svg(malicious) is True
+
+    # ── Regression: audit U2 – leading XML comment ───────────────────
+
+    def test_detects_svg_with_leading_comment(self):
+        """Audit U2: a leading ``<!-- ... -->`` must not cause the
+        detector to skip sanitization.  The fallback loop strips the
+        comment before inspecting the first element.
+        """
+        malicious = (
+            b"<!-- harmless -->\n"
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<script>alert(1)</script>"
+            b"</svg>"
+        )
+        assert looks_like_svg(malicious) is True
+
+    # ── Regression: audit U3 – non-xml / multiple PIs ────────────────
+
+    def test_detects_svg_with_non_xml_processing_instruction(self):
+        """Audit U3.1: a PI whose target is not ``xml`` must not fool
+        the detector.  Old code only stripped ``<?xml ...?>`` — any
+        other PI prefix bypassed detection.
+        """
+        malicious = (
+            b"<?Some-Other-PI?>"
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<script>alert(1)</script>"
+            b"</svg>"
+        )
+        assert looks_like_svg(malicious) is True
+
+    def test_detects_svg_with_multiple_processing_instructions(self):
+        """Audit U3.2: two PIs in a row (``<?xml?>`` then
+        ``<?xml-stylesheet?>``) must not bypass detection.  The
+        preamble-stripping loop consumes all PIs, not just one.
+        """
+        malicious = (
+            b'<?xml version="1.0"?>\n'
+            b'<?xml-stylesheet href="x"?>\n'
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<script>alert(1)</script>"
+            b"</svg>"
+        )
+        assert looks_like_svg(malicious) is True
+
+    # ── Regression: audit U4 – oversized leading preamble ────────────
+
+    def test_detects_svg_with_oversized_leading_preamble(self):
+        """Audit U4: an attacker padding >4 KiB of leading comment must
+        not bypass detection.  The scan window is at least 64 KiB and
+        the fallback loop walks past all whitespace/comments.
+        """
+        huge_lead = (
+            b"<!-- "
+            + b"x" * 5000
+            + b" -->\n"
+            + b'<svg xmlns="http://www.w3.org/2000/svg">'
+              b"<script>alert(1)</script>"
+              b"</svg>"
+        )
+        assert looks_like_svg(huge_lead) is True
+
+    def test_detects_svg_with_combined_bypass_attempts(self):
+        """All four bypass techniques stacked must still be detected."""
+        payload = (
+            b"<!-- pad " + b"y" * 3000 + b" -->\n"
+            b"<?xml version='1.0'?>\n"
+            b"<?xml-stylesheet href='a'?>\n"
+            b"<!DOCTYPE svg [\n"
+            b"<!ENTITY e \"bar\">\n"
+            b"]>\n"
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<script>alert(1)</script>"
+            b"</svg>"
+        )
+        assert looks_like_svg(payload) is True

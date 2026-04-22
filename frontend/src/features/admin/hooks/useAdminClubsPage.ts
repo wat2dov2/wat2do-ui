@@ -6,10 +6,8 @@
 
 import { useReducer, useMemo, useEffect, useRef, startTransition, useState } from "react";
 import type { Club } from "@/shared/types";
-import {
-  loadAdminClubsData,
-  filterAdminClubs,
-} from "@/features/admin/api/admin.api";
+import { loadAdminClubsData } from "@/features/admin/api/admin.api";
+import { filterClubs as filterClubsSync } from "@/features/clubs";
 
 interface AdminClubsPageState {
   searchQuery: string;
@@ -103,24 +101,15 @@ export function useAdminClubsPage({ itemsPerPage = 20 }: UseAdminClubsPageOption
     loadData();
   }, []);
 
-  // Filter clubs using API
-  const [filteredClubs, setFilteredClubs] = useState<Club[]>([]);
-  
-  useEffect(() => {
-    if (isLoading) {
-      setFilteredClubs([]);
-      return;
-    }
-    
-    async function applyFilters() {
-      const filtered = await filterAdminClubs(clubs, {
-        searchQuery: state.searchQuery,
-        clubType: state.selectedClubType,
-      });
-      setFilteredClubs(filtered);
-    }
-    
-    applyFilters();
+  // Filter clubs synchronously — `filterClubsSync` is a pure function, so
+  // running it inside an async effect would introduce an extra render
+  // cycle per keystroke. A `useMemo` is both correct and cheaper.
+  const filteredClubs = useMemo<Club[]>(() => {
+    if (isLoading) return [];
+    return filterClubsSync(clubs, {
+      searchQuery: state.searchQuery,
+      clubType: state.selectedClubType,
+    });
   }, [clubs, state.searchQuery, state.selectedClubType, isLoading]);
 
   // Reset to page 1 when filters change

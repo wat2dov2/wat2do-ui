@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Megaphone,
@@ -15,17 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import type { QRCode, QRCodeScan } from "@/shared/types";
+import type { QRCode } from "@/shared/types";
 import {
-  listPostersFromBackend,
-  deletePosterFromBackend,
-  getScansFromBackend,
-  normalizeBackendScan,
   CreateQRCodeModal,
   QRCodeDetailsModal,
 } from "@/features/qrcode";
 import type { Event } from "@/shared/types";
 import { Spinner } from "@/shared/ui/spinner";
+import { useMarketingData } from "@/features/marketing/hooks/useMarketingData";
 
 interface MarketingPageProps {
   events: Event[];
@@ -34,31 +31,17 @@ interface MarketingPageProps {
 
 export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   const { t } = useTranslation();
-  const [qrCodes, setQRCodes] = useState<QRCode[]>([]);
-  const [scans, setScans] = useState<QRCodeScan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { qrCodesWithStats, loading, loadQRCodes, deletePoster } = useMarketingData();
+
+  // Explicit data load on mount (side effect is visible at the call site)
+  useEffect(() => {
+    loadQRCodes().catch((err) => console.error("Failed to initialize QR codes:", err));
+  }, [loadQRCodes]);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedQRCode, setSelectedQRCode] = useState<QRCode | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  const loadQRCodes = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [posters, scansList] = await Promise.all([
-        listPostersFromBackend(),
-        getScansFromBackend().then((list) => list.map(normalizeBackendScan)),
-      ]);
-      setQRCodes(posters);
-      setScans(scansList);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadQRCodes();
-  }, [loadQRCodes]);
 
   const handleCreate = () => {
     loadQRCodes();
@@ -67,8 +50,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
 
   const handleDelete = async (id: string) => {
     try {
-      await deletePosterFromBackend(id);
-      await loadQRCodes();
+      await deletePoster(id);
       setDeleteConfirmId(null);
     } catch (err) {
       console.error("Failed to delete poster:", err);
@@ -80,19 +62,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
     setSelectedQRCode(qrCode);
     setShowDetailsModal(true);
   };
-
-  // Calculate stats from backend scans
-  const qrCodesWithStats = useMemo(() => {
-    return qrCodes.map((qr) => {
-      const qrScans = scans.filter((s) => s.qrCodeId === qr.id);
-      const uniqueScans = new Set(qrScans.map((s) => s.sessionId || s.userId || s.id)).size;
-      return {
-        ...qr,
-        totalScans: qrScans.length,
-        uniqueScans,
-      };
-    });
-  }, [qrCodes, scans]);
 
   if (loading) {
     return (
@@ -161,7 +130,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
                       className={`text-xs px-2 py-0.5 rounded-full ${
                         qr.isActive
                           ? "bg-success/20 text-success"
-                          : "bg-muted text-muted-foreground"
+                          : "bg-secondary text-muted-foreground"
                       }`}
                     >
                       {qr.isActive ? t("common.active") : t("common.inactive")}
@@ -188,7 +157,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
             <QrCode className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">

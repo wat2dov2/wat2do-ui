@@ -33,7 +33,7 @@ export function OnboardingProgressDots({
             className={cn(
               "rounded-full transition-colors",
               "w-2 h-2",
-              done ? "bg-primary" : "bg-muted"
+              done ? "bg-primary" : "bg-secondary"
             )}
           />
         );

@@ -1,7 +1,7 @@
 /**
  * Settings API
  * Handles all settings-related data operations
- * 
+ *
  * This is the public API for the settings feature.
  * It provides clean interfaces for managing user preferences.
  */
@@ -45,36 +45,34 @@ const DEFAULT_PRIVACY_PREFS: PrivacyPreferences = {
 
 /**
  * Notification Preferences API
+ *
+ * StorageService.setItem already JSON-stringifies; we pass the object directly.
  */
 export function loadNotificationPreferences(): NotificationPreferences {
-  const saved = StorageService.getItem<string | null>(
+  return StorageService.getItem<NotificationPreferences>(
     STORAGE_KEYS.NOTIFICATION_PREFS,
-    null
+    DEFAULT_NOTIFICATION_PREFS
   );
-  return saved
-    ? (JSON.parse(saved) as NotificationPreferences)
-    : DEFAULT_NOTIFICATION_PREFS;
 }
 
 export function saveNotificationPreferences(prefs: NotificationPreferences): void {
-  StorageService.setItem(STORAGE_KEYS.NOTIFICATION_PREFS, JSON.stringify(prefs));
+  StorageService.setItem(STORAGE_KEYS.NOTIFICATION_PREFS, prefs);
 }
 
 /**
  * Privacy Preferences API
+ *
+ * StorageService.setItem already JSON-stringifies; we pass the object directly.
  */
 export function loadPrivacyPreferences(): PrivacyPreferences {
-  const saved = StorageService.getItem<string | null>(
+  return StorageService.getItem<PrivacyPreferences>(
     STORAGE_KEYS.PRIVACY_PREFS,
-    null
+    DEFAULT_PRIVACY_PREFS
   );
-  return saved
-    ? (JSON.parse(saved) as PrivacyPreferences)
-    : DEFAULT_PRIVACY_PREFS;
 }
 
 export function savePrivacyPreferences(prefs: PrivacyPreferences): void {
-  StorageService.setItem(STORAGE_KEYS.PRIVACY_PREFS, JSON.stringify(prefs));
+  StorageService.setItem(STORAGE_KEYS.PRIVACY_PREFS, prefs);
 }
 
 /**
@@ -90,34 +88,11 @@ export function saveProfile(profile: UserProfile): void {
 
 /**
  * Appearance Preferences API
+ *
+ * viewMode and filterViewMode are persisted via the `useAppPrefsStore`
+ * Zustand store (see `src/shared/store/appPrefs.store.ts`) — no API
+ * functions are needed here.
  */
-export function loadAppearancePreferences(): AppearancePreferences | null {
-  const viewMode = StorageService.getItem<ViewMode | null>(
-    STORAGE_KEYS.VIEW_MODE,
-    null
-  );
-  const filterViewMode = StorageService.getItem<FilterViewMode | null>(
-    STORAGE_KEYS.FILTER_VIEW_MODE,
-    null
-  );
-  
-  if (viewMode === null && filterViewMode === null) {
-    return null;
-  }
-  
-  return {
-    viewMode: viewMode || "grid",
-    filterViewMode: filterViewMode || "visual",
-  };
-}
-
-export function saveViewMode(viewMode: ViewMode): void {
-  StorageService.setItem(STORAGE_KEYS.VIEW_MODE, viewMode);
-}
-
-export function saveFilterViewMode(filterViewMode: FilterViewMode): void {
-  StorageService.setItem(STORAGE_KEYS.FILTER_VIEW_MODE, filterViewMode);
-}
 
 /**
  * Theme & Language — re-exported from shared (canonical home: shared/services/preferencesStorage.ts)

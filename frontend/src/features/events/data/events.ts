@@ -1,46 +1,5 @@
 import type { Event } from "@/shared/types";
-import { deriveCategoryFromClubType } from "@/shared/utils/event";
-
-// Helper function to derive date/time/dayOfWeek from dtstart_utc
-function getDateFromUTC(utcString: string): { date: string; time: string; dayOfWeek: string; eventDate: Date } {
-  const date = new Date(utcString);
-  const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
-  const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  
-  // Format time in 12-hour format
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const displayHours = hours % 12 || 12;
-  const timeStr = minutes > 0 
-    ? `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`
-    : `${displayHours} ${ampm}`;
-  
-  return { date: dateStr, time: timeStr, dayOfWeek, eventDate: date };
-}
-
-// Helper function to format time range from dtstart_utc and dtend_utc
-function getTimeRange(dtstart_utc: string, dtend_utc: string): string {
-  const start = new Date(dtstart_utc);
-  const end = new Date(dtend_utc);
-  
-  const formatTime = (date: Date): string => {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    return minutes > 0 
-      ? `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`
-      : `${displayHours} ${ampm}`;
-  };
-  
-  return `${formatTime(start)} - ${formatTime(end)}`;
-}
-
-// Helper to map club_type to category (canonical 22 categories)
-function getCategoryFromClubType(club_type?: string): string {
-  return deriveCategoryFromClubType(club_type);
-}
+import { transformRawEvent } from "@/shared/utils/event";
 
 export const mockEvents: Event[] = [
   {
@@ -386,34 +345,7 @@ export const mockEvents: Event[] = [
     school: "University of Waterloo",
     display_handle: "wloo.dboat",
   },
-].map((eventRaw): Event => {
-  // Transform new format to include computed fields for backward compatibility
-  if (eventRaw.dtstart_utc) {
-    const dateInfo = getDateFromUTC(eventRaw.dtstart_utc);
-    const timeRange = eventRaw.dtend_utc
-      ? getTimeRange(eventRaw.dtstart_utc, eventRaw.dtend_utc)
-      : dateInfo.time;
-
-    return {
-      ...eventRaw,
-      // Computed fields for backward compatibility
-      date: dateInfo.date,
-      time: timeRange,
-      dayOfWeek: dateInfo.dayOfWeek,
-      eventDate: dateInfo.eventDate,
-      // Map fields
-      category: eventRaw.category || getCategoryFromClubType(eventRaw.club_type),
-      organization: eventRaw.organization || eventRaw.display_handle || '',
-      requiresRegistration: eventRaw.requiresRegistration ?? eventRaw.registration ?? false,
-      isLive: eventRaw.isLive ?? true,
-      food: eventRaw.food || [],
-      price: eventRaw.price ?? 0,
-      imageUrl: eventRaw.imageUrl || eventRaw.source_image_url,
-      addedDate: eventRaw.addedDate || (eventRaw.added_at ? new Date(eventRaw.added_at) : new Date()),
-    };
-  }
-  return eventRaw;
-});
+].map(transformRawEvent);
 
 // Event categories: same as onboarding "What kind of events are you into?" (source of truth: shared/constants/eventCategories)
 export { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";

@@ -4,19 +4,19 @@
  */
 
 import type { Event, EventFormData } from "@/shared/types";
+import type { ApiEventResponse } from "@/shared/generated";
 import { api } from "@/shared/services/apiClient";
-import {
-  createEvent,
-  updateEvent as updateEventService,
-  getEventById,
-} from "@/features/events/api/eventService";
+import { getEventById } from "@/features/events/api/eventService";
 import { filterEvents, sortEvents, type SearchFilters, type SortOptions } from "@/features/search";
 
 /**
  * Fetch events from backend API.
+ *
+ * The backend returns `ApiEventResponse[]`; `Event` extends that with
+ * view-only computed fields added downstream by `transformRawEvent`.
  */
 export async function fetchAllEvents(): Promise<Event[]> {
-  const apiEvents = await api.get<Event[]>("/events/");
+  const apiEvents = await api.get<ApiEventResponse[]>("/events/");
   return apiEvents;
 }
 
@@ -38,53 +38,35 @@ export async function fetchLatestAddedEvent(): Promise<LatestAddedEvent | null> 
  * Fetch a single event by ID from the backend API (full details for edit form).
  */
 export async function fetchEventById(id: number): Promise<Event> {
-  return api.get<Event>(`/events/${id}`);
+  return api.get<ApiEventResponse>(`/events/${id}`);
 }
 
-export async function createEventAPI(
-  eventData: EventFormData,
-  getDayOfWeek: (date: string) => string,
-): Promise<Event> {
-  try {
-    return await api.post<Event>("/events/", {
-      title: eventData.title,
-      description: eventData.description || null,
-      location: eventData.location,
-      dtstart_utc: eventData.date ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString() : null,
-      price: eventData.price || null,
-      food: eventData.food?.length ? eventData.food : null,
-      registration: eventData.requiresRegistration || false,
-      category: eventData.category || null,
-      organization: eventData.organization || null,
-    });
-  } catch (error) {
-    console.warn("Backend event creation failed, using local fallback:", error);
-    return createEvent(eventData, getDayOfWeek);
-  }
+/** Map frontend EventFormData to the backend API payload shape. */
+function buildEventPayload(eventData: EventFormData) {
+  return {
+    title: eventData.title,
+    description: eventData.description || null,
+    location: eventData.location,
+    dtstart_utc: eventData.date ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString() : null,
+    price: eventData.price || null,
+    food: eventData.food?.length ? eventData.food : null,
+    registration: eventData.requiresRegistration || false,
+    category: eventData.category || null,
+    organization: eventData.organization || null,
+  };
+}
+
+export async function createEventAPI(eventData: EventFormData): Promise<Event> {
+  // Re-throw backend errors so callers can display real error messages.
+  // Local fabrication of persisted resources is never correct.
+  return api.post<ApiEventResponse>("/events/", buildEventPayload(eventData));
 }
 
 export async function updateEventAPI(
-  event: Event,
+  eventId: number,
   eventData: EventFormData,
-  getDayOfWeek: (date: string) => string,
 ): Promise<Event> {
-  try {
-    const updated = await api.patch<Event>(`/events/${event.id}`, {
-      title: eventData.title,
-      description: eventData.description || null,
-      location: eventData.location,
-      dtstart_utc: eventData.date ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString() : null,
-      price: eventData.price || null,
-      food: eventData.food?.length ? eventData.food : null,
-      registration: eventData.requiresRegistration || false,
-      category: eventData.category || null,
-      organization: eventData.organization || null,
-    });
-    return updated;
-  } catch (error) {
-    console.warn("Backend event update failed, using local fallback:", error);
-    return updateEventService(event, eventData, getDayOfWeek);
-  }
+  return api.patch<ApiEventResponse>(`/events/${eventId}`, buildEventPayload(eventData));
 }
 
 export async function deleteEventAPI(eventId: number): Promise<void> {

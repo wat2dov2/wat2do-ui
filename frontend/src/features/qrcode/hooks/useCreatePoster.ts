@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { createPosterToBackend } from "@/features/qrcode/api/qrcode.api";
-import { getSession } from "@/features/auth";
+import { getSessionEmail } from "@/features/auth";
 import type { QRCode } from "@/shared/types";
 
 export interface CreatePosterPayload {
@@ -25,11 +25,11 @@ export interface UseCreatePosterReturn {
 /**
  * Wraps poster creation API call and session-based email resolution.
  * Components should call this hook instead of importing createPosterToBackend
- * or getSession() directly.
+ * or getSessionEmail() directly.
  */
 export function useCreatePoster(): UseCreatePosterReturn {
   const resolveEmail = useCallback((contextEmail?: string | null): string => {
-    return contextEmail ?? getSession().email ?? "";
+    return contextEmail ?? getSessionEmail() ?? "";
   }, []);
 
   const createPoster = useCallback(

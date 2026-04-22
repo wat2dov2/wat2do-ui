@@ -1,11 +1,17 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_current_user, get_admin_user, get_db_user
-from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
-from schemas.user import UserUpdate, UserProfileUpdate, UserResponse
-from core.errors import USER_NOT_FOUND, USER_PROFILE_NOT_FOUND
+from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT, ROLE_ADMIN
+from core.errors import (
+    CANNOT_DELETE_SELF,
+    LAST_ADMIN_REQUIRED,
+    USER_NOT_FOUND,
+    USER_PROFILE_NOT_FOUND,
+)
+from core.exceptions import AuthorizationError, ValidationError, get_or_404
+from schemas.user import UserRoleUpdate, UserUpdate, UserProfileUpdate, UserResponse
 from services import user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -13,13 +19,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/me", response_model=UserResponse)
 def get_me(auth_user: dict = Depends(get_current_user)):
-    user = user_service.get_user_by_supabase_id(auth_user["id"])
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=USER_PROFILE_NOT_FOUND,
-        )
-    return user
+    return get_or_404(user_service.get_user_by_supabase_id(auth_user["id"]), USER_PROFILE_NOT_FOUND)
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -55,17 +55,55 @@ def get_user(
     user_id: UUID,
     _=Depends(get_admin_user),
 ):
-    user = user_service.get_user(user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)
-    return user
+    return get_or_404(user_service.get_user(user_id), USER_NOT_FOUND)
+
+
+@router.patch("/{user_id}/role", response_model=UserResponse)
+def update_user_role(
+    user_id: UUID,
+    data: UserRoleUpdate,
+    _=Depends(get_admin_user),
+):
+    """Admin-only: rotate a user's role ('user' <-> 'admin').
+
+    Separate from ``PATCH /users/{id}`` so the role is only mutable through
+    an explicitly-admin endpoint — keeps the trust boundary bright and
+    closes audit I16.  ``user_service.set_role`` invalidates the
+    supabase-auth-id cache so the change is immediately visible in
+    subsequent role checks.
+
+    A26: if the target is currently an admin and the new role is not
+    ``admin``, refuse the demotion when it would leave zero admins.
+    """
+    if data.role != ROLE_ADMIN:
+        target = user_service.get_user(user_id)
+        if target is not None and target.role == ROLE_ADMIN and user_service.count_admins() <= 1:
+            raise ValidationError(LAST_ADMIN_REQUIRED)
+    return get_or_404(user_service.set_role(user_id, data.role), USER_NOT_FOUND)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: UUID,
-    _=Depends(get_admin_user),
+    admin=Depends(get_admin_user),
 ):
-    deleted = user_service.delete_user(user_id)
-    if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)
+    """Admin-only user deletion with A26 guardrails.
+
+    - **Self-delete block:** admins cannot delete their own account via
+      this endpoint.  Account deletion for the caller must be done through
+      an explicit "delete my account" flow (not implemented here) so that
+      the operation is intentional and separate from moderation.
+    - **Admin quorum:** if the target is currently an admin, refuse the
+      delete when the system would end up with zero admins.  A bored or
+      compromised admin could otherwise demote/delete every other admin
+      and lock the system into an un-administered state.
+    """
+    caller = user_service.get_user_by_supabase_id(admin["id"])
+    if caller is not None and caller.id == user_id:
+        raise AuthorizationError(CANNOT_DELETE_SELF)
+
+    target = user_service.get_user(user_id)
+    if target is not None and target.role == ROLE_ADMIN and user_service.count_admins() <= 1:
+        raise ValidationError(LAST_ADMIN_REQUIRED)
+
+    get_or_404(user_service.delete_user(user_id), USER_NOT_FOUND)

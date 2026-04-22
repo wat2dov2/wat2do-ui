@@ -3,7 +3,7 @@ import type { Event } from "@/shared/types";
 /**
  * Search Service
  * Core search, filter, and sort operations
- * 
+ *
  * This service is domain-agnostic and can filter any collection
  * that matches the Event interface structure.
  */
@@ -11,15 +11,10 @@ import type { Event } from "@/shared/types";
 export interface SearchFilters {
   searchQuery: string;
   savedFilter: boolean;
-  todayFilter: boolean;
-  freeFilter: boolean;
   freeFoodFilter: boolean;
-  forYouFilter: boolean;
-  thisWeekFilter: boolean;
   selectedDays: string[];
   priceRange: { min: string; max: string };
   selectedLocations: string[];
-  includeFoods: boolean;
   selectedFoods: string[];
   selectedCategories: string[];
   requiresRegistration: boolean;
@@ -37,8 +32,14 @@ export interface SortOptions {
  */
 export function filterEvents(
   events: Event[],
-  filters: SearchFilters
+  filters: SearchFilters,
 ): Event[] {
+  // Lowercase query once (loop-invariant) instead of recomputing per event.
+  const q = filters.searchQuery ? filters.searchQuery.toLowerCase() : "";
+  // Set lookup is O(1); .includes on an array is O(n). When savedFilter is
+  // active this is run per-event, so hoist and wrap once.
+  const savedSet = filters.savedFilter ? new Set(filters.savedEventIds) : null;
+
   return events.filter((event) => {
     const food = event.food ?? [];
     const price = event.price ?? 0;
@@ -47,52 +48,27 @@ export function filterEvents(
     const needsRegistration = event.requiresRegistration ?? event.registration ?? false;
 
     // Search query filter
-    if (
-      filters.searchQuery &&
-      !event.title.toLowerCase().includes(filters.searchQuery.toLowerCase())
-    ) {
+    if (q && !event.title.toLowerCase().includes(q)) {
       return false;
     }
 
     // Saved filter
-    if (filters.savedFilter && !filters.savedEventIds.includes(event.id)) {
+    if (savedSet && !savedSet.has(event.id)) {
       return false;
     }
 
-    // Quick filters
-    if (filters.todayFilter) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const raw = event.dtstart_utc || event.eventDate || event.date;
-      if (!raw) return false;
-      const eventDate = new Date(raw);
-      if (isNaN(eventDate.getTime()) || eventDate < today || eventDate >= tomorrow) return false;
-    }
-    if (filters.freeFilter && price !== 0) return false;
+    // Free-food quick filter
     if (filters.freeFoodFilter && (food.length === 0 || price > 0)) {
       return false;
     }
-    if (
-      filters.forYouFilter &&
-      filters.profileCompleted &&
-      filters.selectedCategories.length > 0 &&
-      !filters.selectedCategories.includes(category)
-    ) {
+
+    // Day-of-week filter
+    if (filters.selectedDays.length > 0 && !filters.selectedDays.includes(dayOfWeek)) {
       return false;
     }
 
-    // Advanced filters
-    if (
-      !filters.todayFilter &&
-      !filters.thisWeekFilter &&
-      filters.selectedDays.length > 0 &&
-      !filters.selectedDays.includes(dayOfWeek)
-    ) {
-      return false;
-    }
-    if (!filters.freeFilter && !filters.freeFoodFilter) {
+    // Price range — only applies when the freeFood quick filter is off.
+    if (!filters.freeFoodFilter) {
       if (filters.priceRange.min && price < parseFloat(filters.priceRange.min)) {
         return false;
       }
@@ -100,26 +76,32 @@ export function filterEvents(
         return false;
       }
     }
+
+    // Location substring filter
     if (
       filters.selectedLocations.length > 0 &&
       !filters.selectedLocations.some((loc) => (event.location ?? "").includes(loc))
     ) {
       return false;
     }
+
+    // Food filter
     if (
-      filters.includeFoods &&
       filters.selectedFoods.length > 0 &&
       !food.some((f) => filters.selectedFoods.includes(f))
     ) {
       return false;
     }
+
+    // Category filter
     if (
-      !filters.forYouFilter &&
       filters.selectedCategories.length > 0 &&
       !filters.selectedCategories.includes(category)
     ) {
       return false;
     }
+
+    // Registration filter
     if (filters.requiresRegistration && !needsRegistration) {
       return false;
     }
@@ -133,7 +115,7 @@ export function filterEvents(
  */
 export function sortEvents(
   events: Event[],
-  sortOptions: SortOptions
+  sortOptions: SortOptions,
 ): Event[] {
   const { sortBy, sortOrder } = sortOptions;
   const sorted = [...events];

@@ -1,5 +1,5 @@
-import React from "react";
-import { Coins, Check, CreditCard } from "lucide-react";
+import React, { useState } from "react";
+import { Coins, Check, CreditCard, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useConfetti } from "@/shared/hooks/useConfetti";
 import { useBuyCreditsForm } from "@/features/credits/hooks/useBuyCreditsForm";
@@ -13,9 +13,6 @@ import {
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { CreditPackageCard } from "@/shared/ui/credit-package-card";
-
-/** Simulated delay (ms) for mock payment processing. */
-const SIMULATED_PAYMENT_DELAY_MS = 1500;
 import { ModalContentWrapper, CenteredIconContainer, FlexCol, FlexRow } from "@/shared/ui/modal-components";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { CREDIT_PACKAGES } from "@/shared/types";
@@ -24,7 +21,9 @@ interface BuyCreditsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentCredits: number;
-  onPurchase: (credits: number) => void;
+  // C1: onPurchase must return a Promise so we can surface backend failure
+  // to the user instead of showing fake confetti for a silent rejection.
+  onPurchase: (credits: number) => Promise<void> | void;
 }
 
 export function BuyCreditsModal({
@@ -36,36 +35,50 @@ export function BuyCreditsModal({
   const { t } = useTranslation();
   const { trigger } = useConfetti();
   const form = useBuyCreditsForm();
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   // Use modal state hook for standardized open/close handling
   const modalState = useModalState({
     onClose,
     resetOnClose: true,
-    resetFn: form.reset,
+    resetFn: () => {
+      form.reset();
+      setPurchaseError(null);
+    },
   });
 
   const handlePurchase = async () => {
     if (form.selectedPackage === null) return;
 
+    setPurchaseError(null);
     form.setPurchasing(true);
-
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, SIMULATED_PAYMENT_DELAY_MS));
 
     const pkg = CREDIT_PACKAGES[form.selectedPackage];
     const totalCredits = pkg.credits + (pkg.bonus || 0);
 
-    onPurchase(totalCredits);
-    form.setPurchasedCredits(totalCredits);
-    form.setPurchaseComplete(true);
-    form.setPurchasing(false);
-
-    // Fire confetti
-    trigger({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
+    // C1: await the backend mutation and only show success on a resolved
+    // promise.  If the backend rejects (e.g. admin-only endpoint for a
+    // regular user, or network error), show an error state instead of
+    // confetti so the UI reflects reality.
+    try {
+      await onPurchase(totalCredits);
+      form.setPurchasedCredits(totalCredits);
+      form.setPurchaseComplete(true);
+      trigger({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+    } catch (err) {
+      console.error("Credit purchase failed:", err);
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : t("credits.purchaseFailed", { defaultValue: "Purchase failed. Please try again." });
+      setPurchaseError(message);
+    } finally {
+      form.setPurchasing(false);
+    }
   };
 
   if (form.purchaseComplete) {
@@ -127,6 +140,16 @@ export function BuyCreditsModal({
               />
             ))}
           </div>
+
+          {purchaseError && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 p-3 mb-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm"
+            >
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{purchaseError}</span>
+            </div>
+          )}
 
           <LoadingButton
             onClick={handlePurchase}

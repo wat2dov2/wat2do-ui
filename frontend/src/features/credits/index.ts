@@ -6,5 +6,6 @@
 // Components
 export { BuyCreditsModal } from "./components/BuyCreditsModal";
 
-// Hooks
-export { usePromotions } from "./hooks/usePromotions";
+// Stores
+export { useCreditsStore } from "./store/credits.store";
+export { usePromotionsStore } from "./store/promotions.store";

@@ -14,13 +14,11 @@ import { ProfileTab } from "@/features/settings/components/ProfileTab";
 import { NotificationsTab } from "@/features/settings/components/NotificationsTab";
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
 import { PrivacyTab } from "@/features/settings/components/PrivacyTab";
-import { useUIContext } from "@/contexts/UIContext";
-import { useUserContext } from "@/contexts/UserContext";
+import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { QP } from "@/shared/constants/queryParams";
 
 export function SettingsPage() {
-  const { viewMode, setViewMode, filterViewMode, setFilterViewMode } = useUIContext();
-  const { userEmail } = useUserContext();
+  const userEmail = useUserEmail();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get(QP.TAB) || "profile";
@@ -61,12 +59,7 @@ export function SettingsPage() {
             <NotificationsTab />
           </TabsContent>
           <TabsContent value="appearance" className="mt-8">
-            <AppearanceTab
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              filterViewMode={filterViewMode}
-              setFilterViewMode={setFilterViewMode}
-            />
+            <AppearanceTab />
           </TabsContent>
           <TabsContent value="privacy" className="mt-8">
             <PrivacyTab />

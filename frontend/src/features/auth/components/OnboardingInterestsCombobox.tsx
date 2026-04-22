@@ -13,6 +13,11 @@ import {
 } from "@/shared/ui/popover";
 import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
 
+const LABELS = {
+  defaultPlaceholder: "Search or select...",
+  noMatches: "No matches",
+} as const;
+
 interface OnboardingInterestsComboboxProps {
   selected: string[];
   onToggle: (value: string) => void;
@@ -23,7 +28,7 @@ interface OnboardingInterestsComboboxProps {
 export function OnboardingInterestsCombobox({
   selected,
   onToggle,
-  placeholder = "Search or select...",
+  placeholder = LABELS.defaultPlaceholder,
   className,
 }: OnboardingInterestsComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -76,7 +81,7 @@ export function OnboardingInterestsCombobox({
         >
           {filtered.length === 0 ? (
             <div className="py-4 text-center text-sm text-muted-foreground">
-              No matches
+              {LABELS.noMatches}
             </div>
           ) : (
             filtered.map((option) => {

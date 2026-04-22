@@ -7,7 +7,6 @@
  */
 
 import React, { lazy, Suspense, useMemo } from "react";
-import { AdminProvider } from "@/features/admin/context/AdminContext";
 import type { Event, EventFormData } from "@/shared/types";
 import { useNavigate } from "react-router-dom";
 import { ROUTES, CLUB_PANEL_ROUTE_MAP } from "@/shared/constants/routes";
@@ -78,21 +77,16 @@ export function ClubPanelRoute({ config }: { config: ClubPanelRoutesConfig }) {
 export function ClubPanelPostersRoute({ config }: { config: ClubPanelRoutesConfig }) {
   const navigate = useNavigate();
 
-  const adminProps = useMemo(
-    () => ({
-      events: config.events,
-      onBack: () => navigate(ROUTES.CLUB_PANEL),
-      userEmail: config.userEmail || "",
-    }),
-    [config.events, config.userEmail, navigate]
-  );
+  const onBack = useMemo(() => () => navigate(ROUTES.CLUB_PANEL), [navigate]);
 
   return (
-    <AdminProvider {...adminProps}>
-      <ClubPanelSuspense>
-        <ClubPanelPostersPage />
-      </ClubPanelSuspense>
-    </AdminProvider>
+    <ClubPanelSuspense>
+      <ClubPanelPostersPage
+        events={config.events}
+        onBack={onBack}
+        userEmail={config.userEmail || ""}
+      />
+    </ClubPanelSuspense>
   );
 }
 

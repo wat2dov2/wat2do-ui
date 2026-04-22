@@ -1,4 +1,21 @@
-"""Supabase only — no SQLAlchemy. Use this client for all table access."""
+"""Supabase only — no SQLAlchemy. Use this client for all table access.
+
+Export contract (D19):
+  * :func:`get_sb` returns the service-role client for backend DB access
+    (bypasses RLS).  **Use this for every table read/write.**
+  * :data:`supabase_admin` is the same client, exposed for call sites that
+    need to construct queries lazily inside a service class.
+  * :data:`supabase` is the *anon* client used ONLY for Supabase Auth
+    calls (``auth.sign_up``, ``auth.sign_in_with_password``, …).  It is
+    RLS-bound and must **not** be used for PostgREST table access; doing
+    so will silently return empty results (or 403) in production.
+
+Direct ``from core.database import supabase`` imports are discouraged —
+every table path should go through ``get_sb()``.  The lone legitimate
+consumer is ``services/auth_service.py``, which imports ``supabase``
+lazily so a typo elsewhere fails fast at call time rather than silently
+swapping clients.
+"""
 
 from supabase import create_client, Client
 
@@ -15,6 +32,10 @@ if not settings.supabase_secret_key:
         "(Dashboard > Settings > API Keys)."
     )
 
+# Anon client: RLS-bound, for Supabase Auth endpoints only.  Kept at module
+# scope for the one caller that needs it (auth_service), but not re-exported
+# via ``__all__`` to discourage accidental adoption elsewhere.  New code
+# should not import this — use ``get_sb()``.
 supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
 
 # Service-role client for backend table access (bypasses RLS).
@@ -26,3 +47,6 @@ supabase_admin: Client = create_client(
 def get_sb() -> Client:
     """Return the service-role client (bypasses RLS)."""
     return supabase_admin
+
+
+__all__ = ("get_sb", "supabase_admin")
