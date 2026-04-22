@@ -103,7 +103,8 @@ BUCKET_QR_ASSETS = "qr-assets"
 
 # ---------------------------------------------------------------------------
 # Upload file-size limits (bytes).  Used by StorageService bucket configs
-# and the uploads router validation.  Keep in sync with setup_storage.sql.
+# and the uploads router validation.  Keep in sync with the bucket
+# file_size_limit values in supabase/migrations/.
 # ---------------------------------------------------------------------------
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024   # 5 MB  – event images, QR assets
 MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB  – avatars, club logos
