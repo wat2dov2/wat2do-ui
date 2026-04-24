@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -9,6 +9,8 @@ import logging
 from core.constants import (
     CATEGORY_NORMALIZE_MAP,
     EVENT_CATEGORIES,
+    EVENT_STATUS_ACTIVE,
+    EVENT_STATUS_CANCELLED,
     MAX_EVENT_CATEGORY_LENGTH,
     MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
@@ -22,6 +24,10 @@ from core.constants import (
     MAX_EVENT_TITLE_LENGTH,
     MAX_URL_LENGTH,
 )
+
+# events.status column — Literal-typed so the value renders as an enum
+# in the OpenAPI schema and the generated TS types stay in sync.
+EventStatus = Literal[EVENT_STATUS_ACTIVE, EVENT_STATUS_CANCELLED]
 
 _log = logging.getLogger(__name__)
 
@@ -192,6 +198,7 @@ class EventUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=MAX_EVENT_TITLE_LENGTH)
     description: str | None = Field(default=None, max_length=MAX_EVENT_DESCRIPTION_LENGTH)
     location: str | None = Field(default=None, max_length=MAX_EVENT_LOCATION_LENGTH)
+    status: EventStatus | None = None
     # See ``EventCreate`` for ``AwareDatetime`` rationale (audit S15).
     dtstart_utc: AwareDatetime | None = None
     dtend_utc: AwareDatetime | None = None
@@ -301,6 +308,7 @@ class EventSummaryResponse(BaseModel):
     organization: str | None = None
     display_handle: str | None = None
     added_at: datetime
+    status: EventStatus = EVENT_STATUS_ACTIVE
 
     model_config = {"from_attributes": True}
 
@@ -343,6 +351,7 @@ class EventResponse(BaseModel):
     display_handle: str | None = None
     added_at: datetime
     created_by: str | None = None
+    status: EventStatus = EVENT_STATUS_ACTIVE
 
     model_config = {"from_attributes": True}
 
@@ -376,5 +385,6 @@ class EventPublicResponse(BaseModel):
     other_handle: str | None = None
     display_handle: str | None = None
     added_at: datetime
+    status: EventStatus = EVENT_STATUS_ACTIVE
 
     model_config = {"from_attributes": True}

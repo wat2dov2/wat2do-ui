@@ -126,6 +126,97 @@ def test_update_legacy_event_non_admin_rejected(authenticated_client, monkeypatc
 
 
 # ---------------------------------------------------------------------------
+# events.status — cancel / un-cancel semantics
+# ---------------------------------------------------------------------------
+
+
+def test_update_status_cancelled_owner_allowed(authenticated_client, monkeypatch):
+    """Owner can flip status to cancelled via the PATCH endpoint."""
+    event = _mock_event(created_by=FAKE_USER["id"], status="active")
+    updated = _mock_event(created_by=FAKE_USER["id"], status="cancelled")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    mock_update = MagicMock(return_value=updated)
+    monkeypatch.setattr(event_service, "update_event", mock_update)
+
+    resp = authenticated_client.patch("/events/1", json={"status": "cancelled"})
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "cancelled"
+    # The EventUpdate payload reached the service with status set.
+    args, _ = mock_update.call_args
+    assert args[1].status == "cancelled"
+
+
+def test_update_status_back_to_active_owner_allowed(authenticated_client, monkeypatch):
+    """Owner can un-cancel — cancelled → active is allowed too."""
+    event = _mock_event(created_by=FAKE_USER["id"], status="cancelled")
+    updated = _mock_event(created_by=FAKE_USER["id"], status="active")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+
+    resp = authenticated_client.patch("/events/1", json={"status": "active"})
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "active"
+
+
+def test_update_status_admin_allowed(admin_client, monkeypatch):
+    """Admin can flip status on any event regardless of ownership."""
+    event = _mock_event(created_by=FAKE_USER["id"], status="active")
+    updated = _mock_event(created_by=FAKE_USER["id"], status="cancelled")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+
+    resp = admin_client.patch("/events/1", json={"status": "cancelled"})
+    assert resp.status_code == 200
+
+
+def test_update_status_non_owner_rejected(other_user_client, monkeypatch):
+    """Non-owner, non-admin gets 403 when trying to cancel."""
+    event = _mock_event(created_by=FAKE_USER["id"], status="active")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+
+    resp = other_user_client.patch("/events/1", json={"status": "cancelled"})
+    assert resp.status_code == 403
+
+
+def test_update_status_rejects_unknown_value(authenticated_client, monkeypatch):
+    """Literal-typed status rejects values outside {active, cancelled}."""
+    event = _mock_event(created_by=FAKE_USER["id"], status="active")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+
+    resp = authenticated_client.patch("/events/1", json={"status": "deleted"})
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# List filtering on status
+# ---------------------------------------------------------------------------
+
+
+def test_list_events_default_passes_include_cancelled_false(client, monkeypatch):
+    """Default list endpoint asks the service to exclude cancelled events."""
+    mock_list = MagicMock(return_value=[])
+    monkeypatch.setattr(event_service, "list_events", mock_list)
+
+    resp = client.get("/events/")
+    assert resp.status_code == 200
+
+    _, kwargs = mock_list.call_args
+    assert kwargs["include_cancelled"] is False
+
+
+def test_list_events_include_cancelled_true_passes_through(client, monkeypatch):
+    """?include_cancelled=true reaches the service kwarg unchanged."""
+    mock_list = MagicMock(return_value=[])
+    monkeypatch.setattr(event_service, "list_events", mock_list)
+
+    resp = client.get("/events/?include_cancelled=true")
+    assert resp.status_code == 200
+
+    _, kwargs = mock_list.call_args
+    assert kwargs["include_cancelled"] is True
+
+
+# ---------------------------------------------------------------------------
 # Search sanitization
 # ---------------------------------------------------------------------------
 

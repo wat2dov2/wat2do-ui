@@ -54,6 +54,10 @@ def list_events(
     max_price: float | None = Query(default=None, ge=0, allow_inf_nan=False),
     registration: bool | None = None,
     summary: bool = Query(default=False, description="Return lightweight card-view fields only"),
+    include_cancelled: bool = Query(
+        default=False,
+        description="Include cancelled events. Default excludes them so browse/search stays clean.",
+    ),
 ):
     """Public list endpoint.
 
@@ -77,6 +81,7 @@ def list_events(
         max_price=max_price,
         registration=registration,
         summary=summary,
+        include_cancelled=include_cancelled,
     )
 
 

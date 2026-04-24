@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime, timezone
 
-from core.constants import DEFAULT_LIST_LIMIT
+from core.constants import DEFAULT_LIST_LIMIT, EVENT_STATUS_ACTIVE
 from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
@@ -20,6 +20,16 @@ from schemas.event import (
 )
 
 log = logging.getLogger(__name__)
+
+# Event fields whose changes constitute a "material" update — the ones
+# worth notifying saved-by users about. Description/title/handle edits
+# are deliberately excluded so routine cleanup does not fire alerts.
+MATERIAL_FIELDS: tuple[str, ...] = (
+    "dtstart_utc",
+    "dtend_utc",
+    "location",
+    "status",
+)
 
 
 def get_latest_added_event() -> LatestEventResponse | None:
@@ -57,9 +67,12 @@ def list_events(
     max_price: float | None = None,
     registration: bool | None = None,
     summary: bool = False,
+    include_cancelled: bool = False,
 ) -> list[EventSummaryResponse] | list[EventResponse]:
     select_cols = EVENT_SUMMARY_COLUMNS if summary else "*"
     q = get_sb().table(EVENTS).select(select_cols)
+    if not include_cancelled:
+        q = q.eq("status", EVENT_STATUS_ACTIVE)
     if category:
         q = q.eq("category", category)
     if club_type:
@@ -193,3 +206,37 @@ def delete_event(event_id: int) -> bool:
     if r.data:
         invalidate_candidates_cache()
     return bool(r.data)
+
+
+def compute_event_diff(
+    old: EventResponse, new: EventResponse
+) -> dict[str, dict[str, object | None]]:
+    """Diff the subset of fields whose changes warrant a user-facing alert.
+
+    Only ``MATERIAL_FIELDS`` are compared — routine title/description
+    edits should not fire notifications. Values are serialised to
+    JSON-friendly types (datetimes → ISO strings) so the result drops
+    straight into a ``jsonb`` column without a second pass.
+
+    Returns an empty dict when no material field changed; callers can
+    branch on truthiness.
+    """
+    diff: dict[str, dict[str, object | None]] = {}
+    for field in MATERIAL_FIELDS:
+        old_val = getattr(old, field, None)
+        new_val = getattr(new, field, None)
+        if old_val == new_val:
+            continue
+        diff[field] = {
+            "old": _jsonable(old_val),
+            "new": _jsonable(new_val),
+        }
+    return diff
+
+
+def _jsonable(value: object) -> object | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value

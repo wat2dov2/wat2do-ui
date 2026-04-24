@@ -34,6 +34,14 @@ REPORT_DISMISSED: Final = "dismissed"
 REPORT_STATUSES = (REPORT_PENDING, REPORT_RESOLVED, REPORT_DISMISSED)
 
 # ---------------------------------------------------------------------------
+# Event statuses (events.status column)
+# ---------------------------------------------------------------------------
+EVENT_STATUS_ACTIVE: Final = "active"
+EVENT_STATUS_CANCELLED: Final = "cancelled"
+
+EVENT_STATUSES = (EVENT_STATUS_ACTIVE, EVENT_STATUS_CANCELLED)
+
+# ---------------------------------------------------------------------------
 # Event categories & interest mappings
 # ---------------------------------------------------------------------------
 EVENT_CATEGORIES = (
