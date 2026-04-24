@@ -13,7 +13,9 @@ TARGET_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 def _mock_db_user(**overrides) -> UserResponse:
     defaults = {
-        "id": TARGET_USER_ID,
+        # Default id matches FAKE_USER["id"] so ownership checks pass
+        # when the test mocks an event with ``created_by=FAKE_USER["id"]``.
+        "id": FAKE_USER["id"],
         "email": FAKE_USER["email"],
         "username": "testuser",
         "full_name": "Test User",

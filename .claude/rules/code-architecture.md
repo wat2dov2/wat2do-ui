@@ -1,4 +1,9 @@
-# Architecture Enforcement Hooks
+# Frontend Architecture (React / `frontend/src`)
+
+> **Scope:** this document governs the **frontend** codebase only
+> (`frontend/src/**`). The backend uses a different, layered structure —
+> see [`backend-architecture.md`](./backend-architecture.md). Do not apply
+> the feature-sliced rules below to `backend/`.
 
 This document explains how the Cursor hooks enforce scalable React architecture patterns.
 

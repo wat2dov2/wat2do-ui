@@ -2,7 +2,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_authorized_resource, get_current_user
+from core.auth import get_authorized_resource, get_db_user
+from schemas.user import UserResponse
 from core.exceptions import get_or_404
 from core.constants import (
     DEFAULT_LIST_LIMIT,
@@ -26,10 +27,10 @@ from services import event_service
 router = APIRouter(prefix="/events", tags=["events"])
 
 
-def _get_event_or_404_authorized(event_id: int, auth_user: dict) -> EventResponse:
+def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventResponse:
     """Fetch an event by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
     return get_authorized_resource(
-        lambda: event_service.get_event(event_id), EVENT_NOT_FOUND, auth_user,
+        lambda: event_service.get_event(event_id), EVENT_NOT_FOUND, db_user,
     )
 
 
@@ -91,25 +92,25 @@ def get_event(event_id: int):
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
     data: EventCreate,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    return event_service.create_event(data, created_by=auth_user["id"])
+    return event_service.create_event(data, created_by=str(db_user.id))
 
 
 @router.patch("/{event_id}", response_model=EventResponse)
 def update_event(
     event_id: int,
     data: EventUpdate,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_event_or_404_authorized(event_id, auth_user)
+    _get_event_or_404_authorized(event_id, db_user)
     return get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_event(
     event_id: int,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_event_or_404_authorized(event_id, auth_user)
+    _get_event_or_404_authorized(event_id, db_user)
     event_service.delete_event(event_id)

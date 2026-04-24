@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_authorized_resource, get_current_user
+from core.auth import get_authorized_resource, get_current_user, get_db_user
+from schemas.user import UserResponse
 from core.exceptions import get_or_404
 from core.constants import (
     DEFAULT_LIST_LIMIT,
@@ -27,20 +28,20 @@ router = APIRouter(prefix="/clubs", tags=["clubs"])
 INTEGRATION_NOT_FOUND = "Integration not found"
 
 
-def _get_club_or_403(club_id: int, auth_user: dict) -> ClubResponse:
+def _get_club_or_403(club_id: int, db_user: UserResponse) -> ClubResponse:
     """Fetch a club by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
     return get_authorized_resource(
-        lambda: club_service.get_club(club_id), CLUB_NOT_FOUND, auth_user,
+        lambda: club_service.get_club(club_id), CLUB_NOT_FOUND, db_user,
     )
 
 
-def _authorize_and_exec(club_id: int, auth_user: dict, action):
+def _authorize_and_exec(club_id: int, db_user: UserResponse, action):
     """Verify club ownership, execute *action*, and validate the result.
 
     Separates the authorization check from the action so callers are
     explicit about what operation is being performed.
     """
-    _get_club_or_403(club_id, auth_user)
+    _get_club_or_403(club_id, db_user)
     return get_or_404(action(), INTEGRATION_NOT_FOUND)
 
 
@@ -55,9 +56,9 @@ def list_clubs(
 
 
 @router.get("/mine", response_model=list[ClubResponse])
-def list_my_clubs(auth_user: dict = Depends(get_current_user)):
+def list_my_clubs(db_user: UserResponse = Depends(get_db_user)):
     """Return clubs owned by the authenticated user."""
-    return club_service.list_clubs_by_owner(auth_user["id"])
+    return club_service.list_clubs_by_owner(str(db_user.id))
 
 
 @router.get(
@@ -91,10 +92,10 @@ def get_club(club_id: int):
 def get_platform_integration(
     club_id: int,
     platform: IntegrationPlatform,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
     return _authorize_and_exec(
-        club_id, auth_user, lambda: club_service.get_platform_integration(club_id, platform),
+        club_id, db_user, lambda: club_service.get_platform_integration(club_id, platform),
     )
 
 
@@ -106,10 +107,10 @@ def upsert_platform_integration(
     club_id: int,
     platform: IntegrationPlatform,
     data: ClubIntegrationUpdate,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
     return _authorize_and_exec(
-        club_id, auth_user, lambda: club_service.upsert_platform_integration(
+        club_id, db_user, lambda: club_service.upsert_platform_integration(
             club_id=club_id,
             platform=platform,
             name=data.name,
@@ -125,28 +126,28 @@ def upsert_platform_integration(
 def disconnect_platform_integration(
     club_id: int,
     platform: IntegrationPlatform,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
     return _authorize_and_exec(
-        club_id, auth_user, lambda: club_service.disconnect_platform_integration(club_id, platform),
+        club_id, db_user, lambda: club_service.disconnect_platform_integration(club_id, platform),
     )
 
 
 @router.post("/", response_model=ClubResponse, status_code=status.HTTP_201_CREATED)
 def create_club(
     data: ClubCreate,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    return club_service.create_club(data, created_by=auth_user["id"])
+    return club_service.create_club(data, created_by=str(db_user.id))
 
 
 @router.patch("/{club_id}", response_model=ClubResponse)
 def update_club(
     club_id: int,
     data: ClubUpdate,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, auth_user)
+    _get_club_or_403(club_id, db_user)
     updated = club_service.update_club(club_id, data)
     return updated
 
@@ -154,7 +155,7 @@ def update_club(
 @router.delete("/{club_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_club(
     club_id: int,
-    auth_user: dict = Depends(get_current_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, auth_user)
+    _get_club_or_403(club_id, db_user)
     club_service.delete_club(club_id)

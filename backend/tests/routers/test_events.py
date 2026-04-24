@@ -54,7 +54,6 @@ def test_update_event_owner_allowed(authenticated_client, monkeypatch):
 
     # is_admin check must return False for the non-admin user
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.patch("/events/1", json={"title": "Updated"})
     assert resp.status_code == 200
@@ -66,7 +65,6 @@ def test_update_event_non_owner_rejected(other_user_client, monkeypatch):
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = other_user_client.patch("/events/1", json={"title": "Hacked"})
     assert resp.status_code == 403
@@ -99,7 +97,6 @@ def test_delete_event_non_owner_rejected(other_user_client, monkeypatch):
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = other_user_client.delete("/events/1")
     assert resp.status_code == 403
@@ -112,7 +109,6 @@ def test_delete_event_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(event_service, "delete_event", MagicMock(return_value=True))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.delete("/events/1")
     assert resp.status_code == 204
@@ -124,7 +120,6 @@ def test_update_legacy_event_non_admin_rejected(authenticated_client, monkeypatc
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.patch("/events/1", json={"title": "Hacked"})
     assert resp.status_code == 403
@@ -226,7 +221,6 @@ def test_update_past_event_rejected(authenticated_client, monkeypatch):
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     # Drive the service call directly so we get the ValidationError
     try:

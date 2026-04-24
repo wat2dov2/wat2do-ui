@@ -200,7 +200,6 @@ def test_upload_event_image_non_owner_rejected(other_user_client, monkeypatch):
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     files = _make_file("poster.png", _real_png(), "image/png")
     resp = other_user_client.post("/uploads/event-image/1", files=files)
@@ -215,7 +214,6 @@ def test_upload_event_image_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(storage, "upload_file", MagicMock(return_value="https://example.com/img.png"))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     files = _make_file("poster.png", _real_png(), "image/png")
     resp = authenticated_client.post("/uploads/event-image/1", files=files)
@@ -231,7 +229,6 @@ def test_upload_club_logo_non_owner_rejected(other_user_client, monkeypatch):
     monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     files = _make_file("logo.png", _real_png(), "image/png")
     resp = other_user_client.post("/uploads/club-logo/1", files=files)
@@ -246,7 +243,6 @@ def test_upload_club_logo_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(storage, "upload_file", MagicMock(return_value="https://example.com/logo.png"))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     files = _make_file("logo.png", _real_png(), "image/png")
     resp = authenticated_client.post("/uploads/club-logo/1", files=files)
@@ -313,7 +309,6 @@ def test_svg_disguised_as_png_blocked_on_non_svg_bucket(authenticated_client, mo
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     malicious_svg = (
         b'<svg xmlns="http://www.w3.org/2000/svg">'
@@ -476,7 +471,6 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
     monkeypatch.setattr(storage, "upload_file", fake_upload_file)
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
     monkeypatch.setattr(user_service, "update_user", MagicMock())
 
     # get_db_user dep returns the DB user — stub it directly since the

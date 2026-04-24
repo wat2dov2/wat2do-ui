@@ -118,12 +118,12 @@ async def _replace_image(
 async def upload_event_image(
     event_id: int,
     file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
+    db_user=Depends(get_db_user),
     _rl: None = Depends(_rate_limit_dep),
     _cl: None = Depends(_enforce_content_length(BUCKET_EVENT_IMAGES)),
 ):
     event = get_or_404(await asyncio.to_thread(event_service.get_event, event_id), EVENT_NOT_FOUND)
-    require_owner_or_admin(user, event.created_by)
+    require_owner_or_admin(db_user, event.created_by)
     url = await _replace_image(
         file, BUCKET_EVENT_IMAGES, event.source_image_url,
         lambda u: event_service.update_event(event_id, EventUpdate(source_image_url=u)),
@@ -149,12 +149,12 @@ async def upload_avatar(
 async def upload_club_logo(
     club_id: int,
     file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
+    db_user=Depends(get_db_user),
     _rl: None = Depends(_rate_limit_dep),
     _cl: None = Depends(_enforce_content_length(BUCKET_CLUB_LOGOS)),
 ):
     club = get_or_404(await asyncio.to_thread(club_service.get_club, club_id), CLUB_NOT_FOUND)
-    require_owner_or_admin(user, club.created_by)
+    require_owner_or_admin(db_user, club.created_by)
     url = await _replace_image(
         file, BUCKET_CLUB_LOGOS, club.logo_url,
         lambda u: club_service.update_club(club_id, ClubUpdate(logo_url=u)),

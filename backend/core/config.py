@@ -9,7 +9,11 @@ _DEV_ORIGINS = [
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env")
+    # `extra="ignore"` — .env holds some shell-only vars (e.g. DATABASE_URL,
+    # read by the Supabase CLI) that the Python runtime doesn't need as
+    # typed fields. Ignoring them keeps Settings focused on what the app
+    # actually reads.
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # "development", "testing", or "production". Controls OpenAPI docs visibility.
     environment: str = "development"
@@ -17,7 +21,6 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_key: str
     supabase_secret_key: str = ""
-    database_url: str = ""  # Optional; only for legacy Alembic/scripts. App uses Supabase client only.
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     openai_timeout: int = 15

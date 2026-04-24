@@ -1,16 +1,14 @@
+import importlib
 import logging
+import pkgutil
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import routers as routers_package
 from core.config import settings
 from core.error_handlers import register_error_handlers
 from core.security_headers import SecurityHeadersMiddleware
-from routers import auth, users, events, clubs, uploads, qr
-from routers import (
-    interactions, saved_events, recommendations, ab_test, ai,
-    credits, submissions, reports, scraped_events, meta,
-)
 
 log = logging.getLogger(__name__)
 
@@ -47,22 +45,22 @@ app.add_middleware(
 # Added after CORS so it wraps every response including preflight.
 app.add_middleware(SecurityHeadersMiddleware)
 
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(events.router)
-app.include_router(clubs.router)
-app.include_router(uploads.router)
-app.include_router(qr.router)
-app.include_router(interactions.router)
-app.include_router(saved_events.router)
-app.include_router(recommendations.router)
-app.include_router(ab_test.router)
-app.include_router(ai.router)
-app.include_router(credits.router)
-app.include_router(submissions.router)
-app.include_router(reports.router)
-app.include_router(scraped_events.router)
-app.include_router(meta.router)
+
+# Auto-discover routers: every module in `routers/` that exports an
+# `APIRouter` attribute named `router` is wired automatically, in
+# deterministic alphabetical order. Adding a new endpoint set is a single
+# file drop — no edit to this file required.
+#
+# See .claude/rules/backend-architecture.md → "New router checklist".
+_registered: list[str] = []
+for _mod_info in sorted(pkgutil.iter_modules(routers_package.__path__), key=lambda m: m.name):
+    _module = importlib.import_module(f"{routers_package.__name__}.{_mod_info.name}")
+    _router = getattr(_module, "router", None)
+    if isinstance(_router, APIRouter):
+        app.include_router(_router)
+        _registered.append(_mod_info.name)
+
+log.info("Registered %d routers: %s", len(_registered), ", ".join(_registered))
 
 
 @app.get("/health")

@@ -273,6 +273,46 @@ REPORT_RATE_LIMIT_WINDOW_SECONDS = 60        # 5 reports per minute per user
 MAX_SAVED_EVENTS_PER_USER = 10_000
 
 # ---------------------------------------------------------------------------
+# Calendar feed — ICS subscription
+# ---------------------------------------------------------------------------
+# Apple polls every ~1h, Google every 12-24h.  60 requests/hour per token
+# is generous headroom for legitimate clients (covers a user syncing
+# across several devices behind a shared NAT) while capping a broken
+# client's polling loop. Keyed on token so one misbehaving user can't
+# affect others on the same network.
+CALENDAR_FEED_RATE_LIMIT_MAX_REQUESTS = 60
+CALENDAR_FEED_RATE_LIMIT_WINDOW_SECONDS = 3600
+
+# Map ``events.school`` -> IANA timezone string.  Keys are the canonical
+# school names from ``core.allowed_emails.ALLOWED_EMAIL_DOMAINS`` values,
+# lowercased.  Lookup goes via ``resolve_school_timezone`` which also
+# consults ``SCHOOL_ALIASES`` and falls back to UTC with a warning log.
+#
+# When a new school is onboarded (added to ALLOWED_EMAIL_DOMAINS), add
+# its timezone here in the same change — the log warning is the signal
+# that a school is missing from the map.
+SCHOOL_TIMEZONES: dict[str, str] = {
+    "university of waterloo": "America/Toronto",
+    "wilfrid laurier university": "America/Toronto",
+    "university of guelph": "America/Toronto",
+    "conestoga college": "America/Toronto",
+}
+
+# Common user-typed variants of school names that map to a canonical
+# key in SCHOOL_TIMEZONES.  Keep keys lowercase and whitespace-stripped
+# so the normalizer only has to do casefold + strip.
+SCHOOL_ALIASES: dict[str, str] = {
+    "uw": "university of waterloo",
+    "u of w": "university of waterloo",
+    "uwaterloo": "university of waterloo",
+    "waterloo": "university of waterloo",
+    "laurier": "wilfrid laurier university",
+    "wlu": "wilfrid laurier university",
+    "guelph": "university of guelph",
+    "conestoga": "conestoga college",
+}
+
+# ---------------------------------------------------------------------------
 # PostgreSQL error codes (used by error_handlers and service-level catches)
 # See: https://www.postgresql.org/docs/current/errcodes-appendix.html
 # ---------------------------------------------------------------------------

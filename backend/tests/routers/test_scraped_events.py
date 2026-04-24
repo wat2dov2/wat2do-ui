@@ -126,7 +126,7 @@ def test_create_scraped_event_rejects_oversize_source(admin_client):
 # ---------------------------------------------------------------------------
 
 def test_create_scraped_event_rejects_oversize_raw_data(admin_client):
-    """raw_data larger than MAX_RAW_DATA_BYTES is rejected (audit M9/M12)."""
+    """raw_data larger than the schema's raw_data byte cap is rejected (audit M9/M12)."""
     big_blob = {"payload": "x" * 40_000}
     resp = admin_client.post(
         "/scraped-events/",

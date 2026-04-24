@@ -22,6 +22,7 @@ CLUB_NOT_FOUND = "Club not found"
 POSTER_NOT_FOUND = "Poster not found"
 SUBMISSION_NOT_FOUND = "Submission not found"
 REPORT_NOT_FOUND = "Report not found"
+CALENDAR_FEED_NOT_FOUND = "Calendar feed not found"
 
 # ---------------------------------------------------------------------------
 # 401 – Authentication

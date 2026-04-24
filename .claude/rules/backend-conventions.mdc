@@ -1,58 +1,99 @@
 ---
-description: Backend (FastAPI + SQLAlchemy + Supabase) coding conventions and patterns.
+description: Backend (FastAPI + Supabase) coding conventions and patterns.
 globs: backend/**/*.py
 alwaysApply: false
 ---
 
-# Backend Conventions
+# Backend Conventions (summary)
 
-## Architecture
+> Detailed architecture, ownership conventions, and checklists live in
+> [`backend-architecture.md`](./backend-architecture.md). This file is a
+> quick-reference summary that Cursor auto-loads for backend edits.
 
-The backend follows a layered architecture inside `backend/`:
+## Stack
+
+- **FastAPI** for the HTTP layer.
+- **Supabase** (Postgres + PostgREST) as the data layer. Accessed via
+  the synchronous Python client from `core.database.get_sb()`.
+- **No ORM.** No SQLAlchemy, no Alembic. Schema lives in
+  `backend/supabase/migrations/*.sql` and is owned by the Supabase CLI.
+- **Pydantic v2** for schemas (request/response validation + OpenAPI).
+
+## Layout
 
 ```
 backend/
-  main.py              # FastAPI app entry point, mounts routers
-  core/                # Config, database engine, auth helpers, logging
-  models/              # SQLAlchemy ORM models (one file per domain entity)
-  schemas/             # Pydantic request/response schemas (one file per domain entity)
-  services/            # Business logic (one file per domain entity, no HTTP concerns)
-  routers/             # FastAPI routers (one file per domain entity, thin — delegates to services)
-  migrations/          # Alembic migrations (auto-generated)
-  seeds/               # Seed scripts
-  tests/               # Mirrors routers/ and services/ structure
+  main.py      # App entry; auto-discovers every module in routers/ that exports `router`
+  core/        # Cross-cutting primitives (auth, db, tables, errors, constants, pagination, …)
+  schemas/     # Pydantic models — one file per resource
+  services/    # Data access + business logic — one file per resource
+  routers/     # HTTP endpoints — one file per resource, auto-discovered
+  tests/       # Mirrors routers/ and services/
+  jobs/ seeds/ scripts/   # Background tasks, data population, admin ops
+  supabase/    # Schema (migrations/*.sql + config.toml) — owned by Supabase CLI
 ```
 
-## Adding a new domain entity
+**No `models/` directory.** Data access goes through `get_sb()`, not an
+ORM.
 
-1. **Model** — create `models/<entity>.py`, import `Base` from `models.user`, define the SQLAlchemy model.
-2. **Register model** — add the import to `models/__init__.py` so Alembic discovers it.
-3. **Schema** — create `schemas/<entity>.py` with `<Entity>Create`, `<Entity>Update`, `<Entity>Response` Pydantic models.  
-   - Response models must set `model_config = {"from_attributes": True}`.
-4. **Service** — create `services/<entity>_service.py` with async CRUD functions that accept `AsyncSession` as the first arg.
-5. **Router** — create `routers/<entity>.py` with an `APIRouter`. Public read endpoints (list, get) need no auth; write endpoints use `Depends(get_current_user)`.
-6. **Mount router** — import and `app.include_router(...)` in `main.py`.
-7. **Migration** — run `alembic revision --autogenerate -m "description"` then `alembic upgrade head`.
-8. **Seed** — optionally add `seeds/<entity>.py` and import it in `seeds/run.py`.
-9. **Tests** — add `tests/routers/test_<entity>.py` and/or `tests/services/test_<entity>_service.py`.
+## Adding a new resource
+
+1. **Migration** — new file in `backend/supabase/migrations/`. Idempotent
+   (`IF NOT EXISTS`, `pg_constraint` guards). **Always include**
+   `ALTER TABLE <name> ENABLE ROW LEVEL SECURITY;` — forgetting this
+   exposes the table to the anon role.
+2. **Table constant** — add to `core/tables.py`.
+3. **Error string(s)** — add any user-facing 404 / 400 to `core/errors.py`.
+4. **Schema** — `schemas/<resource>.py` with Pydantic `Create` / `Update` /
+   `Response` models. Use `Literal[...]` for enum-like fields.
+5. **Service** — `services/<resource>_service.py`. Function-based by
+   default; class-based only for external-client wrappers. Services
+   raise domain exceptions from `core.exceptions`, never `HTTPException`.
+6. **Router** — `routers/<resource>.py` exporting `router = APIRouter(...)`.
+   `main.py` picks it up automatically — do NOT edit `main.py`.
+7. **Tests** — `tests/routers/test_<resource>.py` with
+   `authenticated_client` / `admin_client` fixtures from `conftest.py`.
 
 ## Patterns
 
-- **Auth**: `core/auth.py` provides `get_current_user` (validates Supabase JWT). Use `Depends(get_current_user)` on protected routes.
-- **Database session**: use `db: AsyncSession = Depends(get_db)` in route signatures.
-- **Services never raise HTTP exceptions** — if a service returns `None`, the router raises `HTTPException(404)`. Exception: `auth_service` raises HTTP exceptions for auth-specific errors.
-- **All DB operations are async** — use `await db.execute(...)`, `await db.commit()`, etc.
-- **JSONB for arrays** — use `JSONB` column type for list fields (e.g. `categories`, `interests`, `food`).
-- **SSL for remote DB** — `core/database.py` and `migrations/env.py` both create an SSL context with `CERT_NONE` for Supabase pooler connections.
-- **Pydantic v2** — use `model_config = SettingsConfigDict(...)` instead of inner `class Config`.
+- **Auth dependencies**: default to `db_user = Depends(get_db_user)` →
+  `UserResponse` (has `.id`, `.role`, `.email`, …). Use
+  `get_current_user` only for endpoints that need nothing more than an
+  auth check (e.g. rate-limit key functions). `get_admin_user` = same
+  shape, admin-role enforced.
+- **Ownership** is uniform: every per-user column is a `UUID` FK'd to
+  `users.id`. Two styles depending on access:
+  - **Moderated** (`created_by`): use
+    `get_authorized_resource(..., db_user, owner_field="created_by")`
+    so admins can also reach the row.
+  - **Strictly per-user** (`user_id`): filter in the service with
+    `.eq("user_id", str(db_user.id))`.
+  Details in [`backend-architecture.md`](./backend-architecture.md)
+  → "Ownership convention".
+- **Pagination**: `Depends(PaginationParams)` + `paginated_response(...)`
+  for every list endpoint. Never hand-roll `?page=`.
+- **Constants**: table names in `core/tables.py`, error strings in
+  `core/errors.py`, limits/enums in `core/constants.py`. Do not inline.
+- **Domain exceptions**: services raise `NotFoundError`,
+  `ValidationError`, `AuthorizationError`, etc. The global error handler
+  translates to HTTP. Keep services HTTP-free.
+- **Supabase client is synchronous** — do NOT `await` it. FastAPI routes
+  declared with `def` (not `async def`) run in a thread pool, which is
+  the right posture for sync DB calls.
 
 ## Running
 
 ```bash
-cd backend && source .venv/bin/activate
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 uvicorn main:app --reload          # dev server
-alembic upgrade head               # apply migrations
-alembic revision --autogenerate -m "msg"  # generate migration
-python seeds/run.py                # seed data
-pytest -v                          # run tests
+pytest -q                          # run tests
+```
+
+Migrations (run from `backend/` — that's where both `.env` and `supabase/` live):
+```bash
+cd backend
+supabase migration new <name>
+supabase db push --db-url "$DATABASE_URL"
 ```

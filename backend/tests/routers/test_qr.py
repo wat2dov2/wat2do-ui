@@ -222,7 +222,6 @@ def test_update_poster_rejects_javascript_url(authenticated_client, monkeypatch)
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.patch(
         "/qr/test-qr",
@@ -339,7 +338,6 @@ def test_update_poster_non_owner_rejected(other_user_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = other_user_client.patch(
         "/qr/test-qr",
@@ -359,7 +357,6 @@ def test_delete_poster_non_owner_rejected(other_user_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = other_user_client.delete("/qr/test-qr")
     assert resp.status_code == 403
@@ -372,7 +369,6 @@ def test_delete_poster_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "delete_qr_code", MagicMock())
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.delete("/qr/test-qr")
     assert resp.status_code == 204
@@ -421,7 +417,6 @@ def test_list_qr_codes_user_sees_own(authenticated_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.get("/qr/")
     assert resp.status_code == 200
@@ -458,7 +453,6 @@ def test_list_scans_user_sees_own(authenticated_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.get("/qr/scans")
     assert resp.status_code == 200
@@ -491,7 +485,6 @@ def test_update_poster_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "update_qr_code", MagicMock(return_value=updated))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
 
     resp = authenticated_client.patch(
         "/qr/test-qr",

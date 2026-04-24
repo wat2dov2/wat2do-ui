@@ -12,6 +12,9 @@ import ErrorBoundary from '@/app/ErrorBoundary'
 import { fetchProfileAPI, initializeAuth } from '@/features/auth/api/auth.api'
 import { setOnAfterRefresh } from '@/shared/services/apiClient'
 import { loadAppConstants } from '@/shared/api/metaApi'
+import { initClarity } from '@/shared/lib/clarity'
+
+initClarity(import.meta.env.VITE_CLARITY_PROJECT_ID)
 
 // After a silent 401 token refresh, re-fetch /users/me so cached
 // role/hasClub stay in sync with the backend (AUTH-010). The main.tsx
