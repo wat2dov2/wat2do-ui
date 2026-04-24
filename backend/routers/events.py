@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
@@ -22,7 +23,9 @@ from schemas.event import (
     LatestEventResponse,
 )
 from core.errors import EVENT_NOT_FOUND
-from services import event_service
+from services import event_service, notification_service
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -108,8 +111,22 @@ def update_event(
     data: EventUpdate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_event_or_404_authorized(event_id, db_user)
-    return get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
+    old_event = _get_event_or_404_authorized(event_id, db_user)
+    updated_event = get_or_404(
+        event_service.update_event(event_id, data), EVENT_NOT_FOUND
+    )
+    # Event-change notifications — fires on material diff only; routes stay
+    # ignorant of what "material" means (that's compute_event_diff). Wrap
+    # in try/except so a notification failure never breaks the update.
+    diff = event_service.compute_event_diff(old_event, updated_event)
+    if diff:
+        try:
+            notification_service.enqueue_event_change(event_id, diff)
+        except Exception as e:
+            log.warning(
+                "enqueue_event_change failed event=%s: %s", event_id, e
+            )
+    return updated_event
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

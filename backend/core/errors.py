@@ -23,6 +23,8 @@ POSTER_NOT_FOUND = "Poster not found"
 SUBMISSION_NOT_FOUND = "Submission not found"
 REPORT_NOT_FOUND = "Report not found"
 CALENDAR_FEED_NOT_FOUND = "Calendar feed not found"
+NOTIFICATION_PREFERENCE_NOT_FOUND = "Notification preference not found"
+UNKNOWN_NOTIFICATION_TYPE = "Unknown notification type"
 
 # ---------------------------------------------------------------------------
 # 401 – Authentication

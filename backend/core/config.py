@@ -49,6 +49,14 @@ class Settings(BaseSettings):
     # that shares peers with untrusted workloads.
     trusted_proxies: list[str] = ["127.0.0.1", "::1"]
 
+    # --- Email provider (notifications v1) -------------------------------
+    # Empty string => dry-run mode (log-only). Set to ``resend`` or
+    # ``postmark`` when wiring the real provider, and populate
+    # ``email_provider_api_key`` + ``email_from``.
+    email_provider: str = ""
+    email_provider_api_key: str = ""
+    email_from: str = "wat2do <notifications@wat2do.app>"
+
     @property
     def is_production(self) -> bool:
         return self.environment.lower() == "production"

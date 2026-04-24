@@ -217,6 +217,66 @@ def test_list_events_include_cancelled_true_passes_through(client, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# event_change hook — router wires the notification fanout on material diff
+# ---------------------------------------------------------------------------
+
+
+def test_update_event_material_diff_triggers_enqueue(authenticated_client, monkeypatch):
+    """PATCH with a material change (status) should fire enqueue_event_change."""
+    from services import notification_service
+
+    old = _mock_event(created_by=FAKE_USER["id"], status="active")
+    updated = _mock_event(created_by=FAKE_USER["id"], status="cancelled")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+
+    mock_enqueue = MagicMock(return_value=0)
+    monkeypatch.setattr(notification_service, "enqueue_event_change", mock_enqueue)
+
+    resp = authenticated_client.patch("/events/1", json={"status": "cancelled"})
+    assert resp.status_code == 200
+    mock_enqueue.assert_called_once()
+    args, _ = mock_enqueue.call_args
+    assert args[0] == 1
+    assert "status" in args[1]
+
+
+def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monkeypatch):
+    """PATCH that only changes title must NOT fire enqueue_event_change."""
+    from services import notification_service
+
+    old = _mock_event(created_by=FAKE_USER["id"], title="Old Title")
+    updated = _mock_event(created_by=FAKE_USER["id"], title="New Title")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+
+    mock_enqueue = MagicMock(return_value=0)
+    monkeypatch.setattr(notification_service, "enqueue_event_change", mock_enqueue)
+
+    resp = authenticated_client.patch("/events/1", json={"title": "New Title"})
+    assert resp.status_code == 200
+    mock_enqueue.assert_not_called()
+
+
+def test_update_event_enqueue_failure_does_not_break_update(authenticated_client, monkeypatch):
+    """A notification-layer exception must not propagate up to the user."""
+    from services import notification_service
+
+    old = _mock_event(created_by=FAKE_USER["id"], status="active")
+    updated = _mock_event(created_by=FAKE_USER["id"], status="cancelled")
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+    monkeypatch.setattr(
+        notification_service,
+        "enqueue_event_change",
+        MagicMock(side_effect=RuntimeError("provider down")),
+    )
+
+    resp = authenticated_client.patch("/events/1", json={"status": "cancelled"})
+    assert resp.status_code == 200  # update still succeeded
+
+
+# ---------------------------------------------------------------------------
 # Search sanitization
 # ---------------------------------------------------------------------------
 

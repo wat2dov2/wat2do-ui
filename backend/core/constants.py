@@ -42,6 +42,48 @@ EVENT_STATUS_CANCELLED: Final = "cancelled"
 EVENT_STATUSES = (EVENT_STATUS_ACTIVE, EVENT_STATUS_CANCELLED)
 
 # ---------------------------------------------------------------------------
+# Notification types (notification_preferences.notification_type and
+# notifications_log.notification_type). Plain text in the DB — validation
+# happens at the Pydantic boundary. Add a new type here AND update the
+# Literal alias in schemas/notification_preference.py AND any default
+# list below; no DB migration needed.
+# ---------------------------------------------------------------------------
+NOTIFICATION_TYPE_MORNING_DIGEST: Final = "morning_digest"
+NOTIFICATION_TYPE_WEEKLY_DIGEST: Final = "weekly_digest"
+NOTIFICATION_TYPE_EVENT_CHANGE: Final = "event_change"
+
+NOTIFICATION_TYPES = (
+    NOTIFICATION_TYPE_MORNING_DIGEST,
+    NOTIFICATION_TYPE_WEEKLY_DIGEST,
+    NOTIFICATION_TYPE_EVENT_CHANGE,
+)
+
+# Default opt-in state when a user has no row in notification_preferences.
+# All types default-on in v1; users explicitly opt out. The worker's
+# ``is_enabled`` helper falls back to this mapping.
+NOTIFICATION_DEFAULT_ENABLED: dict[str, bool] = {
+    NOTIFICATION_TYPE_MORNING_DIGEST: True,
+    NOTIFICATION_TYPE_WEEKLY_DIGEST: True,
+    NOTIFICATION_TYPE_EVENT_CHANGE: True,
+}
+
+# notifications_log.status — terminal state space. No retry_count because
+# the email provider handles transient failures internally; a ``failed``
+# row is a permanent failure that an operator investigates.
+NOTIFICATION_STATUS_PENDING: Final = "pending"
+NOTIFICATION_STATUS_SENT: Final = "sent"
+NOTIFICATION_STATUS_FAILED: Final = "failed"
+
+NOTIFICATION_STATUSES = (
+    NOTIFICATION_STATUS_PENDING,
+    NOTIFICATION_STATUS_SENT,
+    NOTIFICATION_STATUS_FAILED,
+)
+
+# Channels — ``email`` only in v1; ``push`` arrives in v2.
+NOTIFICATION_CHANNEL_EMAIL: Final = "email"
+
+# ---------------------------------------------------------------------------
 # Event categories & interest mappings
 # ---------------------------------------------------------------------------
 EVENT_CATEGORIES = (

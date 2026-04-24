@@ -65,7 +65,7 @@ class FakeSupabase:
         self.execute = MagicMock(side_effect=lambda: self._response, name="execute")
 
     def set_response(self, *, data: list | None = None, count: int | None = None) -> None:
-        """Configure what the next ``.execute()`` call returns.
+        """Configure what every ``.execute()`` call returns.
 
         ``data`` is the row list; ``count`` is the optional ``count="exact"``
         result. Both default to empty — call this when a test needs rows
@@ -76,6 +76,33 @@ class FakeSupabase:
             count=0 if count is None else count,
         )
         self.execute.side_effect = lambda: self._response
+
+    def queue_responses(self, responses: list[dict | list | None]) -> None:
+        """Configure a sequence of ``.execute()`` results for multi-query tests.
+
+        Each item is the ``data`` payload for one call, in order. Use when
+        a single service function makes multiple Supabase calls (e.g. a
+        fanout that fetches an event, then its saves, then the users).
+        Exhausting the queue falls back to an empty response so tests
+        don't crash if a new query is added mid-refactor — the failing
+        assertion will still localise the regression.
+        """
+        queue = list(responses)
+
+        def _next():
+            if queue:
+                item = queue.pop(0)
+                return MagicMock(data=item if item is not None else [], count=0)
+            return MagicMock(data=[], count=0)
+
+        self.execute.side_effect = _next
+
+    def raise_on_execute(self, exc: Exception) -> None:
+        """Make the next ``.execute()`` call raise ``exc``.
+
+        Useful for simulating unique-violation / transient errors.
+        """
+        self.execute.side_effect = exc
 
 
 @pytest.fixture
