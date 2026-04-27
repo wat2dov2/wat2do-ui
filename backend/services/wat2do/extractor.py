@@ -1,0 +1,320 @@
+"""OpenAI vision-based event extraction for scraped Instagram posts.
+
+Ports v1's ``backend/services/openai_service.extract_events_from_caption``
+to v2 idioms (settings-based config, single OpenAI client, structured
+errors). The prompt is kept faithful to v1 — it has been tuned against
+real Instagram posts and divergence here regresses extraction quality.
+
+Critical behaviour preserved (commit f51be22 in v1):
+    Each ``image_url`` block in the user-message content is preceded by
+    a ``{"type": "text", "text": "Image N:"}`` marker. The vision model
+    keys off these markers when populating ``image_index`` on extracted
+    events; without them carousel-image attribution is essentially
+    random.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from openai import OpenAI
+
+from core.config import settings
+from core.constants import EVENT_CATEGORIES
+from services.wat2do.school_dates import (
+    current_semester_end,
+    resolve_school_timezone,
+)
+
+log = logging.getLogger(__name__)
+
+_SYSTEM_MESSAGE = (
+    "You are a helpful assistant that extracts event information from social "
+    "media posts. Always return valid JSON with the exact structure requested."
+)
+
+
+def _client() -> OpenAI | None:
+    """Return a configured OpenAI client, or None if no key is set.
+
+    The dry-run path bypasses extraction entirely, so tests/CI can run
+    the pipeline without an API key. A None return at runtime causes
+    ``extract_events_from_post`` to log + return ``[]``.
+    """
+    if not settings.openai_api_key:
+        return None
+    return OpenAI(api_key=settings.openai_api_key)
+
+
+def extract_events_from_post(
+    *,
+    caption_text: str | None,
+    image_urls: list[str] | None,
+    post_created_at: datetime | None,
+    school: str,
+    model: str | None = None,
+) -> list[dict]:
+    """Extract zero-or-more events from one Instagram post.
+
+    Args:
+        caption_text: post caption (may be empty/None for image-only posts).
+        image_urls: ordered list of public image URLs (Supabase Storage
+            after ``image_uploader.upload_post_images``). The list order
+            corresponds to the carousel order; ``image_index`` on the
+            returned events refers to this list.
+        post_created_at: aware datetime of the post (used for relative
+            phrases like "tonight"/"tomorrow"). Falls back to "now" in
+            the school's local TZ if missing.
+        school: full canonical school name (e.g. "University of Waterloo").
+        model: vision-capable OpenAI model. Defaults to
+            ``settings.openai_extraction_model``.
+
+    Returns the cleaned list of event dicts (each with title, description,
+    location, occurrences, categories, image_index, etc.). Returns an
+    empty list on any failure — never raises so the pipeline can keep
+    processing the next post.
+    """
+    client = _client()
+    if client is None:
+        log.warning("OpenAI key not configured; skipping extraction for %s", school)
+        return []
+
+    tz_name = resolve_school_timezone(school)
+    try:
+        local_tz = ZoneInfo(tz_name)
+    except Exception:
+        # resolve_school_timezone falls back to "UTC" for unknown schools
+        # so this branch only fires if the IANA database is somehow missing
+        # the resolved zone — paranoid fallback to UTC.
+        local_tz = ZoneInfo("UTC")
+
+    now_local = datetime.now(local_tz)
+    if isinstance(post_created_at, datetime):
+        if post_created_at.tzinfo is None:
+            post_local = post_created_at.replace(tzinfo=local_tz)
+        else:
+            post_local = post_created_at.astimezone(local_tz)
+    else:
+        post_local = now_local
+
+    semester_end = current_semester_end(school, now=now_local)
+    semester_line = (
+        f"Current semester end date: {semester_end}\n" if semester_end else ""
+    )
+
+    categories_str = "\n".join(f"- {cat}" for cat in EVENT_CATEGORIES)
+    prompt = _build_prompt(
+        caption_text=caption_text,
+        image_urls=image_urls or [],
+        school=school,
+        local_tz_key=local_tz.key,
+        current_date=now_local.strftime("%Y-%m-%d"),
+        current_day=now_local.strftime("%A"),
+        post_date=post_local.strftime("%Y-%m-%d"),
+        post_day=post_local.strftime("%A"),
+        post_time=post_local.strftime("%H:%M"),
+        semester_line=semester_line,
+        categories_str=categories_str,
+    )
+
+    user_content: list[dict] = [{"type": "text", "text": prompt}]
+    valid_urls = [u for u in (image_urls or []) if u]
+    # Inline ``Image N:`` text markers before each image_url block.
+    # See module docstring — preserving this is a hard requirement.
+    for i, url in enumerate(valid_urls):
+        user_content.append({"type": "text", "text": f"Image {i}:"})
+        user_content.append({"type": "image_url", "image_url": {"url": url}})
+
+    messages = [
+        {"role": "system", "content": _SYSTEM_MESSAGE},
+        {"role": "user", "content": user_content},
+    ]
+
+    try:
+        response = client.chat.completions.create(
+            model=model or settings.openai_extraction_model,
+            messages=messages,
+        )
+    except Exception as e:
+        log.exception("OpenAI extraction call failed: %s", e)
+        return []
+
+    raw = (response.choices[0].message.content or "").strip()
+    if raw.startswith("```json"):
+        raw = raw[len("```json"):]
+    if raw.endswith("```"):
+        raw = raw[: -len("```")]
+    raw = raw.strip()
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        log.warning("Extractor returned non-JSON text (len=%d): %s", len(raw), raw[:200])
+        return []
+
+    events = parsed if isinstance(parsed, list) else []
+    return [_clean_event(e) for e in events if isinstance(e, dict)]
+
+
+def _build_prompt(
+    *,
+    caption_text: str | None,
+    image_urls: list[str],
+    school: str,
+    local_tz_key: str,
+    current_date: str,
+    current_day: str,
+    post_date: str,
+    post_day: str,
+    post_time: str,
+    semester_line: str,
+    categories_str: str,
+) -> str:
+    """Assemble the extraction prompt.
+
+    Kept verbose / faithful to v1 — the Instagram-caption phrasing this
+    handles is irregular enough that aggressive trimming has historically
+    caused regressions in date inference and price parsing.
+    """
+    image_list_str = (
+        "\n".join(f"Image {i}: {url}" for i, url in enumerate(image_urls))
+        if image_urls
+        else "No images provided."
+    )
+
+    return f"""
+Analyze the following Instagram caption and list of images. Extract event information if it's an event post.
+
+School context: This post is from {school}. Use this to guide location and timezone decisions.
+Current context: Today is {current_day}, {current_date}
+Post was created on: {post_day}, {post_date} at {post_time}
+{semester_line}
+Caption: {caption_text or ''}
+
+Images (0-indexed):
+{image_list_str}
+
+STRICT CONTENT POLICY:
+- ONLY extract an event if the post is clearly announcing or describing a real-world event.
+- Ideally, the post should have BOTH a specific date AND a specific start time.
+- EXCEPTION: For major events (e.g., full-day, multi-day, overnight), you MAY extract the event even if a specific start time is not explicitly stated, provided there is a specific DATE or date range.
+- For these major events ONLY, if no time is given, you may default the start time to 00:00 (midnight) or a logical start time implied by the context.
+- DO NOT extract an event if:
+    * The post is a meme, personal photo dump, or generic post with no time/place.
+    * The post is inappropriate (nudity, explicit sexual content, or graphic violence).
+    * There is NO mention of a date at all.
+    * The post only introduces people or some topic, UNLESS there is a clear call to attend or participate in an actual event (such as a meeting, workshop, performance, or competition).
+
+If you determine that there is NO event in the post, return the JSON value: null (not an object, not an array, just the literal null). Otherwise, return an array of JSON objects with ALL of the following fields:
+{{
+    "title": string,
+    "description": string,
+    "location": string,
+    "organization": string,
+    "price": number or null,
+    "food": string,
+    "registration": boolean,
+    "image_index": integer,
+    "occurrences": [
+        {{
+            "dtstart_utc": string,  // UTC start "YYYY-MM-DDTHH:MM:SSZ"
+            "dtend_utc": string,    // UTC end "YYYY-MM-DDTHH:MM:SSZ" or empty string if unknown
+            "duration": string,     // "HH:MM:SS" or empty string if unknown
+            "tz": string            // Timezone name like "{local_tz_key}"; use the post's timezone context
+        }}
+    ],
+    "school": string,
+    "categories": list  // one or more of the following, as a JSON array of strings: {categories_str}
+}}
+
+IMAGE MAPPING RULES:
+- You are provided with a list of images.
+- For each extracted event, identify which specific image contains the relevant details (e.g., date/time/location).
+- Set "image_index" to the 0-based index of that image.
+- Otherwise, set "image_index": 0.
+
+OCCURRENCE RULES (CRITICAL):
+- Every event MUST include at least one occurrence with a concrete UTC start time.
+- Return explicit dates and times that correspond to events as separate entries in the occurrences array.
+- DO NOT include registration, signup, RSVP, or application deadlines as occurrences.
+- Do NOT infer or compress recurrence patterns. List each event date/time exactly as given.
+- Always convert local times to UTC. The JSON must use ISO 8601 format with a trailing "Z" (e.g., "2025-11-05T22:00:00Z").
+- If an end time is not provided, leave "dtend_utc" as an empty string.
+- If duration is not explicitly available, leave "duration" as an empty string.
+- Use the timezone context from the caption/image (default to "{local_tz_key}" for {school}) for the "tz" field.
+
+ADDITIONAL RULES:
+- Prioritize caption text; use image text if missing details.
+- Title-case event titles.
+- For "organization": this is the club / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Club"); if none is named, use the Instagram handle as a fallback.
+- If year not found, infer the NEXT occurrence of that date relative to the post creation date ({post_date}). If end time < start time (e.g., 7pm-12am), set end to the next day.
+- When no explicit date is found but there are relative terms like "tonight", "tomorrow", interpret these relative to the POST CREATION DATE ({post_date}).
+- For location: Use the exact location as stated in the caption or image. If the location is a building or room on campus, use only that (e.g., "SLC 3223", "DC Library"). Include city/province if the event is off-campus and the address is provided.
+- For price: REGISTRATION COST ONLY. Prefer non-member / general admission price if multiple are listed. Free events are 0.0. Use null if price is not mentioned.
+- For food: Only set this field if the post says food or drinks will be served, provided, or available for attendees. Specific items: comma-separated, capitalize the first only (e.g., "Pizza, bubble tea"). Generic mention of food: "Yes!". No mention: empty string.
+- For registration: only true if there is a clear instruction to register, RSVP, or sign up.
+- For description: caption text word-for-word. If empty, use image text.
+- If information is not available, use empty string for strings, null for price, and false for booleans.
+- Return ONLY the JSON array text, no extra commentary.
+"""
+
+
+def _clean_event(event: dict) -> dict:
+    """Apply the v1 normalisation rules to one extracted event dict.
+
+    Idempotent — running this twice on the same input is a no-op. The
+    pipeline depends on this for safety after JSON parsing of arbitrary
+    model output.
+    """
+    defaults: dict[str, object] = {
+        "title": "",
+        "description": "",
+        "location": "",
+        "organization": "",
+        "price": None,
+        "food": "",
+        "registration": False,
+        "image_index": 0,
+        "occurrences": [],
+        "school": "",
+        "categories": [],
+    }
+    for key, fallback in defaults.items():
+        if key not in event or event.get(key) is None and key not in ("price",):
+            # ``price`` legitimately stays None when free-event detection
+            # below decides nothing — every other field gets a typed default.
+            if key == "price" and "price" in event:
+                continue
+            event[key] = fallback
+
+    # Free-event coercion — if the price came back null but the post text
+    # mentions "free", set 0.0. Mirrors v1's behaviour.
+    if event.get("price") is None:
+        haystack = " ".join(
+            str(event.get(k) or "") for k in ("description", "food")
+        ).lower()
+        if "free" in haystack:
+            event["price"] = 0.0
+
+    if not isinstance(event.get("categories"), list):
+        cat = event["categories"]
+        event["categories"] = [str(cat)] if cat else []
+
+    occurrences = event.get("occurrences") or []
+    cleaned_occ: list[dict] = []
+    if isinstance(occurrences, list):
+        for occ in occurrences:
+            if not isinstance(occ, dict):
+                continue
+            cleaned_occ.append({
+                "dtstart_utc": occ.get("dtstart_utc", "") or "",
+                "dtend_utc": occ.get("dtend_utc", "") or "",
+                "duration": occ.get("duration", "") or "",
+                "tz": occ.get("tz", "") or "",
+            })
+    cleaned_occ.sort(key=lambda x: x.get("dtstart_utc", ""))
+    event["occurrences"] = cleaned_occ
+    return event

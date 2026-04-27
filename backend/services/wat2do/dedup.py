@@ -1,0 +1,274 @@
+"""Duplicate-event detection for the scraping pipeline.
+
+Ports v1's ``EventDuplicateDetector`` (utils/scraping_utils.py) to v2's
+Supabase client. Thresholds match v1 — see SCRAPING_*_THRESHOLD constants
+in ``core/constants.py`` and the rationale comment there.
+
+The detector exposes one public method, ``find_match``, returning either
+None or an existing-event row. Callers (event_writer) decide whether to
+treat the match as a same-club update vs. a cross-club duplicate.
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+from datetime import datetime, timedelta, timezone
+from difflib import SequenceMatcher
+from typing import Iterable
+
+from core.constants import (
+    SCRAPING_DESCRIPTION_SIMILARITY_THRESHOLD,
+    SCRAPING_LOCATION_SIMILARITY_THRESHOLD,
+    SCRAPING_SAME_CLUB_TITLE_THRESHOLD,
+    SCRAPING_TITLE_SIMILARITY_THRESHOLD,
+)
+from core.database import get_sb
+from core.tables import EVENTS
+
+log = logging.getLogger(__name__)
+
+
+def normalize(s: str) -> str:
+    """Lowercase + strip non-alphanumeric — used for substring duplicate checks."""
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def jaccard_similarity(a: str, b: str) -> float:
+    """Word-set Jaccard similarity. Empty strings -> 0.0."""
+    set_a = set(re.findall(r"\w+", (a or "").lower()))
+    set_b = set(re.findall(r"\w+", (b or "").lower()))
+    if not set_a or not set_b:
+        return 0.0
+    return len(set_a & set_b) / len(set_a | set_b)
+
+
+def sequence_similarity(a: str, b: str) -> float:
+    """SequenceMatcher ratio (case-insensitive)."""
+    return SequenceMatcher(None, (a or "").lower(), (b or "").lower()).ratio()
+
+
+def title_similarity(a: str, b: str) -> float:
+    """Combined title similarity — max of Jaccard and SequenceMatcher.
+
+    v1 takes the max so both word-overlap titles ("Movie Night Friday" vs
+    "Friday Movie Night") and reordered-but-similar titles match.
+    """
+    return max(jaccard_similarity(a, b), sequence_similarity(a, b))
+
+
+class MatchResult:
+    """Result of a dedup lookup.
+
+    ``kind`` is one of:
+      * ``same_club`` — caller should UPDATE the existing event
+        (location/dates/etc) and refresh ``added_at``.
+      * ``duplicate`` — caller should SKIP the insert (some other club
+        already has this event on the same day, or location-based match).
+    """
+
+    __slots__ = ("kind", "event")
+
+    def __init__(self, kind: str, event: dict):
+        self.kind = kind
+        self.event = event
+
+
+def find_match(
+    *,
+    title: str,
+    location: str,
+    description: str,
+    occurrences: list[dict],
+    ig_handle: str | None,
+) -> MatchResult | None:
+    """Return a match for the given event, or None.
+
+    Two-stage check (matches v1):
+        1. Same-club update — any event from the same ``ig_handle`` whose
+           latest occurrence is in the future and whose title is >0.8
+           similar.
+        2. Same-day duplicate — any event whose ``dtstart_utc`` falls on
+           the same UTC day as the candidate's first occurrence and
+           passes the location/description/title threshold gauntlet.
+
+    ``occurrences`` is the extractor's output shape. Empty / missing
+    first-occurrence start time means no match (we cannot compare).
+    """
+    if not occurrences:
+        return None
+    target_start = _parse_iso8601_utc(occurrences[0].get("dtstart_utc"))
+    if target_start is None:
+        return None
+
+    same_club = _check_same_club_update(
+        ig_handle=ig_handle, candidate_title=title,
+    )
+    if same_club is not None:
+        return MatchResult("same_club", same_club)
+
+    same_day = _check_same_day_duplicate(
+        target_start=target_start,
+        candidate_title=title,
+        candidate_location=location,
+        candidate_description=description,
+    )
+    if same_day is not None:
+        return MatchResult("duplicate", same_day)
+
+    return None
+
+
+def _parse_iso8601_utc(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        # Python's ``fromisoformat`` accepts the trailing ``Z`` from 3.11+
+        # but we still normalise for older interpreters / extractor quirks.
+        cleaned = value.replace("Z", "+00:00") if value.endswith("Z") else value
+        dt = datetime.fromisoformat(cleaned)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _check_same_club_update(
+    *,
+    ig_handle: str | None,
+    candidate_title: str,
+) -> dict | None:
+    """Return an existing event from the same club whose title is too similar."""
+    if not ig_handle:
+        return None
+
+    rows = (
+        get_sb()
+        .table(EVENTS)
+        .select("id,title,ig_handle,location,description,dtstart_utc,dtend_utc")
+        .eq("ig_handle", ig_handle)
+        .execute()
+    ).data or []
+
+    now = datetime.now(timezone.utc)
+    for row in rows:
+        # Skip past events — a same-named event in the past is a new
+        # occurrence of a recurring series, not an update.
+        end = _parse_iso8601_utc(row.get("dtend_utc")) or _parse_iso8601_utc(
+            row.get("dtstart_utc")
+        )
+        if end is None or end < now:
+            continue
+
+        if title_similarity(row.get("title") or "", candidate_title) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD:
+            log.info(
+                "Same-club update candidate: %r matches existing event id=%s (%r)",
+                candidate_title, row.get("id"), row.get("title"),
+            )
+            return row
+    return None
+
+
+def _check_same_day_duplicate(
+    *,
+    target_start: datetime,
+    candidate_title: str,
+    candidate_location: str,
+    candidate_description: str,
+) -> dict | None:
+    """Return an existing event on the same UTC day that fails the duplicate gauntlet."""
+    day_start = target_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = day_start + timedelta(days=1)
+
+    rows = (
+        get_sb()
+        .table(EVENTS)
+        .select("id,title,ig_handle,location,description,dtstart_utc")
+        .gte("dtstart_utc", day_start.isoformat())
+        .lt("dtstart_utc", day_end.isoformat())
+        .execute()
+    ).data or []
+
+    norm_candidate_title = normalize(candidate_title)
+
+    for row in rows:
+        existing_title = row.get("title") or ""
+        existing_location = row.get("location") or ""
+        existing_description = row.get("description") or ""
+
+        loc_sim = jaccard_similarity(existing_location, candidate_location)
+        substring_match = (
+            normalize(existing_title) in norm_candidate_title
+            or norm_candidate_title in normalize(existing_title)
+        )
+
+        if substring_match:
+            if loc_sim > SCRAPING_LOCATION_SIMILARITY_THRESHOLD:
+                return row
+            # Substring match without location overlap — different events
+            # that just share a word.  Keep checking other rows.
+            continue
+
+        title_sim = title_similarity(existing_title, candidate_title)
+        desc_sim = jaccard_similarity(existing_description, candidate_description)
+
+        title_and_loc = (
+            title_sim > SCRAPING_TITLE_SIMILARITY_THRESHOLD
+            and loc_sim > SCRAPING_LOCATION_SIMILARITY_THRESHOLD
+        )
+        loc_and_desc = (
+            loc_sim > SCRAPING_LOCATION_SIMILARITY_THRESHOLD
+            and desc_sim > SCRAPING_DESCRIPTION_SIMILARITY_THRESHOLD
+        )
+
+        if title_and_loc or loc_and_desc:
+            return row
+
+    return None
+
+
+def existing_shortcodes(source_urls: Iterable[str]) -> set[str]:
+    """Return the set of shortcodes already present in the events table.
+
+    Used by the pipeline's filter stage to skip posts we have already
+    processed. The shortcode is the last URL segment of an Instagram
+    post URL (e.g. for ``https://www.instagram.com/p/AbCDeF1/`` it is
+    ``AbCDeF1``).
+    """
+    rows = (
+        get_sb()
+        .table(EVENTS)
+        .select("source_url")
+        .not_.is_("source_url", "null")
+        .execute()
+    ).data or []
+
+    seen: set[str] = set()
+    for row in rows:
+        url = row.get("source_url")
+        if not url:
+            continue
+        shortcode = _extract_shortcode(url)
+        if shortcode:
+            seen.add(shortcode)
+    # ``source_urls`` is an in-pipeline iterable we use only to constrain
+    # the response shape; we still return the global set so the caller
+    # can drop any shortcode regardless of the filter list.
+    _ = source_urls
+    return seen
+
+
+def _extract_shortcode(source_url: str) -> str | None:
+    """Pull the post shortcode out of an Instagram URL.
+
+    Examples:
+        https://www.instagram.com/p/AbCDeF1/  -> "AbCDeF1"
+        https://instagram.com/reel/XYZ7/      -> "XYZ7"
+    """
+    if not source_url:
+        return None
+    parts = [p for p in source_url.split("/") if p]
+    if not parts:
+        return None
+    return parts[-1]

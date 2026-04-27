@@ -15,6 +15,20 @@ ALLOWED_EMAIL_DOMAINS: dict[str, str] = {
     "mylaurier.ca": "Wilfrid Laurier University",
     "uoguelph.ca": "University of Guelph",
     "conestogac.on.ca": "Conestoga College",
+    # Audit Phase 1 added these four schools to the in-scope list.  Domains
+    # are the institution's primary student domains; broaden as needed when
+    # a real user signup hits a sub-domain (e.g. ``seas.upenn.edu``) — every
+    # added domain must keep mapping to the same canonical school name so
+    # ``SCHOOL_TIMEZONES`` lookups resolve.
+    "upenn.edu": "University of Pennsylvania",
+    "seas.upenn.edu": "University of Pennsylvania",
+    "wharton.upenn.edu": "University of Pennsylvania",
+    "nyu.edu": "New York University",
+    "stern.nyu.edu": "New York University",
+    "columbia.edu": "Columbia University",
+    "cumc.columbia.edu": "Columbia University",
+    "barnard.edu": "Columbia University",
+    "mit.edu": "Massachusetts Institute of Technology",
 }
 
 

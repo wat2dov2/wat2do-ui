@@ -346,6 +346,10 @@ SCHOOL_TIMEZONES: dict[str, str] = {
     "wilfrid laurier university": "America/Toronto",
     "university of guelph": "America/Toronto",
     "conestoga college": "America/Toronto",
+    "university of pennsylvania": "America/New_York",
+    "new york university": "America/New_York",
+    "columbia university": "America/New_York",
+    "massachusetts institute of technology": "America/New_York",
 }
 
 # Common user-typed variants of school names that map to a canonical
@@ -360,7 +364,99 @@ SCHOOL_ALIASES: dict[str, str] = {
     "wlu": "wilfrid laurier university",
     "guelph": "university of guelph",
     "conestoga": "conestoga college",
+    "upenn": "university of pennsylvania",
+    "penn": "university of pennsylvania",
+    "nyu": "new york university",
+    "columbia": "columbia university",
+    "mit": "massachusetts institute of technology",
 }
+
+# Per-school semester end times (Fall, Winter/Spring, Summer) in UTC,
+# format YYYYMMDDTHHMMSSZ.  Indexed lookup via ``current_semester_end``:
+#   month in 1..4 -> index 1 (Winter/Spring)
+#   month in 5..8 -> index 2 (Summer)
+#   else (9..12)  -> index 0 (Fall)
+#
+# Used by the scraping pipeline (services/wat2do/extractor.py) to give
+# the OpenAI model a concrete "semester end" anchor when interpreting
+# vague dates like "next month" in Instagram captions.  When a school is
+# added to SCHOOL_TIMEZONES, add its semester ends here in the same change.
+SCHOOL_SEMESTER_ENDS: dict[str, tuple[str, str, str]] = {
+    "university of waterloo": (
+        "20251231T235959Z",  # Fall ends Dec 31
+        "20260430T235959Z",  # Winter ends Apr 30
+        "20260831T235959Z",  # Summer ends Aug 31
+    ),
+    "wilfrid laurier university": (
+        "20251231T235959Z",
+        "20260430T235959Z",
+        "20260831T235959Z",
+    ),
+    "university of guelph": (
+        "20251231T235959Z",
+        "20260430T235959Z",
+        "20260831T235959Z",
+    ),
+    "conestoga college": (
+        "20251231T235959Z",
+        "20260430T235959Z",
+        "20260831T235959Z",
+    ),
+    "university of pennsylvania": (
+        "20251231T235959Z",
+        "20260531T235959Z",  # Spring ends May 31 (Penn)
+        "20260831T235959Z",
+    ),
+    "new york university": (
+        "20251231T235959Z",
+        "20260531T235959Z",
+        "20260831T235959Z",
+    ),
+    "columbia university": (
+        "20251231T235959Z",
+        "20260531T235959Z",
+        "20260831T235959Z",
+    ),
+    "massachusetts institute of technology": (
+        "20251231T235959Z",
+        "20260531T235959Z",
+        "20260831T235959Z",
+    ),
+}
+
+# ---------------------------------------------------------------------------
+# Scraping pipeline (services/wat2do)
+# ---------------------------------------------------------------------------
+# Apify caps each Instagram-post-scraper actor run at one batch of usernames
+# with a single timeout.  Splitting a big handle list into chunks of 100 is
+# what v1's ``main_big_scrape.py`` settled on after the timeout regressions
+# documented in commit ee1a954 (1-hour timeout per chunk).
+SCRAPING_HANDLES_PER_RUN = 100
+# 1-hour ceiling per Apify run (matches v1 behaviour).
+SCRAPING_APIFY_TIMEOUT_SECONDS = 3600
+# Default look-back window for batch scrapes; CLI flag overrides.
+SCRAPING_DEFAULT_CUTOFF_DAYS = 4
+# Single-user mode look-back when ``IGNORE_CUTOFF`` env is unset.
+SCRAPING_SINGLE_USER_CUTOFF_DAYS = 1
+# Apify run-status poll interval while waiting for completion.
+SCRAPING_POLL_INTERVAL_SECONDS = 5
+# Duplicate-detection thresholds.  Match v1 (utils/scraping_utils.py) so a
+# regression here is visible in side-by-side comparisons of the two pipelines.
+SCRAPING_SAME_CLUB_TITLE_THRESHOLD = 0.8
+SCRAPING_TITLE_SIMILARITY_THRESHOLD = 0.7
+SCRAPING_LOCATION_SIMILARITY_THRESHOLD = 0.5
+SCRAPING_DESCRIPTION_SIMILARITY_THRESHOLD = 0.3
+# ScrapeRun status values.
+SCRAPE_RUN_RUNNING: Final = "running"
+SCRAPE_RUN_SUCCESS: Final = "success"
+SCRAPE_RUN_ERROR: Final = "error"
+SCRAPE_RUN_NO_POSTS: Final = "no_posts"
+SCRAPE_RUN_STATUSES = (
+    SCRAPE_RUN_RUNNING,
+    SCRAPE_RUN_SUCCESS,
+    SCRAPE_RUN_ERROR,
+    SCRAPE_RUN_NO_POSTS,
+)
 
 # ---------------------------------------------------------------------------
 # PostgreSQL error codes (used by error_handlers and service-level catches)

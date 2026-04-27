@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     openai_timeout: int = 15
     openai_temperature_precise: float = 0.3
     openai_temperature_creative: float = 0.7
+    # Apify token for the Instagram scraper (services/wat2do).
+    # Empty string => the scraping pipeline raises at startup.  Set in
+    # GitHub repo secrets for the big-scrape and process-single-user workflows.
+    apify_api_token: str = ""
+    # OpenAI model used for vision-based event extraction in services/wat2do.
+    # Kept separate from ``openai_model`` so we can swap the extraction model
+    # (vision-capable) without affecting non-vision call sites.
+    openai_extraction_model: str = "gpt-4o-mini"
     # Set CORS_ORIGINS env var as a JSON list for production,
     # e.g. CORS_ORIGINS=["https://wat2do.app","https://www.wat2do.app"]
     cors_origins: list[str] = _DEV_ORIGINS
