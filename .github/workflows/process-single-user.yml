@@ -1,0 +1,93 @@
+name: Process Single User
+run-name: Process @${{ github.event.client_payload.username || inputs.username }}
+
+# One-off scrape of a single Instagram handle.
+# Triggered either manually (workflow_dispatch) or by an external service
+# posting to repository_dispatch with type=new_instagram_post.
+#
+# When triggered manually, IGNORE_CUTOFF=true makes services/wat2do walk
+# back five years instead of one day so an admin can backfill an account
+# that hasn't been scraped before.
+
+on:
+  repository_dispatch:
+    types: [new_instagram_post]
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'Instagram username to process'
+        required: true
+        type: string
+      school:
+        description: 'School the handle belongs to (controls timezone + semester context)'
+        required: true
+        type: choice
+        default: 'University of Waterloo'
+        options:
+          - 'University of Waterloo'
+          - 'University of Pennsylvania'
+          - 'New York University'
+          - 'Columbia University'
+          - 'Massachusetts Institute of Technology'
+
+jobs:
+  process-post:
+    runs-on: ubuntu-latest
+    # Serialize Apify runs across this repo so we don't hit concurrent
+    # rate limits when an external dispatcher fires several times in
+    # quick succession.
+    concurrency:
+      group: apify-scrape-group
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    env:
+      ENVIRONMENT: production
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+      # services/wat2do reads these — TARGET_USERNAME triggers single-user
+      # mode in jobs/scrape.py; IGNORE_CUTOFF widens the look-back to five
+      # years for manual dispatches.
+      TARGET_USERNAME: ${{ github.event.client_payload.username || inputs.username }}
+      IGNORE_CUTOFF: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+      SCHOOL: ${{ github.event.client_payload.school || inputs.school || 'University of Waterloo' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install --prefer-binary -r requirements.txt
+
+      - name: Run scraper for single user
+        working-directory: backend
+        run: |
+          mkdir -p logs
+          set -o pipefail
+          python -u jobs/scrape.py 2>&1 | tee logs/scraping.log
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: single-user-logs-${{ github.run_number }}
+          path: backend/logs/scraping.log
+          if-no-files-found: 'ignore'

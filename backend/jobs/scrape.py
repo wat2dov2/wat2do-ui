@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Scraping job entry point.
 
 Two invocation modes, distinguished by environment + arguments:
@@ -11,8 +12,13 @@ Two invocation modes, distinguished by environment + arguments:
    ``SCRAPING_HANDLES_PER_RUN`` per Apify run. Used by
    ``.github/workflows/big-scrape.yml``.
 
-Both modes write their summary to stdout and exit 0 on success / 1 on
-failure (so the workflow's ``Summary`` step can capture the log).
+Usage:
+    cd backend
+    python jobs/scrape.py --urls-file services/wat2do/urls/uwaterloo.txt \\
+        --school "University of Waterloo" --limit 100 --cutoff-days 4 --dry-run
+
+Both modes write a one-line summary to stdout and exit 0 on success /
+1 on failure so the workflow can grep the log.
 """
 
 from __future__ import annotations
@@ -23,12 +29,23 @@ import os
 import sys
 from pathlib import Path
 
-from core.constants import (
+# Add backend root to path so service imports resolve when invoked as a
+# script from inside backend/. Mirrors the pattern in
+# jobs/compute_recommendations.py and jobs/send_notifications.py.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+import core.logging  # noqa: F401, E402  — triggers basicConfig for standalone execution
+
+from core.constants import (  # noqa: E402
     SCRAPING_DEFAULT_CUTOFF_DAYS,
     SCRAPING_HANDLES_PER_RUN,
     SCRAPING_SINGLE_USER_CUTOFF_DAYS,
 )
-from services.wat2do.pipeline import run_pipeline
+from services.wat2do.pipeline import run_pipeline  # noqa: E402
 
 log = logging.getLogger(__name__)
 
