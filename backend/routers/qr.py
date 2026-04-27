@@ -6,7 +6,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from core.auth import get_authorized_resource, get_db_user, is_admin
+from core.auth import get_admin_user, get_authorized_resource, get_db_user
 from schemas.user import UserResponse
 from core.constants import MAX_SESSION_ID_LENGTH, MAX_USER_AGENT_LENGTH
 
@@ -30,19 +30,19 @@ def _get_poster_or_404_authorized(qr_code_id: str, db_user: UserResponse) -> QrC
 @router.get("/", response_model=PaginatedResponse[QrCodeResponse])
 def list_qr_codes(
     pagination: PaginationParams = Depends(),
-    db_user: UserResponse = Depends(get_db_user),
+    _admin: UserResponse = Depends(get_admin_user),
 ):
-    if is_admin(db_user):
-        items, total = qr_code_service.list_qr_codes(
-            offset=pagination.offset,
-            limit=pagination.page_size,
-        )
-    else:
-        items, total = qr_code_service.list_qr_codes(
-            created_by=str(db_user.id),
-            offset=pagination.offset,
-            limit=pagination.page_size,
-        )
+    """List QR codes — admin-only.
+
+    QR codes are an admin-managed promotional surface; non-admins must
+    not be able to enumerate them, see other admins' codes, or learn the
+    naming scheme via this endpoint. Use the public scan endpoint
+    (``GET /qr/{id}``) for end-user redirects.
+    """
+    items, total = qr_code_service.list_qr_codes(
+        offset=pagination.offset,
+        limit=pagination.page_size,
+    )
     return paginated_response(items, total, pagination)
 
 
@@ -52,14 +52,14 @@ def list_scans(
     from_time: datetime | None = Query(None, description="Scans from this time (inclusive)"),
     to_time: datetime | None = Query(None, description="Scans until this time (inclusive)"),
     pagination: PaginationParams = Depends(),
-    db_user: UserResponse = Depends(get_db_user),
+    _admin: UserResponse = Depends(get_admin_user),
 ):
-    owned_by = None if is_admin(db_user) else str(db_user.id)
+    """List QR-code scan events — admin-only (analytics surface)."""
     items, total = qr_code_service.list_scans(
         qr_code_id=qr_code_id,
         from_time=from_time,
         to_time=to_time,
-        owned_by=owned_by,
+        owned_by=None,
         offset=pagination.offset,
         limit=pagination.page_size,
     )
@@ -93,24 +93,28 @@ def resolve_qr_and_record_scan(
 @router.post("/", response_model=QrCodeResponse, status_code=status.HTTP_201_CREATED)
 def create_poster(
     data: QrCodeCreate,
-    db_user: UserResponse = Depends(get_db_user),
+    admin: UserResponse = Depends(get_admin_user),
 ):
-    # INSERT-only: if the id already exists, create_qr_code raises
-    # ConflictError -> 409.  Previously this was an upsert which allowed
-    # any authenticated user to hijack an existing poster by guessing its
-    # id and reposting with their own destination_id.
-    return qr_code_service.create_qr_code(data, created_by=str(db_user.id))
+    """Create a QR code — admin-only.
+
+    INSERT-only: if the id already exists, ``create_qr_code`` raises
+    ConflictError -> 409. Previously this was an upsert which allowed
+    any authenticated user to hijack an existing poster by guessing its
+    id and reposting with their own destination_id.
+    """
+    return qr_code_service.create_qr_code(data, created_by=str(admin.id))
 
 
 @router.patch("/{qr_code_id}", response_model=QrCodeResponse)
 def update_poster(
     qr_code_id: str,
     data: QrCodeCreate,
-    db_user: UserResponse = Depends(get_db_user),
+    admin: UserResponse = Depends(get_admin_user),
 ):
+    """Update a QR code — admin-only."""
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
-    existing = _get_poster_or_404_authorized(qr_code_id, db_user)
+    existing = _get_poster_or_404_authorized(qr_code_id, admin)
     # Pass the trusted original created_by so a PATCH body cannot
     # transfer ownership to a different user.
     return qr_code_service.update_qr_code(data, created_by=existing.created_by)
@@ -119,7 +123,8 @@ def update_poster(
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_poster(
     qr_code_id: str,
-    db_user: UserResponse = Depends(get_db_user),
+    admin: UserResponse = Depends(get_admin_user),
 ):
-    _get_poster_or_404_authorized(qr_code_id, db_user)
+    """Delete a QR code — admin-only."""
+    _get_poster_or_404_authorized(qr_code_id, admin)
     qr_code_service.delete_qr_code(qr_code_id)

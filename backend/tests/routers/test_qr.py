@@ -144,13 +144,17 @@ def test_resolve_inactive_qr_with_location_activates_and_returns_config(client):
 # ── Ownership tests ─────────────────────────────────────────────────────
 
 
-def test_create_poster_sets_created_by(authenticated_client, monkeypatch):
-    """create_poster overrides created_by with the authenticated user's ID."""
+def test_create_poster_sets_created_by(admin_client, monkeypatch):
+    """create_poster overrides created_by with the authenticated admin's ID.
+
+    QR creation is admin-only (Phase 4 lockdown); the trusted ``created_by``
+    is the admin's internal id regardless of what the request body says.
+    """
     qr = _mock_qr()
     mock_create = MagicMock(return_value=qr)
     monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
 
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "test-qr",
@@ -161,15 +165,15 @@ def test_create_poster_sets_created_by(authenticated_client, monkeypatch):
     )
     assert resp.status_code == 201
     _, kwargs = mock_create.call_args
-    assert kwargs["created_by"] == FAKE_USER["id"]
+    assert kwargs["created_by"] == ADMIN_USER["id"]
 
 
 # ── URL validation for custom-url destination type ─────────────────────
 
 
-def test_create_poster_rejects_javascript_url(authenticated_client):
+def test_create_poster_rejects_javascript_url(admin_client):
     """POST /qr/ with javascript: URL returns 422."""
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "xss-qr",
@@ -182,9 +186,9 @@ def test_create_poster_rejects_javascript_url(authenticated_client):
     assert resp.status_code == 422
 
 
-def test_create_poster_rejects_data_url(authenticated_client):
+def test_create_poster_rejects_data_url(admin_client):
     """POST /qr/ with data: URL returns 422."""
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "data-qr",
@@ -197,13 +201,13 @@ def test_create_poster_rejects_data_url(authenticated_client):
     assert resp.status_code == 422
 
 
-def test_create_poster_accepts_https_url(authenticated_client, monkeypatch):
+def test_create_poster_accepts_https_url(admin_client, monkeypatch):
     """POST /qr/ with a valid https URL succeeds."""
     qr = _mock_qr(destination_id="https://example.com")
     mock_create = MagicMock(return_value=qr)
     monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
 
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "safe-qr",
@@ -216,14 +220,12 @@ def test_create_poster_accepts_https_url(authenticated_client, monkeypatch):
     assert resp.status_code == 201
 
 
-def test_update_poster_rejects_javascript_url(authenticated_client, monkeypatch):
+def test_update_poster_rejects_javascript_url(admin_client, monkeypatch):
     """PATCH /qr/{id} with javascript: URL returns 422."""
     existing = _mock_qr(created_by=FAKE_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
 
-    from services import user_service
-
-    resp = authenticated_client.patch(
+    resp = admin_client.patch(
         "/qr/test-qr",
         json={
             "id": "test-qr",
@@ -236,13 +238,13 @@ def test_update_poster_rejects_javascript_url(authenticated_client, monkeypatch)
     assert resp.status_code == 422
 
 
-def test_create_poster_allows_custom_url_without_destination_id(authenticated_client, monkeypatch):
+def test_create_poster_allows_custom_url_without_destination_id(admin_client, monkeypatch):
     """POST /qr/ with custom-url but no destination_id (null) is allowed."""
     qr = _mock_qr()
     mock_create = MagicMock(return_value=qr)
     monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
 
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "null-url-qr",
@@ -258,13 +260,15 @@ def test_create_poster_allows_custom_url_without_destination_id(authenticated_cl
 # ── Regression: audit U5 — POST must not allow hijacking an existing poster ──
 
 
-def test_create_poster_refuses_to_hijack_existing_id(authenticated_client, monkeypatch):
+def test_create_poster_refuses_to_hijack_existing_id(admin_client, monkeypatch):
     """POST /qr/ with an id that already exists returns 409, not silent upsert.
 
     Audit U5: previously this handler called ``upsert_qr_code`` which did
-    a blind update if the row existed.  Any authenticated user could
-    guess / observe another user's poster id and POST a new destination
-    to hijack it.  The fix splits create vs update — POST inserts only.
+    a blind update if the row existed.  Any caller could guess / observe
+    another poster id and POST a new destination to hijack it.  The fix
+    splits create vs update — POST inserts only.  The admin-only lockdown
+    (Phase 4) further narrows the attack surface but the 409 guard stays
+    independent of role since two admins could race on the same id.
     """
     existing = _mock_qr(id="victim-qr", created_by=OTHER_USER["id"])
     # create_qr_code performs the existence check itself by calling
@@ -273,7 +277,7 @@ def test_create_poster_refuses_to_hijack_existing_id(authenticated_client, monke
         qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing),
     )
 
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "victim-qr",
@@ -289,9 +293,9 @@ def test_create_poster_refuses_to_hijack_existing_id(authenticated_client, monke
 # ── Regression: audit U11 — QrCodeCreate field size caps ───────────────
 
 
-def test_create_poster_rejects_oversized_name(authenticated_client):
+def test_create_poster_rejects_oversized_name(admin_client):
     """POST /qr/ with a 10 MB name is rejected by Pydantic (422)."""
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "normal-id",
@@ -303,9 +307,9 @@ def test_create_poster_rejects_oversized_name(authenticated_client):
     assert resp.status_code == 422
 
 
-def test_create_poster_rejects_oversized_description(authenticated_client):
+def test_create_poster_rejects_oversized_description(admin_client):
     """POST /qr/ with a huge description is rejected (422)."""
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "normal-id",
@@ -318,9 +322,9 @@ def test_create_poster_rejects_oversized_description(authenticated_client):
     assert resp.status_code == 422
 
 
-def test_create_poster_rejects_oversized_id(authenticated_client):
+def test_create_poster_rejects_oversized_id(admin_client):
     """POST /qr/ with a 100k-char id is rejected (422)."""
-    resp = authenticated_client.post(
+    resp = admin_client.post(
         "/qr/",
         json={
             "id": "x" * 100_000,
@@ -332,45 +336,57 @@ def test_create_poster_rejects_oversized_id(authenticated_client):
     assert resp.status_code == 422
 
 
-def test_update_poster_non_owner_rejected(other_user_client, monkeypatch):
-    """Non-owner cannot update a QR code."""
-    existing = _mock_qr(created_by=FAKE_USER["id"])
-    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+# ── Non-admin enforcement (Phase 4 lockdown) ────────────────────────────
 
-    from services import user_service
 
-    resp = other_user_client.patch(
-        "/qr/test-qr",
+def test_create_poster_non_admin_rejected(authenticated_client):
+    """POST /qr/ from a non-admin returns 403."""
+    resp = authenticated_client.post(
+        "/qr/",
         json={
-            "id": "test-qr",
-            "name": "Hacked",
+            "id": "non-admin-attempt",
+            "name": "Nope",
             "destination_type": "custom-url",
-            "created_by": OTHER_USER["id"],
+            "destination_id": "https://example.com",
         },
     )
     assert resp.status_code == 403
 
 
-def test_delete_poster_non_owner_rejected(other_user_client, monkeypatch):
-    """Non-owner cannot delete a QR code."""
-    existing = _mock_qr(created_by=FAKE_USER["id"])
-    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+def test_update_poster_non_admin_rejected(authenticated_client, monkeypatch):
+    """PATCH /qr/{id} from a non-admin returns 403, even on their own QR.
 
-    from services import user_service
-
-    resp = other_user_client.delete("/qr/test-qr")
+    Non-admins should never reach update — admin-only is checked before
+    ownership. The dependency rejects the request before the route body
+    runs, so the service layer is not exercised here.
+    """
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock())
+    resp = authenticated_client.patch(
+        "/qr/test-qr",
+        json={
+            "id": "test-qr",
+            "name": "Nope",
+            "destination_type": "custom-url",
+            "created_by": FAKE_USER["id"],
+        },
+    )
     assert resp.status_code == 403
 
 
-def test_delete_poster_owner_allowed(authenticated_client, monkeypatch):
-    """Owner can delete their own QR code."""
+def test_delete_poster_non_admin_rejected(authenticated_client, monkeypatch):
+    """DELETE /qr/{id} from a non-admin returns 403."""
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock())
+    resp = authenticated_client.delete("/qr/test-qr")
+    assert resp.status_code == 403
+
+
+def test_delete_poster_admin_allowed(admin_client, monkeypatch):
+    """Admin can delete a QR code."""
     existing = _mock_qr(created_by=FAKE_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
     monkeypatch.setattr(qr_code_service, "delete_qr_code", MagicMock())
 
-    from services import user_service
-
-    resp = authenticated_client.delete("/qr/test-qr")
+    resp = admin_client.delete("/qr/test-qr")
     assert resp.status_code == 204
 
 
@@ -410,22 +426,10 @@ def test_list_scans_requires_auth(client):
 # ── Admin sees all vs user sees own ─────────────────────────────────────
 
 
-def test_list_qr_codes_user_sees_own(authenticated_client, monkeypatch):
-    """Regular user only sees their own QR codes (created_by filter applied)."""
-    own_qr = [_mock_qr(created_by=FAKE_USER["id"])]
-    mock_list = MagicMock(return_value=(own_qr, 1))
-    monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
-
-    from services import user_service
-
+def test_list_qr_codes_non_admin_rejected(authenticated_client):
+    """GET /qr/ from a non-admin returns 403 (admin-only listing)."""
     resp = authenticated_client.get("/qr/")
-    assert resp.status_code == 200
-    body = resp.json()
-    assert len(body["items"]) == 1
-    assert body["total"] == 1
-    # Verify the service was called with the user's created_by filter
-    _, kwargs = mock_list.call_args
-    assert kwargs["created_by"] == FAKE_USER["id"]
+    assert resp.status_code == 403
 
 
 def test_list_qr_codes_admin_sees_all(admin_client, monkeypatch):
@@ -447,17 +451,10 @@ def test_list_qr_codes_admin_sees_all(admin_client, monkeypatch):
     assert "created_by" not in kwargs
 
 
-def test_list_scans_user_sees_own(authenticated_client, monkeypatch):
-    """Regular user scans are filtered by owned_by."""
-    mock_list = MagicMock(return_value=([], 0))
-    monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
-
-    from services import user_service
-
+def test_list_scans_non_admin_rejected(authenticated_client):
+    """GET /qr/scans from a non-admin returns 403 (admin-only analytics)."""
     resp = authenticated_client.get("/qr/scans")
-    assert resp.status_code == 200
-    _, kwargs = mock_list.call_args
-    assert kwargs["owned_by"] == FAKE_USER["id"]
+    assert resp.status_code == 403
 
 
 def test_list_scans_admin_sees_all(admin_client, monkeypatch):
@@ -477,16 +474,14 @@ def test_list_scans_admin_sees_all(admin_client, monkeypatch):
 # ── Owner can update (success) ──────────────────────────────────────────
 
 
-def test_update_poster_owner_allowed(authenticated_client, monkeypatch):
-    """Owner can update their own QR code."""
+def test_update_poster_admin_allowed(admin_client, monkeypatch):
+    """Admin can update any QR code (admin-only endpoint, ownership-agnostic)."""
     existing = _mock_qr(created_by=FAKE_USER["id"])
     updated = _mock_qr(name="Updated Name", created_by=FAKE_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
     monkeypatch.setattr(qr_code_service, "update_qr_code", MagicMock(return_value=updated))
 
-    from services import user_service
-
-    resp = authenticated_client.patch(
+    resp = admin_client.patch(
         "/qr/test-qr",
         json={
             "id": "test-qr",
