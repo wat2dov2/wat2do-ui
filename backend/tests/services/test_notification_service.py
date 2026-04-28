@@ -154,6 +154,100 @@ def test_enqueue_event_change_empty_diff_noop():
     assert notification_service.enqueue_event_change(42, {}) == 0
 
 
+# ---------------------------------------------------------------------------
+# Occurrence-list diff rendering — the v1-style EventDates port produces a
+# single ``occurrences`` field in the diff whose old/new values are full
+# lists of occurrence dicts. Rendering must produce a human-readable bullet
+# list, not the raw Python repr.
+# ---------------------------------------------------------------------------
+
+
+def _occ(dtstart_iso: str) -> dict:
+    return {
+        "dtstart_utc": dtstart_iso,
+        "dtend_utc": None,
+        "duration": None,
+        "tz": None,
+    }
+
+
+def test_render_event_change_text_renders_added_occurrence():
+    """Adding a date renders as ``+ added 2026-06-01 18:00 UTC``."""
+    diff = {
+        "occurrences": {
+            "old": [_occ("2026-05-01T18:00:00+00:00")],
+            "new": [_occ("2026-05-01T18:00:00+00:00"), _occ("2026-06-01T18:00:00+00:00")],
+        },
+    }
+    summary = {"title": "Tea Tasting", "location": "SLC"}
+    text = notification_service._render_event_change_text(summary, diff)
+    assert "+ added 2026-06-01 18:00 UTC" in text
+    # The unchanged date should NOT appear under added/removed.
+    assert "+ added 2026-05-01" not in text
+    # No raw Python repr leakage.
+    assert "{'dtstart_utc'" not in text
+
+
+def test_render_event_change_text_renders_removed_occurrence():
+    diff = {
+        "occurrences": {
+            "old": [_occ("2026-05-01T18:00:00+00:00"), _occ("2026-06-01T18:00:00+00:00")],
+            "new": [_occ("2026-05-01T18:00:00+00:00")],
+        },
+    }
+    summary = {"title": "Tea Tasting", "location": "SLC"}
+    text = notification_service._render_event_change_text(summary, diff)
+    assert "- removed 2026-06-01 18:00 UTC" in text
+
+
+def test_render_event_change_html_lists_added_and_removed():
+    """HTML rendering uses <li> bullets nested under a <strong>dates</strong> heading."""
+    diff = {
+        "occurrences": {
+            "old": [_occ("2026-05-01T18:00:00+00:00")],
+            "new": [_occ("2026-06-01T18:00:00+00:00")],
+        },
+    }
+    summary = {"title": "Tea Tasting", "location": "SLC"}
+    html = notification_service._render_event_change_html(summary, diff)
+    assert "<strong>dates</strong>" in html
+    assert "added <strong>2026-06-01 18:00 UTC</strong>" in html
+    assert "removed <strong>2026-05-01 18:00 UTC</strong>" in html
+    # No Python list repr.
+    assert "{'dtstart_utc'" not in html
+
+
+def test_render_event_change_falls_back_to_edited_when_only_metadata_changed():
+    """If nothing was added or removed (e.g. tz/duration changed but
+    dtstart stayed the same), the diff still surfaces a generic
+    ``dates: edited`` line rather than nothing.
+    """
+    diff = {
+        "occurrences": {
+            "old": [{"dtstart_utc": "2026-05-01T18:00:00+00:00", "tz": "UTC"}],
+            "new": [{"dtstart_utc": "2026-05-01T18:00:00+00:00", "tz": "America/Toronto"}],
+        },
+    }
+    summary = {"title": "Tea Tasting", "location": "SLC"}
+    text = notification_service._render_event_change_text(summary, diff)
+    assert "dates: edited" in text
+
+
+def test_render_event_change_text_handles_malformed_iso_gracefully():
+    """Malformed dtstart strings round-trip without crashing — fall back
+    to the raw value."""
+    diff = {
+        "occurrences": {
+            "old": [],
+            "new": [_occ("not-a-date")],
+        },
+    }
+    summary = {"title": "X", "location": "Y"}
+    # Should not raise.
+    text = notification_service._render_event_change_text(summary, diff)
+    assert "not-a-date" in text  # raw value preserved
+
+
 def test_enqueue_event_change_missing_event_returns_zero(fake_sb, patch_sb):
     """Event row fetched but empty → log warn, return 0."""
     patch_sb("services.notification_service")

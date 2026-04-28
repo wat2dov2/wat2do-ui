@@ -578,23 +578,98 @@ def _render_event_change_text(summary: dict, diff: dict) -> str:
         "",
     ]
     for field, change in diff.items():
-        lines.append(
-            f"  {field}: {change.get('old')} -> {change.get('new')}"
-        )
+        if field == "occurrences":
+            lines.extend(_render_occurrence_diff_text(change))
+        else:
+            lines.append(
+                f"  {field}: {change.get('old')} -> {change.get('new')}"
+            )
     lines.append("")
     lines.append(f"Location: {summary.get('location', '')}")
     return "\n".join(lines)
 
 
 def _render_event_change_html(summary: dict, diff: dict) -> str:
-    rows = "".join(
-        f"<li><strong>{field}</strong>: {change.get('old')} &rarr; {change.get('new')}</li>"
-        for field, change in diff.items()
-    )
+    parts: list[str] = []
+    for field, change in diff.items():
+        if field == "occurrences":
+            parts.append(_render_occurrence_diff_html(change))
+        else:
+            parts.append(
+                f"<li><strong>{field}</strong>: "
+                f"{change.get('old')} &rarr; {change.get('new')}</li>"
+            )
+    rows = "".join(parts)
     return (
         f"<p>Update to an event you saved: <strong>{summary.get('title', '')}</strong></p>"
         f"<ul>{rows}</ul>"
         f"<p>Location: {summary.get('location', '')}</p>"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Occurrence-list diff rendering
+#
+# After the v1-style EventDates port, ``compute_event_diff`` emits a single
+# ``occurrences`` field whose old/new values are full lists of occurrence
+# dicts. Dumping the raw Python list-of-dicts into the email body produced
+# unreadable output ("`[{'dtstart_utc': '2026-05-01T18:00:00+00:00', ...}, ...]`").
+# These helpers render added / removed / unchanged dates as a human-friendly
+# bullet list keyed on dtstart_utc.
+# ---------------------------------------------------------------------------
+
+
+def _occurrence_set(items: list[dict] | None) -> set[str]:
+    """Return the set of dtstart_utc strings on a list of occurrence dicts."""
+    if not items:
+        return set()
+    return {it.get("dtstart_utc") for it in items if it.get("dtstart_utc")}
+
+
+def _format_occurrence_dt(dtstart_iso: str) -> str:
+    """Pretty-format ``2026-05-01T18:00:00+00:00`` -> ``2026-05-01 18:00 UTC``.
+
+    Falls back to the raw string if the value isn't ISO-8601 — defensive
+    against legacy or malformed rows.
+    """
+    try:
+        dt = datetime.fromisoformat(dtstart_iso.replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        return dtstart_iso
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+
+def _render_occurrence_diff_text(change: dict) -> list[str]:
+    """Render ``occurrences`` change as plain-text bullets."""
+    old_set = _occurrence_set(change.get("old"))
+    new_set = _occurrence_set(change.get("new"))
+    added = sorted(new_set - old_set)
+    removed = sorted(old_set - new_set)
+    if not added and not removed:
+        return ["  dates: edited"]
+    out: list[str] = ["  dates:"]
+    for ts in added:
+        out.append(f"    + added {_format_occurrence_dt(ts)}")
+    for ts in removed:
+        out.append(f"    - removed {_format_occurrence_dt(ts)}")
+    return out
+
+
+def _render_occurrence_diff_html(change: dict) -> str:
+    """Render ``occurrences`` change as one HTML <li> per added/removed date."""
+    old_set = _occurrence_set(change.get("old"))
+    new_set = _occurrence_set(change.get("new"))
+    added = sorted(new_set - old_set)
+    removed = sorted(old_set - new_set)
+    if not added and not removed:
+        return "<li><strong>dates</strong>: edited</li>"
+    items: list[str] = []
+    for ts in added:
+        items.append(f"<li>added <strong>{_format_occurrence_dt(ts)}</strong></li>")
+    for ts in removed:
+        items.append(f"<li>removed <strong>{_format_occurrence_dt(ts)}</strong></li>")
+    return (
+        f"<li><strong>dates</strong>:<ul>{''.join(items)}</ul></li>"
     )
 
 
