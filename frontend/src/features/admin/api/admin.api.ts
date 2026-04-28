@@ -35,7 +35,11 @@ type ScrapedEventResponse = ApiScrapedEventResponse;
 function toEventSubmission(row: SubmissionResponse): EventSubmission {
   return {
     id: row.id,
-    eventData: row.event_data as EventSubmission["eventData"],
+    // event_data is stored as opaque JSON in the DB; the FE narrows it
+    // to ``EventSubmission["eventData"]`` (which is ``EventFormData``)
+    // when handed to the review UI. Cast through unknown so the type
+    // check doesn't trip on the loose ``Record<string, unknown>`` shape.
+    eventData: row.event_data as unknown as EventSubmission["eventData"],
     submittedBy: row.user_id,
     submittedAt: row.submitted_at,
     status: row.status as EventSubmission["status"],

@@ -4,6 +4,92 @@
  */
 
 export interface paths {
+    "/ab/variant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Variant
+         * @description Get the current user's A/B test variant.
+         *
+         *     If the authenticated user has no DB row yet (race between signup and
+         *     profile creation), we still want a stable variant rather than locking
+         *     everyone into control and biasing the treatment share downward (M5).
+         *     Hashing on ``auth_user["id"]`` gives a deterministic assignment that
+         *     will match once a DB row exists only if the two IDs agree — but since
+         *     they typically don't, we instead use the auth ID directly so the
+         *     fallback is random-by-hash, not hard-coded to control.
+         */
+        get: operations["get_variant_ab_variant_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ab/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Metrics
+         * @description Get CTR metrics by variant (admin only).
+         *
+         *     Response is cached in-process for 60 s (see
+         *     ``ABTestService.get_ctr_by_variant``) so polling dashboards don't
+         *     trigger a full table scan per poll.
+         */
+        get: operations["get_metrics_ab_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/generate-filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Filters */
+        post: operations["generate_filters_ai_generate_filters_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/generate-event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Event */
+        post: operations["generate_event_ai_generate_event_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/signup": {
         parameters: {
             query?: never;
@@ -109,6 +195,724 @@ export interface paths {
         put?: never;
         /** Reset Password */
         post: operations["reset_password_auth_reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Calendar Token
+         * @description Return the user's feed token, generating one on first call.
+         */
+        get: operations["get_calendar_token_calendar_token_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar/token/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate Calendar Token
+         * @description Rotate the user's feed token; existing subscriptions break.
+         */
+        post: operations["regenerate_calendar_token_calendar_token_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar/feed/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Calendar Feed
+         * @description Public: return the VCALENDAR for the token's owner.
+         *
+         *     Calendar clients (Google, Apple, Outlook) poll this URL and render
+         *     each VEVENT as a calendar entry.  Rate-limited per token.
+         */
+        get: operations["get_calendar_feed_calendar_feed__token__ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Clubs */
+        get: operations["list_clubs_clubs__get"];
+        put?: never;
+        /** Create Club */
+        post: operations["create_club_clubs__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List My Clubs
+         * @description Return clubs owned by the authenticated user.
+         */
+        get: operations["list_my_clubs_clubs_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/integrations/discord/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Discord Options */
+        get: operations["get_discord_options_clubs_integrations_discord_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/integrations/{platform}/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Platform Options */
+        get: operations["get_platform_options_clubs_integrations__platform__options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Club */
+        get: operations["get_club_clubs__club_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Club */
+        delete: operations["delete_club_clubs__club_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Club */
+        patch: operations["update_club_clubs__club_id__patch"];
+        trace?: never;
+    };
+    "/clubs/{club_id}/integrations/{platform}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Platform Integration */
+        get: operations["get_platform_integration_clubs__club_id__integrations__platform__get"];
+        /** Upsert Platform Integration */
+        put: operations["upsert_platform_integration_clubs__club_id__integrations__platform__put"];
+        post?: never;
+        /** Disconnect Platform Integration */
+        delete: operations["disconnect_platform_integration_clubs__club_id__integrations__platform__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/credits/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Credits */
+        get: operations["get_credits_credits__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/credits/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Credits
+         * @description Admin-only: add credits to a target user's balance.
+         */
+        post: operations["add_credits_credits_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/promotions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Promotions */
+        get: operations["list_promotions_promotions__get"];
+        put?: never;
+        /** Create Promotion */
+        post: operations["create_promotion_promotions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/promotions/active-ids": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Active Promoted Ids
+         * @description Public endpoint — returns event IDs with active promotions.
+         */
+        get: operations["get_active_promoted_ids_promotions_active_ids_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/latest-added": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Latest Added
+         * @description Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'.
+         */
+        get: operations["get_latest_added_events_latest_added_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Events
+         * @description Public list endpoint.
+         *
+         *     Response shape is fixed to ``EventSummaryResponse`` which omits
+         *     ``created_by`` — this is the IDOR/PII fix for audit I10/S16.  The
+         *     ``summary`` flag is still forwarded to the service (so the query
+         *     can short-circuit large column reads) but the wire shape is the
+         *     same either way.  FastAPI's response_model serialization will drop
+         *     any extra fields if the service returns the fuller ``EventResponse``.
+         */
+        get: operations["list_events_events__get"];
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_events__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event
+         * @description Public event detail.  ``created_by`` is stripped via
+         *     ``EventPublicResponse`` (audit I10 / S16); owners / admins see the
+         *     full shape through their dashboards via the dedicated service call.
+         */
+        get: operations["get_event_events__event_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Event */
+        delete: operations["delete_event_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Event */
+        patch: operations["update_event_events__event_id__patch"];
+        trace?: never;
+    };
+    "/interactions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Interactions
+         * @description Record a batch of user-event interactions.
+         *
+         *     Auth is via the standard ``Authorization: Bearer <token>`` header.
+         *     The frontend uses ``fetch()`` with ``keepalive: true`` (instead of
+         *     ``sendBeacon``) so it can set this header even during page unload.
+         *
+         *     When a user is authenticated:
+         *     - Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.
+         *     - Duplicate interactions are deduplicated within a sliding time window.
+         *
+         *     When ``user_id`` is present in the payload it MUST match the authenticated
+         *     user — submitting interactions on behalf of another user is rejected.
+         *
+         *     Anonymous requests (no auth at all) are still allowed for basic
+         *     view/impression tracking, but without a ``user_id`` they cannot influence
+         *     personalised recommendations or collaborative filtering scores.
+         *     Anonymous requests are IP-rate-limited to prevent abuse.
+         */
+        post: operations["record_interactions_interactions_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meta/constants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Constants
+         * @description Return shared domain constants for frontend consumption.
+         *
+         *     This endpoint is public (no auth required) and highly cacheable.
+         *     Sets an explicit ``Cache-Control: public, max-age=60`` header so
+         *     cheap repeat scrapes hit the CDN / browser cache rather than the
+         *     application process (audit M13).  The cache window is deliberately
+         *     short (60 s) so that category / interest changes deployed via a
+         *     backend-only restart propagate within a minute.
+         */
+        get: operations["get_constants_meta_constants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Preferences
+         * @description Return the resolved preferences for the authenticated user.
+         *
+         *     Always includes one entry per supported type — types the user has
+         *     never toggled come back with their default value and
+         *     ``updated_at=None`` so the client can distinguish "default-on" from
+         *     "explicitly opted in".
+         */
+        get: operations["get_my_preferences_notification_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update My Preferences
+         * @description Bulk-upsert preferences for the authenticated user.
+         */
+        patch: operations["update_my_preferences_notification_preferences_patch"];
+        trace?: never;
+    };
+    "/qr/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Qr Codes
+         * @description List QR codes — admin-only.
+         *
+         *     QR codes are an admin-managed promotional surface; non-admins must
+         *     not be able to enumerate them, see other admins' codes, or learn the
+         *     naming scheme via this endpoint. Use the public scan endpoint
+         *     (``GET /qr/{id}``) for end-user redirects.
+         */
+        get: operations["list_qr_codes_qr__get"];
+        put?: never;
+        /**
+         * Create Poster
+         * @description Create a QR code — admin-only.
+         *
+         *     INSERT-only: if the id already exists, ``create_qr_code`` raises
+         *     ConflictError -> 409. Previously this was an upsert which allowed
+         *     any authenticated user to hijack an existing poster by guessing its
+         *     id and reposting with their own destination_id.
+         */
+        post: operations["create_poster_qr__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Scans
+         * @description List QR-code scan events — admin-only (analytics surface).
+         */
+        get: operations["list_scans_qr_scans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/{qr_code_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve Qr And Record Scan */
+        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Poster
+         * @description Delete a QR code — admin-only.
+         */
+        delete: operations["delete_poster_qr__qr_code_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Poster
+         * @description Update a QR code — admin-only.
+         */
+        patch: operations["update_poster_qr__qr_code_id__patch"];
+        trace?: never;
+    };
+    "/recommendations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Recommendations
+         * @description Get event recommendations. Personalized if logged in, popular otherwise.
+         */
+        get: operations["get_recommendations_recommendations__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_reports__get"];
+        put?: never;
+        /** Create Report */
+        post: operations["create_report_reports__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Report */
+        patch: operations["update_report_reports__report_id__patch"];
+        trace?: never;
+    };
+    "/saved-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Saved Events
+         * @description Return event IDs saved by the current user.
+         */
+        get: operations["list_saved_events_saved_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/saved-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Event
+         * @description Save (bookmark) an event.
+         *
+         *     - 404 if the referenced event does not exist (audit I9).
+         *     - 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER`` —
+         *       prevents a single account from growing an unbounded bookmark list
+         *       and OOM'ing the listing endpoint (audit I8).
+         */
+        put: operations["save_event_saved_events__event_id__put"];
+        post?: never;
+        /**
+         * Unsave Event
+         * @description Remove a saved event.
+         */
+        delete: operations["unsave_event_saved_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scraped-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scraped Events */
+        get: operations["list_scraped_events_scraped_events__get"];
+        put?: never;
+        /** Create Scraped Event */
+        post: operations["create_scraped_event_scraped_events__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Submission */
+        get: operations["get_submission_submissions__submission_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Submission */
+        delete: operations["delete_submission_submissions__submission_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Submission */
+        patch: operations["update_submission_submissions__submission_id__patch"];
+        trace?: never;
+    };
+    "/uploads/event-image/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Event Image */
+        post: operations["upload_event_image_uploads_event_image__event_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Avatar */
+        post: operations["upload_avatar_uploads_avatar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/club-logo/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Club Logo */
+        post: operations["upload_club_logo_uploads_club_logo__club_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/qr-asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Qr Asset */
+        post: operations["upload_qr_asset_uploads_qr_asset_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -226,693 +1030,6 @@ export interface paths {
         patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
     };
-    "/events/latest-added": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Latest Added
-         * @description Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'.
-         */
-        get: operations["get_latest_added_events_latest_added_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Events
-         * @description Public list endpoint.
-         *
-         *     Response shape is fixed to ``EventSummaryResponse`` which omits
-         *     ``created_by`` — this is the IDOR/PII fix for audit I10/S16.  The
-         *     ``summary`` flag is still forwarded to the service (so the query
-         *     can short-circuit large column reads) but the wire shape is the
-         *     same either way.  FastAPI's response_model serialization will drop
-         *     any extra fields if the service returns the fuller ``EventResponse``.
-         */
-        get: operations["list_events_events__get"];
-        put?: never;
-        /** Create Event */
-        post: operations["create_event_events__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event
-         * @description Public event detail.  ``created_by`` is stripped via
-         *     ``EventPublicResponse`` (audit I10 / S16); owners / admins see the
-         *     full shape through their dashboards via the dedicated service call.
-         */
-        get: operations["get_event_events__event_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Event */
-        delete: operations["delete_event_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Event */
-        patch: operations["update_event_events__event_id__patch"];
-        trace?: never;
-    };
-    "/clubs/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Clubs */
-        get: operations["list_clubs_clubs__get"];
-        put?: never;
-        /** Create Club */
-        post: operations["create_club_clubs__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clubs/mine": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List My Clubs
-         * @description Return clubs owned by the authenticated user.
-         */
-        get: operations["list_my_clubs_clubs_mine_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clubs/integrations/discord/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Discord Options */
-        get: operations["get_discord_options_clubs_integrations_discord_options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clubs/integrations/{platform}/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Platform Options */
-        get: operations["get_platform_options_clubs_integrations__platform__options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clubs/{club_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Club */
-        get: operations["get_club_clubs__club_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Club */
-        delete: operations["delete_club_clubs__club_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Club */
-        patch: operations["update_club_clubs__club_id__patch"];
-        trace?: never;
-    };
-    "/clubs/{club_id}/integrations/{platform}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Platform Integration */
-        get: operations["get_platform_integration_clubs__club_id__integrations__platform__get"];
-        /** Upsert Platform Integration */
-        put: operations["upsert_platform_integration_clubs__club_id__integrations__platform__put"];
-        post?: never;
-        /** Disconnect Platform Integration */
-        delete: operations["disconnect_platform_integration_clubs__club_id__integrations__platform__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/event-image/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Event Image */
-        post: operations["upload_event_image_uploads_event_image__event_id__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Avatar */
-        post: operations["upload_avatar_uploads_avatar_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/club-logo/{club_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Club Logo */
-        post: operations["upload_club_logo_uploads_club_logo__club_id__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/qr-asset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Qr Asset */
-        post: operations["upload_qr_asset_uploads_qr_asset_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Qr Codes */
-        get: operations["list_qr_codes_qr__get"];
-        put?: never;
-        /** Create Poster */
-        post: operations["create_poster_qr__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/scans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Scans */
-        get: operations["list_scans_qr_scans_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/{qr_code_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Resolve Qr And Record Scan */
-        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Poster */
-        delete: operations["delete_poster_qr__qr_code_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Poster */
-        patch: operations["update_poster_qr__qr_code_id__patch"];
-        trace?: never;
-    };
-    "/interactions/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Record Interactions
-         * @description Record a batch of user-event interactions.
-         *
-         *     Auth is via the standard ``Authorization: Bearer <token>`` header.
-         *     The frontend uses ``fetch()`` with ``keepalive: true`` (instead of
-         *     ``sendBeacon``) so it can set this header even during page unload.
-         *
-         *     When a user is authenticated:
-         *     - Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.
-         *     - Duplicate interactions are deduplicated within a sliding time window.
-         *
-         *     When ``user_id`` is present in the payload it MUST match the authenticated
-         *     user — submitting interactions on behalf of another user is rejected.
-         *
-         *     Anonymous requests (no auth at all) are still allowed for basic
-         *     view/impression tracking, but without a ``user_id`` they cannot influence
-         *     personalised recommendations or collaborative filtering scores.
-         *     Anonymous requests are IP-rate-limited to prevent abuse.
-         */
-        post: operations["record_interactions_interactions_batch_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/saved-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Saved Events
-         * @description Return event IDs saved by the current user.
-         */
-        get: operations["list_saved_events_saved_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/saved-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Save Event
-         * @description Save (bookmark) an event.
-         *
-         *     - 404 if the referenced event does not exist (audit I9).
-         *     - 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER`` —
-         *       prevents a single account from growing an unbounded bookmark list
-         *       and OOM'ing the listing endpoint (audit I8).
-         */
-        put: operations["save_event_saved_events__event_id__put"];
-        post?: never;
-        /**
-         * Unsave Event
-         * @description Remove a saved event.
-         */
-        delete: operations["unsave_event_saved_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/recommendations/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Recommendations
-         * @description Get event recommendations. Personalized if logged in, popular otherwise.
-         */
-        get: operations["get_recommendations_recommendations__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ab/variant": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Variant
-         * @description Get the current user's A/B test variant.
-         *
-         *     If the authenticated user has no DB row yet (race between signup and
-         *     profile creation), we still want a stable variant rather than locking
-         *     everyone into control and biasing the treatment share downward (M5).
-         *     Hashing on ``auth_user["id"]`` gives a deterministic assignment that
-         *     will match once a DB row exists only if the two IDs agree — but since
-         *     they typically don't, we instead use the auth ID directly so the
-         *     fallback is random-by-hash, not hard-coded to control.
-         */
-        get: operations["get_variant_ab_variant_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ab/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Metrics
-         * @description Get CTR metrics by variant (admin only).
-         *
-         *     Response is cached in-process for 60 s (see
-         *     ``ABTestService.get_ctr_by_variant``) so polling dashboards don't
-         *     trigger a full table scan per poll.
-         */
-        get: operations["get_metrics_ab_metrics_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ai/generate-filters": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate Filters */
-        post: operations["generate_filters_ai_generate_filters_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ai/generate-event": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate Event */
-        post: operations["generate_event_ai_generate_event_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/credits/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Credits */
-        get: operations["get_credits_credits__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/credits/add": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Credits
-         * @description Admin-only: add credits to a target user's balance.
-         */
-        post: operations["add_credits_credits_add_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/promotions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Promotions */
-        get: operations["list_promotions_promotions__get"];
-        put?: never;
-        /** Create Promotion */
-        post: operations["create_promotion_promotions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/promotions/active-ids": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Active Promoted Ids
-         * @description Public endpoint — returns event IDs with active promotions.
-         */
-        get: operations["get_active_promoted_ids_promotions_active_ids_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Submission */
-        get: operations["get_submission_submissions__submission_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Submission */
-        delete: operations["delete_submission_submissions__submission_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Submission */
-        patch: operations["update_submission_submissions__submission_id__patch"];
-        trace?: never;
-    };
-    "/reports/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Reports */
-        get: operations["list_reports_reports__get"];
-        put?: never;
-        /** Create Report */
-        post: operations["create_report_reports__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/{report_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Report */
-        patch: operations["update_report_reports__report_id__patch"];
-        trace?: never;
-    };
-    "/scraped-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Scraped Events */
-        get: operations["list_scraped_events_scraped_events__get"];
-        put?: never;
-        /** Create Scraped Event */
-        post: operations["create_scraped_event_scraped_events__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/meta/constants": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Constants
-         * @description Return shared domain constants for frontend consumption.
-         *
-         *     This endpoint is public (no auth required) and highly cacheable.
-         *     Sets an explicit ``Cache-Control: public, max-age=60`` header so
-         *     cheap repeat scrapes hit the CDN / browser cache rather than the
-         *     application process (audit M13).  The cache window is deliberately
-         *     short (60 s) so that category / interest changes deployed via a
-         *     backend-only restart propagate within a minute.
-         */
-        get: operations["get_constants_meta_constants_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/health": {
         parameters: {
             query?: never;
@@ -1024,6 +1141,16 @@ export interface components {
         Body_upload_qr_asset_uploads_qr_asset_post: {
             /** File */
             file: string;
+        };
+        /**
+         * CalendarTokenResponse
+         * @description Returned by GET /calendar/token and POST /calendar/token/regenerate.
+         */
+        CalendarTokenResponse: {
+            /** Token */
+            token: string;
+            /** Feed Url */
+            feed_url: string;
         };
         /** ClubCreate */
         ClubCreate: {
@@ -1162,10 +1289,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location: string;
-            /** Dtstart Utc */
-            dtstart_utc?: string | null;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
+            /** Occurrences */
+            occurrences: components["schemas"]["OccurrenceCreate"][];
             /** Price */
             price?: number | null;
             /** Food */
@@ -1270,6 +1395,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location: string;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Dtstart Utc */
             dtstart_utc?: string | null;
             /** Dtend Utc */
@@ -1314,6 +1441,12 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /**
+             * Status
+             * @default active
+             * @enum {string}
+             */
+            status: "active" | "cancelled";
         };
         /**
          * EventResponse
@@ -1324,6 +1457,13 @@ export interface components {
          *     the authorization layer (``get_authorized_resource`` reads it); the
          *     public list endpoint hides it via ``EventSummaryResponse`` which
          *     omits the field entirely.
+         *
+         *     ``occurrences`` is the canonical date list. ``dtstart_utc`` /
+         *     ``dtend_utc`` are denormalized "primary date" convenience fields
+         *     populated by the service layer (earliest future occurrence, or
+         *     earliest occurrence if the event has only past dates). They are
+         *     NOT columns on the events table — see migration
+         *     20260428031741_add_event_dates_table.sql.
          */
         EventResponse: {
             /** Id */
@@ -1334,6 +1474,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location: string;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Dtstart Utc */
             dtstart_utc?: string | null;
             /** Dtend Utc */
@@ -1380,6 +1522,12 @@ export interface components {
             added_at: string;
             /** Created By */
             created_by?: string | null;
+            /**
+             * Status
+             * @default active
+             * @enum {string}
+             */
+            status: "active" | "cancelled";
         };
         /**
          * EventSummaryResponse
@@ -1424,6 +1572,12 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /**
+             * Status
+             * @default active
+             * @enum {string}
+             */
+            status: "active" | "cancelled";
         };
         /** EventUpdate */
         EventUpdate: {
@@ -1433,10 +1587,10 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
-            /** Dtstart Utc */
-            dtstart_utc?: string | null;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
+            /** Status */
+            status?: ("active" | "cancelled") | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceCreate"][] | null;
             /** Price */
             price?: number | null;
             /** Food */
@@ -1598,6 +1752,98 @@ export interface components {
         MessageResponse: {
             /** Message */
             message: string;
+        };
+        /**
+         * NotificationPreferenceResponse
+         * @description Single preference row as returned from the API.
+         */
+        NotificationPreferenceResponse: {
+            /**
+             * Notification Type
+             * @enum {string}
+             */
+            notification_type: "morning_digest" | "weekly_digest" | "event_change";
+            /** Enabled */
+            enabled: boolean;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * NotificationPreferenceUpdate
+         * @description One preference-flip in a bulk update payload.
+         */
+        NotificationPreferenceUpdate: {
+            /**
+             * Notification Type
+             * @enum {string}
+             */
+            notification_type: "morning_digest" | "weekly_digest" | "event_change";
+            /** Enabled */
+            enabled: boolean;
+        };
+        /**
+         * NotificationPreferencesBulkUpdate
+         * @description Settings-page payload: flip multiple toggles in one call.
+         *
+         *     The settings UI typically shows every type as a toggle; letting the
+         *     client send them in one request avoids N round-trips and lines up
+         *     cleanly with an UPSERT on the (user_id, notification_type) key.
+         */
+        NotificationPreferencesBulkUpdate: {
+            /** Preferences */
+            preferences: components["schemas"]["NotificationPreferenceUpdate"][];
+        };
+        /**
+         * NotificationPreferencesListResponse
+         * @description GET response: every type's current resolved state for the user.
+         *
+         *     Includes types for which the user has no row (default-on); the
+         *     ``enabled`` value is the resolved default in that case. Clients
+         *     render one toggle per entry.
+         */
+        NotificationPreferencesListResponse: {
+            /** Preferences */
+            preferences: components["schemas"]["NotificationPreferenceResponse"][];
+        };
+        /**
+         * OccurrenceCreate
+         * @description One occurrence — start time + optional end / duration / timezone.
+         */
+        OccurrenceCreate: {
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+        };
+        /** OccurrenceResponse */
+        OccurrenceResponse: {
+            /** Id */
+            id: string;
+            /** Event Id */
+            event_id: number;
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** PaginatedResponse[QrCodeResponse] */
         PaginatedResponse_QrCodeResponse_: {
@@ -2181,6 +2427,112 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_variant_ab_variant_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ABVariantResponse"];
+                };
+            };
+        };
+    };
+    get_metrics_ab_metrics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ABMetricsResponse"];
+                };
+            };
+        };
+    };
+    generate_filters_ai_generate_filters_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AIPromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FilterStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_event_ai_generate_event_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AIPromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFormDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     signup_auth_signup_post: {
         parameters: {
             query?: never;
@@ -2353,7 +2705,7 @@ export interface operations {
             };
         };
     };
-    get_me_users_me_get: {
+    get_calendar_token_calendar_token_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2368,83 +2720,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserResponse"];
+                    "application/json": components["schemas"]["CalendarTokenResponse"];
                 };
             };
         };
     };
-    update_me_users_me_patch: {
+    regenerate_calendar_token_calendar_token_regenerate_post: {
         parameters: {
             query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_users_me_profile_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserProfileUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_users_users__get: {
-        parameters: {
-            query?: {
-                skip?: number;
-                limit?: number;
-            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2457,26 +2740,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["CalendarTokenResponse"];
                 };
             };
         };
     };
-    get_user_users__user_id__get: {
+    get_calendar_feed_calendar_feed__token__ics_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                user_id: string;
+                token: string;
             };
             cookie?: never;
         };
@@ -2484,267 +2758,10 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_user_users__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_user_role_users__user_id__role_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserRoleUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_latest_added_events_latest_added_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LatestEventResponse"] | null;
-                };
-            };
-        };
-    };
-    list_events_events__get: {
-        parameters: {
-            query?: {
-                skip?: number;
-                limit?: number;
-                category?: string | null;
-                club_type?: string | null;
-                school?: string | null;
-                search?: string | null;
-                from_date?: string | null;
-                to_date?: string | null;
-                has_food?: boolean | null;
-                max_price?: number | null;
-                registration?: boolean | null;
-                /** @description Return lightweight card-view fields only */
-                summary?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventSummaryResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_event_events__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EventCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_event_events__event_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventPublicResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_event_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_event_events__event_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EventUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
             };
             /** @description Validation Error */
             422: {
@@ -3090,7 +3107,305 @@ export interface operations {
             };
         };
     };
-    upload_event_image_uploads_event_image__event_id__post: {
+    get_credits_credits__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditBalanceResponse"];
+                };
+            };
+        };
+    };
+    add_credits_credits_add_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCreditsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditBalanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_promotions_promotions__get: {
+        parameters: {
+            query?: {
+                /** @description If set, filter by active (True) or expired (False) promotions. */
+                active?: boolean | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_promotion_promotions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_active_promoted_ids_promotions_active_ids_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    get_latest_added_events_latest_added_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LatestEventResponse"] | null;
+                };
+            };
+        };
+    };
+    list_events_events__get: {
+        parameters: {
+            query?: {
+                skip?: number;
+                limit?: number;
+                category?: string | null;
+                club_type?: string | null;
+                school?: string | null;
+                search?: string | null;
+                from_date?: string | null;
+                to_date?: string | null;
+                has_food?: boolean | null;
+                max_price?: number | null;
+                registration?: boolean | null;
+                /** @description Return lightweight card-view fields only */
+                summary?: boolean;
+                /** @description Include cancelled events. Default excludes them so browse/search stays clean. */
+                include_cancelled?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSummaryResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_events__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_events__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPublicResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_event_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_event_events__event_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -3101,7 +3416,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_event_image_uploads_event_image__event_id__post"];
+                "application/json": components["schemas"]["EventUpdate"];
             };
         };
         responses: {
@@ -3111,7 +3426,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadResponse"];
+                    "application/json": components["schemas"]["EventResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3125,7 +3440,7 @@ export interface operations {
             };
         };
     };
-    upload_avatar_uploads_avatar_post: {
+    record_interactions_interactions_batch_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3134,17 +3449,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_avatar_uploads_avatar_post"];
+                "application/json": components["schemas"]["InteractionBatch"];
             };
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadResponse"];
+                    "application/json": components["schemas"]["RecordInteractionsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3158,20 +3473,14 @@ export interface operations {
             };
         };
     };
-    upload_club_logo_uploads_club_logo__club_id__post: {
+    get_constants_meta_constants_get: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                club_id: number;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_club_logo_uploads_club_logo__club_id__post"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -3179,21 +3488,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["AppConstantsResponse"];
                 };
             };
         };
     };
-    upload_qr_asset_uploads_qr_asset_post: {
+    get_my_preferences_notification_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferencesListResponse"];
+                };
+            };
+        };
+    };
+    update_my_preferences_notification_preferences_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -3202,18 +3522,16 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_qr_asset_uploads_qr_asset_post"];
+                "application/json": components["schemas"]["NotificationPreferencesBulkUpdate"];
             };
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3433,7 +3751,73 @@ export interface operations {
             };
         };
     };
-    record_interactions_interactions_batch_post: {
+    get_recommendations_recommendations__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reports_reports__get: {
+        parameters: {
+            query?: {
+                report_status?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ReportResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_reports__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3442,17 +3826,52 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InteractionBatch"];
+                "application/json": components["schemas"]["ReportCreate"];
             };
         };
         responses: {
             /** @description Successful Response */
-            202: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecordInteractionsResponse"];
+                    "application/json": components["schemas"]["ReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3548,10 +3967,13 @@ export interface operations {
             };
         };
     };
-    get_recommendations_recommendations__get: {
+    list_scraped_events_scraped_events__get: {
         parameters: {
             query?: {
-                limit?: number;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -3565,7 +3987,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecommendationItem"][];
+                    "application/json": components["schemas"]["PaginatedResponse_ScrapedEventResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -3579,47 +4001,7 @@ export interface operations {
             };
         };
     };
-    get_variant_ab_variant_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ABVariantResponse"];
-                };
-            };
-        };
-    };
-    get_metrics_ab_metrics_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ABMetricsResponse"];
-                };
-            };
-        };
-    };
-    generate_filters_ai_generate_filters_post: {
+    create_scraped_event_scraped_events__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3628,160 +4010,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AIPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FilterStateResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_event_ai_generate_event_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AIPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventFormDataResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_credits_credits__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreditBalanceResponse"];
-                };
-            };
-        };
-    };
-    add_credits_credits_add_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddCreditsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreditBalanceResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_promotions_promotions__get: {
-        parameters: {
-            query?: {
-                /** @description If set, filter by active (True) or expired (False) promotions. */
-                active?: boolean | null;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromotionResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_promotion_promotions__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromotionCreate"];
+                "application/json": components["schemas"]["ScrapedEventCreate"];
             };
         };
         responses: {
@@ -3791,7 +4020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PromotionResponse"];
+                    "application/json": components["schemas"]["ScrapedEventResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3801,26 +4030,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_active_promoted_ids_promotions_active_ids_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number[];
                 };
             };
         };
@@ -3988,86 +4197,18 @@ export interface operations {
             };
         };
     };
-    list_reports_reports__get: {
-        parameters: {
-            query?: {
-                report_status?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ReportResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_report_reports__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_report_reports__report_id__patch: {
+    upload_event_image_uploads_event_image__event_id__post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                report_id: string;
+                event_id: number;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReportUpdate"];
+                "multipart/form-data": components["schemas"]["Body_upload_event_image_uploads_event_image__event_id__post"];
             };
         };
         responses: {
@@ -4077,7 +4218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReportResponse"];
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4091,13 +4232,198 @@ export interface operations {
             };
         };
     };
-    list_scraped_events_scraped_events__get: {
+    upload_avatar_uploads_avatar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_avatar_uploads_avatar_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_club_logo_uploads_club_logo__club_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_club_logo_uploads_club_logo__club_id__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_qr_asset_uploads_qr_asset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_qr_asset_uploads_qr_asset_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_me_users_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    update_me_users_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_profile_users_me_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_users_users__get: {
         parameters: {
             query?: {
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
+                skip?: number;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -4111,7 +4437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ScrapedEventResponse_"];
+                    "application/json": components["schemas"]["UserResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -4125,26 +4451,88 @@ export interface operations {
             };
         };
     };
-    create_scraped_event_scraped_events__post: {
+    get_user_users__user_id__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_user_users__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_role_users__user_id__role_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScrapedEventCreate"];
+                "application/json": components["schemas"]["UserRoleUpdate"];
             };
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScrapedEventResponse"];
+                    "application/json": components["schemas"]["UserResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4154,26 +4542,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_constants_meta_constants_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AppConstantsResponse"];
                 };
             };
         };

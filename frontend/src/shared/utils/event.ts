@@ -65,6 +65,12 @@ export function formDataToEvent(
   formData: EventFormData,
   getDayOfWeek: (date: string) => string
 ): Omit<Event, "id" | "addedDate" | "eventDate"> {
+  // Two new required fields after the v1-style EventDates port:
+  // ``registration`` (the API's preferred name; ``requiresRegistration`` is
+  // the FE legacy alias) and ``added_at`` (timestamp from the server). For
+  // a client-side preview before the API call lands, we synthesize
+  // ``added_at`` from now and default status to "active".
+  const requires = formData.requiresRegistration || false;
   return {
     title: formData.title,
     category: formData.category || DEFAULT_EVENT_CATEGORY,
@@ -76,7 +82,10 @@ export function formDataToEvent(
     food: formData.food || [],
     price: formData.price || 0,
     dayOfWeek: getDayOfWeek(formData.date),
-    requiresRegistration: formData.requiresRegistration || false,
+    requiresRegistration: requires,
+    registration: requires,
+    added_at: new Date().toISOString(),
+    status: "active",
     description: formData.description || "",
   };
 }

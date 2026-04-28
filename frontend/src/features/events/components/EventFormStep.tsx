@@ -57,7 +57,7 @@ interface EventFormStepProps {
     aiPrompt: string;
     setAiPrompt: (value: string) => void;
     aiGenerating: boolean;
-    handleAiGenerate: () => void;
+    handleAiGenerate: () => Promise<void>;
   };
   isDarkMode: boolean;
 }

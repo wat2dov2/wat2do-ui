@@ -345,7 +345,10 @@ export const mockEvents: Event[] = [
     school: "University of Waterloo",
     display_handle: "wloo.dboat",
   },
-].map(transformRawEvent);
+// ``status`` became required on Event after the v1-style EventDates port
+// (Apr 2026 backend). The mock seed data here predates it; default each
+// row to "active" before handing to transformRawEvent.
+].map((e) => transformRawEvent({ ...e, status: "active" } as Event));
 
 // Event categories: same as onboarding "What kind of events are you into?" (source of truth: shared/constants/eventCategories)
 export { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";

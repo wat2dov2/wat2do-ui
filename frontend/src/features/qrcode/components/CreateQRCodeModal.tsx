@@ -90,7 +90,13 @@ function CreateQRCodeModalContent({
         description: form.formData.description.trim() || null,
         destination_type: form.formData.destinationType,
         destination_id: destId ?? undefined,
-        filters: form.formData.destinationType === "events-list" ? form.formData.filters : undefined,
+        // ``filters`` is typed strictly on the FE (FilterState) but the
+        // backend persists opaque JSON — cast through unknown so the
+        // payload type matches QrCodePosterBackend.filters:
+        // ``Record<string, unknown> | unknown[] | null``.
+        filters: form.formData.destinationType === "events-list"
+          ? (form.formData.filters as unknown as Record<string, unknown>)
+          : undefined,
         created_by: userEmail,
         is_active: true,
         image_url: form.formData.imageUrl || null,

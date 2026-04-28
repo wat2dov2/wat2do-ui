@@ -72,7 +72,10 @@ export function AdminPanelRoute({ config: _config }: { config: AdminRoutesConfig
 
   return (
     <AdminSuspense>
-      <AdminPanel onNavigate={handleNavigate} />
+      {/* AdminPanel renders dashboard widgets that source their own data
+          via store hooks; the legacy ``events`` prop is unused but still
+          required by the type. Pass an empty array to satisfy it. */}
+      <AdminPanel events={[]} onNavigate={handleNavigate} />
     </AdminSuspense>
   );
 }

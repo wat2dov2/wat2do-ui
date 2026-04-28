@@ -165,7 +165,21 @@ export function useFilterState(profileCompleted: boolean) {
       const newFilters = await generateFiltersWithAI(aiPrompt, () => {
         // Partial updates handled by the streaming callback
       });
-      const generatedJson = serializeFiltersToJSON(newFilters);
+      // Normalise the API-shape FilterState (loose ``priceRange``,
+      // possible extra fields) to the local FilterState the
+      // serializer expects. Same pattern as ``handleJsonChange`` above.
+      const generatedJson = serializeFiltersToJSON({
+        searchQuery: newFilters.searchQuery || "",
+        categories: newFilters.categories || [],
+        locations: newFilters.locations || [],
+        foods: newFilters.foods || [],
+        days: newFilters.days || [],
+        priceRange: {
+          min: newFilters.priceRange?.min ?? "",
+          max: newFilters.priceRange?.max ?? "",
+        },
+        requiresRegistration: newFilters.requiresRegistration ?? false,
+      });
       handleJsonChange(generatedJson);
     } catch (error) {
       console.error("AI filter generation failed:", error);

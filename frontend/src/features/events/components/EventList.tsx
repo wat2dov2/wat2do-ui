@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { usePromotionsStore } from "@/features/credits";
-import { idArrayEqual } from "@/shared/hooks/useShallowIdArrayEquality";
+import { useShallow } from "zustand/react/shallow";
 import type { Event } from "@/shared/types";
 
 interface EventListProps {
@@ -38,11 +38,11 @@ export function EventList({
   const { t } = useTranslation();
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
   // Custom equality: the store re-sets this array on every reconcile, so the
-  // reference changes even when the ID set is identical. Compare element-wise
-  // to avoid unnecessary re-renders.
+  // reference changes even when the ID set is identical. ``useShallow`` does
+  // element-wise reference equality on the array to avoid unnecessary re-renders.
+  // (Zustand v5 dropped the second-arg equalityFn — useShallow is the v5 idiom.)
   const activePromotedEventIds = usePromotionsStore(
-    (s) => s.activePromotedEventIds,
-    idArrayEqual,
+    useShallow((s) => s.activePromotedEventIds),
   );
 
   // Wrap id arrays in Sets for O(1) membership lookups per card.

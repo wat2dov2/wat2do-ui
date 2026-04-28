@@ -8,7 +8,7 @@ import { usePromotionsStore } from "@/features/credits";
 import { showToast } from "@/shared/ui/toast";
 import { ApiError } from "@/shared/services/apiClient";
 import { getUniqueEvents } from "@/shared/utils/event";
-import { idArrayEqual } from "@/shared/hooks/useShallowIdArrayEquality";
+import { useShallow } from "zustand/react/shallow";
 
 interface UseEventsPageDataOptions {
   profileCompleted: boolean;
@@ -26,11 +26,11 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
   // Custom equality: the store re-sets this array on every reconcile, so
-  // the reference changes even when the ID set is identical. Compare
-  // element-wise to avoid waking EventList's sort memo.
+  // the reference changes even when the ID set is identical. ``useShallow``
+  // does element-wise reference equality on the array (zustand v5 dropped
+  // the equalityFn second arg).
   const activePromotedEventIds = usePromotionsStore(
-    (s) => s.activePromotedEventIds,
-    idArrayEqual,
+    useShallow((s) => s.activePromotedEventIds),
   );
 
   const { latest: latestAddedEvent } = useLatestAddedEvent();

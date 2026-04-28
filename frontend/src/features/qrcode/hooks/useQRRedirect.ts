@@ -71,7 +71,12 @@ export function useQRRedirect(): { message: string } {
           );
           return;
         }
-        redirectFromConfig(result);
+        // TypeScript can't narrow QrRedirectResult after the
+        // ``"requires_location" in result && result.requires_location``
+        // check (the && chains a property read after the ``in`` guard).
+        // Cast since by control flow we've established this is the
+        // ``QrRedirectConfig`` branch.
+        redirectFromConfig(result as Parameters<typeof redirectFromConfig>[0]);
       })
       .catch((err) => {
         console.error("QR redirect failed:", err);
