@@ -176,3 +176,74 @@ def test_list_events_include_cancelled_drops_status_filter(fake_sb, patch_sb):
 
     calls = fake_sb.eq.call_args_list
     assert not any(c.args == ("status", EVENT_STATUS_ACTIVE) for c in calls)
+
+
+# ---------------------------------------------------------------------------
+# Primary-date consistency between summary and detail modes
+# ---------------------------------------------------------------------------
+
+
+def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch_sb):
+    """Summary mode must report the primary occurrence (earliest future)
+    as ``dtstart_utc``, NOT whichever date the events_listing view's
+    dedup happened to keep.
+
+    Pre-fix (detail mode used ``_pick_primary`` but summary used the
+    raw view row), an event with occurrences ``[May 1, May 8, May 15]``
+    on a list at ``desc=True`` showed ``May 15`` in the list view but
+    ``May 1`` (next-future) on the detail view — same event, different
+    "primary date" depending on endpoint. The fix makes both routes
+    fetch occurrences and call the same picker.
+    """
+    from datetime import timedelta
+    from services import event_date_service
+
+    patch_sb("services.event_service")
+
+    # The view returns one row per (event, occurrence). Dedup keeps id=42
+    # once. The view's first row has dtstart_utc=May 15 (with desc=True).
+    fake_sb.set_response(data=[{
+        "id": 42,
+        "title": "Tea Tasting Series",
+        "location": "SLC",
+        "organization": "UW Tea Club",
+        "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
+        "status": EVENT_STATUS_ACTIVE,
+        # The view's joined date columns — would have been used pre-fix.
+        "dtstart_utc": datetime(2026, 5, 15, tzinfo=timezone.utc).isoformat(),
+        "dtend_utc": None,
+    }])
+
+    # Mock the post-dedup occurrence batch fetch with the FULL list,
+    # including a future May 1 — that's what _pick_primary should pick.
+    now = datetime.now(timezone.utc)
+    future_1 = now + timedelta(days=2)
+    future_2 = now + timedelta(days=9)
+    future_3 = now + timedelta(days=16)
+    monkeypatch.setattr(
+        event_date_service, "list_for_events",
+        lambda ids: {42: [
+            _occ_response(future_1, occ_id="o1"),
+            _occ_response(future_2, occ_id="o2"),
+            _occ_response(future_3, occ_id="o3"),
+        ]},
+    )
+
+    summary_results = event_service.list_events(summary=True)
+    assert len(summary_results) == 1
+    summary = summary_results[0]
+    # Primary must be the EARLIEST future occurrence, not the May 15 one.
+    assert summary.dtstart_utc == future_1
+
+
+def _occ_response(dtstart, dtend=None, occ_id="00000000-0000-0000-0000-000000000001"):
+    """Helper: build an OccurrenceResponse for the test above."""
+    return OccurrenceResponse.model_validate({
+        "id": occ_id,
+        "event_id": 42,
+        "dtstart_utc": dtstart,
+        "dtend_utc": dtend,
+        "duration": None,
+        "tz": None,
+        "created_at": datetime.now(timezone.utc),
+    })

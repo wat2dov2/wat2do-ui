@@ -96,13 +96,25 @@ def _hydrate_response(
     return EventResponse.model_validate(payload)
 
 
-def _hydrate_summary(row: dict) -> EventSummaryResponse:
-    """Build an EventSummaryResponse from a row of the events_listing view.
+def _hydrate_summary(
+    row: dict, occurrences: list[OccurrenceResponse]
+) -> EventSummaryResponse:
+    """Build an EventSummaryResponse with the primary occurrence's date.
 
-    The view already projects ``dtstart_utc`` / ``dtend_utc`` from the
-    joined event_dates row — no extra fetch needed here.
+    Pre-fix this used the date columns the events_listing view projects
+    from whichever event_dates row the dedup happened to keep — at
+    ``desc=True`` ordering that's the LATEST occurrence, which mismatched
+    the detail endpoint's ``_pick_primary`` (earliest future). Two
+    endpoints reporting different "primary date" for the same event was
+    a UX bug. Now both routes share the same primary computation.
     """
-    return EventSummaryResponse.model_validate(row)
+    primary = _pick_primary(occurrences)
+    payload = dict(row)
+    payload["dtstart_utc"] = primary.dtstart_utc.isoformat() if primary else None
+    payload["dtend_utc"] = (
+        primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
+    )
+    return EventSummaryResponse.model_validate(payload)
 
 
 # ── Public functions ──────────────────────────────────────────────────
@@ -202,13 +214,24 @@ def list_events(
         if len(deduped) >= limit:
             break
 
-    if summary:
-        return [_hydrate_summary(row) for row in deduped]
-
-    # Detail mode for list — fetch occurrences per event in one batch.
+    # Both summary and detail paths fetch the full occurrence list for
+    # each event so the primary-date computation (``_pick_primary``)
+    # agrees across endpoints. The view's joined date columns are
+    # whichever row the dedup happened to keep — using them as the
+    # primary led to summary/detail divergence for multi-occurrence
+    # events.
     event_ids = [row["id"] for row in deduped]
     occ_by_event = event_date_service.list_for_events(event_ids)
-    return [_hydrate_response(row, occ_by_event.get(row["id"], [])) for row in deduped]
+
+    if summary:
+        return [
+            _hydrate_summary(row, occ_by_event.get(row["id"], []))
+            for row in deduped
+        ]
+    return [
+        _hydrate_response(row, occ_by_event.get(row["id"], []))
+        for row in deduped
+    ]
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
