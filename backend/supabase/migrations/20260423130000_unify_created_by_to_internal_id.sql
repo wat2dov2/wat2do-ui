@@ -46,14 +46,21 @@ WHERE created_by IS NOT NULL
 ALTER TABLE events DROP CONSTRAINT IF EXISTS chk_events_created_by_uuid_format;
 ALTER TABLE events DROP CONSTRAINT IF EXISTS fk_events_created_by;
 
-ALTER TABLE events
-    ALTER COLUMN created_by TYPE uuid
-    USING (
-        CASE
-            WHEN created_by IS NULL THEN NULL
-            ELSE (SELECT id FROM users WHERE supabase_auth_id = events.created_by)
-        END
-    );
+-- ``ALTER COLUMN ... USING (SELECT …)`` is illegal in PostgreSQL —
+-- transform expressions can't contain subqueries. The temp-column
+-- pattern below produces the same result: add a new uuid column, fill
+-- it via UPDATE FROM, drop the text column, rename. Rows whose
+-- created_by doesn't match any user keep ``created_by_new`` at its
+-- default NULL — same orphan-safe semantics the original CASE block
+-- intended.
+ALTER TABLE events ADD COLUMN IF NOT EXISTS created_by_new uuid;
+UPDATE events
+    SET created_by_new = users.id
+    FROM users
+    WHERE users.supabase_auth_id = events.created_by
+      AND events.created_by IS NOT NULL;
+ALTER TABLE events DROP COLUMN created_by;
+ALTER TABLE events RENAME COLUMN created_by_new TO created_by;
 
 DO $$
 BEGIN
@@ -73,14 +80,15 @@ END$$;
 ALTER TABLE clubs DROP CONSTRAINT IF EXISTS chk_clubs_created_by_uuid_format;
 ALTER TABLE clubs DROP CONSTRAINT IF EXISTS fk_clubs_created_by;
 
-ALTER TABLE clubs
-    ALTER COLUMN created_by TYPE uuid
-    USING (
-        CASE
-            WHEN created_by IS NULL THEN NULL
-            ELSE (SELECT id FROM users WHERE supabase_auth_id = clubs.created_by)
-        END
-    );
+-- Same temp-column pattern as the events block above.
+ALTER TABLE clubs ADD COLUMN IF NOT EXISTS created_by_new uuid;
+UPDATE clubs
+    SET created_by_new = users.id
+    FROM users
+    WHERE users.supabase_auth_id = clubs.created_by
+      AND clubs.created_by IS NOT NULL;
+ALTER TABLE clubs DROP COLUMN created_by;
+ALTER TABLE clubs RENAME COLUMN created_by_new TO created_by;
 
 DO $$
 BEGIN
@@ -101,10 +109,16 @@ END$$;
 
 ALTER TABLE qr_codes DROP CONSTRAINT IF EXISTS chk_qr_codes_created_by_uuid_format;
 
-ALTER TABLE qr_codes
-    ALTER COLUMN created_by TYPE uuid
-    USING (SELECT id FROM users WHERE supabase_auth_id = qr_codes.created_by);
-
+-- Same temp-column pattern. qr_codes.created_by is NOT NULL — orphans
+-- were deleted in step 1, so every surviving row has a matching user
+-- and ``created_by_new`` is populated. Re-establish the NOT NULL after.
+ALTER TABLE qr_codes ADD COLUMN IF NOT EXISTS created_by_new uuid;
+UPDATE qr_codes
+    SET created_by_new = users.id
+    FROM users
+    WHERE users.supabase_auth_id = qr_codes.created_by;
+ALTER TABLE qr_codes DROP COLUMN created_by;
+ALTER TABLE qr_codes RENAME COLUMN created_by_new TO created_by;
 ALTER TABLE qr_codes ALTER COLUMN created_by SET NOT NULL;
 
 DO $$
