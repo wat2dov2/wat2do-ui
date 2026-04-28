@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 from core.constants import EVENT_STATUS_ACTIVE, EVENT_STATUS_CANCELLED
 from schemas.event import EventResponse
+from schemas.event_date import OccurrenceResponse
 from services import event_service
 
 
@@ -29,6 +30,19 @@ def _event(**overrides) -> EventResponse:
     }
     defaults.update(overrides)
     return EventResponse.model_validate(defaults)
+
+
+def _occurrence(dtstart: datetime, dtend: datetime | None = None) -> OccurrenceResponse:
+    """Helper: build an OccurrenceResponse the diff helper can iterate."""
+    return OccurrenceResponse.model_validate({
+        "id": "00000000-0000-0000-0000-000000000000",
+        "event_id": 1,
+        "dtstart_utc": dtstart,
+        "dtend_utc": dtend,
+        "duration": None,
+        "tz": None,
+        "created_at": datetime.now(timezone.utc),
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -76,16 +90,33 @@ def test_diff_location_change_populates_dict():
     }
 
 
-def test_diff_dtstart_change_serialises_to_iso():
+def test_diff_occurrence_change_serialises_to_iso():
+    """After the v1-style EventDates port, dtstart/dtend live in the
+    occurrences list — the diff compares the full list and emits a
+    structured change rather than two separate field diffs.
+    """
     old_ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
     new_ts = datetime(2026, 5, 1, 19, 0, tzinfo=timezone.utc)
-    old = _event(dtstart_utc=old_ts)
-    new = _event(dtstart_utc=new_ts)
+    old = _event(occurrences=[_occurrence(old_ts)])
+    new = _event(occurrences=[_occurrence(new_ts)])
 
     diff = event_service.compute_event_diff(old, new)
 
     assert diff == {
-        "dtstart_utc": {"old": old_ts.isoformat(), "new": new_ts.isoformat()}
+        "occurrences": {
+            "old": [{
+                "dtstart_utc": old_ts.isoformat(),
+                "dtend_utc": None,
+                "duration": None,
+                "tz": None,
+            }],
+            "new": [{
+                "dtstart_utc": new_ts.isoformat(),
+                "dtend_utc": None,
+                "duration": None,
+                "tz": None,
+            }],
+        }
     }
 
 
@@ -101,13 +132,23 @@ def test_diff_multiple_fields_all_present():
     }
 
 
-def test_diff_dtstart_none_to_set():
+def test_diff_occurrence_added_from_none():
+    """An event going from no occurrences to one new occurrence diffs as
+    a single ``occurrences`` change with old=[] and the new list."""
     new_ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
-    old = _event(dtstart_utc=None)
-    new = _event(dtstart_utc=new_ts)
+    old = _event(occurrences=[])
+    new = _event(occurrences=[_occurrence(new_ts)])
 
     assert event_service.compute_event_diff(old, new) == {
-        "dtstart_utc": {"old": None, "new": new_ts.isoformat()}
+        "occurrences": {
+            "old": [],
+            "new": [{
+                "dtstart_utc": new_ts.isoformat(),
+                "dtend_utc": None,
+                "duration": None,
+                "tz": None,
+            }],
+        }
     }
 
 

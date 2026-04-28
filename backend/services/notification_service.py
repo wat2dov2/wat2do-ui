@@ -49,6 +49,7 @@ from core.constants import (
 from core.database import get_sb
 from core.tables import (
     EVENTS,
+    EVENTS_LISTING,
     NOTIFICATIONS_LOG,
     NOTIFICATION_PREFERENCES,
     USERS,
@@ -177,7 +178,7 @@ def enqueue_event_change(
     event_row = (
         get_sb()
         .table(EVENTS)
-        .select("title, location, dtstart_utc, status")
+        .select("title, location, status")
         .eq("id", event_id)
         .limit(1)
         .execute()
@@ -530,9 +531,17 @@ def _fetch_events_in_utc_range(
     start_utc: datetime,
     end_utc: datetime,
 ) -> list[dict]:
+    """Fetch events with at least one occurrence in [start_utc, end_utc].
+
+    Reads from the events_listing view so the dtstart_utc filter and sort
+    operate on the joined event_dates row. Multi-occurrence events with
+    several occurrences in the range collapse to one entry per event,
+    keyed on the earliest matching occurrence (the row order from the
+    view's ``order(dtstart_utc)``).
+    """
     q = (
         get_sb()
-        .table(EVENTS)
+        .table(EVENTS_LISTING)
         .select("id, title, location, dtstart_utc")
         .eq("status", EVENT_STATUS_ACTIVE)
         .gte("dtstart_utc", start_utc.isoformat())
@@ -541,7 +550,16 @@ def _fetch_events_in_utc_range(
     )
     if school:
         q = q.eq("school", school)
-    return q.execute().data or []
+    rows = q.execute().data or []
+    seen: set[int] = set()
+    deduped: list[dict] = []
+    for row in rows:
+        eid = row.get("id")
+        if eid in seen:
+            continue
+        seen.add(eid)
+        deduped.append(row)
+    return deduped
 
 
 # ---------------------------------------------------------------------------

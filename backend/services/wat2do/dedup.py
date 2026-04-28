@@ -24,7 +24,7 @@ from core.constants import (
     SCRAPING_TITLE_SIMILARITY_THRESHOLD,
 )
 from core.database import get_sb
-from core.tables import EVENTS
+from core.tables import EVENT_DATES, EVENTS
 
 log = logging.getLogger(__name__)
 
@@ -139,26 +139,33 @@ def _check_same_club_update(
     ig_handle: str | None,
     candidate_title: str,
 ) -> dict | None:
-    """Return an existing event from the same club whose title is too similar."""
+    """Return an existing event from the same club whose title is too similar.
+
+    The events row no longer carries dtstart_utc / dtend_utc — dates live
+    in the event_dates table. We embed the event_dates rows for each
+    candidate and check the latest end time to decide whether the event
+    is still in flight (any future occurrence keeps it alive).
+    """
     if not ig_handle:
         return None
 
     rows = (
         get_sb()
         .table(EVENTS)
-        .select("id,title,ig_handle,location,description,dtstart_utc,dtend_utc")
+        .select("id,title,ig_handle,location,description,event_dates(dtstart_utc,dtend_utc)")
         .eq("ig_handle", ig_handle)
         .execute()
     ).data or []
 
     now = datetime.now(timezone.utc)
     for row in rows:
+        occurrences = row.get("event_dates") or []
+        if not occurrences:
+            continue
+        latest_end = _latest_occurrence_end(occurrences)
         # Skip past events — a same-named event in the past is a new
         # occurrence of a recurring series, not an update.
-        end = _parse_iso8601_utc(row.get("dtend_utc")) or _parse_iso8601_utc(
-            row.get("dtstart_utc")
-        )
-        if end is None or end < now:
+        if latest_end is None or latest_end < now:
             continue
 
         if title_similarity(row.get("title") or "", candidate_title) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD:
@@ -177,25 +184,39 @@ def _check_same_day_duplicate(
     candidate_location: str,
     candidate_description: str,
 ) -> dict | None:
-    """Return an existing event on the same UTC day that fails the duplicate gauntlet."""
+    """Return an existing event on the same UTC day that fails the duplicate gauntlet.
+
+    Queries event_dates first (one row per occurrence), then embeds the
+    parent event metadata. Multiple occurrences of the same event on the
+    same day collapse to one event-row check via the ``seen`` set.
+    """
     day_start = target_start.replace(hour=0, minute=0, second=0, microsecond=0)
     day_end = day_start + timedelta(days=1)
 
     rows = (
         get_sb()
-        .table(EVENTS)
-        .select("id,title,ig_handle,location,description,dtstart_utc")
+        .table(EVENT_DATES)
+        .select("event_id,events(id,title,ig_handle,location,description)")
         .gte("dtstart_utc", day_start.isoformat())
         .lt("dtstart_utc", day_end.isoformat())
         .execute()
     ).data or []
 
     norm_candidate_title = normalize(candidate_title)
+    seen_event_ids: set[int] = set()
 
-    for row in rows:
-        existing_title = row.get("title") or ""
-        existing_location = row.get("location") or ""
-        existing_description = row.get("description") or ""
+    for date_row in rows:
+        event = date_row.get("events")
+        if not event:
+            continue
+        eid = event.get("id")
+        if eid in seen_event_ids:
+            continue
+        seen_event_ids.add(eid)
+
+        existing_title = event.get("title") or ""
+        existing_location = event.get("location") or ""
+        existing_description = event.get("description") or ""
 
         loc_sim = jaccard_similarity(existing_location, candidate_location)
         substring_match = (
@@ -205,9 +226,7 @@ def _check_same_day_duplicate(
 
         if substring_match:
             if loc_sim > SCRAPING_LOCATION_SIMILARITY_THRESHOLD:
-                return row
-            # Substring match without location overlap — different events
-            # that just share a word.  Keep checking other rows.
+                return event
             continue
 
         title_sim = title_similarity(existing_title, candidate_title)
@@ -223,9 +242,21 @@ def _check_same_day_duplicate(
         )
 
         if title_and_loc or loc_and_desc:
-            return row
+            return event
 
     return None
+
+
+def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
+    """Return the latest dtend (or dtstart fallback) across occurrences."""
+    candidates: list[datetime] = []
+    for occ in occurrences:
+        end = _parse_iso8601_utc(occ.get("dtend_utc")) or _parse_iso8601_utc(
+            occ.get("dtstart_utc")
+        )
+        if end is not None:
+            candidates.append(end)
+    return max(candidates) if candidates else None
 
 
 def existing_shortcodes(source_urls: Iterable[str]) -> set[str]:

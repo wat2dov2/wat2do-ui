@@ -38,6 +38,12 @@ _VALID_EVENT_DATA = {
     "title": "X",
     "location": "Loc",
     "organization": "Org",
+    "occurrences": [{
+        "dtstart_utc": "2026-12-01T18:00:00+00:00",
+        "dtend_utc": "2026-12-01T20:00:00+00:00",
+        "duration": None,
+        "tz": "America/Toronto",
+    }],
 }
 
 

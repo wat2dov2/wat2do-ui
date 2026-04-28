@@ -24,6 +24,7 @@ from core.constants import (
     MAX_EVENT_TITLE_LENGTH,
     MAX_URL_LENGTH,
 )
+from schemas.event_date import OccurrenceCreate, OccurrenceResponse
 
 # events.status column — Literal-typed so the value renders as an enum
 # in the OpenAPI schema and the generated TS types stay in sync.
@@ -119,12 +120,12 @@ class EventCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=MAX_EVENT_TITLE_LENGTH)
     description: str | None = Field(default=None, max_length=MAX_EVENT_DESCRIPTION_LENGTH)
     location: str = Field(..., min_length=1, max_length=MAX_EVENT_LOCATION_LENGTH)
-    # ``AwareDatetime`` rejects naive datetimes (no tzinfo) at parse time
-    # (audit S15).  The ``_normalize_utc`` validator additionally converts
-    # any aware input to UTC so the DB stores a single canonical timezone
-    # regardless of the client's original offset.
-    dtstart_utc: AwareDatetime | None = None
-    dtend_utc: AwareDatetime | None = None
+    # Occurrences live in the event_dates table — one row per occurrence,
+    # one events row per logical event. Per-occurrence dtstart/dtend
+    # validation lives on OccurrenceCreate; the only constraint here is
+    # that an event has at least one occurrence (matches v1's required
+    # EventDates).
+    occurrences: list[OccurrenceCreate] = Field(..., min_length=1)
     price: PriceField | None = None
     food: list[FoodStr] | None = Field(default=None, max_length=MAX_EVENT_FOOD_COUNT)
     registration: bool = False
@@ -173,24 +174,6 @@ class EventCreate(BaseModel):
     def _safe_handle(cls, v: str | None) -> str | None:
         return _validate_optional_handle(v)
 
-    @field_validator("dtstart_utc", "dtend_utc")
-    @classmethod
-    def _normalize_utc(cls, v: datetime | None) -> datetime | None:
-        """Convert any aware datetime to UTC (audit S15)."""
-        if v is None:
-            return None
-        return v.astimezone(timezone.utc)
-
-    @model_validator(mode="after")
-    def _dtstart_before_dtend(self):
-        if (
-            self.dtstart_utc is not None
-            and self.dtend_utc is not None
-            and self.dtstart_utc >= self.dtend_utc
-        ):
-            raise ValueError("dtstart_utc must be before dtend_utc")
-        return self
-
 
 class EventUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -199,9 +182,10 @@ class EventUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=MAX_EVENT_DESCRIPTION_LENGTH)
     location: str | None = Field(default=None, max_length=MAX_EVENT_LOCATION_LENGTH)
     status: EventStatus | None = None
-    # See ``EventCreate`` for ``AwareDatetime`` rationale (audit S15).
-    dtstart_utc: AwareDatetime | None = None
-    dtend_utc: AwareDatetime | None = None
+    # ``None`` (the default) leaves occurrences unchanged. An empty list
+    # is rejected — every event must have at least one occurrence — so
+    # callers wanting to clear dates must instead delete the event.
+    occurrences: list[OccurrenceCreate] | None = Field(default=None, min_length=1)
     price: PriceField | None = None
     food: list[FoodStr] | None = Field(default=None, max_length=MAX_EVENT_FOOD_COUNT)
     registration: bool | None = None
@@ -252,24 +236,6 @@ class EventUpdate(BaseModel):
     def _safe_handle(cls, v: str | None) -> str | None:
         return _validate_optional_handle(v)
 
-    @field_validator("dtstart_utc", "dtend_utc")
-    @classmethod
-    def _normalize_utc(cls, v: datetime | None) -> datetime | None:
-        """Convert any aware datetime to UTC (audit S15)."""
-        if v is None:
-            return None
-        return v.astimezone(timezone.utc)
-
-    @model_validator(mode="after")
-    def _dtstart_before_dtend(self):
-        if (
-            self.dtstart_utc is not None
-            and self.dtend_utc is not None
-            and self.dtstart_utc >= self.dtend_utc
-        ):
-            raise ValueError("dtstart_utc must be before dtend_utc")
-        return self
-
 
 class LatestEventResponse(BaseModel):
     """Minimal payload for 'latest added event' (e.g. for 'X added 22 minutes ago')."""
@@ -279,9 +245,15 @@ class LatestEventResponse(BaseModel):
 
 
 class EventTimeMeta(BaseModel):
-    """Minimal event metadata for time-decay calculations."""
+    """Minimal event metadata for time-decay calculations.
+
+    Decay keys off ``added_at`` (catalog age), not ``dtstart_utc`` —
+    see the rationale in services/recommender/popularity.py. The field
+    used to be on this model when ``events`` carried dtstart_utc as a
+    column; after the v1-style EventDates port (migration
+    20260428031741) we drop it from the model too.
+    """
     id: int
-    dtstart_utc: str | None = None
     added_at: str | None = None
 
 
@@ -325,12 +297,20 @@ class EventResponse(BaseModel):
     the authorization layer (``get_authorized_resource`` reads it); the
     public list endpoint hides it via ``EventSummaryResponse`` which
     omits the field entirely.
+
+    ``occurrences`` is the canonical date list. ``dtstart_utc`` /
+    ``dtend_utc`` are denormalized "primary date" convenience fields
+    populated by the service layer (earliest future occurrence, or
+    earliest occurrence if the event has only past dates). They are
+    NOT columns on the events table — see migration
+    20260428031741_add_event_dates_table.sql.
     """
 
     id: int
     title: str
     description: str | None = None
     location: str
+    occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     dtstart_utc: datetime | None = None
     dtend_utc: datetime | None = None
     price: float | None = None
@@ -366,6 +346,7 @@ class EventPublicResponse(BaseModel):
     title: str
     description: str | None = None
     location: str
+    occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     dtstart_utc: datetime | None = None
     dtend_utc: datetime | None = None
     price: float | None = None

@@ -153,18 +153,35 @@ def test_get_user_id_by_token_miss(fake_sb, patch_sb):
 
 
 def _event_row(**overrides) -> dict:
+    """Plain events row — no date columns since the v1-style EventDates
+    port (migration 20260428031741). Occurrences come from a separate
+    event_dates query; use ``_occurrence_row`` to build those.
+    """
     defaults = {
         "id": 42,
         "title": "Jazz Night",
         "description": "Live jazz on the quad",
         "location": "The Quad",
-        "dtstart_utc": "2026-05-01T23:00:00+00:00",
-        "dtend_utc": "2026-05-02T01:30:00+00:00",
         "school": "University of Waterloo",
         "organization": "Music Club",
         "source_url": None,
         "added_at": "2026-04-15T10:00:00+00:00",
         "created_by": None,
+    }
+    defaults.update(overrides)
+    return defaults
+
+
+def _occurrence_row(event_id: int, **overrides) -> dict:
+    """One event_dates row, shaped to satisfy OccurrenceResponse."""
+    defaults = {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "event_id": event_id,
+        "dtstart_utc": "2026-05-01T23:00:00+00:00",
+        "dtend_utc": "2026-05-02T01:30:00+00:00",
+        "duration": None,
+        "tz": None,
+        "created_at": "2026-04-15T10:00:00+00:00",
     }
     defaults.update(overrides)
     return defaults
@@ -190,22 +207,31 @@ def test_build_ics_for_user_renders_vevent(monkeypatch, fake_sb, patch_sb):
     """One saved event → one VEVENT with expected fields.
 
     Asserts on TZID (from school), DTSTART in local wall-clock time,
-    UID stability, SUMMARY, LOCATION, and that the description ends
-    with a deep-link back to the event page.
+    UID stability (event-id-occ-id pair), SUMMARY, LOCATION, and that
+    the description ends with a deep-link back to the event page.
     """
     patch_sb("services.calendar_service")
+    patch_sb("services.event_date_service")
     monkeypatch.setattr(
         saved_event_service,
         "get_saved_event_ids",
         MagicMock(return_value=[42]),
     )
-    fake_sb.set_response(data=[_event_row()])
+    # Two queries land on fake_sb in sequence: events.select.in_, then
+    # event_dates.select.in_. Queue both responses.
+    fake_sb.queue_responses([
+        [_event_row()],                               # events
+        [_occurrence_row(event_id=42)],               # event_dates
+    ])
 
     body = calendar_service.build_ics_for_user(str(uuid4()))
     text = body.decode()
 
     assert "BEGIN:VEVENT" in text
-    assert "UID:event-42@wat2do.app" in text
+    # UID combines event id with the occurrence id so a multi-occurrence
+    # event renders distinct VEVENTs that calendar clients can track
+    # independently.
+    assert "UID:event-42-00000000-0000-0000-0000-000000000001@wat2do.app" in text
     assert "SUMMARY:Jazz Night" in text
     # 23:00 UTC = 19:00 America/Toronto in EDT (May)
     assert "DTSTART;TZID=America/Toronto:20260501T190000" in text
@@ -213,18 +239,22 @@ def test_build_ics_for_user_renders_vevent(monkeypatch, fake_sb, patch_sb):
     assert "LOCATION:The Quad" in text
     assert "/events/42" in text  # deep-link in URL + description
     fake_sb.table.assert_any_call(EVENTS)
-    fake_sb.in_.assert_called_with("id", [42])
+    fake_sb.in_.assert_any_call("id", [42])
 
 
-def test_build_ics_for_user_skips_events_without_dtstart(monkeypatch, fake_sb, patch_sb):
-    """Events missing dtstart_utc are skipped, not rendered as malformed VEVENT."""
+def test_build_ics_for_user_skips_events_without_occurrences(monkeypatch, fake_sb, patch_sb):
+    """Events with zero occurrences are skipped, not rendered as malformed VEVENT."""
     patch_sb("services.calendar_service")
+    patch_sb("services.event_date_service")
     monkeypatch.setattr(
         saved_event_service,
         "get_saved_event_ids",
         MagicMock(return_value=[99]),
     )
-    fake_sb.set_response(data=[_event_row(id=99, dtstart_utc=None, dtend_utc=None)])
+    fake_sb.queue_responses([
+        [_event_row(id=99)],   # events row exists
+        [],                    # but no event_dates rows
+    ])
 
     body = calendar_service.build_ics_for_user(str(uuid4()))
     text = body.decode()
@@ -236,12 +266,16 @@ def test_build_ics_for_user_skips_events_without_dtstart(monkeypatch, fake_sb, p
 def test_build_ics_for_user_unknown_school_renders_utc(monkeypatch, fake_sb, patch_sb):
     """School not in the map → DTSTART emitted with TZID=UTC."""
     patch_sb("services.calendar_service")
+    patch_sb("services.event_date_service")
     monkeypatch.setattr(
         saved_event_service,
         "get_saved_event_ids",
         MagicMock(return_value=[1]),
     )
-    fake_sb.set_response(data=[_event_row(id=1, school="Hogwarts")])
+    fake_sb.queue_responses([
+        [_event_row(id=1, school="Hogwarts")],
+        [_occurrence_row(event_id=1)],
+    ])
 
     body = calendar_service.build_ics_for_user(str(uuid4()))
     text = body.decode()

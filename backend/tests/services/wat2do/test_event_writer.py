@@ -1,11 +1,16 @@
-"""Unit tests for services/wat2do/event_writer."""
+"""Unit tests for services/wat2do/event_writer.
+
+After the v1-style EventDates port (migration 20260428031741) the writer
+inserts ONE events row plus N event_dates rows per logical event.
+The tests assert on both layers via the fake_sb fixture.
+"""
 
 from datetime import datetime, timedelta, timezone
 
 from services.wat2do import event_writer
 from services.wat2do.event_writer import (
     _coerce_food,
-    _maybe_iso,
+    _coerce_future_occurrences,
     _parse_iso,
     _pick_first_canonical_category,
     write_event,
@@ -77,9 +82,31 @@ def test_parse_iso_invalid_returns_none():
     assert _parse_iso(None) is None
 
 
-def test_maybe_iso_returns_none_for_empty():
-    assert _maybe_iso("") is None
-    assert _maybe_iso(None) is None
+# ── _coerce_future_occurrences ────────────────────────────────────────
+
+
+def test_coerce_future_occurrences_drops_past():
+    past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+    occurrences = [
+        {"dtstart_utc": past, "dtend_utc": "", "duration": "", "tz": "UTC"},
+        {"dtstart_utc": future, "dtend_utc": "", "duration": "", "tz": "UTC"},
+    ]
+    cleaned = _coerce_future_occurrences(occurrences)
+    assert len(cleaned) == 1
+    # OccurrenceCreate dtstart is parsed; just check it's the future one.
+    assert cleaned[0].dtstart_utc.isoformat().startswith(future[:13])
+
+
+def test_coerce_future_occurrences_skips_invalid():
+    """Invalid date strings drop quietly — one bad occurrence shouldn't kill the event."""
+    future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+    occurrences = [
+        {"dtstart_utc": "not-a-date", "dtend_utc": "", "duration": "", "tz": "UTC"},
+        {"dtstart_utc": future, "dtend_utc": "", "duration": "", "tz": "UTC"},
+    ]
+    cleaned = _coerce_future_occurrences(occurrences)
+    assert len(cleaned) == 1
 
 
 # ── write_event paths ─────────────────────────────────────────────────
@@ -96,9 +123,11 @@ def _event(**overrides) -> dict:
         "location": "SLC 3223",
         "organization": "UW Tea Club",
         "categories": ["Food"],
+        # dtend left as empty string — OccurrenceCreate's
+        # _dtend_after_dtstart validator only fires when dtend is set.
         "occurrences": [{
             "dtstart_utc": _future(2),
-            "dtend_utc": _future(2),
+            "dtend_utc": "",
             "duration": "",
             "tz": "America/Toronto",
         }],
@@ -114,25 +143,39 @@ def _event(**overrides) -> dict:
 
 def test_write_event_skips_when_occurrences_empty(monkeypatch):
     """No occurrences -> "skipped" without touching the DB."""
-    # ``find_match`` is the only DB caller before the early return; not
-    # patching it would crash on the real client. Stub it out.
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     result = write_event(_event(occurrences=[]), ig_handle="x", source_url="u")
     assert result == "skipped"
 
 
 def test_write_event_skips_when_required_fields_missing(monkeypatch):
-    """Missing title or location -> skipped, no DB touch."""
+    """Missing title or location -> skipped."""
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     assert write_event(_event(title=""), ig_handle="x", source_url="u") == "skipped"
     assert write_event(_event(location=""), ig_handle="x", source_url="u") == "skipped"
 
 
-def test_write_event_inserts_one_row_per_occurrence(fake_sb, patch_sb, monkeypatch):
-    """Multi-occurrence events become multiple events rows in v2's flat schema."""
+def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, monkeypatch):
+    """Multi-occurrence post -> ONE events row + N event_dates rows."""
     patch_sb("services.wat2do.event_writer")
+    patch_sb("services.event_date_service")
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
-    fake_sb.set_response(data=[{"id": 1}])
+    # Sequence of execute responses the writer hits, in order:
+    #   1. (event_writer) clubs lookup for club_type — _resolve_organization
+    #      short-circuits because the event dict already has an organization.
+    #   2. (event_writer) events insert -> [{"id": 7}]
+    #   3. (event_date_service) event_dates insert -> [...] (>=1 row)
+    occ_now = datetime.now(timezone.utc).isoformat()
+    fake_sb.queue_responses([
+        [],                       # clubs lookup for club_type
+        [{"id": 7}],             # events insert
+        # occurrences insert — return shape must satisfy OccurrenceResponse
+        [
+            {"id": "d1", "event_id": 7, "dtstart_utc": _future(2),  "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
+            {"id": "d2", "event_id": 7, "dtstart_utc": _future(9),  "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
+            {"id": "d3", "event_id": 7, "dtstart_utc": _future(16), "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
+        ],
+    ])
 
     event = _event(
         occurrences=[
@@ -144,23 +187,46 @@ def test_write_event_inserts_one_row_per_occurrence(fake_sb, patch_sb, monkeypat
     result = write_event(event, ig_handle="uwteaclub", source_url="https://instagram.com/p/abc")
     assert result == "inserted"
 
-    # Confirm the insert was called with a list of three rows.
-    fake_sb.insert.assert_called_once()
-    rows = fake_sb.insert.call_args[0][0]
-    assert isinstance(rows, list)
-    assert len(rows) == 3
-    # Same metadata across all rows; only the dtstart differs.
-    titles = {row["title"] for row in rows}
-    assert titles == {"Tea Tasting"}
-    starts = {row["dtstart_utc"] for row in rows}
-    assert len(starts) == 3
+    # The events insert should have been called exactly once, with a SINGLE row payload
+    # (not a list of three) — the v1-style port collapses multi-occurrence events to
+    # one parent row.
+    insert_calls = [
+        call for call in fake_sb.insert.call_args_list
+        if isinstance(call[0][0], dict)
+    ]
+    assert len(insert_calls) == 1
+    payload = insert_calls[0][0][0]
+    assert payload["title"] == "Tea Tasting"
+    assert "dtstart_utc" not in payload  # dates do NOT belong on the events row anymore
+
+    # The event_dates insert should have received THREE rows (one per occurrence).
+    list_inserts = [
+        call for call in fake_sb.insert.call_args_list
+        if isinstance(call[0][0], list)
+    ]
+    assert len(list_inserts) == 1
+    occ_payload = list_inserts[0][0][0]
+    assert len(occ_payload) == 3
+    assert all("dtstart_utc" in row for row in occ_payload)
 
 
 def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
-    """Past occurrences are filtered out; only future ones become rows."""
+    """Past occurrences are filtered out before the events insert."""
     patch_sb("services.wat2do.event_writer")
+    patch_sb("services.event_date_service")
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
-    fake_sb.set_response(data=[{"id": 1}])
+    occ_now = datetime.now(timezone.utc).isoformat()
+    fake_sb.queue_responses([
+        [],                       # clubs club_type
+        [{"id": 11}],             # events insert
+        # occurrences insert — only one survives the past-event filter
+        [{
+            "id": "d1", "event_id": 11,
+            "dtstart_utc": _future(2), "dtend_utc": None,
+            "duration": None, "tz": None,
+            "created_at": occ_now,
+        }],
+    ])
 
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
@@ -170,14 +236,18 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
     ])
 
     assert write_event(event, ig_handle="x", source_url="u") == "inserted"
-    rows = fake_sb.insert.call_args[0][0]
-    assert len(rows) == 1
+
+    list_inserts = [
+        call for call in fake_sb.insert.call_args_list
+        if isinstance(call[0][0], list)
+    ]
+    assert len(list_inserts) == 1
+    occ_payload = list_inserts[0][0][0]
+    assert len(occ_payload) == 1
 
 
-def test_write_event_returns_skipped_when_all_occurrences_past(fake_sb, patch_sb, monkeypatch):
-    patch_sb("services.wat2do.event_writer")
+def test_write_event_returns_skipped_when_all_occurrences_past(monkeypatch):
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
-
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     event = _event(occurrences=[
         {"dtstart_utc": past, "dtend_utc": "", "duration": "", "tz": "UTC"},

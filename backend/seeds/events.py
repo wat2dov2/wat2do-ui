@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from core.config import settings
 from core.constants import BUCKET_EVENT_IMAGES
 from core.database import get_sb
-from core.tables import EVENTS
+from core.tables import EVENT_DATES, EVENTS
 from core.constants import EVENT_CATEGORIES
 
 
@@ -118,6 +118,22 @@ def seed():
         r = sb.table(EVENTS).select("id").eq("title", data["title"]).execute()
         if r.data and len(r.data) > 0:
             continue
-        sb.table(EVENTS).insert(data).execute()
+
+        # Pull dates out of the events dict — after migration
+        # 20260428031741 they live in event_dates.
+        payload = dict(data)
+        dtstart = payload.pop("dtstart_utc", None)
+        dtend = payload.pop("dtend_utc", None)
+
+        inserted = sb.table(EVENTS).insert(payload).execute()
+        if not inserted.data:
+            continue
+        new_id = inserted.data[0]["id"]
+        if dtstart:
+            sb.table(EVENT_DATES).insert({
+                "event_id": new_id,
+                "dtstart_utc": dtstart,
+                "dtend_utc": dtend,
+            }).execute()
         created += 1
     print(f"Seeded {created} new events ({len(SEED_EVENTS)} total in seed list)")

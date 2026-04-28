@@ -1,13 +1,10 @@
-"""Insert extracted events into the v2 ``events`` table.
+"""Insert extracted events into the v2 ``events`` + ``event_dates`` tables.
 
-v1's events schema had a separate ``EventDates`` table for multi-occurrence
-events. v2 collapsed that — every Event row carries its own ``dtstart_utc``
-/ ``dtend_utc`` pair. The translation: each occurrence the extractor
-returns becomes an independent Event row sharing the rest of the metadata
-(image, source_url, ig_handle, etc.).
-
-The writer is the only module in the pipeline that touches the events
-table directly; everything else builds dicts.
+After the v1-style EventDates port (migration 20260428031741), every
+logical event is one ``events`` row + N ``event_dates`` rows. The writer
+inserts the parent row first, then bulk-inserts occurrences. If the
+occurrence insert fails the parent row is rolled back so we don't leave
+orphan events with no dates.
 """
 
 from __future__ import annotations
@@ -19,16 +16,18 @@ from core.constants import EVENT_STATUS_ACTIVE
 from core.database import get_sb
 from core.tables import CLUBS, EVENTS
 from schemas.event import normalize_category
-from services.wat2do.dedup import MatchResult, find_match
+from schemas.event_date import OccurrenceCreate
+from services import event_date_service
+from services.wat2do.dedup import find_match
 
 log = logging.getLogger(__name__)
 
 
 def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
-    """Insert (or update) the event(s) extracted from one Instagram post.
+    """Insert (or update) the event extracted from one Instagram post.
 
     Returns one of:
-        ``"inserted"``  — new row(s) created.
+        ``"inserted"``  — new event row + occurrences created.
         ``"updated"``   — same-club update applied to an existing row.
         ``"duplicate"`` — cross-club duplicate, skipped.
         ``"skipped"``   — required field missing (e.g. no occurrence,
@@ -52,6 +51,16 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
     club_type = _resolve_club_type(ig_handle)
     category = _pick_first_canonical_category(event.get("categories") or [])
 
+    # Build the future-only occurrence list. Past-dated occurrences from
+    # mis-parsed captions are dropped here rather than at insert time.
+    future_occurrences = _coerce_future_occurrences(occurrences)
+    if not future_occurrences:
+        log.info(
+            "[%s] all %d occurrences for %r are in the past — skipping",
+            ig_handle, len(occurrences), title,
+        )
+        return "skipped"
+
     # Same-club / same-day dedup against the events table.
     match = find_match(
         title=title,
@@ -67,68 +76,58 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         )
         return "duplicate"
 
-    rows = []
-    for occ in occurrences:
-        dtstart = _parse_iso(occ.get("dtstart_utc"))
-        if dtstart is None:
-            continue
-        # Past-event filter (matches v1): drop occurrences whose start is
-        # already in the past — they are noise from misparsed captions.
-        if dtstart < datetime.now(timezone.utc):
-            continue
-
-        rows.append({
-            "title": title[:500],
-            "description": (event.get("description") or "")[:5000] or None,
-            "location": location[:500],
-            "dtstart_utc": dtstart.isoformat(),
-            "dtend_utc": _maybe_iso(occ.get("dtend_utc")),
-            "price": event.get("price"),
-            "food": _coerce_food(event.get("food")),
-            "registration": bool(event.get("registration", False)),
-            "source_image_url": (event.get("source_image_url") or None),
-            "source_url": source_url or None,
-            "club_type": (club_type[:100] if club_type else None),
-            "school": (event.get("school") or "")[:255] or None,
-            "category": category,
-            "organization": organization[:255],
-            "ig_handle": ig_handle[:255] if ig_handle else None,
-            "status": EVENT_STATUS_ACTIVE,
-        })
-
-    if not rows:
-        log.info(
-            "[%s] all %d occurrences for %r are in the past — skipping",
-            ig_handle, len(occurrences), title,
-        )
-        return "skipped"
+    event_row = {
+        "title": title[:500],
+        "description": (event.get("description") or "")[:5000] or None,
+        "location": location[:500],
+        "price": event.get("price"),
+        "food": _coerce_food(event.get("food")),
+        "registration": bool(event.get("registration", False)),
+        "source_image_url": (event.get("source_image_url") or None),
+        "source_url": source_url or None,
+        "club_type": (club_type[:100] if club_type else None),
+        "school": (event.get("school") or "")[:255] or None,
+        "category": category,
+        "organization": organization[:255],
+        "ig_handle": ig_handle[:255] if ig_handle else None,
+        "status": EVENT_STATUS_ACTIVE,
+    }
 
     if match is not None and match.kind == "same_club":
-        # v1 keeps a single row and updates it with the latest data from the
-        # newest post.  v2 has one row per occurrence — so we update the
-        # matched row with the FIRST occurrence's data and let the rest fall
-        # through as new inserts (preserves all known dates of a recurring
-        # series even when an existing row matched the title).
-        first, rest = rows[0], rows[1:]
         existing_id = match.event.get("id")
         log.info(
             "[%s] same-club update on event id=%s for %r",
             ig_handle, existing_id, title,
         )
-        get_sb().table(EVENTS).update(first).eq("id", existing_id).execute()
-        if rest:
-            get_sb().table(EVENTS).insert(rest).execute()
+        get_sb().table(EVENTS).update(event_row).eq("id", existing_id).execute()
+        event_date_service.replace_occurrences(existing_id, future_occurrences)
         return "updated"
 
-    get_sb().table(EVENTS).insert(rows).execute()
-    log.info("[%s] inserted %d row(s) for %r", ig_handle, len(rows), title)
+    inserted = get_sb().table(EVENTS).insert(event_row).execute()
+    if not inserted.data:
+        log.error("[%s] events insert returned no row for %r", ig_handle, title)
+        return "skipped"
+    new_id = inserted.data[0]["id"]
+    try:
+        event_date_service.create_occurrences(new_id, future_occurrences)
+    except Exception:
+        # Clean up the orphan event row — without occurrences it would
+        # be invisible to the listing query (LEFT JOIN row with NULL
+        # date columns) but still pollute the table.
+        get_sb().table(EVENTS).delete().eq("id", new_id).execute()
+        raise
+
+    log.info(
+        "[%s] inserted event id=%s with %d occurrence(s) for %r",
+        ig_handle, new_id, len(future_occurrences), title,
+    )
     return "inserted"
 
 
 def _resolve_organization(event: dict, *, ig_handle: str) -> str:
     """Pick a non-empty organization string for the events row.
 
-    Order: extractor's ``organization`` -> club lookup by IG handle ->
+    Order: extractor's ``organization`` → club lookup by IG handle →
     raw IG handle. ``events.organization`` is NOT NULL in the v2 schema,
     so we always return a non-empty string.
     """
@@ -188,15 +187,14 @@ def _pick_first_canonical_category(categories: list) -> str | None:
 
 
 def _coerce_food(value: object) -> list | None:
-    """v1 stored food as a single comma-separated string. v2 stores it as a JSON list.
+    """v1 stored food as a single comma-separated string; v2 stores a JSON list.
 
     Accept both shapes:
-        - empty / None / "" -> None
-        - list[str]         -> [stripped, deduped, capped]
-        - str               -> split on commas, trim, dedupe, cap
+        - empty / None / "" → None
+        - list[str]         → [stripped, deduped, capped]
+        - str               → split on commas, trim, dedupe, cap
 
-    Capped at 20 items (matches MAX_EVENT_FOOD_COUNT in core/constants.py)
-    so a runaway extraction doesn't blow the schema validator at insert time.
+    Capped at 20 items (matches MAX_EVENT_FOOD_COUNT in core/constants.py).
     """
     if value in (None, "", []):
         return None
@@ -218,6 +216,38 @@ def _coerce_food(value: object) -> list | None:
     return deduped or None
 
 
+def _coerce_future_occurrences(occurrences: list[dict]) -> list[OccurrenceCreate]:
+    """Filter to future occurrences and return validated OccurrenceCreate models.
+
+    Past occurrences are dropped (mirrors v1: scraped events with a
+    dtstart_utc earlier than ``now()`` are noise from misparsed captions).
+    Invalid dates are silently skipped — the warning lives at the
+    extractor layer where the JSON parsing error is more actionable.
+    """
+    now = datetime.now(timezone.utc)
+    out: list[OccurrenceCreate] = []
+    for occ in occurrences:
+        if not isinstance(occ, dict):
+            continue
+        dtstart = _parse_iso(occ.get("dtstart_utc"))
+        if dtstart is None or dtstart < now:
+            continue
+        dtend = _parse_iso(occ.get("dtend_utc"))
+        try:
+            out.append(OccurrenceCreate(
+                dtstart_utc=dtstart,
+                dtend_utc=dtend,
+                duration=(occ.get("duration") or None),
+                tz=(occ.get("tz") or None),
+            ))
+        except Exception as e:
+            # OccurrenceCreate's validators reject dtend <= dtstart and a
+            # few other shapes; one bad occurrence shouldn't drop the
+            # whole event.
+            log.warning("Skipping invalid occurrence %r: %s", occ, e)
+    return out
+
+
 def _parse_iso(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -229,8 +259,3 @@ def _parse_iso(value: str | None) -> datetime | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
-
-
-def _maybe_iso(value: str | None) -> str | None:
-    parsed = _parse_iso(value)
-    return parsed.isoformat() if parsed else None

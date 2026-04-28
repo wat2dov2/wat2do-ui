@@ -5,6 +5,8 @@ Single source of truth — import from here instead of using string literals.
 
 USERS = "users"
 EVENTS = "events"
+EVENT_DATES = "event_dates"
+EVENTS_LISTING = "events_listing"
 CLUBS = "clubs"
 CLUB_INTEGRATIONS = "club_integrations"
 QR_CODES = "qr_codes"

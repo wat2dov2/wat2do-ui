@@ -23,7 +23,8 @@ from core.constants import SCHOOL_ALIASES, SCHOOL_TIMEZONES
 from core.database import get_sb
 from core.tables import EVENTS, USERS
 from schemas.event import EventResponse
-from services import saved_event_service
+from schemas.event_date import OccurrenceResponse
+from services import event_date_service, saved_event_service
 
 log = logging.getLogger(__name__)
 
@@ -130,17 +131,18 @@ def build_ics_for_user(user_id: str) -> bytes:
 
     dtstamp = datetime.now(timezone.utc)
     for event in events:
-        vevent = _event_to_vevent(event, dtstamp)
-        if vevent is not None:
+        for vevent in _event_to_vevents(event, dtstamp):
             cal.add_component(vevent)
 
     return cal.to_ical()
 
 
 def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
-    """Chunked fetch preserving the caller's ordering.
+    """Chunked fetch preserving the caller's ordering, with occurrences attached.
 
     PostgREST ``in_`` has practical length limits, so chunk the ids.
+    Occurrences are batched separately (one query per chunk) and joined
+    in Python — avoids an N+1 fetch for a feed with many saved events.
     """
     if not event_ids:
         return []
@@ -151,23 +153,36 @@ def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
         r = get_sb().table(EVENTS).select("*").in_("id", batch).execute()
         for row in r.data or []:
             rows_by_id[row["id"]] = row
+
+    occ_by_event = event_date_service.list_for_events(list(rows_by_id.keys()))
+
     ordered: list[EventResponse] = []
     for eid in event_ids:
         row = rows_by_id.get(eid)
         if row is not None:
-            ordered.append(EventResponse.model_validate(row))
+            payload = dict(row)
+            payload["occurrences"] = [
+                o.model_dump(mode="json") for o in occ_by_event.get(eid, [])
+            ]
+            # Calendar feed only iterates ``occurrences``; the primary
+            # date convenience fields are unused, so leave them None to
+            # avoid an extra _pick_primary call here.
+            ordered.append(EventResponse.model_validate(payload))
     return ordered
 
 
-def _event_to_vevent(event: EventResponse, dtstamp: datetime) -> ICalEvent | None:
-    """Render one event as a VEVENT component, or None to skip.
+def _event_to_vevents(event: EventResponse, dtstamp: datetime) -> list[ICalEvent]:
+    """Emit one VEVENT per occurrence on the event.
 
-    Events without a start time are skipped — RFC 5545 requires DTSTART
+    Events with zero occurrences are skipped — RFC 5545 requires DTSTART
     on every VEVENT, and a calendar entry with no time is nonsensical.
+    Each VEVENT carries a UID that combines the event id with the
+    occurrence id so calendar clients distinguish recurrences without
+    treating them as edits to a single underlying entry.
     """
-    if event.dtstart_utc is None:
-        log.debug("Skipping event %d in ICS feed: no dtstart_utc", event.id)
-        return None
+    if not event.occurrences:
+        log.debug("Skipping event %d in ICS feed: no occurrences", event.id)
+        return []
 
     tzid = resolve_school_timezone(event.school)
     try:
@@ -185,15 +200,38 @@ def _event_to_vevent(event: EventResponse, dtstamp: datetime) -> ICalEvent | Non
     if event.description:
         description_parts.append(event.description)
     description_parts.append(event_url)
+    description = "\n\n".join(description_parts)
 
+    components: list[ICalEvent] = []
+    for occ in event.occurrences:
+        components.append(_occurrence_to_vevent(
+            event=event,
+            occurrence=occ,
+            tzinfo=tzinfo,
+            event_url=event_url,
+            description=description,
+            dtstamp=dtstamp,
+        ))
+    return components
+
+
+def _occurrence_to_vevent(
+    *,
+    event: EventResponse,
+    occurrence: OccurrenceResponse,
+    tzinfo,
+    event_url: str,
+    description: str,
+    dtstamp: datetime,
+) -> ICalEvent:
     v = ICalEvent()
-    v.add("uid", f"event-{event.id}@wat2do.app")
+    v.add("uid", f"event-{event.id}-{occurrence.id}@wat2do.app")
     v.add("summary", event.title)
-    v.add("dtstart", event.dtstart_utc.astimezone(tzinfo))
-    if event.dtend_utc is not None:
-        v.add("dtend", event.dtend_utc.astimezone(tzinfo))
+    v.add("dtstart", occurrence.dtstart_utc.astimezone(tzinfo))
+    if occurrence.dtend_utc is not None:
+        v.add("dtend", occurrence.dtend_utc.astimezone(tzinfo))
     v.add("location", event.location)
-    v.add("description", "\n\n".join(description_parts))
+    v.add("description", description)
     v.add("url", event_url)
     v.add("dtstamp", dtstamp)
     v.add("last-modified", event.added_at)

@@ -19,7 +19,7 @@ from core.cache import TTLCache
 from core.retry import supabase_retry
 from core.database import get_sb
 from core.pagination import iter_all_pages
-from core.tables import EVENTS, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
+from core.tables import EVENTS, EVENTS_LISTING, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
 from schemas.recommendation import RecommendationItem
 from services import user_service, interaction_service
@@ -223,14 +223,16 @@ class RecommendationEngine:
 
     @staticmethod
     def _fetch_future_event_ids(event_ids: list[int], now: str) -> set[int]:
-        """Check which of the given event IDs are still in the future.
+        """Check which of the given event IDs have at least one future occurrence.
 
-        Uses an IN-clause filter instead of scanning all future events,
-        so the query touches only the rows we care about.
+        Uses the ``events_listing`` view (events × event_dates LEFT JOIN)
+        and an IN-clause filter so the query touches only the rows we
+        care about. Multi-occurrence events show up multiple times in
+        the view rows; the ``set()`` collapses them.
         """
         r = (
             get_sb()
-            .table(EVENTS)
+            .table(EVENTS_LISTING)
             .select("id")
             .in_("id", event_ids)
             .gte("dtstart_utc", now)
@@ -477,16 +479,30 @@ class RecommendationEngine:
         def _fetch_candidates() -> list[EventResponse]:
             log.debug("Candidate events cache MISS — querying DB")
             now = datetime.now(timezone.utc).isoformat()
+            # events_listing returns one row per (event, occurrence). Sort
+            # by the occurrence's dtstart and dedupe to keep each event's
+            # EARLIEST future occurrence as the candidate's primary date.
+            # Over-fetch (4× the pool size) to give the dedupe room.
             r = (
                 get_sb()
-                .table(EVENTS)
+                .table(EVENTS_LISTING)
                 .select("*")
                 .gte("dtstart_utc", now)
                 .order("dtstart_utc", desc=False)
-                .limit(CANDIDATE_POOL_SIZE)
+                .limit(CANDIDATE_POOL_SIZE * 4)
                 .execute()
             )
-            return [EventResponse.model_validate(row) for row in (r.data or [])]
+            seen: set[int] = set()
+            candidates: list[EventResponse] = []
+            for row in r.data or []:
+                eid = row.get("id")
+                if eid in seen:
+                    continue
+                seen.add(eid)
+                candidates.append(EventResponse.model_validate(row))
+                if len(candidates) >= CANDIDATE_POOL_SIZE:
+                    break
+            return candidates
 
         return _candidates_cache.get_or_compute("candidates", _fetch_candidates)
 

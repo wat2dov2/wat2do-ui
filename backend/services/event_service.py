@@ -1,4 +1,15 @@
-"""Events via Supabase. Sync so no asyncpg/SQLAlchemy."""
+"""Events via Supabase. Sync so no asyncpg/SQLAlchemy.
+
+Events store metadata (title, location, image, etc.); occurrence dates
+live in event_dates and are managed via event_date_service. The
+``primary occurrence`` convenience fields ``dtstart_utc`` / ``dtend_utc``
+on response models are computed by ``_pick_primary`` — earliest future
+occurrence, or earliest occurrence if all are in the past.
+
+Read-side filtering by date uses the ``events_listing`` view, which
+LEFT JOINs events × event_dates so a single date filter clause translates
+to a join-style "events that have a matching occurrence" query.
+"""
 
 import logging
 from datetime import datetime, timezone
@@ -8,7 +19,8 @@ from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
 from core.sanitize import sanitize_postgrest_value
-from core.tables import EVENTS
+from core.tables import EVENTS, EVENTS_LISTING
+from services import event_date_service
 from services.recommendation_service import invalidate_candidates_cache
 from schemas.event import (
     EventCreate,
@@ -18,18 +30,82 @@ from schemas.event import (
     LatestEventResponse,
     EVENT_SUMMARY_COLUMNS,
 )
+from schemas.event_date import OccurrenceResponse
 
 log = logging.getLogger(__name__)
 
 # Event fields whose changes constitute a "material" update — the ones
 # worth notifying saved-by users about. Description/title/handle edits
 # are deliberately excluded so routine cleanup does not fire alerts.
+#
+# ``occurrences`` covers what used to be two separate fields
+# (``dtstart_utc`` + ``dtend_utc``); the diff helper compares the full
+# list so adding / removing / reshuffling occurrences all show up.
 MATERIAL_FIELDS: tuple[str, ...] = (
-    "dtstart_utc",
-    "dtend_utc",
+    "occurrences",
     "location",
     "status",
 )
+
+
+# ── Internal helpers ──────────────────────────────────────────────────
+
+
+def _pick_primary(occurrences: list[OccurrenceResponse]) -> OccurrenceResponse | None:
+    """Return the occurrence the API exposes as the "primary" date.
+
+    Earliest future occurrence wins; if every occurrence is in the past,
+    fall back to the earliest one so the event still has a date label
+    (matches the v1 behaviour where the events table always carried a
+    dtstart even after the event ended).
+    """
+    if not occurrences:
+        return None
+    now = datetime.now(timezone.utc)
+    future = [o for o in occurrences if _to_utc(o.dtstart_utc) >= now]
+    pool = future or list(occurrences)
+    pool.sort(key=lambda o: _to_utc(o.dtstart_utc))
+    return pool[0]
+
+
+def _to_utc(dt: datetime | None) -> datetime:
+    """Return a UTC-aware datetime, treating naive values as UTC."""
+    if dt is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _hydrate_response(
+    row: dict, occurrences: list[OccurrenceResponse]
+) -> EventResponse:
+    """Build an EventResponse from a raw events row + its occurrences.
+
+    The events row no longer carries ``dtstart_utc`` / ``dtend_utc``; we
+    inject them from the primary occurrence so existing clients keep
+    seeing a single date pair on top of the new ``occurrences`` list.
+    """
+    primary = _pick_primary(occurrences)
+    payload = dict(row)
+    payload["occurrences"] = [o.model_dump(mode="json") for o in occurrences]
+    payload["dtstart_utc"] = primary.dtstart_utc.isoformat() if primary else None
+    payload["dtend_utc"] = (
+        primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
+    )
+    return EventResponse.model_validate(payload)
+
+
+def _hydrate_summary(row: dict) -> EventSummaryResponse:
+    """Build an EventSummaryResponse from a row of the events_listing view.
+
+    The view already projects ``dtstart_utc`` / ``dtend_utc`` from the
+    joined event_dates row — no extra fetch needed here.
+    """
+    return EventSummaryResponse.model_validate(row)
+
+
+# ── Public functions ──────────────────────────────────────────────────
 
 
 def get_latest_added_event() -> LatestEventResponse | None:
@@ -51,7 +127,8 @@ def get_event(event_id: int) -> EventResponse | None:
     r = get_sb().table(EVENTS).select("*").eq("id", event_id).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return EventResponse.model_validate(r.data[0])
+    occurrences = event_date_service.list_for_event(event_id)
+    return _hydrate_response(r.data[0], occurrences)
 
 
 def list_events(
@@ -69,8 +146,16 @@ def list_events(
     summary: bool = False,
     include_cancelled: bool = False,
 ) -> list[EventSummaryResponse] | list[EventResponse]:
+    """List events with optional filters.
+
+    Reads from ``events_listing`` (the LEFT JOIN view) so a single date
+    filter clause behaves like "events that have a matching occurrence".
+    The same logical event can appear in multiple view rows when it has
+    multiple occurrences; we de-dup at the Python layer keyed on
+    ``id`` and pick the earliest matching occurrence as the row date.
+    """
     select_cols = EVENT_SUMMARY_COLUMNS if summary else "*"
-    q = get_sb().table(EVENTS).select(select_cols)
+    q = get_sb().table(EVENTS_LISTING).select(select_cols)
     if not include_cancelled:
         q = q.eq("status", EVENT_STATUS_ACTIVE)
     if category:
@@ -82,8 +167,6 @@ def list_events(
     if search:
         term = sanitize_postgrest_value(search)
         if term:
-            # Sanitize strips PostgREST control chars (commas, dots, parens,
-            # quotes) then we double-quote so the value is a safe literal.
             quoted = f'"%{term}%"'
             columns = ("title", "description", "location", "organization")
             q = q.or_(",".join(f"{col}.ilike.{quoted}" for col in columns))
@@ -94,109 +177,120 @@ def list_events(
     if has_food is True:
         q = q.not_.is_("food", "null").neq("food", "[]")
     if max_price is not None:
-        # Format as fixed-point to avoid scientific notation (e.g. 1e-05)
-        # and ensure the value contains only digits/dot — no PostgREST
-        # control characters can appear in the filter string.
         safe_price = f"{max_price:.6f}"
         q = q.or_(f"price.is.null,price.lte.{safe_price}")
     if registration is not None:
         q = q.eq("registration", registration)
-    q = q.order("dtstart_utc", desc=True).range(skip, skip + limit - 1)
+    # Order by dtstart_utc desc to match the v1 listing order. The view
+    # has one row per (event, occurrence) so we over-fetch a bit before
+    # the dedup pass — chosen multiplier of 4 covers the common case
+    # (≤4 occurrences per event) without an unbounded fan-out.
+    q = q.order("dtstart_utc", desc=True).range(skip, skip + limit * 4 - 1)
     r = q.execute()
-    model = EventSummaryResponse if summary else EventResponse
-    return [model.model_validate(e) for e in (r.data or [])]
+    rows = r.data or []
+
+    # De-dup: one row per event id, keep the first occurrence-row we
+    # see (which is the highest dtstart_utc thanks to the desc sort).
+    seen: set[int] = set()
+    deduped: list[dict] = []
+    for row in rows:
+        rid = row.get("id")
+        if rid in seen:
+            continue
+        seen.add(rid)
+        deduped.append(row)
+        if len(deduped) >= limit:
+            break
+
+    if summary:
+        return [_hydrate_summary(row) for row in deduped]
+
+    # Detail mode for list — fetch occurrences per event in one batch.
+    event_ids = [row["id"] for row in deduped]
+    occ_by_event = event_date_service.list_for_events(event_ids)
+    return [_hydrate_response(row, occ_by_event.get(row["id"], [])) for row in deduped]
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
+    occurrences = payload.pop("occurrences")
     payload["created_by"] = created_by
     r = get_sb().table(EVENTS).insert(payload).execute()
+    new_row = r.data[0]
+    new_id = new_row["id"]
+
+    try:
+        event_date_service.create_occurrences(new_id, data.occurrences)
+    except Exception:
+        # Roll back the orphan event row if occurrence insert failed —
+        # PostgREST has no transaction surface, so we clean up manually.
+        get_sb().table(EVENTS).delete().eq("id", new_id).execute()
+        raise
+
+    occ_rows = event_date_service.list_for_event(new_id)
     invalidate_candidates_cache()
-    return EventResponse.model_validate(r.data[0])
+    return _hydrate_response(new_row, occ_rows)
 
 
 def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
-    """Return True if the event is strictly in the past.
+    """Return True if every occurrence on the event is strictly in the past.
 
-    Uses ``dtend_utc`` if present (true completion time), else falls back
-    to ``dtstart_utc`` as the event's boundary.  Events with neither
-    timestamp are treated as always-mutable (legacy rows).
-
-    Shared with the credits router (audit I6 — reject promotion of
-    already-past events).  Kept public so both writers agree on the
-    definition of "past".
+    For multi-occurrence events, we use the LATEST occurrence's end time
+    as the "event still in flight" boundary — an event with one occurrence
+    last week and one next week is not yet "ended". Events with no
+    occurrences are treated as always-mutable (legacy rows).
     """
-    reference = event.dtend_utc or event.dtstart_utc
-    if reference is None:
+    if not event.occurrences:
         return False
     current = now or datetime.now(timezone.utc)
-    # ``reference`` was parsed by Pydantic as datetime; it may be naive for
-    # legacy rows.  Coerce to UTC-aware for a safe comparison.
-    if reference.tzinfo is None:
-        reference = reference.replace(tzinfo=timezone.utc)
-    return reference < current
+    latest_end = max(
+        _to_utc(o.dtend_utc or o.dtstart_utc) for o in event.occurrences
+    )
+    return latest_end < current
 
 
 def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
     """Update an event, refusing edits to already-past events.
 
-    Past-event freezing (audit I12) — once the event has ended (dtend_utc
-    < now, or dtstart_utc < now when no end is set), all mutations are
-    rejected.  This prevents owners from silently rewriting title /
-    dtstart / organization on an event that users have already saved or
-    interacted with.
+    Past-event freezing (audit I12) — once every occurrence has passed,
+    mutations are rejected. This prevents owners from silently rewriting
+    title / dtstart / organization on an event users already saved.
     """
     existing = get_event(event_id)
     if existing is None:
         return None
     if has_ended(existing):
         log.warning(
-            "Rejected update to past event id=%s (dtstart=%s dtend=%s)",
+            "Rejected update to past event id=%s (last occurrence ended)",
             event_id,
-            existing.dtstart_utc,
-            existing.dtend_utc,
         )
         raise ValidationError(EVENT_ALREADY_PAST)
 
     payload = data.model_dump(mode="json", exclude_unset=True)
-    if not payload:
-        return existing
+    new_occurrences = payload.pop("occurrences", None)
 
-    # Flag large dtstart rewrites explicitly in logs — they are legal for
-    # future events but usually indicate a misuse pattern (recycling an
-    # event ID for a totally different occasion); see audit I12 note.
-    new_dtstart = payload.get("dtstart_utc")
-    if (
-        new_dtstart is not None
-        and existing.dtstart_utc is not None
-        and new_dtstart != existing.dtstart_utc.isoformat()
-    ):
-        log.warning(
-            "dtstart_utc changed on event id=%s from %s to %s",
-            event_id,
-            existing.dtstart_utc,
-            new_dtstart,
-        )
+    if payload:
+        get_sb().table(EVENTS).update(payload).eq("id", event_id).execute()
 
-    r = get_sb().table(EVENTS).update(payload).eq("id", event_id).execute()
+    if new_occurrences is not None and data.occurrences is not None:
+        event_date_service.replace_occurrences(event_id, data.occurrences)
+
     invalidate_candidates_cache()
-    return EventResponse.model_validate(r.data[0]) if r.data else None
+    return get_event(event_id)
 
 
 def delete_event(event_id: int) -> bool:
     # C6: event_promotions.event_id has ON DELETE CASCADE, so any active
     # paid promotion on this event would silently disappear when the row
-    # is deleted.  Prorate-refund the unused portion first (via the ledger
-    # so the audit trail stays correct) before dropping the event.  The
+    # is deleted. Prorate-refund the unused portion first (via the ledger
+    # so the audit trail stays correct) before dropping the event. The
     # refund helper logs per-row failures and never raises, so a single
-    # bad promotion row cannot block the deletion.
+    # bad promotion row cannot block the deletion. event_dates also
+    # cascade-delete via FK, so we don't have to clean them up manually.
     from services import credit_service  # local import to avoid cycle
     try:
         credit_service.refund_active_promotions_for_event(event_id)
     except Exception as e:
-        # Defensive: the helper already logs and catches, but if a fresh
-        # bug slips past, log and continue — blocking the deletion on a
-        # refund glitch would be worse than the partial refund.
         log.error(
             "refund_active_promotions_for_event failed for event=%s: %s",
             event_id, e,
@@ -214,9 +308,9 @@ def compute_event_diff(
     """Diff the subset of fields whose changes warrant a user-facing alert.
 
     Only ``MATERIAL_FIELDS`` are compared — routine title/description
-    edits should not fire notifications. Values are serialised to
-    JSON-friendly types (datetimes → ISO strings) so the result drops
-    straight into a ``jsonb`` column without a second pass.
+    edits should not fire notifications. ``occurrences`` is a list of
+    dicts compared in order; reshuffling counts as a change so a
+    "moved one of three dates" edit still fires the alert.
 
     Returns an empty dict when no material field changed; callers can
     branch on truthiness.
@@ -225,6 +319,13 @@ def compute_event_diff(
     for field in MATERIAL_FIELDS:
         old_val = getattr(old, field, None)
         new_val = getattr(new, field, None)
+        if field == "occurrences":
+            old_jsonable = [_occurrence_jsonable(o) for o in (old_val or [])]
+            new_jsonable = [_occurrence_jsonable(o) for o in (new_val or [])]
+            if old_jsonable == new_jsonable:
+                continue
+            diff[field] = {"old": old_jsonable, "new": new_jsonable}
+            continue
         if old_val == new_val:
             continue
         diff[field] = {
@@ -240,3 +341,17 @@ def _jsonable(value: object) -> object | None:
     if isinstance(value, datetime):
         return value.isoformat()
     return value
+
+
+def _occurrence_jsonable(occ: OccurrenceResponse) -> dict:
+    """Stable, comparable shape for occurrence diffs.
+
+    Drops ``id`` and ``created_at`` (DB metadata) so reshuffling
+    occurrences without changing dates does NOT show up as a diff.
+    """
+    return {
+        "dtstart_utc": occ.dtstart_utc.isoformat(),
+        "dtend_utc": occ.dtend_utc.isoformat() if occ.dtend_utc else None,
+        "duration": occ.duration,
+        "tz": occ.tz,
+    }

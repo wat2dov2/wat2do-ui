@@ -8,6 +8,13 @@ from tests.conftest import FAKE_USER, OTHER_USER, ADMIN_USER
 
 
 def _mock_event(**overrides) -> EventResponse:
+    """Build a mock EventResponse.
+
+    Accepts the legacy ``dtstart_utc`` / ``dtend_utc`` kwargs and
+    synthesises a single OccurrenceResponse so ``has_ended`` and the
+    diff helper (both of which now read ``occurrences``) behave the
+    same as they did before the v1-style EventDates port.
+    """
     defaults = {
         "id": 1,
         "title": "Test Event",
@@ -17,6 +24,19 @@ def _mock_event(**overrides) -> EventResponse:
         "created_by": FAKE_USER["id"],
     }
     defaults.update(overrides)
+
+    dtstart = defaults.get("dtstart_utc")
+    if dtstart is not None and "occurrences" not in defaults:
+        defaults["occurrences"] = [{
+            "id": "00000000-0000-0000-0000-000000000001",
+            "event_id": defaults["id"],
+            "dtstart_utc": dtstart,
+            "dtend_utc": defaults.get("dtend_utc"),
+            "duration": None,
+            "tz": None,
+            "created_at": datetime.now(timezone.utc),
+        }]
+
     return EventResponse.model_validate(defaults)
 
 
@@ -38,7 +58,17 @@ def test_create_event_sets_created_by(authenticated_client, monkeypatch):
 
     resp = authenticated_client.post(
         "/events/",
-        json={"title": "Test", "location": "Here", "organization": "Org"},
+        json={
+            "title": "Test",
+            "location": "Here",
+            "organization": "Org",
+            "occurrences": [{
+                "dtstart_utc": "2026-12-01T18:00:00+00:00",
+                "dtend_utc": "2026-12-01T20:00:00+00:00",
+                "duration": None,
+                "tz": "America/Toronto",
+            }],
+        },
     )
     assert resp.status_code == 201
     assert mock_create.call_count == 1

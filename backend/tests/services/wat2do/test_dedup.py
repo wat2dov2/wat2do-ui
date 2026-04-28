@@ -76,20 +76,25 @@ def test_find_match_returns_none_without_occurrences():
 
 
 def test_find_match_same_club_update(fake_sb, patch_sb):
-    """Same IG handle + future event + similar title -> same_club match."""
+    """Same IG handle + future event + similar title -> same_club match.
+
+    After the v1-style EventDates port, the same-club query embeds
+    event_dates rows in the events response — the dedup helper checks
+    the latest end across embedded occurrences instead of reading
+    dtstart/dtend directly off the event row.
+    """
     patch_sb("services.wat2do.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     fake_sb.queue_responses([
-        # First query: same-club lookup — return one matching row.
+        # Same-club lookup — events row with embedded event_dates list.
         [{
             "id": 42,
             "title": "Tea Tasting Night",
             "ig_handle": "uwteaclub",
             "location": "SLC",
             "description": "...",
-            "dtstart_utc": future,
-            "dtend_utc": future,
+            "event_dates": [{"dtstart_utc": future, "dtend_utc": future}],
         }],
     ])
 
@@ -119,8 +124,7 @@ def test_find_match_skips_past_same_club_events(fake_sb, patch_sb):
             "ig_handle": "uwteaclub",
             "location": "SLC",
             "description": "",
-            "dtstart_utc": past,
-            "dtend_utc": past,
+            "event_dates": [{"dtstart_utc": past, "dtend_utc": past}],
         }],
         # Same-day lookup returns nothing.
         [],
@@ -137,21 +141,27 @@ def test_find_match_skips_past_same_club_events(fake_sb, patch_sb):
 
 
 def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
-    """Substring title match + similar location -> cross-club duplicate."""
+    """Substring title match + similar location -> cross-club duplicate.
+
+    After the v1-style EventDates port, the same-day query hits the
+    event_dates table first and embeds the parent ``events`` row.
+    """
     patch_sb("services.wat2do.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
     fake_sb.queue_responses([
         # Same-club lookup returns nothing (different ig_handle in DB).
         [],
-        # Same-day lookup returns a match.
+        # Same-day lookup: each row is one event_date with embedded events.
         [{
-            "id": 17,
-            "title": "Movie Night",
-            "ig_handle": "otherclub",
-            "location": "DC Library",
-            "description": "Free popcorn",
-            "dtstart_utc": future,
+            "event_id": 17,
+            "events": {
+                "id": 17,
+                "title": "Movie Night",
+                "ig_handle": "otherclub",
+                "location": "DC Library",
+                "description": "Free popcorn",
+            },
         }],
     ])
 
