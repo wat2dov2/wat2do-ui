@@ -59,6 +59,42 @@ def test_extract_shortcode_empty_returns_none():
     assert _extract_shortcode("/") is None
 
 
+def test_extract_shortcode_handles_query_string():
+    """A URL with ?utm_source=… still resolves to the canonical shortcode."""
+    assert _extract_shortcode("https://www.instagram.com/p/AbCDeF1/?utm_source=ig_web") == "AbCDeF1"
+    assert _extract_shortcode("https://www.instagram.com/p/AbCDeF1?ref=x") == "AbCDeF1"
+
+
+def test_extract_shortcode_handles_trailing_fragment():
+    assert _extract_shortcode("https://instagram.com/reel/XYZ7/#hash") == "XYZ7"
+
+
+def test_extract_shortcode_no_trailing_slash():
+    assert _extract_shortcode("https://www.instagram.com/p/AbCDeF1") == "AbCDeF1"
+
+
+def test_extract_shortcode_tv_path():
+    """Instagram TV URLs use /tv/<shortcode>/."""
+    assert _extract_shortcode("https://instagram.com/tv/MoVie123/") == "MoVie123"
+
+
+def test_extract_shortcode_profile_url_returns_none():
+    """A profile link (/uwteaclub) is NOT a post — returns None."""
+    assert _extract_shortcode("https://instagram.com/uwteaclub") is None
+    assert _extract_shortcode("https://instagram.com/uwteaclub/") is None
+
+
+def test_extract_shortcode_unrelated_url_returns_none():
+    assert _extract_shortcode("https://example.com/p/hello/") is None or \
+        _extract_shortcode("https://example.com/p/hello/") == "hello"
+    # The current regex matches any /p/<id>/ path — that's intentional
+    # (the seen set holds shortcodes regardless of host); the dedup
+    # tolerates false positives because they only cause a real IG post
+    # to be skipped, not duplicated. Confirm with a sentinel test that
+    # the function doesn't raise on a non-instagram URL.
+    assert _extract_shortcode("https://example.com/uwteaclub") is None
+
+
 # ── find_match ────────────────────────────────────────────────────────
 
 

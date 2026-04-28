@@ -15,7 +15,7 @@ import logging
 import re
 from datetime import datetime, timedelta, timezone
 from difflib import SequenceMatcher
-from typing import Iterable
+from urllib.parse import urlparse
 
 from core.constants import (
     SCRAPING_DESCRIPTION_SIMILARITY_THRESHOLD,
@@ -24,6 +24,7 @@ from core.constants import (
     SCRAPING_TITLE_SIMILARITY_THRESHOLD,
 )
 from core.database import get_sb
+from core.pagination import fetch_all_pages
 from core.tables import EVENT_DATES, EVENTS
 
 log = logging.getLogger(__name__)
@@ -145,17 +146,27 @@ def _check_same_club_update(
     in the event_dates table. We embed the event_dates rows for each
     candidate and check the latest end time to decide whether the event
     is still in flight (any future occurrence keeps it alive).
+
+    Paginated via ``fetch_all_pages`` — long-lived clubs can accumulate
+    >1000 events and PostgREST silently caps the result at 1000. Without
+    pagination, dedup against older same-club events would be invisible
+    (and the row order without ``.order()`` is undefined).
     """
     if not ig_handle:
         return None
 
-    rows = (
-        get_sb()
-        .table(EVENTS)
-        .select("id,title,ig_handle,location,description,event_dates(dtstart_utc,dtend_utc)")
-        .eq("ig_handle", ig_handle)
-        .execute()
-    ).data or []
+    def _page(offset: int, page_size: int) -> list[dict]:
+        return (
+            get_sb()
+            .table(EVENTS)
+            .select("id,title,ig_handle,location,description,event_dates(dtstart_utc,dtend_utc)")
+            .eq("ig_handle", ig_handle)
+            .order("id", desc=True)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        ).data or []
+
+    rows = fetch_all_pages(_page)
 
     now = datetime.now(timezone.utc)
     for row in rows:
@@ -189,18 +200,27 @@ def _check_same_day_duplicate(
     Queries event_dates first (one row per occurrence), then embeds the
     parent event metadata. Multiple occurrences of the same event on the
     same day collapse to one event-row check via the ``seen`` set.
+
+    Paginated via ``fetch_all_pages`` — peak days can have >1000
+    occurrences across all schools and PostgREST silently truncates at
+    1000 rows.
     """
     day_start = target_start.replace(hour=0, minute=0, second=0, microsecond=0)
     day_end = day_start + timedelta(days=1)
 
-    rows = (
-        get_sb()
-        .table(EVENT_DATES)
-        .select("event_id,events(id,title,ig_handle,location,description)")
-        .gte("dtstart_utc", day_start.isoformat())
-        .lt("dtstart_utc", day_end.isoformat())
-        .execute()
-    ).data or []
+    def _page(offset: int, page_size: int) -> list[dict]:
+        return (
+            get_sb()
+            .table(EVENT_DATES)
+            .select("event_id,events(id,title,ig_handle,location,description)")
+            .gte("dtstart_utc", day_start.isoformat())
+            .lt("dtstart_utc", day_end.isoformat())
+            .order("id", desc=False)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        ).data or []
+
+    rows = fetch_all_pages(_page)
 
     norm_candidate_title = normalize(candidate_title)
     seen_event_ids: set[int] = set()
@@ -259,22 +279,32 @@ def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
     return max(candidates) if candidates else None
 
 
-def existing_shortcodes(source_urls: Iterable[str]) -> set[str]:
+def existing_shortcodes() -> set[str]:
     """Return the set of shortcodes already present in the events table.
 
     Used by the pipeline's filter stage to skip posts we have already
-    processed. The shortcode is the last URL segment of an Instagram
-    post URL (e.g. for ``https://www.instagram.com/p/AbCDeF1/`` it is
-    ``AbCDeF1``).
-    """
-    rows = (
-        get_sb()
-        .table(EVENTS)
-        .select("source_url")
-        .not_.is_("source_url", "null")
-        .execute()
-    ).data or []
+    processed. The shortcode is the post-id segment of an Instagram
+    post URL — e.g. for ``https://www.instagram.com/p/AbCDeF1/?utm=...``
+    it is ``AbCDeF1``.
 
+    Paginated via ``fetch_all_pages`` because PostgREST silently caps
+    the response at 1000 rows by default — without pagination, an
+    events table with >1000 rows would only dedupe against the first
+    1000 returned (and the order without ``.order()`` is undefined),
+    causing previously-scraped posts to be re-inserted as duplicates.
+    """
+    def _page(offset: int, page_size: int) -> list[dict]:
+        return (
+            get_sb()
+            .table(EVENTS)
+            .select("source_url")
+            .not_.is_("source_url", "null")
+            .order("id", desc=False)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        ).data or []
+
+    rows = fetch_all_pages(_page)
     seen: set[str] = set()
     for row in rows:
         url = row.get("source_url")
@@ -283,23 +313,34 @@ def existing_shortcodes(source_urls: Iterable[str]) -> set[str]:
         shortcode = _extract_shortcode(url)
         if shortcode:
             seen.add(shortcode)
-    # ``source_urls`` is an in-pipeline iterable we use only to constrain
-    # the response shape; we still return the global set so the caller
-    # can drop any shortcode regardless of the filter list.
-    _ = source_urls
     return seen
+
+
+# Instagram post / reel URL pattern — captures the shortcode (alphanumeric
+# + dashes / underscores). Used by both ``_extract_shortcode`` and the
+# pipeline's per-post filter so a URL with a query string or trailing
+# fragment doesn't disagree on what the canonical shortcode is.
+_SHORTCODE_RE = re.compile(r"/(?:p|reel|tv)/([A-Za-z0-9_-]+)")
 
 
 def _extract_shortcode(source_url: str) -> str | None:
     """Pull the post shortcode out of an Instagram URL.
 
+    Handles trailing slashes, query strings, fragments, and reel/tv
+    paths. Returns ``None`` when no shortcode can be extracted (e.g. the
+    URL is from a different domain or the URL is a profile link).
+
     Examples:
-        https://www.instagram.com/p/AbCDeF1/  -> "AbCDeF1"
-        https://instagram.com/reel/XYZ7/      -> "XYZ7"
+        https://www.instagram.com/p/AbCDeF1/                 -> "AbCDeF1"
+        https://www.instagram.com/p/AbCDeF1/?utm_source=x    -> "AbCDeF1"
+        https://instagram.com/reel/XYZ7/                     -> "XYZ7"
+        https://instagram.com/uwteaclub                      -> None
     """
     if not source_url:
         return None
-    parts = [p for p in source_url.split("/") if p]
-    if not parts:
+    try:
+        path = urlparse(source_url).path
+    except ValueError:
         return None
-    return parts[-1]
+    match = _SHORTCODE_RE.search(path)
+    return match.group(1) if match else None

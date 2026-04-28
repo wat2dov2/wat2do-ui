@@ -28,7 +28,7 @@ from core.constants import (
 )
 from schemas.scrape_run import ScrapeRunCreate
 from services import scrape_run_service
-from services.wat2do.dedup import existing_shortcodes
+from services.wat2do.dedup import _extract_shortcode, existing_shortcodes
 from services.wat2do.event_writer import write_event
 from services.wat2do.extractor import extract_events_from_post
 from services.wat2do.image_uploader import upload_post_images
@@ -107,7 +107,7 @@ def run_pipeline(
     from services.wat2do.instagram_scraper import get_scraper
     scraper = get_scraper()
 
-    seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes(())
+    seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes()
     log.info(
         "Pipeline start: %d username(s), school=%s, cutoff_days=%d, dry_run=%s",
         len(usernames), school, cutoff_days, dry_run,
@@ -178,14 +178,20 @@ def _filter_new_posts(
     seen_shortcodes: set[str],
     cutoff: datetime,
 ) -> list[dict]:
-    """Drop already-seen shortcodes and posts older than ``cutoff``."""
+    """Drop already-seen shortcodes and posts older than ``cutoff``.
+
+    Uses ``dedup._extract_shortcode`` for both the seen-set lookup and
+    the URL-shape check so a URL with a query string or fragment
+    canonicalises the same way it does in the DB-backed seen set.
+    """
     fresh: list[dict] = []
     for post in posts:
         url = post.get("url") or ""
-        if "/p/" not in url and "/reel/" not in url:
+        shortcode = _extract_shortcode(url)
+        if shortcode is None:
+            # Profile link, story URL, or unrecognised path — skip.
             continue
-        shortcode = url.rstrip("/").split("/")[-1]
-        if shortcode and shortcode in seen_shortcodes:
+        if shortcode in seen_shortcodes:
             continue
 
         timestamp = post.get("timestamp")

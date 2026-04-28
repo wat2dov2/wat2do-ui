@@ -43,14 +43,50 @@ def create_occurrences(
 def replace_occurrences(
     event_id: int, occurrences: list[OccurrenceCreate]
 ) -> list[OccurrenceResponse]:
-    """Atomically replace the occurrence list for ``event_id``.
+    """Replace the occurrence list for ``event_id`` with snapshot rollback.
 
-    DELETE-then-INSERT — PostgREST has no real transaction surface, so
-    a failure between the two leaves the event with no occurrences.
-    Callers that care should check the returned list length.
+    PostgREST has no real transaction surface, so a naive
+    DELETE-then-INSERT leaves the event with zero occurrences if the
+    INSERT fails. We snapshot the existing rows first; on INSERT
+    failure we re-insert the snapshot and re-raise so the caller knows
+    the operation didn't take effect. The window between DELETE and
+    re-INSERT-of-snapshot is tiny, but at least the event ends up
+    either with the new occurrences or with the original ones — never
+    silently empty.
     """
-    get_sb().table(EVENT_DATES).delete().eq("event_id", event_id).execute()
-    return create_occurrences(event_id, occurrences)
+    snapshot = list_for_event(event_id)
+    sb = get_sb()
+    sb.table(EVENT_DATES).delete().eq("event_id", event_id).execute()
+    try:
+        return create_occurrences(event_id, occurrences)
+    except Exception:
+        # Best-effort restore from snapshot. If this also fails the
+        # event is left empty — but at least we logged loudly.
+        if snapshot:
+            try:
+                payload = []
+                for occ in snapshot:
+                    payload.append({
+                        "event_id": event_id,
+                        "dtstart_utc": occ.dtstart_utc.isoformat(),
+                        "dtend_utc": occ.dtend_utc.isoformat() if occ.dtend_utc else None,
+                        "duration": occ.duration,
+                        "tz": occ.tz,
+                    })
+                sb.table(EVENT_DATES).insert(payload).execute()
+                log.warning(
+                    "replace_occurrences for event_id=%s failed; "
+                    "restored %d original occurrence(s) from snapshot",
+                    event_id, len(snapshot),
+                )
+            except Exception as restore_err:
+                log.error(
+                    "replace_occurrences for event_id=%s failed AND "
+                    "snapshot restore failed; event has no occurrences. "
+                    "Restore error: %s",
+                    event_id, restore_err,
+                )
+        raise
 
 
 def list_for_event(event_id: int) -> list[OccurrenceResponse]:
@@ -69,24 +105,33 @@ def list_for_event(event_id: int) -> list[OccurrenceResponse]:
 def list_for_events(event_ids: list[int]) -> dict[int, list[OccurrenceResponse]]:
     """Batched fetch — returns a dict keyed by event_id.
 
-    Used by list_events to attach occurrences to a page of event rows
-    without an N+1 query. Empty input returns ``{}``.
+    Used by list_events and the calendar feed to attach occurrences to
+    a page of event rows without an N+1 query. Empty input returns
+    ``{}``.
+
+    Chunked on the IDs because PostgREST sends ``in_(...)`` as a comma-
+    separated value in a query string. Past ~1000 ids the URL exceeds
+    Supabase's ~8KB cap and the request fails with 414. ``MAX_SAVED_EVENTS_PER_USER``
+    is 10000, so calendar feeds for power users would hit this otherwise.
     """
     if not event_ids:
         return {}
-    r = (
-        get_sb()
-        .table(EVENT_DATES)
-        .select("*")
-        .in_("event_id", event_ids)
-        .order("dtstart_utc", desc=False)
-        .execute()
-    )
     grouped: dict[int, list[OccurrenceResponse]] = {eid: [] for eid in event_ids}
-    for d in r.data or []:
-        eid = d.get("event_id")
-        if eid in grouped:
-            grouped[eid].append(OccurrenceResponse.model_validate(d))
+    chunk_size = 500
+    for start in range(0, len(event_ids), chunk_size):
+        chunk = event_ids[start : start + chunk_size]
+        r = (
+            get_sb()
+            .table(EVENT_DATES)
+            .select("*")
+            .in_("event_id", chunk)
+            .order("dtstart_utc", desc=False)
+            .execute()
+        )
+        for d in r.data or []:
+            eid = d.get("event_id")
+            if eid in grouped:
+                grouped[eid].append(OccurrenceResponse.model_validate(d))
     return grouped
 
 
