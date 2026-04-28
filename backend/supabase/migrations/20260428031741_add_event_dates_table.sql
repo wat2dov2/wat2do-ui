@@ -33,8 +33,12 @@ CREATE TABLE IF NOT EXISTS public.event_dates (
     tz text,
     created_at timestamptz NOT NULL DEFAULT now(),
 
+    -- ``>=`` not ``>``: legacy data sometimes has a zero-duration event
+    -- (dtend == dtstart). A strict ``>`` constraint would abort the
+    -- whole migration on backfill if any production row carries that
+    -- shape.
     CONSTRAINT chk_event_dates_dtend_after_dtstart
-        CHECK (dtend_utc IS NULL OR dtend_utc > dtstart_utc)
+        CHECK (dtend_utc IS NULL OR dtend_utc >= dtstart_utc)
 );
 
 -- 2. RLS ---------------------------------------------------------------
@@ -65,13 +69,34 @@ CREATE INDEX IF NOT EXISTS ix_event_dates_event_id_dtstart
 -- 5. Backfill from events --------------------------------------------
 -- Each existing event becomes one event_dates row (only for rows that
 -- actually carry a date — older rows without a date stay date-less).
-INSERT INTO public.event_dates (event_id, dtstart_utc, dtend_utc)
-SELECT id, dtstart_utc, dtend_utc
-FROM public.events
-WHERE dtstart_utc IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1 FROM public.event_dates ed WHERE ed.event_id = events.id
-  );
+--
+-- Wrapped in a DO block + pg_attribute guard so re-running the migration
+-- on a fully-migrated DB does NOT raise "column events.dtstart_utc does
+-- not exist". The first run sees the columns, backfills, then drops
+-- them; the second run sees the columns already dropped and skips.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'events'
+          AND column_name = 'dtstart_utc'
+    ) THEN
+        -- Coerce any non-conforming legacy rows (dtend < dtstart) to NULL
+        -- before backfill so the CHECK constraint above doesn't abort
+        -- the whole migration on data corruption.
+        EXECUTE 'UPDATE public.events SET dtend_utc = NULL '
+                'WHERE dtend_utc IS NOT NULL AND dtend_utc < dtstart_utc';
+
+        EXECUTE 'INSERT INTO public.event_dates (event_id, dtstart_utc, dtend_utc) '
+                'SELECT id, dtstart_utc, dtend_utc '
+                'FROM public.events '
+                'WHERE dtstart_utc IS NOT NULL '
+                'AND NOT EXISTS ('
+                '    SELECT 1 FROM public.event_dates ed WHERE ed.event_id = events.id'
+                ')';
+    END IF;
+END$$;
 
 -- 6. Drop dtstart_utc / dtend_utc from events ------------------------
 ALTER TABLE public.events DROP COLUMN IF EXISTS dtstart_utc;
@@ -82,7 +107,15 @@ ALTER TABLE public.events DROP COLUMN IF EXISTS dtend_utc;
 -- events with no occurrences still appear once with NULL date columns.
 -- Date-range filters on this view behave like v1's Django filter that
 -- joined through EventDates.
-CREATE OR REPLACE VIEW public.events_listing AS
+--
+-- ``security_invoker = true`` makes the view honour RLS on the
+-- underlying ``events`` and ``event_dates`` tables — without it, Postgres
+-- defaults to running view queries with the view owner's privileges,
+-- which would let any role with default SELECT-on-public privileges
+-- (typically ``anon`` and ``authenticated``) read the underlying tables
+-- through the view even though both have RLS enabled.
+CREATE OR REPLACE VIEW public.events_listing
+WITH (security_invoker = true) AS
 SELECT
     events.*,
     event_dates.id          AS event_date_id,
@@ -91,5 +124,21 @@ SELECT
     event_dates.tz          AS tz
 FROM public.events
 LEFT JOIN public.event_dates ON event_dates.event_id = events.id;
+
+-- Belt-and-suspenders: revoke any default privileges granted to the
+-- public-facing roles. The backend reads via the service-role client
+-- which bypasses these grants entirely. Wrapped in DO blocks so the
+-- migration is portable to a fresh local Postgres that doesn't have
+-- the Supabase-managed ``anon`` / ``authenticated`` roles yet.
+REVOKE ALL ON public.events_listing FROM PUBLIC;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+        EXECUTE 'REVOKE ALL ON public.events_listing FROM anon';
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+        EXECUTE 'REVOKE ALL ON public.events_listing FROM authenticated';
+    END IF;
+END$$;
 
 COMMIT;

