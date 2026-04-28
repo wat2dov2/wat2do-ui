@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta, timezone
 
-from services.wat2do import dedup
 from services.wat2do.dedup import (
     find_match,
     jaccard_similarity,

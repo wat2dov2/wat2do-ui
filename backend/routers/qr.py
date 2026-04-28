@@ -6,16 +6,16 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from core.auth import get_admin_user, get_authorized_resource, get_db_user
-from schemas.user import UserResponse
+from core.auth import get_admin_user, get_authorized_resource
 from core.constants import MAX_SESSION_ID_LENGTH, MAX_USER_AGENT_LENGTH
-
-log = logging.getLogger(__name__)
+from core.errors import ID_MISMATCH, POSTER_NOT_FOUND
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from core.rate_limit import qr_scan_rate_limiter
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
-from core.errors import ID_MISMATCH, POSTER_NOT_FOUND
+from schemas.user import UserResponse
 from services import qr_code_service
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/qr", tags=["qr"])
 

@@ -213,7 +213,7 @@ def list_events(
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
-    occurrences = payload.pop("occurrences")
+    payload.pop("occurrences", None)
     payload["created_by"] = created_by
     r = get_sb().table(EVENTS).insert(payload).execute()
     new_row = r.data[0]

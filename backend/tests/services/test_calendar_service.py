@@ -11,7 +11,6 @@ Covers:
   skip-when-no-dtstart).
 """
 
-from datetime import datetime, timezone
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -261,6 +260,67 @@ def test_build_ics_for_user_skips_events_without_occurrences(monkeypatch, fake_s
 
     assert "BEGIN:VCALENDAR" in text
     assert "BEGIN:VEVENT" not in text
+
+
+def test_build_ics_for_user_renders_one_vevent_per_occurrence(monkeypatch, fake_sb, patch_sb):
+    """Multi-occurrence event -> N VEVENT components, one per event_dates row.
+
+    Phase 8 invariant: an event with three occurrences must produce three
+    distinct VEVENTs in the calendar feed, each with a UID combining
+    event id + occurrence id (so calendar clients track them separately
+    rather than treating later ones as edits to the first).
+    """
+    patch_sb("services.calendar_service")
+    patch_sb("services.event_date_service")
+    monkeypatch.setattr(
+        saved_event_service,
+        "get_saved_event_ids",
+        MagicMock(return_value=[42]),
+    )
+    fake_sb.queue_responses([
+        [_event_row()],
+        [
+            _occurrence_row(
+                event_id=42,
+                id="11111111-1111-1111-1111-111111111111",
+                dtstart_utc="2026-05-01T23:00:00+00:00",
+                dtend_utc="2026-05-02T01:30:00+00:00",
+            ),
+            _occurrence_row(
+                event_id=42,
+                id="22222222-2222-2222-2222-222222222222",
+                dtstart_utc="2026-05-08T23:00:00+00:00",
+                dtend_utc="2026-05-09T01:30:00+00:00",
+            ),
+            _occurrence_row(
+                event_id=42,
+                id="33333333-3333-3333-3333-333333333333",
+                dtstart_utc="2026-05-15T23:00:00+00:00",
+                dtend_utc="2026-05-16T01:30:00+00:00",
+            ),
+        ],
+    ])
+
+    body = calendar_service.build_ics_for_user(str(uuid4()))
+    text = body.decode()
+
+    # Three VEVENT components.
+    assert text.count("BEGIN:VEVENT") == 3
+    assert text.count("END:VEVENT") == 3
+
+    # Each occurrence has a distinct UID combining event + occurrence id.
+    assert "UID:event-42-11111111-1111-1111-1111-111111111111@wat2do.app" in text
+    assert "UID:event-42-22222222-2222-2222-2222-222222222222@wat2do.app" in text
+    assert "UID:event-42-33333333-3333-3333-3333-333333333333@wat2do.app" in text
+
+    # The three DTSTARTs (in America/Toronto local time, May 1/8/15 UTC
+    # 23:00 == May 1/8/15 19:00 EDT) are all present.
+    assert "DTSTART;TZID=America/Toronto:20260501T190000" in text
+    assert "DTSTART;TZID=America/Toronto:20260508T190000" in text
+    assert "DTSTART;TZID=America/Toronto:20260515T190000" in text
+
+    # SUMMARY is identical across the three occurrences (same event).
+    assert text.count("SUMMARY:Jazz Night") == 3
 
 
 def test_build_ics_for_user_unknown_school_renders_utc(monkeypatch, fake_sb, patch_sb):

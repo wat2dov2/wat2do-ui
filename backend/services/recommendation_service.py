@@ -19,7 +19,7 @@ from core.cache import TTLCache
 from core.retry import supabase_retry
 from core.database import get_sb
 from core.pagination import iter_all_pages
-from core.tables import EVENTS, EVENTS_LISTING, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
+from core.tables import EVENTS_LISTING, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
 from schemas.recommendation import RecommendationItem
 from services import user_service, interaction_service
