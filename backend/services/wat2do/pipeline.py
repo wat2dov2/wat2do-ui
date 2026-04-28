@@ -163,12 +163,21 @@ def run_pipeline(
 
 
 def _group_by_handle(posts: list[dict], usernames: list[str]) -> dict[str, list[dict]]:
-    """Bucket Apify results by their ``ownerUsername`` (or ``username``) field."""
+    """Bucket Apify results by their ``ownerUsername`` (or ``username``) field.
+
+    Instagram handles are case-insensitive — Apify sometimes returns
+    ``ownerUsername`` in different casing than the requested handle (we
+    ask for ``uwteaclub``, get back ``UWTeaClub``). A case-sensitive
+    bucket would silently drop those posts and report ``posts_fetched=0``,
+    making active accounts look dormant. Match casefold-on-both-sides.
+    """
+    lookup = {h.lower(): h for h in usernames}
     by_handle: dict[str, list[dict]] = {h: [] for h in usernames}
     for post in posts:
-        owner = post.get("ownerUsername") or post.get("username") or ""
-        if owner in by_handle:
-            by_handle[owner].append(post)
+        owner = (post.get("ownerUsername") or post.get("username") or "").lower()
+        canonical = lookup.get(owner)
+        if canonical is not None:
+            by_handle[canonical].append(post)
     return by_handle
 
 
@@ -231,8 +240,13 @@ def _process_one_post(
 
     for event in events:
         # Pick the source image based on the extractor's image_index, with
-        # bounds-fallback to the first uploaded image (mirrors v1).
-        idx = event.get("image_index") or 0
+        # bounds-fallback to the first uploaded image (mirrors v1). The
+        # model occasionally returns a non-int (e.g. the string ``"first"``);
+        # ``int()`` with TypeError fallback keeps the pipeline alive.
+        try:
+            idx = int(event.get("image_index") or 0)
+        except (TypeError, ValueError):
+            idx = 0
         if uploaded:
             event["source_image_url"] = uploaded[idx if 0 <= idx < len(uploaded) else 0]
 

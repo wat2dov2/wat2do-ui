@@ -54,6 +54,19 @@ def test_group_by_handle_falls_back_to_username_field():
     assert len(grouped["uwteaclub"]) == 1
 
 
+def test_group_by_handle_is_case_insensitive():
+    """Instagram handles are case-insensitive; Apify sometimes returns
+    ``ownerUsername`` in different casing than what we requested."""
+    posts = [
+        {"ownerUsername": "UWTeaClub", "url": "https://instagram.com/p/a/"},
+        {"ownerUsername": "uwteaclub", "url": "https://instagram.com/p/b/"},
+        {"ownerUsername": "UwTeaClub", "url": "https://instagram.com/p/c/"},
+    ]
+    grouped = _group_by_handle(posts, ["uwteaclub"])
+    # All three casings should land in the canonical-cased key.
+    assert len(grouped["uwteaclub"]) == 3
+
+
 # ── _filter_new_posts ─────────────────────────────────────────────────
 
 

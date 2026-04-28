@@ -61,12 +61,19 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         )
         return "skipped"
 
-    # Same-club / same-day dedup against the events table.
+    # Same-club / same-day dedup against the events table. Pass the
+    # filtered future-only list so the same-day window is computed
+    # against an actual upcoming date — passing the unfiltered list
+    # could put ``occurrences[0]`` at a past dtstart and drive the
+    # day-window check against a stale day with no relevant matches.
+    future_occurrence_dicts = [
+        o.model_dump(mode="json") for o in future_occurrences
+    ]
     match = find_match(
         title=title,
         location=location,
         description=event.get("description") or "",
-        occurrences=occurrences,
+        occurrences=future_occurrence_dicts,
         ig_handle=ig_handle,
     )
     if match is not None and match.kind == "duplicate":

@@ -9,7 +9,7 @@ The constants themselves (``SCHOOL_TIMEZONES``, ``SCHOOL_SEMESTER_ENDS``)
 do live in ``core/constants.py`` so they remain a single source of truth.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from core.constants import SCHOOL_ALIASES, SCHOOL_SEMESTER_ENDS
 from services.calendar_service import resolve_school_timezone
@@ -39,7 +39,10 @@ def current_semester_end(school: str | None, *, now: datetime | None = None) -> 
     if ends is None:
         return None
 
-    month = (now or datetime.utcnow()).month
+    # ``datetime.utcnow()`` is deprecated in Python 3.12+. The timezone-
+    # aware form gives the same month value but doesn't emit a runtime
+    # warning.
+    month = (now or datetime.now(timezone.utc)).month
     if 1 <= month <= 4:
         return ends[1]
     if 5 <= month <= 8:

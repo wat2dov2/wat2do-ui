@@ -143,20 +143,59 @@ def extract_events_from_post(
         return []
 
     raw = (response.choices[0].message.content or "").strip()
-    if raw.startswith("```json"):
-        raw = raw[len("```json"):]
-    if raw.endswith("```"):
-        raw = raw[: -len("```")]
-    raw = raw.strip()
+    parsed = _parse_model_json(raw)
+
+    if isinstance(parsed, dict):
+        # Model occasionally returns a single event dict instead of an
+        # array of one. Treat as a single-event response rather than
+        # silently dropping it.
+        events = [parsed]
+    elif isinstance(parsed, list):
+        events = parsed
+    else:
+        # ``null`` (the model's "no event in this post" return) falls
+        # through here, as do unexpected shapes.
+        events = []
+    return [_clean_event(e) for e in events if isinstance(e, dict)]
+
+
+def _parse_model_json(raw: str):
+    """Parse the model's response, tolerating common formatting quirks.
+
+    Strips ``json`` and bare ` ``` ` code fences, then attempts a strict
+    parse. On failure, falls back to extracting the first JSON value
+    (``[ ... ]`` or ``{ ... }``) in the string — handles the case where
+    the model appended a trailing "Note: …" sentence despite the prompt
+    asking for JSON only. Returns ``None`` if nothing parses.
+    """
+    s = raw
+    if s.startswith("```json"):
+        s = s[len("```json"):]
+    elif s.startswith("```"):
+        s = s[3:]
+    if s.endswith("```"):
+        s = s[: -len("```")]
+    s = s.strip()
+    if not s:
+        return None
 
     try:
-        parsed = json.loads(raw)
+        return json.loads(s)
     except json.JSONDecodeError:
-        log.warning("Extractor returned non-JSON text (len=%d): %s", len(raw), raw[:200])
-        return []
+        pass
 
-    events = parsed if isinstance(parsed, list) else []
-    return [_clean_event(e) for e in events if isinstance(e, dict)]
+    # Fallback: find the first `[` or `{` and the matching last `]` or `}`.
+    for opener, closer in (("[", "]"), ("{", "}")):
+        start = s.find(opener)
+        end = s.rfind(closer)
+        if start != -1 and end > start:
+            try:
+                return json.loads(s[start : end + 1])
+            except json.JSONDecodeError:
+                continue
+
+    log.warning("Extractor returned non-JSON text (len=%d): %s", len(raw), raw[:200])
+    return None
 
 
 def _build_prompt(
@@ -291,10 +330,12 @@ def _clean_event(event: dict) -> dict:
             event[key] = fallback
 
     # Free-event coercion — if the price came back null but the post text
-    # mentions "free", set 0.0. Mirrors v1's behaviour.
+    # mentions "free", set 0.0. Mirrors v1's behaviour. Includes the
+    # title in the haystack so a post titled "Free Pizza Friday" with
+    # an empty description / food still gets coerced to price=0.0.
     if event.get("price") is None:
         haystack = " ".join(
-            str(event.get(k) or "") for k in ("description", "food")
+            str(event.get(k) or "") for k in ("title", "description", "food")
         ).lower()
         if "free" in haystack:
             event["price"] = 0.0
