@@ -331,9 +331,12 @@ def compute_event_diff(
     """Diff the subset of fields whose changes warrant a user-facing alert.
 
     Only ``MATERIAL_FIELDS`` are compared — routine title/description
-    edits should not fire notifications. ``occurrences`` is a list of
-    dicts compared in order; reshuffling counts as a change so a
-    "moved one of three dates" edit still fires the alert.
+    edits should not fire notifications. The ``occurrences`` field
+    compares old vs new as ordered lists of dtstart/dtend/duration/tz
+    tuples; the lists arrive sorted by ``dtstart_utc`` (because
+    ``list_for_event`` orders ASC), so a pure reshuffle without any
+    date change produces identical canonical lists and fires NO diff.
+    A real change (added / removed / moved date) does fire.
 
     Returns an empty dict when no material field changed; callers can
     branch on truthiness.
@@ -369,8 +372,10 @@ def _jsonable(value: object) -> object | None:
 def _occurrence_jsonable(occ: OccurrenceResponse) -> dict:
     """Stable, comparable shape for occurrence diffs.
 
-    Drops ``id`` and ``created_at`` (DB metadata) so reshuffling
-    occurrences without changing dates does NOT show up as a diff.
+    Strips ``id`` and ``created_at`` (DB metadata that changes on every
+    ``replace_occurrences`` regardless of whether the underlying date
+    moved). The remaining fields (dtstart_utc, dtend_utc, duration, tz)
+    are what users actually care about being notified on.
     """
     return {
         "dtstart_utc": occ.dtstart_utc.isoformat(),

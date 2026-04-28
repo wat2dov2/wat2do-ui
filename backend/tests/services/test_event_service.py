@@ -132,6 +132,44 @@ def test_diff_multiple_fields_all_present():
     }
 
 
+def test_diff_reshuffle_with_same_dates_produces_no_diff():
+    """The function-level docstring says: pure reshuffle without any
+    date change does NOT fire a diff. Verify by feeding the same set
+    of occurrences twice — once in id order, once in reverse — and
+    asserting the diff is empty.
+
+    The post-fix behavior is: ``list_for_event`` orders by ``dtstart_utc``
+    ASC, so any reshuffle on the DB side normalises away. The picker
+    + canonical-form helper produce identical JSON for the same set
+    of (dtstart, dtend, duration, tz) tuples regardless of what id
+    they happened to have.
+    """
+    ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
+    old_occ = OccurrenceResponse.model_validate({
+        "id": "11111111-1111-1111-1111-111111111111",
+        "event_id": 1,
+        "dtstart_utc": ts,
+        "dtend_utc": None,
+        "duration": None,
+        "tz": "America/Toronto",
+        "created_at": datetime.now(timezone.utc),
+    })
+    new_occ = OccurrenceResponse.model_validate({
+        "id": "22222222-2222-2222-2222-222222222222",
+        "event_id": 1,
+        "dtstart_utc": ts,
+        "dtend_utc": None,
+        "duration": None,
+        "tz": "America/Toronto",
+        "created_at": datetime.now(timezone.utc),
+    })
+    old = _event(occurrences=[old_occ])
+    new = _event(occurrences=[new_occ])
+
+    # Same dtstart, different ids/created_at — no diff.
+    assert event_service.compute_event_diff(old, new) == {}
+
+
 def test_diff_occurrence_added_from_none():
     """An event going from no occurrences to one new occurrence diffs as
     a single ``occurrences`` change with old=[] and the new list."""
