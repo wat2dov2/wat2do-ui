@@ -12,7 +12,18 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
-from core.constants import EVENT_STATUS_ACTIVE
+from core.constants import (
+    EVENT_STATUS_ACTIVE,
+    MAX_EVENT_CLUB_TYPE_LENGTH,
+    MAX_EVENT_DESCRIPTION_LENGTH,
+    MAX_EVENT_FOOD_COUNT,
+    MAX_EVENT_FOOD_ITEM_LENGTH,
+    MAX_EVENT_HANDLE_LENGTH,
+    MAX_EVENT_LOCATION_LENGTH,
+    MAX_EVENT_ORGANIZATION_LENGTH,
+    MAX_EVENT_SCHOOL_LENGTH,
+    MAX_EVENT_TITLE_LENGTH,
+)
 from core.database import get_sb
 from core.tables import CLUBS, EVENTS
 from schemas.event import normalize_category
@@ -83,20 +94,25 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         )
         return "duplicate"
 
+    # Truncations mirror the API's ``EventCreate`` schema caps (defined in
+    # core/constants.py) so a row written by the scraper round-trips through
+    # the Pydantic boundary. The DB columns themselves are wider in places
+    # (events.title is varchar(500), schema cap is 300) — slicing to the
+    # tighter cap keeps the user-facing contract consistent.
     event_row = {
-        "title": title[:500],
-        "description": (event.get("description") or "")[:5000] or None,
-        "location": location[:500],
+        "title": title[:MAX_EVENT_TITLE_LENGTH],
+        "description": (event.get("description") or "")[:MAX_EVENT_DESCRIPTION_LENGTH] or None,
+        "location": location[:MAX_EVENT_LOCATION_LENGTH],
         "price": event.get("price"),
         "food": _coerce_food(event.get("food")),
         "registration": bool(event.get("registration", False)),
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
-        "club_type": (club_type[:100] if club_type else None),
-        "school": (event.get("school") or "")[:255] or None,
+        "club_type": (club_type[:MAX_EVENT_CLUB_TYPE_LENGTH] if club_type else None),
+        "school": (event.get("school") or "")[:MAX_EVENT_SCHOOL_LENGTH] or None,
         "category": category,
-        "organization": organization[:255],
-        "ig_handle": ig_handle[:255] if ig_handle else None,
+        "organization": organization[:MAX_EVENT_ORGANIZATION_LENGTH],
+        "ig_handle": ig_handle[:MAX_EVENT_HANDLE_LENGTH] if ig_handle else None,
         "status": EVENT_STATUS_ACTIVE,
     }
 
@@ -136,27 +152,29 @@ def _resolve_organization(event: dict, *, ig_handle: str) -> str:
 
     Order: extractor's ``organization`` → club lookup by IG handle →
     raw IG handle. ``events.organization`` is NOT NULL in the v2 schema,
-    so we always return a non-empty string.
+    so we always return a non-empty string. The pipeline always passes
+    a non-empty ``ig_handle`` (it's the bucket key in
+    ``_group_by_handle``), so the IG-handle fallback always wins when
+    everything upstream returned empty.
     """
     org = (event.get("organization") or "").strip()
     if org:
         return org
 
-    if ig_handle:
-        rows = (
-            get_sb()
-            .table(CLUBS)
-            .select("club_name")
-            .eq("ig", ig_handle)
-            .limit(1)
-            .execute()
-        ).data or []
-        if rows:
-            club_name = (rows[0].get("club_name") or "").strip()
-            if club_name:
-                return club_name
+    rows = (
+        get_sb()
+        .table(CLUBS)
+        .select("club_name")
+        .eq("ig", ig_handle)
+        .limit(1)
+        .execute()
+    ).data or []
+    if rows:
+        club_name = (rows[0].get("club_name") or "").strip()
+        if club_name:
+            return club_name
 
-    return ig_handle or "Unknown"
+    return ig_handle
 
 
 def _resolve_club_type(ig_handle: str | None) -> str | None:
@@ -201,7 +219,8 @@ def _coerce_food(value: object) -> list | None:
         - list[str]         → [stripped, deduped, capped]
         - str               → split on commas, trim, dedupe, cap
 
-    Capped at 20 items (matches MAX_EVENT_FOOD_COUNT in core/constants.py).
+    Per-item length and item-count caps both come from
+    ``core.constants`` so the writer agrees with the schema.
     """
     if value in (None, "", []):
         return None
@@ -217,8 +236,8 @@ def _coerce_food(value: object) -> list | None:
         if key in seen:
             continue
         seen.add(key)
-        deduped.append(item[:100])
-        if len(deduped) >= 20:
+        deduped.append(item[:MAX_EVENT_FOOD_ITEM_LENGTH])
+        if len(deduped) >= MAX_EVENT_FOOD_COUNT:
             break
     return deduped or None
 
