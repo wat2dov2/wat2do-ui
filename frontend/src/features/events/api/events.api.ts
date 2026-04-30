@@ -104,3 +104,23 @@ export async function saveEventToBackend(eventId: number): Promise<void> {
 export async function unsaveEventFromBackend(eventId: number): Promise<void> {
   await api.delete(`/saved-events/${eventId}`);
 }
+
+// --- Backend-synced RSVPs ("I'm Going") ---
+
+export function toggleRsvpEventAPI(eventId: number, currentRsvpIds: number[]): number[] {
+  return currentRsvpIds.includes(eventId)
+    ? currentRsvpIds.filter((id) => id !== eventId)
+    : [...currentRsvpIds, eventId];
+}
+
+export async function fetchRsvpEventIdsFromBackend(): Promise<number[]> {
+  return api.get<number[]>("/event-rsvps/");
+}
+
+export async function rsvpEventToBackend(eventId: number): Promise<void> {
+  await api.put<void>(`/event-rsvps/${eventId}`);
+}
+
+export async function unrsvpEventFromBackend(eventId: number): Promise<void> {
+  await api.delete(`/event-rsvps/${eventId}`);
+}
