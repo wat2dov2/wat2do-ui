@@ -321,6 +321,7 @@ REPORT_RATE_LIMIT_WINDOW_SECONDS = 60        # 5 reports per minute per user
 # Saved events cap — hard ceiling enforced at the save endpoint to prevent
 # a single account from growing an unbounded bookmark list (DoS vector).
 MAX_SAVED_EVENTS_PER_USER = 10_000
+MAX_RSVPS_PER_USER = 10_000
 
 # ---------------------------------------------------------------------------
 # Calendar feed — ICS subscription

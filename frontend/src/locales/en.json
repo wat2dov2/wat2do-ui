@@ -1,7 +1,9 @@
 {
   "common": {
-    "save": "Save",
-    "unsave": "Unsave",
+    "interested": "Interested",
+    "uninterested": "Not Interested",
+    "imGoing": "I'm Going",
+    "notGoing": "Not Going",
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
