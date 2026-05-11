@@ -2,7 +2,7 @@
  * TopNav Component
  */
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Shield, LogOut, Building2 } from "lucide-react";
@@ -17,13 +17,14 @@ import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { useEventsStore } from "@/features/events/store/events.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { logoutAPI } from "@/features/auth";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 export function TopNav() {
-  const [selectedSchool, setSelectedSchool] = useState(DEFAULT_SCHOOL);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
   const { profileCompleted, isAdmin, hasClub } = useAuthState();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ export function TopNav() {
           />
         </button>
         <span className="text-muted-foreground text-lg font-light">/</span>
-        <SchoolCombobox value={selectedSchool} onChange={setSelectedSchool} />
+        <SchoolCombobox value={schoolFilter ?? ""} onChange={setSchoolFilter} />
       </div>
 
       <div className="flex items-center gap-2">

@@ -67,6 +67,11 @@ const OnboardingPage = lazy(() =>
     default: module.OnboardingPage,
   }))
 );
+const ForgotPasswordPage = lazy(() =>
+  import("@/features/auth").then((module) => ({
+    default: module.ForgotPasswordPage,
+  }))
+);
 
 export default function App() {
   const location = useLocation();
@@ -192,11 +197,12 @@ function AppContent() {
     [events, handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
   );
 
-  const isAuthFlowRoute = location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.ONBOARDING;
+  const isAuthFlowRoute = location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.FORGOT_PASSWORD || location.pathname === ROUTES.ONBOARDING;
 
   const appRoutes = (
     <Routes>
       <Route path={ROUTES.LOGIN} element={<AuthEntryPage />} />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
       <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
       <Route
         path={ROUTES.HOME}

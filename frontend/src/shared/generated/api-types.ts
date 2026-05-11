@@ -1567,6 +1567,8 @@ export interface components {
             organization?: string | null;
             /** Display Handle */
             display_handle?: string | null;
+            /** School */
+            school?: string | null;
             /**
              * Added At
              * Format: date-time

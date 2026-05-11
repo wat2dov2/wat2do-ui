@@ -47,10 +47,11 @@ if settings.is_production and not settings.cookie_secure:
 _optional_bearer = HTTPBearer(auto_error=False)
 
 
-# A2: Scope the refresh cookie to ``/auth/refresh`` — the only route that
-# needs it.  Narrower paths reduce the number of requests that carry the
-# long-lived credential, shrinking the CSRF / accidental-attach surface.
-REFRESH_COOKIE_PATH = "/auth/refresh"
+# A2: Scope the refresh cookie to the browser-visible refresh endpoint — the
+# only route that needs it. Narrower paths reduce the number of requests that
+# carry the long-lived credential, shrinking the CSRF / accidental-attach
+# surface. Production Vercel rewrites use /api/auth/refresh.
+REFRESH_COOKIE_PATH = settings.refresh_cookie_path
 
 
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:

@@ -12,6 +12,7 @@
 export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
+  FORGOT_PASSWORD: "/forgot-password",
   ONBOARDING: "/onboarding",
   ABOUT: "/about",
   CLUBS: "/clubs",

@@ -57,7 +57,7 @@ export function PreviewStyleEventCard({
       }
       data-event-id={dataEventId}
       className={cn(
-        "rounded-xl overflow-hidden flex flex-col bg-card",
+        "rounded-xl overflow-hidden flex flex-col bg-card border border-border",
         onClick && "cursor-pointer transition-shadow duration-200 hover:opacity-90",
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl"
       )}

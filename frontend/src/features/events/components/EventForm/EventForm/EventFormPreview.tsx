@@ -48,7 +48,7 @@ export function EventFormPreview() {
 
       {/* Preview Card - Matches EventCard styling exactly */}
       <article
-        className="rounded-xl overflow-hidden flex flex-col bg-card"
+        className="rounded-xl overflow-hidden flex flex-col bg-card border border-border"
       >
         {/* Event Image */}
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>

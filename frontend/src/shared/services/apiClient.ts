@@ -122,10 +122,15 @@ export function refreshAccessToken(): Promise<boolean> {
  * /login on the first auth-gated fetch is a bad UX.
  */
 export function handleAuthFailure(): void {
+  // Capture whether there was a token BEFORE clearing it.
+  const hadToken = hasAccessToken();
   clearAccessToken();
+  // Only redirect when the user had a real session (access token + cached email).
+  // A 401 without ever having a token means the user was never fully
+  // authenticated (e.g. confirmation-required signup) — don't bounce them.
   const hasCachedEmail =
     StorageService.getItem<string | null>(STORAGE_KEYS.USER_EMAIL, null) !== null;
-  if (!hasCachedEmail) return;
+  if (!hadToken || !hasCachedEmail) return;
   if (!window.location.pathname.startsWith("/login")) {
     window.location.href = "/login";
   }

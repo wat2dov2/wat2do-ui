@@ -29,6 +29,8 @@ export function EventsPageContainer() {
 
   const {
     isLoading,
+    error,
+    fetchEvents,
     savedEventIds,
     latestAddedEvent,
     recsLoading,
@@ -151,6 +153,17 @@ export function EventsPageContainer() {
       <main className="w-full px-6 pt-5 pb-6" role="main" aria-label={t("search.ariaLabel")}>
         {isLoading || recsLoading ? (
           <LoadingPage />
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <p className="text-destructive text-sm text-center max-w-md">{error}</p>
+            <button
+              type="button"
+              onClick={() => fetchEvents()}
+              className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Try again
+            </button>
+          </div>
         ) : (
           <EventList
             events={orderedEvents}

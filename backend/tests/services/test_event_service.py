@@ -5,7 +5,7 @@ Covers the two pieces the router tests can't reach:
    a future refactor doesn't accidentally broaden ``MATERIAL_FIELDS`` to
    include routine edits.
 2. The list-filter default — every ``GET /events`` query must filter
-   ``status = 'active'`` at the builder level. Regression here would
+   ``status = 'CONFIRMED'`` at the builder level. Regression here would
    leak cancelled events into browse/search without anyone noticing
    through the router tests (which mock the service entirely).
 """
@@ -35,7 +35,7 @@ def _event(**overrides) -> EventResponse:
 def _occurrence(dtstart: datetime, dtend: datetime | None = None) -> OccurrenceResponse:
     """Helper: build an OccurrenceResponse the diff helper can iterate."""
     return OccurrenceResponse.model_validate({
-        "id": "00000000-0000-0000-0000-000000000000",
+        "id": 0,
         "event_id": 1,
         "dtstart_utc": dtstart,
         "dtend_utc": dtend,
@@ -146,7 +146,7 @@ def test_diff_reshuffle_with_same_dates_produces_no_diff():
     """
     ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
     old_occ = OccurrenceResponse.model_validate({
-        "id": "11111111-1111-1111-1111-111111111111",
+        "id": 999,
         "event_id": 1,
         "dtstart_utc": ts,
         "dtend_utc": None,
@@ -155,7 +155,7 @@ def test_diff_reshuffle_with_same_dates_produces_no_diff():
         "created_at": datetime.now(timezone.utc),
     })
     new_occ = OccurrenceResponse.model_validate({
-        "id": "22222222-2222-2222-2222-222222222222",
+        "id": 888,
         "event_id": 1,
         "dtstart_utc": ts,
         "dtend_utc": None,
@@ -196,7 +196,7 @@ def test_diff_occurrence_added_from_none():
 
 
 def test_list_events_default_filters_active(fake_sb, patch_sb):
-    """By default, the list query must include .eq("status", "active")."""
+    """By default, the list query must include .eq("status", "CONFIRMED")."""
     patch_sb("services.event_service")
     fake_sb.set_response(data=[])
 
@@ -261,9 +261,9 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
     monkeypatch.setattr(
         event_date_service, "list_for_events",
         lambda ids: {42: [
-            _occ_response(future_1, occ_id="o1"),
-            _occ_response(future_2, occ_id="o2"),
-            _occ_response(future_3, occ_id="o3"),
+            _occ_response(future_1, occ_id=1),
+            _occ_response(future_2, occ_id=2),
+            _occ_response(future_3, occ_id=3),
         ]},
     )
 
@@ -274,7 +274,7 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
     assert summary.dtstart_utc == future_1
 
 
-def _occ_response(dtstart, dtend=None, occ_id="00000000-0000-0000-0000-000000000001"):
+def _occ_response(dtstart, dtend=None, occ_id=1):
     """Helper: build an OccurrenceResponse for the test above."""
     return OccurrenceResponse.model_validate({
         "id": occ_id,

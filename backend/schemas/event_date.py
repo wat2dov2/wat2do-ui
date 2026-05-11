@@ -43,7 +43,7 @@ class OccurrenceCreate(BaseModel):
 
 
 class OccurrenceResponse(BaseModel):
-    id: str
+    id: int
     event_id: int
     dtstart_utc: datetime
     dtend_utc: datetime | None = None

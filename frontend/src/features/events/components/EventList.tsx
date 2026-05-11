@@ -3,7 +3,6 @@ import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { useEventRsvpsStore } from "@/features/events/store/eventRsvps.store";
 import { usePromotionsStore } from "@/features/credits";
 import { useShallow } from "zustand/react/shallow";
 import type { Event } from "@/shared/types";
@@ -38,7 +37,6 @@ export function EventList({
 }: EventListProps) {
   const { t } = useTranslation();
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
-  const rsvpEventIds = useEventRsvpsStore((s) => s.rsvpEventIds);
   // Custom equality: the store re-sets this array on every reconcile, so the
   // reference changes even when the ID set is identical. ``useShallow`` does
   // element-wise reference equality on the array to avoid unnecessary re-renders.
@@ -51,10 +49,6 @@ export function EventList({
   const savedSet = useMemo(
     () => new Set(savedEventIds),
     [savedEventIds],
-  );
-  const goingSet = useMemo(
-    () => new Set(rsvpEventIds),
-    [rsvpEventIds],
   );
   const promotedSet = useMemo(
     () => new Set(activePromotedEventIds),
@@ -120,7 +114,6 @@ export function EventList({
           <EventCard
             event={event}
             isSaved={savedSet.has(event.id)}
-            isGoing={goingSet.has(event.id)}
             isPromoted={promotedSet.has(event.id)}
             onEventClick={onEventClick}
             disableModal={disableModal}

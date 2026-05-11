@@ -7,14 +7,17 @@
  */
 
 // Components
+export { AuthPageLayout } from "./components/AuthPageLayout";
 export { AuthHeroPanel } from "./components/AuthHeroPanel";
 export { AuthEmailFormCard } from "./components/AuthEmailFormCard";
+export { ForgotPasswordFormCard } from "./components/ForgotPasswordFormCard";
 export { OnboardingFacultyStep } from "./components/OnboardingFacultyStep";
 export { GooseDialogue } from "./components/GooseDialogue";
 
 // Pages
 export { AuthEntryPage } from "./pages/AuthEntryPage";
 export { OnboardingPage } from "./pages/OnboardingPage";
+export { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 
 // Hooks
 export { useAuthEntryFlow } from "./hooks/useAuthEntryFlow";

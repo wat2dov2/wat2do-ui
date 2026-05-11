@@ -17,6 +17,18 @@ def _mock_club(**overrides) -> ClubResponse:
     return ClubResponse.model_validate(defaults)
 
 
+def test_club_response_parses_legacy_category_json_string():
+    club = _mock_club(categories='["Creative Arts, Dance and Music"]')
+
+    assert club.categories == ["Creative Arts, Dance and Music"]
+
+
+def test_club_response_defaults_legacy_null_club_type():
+    club = _mock_club(club_type=None)
+
+    assert club.club_type == "Unknown"
+
+
 def test_create_club_requires_auth(client):
     response = client.post("/clubs/", json={"club_name": "Test Club", "club_type": "WUSA"})
     assert response.status_code == 401
@@ -146,8 +158,15 @@ def test_integration_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
     monkeypatch.setattr(
         club_service,
-        "get_discord_integration",
-        MagicMock(return_value={"club_id": 1, "connected": False, "name": None, "server_id": None, "server_name": None, "channel_id": None, "channel_name": None, "last_sync": None}),
+        "get_platform_integration",
+        MagicMock(return_value={
+            "club_id": 1,
+            "platform": "discord",
+            "connected": False,
+            "name": None,
+            "last_sync": None,
+            "metadata": {},
+        }),
     )
 
     resp = authenticated_client.get("/clubs/1/integrations/discord")

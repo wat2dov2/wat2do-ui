@@ -30,3 +30,4 @@ dist-ssr
 
 # Cursor hooks state
 .cursor/hooks/state/
+.vercel

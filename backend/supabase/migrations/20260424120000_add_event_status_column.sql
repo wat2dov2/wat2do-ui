@@ -18,7 +18,7 @@
 --               and saved-events endpoints always return them so users
 --               who saved the event still see the status transition.
 --
--- Backfill: NOT NULL DEFAULT 'active' fills every existing row at
+-- Backfill: NOT NULL DEFAULT 'CONFIRMED' fills every existing row at
 -- column-add time, so no separate data migration is needed.
 --
 -- Idempotent: ADD COLUMN IF NOT EXISTS + pg_constraint-guarded CHECK,
@@ -27,7 +27,7 @@
 BEGIN;
 
 ALTER TABLE public.events
-    ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
+    ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'CONFIRMED';
 
 DO $$
 BEGIN
@@ -36,7 +36,7 @@ BEGIN
     ) THEN
         ALTER TABLE public.events
             ADD CONSTRAINT events_status_check
-            CHECK (status IN ('active', 'cancelled'));
+            CHECK (status IN ('CONFIRMED', 'CANCELLED'));
     END IF;
 END$$;
 

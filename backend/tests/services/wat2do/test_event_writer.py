@@ -171,9 +171,9 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
         [{"id": 7}],             # events insert
         # occurrences insert — return shape must satisfy OccurrenceResponse
         [
-            {"id": "d1", "event_id": 7, "dtstart_utc": _future(2),  "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
-            {"id": "d2", "event_id": 7, "dtstart_utc": _future(9),  "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
-            {"id": "d3", "event_id": 7, "dtstart_utc": _future(16), "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
+            {"id": 1, "event_id": 7, "dtstart_utc": _future(2),  "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
+            {"id": 2, "event_id": 7, "dtstart_utc": _future(9),  "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
+            {"id": 3, "event_id": 7, "dtstart_utc": _future(16), "dtend_utc": None, "duration": None, "tz": None, "created_at": occ_now},
         ],
     ])
 
@@ -221,7 +221,7 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
         [{"id": 11}],             # events insert
         # occurrences insert — only one survives the past-event filter
         [{
-            "id": "d1", "event_id": 11,
+            "id": 1, "event_id": 11,
             "dtstart_utc": _future(2), "dtend_utc": None,
             "duration": None, "tz": None,
             "created_at": occ_now,
@@ -246,7 +246,11 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
     assert len(occ_payload) == 1
 
 
-def test_write_event_returns_skipped_when_all_occurrences_past(monkeypatch):
+def test_write_event_returns_skipped_when_all_occurrences_past(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.wat2do.event_writer")
+    fake_sb.queue_responses([
+        [],  # clubs lookup for club_type
+    ])
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     event = _event(occurrences=[

@@ -174,7 +174,7 @@ def _event_row(**overrides) -> dict:
 def _occurrence_row(event_id: int, **overrides) -> dict:
     """One event_dates row, shaped to satisfy OccurrenceResponse."""
     defaults = {
-        "id": "00000000-0000-0000-0000-000000000001",
+        "id": 1,
         "event_id": event_id,
         "dtstart_utc": "2026-05-01T23:00:00+00:00",
         "dtend_utc": "2026-05-02T01:30:00+00:00",
@@ -230,7 +230,7 @@ def test_build_ics_for_user_renders_vevent(monkeypatch, fake_sb, patch_sb):
     # UID combines event id with the occurrence id so a multi-occurrence
     # event renders distinct VEVENTs that calendar clients can track
     # independently.
-    assert "UID:event-42-00000000-0000-0000-0000-000000000001@wat2do.app" in text
+    assert "UID:event-42-1@wat2do.app" in text
     assert "SUMMARY:Jazz Night" in text
     # 23:00 UTC = 19:00 America/Toronto in EDT (May)
     assert "DTSTART;TZID=America/Toronto:20260501T190000" in text
@@ -282,19 +282,19 @@ def test_build_ics_for_user_renders_one_vevent_per_occurrence(monkeypatch, fake_
         [
             _occurrence_row(
                 event_id=42,
-                id="11111111-1111-1111-1111-111111111111",
+                id=111,
                 dtstart_utc="2026-05-01T23:00:00+00:00",
                 dtend_utc="2026-05-02T01:30:00+00:00",
             ),
             _occurrence_row(
                 event_id=42,
-                id="22222222-2222-2222-2222-222222222222",
+                id=222,
                 dtstart_utc="2026-05-08T23:00:00+00:00",
                 dtend_utc="2026-05-09T01:30:00+00:00",
             ),
             _occurrence_row(
                 event_id=42,
-                id="33333333-3333-3333-3333-333333333333",
+                id=333,
                 dtstart_utc="2026-05-15T23:00:00+00:00",
                 dtend_utc="2026-05-16T01:30:00+00:00",
             ),
@@ -309,9 +309,9 @@ def test_build_ics_for_user_renders_one_vevent_per_occurrence(monkeypatch, fake_
     assert text.count("END:VEVENT") == 3
 
     # Each occurrence has a distinct UID combining event + occurrence id.
-    assert "UID:event-42-11111111-1111-1111-1111-111111111111@wat2do.app" in text
-    assert "UID:event-42-22222222-2222-2222-2222-222222222222@wat2do.app" in text
-    assert "UID:event-42-33333333-3333-3333-3333-333333333333@wat2do.app" in text
+    assert "UID:event-42-111@wat2do.app" in text
+    assert "UID:event-42-222@wat2do.app" in text
+    assert "UID:event-42-333@wat2do.app" in text
 
     # The three DTSTARTs (in America/Toronto local time, May 1/8/15 UTC
     # 23:00 == May 1/8/15 19:00 EDT) are all present.

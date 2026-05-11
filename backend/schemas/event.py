@@ -34,6 +34,18 @@ _log = logging.getLogger(__name__)
 
 _CANONICAL_SET = frozenset(EVENT_CATEGORIES)
 
+
+def _normalize_food(v: object) -> list[str] | None:
+    """Accept both legacy string and list forms of the ``food`` field."""
+    if v is None:
+        return None
+    if isinstance(v, str):
+        return [v]
+    if isinstance(v, list):
+        return v
+    return None
+
+
 # Reusable constrained-string type for individual food tags.
 FoodStr = Annotated[str, Field(min_length=1, max_length=MAX_EVENT_FOOD_ITEM_LENGTH)]
 
@@ -279,10 +291,16 @@ class EventSummaryResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     display_handle: str | None = None
+    school: str | None = None
     added_at: datetime
     status: EventStatus = EVENT_STATUS_ACTIVE
 
     model_config = {"from_attributes": True}
+
+    @field_validator("food", mode="before")
+    @classmethod
+    def _food_str_to_list(cls, v: object) -> list[str] | None:
+        return _normalize_food(v)
 
 
 # Columns to SELECT for summary queries — kept in sync with EventSummaryResponse.
@@ -335,6 +353,11 @@ class EventResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_validator("food", mode="before")
+    @classmethod
+    def _food_str_to_list(cls, v: object) -> list[str] | None:
+        return _normalize_food(v)
+
 
 class EventPublicResponse(BaseModel):
     """Public response for GET /events/{id} — identical to EventResponse
@@ -369,3 +392,8 @@ class EventPublicResponse(BaseModel):
     status: EventStatus = EVENT_STATUS_ACTIVE
 
     model_config = {"from_attributes": True}
+
+    @field_validator("food", mode="before")
+    @classmethod
+    def _food_str_to_list(cls, v: object) -> list[str] | None:
+        return _normalize_food(v)

@@ -14,7 +14,7 @@ from schemas.event_date import OccurrenceCreate
 from services import event_date_service
 
 
-def _occ_row(event_id: int, dtstart: str, occ_id: str = "00000000-0000-0000-0000-000000000001") -> dict:
+def _occ_row(event_id: int, dtstart: str, occ_id: int = 1) -> dict:
     return {
         "id": occ_id,
         "event_id": event_id,
@@ -45,15 +45,15 @@ def test_replace_occurrences_restores_snapshot_on_insert_failure(fake_sb, patch_
     #   3. insert(new_payload)         -> RAISES
     #   4. insert(snapshot_payload)    -> [restored row]
     fake_sb.queue_responses([
-        [_occ_row(42, "2026-05-01T18:00:00+00:00", "snap-id")],  # snapshot fetch
+        [_occ_row(42, "2026-05-01T18:00:00+00:00", 99)],  # snapshot fetch
         [],                                                       # delete
     ])
     # The third execute (the insert that should fail) — set up via raise_on_execute
     # but queue_responses owns the side_effect, so swap to a smarter side_effect.
     state = {"call": 0}
-    snapshot_resp = MagicMock(data=[_occ_row(42, "2026-05-01T18:00:00+00:00", "snap-id")], count=0)
+    snapshot_resp = MagicMock(data=[_occ_row(42, "2026-05-01T18:00:00+00:00", 99)], count=0)
     delete_resp = MagicMock(data=[], count=0)
-    restored_resp = MagicMock(data=[_occ_row(42, "2026-05-01T18:00:00+00:00", "snap-id")], count=0)
+    restored_resp = MagicMock(data=[_occ_row(42, "2026-05-01T18:00:00+00:00", 99)], count=0)
 
     def _smart():
         state["call"] += 1

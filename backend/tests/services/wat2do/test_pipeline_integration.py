@@ -119,7 +119,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
             elif isinstance(payload, list):
                 # event_dates bulk insert — echo with fabricated ids/times.
                 rows = [{
-                    "id": f"d{i}",
+                    "id": i,
                     "event_id": row["event_id"],
                     "dtstart_utc": row["dtstart_utc"],
                     "dtend_utc": row.get("dtend_utc"),

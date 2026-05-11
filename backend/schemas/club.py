@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Literal
 from urllib.parse import urlparse
@@ -114,6 +115,29 @@ class ClubResponse(BaseModel):
     created_by: str | None = None
 
     model_config = {"from_attributes": True}
+
+    @field_validator("categories", mode="before")
+    @classmethod
+    def _parse_legacy_categories(cls, v):
+        if not isinstance(v, str):
+            return v
+        value = v.strip()
+        if not value:
+            return None
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return [value]
+        if isinstance(parsed, list):
+            return parsed
+        return [value]
+
+    @field_validator("club_type", mode="before")
+    @classmethod
+    def _default_legacy_club_type(cls, v):
+        if v is None:
+            return "Unknown"
+        return v
 
 
 class DiscordChannelOption(BaseModel):

@@ -6,7 +6,6 @@ import {
   Users,
   Download,
   Heart,
-  Check,
   Sparkles,
   ImageOff,
   MoreHorizontal,
@@ -21,7 +20,6 @@ import { EventCardContent } from "@/shared/ui/event-card-content";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { DeleteEventDialog } from "@/features/events/components/DeleteEventDialog";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { useEventRsvpsStore } from "@/features/events/store/eventRsvps.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { getUserId } from "@/features/auth";
@@ -38,7 +36,6 @@ import { QP } from "@/shared/constants/queryParams";
 interface EventCardProps {
   event: Event;
   isSaved?: boolean;
-  isGoing?: boolean;
   isPromoted?: boolean;
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
@@ -60,7 +57,6 @@ interface EventCardProps {
 export function EventCard({
   event,
   isSaved = false,
-  isGoing = false,
   isPromoted = false,
   onEventClick,
   disableModal,
@@ -77,7 +73,6 @@ export function EventCard({
 
   // Mutations go through stores directly.
   const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
-  const toggleRsvp = useEventRsvpsStore((s) => s.toggleRsvp);
   // All events feed the similar-events grid in EventDetailsModal.
   const allEvents = useEventsStore((s) => s.events);
 
@@ -117,7 +112,7 @@ export function EventCard({
             navigate(`/?${newParams.toString()}`, { replace: false });
           }
         }}
-        className={`rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
+        className={`rounded-xl overflow-hidden border border-border hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
           isPromoted
             ? "ring-2 ring-amber-400 shadow-amber-100 dark:shadow-amber-900/20 shadow-md"
             : ""
@@ -204,36 +199,6 @@ export function EventCard({
                     {t("common.share")}
                   </button>
                   <button
-                    className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl text-left transition-colors ${
-                      profileCompleted
-                        ? "hover:bg-secondary text-foreground"
-                        : "cursor-not-allowed opacity-50 text-muted-foreground"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (profileCompleted) toggleSaveEvent(event.id);
-                    }}
-                    disabled={!profileCompleted}
-                  >
-                    <Heart className={`w-3.5 h-3.5 ${isSaved ? "fill-error text-error" : ""}`} />
-                    {isSaved ? t("common.uninterested") : t("common.interested")}
-                  </button>
-                  <button
-                    className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl text-left transition-colors ${
-                      profileCompleted
-                        ? "hover:bg-secondary text-foreground"
-                        : "cursor-not-allowed opacity-50 text-muted-foreground"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (profileCompleted) toggleRsvp(event.id);
-                    }}
-                    disabled={!profileCompleted}
-                  >
-                    <Check className={`w-3.5 h-3.5 ${isGoing ? "text-success" : ""}`} />
-                    {isGoing ? t("common.notGoing") : t("common.imGoing")}
-                  </button>
-                  <button
                     className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -292,6 +257,24 @@ export function EventCard({
           location={event.location}
           badges={badges}
         />
+
+        {/* I'm Interested button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (profileCompleted) toggleSaveEvent(event.id);
+          }}
+          disabled={!profileCompleted}
+          className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-t border-border ${
+            isSaved
+              ? "bg-error/10 text-error hover:bg-error/20"
+              : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+          } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
+        >
+          <Heart className={`w-4 h-4 ${isSaved ? "fill-error" : ""}`} />
+          {isSaved ? t("common.saved") : t("common.imInterested")}
+        </button>
       </article>
 
       {/* Event Details Modal */}

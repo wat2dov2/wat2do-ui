@@ -16,13 +16,17 @@ import {
 } from "@/features/events/api/events.api";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { ApiError } from "@/shared/services/apiClient";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 interface EventsState {
   events: Event[];
   isLoading: boolean;
+  error: string | null;
+  schoolFilter: string | null;
 
   /** Fetch all events from backend. Idempotent — skips if already loaded. */
   fetchEvents: () => Promise<void>;
+  setSchoolFilter: (school: string) => void;
   addEvent: (data: EventFormData) => Promise<number>;
   updateEvent: (eventId: number, data: EventFormData) => Promise<void>;
   deleteEvent: (eventId: number) => Promise<void>;
@@ -31,9 +35,11 @@ interface EventsState {
 /** Module-level flag to deduplicate concurrent fetchEvents calls. */
 let _fetchInFlight = false;
 
-export const useEventsStore = create<EventsState>((set) => ({
+export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
   isLoading: true,
+  error: null,
+  schoolFilter: DEFAULT_SCHOOL,
 
   fetchEvents: async () => {
     // Dedup concurrent callers via a module-level flag. We intentionally
@@ -41,16 +47,22 @@ export const useEventsStore = create<EventsState>((set) => ({
     // app self-heals on transient failures.
     if (_fetchInFlight) return;
     _fetchInFlight = true;
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
-      const events = await fetchAllEvents();
-      set({ events, isLoading: false });
+      const events = await fetchAllEvents(get().schoolFilter ?? undefined);
+      set({ events, isLoading: false, error: null });
     } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Failed to load events. Please try again.";
       console.error("Failed to fetch events:", err);
-      set({ isLoading: false });
+      set({ isLoading: false, error: message });
     } finally {
       _fetchInFlight = false;
     }
+  },
+
+  setSchoolFilter: (school: string) => {
+    set({ schoolFilter: school });
+    get().fetchEvents();
   },
 
   addEvent: async (data) => {
@@ -84,7 +96,7 @@ export const useEventsStore = create<EventsState>((set) => ({
       // ensures UI matches the authoritative backend state.
       if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
         try {
-          const events = await fetchAllEvents();
+          const events = await fetchAllEvents(get().schoolFilter ?? undefined);
           set({ events });
         } catch (refetchErr) {
           console.error("Failed to refetch events after delete failure:", refetchErr);

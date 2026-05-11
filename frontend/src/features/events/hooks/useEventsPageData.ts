@@ -23,6 +23,8 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   // Read from stores (single source of truth -- no duplicate fetches)
   const events = useEventsStore((s) => s.events);
   const isLoading = useEventsStore((s) => s.isLoading);
+  const error = useEventsStore((s) => s.error);
+  const fetchEvents = useEventsStore((s) => s.fetchEvents);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
   // Custom equality: the store re-sets this array on every reconcile, so
@@ -95,6 +97,8 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
 
   return {
     isLoading,
+    error,
+    fetchEvents,
     savedEventIds,
     latestAddedEvent,
     recsLoading,

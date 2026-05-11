@@ -15,8 +15,11 @@ import { filterEvents, sortEvents, type SearchFilters, type SortOptions } from "
  * The backend returns `ApiEventResponse[]`; `Event` extends that with
  * view-only computed fields added downstream by `transformRawEvent`.
  */
-export async function fetchAllEvents(): Promise<Event[]> {
-  const apiEvents = await api.get<ApiEventResponse[]>("/events/");
+export async function fetchAllEvents(school?: string): Promise<Event[]> {
+  const params = new URLSearchParams();
+  if (school) params.set("school", school);
+  const qs = params.toString();
+  const apiEvents = await api.get<ApiEventResponse[]>(`/events/${qs ? `?${qs}` : ""}`);
   return apiEvents;
 }
 

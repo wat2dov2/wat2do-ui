@@ -15,6 +15,7 @@ interface EventCardContentProps {
   time?: string;
   location?: string;
   badges?: CardBadge[];
+  className?: string;
 }
 
 export function EventCardContent({
@@ -23,9 +24,10 @@ export function EventCardContent({
   time,
   location,
   badges = [],
+  className,
 }: EventCardContentProps) {
   return (
-    <div className="relative flex flex-col flex-1 px-4 pt-4 pb-3 border-l border-r border-b border-border rounded-b-xl">
+    <div className={`relative flex flex-col flex-1 px-4 pt-4 pb-3 ${className ?? ""}`}>
       <LightRays />
       <div className="flex flex-col gap-3 h-full flex-1">
         <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
@@ -33,13 +35,13 @@ export function EventCardContent({
         </h3>
 
         {/* Info + Badges - pinned to bottom */}
-        <div className="flex items-end justify-between gap-3 mt-auto">
-          <div className="space-y-0.5">
+        <div className="flex items-end justify-between gap-3 mt-auto min-w-0">
+          <div className="space-y-0.5 min-w-0 flex-1">
             {date && (
-              <span className="block text-[11px] text-muted-foreground">{date}</span>
+              <span className="block text-[11px] text-muted-foreground truncate">{date}</span>
             )}
             {time && (
-              <span className="block text-[11px] text-muted-foreground">{time}</span>
+              <span className="block text-[11px] text-muted-foreground truncate">{time}</span>
             )}
             {location && (
               <span className="block text-[11px] text-muted-foreground truncate">

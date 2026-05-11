@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     cookie_domain: str = ""
     # Secure cookies by default (HTTPS-only). Set COOKIE_SECURE=false for local HTTP dev.
     cookie_secure: bool = True
+    # Browser-visible path for the refresh cookie. Keep local/dev at the API
+    # route; set to /api/auth/refresh when the frontend proxies API calls.
+    refresh_cookie_path: str = "/auth/refresh"
     # JWT secret for local token verification. Dashboard > Settings > API > JWT Secret.
     supabase_jwt_secret: str = ""
     # Trusted reverse-proxy IPs.  When a request arrives from one of these

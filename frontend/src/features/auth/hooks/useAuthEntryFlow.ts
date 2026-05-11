@@ -3,7 +3,7 @@ import { loginAPI, signupAPI } from "@/features/auth/api/auth.api";
 import { ApiError } from "@/shared/services/apiClient";
 import { DOMAIN_TO_SCHOOL } from "@/shared/constants/schools";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Map backend auth errors to user-facing messages.
@@ -44,17 +44,20 @@ interface UseAuthEntryFlowOptions {
   /** Invoked on successful signup with the school derived from the email domain. */
   onContinueToOnboarding: (initialSchool: string) => void;
   onContinueToHome: () => void;
+  onForgotPassword: () => void;
 }
 
 export function useAuthEntryFlow({
   onContinueToOnboarding,
   onContinueToHome,
+  onForgotPassword,
 }: UseAuthEntryFlowOptions) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
 
   const isEmailValid = useMemo(
     () => EMAIL_PATTERN.test(email.trim()),
@@ -69,16 +72,19 @@ export function useAuthEntryFlow({
   const handleEmailChange = useCallback((value: string) => {
     setEmail(value);
     setError(null);
+    setConfirmationMessage(null);
   }, []);
 
   const handlePasswordChange = useCallback((pw: string) => {
     setPassword(pw);
     setError(null);
+    setConfirmationMessage(null);
   }, []);
 
   const toggleAuthMode = useCallback(() => {
     setAuthMode((prev) => (prev === "login" ? "signup" : "login"));
     setError(null);
+    setConfirmationMessage(null);
   }, []);
 
   const handleContinue = useCallback(async () => {
@@ -90,7 +96,11 @@ export function useAuthEntryFlow({
 
     try {
       if (authMode === "signup") {
-        await signupAPI(trimmed, password);
+        const result = await signupAPI(trimmed, password);
+        if (result.confirmationRequired) {
+          setConfirmationMessage("Account created! Check your email for a confirmation link, then log in.");
+          return;
+        }
         // signupAPI already cached the email; hand the school to the
         // onboarding page via navigation state so step 3's goose dialogue
         // can greet the user by school name.
@@ -119,9 +129,11 @@ export function useAuthEntryFlow({
     isFormValid,
     isLoading,
     error,
+    confirmationMessage,
     onEmailChange: handleEmailChange,
     onPasswordChange: handlePasswordChange,
     toggleAuthMode,
     onContinue: handleContinue,
+    onForgotPassword,
   };
 }
