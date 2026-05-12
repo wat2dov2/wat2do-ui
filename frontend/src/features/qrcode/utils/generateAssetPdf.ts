@@ -11,7 +11,7 @@ import { stripTrailingSlash } from "@/shared/utils/string";
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
 
-export interface AssetPlacement {
+interface AssetPlacement {
   x: number;
   y: number;
   width: number;

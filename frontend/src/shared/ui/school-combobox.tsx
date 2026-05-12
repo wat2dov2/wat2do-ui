@@ -89,4 +89,3 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
   );
 }
 
-export default SchoolCombobox;

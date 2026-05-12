@@ -44,7 +44,7 @@ interface AdminRoutesConfig {
 /**
  * Admin panel navigation handler
  */
-export function useAdminNavigation() {
+function useAdminNavigation() {
   const navigate = useNavigate();
 
   return useMemo(

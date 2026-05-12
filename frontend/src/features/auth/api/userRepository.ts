@@ -7,7 +7,6 @@
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import {
-  getAccessToken,
   setAccessToken,
   clearAccessToken,
   hasAccessToken,
@@ -94,7 +93,7 @@ export function saveUserProfile(profile: UserProfile): void {
   notifyAuthStateChanged();
 }
 
-export function clearUserProfile(notify = true): void {
+function clearUserProfile(notify = true): void {
   StorageService.removeItem(STORAGE_KEYS.USER_PROFILE);
   _cachedProfile = null;
   if (notify) notifyAuthStateChanged();
@@ -102,14 +101,10 @@ export function clearUserProfile(notify = true): void {
 
 // --- Tokens (in-memory via apiClient) ---
 
-export { getAccessToken, hasAccessToken };
+export { hasAccessToken };
 
 export function saveAccessToken(token: string): void {
   setAccessToken(token);
-}
-
-export function clearTokens(): void {
-  clearAccessToken();
 }
 
 // --- Full clear on logout ---

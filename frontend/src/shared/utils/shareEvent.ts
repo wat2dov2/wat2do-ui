@@ -37,22 +37,3 @@ export async function shareEvent(event: Event): Promise<void> {
   }
 }
 
-/**
- * Generate a shareable URL for an event
- */
-export function getEventShareUrl(event: Event): string {
-  return `${window.location.origin}/?eventId=${event.id}`;
-}
-
-/**
- * Copy event link to clipboard
- */
-export async function copyEventLink(event: Event): Promise<void> {
-  const url = getEventShareUrl(event);
-  try {
-    await navigator.clipboard.writeText(url);
-  } catch (err) {
-    console.error("Failed to copy event link to clipboard:", err);
-    throw new Error("Failed to copy link to clipboard.");
-  }
-}

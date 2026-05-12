@@ -2,7 +2,7 @@
  * Promotion-related types
  */
 
-export type PromotionPackage = "featured" | "email" | "combo";
+type PromotionPackage = "featured" | "email" | "combo";
 
 export interface PromotionPackageInfo {
   id: PromotionPackage;

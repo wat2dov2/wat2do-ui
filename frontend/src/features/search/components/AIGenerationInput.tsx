@@ -89,4 +89,3 @@ export function AIGenerationInput({
   );
 }
 
-export const AIFilterInput = AIGenerationInput;

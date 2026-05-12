@@ -6,14 +6,12 @@
 import type { Event, EventFormData } from "@/shared/types";
 import type { ApiEventResponse } from "@/shared/generated";
 import { api } from "@/shared/services/apiClient";
-import { getEventById } from "@/features/events/api/eventService";
-import { filterEvents, sortEvents, type SearchFilters, type SortOptions } from "@/features/search";
 
 /**
  * Fetch events from backend API.
  *
  * The backend returns `ApiEventResponse[]`; `Event` extends that with
- * view-only computed fields added downstream by `transformRawEvent`.
+ * a few view-only fields that callers populate ad-hoc when needed.
  */
 export async function fetchAllEvents(school?: string): Promise<Event[]> {
   const params = new URLSearchParams();
@@ -74,18 +72,6 @@ export async function updateEventAPI(
 
 export async function deleteEventAPI(eventId: number): Promise<void> {
   await api.delete(`/events/${eventId}`);
-}
-
-export function filterEventsAPI(events: Event[], filters: SearchFilters): Event[] {
-  return filterEvents(events, filters);
-}
-
-export function sortEventsAPI(events: Event[], sortOptions: SortOptions): Event[] {
-  return sortEvents(events, sortOptions);
-}
-
-export function getEventByIdAPI(events: Event[], id: number): Event | undefined {
-  return getEventById(events, id);
 }
 
 export function toggleSaveEventAPI(eventId: number, currentSavedIds: number[]): number[] {

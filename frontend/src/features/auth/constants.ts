@@ -2,9 +2,6 @@
  * Auth feature constants.
  */
 
-/** Number of digits in an OTP verification code. */
-export const OTP_LENGTH = 6;
-
 /** Duration (ms) for the faculty selection splash animation. */
 export const SPLASH_ANIMATION_MS = 800;
 

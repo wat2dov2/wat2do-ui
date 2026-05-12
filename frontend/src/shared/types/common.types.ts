@@ -15,7 +15,6 @@ export type PageMode =
   | "admin-submissions"
   | "admin-posters"
   | "settings";
-export type MyEventsTab = "upcoming" | "past";
 
 // Club interface
 export interface Club {

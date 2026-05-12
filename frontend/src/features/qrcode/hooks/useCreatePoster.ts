@@ -3,7 +3,7 @@ import { createPosterToBackend } from "@/features/qrcode/api/qrcode.api";
 import { getSessionEmail } from "@/features/auth";
 import type { QRCode } from "@/shared/types";
 
-export interface CreatePosterPayload {
+interface CreatePosterPayload {
   id: string;
   name: string;
   description?: string | null;

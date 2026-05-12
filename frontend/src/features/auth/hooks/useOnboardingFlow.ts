@@ -1,10 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { EVENT_CATEGORIES, type EventCategory } from "@/shared/constants/eventCategories";
-import { ONBOARDING_EVENT_CARDS } from "@/features/auth/data/onboardingImages";
 
 export const ONBOARDING_TOTAL_STEPS = 6;
-export { EVENT_CATEGORIES, type EventCategory };
-export { ONBOARDING_EVENT_CARDS };
 
 export const FACULTY_OPTIONS = [
   "Engineering",

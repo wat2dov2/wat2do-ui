@@ -38,7 +38,7 @@ interface ClubPanelRoutesConfig {
 /**
  * Club panel navigation handler
  */
-export function useClubPanelNavigation() {
+function useClubPanelNavigation() {
   const navigate = useNavigate();
 
   return useMemo(

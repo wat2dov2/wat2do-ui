@@ -3,7 +3,6 @@
  * Reusable hooks across features
  */
 
-export * from "./use-on-click-outside";
 export * from "./useIntersectionObserver";
 export * from "./useDarkMode";
 export * from "./useConfetti";
@@ -19,4 +18,3 @@ export * from "./useBackendQuery";
 export * from "./usePostersFilters";
 export * from "./usePostersPagination";
 export * from "./usePostersPage";
-export * from "./useShallowIdArrayEquality";

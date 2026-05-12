@@ -147,7 +147,7 @@ export async function logoutAPI(): Promise<void> {
   }
 }
 
-export async function refreshTokenAPI(): Promise<boolean> {
+async function refreshTokenAPI(): Promise<boolean> {
   // Refresh token is sent automatically as an httpOnly cookie
   try {
     const res = await api.post<ApiTokenResponse>("/auth/refresh");

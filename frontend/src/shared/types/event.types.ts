@@ -2,7 +2,7 @@
  * Event-related types
  *
  * `Event` is the generated backend `ApiEventResponse` shape intersected with
- * a handful of view-only fields that `transformRawEvent` computes (date,
+ * a handful of optional view-only fields populated on the frontend (date,
  * time, dayOfWeek, eventDate, isLive, imageUrl, addedDate,
  * requiresRegistration). Do NOT hand-write new API fields here — add them to
  * the backend Pydantic model and regenerate via `npm run generate-types`.
@@ -22,11 +22,11 @@ interface EventViewOnlyFields {
   eventDate?: Date;
   /** Date object parsed from added_at. */
   addedDate?: Date;
-  /** Convenience alias: `source_image_url` populated via transformRawEvent. */
+  /** Convenience alias for `source_image_url`. */
   imageUrl?: string;
   /** Live/upcoming/past flag derived elsewhere. */
   isLive?: boolean;
-  /** Legacy alias for `registration` — populated by transformRawEvent. */
+  /** Legacy alias for `registration`. */
   requiresRegistration?: boolean;
 }
 
@@ -44,12 +44,6 @@ export interface EventFormData {
   food: string[];
   requiresRegistration: boolean;
   organization: string;
-}
-
-// User's relationship with events
-export interface UserEventState {
-  savedEventIds: number[];
-  registeredEventIds: number[];
 }
 
 // Form validation errors

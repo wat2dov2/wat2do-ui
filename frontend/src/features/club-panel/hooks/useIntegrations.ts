@@ -11,8 +11,6 @@ import { useDiscordIntegration } from "./useDiscordIntegration";
 import { usePlatformConnect } from "./usePlatformConnect";
 
 export type { Integration } from "./useIntegrationData";
-export type { DiscordFlowState } from "./useDiscordIntegration";
-export type { PlatformConnectState } from "./usePlatformConnect";
 
 export function useIntegrations() {
   const data = useIntegrationData();

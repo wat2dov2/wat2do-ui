@@ -12,7 +12,7 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import { Switch } from "@/shared/ui/switch";
-import { availableCategories } from "@/features/events/data/events";
+import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
 import { translateCategory } from "@/shared/utils/event";
 import { FormInput, FormSelect, FormDatePicker, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
@@ -133,7 +133,7 @@ export function EventFormFields() {
               value={formData.category}
               onChange={(value) => updateField("category", value)}
               placeholder={t("forms.selectCategory")}
-              options={availableCategories.map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
+              options={EVENT_CATEGORIES.map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
             />
 
             <FormInput

@@ -89,8 +89,7 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
 
 // Poster types and list function are defined in shared/api/posters.api.ts
 // and re-exported here for backward compatibility.
-export type { QrCodePosterBackend } from "@/shared/api/posters.api";
-export { normalizeBackendPoster, listPostersFromBackend } from "@/shared/api/posters.api";
+export { listPostersFromBackend } from "@/shared/api/posters.api";
 
 /** Create poster (auth). New poster is inactive until first scan provides location. */
 export async function createPosterToBackend(payload: {
@@ -121,39 +120,6 @@ export async function createPosterToBackend(payload: {
   return normalizeBackendPoster(b);
 }
 
-/** Update poster (auth). */
-export async function updatePosterToBackend(
-  qrCodeId: string,
-  payload: {
-    name: string;
-    description?: string | null;
-    destination_type: string;
-    destination_id?: string | number | null;
-    filters?: Record<string, unknown> | unknown[] | null;
-    created_by: string;
-    is_active?: boolean;
-    image_url?: string | null;
-    latitude?: number;
-    longitude?: number;
-  },
-): Promise<QRCode> {
-  const body = {
-    id: qrCodeId,
-    name: payload.name,
-    description: payload.description ?? null,
-    destination_type: payload.destination_type,
-    destination_id: payload.destination_id ?? null,
-    filters: payload.filters ?? null,
-    created_by: payload.created_by,
-    is_active: payload.is_active ?? true,
-    image_url: payload.image_url ?? null,
-    latitude: payload.latitude ?? 0,
-    longitude: payload.longitude ?? 0,
-  };
-  const b = await api.patch<QrCodePosterBackend>(`/qr/${encodeURIComponent(qrCodeId)}`, body);
-  return normalizeBackendPoster(b);
-}
-
 /** Delete poster (auth). */
 export async function deletePosterFromBackend(qrCodeId: string): Promise<void> {
   await api.delete(`/qr/${encodeURIComponent(qrCodeId)}`);
@@ -161,8 +127,7 @@ export async function deletePosterFromBackend(qrCodeId: string): Promise<void> {
 
 // Scan types and functions are defined in shared/api/scans.api.ts
 // and re-exported here for backward compatibility.
-export type { QrCodeScanBackend } from "@/shared/api/scans.api";
-export { getScansFromBackend, normalizeBackendScan } from "@/shared/api/scans.api";
+export { getScansFromBackend } from "@/shared/api/scans.api";
 
 /**
  * Resolve a poster image URL to an absolute URL.

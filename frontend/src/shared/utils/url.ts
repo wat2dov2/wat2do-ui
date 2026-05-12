@@ -28,17 +28,6 @@ export function isSafeUrl(url: string): boolean {
 }
 
 /**
- * Return the URL unchanged if it is safe for navigation, or a fallback path
- * (defaults to "/") if it is not.
- *
- * Use this before any `window.location.href = url` assignment where the URL
- * originates from user-controlled or backend-provided data.
- */
-export function sanitizeRedirectUrl(url: string, fallback = "/"): string {
-  return isSafeUrl(url) ? url : fallback;
-}
-
-/**
  * Return the URL if it uses a safe protocol (http/https), or an empty string
  * otherwise.  An empty-string href renders an inert `<a>` tag.
  *

@@ -79,4 +79,3 @@ export function BadgeMask({ variant, children }: BadgeMaskProps) {
   }
 }
 
-export default BadgeMask;

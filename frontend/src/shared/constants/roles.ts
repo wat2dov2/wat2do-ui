@@ -10,7 +10,6 @@
  */
 
 export const ROLE_ADMIN = "admin" as const;
-export const ROLE_USER = "user" as const;
 export const ROLE_CLUB = "club" as const;
 
 /** Union of all values accepted by ``ProtectedRoute``'s ``requiredRole`` prop. */

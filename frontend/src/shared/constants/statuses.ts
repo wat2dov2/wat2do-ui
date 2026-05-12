@@ -20,8 +20,8 @@ export const SUBMISSION_STATUSES = [
 
 // -- Report statuses -------------------------------------------------------
 export const REPORT_PENDING = "pending" as const;
-export const REPORT_RESOLVED = "resolved" as const;
-export const REPORT_DISMISSED = "dismissed" as const;
+const REPORT_RESOLVED = "resolved" as const;
+const REPORT_DISMISSED = "dismissed" as const;
 
 export const REPORT_STATUSES = [
   REPORT_PENDING,

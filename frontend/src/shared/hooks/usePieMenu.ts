@@ -69,4 +69,3 @@ export function usePieMenu(): UsePieMenuReturn {
   };
 }
 
-export default usePieMenu;

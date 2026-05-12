@@ -10,7 +10,7 @@
  *
  * Example: "Applied Health Sciences" -> "appliedhealthsciences"
  */
-export function toFacultyKey(faculty: string): string {
+function toFacultyKey(faculty: string): string {
   return faculty.toLowerCase().replace(/\s+/g, "");
 }
 
@@ -25,16 +25,6 @@ export function toFacultyTranslationKey(faculty: string): string {
   const key = toFacultyKey(faculty);
   const translationSuffix = key === "appliedhealthsciences" ? "appliedHealthSciences" : key;
   return `onboarding.faculties.${translationSuffix}`;
-}
-
-/**
- * Strip characters that are not valid in an email username (local part).
- * Keeps alphanumeric characters, dots, underscores, and hyphens.
- *
- * Example: "john doe!@#" -> "johndoe"
- */
-export function sanitizeEmailUsername(value: string): string {
-  return value.replace(/[^a-zA-Z0-9._-]/g, "");
 }
 
 /**

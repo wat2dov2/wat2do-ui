@@ -94,7 +94,3 @@ export function saveProfile(profile: UserProfile): void {
  * functions are needed here.
  */
 
-/**
- * Theme & Language — re-exported from shared (canonical home: shared/services/preferencesStorage.ts)
- */
-export { loadTheme, saveTheme, loadLanguage, saveLanguage, type SupportedLanguage } from "@/shared/services/preferencesStorage";

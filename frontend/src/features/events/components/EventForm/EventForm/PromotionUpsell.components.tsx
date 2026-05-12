@@ -99,26 +99,3 @@ export function CreditsDisplay({
   );
 }
 
-// Credits balance component
-interface CreditsBalanceProps {
-  credits: number;
-  onBuyMore: () => void;
-}
-
-export function CreditsBalance({ credits, onBuyMore }: CreditsBalanceProps) {
-  return (
-    <div className="flex items-center justify-between bg-warning/20 px-4 py-2 rounded-lg">
-      <div className="flex items-center gap-2">
-        {/* Coins icon will be passed from parent */}
-        <span className="font-semibold text-warning">{credits} credits</span>
-      </div>
-      <button
-        type="button"
-        onClick={onBuyMore}
-        className="text-xs font-medium text-warning hover:text-warning/80 h-auto p-0"
-      >
-        + Buy more
-      </button>
-    </div>
-  );
-}

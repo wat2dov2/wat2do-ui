@@ -323,4 +323,3 @@ export function SubmitEventModal(props: SubmitEventModalProps) {
   );
 }
 
-export default SubmitEventModal;

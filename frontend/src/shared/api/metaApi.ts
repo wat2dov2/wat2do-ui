@@ -36,14 +36,14 @@ export const FALLBACK_EVENT_CATEGORIES = [
   "Food", "Volunteering",
 ] as const;
 
-/** Fallback interest list — exported so interests.ts can derive its static list. */
-export const FALLBACK_INTERESTS = [
+/** Fallback interest list used when the backend `/meta/constants` call fails. */
+const FALLBACK_INTERESTS = [
   "Academic", "Social", "Career", "Sports", "Music", "Art",
   "Technology", "Gaming", "Food", "Networking", "Health", "Cultural",
 ] as const;
 
-/** Fallback interest-to-category mapping — exported so interestCategoryMap.ts can re-export. */
-export const FALLBACK_INTEREST_TO_CATEGORIES: Record<string, string[]> = {
+/** Fallback interest-to-category mapping used when the backend `/meta/constants` call fails. */
+const FALLBACK_INTEREST_TO_CATEGORIES: Record<string, string[]> = {
   Academic: ["Academics", "Studying"],
   Social: ["Partying", "Games", "Dance"],
   Career: ["Career", "Networking", "Entrepreneurship"],
@@ -70,7 +70,6 @@ const FALLBACK: AppConstants = {
 // Module-level cache — written once by loadAppConstants(), read many times.
 // ---------------------------------------------------------------------------
 let cached: AppConstants = FALLBACK;
-let loaded = false;
 
 /**
  * Fetch constants from the backend. Call once during app init.
@@ -79,7 +78,6 @@ let loaded = false;
 export async function loadAppConstants(): Promise<void> {
   try {
     cached = await api.get<AppConstants>("/meta/constants");
-    loaded = true;
   } catch (err) {
     console.error("Failed to load app constants from backend, using fallback:", err);
     // cached already holds FALLBACK — app keeps working.
@@ -92,9 +90,4 @@ export async function loadAppConstants(): Promise<void> {
  */
 export function getAppConstants(): AppConstants {
   return cached;
-}
-
-/** Whether the constants were successfully fetched from the backend. */
-export function appConstantsLoaded(): boolean {
-  return loaded;
 }

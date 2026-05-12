@@ -515,4 +515,3 @@ function Toast({ message }: { message: string }) {
   );
 }
 
-export default EasterEggs;

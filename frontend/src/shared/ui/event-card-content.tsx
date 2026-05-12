@@ -5,7 +5,7 @@
 
 import { LightRays } from "@/shared/ui/light-rays";
 
-export interface CardBadge {
+interface CardBadge {
   text: string;
 }
 

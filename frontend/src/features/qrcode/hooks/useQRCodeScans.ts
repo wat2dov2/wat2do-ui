@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { getScansFromBackend, normalizeBackendScan } from "@/features/qrcode/api/qrcode.api";
+import { getScansFromBackend } from "@/features/qrcode/api/qrcode.api";
+import { normalizeBackendScan } from "@/shared/api/scans.api";
 import type { QRCode, QRCodeScan } from "@/shared/types";
 
 interface UseQRCodeScansOptions {

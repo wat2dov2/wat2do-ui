@@ -6,27 +6,6 @@
 import type { Club } from "@/shared/types";
 
 /**
- * Create a new club
- */
-export function createClub(clubData: Omit<Club, "id">): Club {
-  const newId = Date.now();
-  return {
-    id: newId,
-    ...clubData,
-  };
-}
-
-/**
- * Update an existing club
- */
-export function updateClub(club: Club, clubData: Partial<Omit<Club, "id">>): Club {
-  return {
-    ...club,
-    ...clubData,
-  };
-}
-
-/**
  * Filter clubs by search query
  */
 export function filterClubsBySearch(clubs: Club[], searchQuery: string): Club[] {

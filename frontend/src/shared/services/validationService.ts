@@ -6,7 +6,7 @@ import type { EventFormData, ValidationErrors } from "@/shared/types";
  */
 
 /** Default validation error message keys — can be overridden with translated strings. */
-export const VALIDATION_MESSAGES = {
+const VALIDATION_MESSAGES = {
   titleRequired: "Title is required",
   organizationRequired: "Organization is required",
   dateRequired: "Date is required",
@@ -67,32 +67,6 @@ export function isEventFormValid(
     formData.location !== "" &&
     Object.keys(errors).length === 0
   );
-}
-
-/**
- * Validate filter JSON
- */
-export function validateFilterJSON(
-  jsonString: string,
-  messages?: ValidationMessageOverrides,
-): {
-  valid: boolean;
-  error: string | null;
-} {
-  const m = { ...VALIDATION_MESSAGES, ...messages };
-  if (!jsonString.trim()) {
-    return { valid: false, error: m.jsonEmpty };
-  }
-
-  try {
-    JSON.parse(jsonString);
-    return { valid: true, error: null };
-  } catch (error) {
-    return {
-      valid: false,
-      error: error instanceof Error ? error.message : m.jsonInvalid,
-    };
-  }
 }
 
 /**

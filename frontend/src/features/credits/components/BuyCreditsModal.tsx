@@ -176,4 +176,3 @@ export function BuyCreditsModal({
   );
 }
 
-export default BuyCreditsModal;

@@ -42,7 +42,7 @@ export function filterClubs(
   return filtered;
 }
 
-export async function getClubCategories(existingClubs?: Club[]): Promise<string[]> {
+async function getClubCategories(existingClubs?: Club[]): Promise<string[]> {
   const clubs = existingClubs ?? await getAllClubs();
   const cats = new Set<string>();
   clubs.forEach((c) => c.categories.forEach((cat) => cats.add(cat)));

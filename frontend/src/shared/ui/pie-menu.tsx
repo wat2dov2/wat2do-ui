@@ -10,7 +10,7 @@ import { cn } from "@/shared/lib/utils";
 import { Z_INDEX } from "@/shared/constants/zIndex";
 import { Check } from "lucide-react";
 
-export interface PieMenuItem {
+interface PieMenuItem {
   id: string;
   label: string;
   icon?: React.ReactNode;
@@ -326,4 +326,3 @@ export function PieMenu({
   );
 }
 
-export default PieMenu;

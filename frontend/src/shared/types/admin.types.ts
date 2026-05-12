@@ -43,9 +43,3 @@ export interface ScrapedEvent {
   scrapedAt: string;
   source: string; // e.g., "web-scraper"
 }
-
-// Union type for activity feed
-export type AdminActivity =
-  | { type: "submission"; data: EventSubmission }
-  | { type: "scraped"; data: ScrapedEvent }
-  | { type: "reported"; data: ReportedEvent };

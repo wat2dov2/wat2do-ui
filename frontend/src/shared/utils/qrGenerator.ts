@@ -14,13 +14,3 @@ export function downloadQRCodeAsPNG(dataUrl: string, filename: string): void {
   link.href = dataUrl;
   link.click();
 }
-
-export function downloadQRCodeAsSVG(svgString: string, filename: string): void {
-  const blob = new Blob([svgString], { type: "image/svg+xml" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.download = `${filename}.svg`;
-  link.href = url;
-  link.click();
-  URL.revokeObjectURL(url);
-}
