@@ -140,6 +140,8 @@ jobs:
       - name: Build Vercel output
         if: env.VERCEL_TOKEN != ''
         working-directory: frontend
+        env:
+          VITE_API_URL: /api
         run: npx vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy Vercel output
