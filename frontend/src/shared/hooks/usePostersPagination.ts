@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type { QRCode, QRCodeScan } from "@/shared/types";
 
 interface UsePostersPaginationOptions {
@@ -22,12 +22,13 @@ export function usePostersPagination({
 }: UsePostersPaginationOptions) {
   const [postersPage, setPostersPage] = useState(1);
   const [scansPage, setScansPage] = useState(1);
+  const [prevTimeFilter, setPrevTimeFilter] = useState(timeFilter);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
+  if (prevTimeFilter !== timeFilter) {
+    setPrevTimeFilter(timeFilter);
     setPostersPage(1);
     setScansPage(1);
-  }, [timeFilter]);
+  }
 
   // Paginate QR codes
   const paginatedQRCodes = useMemo(() => {

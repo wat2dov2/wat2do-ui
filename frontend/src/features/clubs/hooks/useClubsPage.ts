@@ -3,36 +3,23 @@
  * Manages data loading and filtering for ClubsPage
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import type { Club } from "@/shared/types";
 import {
   loadClubsData,
   filterClubs,
 } from "@/features/clubs/api/clubs.api";
+import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
+
+const EMPTY_DATA: { clubs: Club[]; categories: string[] } = { clubs: [], categories: [] };
 
 export function useClubsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const [allCategories, setAllCategories] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Load clubs and categories
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      try {
-        const { clubs: loadedClubs, categories } = await loadClubsData();
-        setClubs(loadedClubs);
-        setAllCategories(categories);
-      } catch (error) {
-        console.error("Failed to load clubs data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+  const { data, loading: isLoading } = useBackendQuery(loadClubsData, EMPTY_DATA);
+  const clubs = data.clubs;
+  const allCategories = data.categories;
 
   // Derive filtered clubs from source data (no useState+useEffect sync needed)
   const filteredClubs = useMemo(() => {

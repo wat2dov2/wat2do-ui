@@ -109,14 +109,23 @@ export async function generateAssetPdf(
   const p = asset.placement;
   const assetFormat = getImageFormat(asset.imagePreview);
 
-  for (let i = 0; i < posterIds.length; i++) {
-    if (i > 0) doc.addPage();
-    const url = baseUrl
-      ? `${stripTrailingSlash(baseUrl)}/qr/${posterIds[i]}`
-      : generateQRCodeUrl(posterIds[i]);
-    const qrData = await qrDataUrl(url);
+  const qrDataUrls = await Promise.all(
+    posterIds.map((posterId) => {
+      const url = baseUrl
+        ? `${stripTrailingSlash(baseUrl)}/qr/${posterId}`
+        : generateQRCodeUrl(posterId);
+      return qrDataUrl(url);
+    })
+  );
 
-    // Draw asset image scaled to fit page
+  const qrW = p.width * imageRect.width;
+  const qrH = p.height * imageRect.height;
+  const qrSize = Math.min(qrW, qrH);
+  const qrX = imageRect.x + p.x * imageRect.width + (qrW - qrSize) / 2;
+  const qrY = imageRect.y + p.y * imageRect.height + (qrH - qrSize) / 2;
+
+  for (let i = 0; i < qrDataUrls.length; i++) {
+    if (i > 0) doc.addPage();
     doc.addImage(
       asset.imagePreview,
       assetFormat,
@@ -125,16 +134,7 @@ export async function generateAssetPdf(
       imageRect.width,
       imageRect.height
     );
-
-    // QR position and size on page (placement is 0-1 relative to image rect)
-    // Use a square region so the QR code isn't stretched (QR codes must be square)
-    const qrW = p.width * imageRect.width;
-    const qrH = p.height * imageRect.height;
-    const qrSize = Math.min(qrW, qrH);
-    const qrX = imageRect.x + p.x * imageRect.width + (qrW - qrSize) / 2;
-    const qrY = imageRect.y + p.y * imageRect.height + (qrH - qrSize) / 2;
-
-    doc.addImage(qrData, "PNG", qrX, qrY, qrSize, qrSize);
+    doc.addImage(qrDataUrls[i], "PNG", qrX, qrY, qrSize, qrSize);
   }
 
   return doc.output("blob");

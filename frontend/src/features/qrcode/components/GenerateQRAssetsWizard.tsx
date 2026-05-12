@@ -200,10 +200,13 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
     setPlacementForAsset(selectedAsset.id, DEFAULT_IMAGE_PLACEMENT);
   }, [step, selectedAsset?.id, setPlacementForAsset]);
 
-  // Reset image dimensions when switching assets so the new image's onLoad sets them.
-  useEffect(() => {
+  // Reset image dimensions when switching assets (the new image's onLoad will set them).
+  // Use the prop-tracking-during-render pattern instead of an effect.
+  const [prevSelectedAssetId, setPrevSelectedAssetId] = useState(selectedAssetId);
+  if (prevSelectedAssetId !== selectedAssetId) {
+    setPrevSelectedAssetId(selectedAssetId);
     setImageNaturalSize(null);
-  }, [selectedAssetId]);
+  }
 
   const addAssetFromFile = useCallback((file: File, preview: string) => {
     setAssets((prev) => {
@@ -324,25 +327,23 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
     try {
       for (const asset of assets) {
         if (!asset.placement) continue;
-        // Create one poster per page (unique QR per page)
-        const posterIds: string[] = [];
-        for (let i = 0; i < asset.quantity; i++) {
-          const name = asset.quantity > 1
-            ? `${asset.name.replace(/\.[^.]+$/, "")} - Page ${i + 1}`
-            : asset.name.replace(/\.[^.]+$/, "");
-          const poster = await createPoster({
-            id: crypto.randomUUID(),
-            name,
-            description: null,
-            destination_type: "events-list",
-            destination_id: null,
-            filters: null,
-            created_by: userEmail,
-            is_active: true,
-            image_url: null,
-          });
-          posterIds.push(poster.id);
-        }
+        const baseName = asset.name.replace(/\.[^.]+$/, "");
+        const posters = await Promise.all(
+          Array.from({ length: asset.quantity }, (_, i) =>
+            createPoster({
+              id: crypto.randomUUID(),
+              name: asset.quantity > 1 ? `${baseName} - Page ${i + 1}` : baseName,
+              description: null,
+              destination_type: "events-list",
+              destination_id: null,
+              filters: null,
+              created_by: userEmail,
+              is_active: true,
+              image_url: null,
+            })
+          )
+        );
+        const posterIds = posters.map((p) => p.id);
         const blob = await generateAssetPdf(
           {
             imagePreview: asset.imagePreview,

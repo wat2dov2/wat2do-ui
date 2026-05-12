@@ -83,7 +83,6 @@ export function useAdminClubsPage({ itemsPerPage = 20 }: UseAdminClubsPageOption
     selectedClubType: state.selectedClubType,
   });
 
-  // Load clubs and club types
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);

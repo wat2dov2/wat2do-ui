@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type { EventSubmission } from "@/shared/types";
 
 interface UseAdminSubmissionsPaginationOptions {
@@ -18,11 +18,15 @@ export function useAdminSubmissionsPagination({
   itemsPerPage,
 }: UseAdminSubmissionsPaginationOptions) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [prevFilters, setPrevFilters] = useState({ searchQuery, statusFilter });
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
+  if (
+    prevFilters.searchQuery !== searchQuery ||
+    prevFilters.statusFilter !== statusFilter
+  ) {
+    setPrevFilters({ searchQuery, statusFilter });
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }
 
   // Paginate submissions
   const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);

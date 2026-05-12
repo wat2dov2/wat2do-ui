@@ -1,4 +1,22 @@
-import { useState, useEffect } from "react";
+import { useEffect, useReducer } from "react";
+
+type QueryState<T> = { data: T; loading: boolean; error: Error | null };
+
+type QueryAction<T> =
+  | { type: "fetch_start" }
+  | { type: "fetch_success"; data: T }
+  | { type: "fetch_error"; error: Error; initialValue: T };
+
+function queryReducer<T>(state: QueryState<T>, action: QueryAction<T>): QueryState<T> {
+  switch (action.type) {
+    case "fetch_start":
+      return { ...state, loading: true, error: null };
+    case "fetch_success":
+      return { data: action.data, loading: false, error: null };
+    case "fetch_error":
+      return { data: action.initialValue, loading: false, error: action.error };
+  }
+}
 
 /**
  * Generic fetch hook that deduplicates the loading/error/data pattern
@@ -8,28 +26,29 @@ export function useBackendQuery<T>(
   fetchFn: () => Promise<T>,
   initialValue: T,
   refreshKey?: number,
-): { data: T; loading: boolean; error: Error | null } {
-  const [data, setData] = useState<T>(initialValue);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+): QueryState<T> {
+  const [state, dispatch] = useReducer(queryReducer<T>, {
+    data: initialValue,
+    loading: true,
+    error: null,
+  });
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    dispatch({ type: "fetch_start" });
     fetchFn()
       .then((result) => {
-        if (!cancelled) setData(result);
+        if (!cancelled) dispatch({ type: "fetch_success", data: result });
       })
       .catch((err) => {
         console.error("useBackendQuery fetch failed:", err);
         if (!cancelled) {
-          setError(err instanceof Error ? err : new Error(String(err)));
-          setData(initialValue);
+          dispatch({
+            type: "fetch_error",
+            error: err instanceof Error ? err : new Error(String(err)),
+            initialValue,
+          });
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
@@ -37,5 +56,5 @@ export function useBackendQuery<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
-  return { data, loading, error };
+  return state;
 }

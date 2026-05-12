@@ -99,7 +99,7 @@ export function TagInput({
         <div className="flex flex-wrap gap-1.5 mt-2">
           {value.map((item, index) => (
             <span
-              key={`${item}-${index}`}
+              key={item}
               className={cn(
                 "inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl font-medium",
                 tagColorClasses[tagColor]

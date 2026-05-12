@@ -29,7 +29,7 @@ export function OnboardingProgressDots({
         const done = i <= currentStep;
         return (
           <span
-            key={i}
+            key={`onboarding-dot-${i}`}
             className={cn(
               "rounded-full transition-colors",
               "w-2 h-2",

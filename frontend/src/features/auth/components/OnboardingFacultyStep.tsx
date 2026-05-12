@@ -26,12 +26,14 @@ const FACULTY_COLORS: Record<string, string> = {
 
 function generateSplashPoints(faculty: string) {
   const color = FACULTY_COLORS[faculty] ?? "var(--faculty-science-splash)";
-  return Array.from({ length: 20 }, () => {
+  const seed = `${faculty}-${Date.now()}`;
+  return Array.from({ length: 20 }, (_, idx) => {
     const angle = Math.random() * Math.PI * 2;
     const distance = 200 + Math.random() * 300;
     const horizontalMultiplier =
       Math.abs(Math.cos(angle)) > 0.3 ? 1.8 : 0.6;
     return {
+      id: `${seed}-${idx}`,
       angle,
       distance: distance * horizontalMultiplier,
       size: 40 + Math.random() * 80,
@@ -70,17 +72,15 @@ export function OnboardingFacultyStep({
     <>
       {splash && (
         <div className="fixed inset-0 pointer-events-none z-easter-egg" aria-hidden>
-          {splashPoints.map((point, i) => (
+          {splashPoints.map((point) => (
             <m.div
-              key={i}
-              className="absolute rounded-full"
+              key={point.id}
+              className="absolute rounded-full left-1/2 top-[42%]"
               style={{
                 width: point.size,
                 height: point.size,
-                borderRadius: point.borderRadius + "%",
+                borderRadius: `${point.borderRadius}%`,
                 backgroundColor: point.color,
-                left: "50%",
-                top: "42%",
                 marginLeft: -point.size / 2,
                 marginTop: -point.size / 2,
               }}
