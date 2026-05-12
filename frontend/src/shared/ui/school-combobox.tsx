@@ -32,7 +32,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
           <Highlighter action="highlight" color="var(--primary)">
             {value ? value : DEFAULT_SCHOOL}
           </Highlighter>
-          <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -41,7 +41,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
       >
         {/* Search input */}
         <div className="flex items-center border-b border-border px-3">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          <Search className="size-4 text-muted-foreground shrink-0" />
           <input
             type="text"
             placeholder="Search schools..."

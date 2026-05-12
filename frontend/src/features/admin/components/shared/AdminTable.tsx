@@ -29,9 +29,9 @@ export function AdminTable({ children, headers, className }: AdminTableProps) {
       <Table>
         <TableHeader>
           <TableRow className="bg-secondary">
-            {headers.map((header, index) => (
+            {headers.map((header) => (
               <TableHead
-                key={index}
+                key={header.label}
                 className={`text-xs font-semibold text-foreground ${header.align === "right" ? "text-right" : ""} ${header.className || ""}`}
               >
                 {header.label}

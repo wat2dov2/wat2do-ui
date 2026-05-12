@@ -9,12 +9,14 @@ export interface CardBadge {
   text: string;
 }
 
+const EMPTY_BADGES: readonly CardBadge[] = [];
+
 interface EventCardContentProps {
   title: string;
   date?: string;
   time?: string;
   location?: string;
-  badges?: CardBadge[];
+  badges?: readonly CardBadge[];
   className?: string;
 }
 
@@ -23,14 +25,14 @@ export function EventCardContent({
   date,
   time,
   location,
-  badges = [],
+  badges = EMPTY_BADGES,
   className,
 }: EventCardContentProps) {
   return (
     <div className={`relative flex flex-col flex-1 px-4 pt-4 pb-3 ${className ?? ""}`}>
       <LightRays />
       <div className="flex flex-col gap-3 h-full flex-1">
-        <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground">
+        <h3 className="font-semibold text-base leading-tight line-clamp-2 text-foreground">
           {title}
         </h3>
 

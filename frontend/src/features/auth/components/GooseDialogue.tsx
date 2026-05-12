@@ -31,7 +31,7 @@ export function GooseDialogue({
         <img
           src={GOOSE_IMAGE_PATH}
           alt="Mr. Goose"
-          className="w-16 h-16 object-contain shrink-0 -mt-1"
+          className="size-16 object-contain shrink-0 -mt-1"
         />
 
         <div className="flex-1 min-w-0 space-y-3">
@@ -39,7 +39,19 @@ export function GooseDialogue({
             <Badge variant="new" className="w-fit text-xs font-medium px-2 py-0.5 mb-2">{t("onboarding.gooseName")}</Badge>
             <p
               className="text-lg text-foreground leading-relaxed mt-1 cursor-pointer"
+              role={!done ? "button" : undefined}
+              tabIndex={!done ? 0 : undefined}
               onClick={!done ? skip : undefined}
+              onKeyDown={
+                !done
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        skip();
+                      }
+                    }
+                  : undefined
+              }
             >
               {displayed}
               {!done && <span className="inline-block w-[2px] h-[1em] bg-foreground align-text-bottom ml-px animate-pulse" />}

@@ -41,8 +41,8 @@ export function AuthHeroPanel() {
         )}
         {!loading && previewEvents.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
-            {previewEvents.map((event, i) => (
-              <PreviewStyleEventCard key={`${event.title}-${event.date}-${i}`} event={event} />
+            {previewEvents.map((event) => (
+              <PreviewStyleEventCard key={`${event.title}-${event.date}`} event={event} />
             ))}
           </div>
         )}

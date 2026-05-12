@@ -28,11 +28,11 @@ export function OnboardingCompleteStep({
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative mb-4">
-        <div className="w-16 h-16 rounded-full bg-success flex items-center justify-center">
-          <Check className="w-8 h-8 text-white" strokeWidth={3} />
+        <div className="size-16 rounded-full bg-success flex items-center justify-center">
+          <Check className="size-8 text-white" strokeWidth={3} />
         </div>
-        <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-          <Sparkles className="w-3 h-3 text-white" />
+        <div className="absolute -top-1 -right-1 size-6 bg-yellow-400 rounded-full flex items-center justify-center">
+          <Sparkles className="size-3 text-white" />
         </div>
       </div>
 

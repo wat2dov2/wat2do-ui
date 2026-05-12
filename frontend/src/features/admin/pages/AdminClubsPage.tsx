@@ -190,21 +190,21 @@ export function AdminClubsPage({
               <TableCell>
                 {club.ig ? (
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Instagram className="w-3.5 h-3.5" />
+                    <Instagram className="size-3.5" />
                     <span>@{club.ig}</span>
                   </div>
                 ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
+                  <span className="text-xs text-muted-foreground">-</span>
                 )}
               </TableCell>
               <TableCell>
                 {club.discord ? (
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <MessageCircle className="w-3.5 h-3.5" />
+                    <MessageCircle className="size-3.5" />
                     <span className="max-w-[100px] truncate">{club.discord}</span>
                   </div>
                 ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
+                  <span className="text-xs text-muted-foreground">-</span>
                 )}
               </TableCell>
               <TableCell>
@@ -215,7 +215,7 @@ export function AdminClubsPage({
                     onClick={() => openEditModal(club)}
                     title={t("admin.editClub")}
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="size-4" />
                   </Button>
                   <Button
                     variant="secondary"
@@ -224,7 +224,7 @@ export function AdminClubsPage({
                     title={t("admin.deleteClub")}
                     className="hover:bg-error/10 hover:text-error"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="size-4" />
                   </Button>
                 </div>
               </TableCell>

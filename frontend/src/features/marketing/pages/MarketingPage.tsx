@@ -66,7 +66,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <Spinner className="w-8 h-8 text-primary" />
+        <Spinner className="size-8 text-primary" />
       </div>
     );
   }
@@ -76,18 +76,18 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-            <Megaphone className="w-6 h-6 text-primary" />
+          <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+            <Megaphone className="size-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("marketing.title")}</h1>
+            <h1 className="text-2xl font-semibold text-foreground">{t("marketing.title")}</h1>
             <p className="text-sm text-muted-foreground">
               {t("marketing.description")}
             </p>
           </div>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="size-4 mr-2" />
           {t("marketing.createQRCode")}
         </Button>
       </div>
@@ -98,7 +98,16 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
           {qrCodesWithStats.map((qr) => (
             <div
               key={qr.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`View QR code: ${qr.name}`}
               onClick={() => handleViewDetails(qr)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleViewDetails(qr);
+                }
+              }}
               className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:opacity-80 transition-all cursor-pointer"
             >
               {/* Poster Image - Always show (hardcoded for now) */}
@@ -111,7 +120,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
                   />
                 ) : (
                   <div className="text-center p-8">
-                    <Megaphone className="w-16 h-16 text-muted-foreground/30 mx-auto mb-2" />
+                    <Megaphone className="size-16 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="text-xs text-muted-foreground">{t("qrCode.posterPreview")}</p>
                   </div>
                 )}
@@ -141,12 +150,12 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
                 {/* Stats */}
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Eye className="w-4 h-4" />
+                    <Eye className="size-4" />
                     <span className="font-medium">{qr.totalScans}</span>
                     <span className="text-xs">{t("marketing.scans")}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Users className="w-4 h-4" />
+                    <Users className="size-4" />
                     <span className="font-medium">{qr.uniqueScans}</span>
                     <span className="text-xs">{t("marketing.unique")}</span>
                   </div>
@@ -157,8 +166,8 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-            <QrCode className="w-8 h-8 text-muted-foreground" />
+          <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+            <QrCode className="size-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
             {t("marketing.noQRCodesYet")}
@@ -167,7 +176,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
             {t("marketing.noQRCodesDesc")}
           </p>
           <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="size-4 mr-2" />
             {t("marketing.createQRCode")}
           </Button>
         </div>

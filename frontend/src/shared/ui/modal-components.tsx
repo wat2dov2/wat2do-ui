@@ -103,7 +103,7 @@ export function ModalImageContainer({
       ) : (
         fallback || (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="w-16 h-16 text-muted-foreground/30" />
+            <div className="size-16 text-muted-foreground/30" />
           </div>
         )
       )}
@@ -201,7 +201,7 @@ export function EmptyState({
       )}
       {...props}
     >
-      <Icon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+      <Icon className="size-12 mx-auto mb-3 opacity-50" />
       <p className="font-medium mb-1">{title}</p>
       <p className="text-sm">{description}</p>
     </div>
@@ -243,7 +243,7 @@ export function ModalImageHeader({
       ) : (
         fallback || (
           <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 flex items-center justify-center">
-            <div className="w-12 h-12 text-muted-foreground/40" />
+            <div className="size-12 text-muted-foreground/40" />
           </div>
         )
       )}

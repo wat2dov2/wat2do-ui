@@ -235,4 +235,18 @@
     display: none;
   }
 
+  /* WCAG 2.3.3: honour prefers-reduced-motion by collapsing animations and
+     transitions to near-instant. Visual changes still occur so functionality
+     isn't lost, just without the motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
 }

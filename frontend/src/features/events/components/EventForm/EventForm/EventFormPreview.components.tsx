@@ -32,7 +32,7 @@ interface InfoRowProps {
 export function InfoRow({ icon: Icon, children }: InfoRowProps) {
   return (
     <div className="flex gap-1.5 items-center">
-      <Icon className="w-3 h-3 shrink-0 text-muted-foreground" strokeWidth={2} />
+      <Icon className="size-3 shrink-0 text-muted-foreground" strokeWidth={2} />
       <span className="text-[11px] truncate text-muted-foreground">{children}</span>
     </div>
   );
@@ -58,7 +58,7 @@ interface ImageAreaProps {
 
 export function ImageArea({ children }: ImageAreaProps) {
   return (
-    <div className="relative h-32 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+    <div className="relative h-32 bg-gradient-to-br from-muted to-muted/70 flex items-center justify-center">
       {children}
     </div>
   );
@@ -73,7 +73,7 @@ interface ClubBadgeProps {
 export function ClubBadge({ organization, fallback }: ClubBadgeProps) {
   return (
     <div className="absolute bottom-2 left-2 z-10 flex items-center gap-2">
-      <div className="w-7 h-7 rounded-full border-2 border-card shadow-lg flex items-center justify-center flex-shrink-0 bg-card bg-gradient-to-br from-primary/20 to-primary/10">
+      <div className="size-7 rounded-full border-2 border-card shadow-lg flex items-center justify-center flex-shrink-0 bg-card bg-gradient-to-br from-primary/20 to-primary/10">
         {/* Icon will be passed as children if needed */}
       </div>
       <span className="font-bold text-[10px] text-white truncate max-w-[100px] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5),0_1px_2px_rgba(0,0,0,0.4)]">

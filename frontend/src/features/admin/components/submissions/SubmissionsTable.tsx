@@ -91,13 +91,13 @@ export function SubmissionsTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <User className="w-3.5 h-3.5" />
+                    <User className="size-3.5" />
                     <span>{submission.submittedBy}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
+                    <Clock className="size-3.5" />
                     <span>{formatRelativeTime(submission.submittedAt)}</span>
                   </div>
                 </TableCell>
@@ -117,7 +117,7 @@ export function SubmissionsTable({
                           }}
                           className="text-success hover:text-success hover:bg-success/10"
                         >
-                          <Check className="w-4 h-4" />
+                          <Check className="size-4" />
                         </Button>
                         <Button
                           variant="secondary"
@@ -128,7 +128,7 @@ export function SubmissionsTable({
                           }}
                           className="text-error hover:text-error hover:bg-error/10"
                         >
-                          <XIcon className="w-4 h-4" />
+                          <XIcon className="size-4" />
                         </Button>
                       </>
                     )}

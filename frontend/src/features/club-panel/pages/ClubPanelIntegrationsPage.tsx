@@ -40,13 +40,13 @@ export function ClubPanelIntegrationsPage() {
           onClick={() => navigate(ROUTES.CLUB_PANEL)}
           className="shrink-0"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="size-5" />
         </Button>
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Link className="w-6 h-6 text-primary" />
+        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+          <Link className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("clubPanel.integrations")}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("clubPanel.integrations")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("integrations.pageDescription")}
           </p>
@@ -82,7 +82,7 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("whatsapp")}
           platform="whatsapp"
-          icon={<MessageCircle className="w-6 h-6 text-green-600" />}
+          icon={<MessageCircle className="size-6 text-green-600" />}
           iconBgClassName="bg-green-100"
           titleKey="clubPanel.whatsapp"
           descriptionKey="integrations.whatsappScrapeDesc"
@@ -93,8 +93,8 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("discord")}
           platform="discord"
-          icon={<DiscordIcon className="w-6 h-6 text-indigo-600" />}
-          iconBgClassName="bg-indigo-100"
+          icon={<DiscordIcon className="size-6 text-primary" />}
+          iconBgClassName="bg-primary/15"
           titleKey="clubPanel.discord"
           descriptionKey="integrations.discordScrapeDesc"
           onConnect={() => integrations.handleConnect("discord")}
@@ -105,7 +105,7 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("instagram")}
           platform="instagram"
-          icon={<InstagramIcon className="w-6 h-6 text-pink-600" />}
+          icon={<InstagramIcon className="size-6 text-pink-600" />}
           iconBgClassName="bg-linear-to-br from-purple-100 to-pink-100"
           titleKey="integrations.instagram"
           descriptionKey="integrations.instagramScrapeDesc"
@@ -116,7 +116,7 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("slack")}
           platform="slack"
-          icon={<SlackIcon className="w-6 h-6 text-purple-600" />}
+          icon={<SlackIcon className="size-6 text-purple-600" />}
           iconBgClassName="bg-purple-100"
           titleKey="integrations.slack"
           descriptionKey="integrations.slackScrapeDesc"
@@ -127,7 +127,7 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("telegram")}
           platform="telegram"
-          icon={<TelegramIcon className="w-6 h-6 text-sky-600" />}
+          icon={<TelegramIcon className="size-6 text-sky-600" />}
           iconBgClassName="bg-sky-100"
           titleKey="integrations.telegram"
           descriptionKey="integrations.telegramScrapeDesc"
@@ -138,7 +138,7 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("linkedin")}
           platform="linkedin"
-          icon={<LinkedInIcon className="w-6 h-6 text-blue-700" />}
+          icon={<LinkedInIcon className="size-6 text-blue-700" />}
           iconBgClassName="bg-blue-100"
           titleKey="integrations.linkedin"
           descriptionKey="integrations.linkedinScrapeDesc"
@@ -149,7 +149,7 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("facebook")}
           platform="facebook"
-          icon={<FacebookIcon className="w-6 h-6 text-blue-600" />}
+          icon={<FacebookIcon className="size-6 text-blue-600" />}
           iconBgClassName="bg-blue-100"
           titleKey="integrations.facebook"
           descriptionKey="integrations.facebookScrapeDesc"

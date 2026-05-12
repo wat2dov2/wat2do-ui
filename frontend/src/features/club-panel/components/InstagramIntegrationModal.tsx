@@ -50,7 +50,7 @@ export function InstagramIntegrationModal({
                 {t("integrations.instagramHandle")}
               </FieldLabel>
               <div className="relative">
-                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   value={handle}
                   onChange={(e) => onHandleChange(e.target.value)}

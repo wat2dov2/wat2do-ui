@@ -34,7 +34,7 @@ export function useAdminSubmissionsFilters() {
     }
 
     // Sort by submittedAt (newest first)
-    return [...filtered].sort(
+    return filtered.toSorted(
       (a, b) =>
         new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
     );

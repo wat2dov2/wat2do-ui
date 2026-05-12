@@ -26,7 +26,7 @@ export function SearchBar({
   return (
     <div className="flex gap-3 items-stretch">
       <div className="relative flex-1 min-w-0">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           placeholder={t("search.placeholder")}
@@ -40,7 +40,7 @@ export function SearchBar({
             onClick={onSearchClear}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         )}
       </div>

@@ -105,7 +105,7 @@ export function EventFormFields() {
             onChange={(value) => updateField("location", value as string)}
             onBlur={() => handleBlur("location")}
             placeholder={t("forms.locationPlaceholder")}
-            labelIcon={<MapPin className="w-4 h-4" />}
+            labelIcon={<MapPin className="size-4" />}
             error={errors.location}
             touched={touched.location}
           />
@@ -146,14 +146,14 @@ export function EventFormFields() {
               step="0.01"
               min="0"
               prefix="$"
-              labelIcon={<DollarSign className="w-4 h-4" />}
+              labelIcon={<DollarSign className="size-4" />}
               inputClassName="text-secondary-foreground"
             />
           </FieldGroup>
 
           <TagInput
             label={t("forms.foodProvided")}
-            labelIcon={<Utensils className="w-4 h-4" />}
+            labelIcon={<Utensils className="size-4" />}
             value={formData.food}
             inputValue={foodInput}
             onInputChange={setFoodInput}

@@ -60,7 +60,7 @@ export function PromotionUpsell({
           {/* Credits balance */}
           <div className="flex items-center justify-between bg-warning/20 px-4 py-2 rounded-lg">
             <div className="flex items-center gap-2">
-              <Coins className="w-5 h-5 text-warning" />
+              <Coins className="size-5 text-warning" />
               <span className="font-semibold text-warning">
                 {userCredits} credits
               </span>
@@ -109,7 +109,7 @@ export function PromotionUpsell({
                       credits={pkg.credits}
                       originalCredits={pkg.originalCredits}
                       duration={pkg.duration}
-                      icon={<Coins className="w-4 h-4 text-warning" />}
+                      icon={<Coins className="size-4 text-warning" />}
                     />
                   </div>
                   {!affordable && (
@@ -133,7 +133,7 @@ export function PromotionUpsell({
             >
               {selectedPkg ? (
                 <span className="flex items-center gap-1.5">
-                  <Coins className="w-4 h-4" />
+                  <Coins className="size-4" />
                   {t("promotion.spendCredits", { credits: selectedPkg.credits })}
                 </span>
               ) : (

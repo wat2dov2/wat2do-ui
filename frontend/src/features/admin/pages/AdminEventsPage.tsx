@@ -183,13 +183,13 @@ export function AdminEventsPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Calendar className="w-3.5 h-3.5" />
+                        <Calendar className="size-3.5" />
                         <span>{event.date}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MapPin className="w-3.5 h-3.5" />
+                        <MapPin className="size-3.5" />
                         <span className="max-w-[150px] truncate">
                           {event.location}
                         </span>
@@ -197,7 +197,7 @@ export function AdminEventsPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
-                        <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                        <Tag className="size-3.5 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">
                           {event.category}
                         </span>
@@ -206,7 +206,7 @@ export function AdminEventsPage({
                     <TableCell>
                       {isReported ? (
                         <div className="flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-error" />
+                          <AlertTriangle className="size-3.5 text-error" />
                           <span className="text-xs text-error font-medium">
                             Reported
                           </span>
@@ -228,7 +228,7 @@ export function AdminEventsPage({
                           }}
                           title={t("admin.editEvent")}
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="size-4" />
                         </Button>
                         <Button
                           variant="secondary"
@@ -240,7 +240,7 @@ export function AdminEventsPage({
                           title={t("admin.deleteEvent")}
                           className="hover:bg-error/10 hover:text-error"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="size-4" />
                         </Button>
                       </div>
                     </TableCell>

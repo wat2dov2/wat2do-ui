@@ -23,7 +23,7 @@ export function ClubsPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">{t("navigation.clubs")}</h1>
+        <h1 className="text-2xl font-semibold text-foreground mb-2">{t("navigation.clubs")}</h1>
         <p className="text-sm text-muted-foreground">
           {t("clubs.description")}
         </p>
@@ -33,7 +33,7 @@ export function ClubsPage() {
       <div className="space-y-4">
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             placeholder={t("clubs.searchPlaceholder")}
@@ -47,7 +47,7 @@ export function ClubsPage() {
               className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <svg
-                className="w-4 h-4"
+                className="size-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -104,8 +104,8 @@ export function ClubsPage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-            <Search className="w-8 h-8 text-muted-foreground" />
+          <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+            <Search className="size-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
             {t("clubs.noClubsFound")}

@@ -130,12 +130,12 @@ export function PlatformConnectModal({
                   >
                     {authorized ? (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className="size-4 mr-2" />
                         {t(config.authorizedTextKey)}
                       </>
                     ) : (
                       <>
-                        <ExternalLink className="w-4 h-4 mr-2" />
+                        <ExternalLink className="size-4 mr-2" />
                         {t(config.authorizeTextKey)}
                       </>
                     )}

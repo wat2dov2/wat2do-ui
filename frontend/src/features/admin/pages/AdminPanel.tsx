@@ -20,9 +20,9 @@ interface AdminPanelProps {
 type ActivityType = ActivityDisplay["type"];
 
 const activityIconMap: Record<ActivityType, ReactNode> = {
-  submission: <FileText className="w-4 h-4 text-primary" />,
-  poster: <QrCode className="w-4 h-4 text-primary" />,
-  scraped: <Calendar className="w-4 h-4 text-primary" />,
+  submission: <FileText className="size-4 text-primary" />,
+  poster: <QrCode className="size-4 text-primary" />,
+  scraped: <Calendar className="size-4 text-primary" />,
 };
 
 /** Navigation route map for activity types. */
@@ -59,11 +59,11 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Shield className="w-6 h-6 text-primary" />
+        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+          <Shield className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("navigation.adminPanel")}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("navigation.adminPanel")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("admin.panelDescription")}
           </p>
@@ -117,11 +117,19 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
               {displayActivities.map((display) => (
                 <div
                   key={`${display.type}-${display.id}`}
+                  role="button"
+                  tabIndex={0}
                   className="w-full p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
                   onClick={() => handleActivityClick(display)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleActivityClick(display);
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       {activityIconMap[display.type]}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -132,7 +140,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                             <span className="font-normal text-muted-foreground">: {display.detail}</span>
                           </p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="w-3 h-3" />
+                            <Clock className="size-3" />
                             <span>{formatRelativeTime(display.timestamp)}</span>
                             {display.submittedBy && (
                               <>
@@ -152,7 +160,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                           }}
                         >
                           {t("common.view")}
-                          <ArrowRight className="w-3 h-3 ml-1" />
+                          <ArrowRight className="size-3 ml-1" />
                         </Button>
                       </div>
                     </div>

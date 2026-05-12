@@ -31,7 +31,7 @@ export function Dropdown({ options, selected, onToggle }: DropdownProps) {
               >
                 {isSelected && (
                   <svg
-                    className="w-2.5 h-2.5 text-primary-foreground"
+                    className="size-2.5 text-primary-foreground"
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -67,14 +67,22 @@ export const FilterTag = React.memo(function FilterTag({ label, onRemove }: Filt
       {label}
       <span
         role="button"
+        tabIndex={0}
         onClick={(e) => {
           e.stopPropagation();
           onRemove(e);
         }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove();
+          }
+        }}
         className="hover:bg-primary-foreground/20 rounded-full p-0.5 transition-colors cursor-pointer"
         aria-label={`Remove ${label}`}
       >
-        <X className="w-2.5 h-2.5" />
+        <X className="size-2.5" />
       </span>
     </span>
   );

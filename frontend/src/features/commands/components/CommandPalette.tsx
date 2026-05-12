@@ -68,7 +68,7 @@ export function CommandPalette({
               searchInput?.focus();
             }}
           >
-            <Search className="mr-2 h-4 w-4" />
+            <Search className="mr-2 size-4" />
             <span>{t("commands.searchEvents")}</span>
             <CommandShortcut>/</CommandShortcut>
           </CommandItem>
@@ -84,7 +84,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            <SlidersHorizontal className="mr-2 size-4" />
             <span>{t("commands.openFilters")}</span>
             <CommandShortcut>F</CommandShortcut>
           </CommandItem>
@@ -94,7 +94,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <Grid3x3 className="mr-2 h-4 w-4" />
+            <Grid3x3 className="mr-2 size-4" />
             <span>{t("commands.gridView")}</span>
             <CommandShortcut>G</CommandShortcut>
           </CommandItem>
@@ -105,7 +105,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <Calendar className="mr-2 h-4 w-4" />
+            <Calendar className="mr-2 size-4" />
             <span>{t("commands.calendarView")}</span>
             <CommandShortcut>C</CommandShortcut>
           </CommandItem>
@@ -121,7 +121,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 size-4" />
             <span>{t("commands.createNewEvent")}</span>
             <CommandShortcut>N</CommandShortcut>
           </CommandItem>
@@ -131,7 +131,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <X className="mr-2 h-4 w-4" />
+            <X className="mr-2 size-4" />
             <span>{t("events.clearAllFilters")}</span>
           </CommandItem>
         </CommandGroup>
@@ -153,7 +153,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <User className="mr-2 h-4 w-4" />
+            <User className="mr-2 size-4" />
             <span>{profileLabel}</span>
           </CommandItem>
           <CommandItem
@@ -162,7 +162,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <Bell className="mr-2 h-4 w-4" />
+            <Bell className="mr-2 size-4" />
             <span>{t("commands.notificationPreferences")}</span>
           </CommandItem>
           <CommandItem
@@ -171,7 +171,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <Palette className="mr-2 h-4 w-4" />
+            <Palette className="mr-2 size-4" />
             <span>{t("commands.themeAppearance")}</span>
           </CommandItem>
           <CommandItem
@@ -180,7 +180,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <Shield className="mr-2 h-4 w-4" />
+            <Shield className="mr-2 size-4" />
             <span>{t("commands.privacySettings")}</span>
           </CommandItem>
           <CommandItem
@@ -189,7 +189,7 @@ export function CommandPalette({
               onOpenChange(false);
             }}
           >
-            <HelpCircle className="mr-2 h-4 w-4" />
+            <HelpCircle className="mr-2 size-4" />
             <span>{t("commands.helpSupport")}</span>
           </CommandItem>
         </CommandGroup>

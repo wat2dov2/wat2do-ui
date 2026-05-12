@@ -48,7 +48,7 @@ export function Pagination({
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="size-4" />
           {t("admin.previous")}
         </Button>
         <div className="flex items-center gap-1">
@@ -83,7 +83,7 @@ export function Pagination({
           disabled={currentPage === totalPages}
         >
           {t("admin.next")}
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="size-4" />
         </Button>
       </div>
     </div>

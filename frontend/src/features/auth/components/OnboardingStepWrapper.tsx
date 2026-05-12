@@ -50,7 +50,7 @@ export function OnboardingStepWrapper({
             onClick={onPrevious}
             className="flex-1 text-muted-foreground"
           >
-            <ChevronLeft className="w-4 h-4 mr-1 text-muted-foreground" />
+            <ChevronLeft className="size-4 mr-1 text-muted-foreground" />
             {t("common.back")}
           </Button>
         )}

@@ -29,7 +29,7 @@ export function EventImage({ event, isPromoted }: EventImageProps) {
           <div
             className={`absolute inset-0 ${fallbackBg} flex items-center justify-center`}
           >
-            <ImageOff className="w-8 h-8 text-muted-foreground/40" />
+            <ImageOff className="size-8 text-muted-foreground/40" />
           </div>
         }
         placeholder={

@@ -77,7 +77,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       const reports = await getReportedEvents();
       const pendingIds = new Set<number>(
-        reports.filter((r) => r.status === REPORT_PENDING).map((r) => r.eventId),
+        reports.flatMap((r) =>
+          r.status === REPORT_PENDING ? [r.eventId] : [],
+        ),
       );
       set((state) => ({
         reportedEventIds: pendingIds,

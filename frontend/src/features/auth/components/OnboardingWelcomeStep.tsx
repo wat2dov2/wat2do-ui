@@ -16,7 +16,7 @@ export function OnboardingWelcomeStep({ onNext }: OnboardingWelcomeStepProps) {
 
   return (
     <div className="flex flex-col items-center text-center">
-      <div className="w-24 h-24 rounded-full overflow-hidden mb-4 bg-secondary">
+      <div className="size-24 rounded-full overflow-hidden mb-4 bg-secondary">
         <img
           src={GOOSE_IMAGE_URL}
           alt="Goose mascot"

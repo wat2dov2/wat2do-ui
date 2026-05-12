@@ -30,7 +30,7 @@ export function QRCodePreview({
     <div className={`space-y-6 ${className}`}>
       {successMessage && (
         <div className="flex items-center gap-2 text-success">
-          <Check className="w-5 h-5" />
+          <Check className="size-5" />
           <span className="font-medium">{successMessage}</span>
         </div>
       )}

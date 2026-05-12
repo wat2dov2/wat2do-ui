@@ -63,10 +63,10 @@ export function PostersTable({
                     <img
                       src={qr.imageUrl}
                       alt={qr.name}
-                      className="w-10 h-10 rounded object-cover shrink-0"
+                      className="size-10 rounded object-cover shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded bg-secondary shrink-0" />
+                    <div className="size-10 rounded bg-secondary shrink-0" />
                   )}
                   <div>
                     <div className="font-medium text-foreground">{qr.name}</div>
@@ -80,13 +80,13 @@ export function PostersTable({
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                  <TrendingUp className="size-3.5 text-muted-foreground" />
                   <span className="font-medium">{qr.totalScans}</span>
                 </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Users className="size-3.5 text-muted-foreground" />
                   <span className="font-medium">{qr.uniqueScans}</span>
                 </div>
               </TableCell>
@@ -110,7 +110,7 @@ export function PostersTable({
                       onClick={() => onDeleteClick(qr.id)}
                       aria-label={t("common.delete")}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="size-4" />
                     </Button>
                   )}
                 </div>

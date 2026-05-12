@@ -45,17 +45,17 @@ export function EventSuccessScreen({
         <DialogTitle className="sr-only">
           {isEditMode ? t("events.eventUpdatedTitle") : t("events.eventCreatedTitle")}
         </DialogTitle>
-        <div className="flex flex-col items-center text-center py-4 space-y-4">
+        <div className="flex flex-col items-center text-center py-4 gap-y-4">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-success flex items-center justify-center">
-              <Check className="w-8 h-8 text-white" strokeWidth={3} />
+            <div className="size-16 rounded-full bg-success flex items-center justify-center">
+              <Check className="size-8 text-white" strokeWidth={3} />
             </div>
-            <div className="absolute -top-1 -right-1 w-6 h-6 bg-warning rounded-full flex items-center justify-center">
-              <Sparkles className="w-3 h-3 text-white" />
+            <div className="absolute -top-1 -right-1 size-6 bg-warning rounded-full flex items-center justify-center">
+              <Sparkles className="size-3 text-white" />
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-foreground">
+          <h2 className="text-xl font-semibold text-foreground">
             {isEditMode ? t("events.eventUpdated") : t("events.eventCreated")}
           </h2>
           <p className="text-muted-foreground text-sm">
@@ -80,7 +80,7 @@ export function EventSuccessScreen({
               onClick={onPromote}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
-              <Megaphone className="w-4 h-4 mr-1.5" />
+              <Megaphone className="size-4 mr-1.5" />
               {t("events.promote")}
             </Button>
           </div>

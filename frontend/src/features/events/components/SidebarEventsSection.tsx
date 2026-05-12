@@ -63,7 +63,7 @@ export function SidebarEventsSection({
           )}
         >
           <CalendarDays
-            className="w-4 h-4 shrink-0"
+            className="size-4 shrink-0"
             strokeWidth={2}
           />
           <span className="flex-1 whitespace-nowrap transition-opacity duration-150 opacity-0 group-hover/sidebar:opacity-100">

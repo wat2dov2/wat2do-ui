@@ -43,11 +43,18 @@ export function EventDetailsModal({
   hideSimilarEvents = false,
 }: EventDetailsModalProps) {
   const { t } = useTranslation();
-  const [displayedEvent, setDisplayedEvent] = useState<Event | null>(event);
-
-  useEffect(() => {
-    setDisplayedEvent(event);
-  }, [event]);
+  // Local override allows clicking a "similar event" without remounting the
+  // modal. We reset it whenever the prop event changes by tracking the prop
+  // id during render (React's pattern for prop-derived resets).
+  const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
+  const [trackedPropEventId, setTrackedPropEventId] = useState<number | null>(
+    event?.id ?? null,
+  );
+  if ((event?.id ?? null) !== trackedPropEventId) {
+    setTrackedPropEventId(event?.id ?? null);
+    setOverrideEvent(null);
+  }
+  const displayedEvent = overrideEvent ?? event;
 
   const isOpen = event !== null;
 
@@ -72,7 +79,7 @@ export function EventDetailsModal({
     const eventsList = allEvents || [];
     const otherEvents = eventsList.filter((e) => e.id !== displayedEvent.id);
     const seed = displayedEvent.id;
-    const shuffled = [...otherEvents].sort((a, b) => {
+    const shuffled = otherEvents.toSorted((a, b) => {
       const hashA = ((seed * a.id) % 1000) / 1000;
       const hashB = ((seed * b.id) % 1000) / 1000;
       return hashA - hashB;
@@ -81,7 +88,7 @@ export function EventDetailsModal({
   }, [displayedEvent, allEvents]);
 
   const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
-    setDisplayedEvent(clickedEvent);
+    setOverrideEvent(clickedEvent);
     document.querySelector("[data-slot='dialog-content']")?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -99,7 +106,7 @@ export function EventDetailsModal({
                 className="absolute inset-0 w-full h-full object-cover"
                 fallback={
                   <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 flex items-center justify-center">
-                    <ImageOff className="w-12 h-12 text-muted-foreground/40" />
+                    <ImageOff className="size-12 text-muted-foreground/40" />
                   </div>
                 }
                 placeholder={
@@ -131,7 +138,7 @@ export function EventDetailsModal({
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline flex items-center gap-1.5"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <ExternalLink className="size-3.5" />
                       <span className="truncate">{displayedEvent.source_url}</span>
                     </a>
                   </div>

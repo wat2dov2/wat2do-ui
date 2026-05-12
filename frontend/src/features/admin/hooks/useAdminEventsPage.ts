@@ -106,20 +106,24 @@ export function useAdminEventsPage({
 
   // Check URL parameters on mount for highlighting
   useEffect(() => {
-    if (eventIdParam) {
-      const eventId = parseInt(eventIdParam, 10);
-      if (!isNaN(eventId)) {
-        requestAnimationFrame(() => {
-          dispatch({ type: "SET_HIGHLIGHTED_EVENT_ID", payload: eventId });
-          setTimeout(() => {
-            const element = document.getElementById(`event-${eventId}`);
-            if (element) {
-              element.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          }, SCROLL_INTO_VIEW_DELAY_MS);
-        });
-      }
-    }
+    if (!eventIdParam) return;
+    const eventId = parseInt(eventIdParam, 10);
+    if (isNaN(eventId)) return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const rafId = requestAnimationFrame(() => {
+      dispatch({ type: "SET_HIGHLIGHTED_EVENT_ID", payload: eventId });
+      timeoutId = setTimeout(() => {
+        const element = document.getElementById(`event-${eventId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, SCROLL_INTO_VIEW_DELAY_MS);
+    });
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
   }, [eventIdParam]);
 
   // Get unique categories using API

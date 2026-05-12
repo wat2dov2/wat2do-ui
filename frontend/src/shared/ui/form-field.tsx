@@ -230,7 +230,7 @@ export function FormDatePicker({
         htmlFor={id}
         className="text-sm font-medium text-foreground flex items-center gap-1.5"
       >
-        {labelIcon || <CalendarIcon className="w-4 h-4" />}
+        {labelIcon || <CalendarIcon className="size-4" />}
         {label}
         {required && <span className="text-error">*</span>}
       </FieldLabel>

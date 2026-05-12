@@ -92,7 +92,7 @@ export function TagInput({
           onClick={onAdd}
           className="shrink-0"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="size-4" />
         </Button>
       </div>
       {value.length > 0 && (
@@ -109,9 +109,9 @@ export function TagInput({
               <button
                 type="button"
                 onClick={() => onRemove(index)}
-                className="bg-foreground/30 text-primary-foreground rounded-full p-0.5 h-4 w-4 flex items-center justify-center hover:bg-foreground/40 transition-colors"
+                className="bg-foreground/30 text-primary-foreground rounded-full p-0.5 size-4 flex items-center justify-center hover:bg-foreground/40 transition-colors"
               >
-                <X className="w-3 h-3" />
+                <X className="size-3" />
               </button>
             </span>
           ))}

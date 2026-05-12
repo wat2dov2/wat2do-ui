@@ -20,7 +20,7 @@ export function AuthPageLayout({ heading, description, children }: AuthPageLayou
               <p className="text-[11px] tracking-wider uppercase text-muted-foreground">
                 {t("auth.tagline")}
               </p>
-              <h1 className="font-sans font-bold text-[32px] text-foreground leading-tight">
+              <h1 className="font-sans font-semibold text-[32px] text-foreground leading-tight">
                 {heading}
               </h1>
               <p className="text-sm text-muted-foreground leading-relaxed">

@@ -49,7 +49,7 @@ export function IntegrationCard({
               <h3 className="font-semibold text-foreground">{t(titleKey)}</h3>
               {integration?.connected && (
                 <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                  <span className="size-1.5 bg-green-500 rounded-full" />
                   {t("integrations.connected")}
                 </span>
               )}

@@ -71,7 +71,7 @@ export function FilterDropdown({
   return (
     <>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-bold text-base text-foreground">{t("filters.filtersHeader")}</h2>
+        <h2 className="font-semibold text-base text-foreground">{t("filters.filtersHeader")}</h2>
         <div className="shrink-0">
           <Tabs
             value={filterViewMode}

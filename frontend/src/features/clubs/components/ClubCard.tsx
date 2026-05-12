@@ -25,7 +25,7 @@ export function ClubCard({ club }: ClubCardProps) {
     <article className="rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card border border-border">
       <div className="p-4 flex flex-col gap-3 flex-1">
         {/* Club Name */}
-        <h3 className="font-bold text-base text-foreground line-clamp-2">
+        <h3 className="font-semibold text-base text-foreground line-clamp-2">
           {club.club_name}
         </h3>
 
@@ -56,7 +56,7 @@ export function ClubCard({ club }: ClubCardProps) {
 
         {/* Club Type */}
         <div className="flex items-center gap-1.5">
-          <Tag className="w-3 h-3 text-muted-foreground" />
+          <Tag className="size-3 text-muted-foreground" />
           <span className="text-xs text-muted-foreground">{club.club_type}</span>
         </div>
 
@@ -70,7 +70,7 @@ export function ClubCard({ club }: ClubCardProps) {
               onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Instagram className="w-3.5 h-3.5" />
+              <Instagram className="size-3.5" />
               <span>{club.ig}</span>
             </a>
           )}
@@ -82,7 +82,7 @@ export function ClubCard({ club }: ClubCardProps) {
               onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              <MessageCircle className="w-3.5 h-3.5" />
+              <MessageCircle className="size-3.5" />
               <span>{t("clubs.discord")}</span>
             </a>
           )}

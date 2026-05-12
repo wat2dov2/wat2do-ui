@@ -3,7 +3,7 @@
  * No editing, no Save, no Download QR button.
  */
 
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import { Eye, Megaphone } from "lucide-react";
@@ -16,7 +16,14 @@ import {
 import { useQRCodeScans } from "@/features/qrcode/hooks/useQRCodeScans";
 import { useQRCodeStats } from "@/features/qrcode/hooks/useQRCodeStats";
 import { QRCodeStatsDisplay } from "@/features/qrcode/components/QRCode/QRCodeStatsDisplay";
-import { QRCodeScansChart } from "@/features/qrcode/components/QRCode/QRCodeScansChart";
+
+// `recharts` is heavy (~80kb gzipped); lazy-load the chart so it only ships
+// when this modal actually opens.
+const QRCodeScansChart = lazy(() =>
+  import("@/features/qrcode/components/QRCode/QRCodeScansChart").then((m) => ({
+    default: m.QRCodeScansChart,
+  })),
+);
 import type { QRCode, Event } from "@/shared/types";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
 import { getQRImageUrl } from "@/features/qrcode/api/qrcode.api";
@@ -74,7 +81,7 @@ function QRCodeDetailsModalContent({ isOpen, onClose, qrCode }: QRCodeDetailsMod
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
-                    <Megaphone className="w-10 h-10" />
+                    <Megaphone className="size-10" />
                   </div>
                 )}
               </div>
@@ -97,13 +104,15 @@ function QRCodeDetailsModalContent({ isOpen, onClose, qrCode }: QRCodeDetailsMod
 
             {/* Chart */}
             {qrCodeStats.stats.totalScansData && qrCodeStats.stats.totalScansData.length > 0 ? (
-              <QRCodeScansChart
-                timeRange={qrCodeScans.timeRange}
-                onTimeRangeChange={qrCodeScans.setTimeRange}
-                totalScansData={qrCodeStats.stats.totalScansData}
-                uniqueScansData={qrCodeStats.stats.uniqueScansData}
-                hideTimeRangeSelector
-              />
+              <Suspense fallback={<div className="h-48" aria-hidden />}>
+                <QRCodeScansChart
+                  timeRange={qrCodeScans.timeRange}
+                  onTimeRangeChange={qrCodeScans.setTimeRange}
+                  totalScansData={qrCodeStats.stats.totalScansData}
+                  uniqueScansData={qrCodeStats.stats.uniqueScansData}
+                  hideTimeRangeSelector
+                />
+              </Suspense>
             ) : (
               <EmptyState
                 icon={Eye}

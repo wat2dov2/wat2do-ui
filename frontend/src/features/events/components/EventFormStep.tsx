@@ -120,7 +120,7 @@ export function EventFormStep({
           <div className="mb-7">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <h2 className="text-xl font-bold text-foreground">
+                <h2 className="text-xl font-semibold text-foreground">
                   {isEditMode ? t("events.updateEvent") : t("events.createEvent")}
                 </h2>
               </div>

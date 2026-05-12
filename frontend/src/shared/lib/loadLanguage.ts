@@ -3,6 +3,15 @@ import i18n from '@/shared/lib/i18n';
 // Cache of loading promises to prevent duplicate loads
 const loadingPromises = new Map<string, Promise<void>>();
 
+// Static map of locale loaders so the bundler can code-split each locale into
+// its own chunk. Add new languages here as JSON files land under `src/locales`.
+const localeLoaders: Record<
+  string,
+  () => Promise<{ default: Record<string, unknown> }>
+> = {
+  en: () => import('@/locales/en.json'),
+};
+
 export async function loadLanguage(lang: string): Promise<void> {
   // Check if language is already loaded
   if (i18n.hasResourceBundle(lang, 'translation')) {
@@ -18,9 +27,11 @@ export async function loadLanguage(lang: string): Promise<void> {
   // Create and cache loading promise
   const loadPromise = (async () => {
     try {
-      // Dynamically import the language file
-      const resources = await import(`@/locales/${lang}.json`);
-      // Add the loaded resources to i18n
+      const loader = localeLoaders[lang];
+      if (!loader) {
+        throw new Error(`No loader registered for locale "${lang}"`);
+      }
+      const resources = await loader();
       i18n.addResourceBundle(lang, 'translation', resources.default);
     } catch (error) {
       console.error(`Failed to load language "${lang}":`, error);

@@ -26,12 +26,12 @@ export function PromotionSuccessScreen({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md" showCloseButton={false}>
         <DialogTitle className="sr-only">{t("events.eventPromoted")}</DialogTitle>
-        <div className="flex flex-col items-center text-center py-6 space-y-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <Check className="w-8 h-8 text-white" strokeWidth={3} />
+        <div className="flex flex-col items-center text-center py-6 gap-y-4">
+          <div className="size-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <Check className="size-8 text-white" strokeWidth={3} />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground">
+          <h2 className="text-xl font-semibold text-foreground">
             {t("events.eventPromoted")}
           </h2>
           <p className="text-muted-foreground text-sm">
@@ -39,7 +39,7 @@ export function PromotionSuccessScreen({
           </p>
 
           <div className="flex items-center gap-2 bg-warning/20 px-4 py-2 rounded-full">
-            <Coins className="w-5 h-5 text-warning" />
+            <Coins className="size-5 text-warning" />
             <span className="font-bold text-warning">
               {userCredits} {t("events.creditsRemaining")}
             </span>

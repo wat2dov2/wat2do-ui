@@ -17,11 +17,11 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Building2 className="w-6 h-6 text-primary" />
+        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+          <Building2 className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("clubPanel.title")}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("clubPanel.title")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("clubPanel.description")}
           </p>

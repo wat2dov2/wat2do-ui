@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 interface Placement {
   x: number;
@@ -316,6 +316,9 @@ export function QRPlacementOverlay({
       {/* Border and interactive area */}
       <div
         className="absolute pointer-events-auto select-none"
+        role="button"
+        tabIndex={-1}
+        aria-label="Drag to move QR placement"
         style={{
           left: `${x}px`,
           top: `${y}px`,
@@ -330,6 +333,9 @@ export function QRPlacementOverlay({
       {/* Resize handles */}
       {/* Northwest */}
       <div
+        role="button"
+        tabIndex={-1}
+        aria-label="Resize from northwest corner"
         style={{
           ...handleStyle,
           left: `-${handleSize / 2}px`,
@@ -343,6 +349,9 @@ export function QRPlacementOverlay({
       />
       {/* Northeast */}
       <div
+        role="button"
+        tabIndex={-1}
+        aria-label="Resize from northeast corner"
         style={{
           ...handleStyle,
           right: `-${handleSize / 2}px`,
@@ -356,6 +365,9 @@ export function QRPlacementOverlay({
       />
       {/* Southwest */}
       <div
+        role="button"
+        tabIndex={-1}
+        aria-label="Resize from southwest corner"
         style={{
           ...handleStyle,
           left: `-${handleSize / 2}px`,
@@ -369,6 +381,9 @@ export function QRPlacementOverlay({
       />
       {/* Southeast */}
       <div
+        role="button"
+        tabIndex={-1}
+        aria-label="Resize from southeast corner"
         style={{
           ...handleStyle,
           right: `-${handleSize / 2}px`,

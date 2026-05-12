@@ -9,9 +9,9 @@ export function OnboardingSafetyStep({ onContinue }: OnboardingSafetyStepProps) 
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center text-center space-y-6 max-w-lg mx-auto">
+    <div className="flex flex-col items-center text-center gap-y-6 max-w-lg mx-auto">
       <span className="text-3xl leading-none text-primary">✶</span>
-      <h1 className="font-sans font-bold text-[28px] leading-tight text-foreground">
+      <h1 className="font-sans font-semibold text-[28px] leading-tight text-foreground">
         {t("onboarding.safetyTitle")}
       </h1>
       <p className="text-sm text-muted-foreground leading-relaxed">

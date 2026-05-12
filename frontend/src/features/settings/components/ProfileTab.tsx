@@ -59,7 +59,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-2 border-border">
+                <div className="size-16 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-2 border-border">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -72,22 +72,22 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  className="absolute -bottom-1 -right-1 rounded-full w-7 h-7 p-0"
+                  className="absolute -bottom-1 -right-1 rounded-full size-7 p-0"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                   isLoading={uploading}
                   loadingText=""
                 >
-                  <Camera className="w-3.5 h-3.5" />
+                  <Camera className="size-3.5" />
                 </LoadingButton>
                 <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <Mail className="size-4 text-muted-foreground" />
                   <span className="text-sm text-foreground">{userEmail}</span>
                 </div>
-                {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading...</p>}
+                {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading…</p>}
               </div>
             </div>
           </CardContent>

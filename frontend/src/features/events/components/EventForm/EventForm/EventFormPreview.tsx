@@ -59,7 +59,7 @@ export function EventFormPreview() {
             className="absolute inset-0 w-full h-full"
             fallback={
               <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
-                <ImageOff className="w-8 h-8 text-muted-foreground/40" />
+                <ImageOff className="size-8 text-muted-foreground/40" />
               </div>
             }
             placeholder={
@@ -83,7 +83,7 @@ export function EventFormPreview() {
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
             <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center gap-1.5">
-              <Users className="w-3 h-3" strokeWidth={2} />
+              <Users className="size-3" strokeWidth={2} />
               <span className="truncate max-w-[100px]">
                 {formData.organization || t("events.organization")}
               </span>

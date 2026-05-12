@@ -17,7 +17,7 @@ export function AboutPage() {
           <p className="font-sans text-[11px] tracking-wider uppercase text-muted-foreground mb-3">
             {t("about.openingDate")}
           </p>
-          <h1 className="font-sans font-bold text-[32px] text-foreground mb-6 leading-tight">
+          <h1 className="font-sans font-semibold text-[32px] text-foreground mb-6 leading-tight">
             {t("about.openingTitle")}
           </h1>
           <div className="font-sans text-[16px] text-foreground leading-relaxed space-y-4">

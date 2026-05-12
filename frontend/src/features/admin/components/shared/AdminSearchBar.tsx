@@ -20,7 +20,7 @@ export function AdminSearchBar({
 }: AdminSearchBarProps) {
   return (
     <div className="relative flex-1">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none z-10" />
       <Input
         type="text"
         placeholder={placeholder}
@@ -33,7 +33,7 @@ export function AdminSearchBar({
           onClick={() => onChange("")}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
         >
-          <X className="w-4 h-4" />
+          <X className="size-4" />
         </button>
       )}
     </div>

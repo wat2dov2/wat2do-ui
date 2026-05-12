@@ -386,8 +386,8 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <QrCode className="w-6 h-6 text-primary" />
+        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+          <QrCode className="size-6 text-primary" />
         </div>
         <div className="flex-1">
           <h2 className="text-xl font-semibold text-foreground">{headerTitle}</h2>
@@ -436,7 +436,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
                     key={asset.id}
                     className="flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-3"
                   >
-                    <div className="w-20 h-20 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
+                    <div className="size-20 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
                       <img
                         src={asset.imagePreview}
                         alt={asset.name}
@@ -562,7 +562,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
                   className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 px-3 py-2"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
+                    <div className="size-8 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
                       <img
                         src={asset.imagePreview}
                         alt={asset.name}
@@ -601,7 +601,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               size="sm"
               onClick={() => setStep((prev) => (prev === 1 ? 1 : ((prev - 1) as WizardStep)))}
             >
-              <ArrowLeft className="w-3 h-3 mr-1" />
+              <ArrowLeft className="size-3 mr-1" />
               {t("common.back")}
             </Button>
           ) : (
@@ -626,7 +626,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               }}
             >
               {t("common.continue")}
-              <ArrowRight className="w-3 h-3 ml-1" />
+              <ArrowRight className="size-3 ml-1" />
             </Button>
           )}
           {step === 3 && (
@@ -642,12 +642,12 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               >
                 {pdfGenerating ? (
                   <>
-                    <Spinner className="w-3 h-3 mr-1" />
+                    <Spinner className="size-3 mr-1" />
                     {t("common.pleaseWait")}
                   </>
                 ) : (
                   <>
-                    <Download className="w-3 h-3 mr-1" />
+                    <Download className="size-3 mr-1" />
                     {t("admin.qrAssets.downloadAllPdfs")}
                   </>
                 )}

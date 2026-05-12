@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useMemo, useState, useEffect, useCallback } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import { LazyMotion, domAnimation } from "framer-motion";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AppLayout } from "@/app/AppLayout";
@@ -80,17 +81,21 @@ export default function App() {
   // Full-page QR redirect: no app chrome, only loading then redirect
   if (isQRRedirectRoute) {
     return (
-      <TooltipProvider delayDuration={0}>
-        <QRRedirectPage />
-      </TooltipProvider>
+      <LazyMotion features={domAnimation} strict>
+        <TooltipProvider delayDuration={0}>
+          <QRRedirectPage />
+        </TooltipProvider>
+      </LazyMotion>
     );
   }
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <CommandPaletteHotkeys />
-      <AppContent />
-    </TooltipProvider>
+    <LazyMotion features={domAnimation} strict>
+      <TooltipProvider delayDuration={0}>
+        <CommandPaletteHotkeys />
+        <AppContent />
+      </TooltipProvider>
+    </LazyMotion>
   );
 }
 

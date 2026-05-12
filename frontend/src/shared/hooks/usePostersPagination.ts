@@ -38,8 +38,9 @@ export function usePostersPagination({
 
   // Sort and paginate scans
   const sortedScans = useMemo(() => {
-    return [...scansMatchingPosterSearch]
-      .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
+    return scansMatchingPosterSearch.toSorted(
+      (a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime()
+    );
   }, [scansMatchingPosterSearch]);
 
   const paginatedScans = useMemo(() => {

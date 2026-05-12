@@ -89,8 +89,8 @@ function ToastItem({ toast }: { toast: Toast }) {
         ${toneClass}
       `}
     >
-      {toast.type === "success" && <Check className="w-5 h-5 shrink-0" />}
-      {toast.type === "error" && <X className="w-5 h-5 shrink-0" />}
+      {toast.type === "success" && <Check className="size-5 shrink-0" />}
+      {toast.type === "error" && <X className="size-5 shrink-0" />}
       <p className="flex-1 text-sm font-medium">{toast.message}</p>
       <button
         onClick={() => {
@@ -98,7 +98,7 @@ function ToastItem({ toast }: { toast: Toast }) {
         }}
         className="shrink-0 hover:bg-foreground/20 rounded p-1 transition-colors"
       >
-        <X className="w-4 h-4" />
+        <X className="size-4" />
       </button>
     </div>
   );

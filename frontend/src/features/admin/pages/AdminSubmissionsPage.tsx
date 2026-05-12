@@ -99,13 +99,13 @@ export function AdminSubmissionsPage({
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="secondary" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="size-4" />
         </Button>
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <FileText className="w-6 h-6 text-primary" />
+        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+          <FileText className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("admin.eventSubmissions")}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("admin.eventSubmissions")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("admin.reviewSubmissionsDesc")}
           </p>
@@ -115,7 +115,7 @@ export function AdminSubmissionsPage({
       {/* Search and Filters */}
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none z-10" />
           <Input
             type="text"
             placeholder={t("admin.searchSubmissions")}
@@ -128,7 +128,7 @@ export function AdminSubmissionsPage({
               onClick={() => filters.setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
             >
-              <XIcon className="w-4 h-4" />
+              <XIcon className="size-4" />
             </button>
           )}
         </div>
@@ -211,13 +211,13 @@ export function AdminSubmissionsPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <User className="w-3.5 h-3.5" />
+                        <User className="size-3.5" />
                         <span>{submission.submittedBy}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Clock className="w-3.5 h-3.5" />
+                        <Clock className="size-3.5" />
                         <span>{fmtTime(submission.submittedAt)}</span>
                       </div>
                     </TableCell>
@@ -237,7 +237,7 @@ export function AdminSubmissionsPage({
                               }}
                               className="text-success hover:text-success hover:bg-success/10"
                             >
-                              <Check className="w-4 h-4" />
+                              <Check className="size-4" />
                             </Button>
                             <Button
                               variant="secondary"
@@ -248,7 +248,7 @@ export function AdminSubmissionsPage({
                               }}
                               className="text-error hover:text-error hover:bg-error/10"
                             >
-                              <XIcon className="w-4 h-4" />
+                              <XIcon className="size-4" />
                             </Button>
                           </>
                         )}
@@ -277,8 +277,8 @@ export function AdminSubmissionsPage({
 
       {filters.filteredSubmissions.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-            <FileText className="w-8 h-8 text-muted-foreground" />
+          <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+            <FileText className="size-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
             No submissions found

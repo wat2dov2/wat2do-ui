@@ -49,10 +49,10 @@ export function Sidebar() {
             onClick={() => setShowCommandPalette(true)}
             badge={
               <div className="flex items-center gap-0.5 opacity-0 group-hover/sidebar:opacity-100 transition-opacity">
-                <span className="flex items-center justify-center w-[18px] h-[18px] bg-secondary border border-border rounded shadow-sm text-[9px] text-muted-foreground">
+                <span className="flex items-center justify-center size-[18px] bg-secondary border border-border rounded shadow-sm text-[9px] text-muted-foreground">
                   ⌘
                 </span>
-                <span className="flex items-center justify-center w-[18px] h-[18px] bg-secondary border border-border rounded shadow-sm text-[9px] text-muted-foreground">
+                <span className="flex items-center justify-center size-[18px] bg-secondary border border-border rounded shadow-sm text-[9px] text-muted-foreground">
                   K
                 </span>
               </div>

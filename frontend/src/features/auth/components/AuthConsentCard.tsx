@@ -30,7 +30,7 @@ export function AuthConsentCard({
         <p className="text-[11px] tracking-wider uppercase text-muted-foreground">
           {t("auth.tagline")}
         </p>
-        <h2 className="font-sans font-bold text-[28px] leading-tight text-foreground">
+        <h2 className="font-sans font-semibold text-[28px] leading-tight text-foreground">
           {t("auth.consentHeading")}
         </h2>
         <p className="text-sm text-muted-foreground leading-relaxed">

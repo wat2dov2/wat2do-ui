@@ -62,7 +62,7 @@ function PosterMarker({
   const color = getColorForScanCount(scanCount, maxScanCount);
   const size = Math.max(16, Math.min(32, 16 + (scanCount / maxScanCount) * 16));
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleActivatePoster = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     if (onClick) {
       onClick(posterData.qrCodeId);
@@ -72,9 +72,18 @@ function PosterMarker({
   return (
     <div
       className="relative cursor-pointer group"
+      role="button"
+      tabIndex={0}
+      aria-label={`Poster ${posterData.qrCodeId}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={handleClick}
+      onClick={handleActivatePoster}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleActivatePoster(e);
+        }
+      }}
       style={{
         animationDelay: `${index * 50}ms`,
       }}
@@ -149,19 +158,19 @@ function PosterMarker({
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-card border border-border rounded-lg shadow-xl text-xs z-dropdown pointer-events-none min-w-[160px]">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
-              <MapPin className="w-3 h-3 text-primary shrink-0" />
+              <MapPin className="size-3 text-primary shrink-0" />
               <span className="text-foreground font-semibold truncate">
                 {posterData.name}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Zap className="w-3 h-3 shrink-0" />
+              <Zap className="size-3 shrink-0" />
               <span>
                 {scanCount} scan{scanCount !== 1 ? "s" : ""}
               </span>
             </div>
           </div>
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-border" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full size-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-border" />
         </div>
       )}
     </div>
@@ -213,22 +222,22 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
     }, {} as Record<string, QRCodeScan[]>);
 
     // Use poster locations from QRCode and filtered scan counts
-    return Object.entries(grouped).map(([qrCodeId, posterScans]) => {
+    return Object.entries(grouped).flatMap(([qrCodeId, posterScans]) => {
       const qrCode = qrCodes.find(qr => qr.id === qrCodeId);
-      
+
       // Skip if QR code not found or doesn't have location
       if (!qrCode || qrCode.latitude === undefined || qrCode.longitude === undefined) {
-        return null;
+        return [];
       }
-      
-      return {
+
+      return [{
         qrCodeId,
         name: qrCode.name || `Poster ${qrCodeId.substring(0, 8)}`,
         latitude: qrCode.latitude,
         longitude: qrCode.longitude,
         scanCount: posterScans.length,
-      };
-    }).filter((poster): poster is NonNullable<typeof poster> => poster !== null);
+      }];
+    });
   }, [scans, qrCodes]);
 
   // Find max scan count for color scaling
@@ -262,8 +271,8 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
         style={{ height }}
       >
         <div className="text-center p-8">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <MapPin className="w-8 h-8 text-primary" />
+          <div className="size-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <MapPin className="size-8 text-primary" />
           </div>
           <p className="text-sm font-medium text-foreground mb-2">
             Mapbox token not configured
@@ -282,13 +291,13 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
       <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-card/95 via-card/80 to-transparent p-4 pointer-events-none">
         <div className="flex items-center justify-between pointer-events-auto">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <div className="size-2 bg-primary rounded-full animate-pulse" />
             <span className="text-xs font-medium text-foreground">
               {posterLocations.length} poster{posterLocations.length !== 1 ? "s" : ""} • {totalScans} total scan{totalScans !== 1 ? "s" : ""}
             </span>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border/50">
-            <MapPin className="w-3 h-3 text-primary" />
+            <MapPin className="size-3 text-primary" />
             <span className="text-xs text-muted-foreground font-medium">
               {posterLocations.length > 0 ? "Active" : "No data"}
             </span>
@@ -334,22 +343,22 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pointer-events-auto flex-wrap">
             <div className="flex items-center gap-2 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border/50">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="size-2 rounded-full bg-green-500" />
                 <span>Low</span>
               </div>
               <span className="text-muted-foreground/50">→</span>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-warning" />
+                <div className="size-2 rounded-full bg-warning" />
                 <span>Medium</span>
               </div>
               <span className="text-muted-foreground/50">→</span>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-error" />
+                <div className="size-2 rounded-full bg-error" />
                 <span>High</span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border/50">
-              <MapPin className="w-3 h-3" />
+              <MapPin className="size-3" />
               <span>
                 {center.latitude.toFixed(4)}, {center.longitude.toFixed(4)}
               </span>

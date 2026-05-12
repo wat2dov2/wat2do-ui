@@ -59,7 +59,7 @@ export function WhatsAppConnectModal({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ExternalLink className="size-4 mr-2" />
                   {t("integrations.openInWhatsApp")}
                 </a>
               </Button>

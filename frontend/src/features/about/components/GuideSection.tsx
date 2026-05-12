@@ -23,7 +23,7 @@ export function GuideSection({ items }: GuideSectionProps) {
   return (
     <div className="mb-40">
       <div className="mb-16">
-        <h2 className="font-sans font-bold text-[28px] text-foreground mb-4">
+        <h2 className="font-sans font-semibold text-[28px] text-foreground mb-4">
           {t("about.guideTitle")}
         </h2>
         <p className="font-sans text-[16px] text-muted-foreground">

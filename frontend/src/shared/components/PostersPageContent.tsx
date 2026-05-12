@@ -132,13 +132,13 @@ export function PostersPageContent({
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="secondary" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="size-4" />
         </Button>
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Megaphone className="w-6 h-6 text-primary" />
+        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+          <Megaphone className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("admin.qrAssets.title")}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("admin.qrAssets.title")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("admin.qrAssets.description")}
           </p>
@@ -200,7 +200,7 @@ export function PostersPageContent({
                 style={{ height: POSTER_MAP_HEIGHT }}
               >
                 <div className="text-center p-8">
-                  <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
+                  <MapPin className="size-12 text-muted-foreground/30 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">{t("admin.mapWillLoadWhenVisible")}</p>
                 </div>
               </div>

@@ -51,6 +51,7 @@ export function OnboardingInterestsCombobox({
             className="flex w-full items-center gap-2 rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs cursor-text focus-within:ring-2 focus-within:ring-ring focus-within:outline-none"
             role="combobox"
             aria-expanded={open}
+            aria-controls="onboarding-interests-listbox"
           >
             <input
               ref={inputRef}
@@ -61,10 +62,12 @@ export function OnboardingInterestsCombobox({
               onFocus={() => requestAnimationFrame(() => setOpen(true))}
               className="flex-1 min-w-0 bg-transparent focus:outline-none placeholder:text-muted-foreground"
             />
-            <ChevronsUpDown className="w-4 h-4 shrink-0 text-muted-foreground pointer-events-none" />
+            <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground pointer-events-none" />
           </div>
         </PopoverAnchor>
         <PopoverContent
+          id="onboarding-interests-listbox"
+          role="listbox"
           className="w-(--radix-popover-trigger-width) p-1 max-h-[220px] overflow-y-auto"
           align="start"
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -121,10 +124,10 @@ export function OnboardingInterestsCombobox({
               <button
                 type="button"
                 onClick={() => onToggle(item)}
-                className="rounded-full p-0.5 h-4 w-4 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
+                className="rounded-full p-0.5 size-4 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
                 aria-label={`Remove ${item}`}
               >
-                <X className="w-3 h-3" />
+                <X className="size-3" />
               </button>
             </span>
           ))}

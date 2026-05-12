@@ -5,7 +5,7 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 import { Z_INDEX } from "@/shared/constants/zIndex";
 import { Check } from "lucide-react";
@@ -24,13 +24,15 @@ export interface PieMenuProps {
   position: { x: number; y: number };
   onClose: () => void;
   onSelect?: (item: PieMenuItem) => void;
-  selectedIds?: string[];
+  selectedIds?: readonly string[];
   closeOnSelect?: boolean;
   radius?: number;
   innerRadius?: number;
   startAngle?: number;
   className?: string;
 }
+
+const EMPTY_SELECTED_IDS: readonly string[] = [];
 
 function describeArc(
   cx: number,
@@ -63,7 +65,7 @@ export function PieMenu({
   position,
   onClose,
   onSelect,
-  selectedIds = [],
+  selectedIds = EMPTY_SELECTED_IDS,
   closeOnSelect = true,
   radius = 140,
   innerRadius = 20,
@@ -134,7 +136,7 @@ export function PieMenu({
   return createPortal(
     <div data-pie-menu style={{ position: "fixed", inset: 0, zIndex: Z_INDEX.PIE_MENU }}>
       {/* Backdrop */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -164,7 +166,7 @@ export function PieMenu({
           zIndex: Z_INDEX.MAX,
         }}
       >
-        <motion.svg
+        <m.svg
           width={svgSize}
           height={svgSize}
           viewBox={`0 0 ${svgSize} ${svgSize}`}
@@ -211,7 +213,7 @@ export function PieMenu({
             return (
               <g key={item.id}>
                 {/* Slice background */}
-                <motion.path
+                <m.path
                   d={path}
                   fill={
                     item.disabled 
@@ -317,7 +319,7 @@ export function PieMenu({
               </g>
             );
           })}
-        </motion.svg>
+        </m.svg>
       </div>
     </div>,
     document.body

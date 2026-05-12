@@ -27,7 +27,7 @@ export function LazyImage({
       <div className={className} ref={ref} style={{ position: "absolute", inset: 0 }}>
         {fallback || (
           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
-            <ImageOff className="w-8 h-8 text-muted-foreground/40" />
+            <ImageOff className="size-8 text-muted-foreground/40" />
           </div>
         )}
       </div>

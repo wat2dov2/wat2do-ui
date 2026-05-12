@@ -61,7 +61,7 @@ export function TopNav() {
       <div className="flex items-center gap-2.5">
         <button
           onClick={handleLogoClick}
-          className="h-6 w-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          className="size-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
           aria-label={t("navigation.goToEvents")}
         >
           <img
@@ -80,7 +80,7 @@ export function TopNav() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="secondary" size="sm" onClick={handleAdminClick}>
-                <Shield className="w-4 h-4" strokeWidth={2.5} />
+                <Shield className="size-4" strokeWidth={2.5} />
                 {t("navigation.admin")}
               </Button>
             </TooltipTrigger>
@@ -95,7 +95,7 @@ export function TopNav() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="secondary" size="sm" onClick={handleClubPanelClick}>
-                <Building2 className="w-4 h-4" strokeWidth={2.5} />
+                <Building2 className="size-4" strokeWidth={2.5} />
                 {t("navigation.clubPanel")}
               </Button>
             </TooltipTrigger>
@@ -116,7 +116,7 @@ export function TopNav() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="secondary" size="sm" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4" strokeWidth={2.5} />
+                <LogOut className="size-4" strokeWidth={2.5} />
                 {t("modals.signOut.logOut")}
               </Button>
             </TooltipTrigger>

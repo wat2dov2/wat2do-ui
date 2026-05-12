@@ -30,18 +30,27 @@ export function MoreFiltersButton({
               : "bg-secondary text-muted-foreground hover:bg-accent/60 dark:hover:bg-accent/60"
           }`}
         >
-          <SlidersHorizontal className="w-3.5 h-3.5" />
+          <SlidersHorizontal className="size-3.5" />
           {t("common.moreFilters")}
           {filterCount > 0 && (
             <span
               role="button"
+              tabIndex={0}
+              aria-label={t("common.clearFilters", "Clear filters")}
               onClick={(e) => {
                 e.stopPropagation();
                 onClearFilters?.();
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClearFilters?.();
+                }
+              }}
               className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/70 transition-colors cursor-pointer"
             >
-              <X className="w-2.5 h-2.5" strokeWidth={3} />
+              <X className="size-2.5" strokeWidth={3} />
               {filterCount}
             </span>
           )}

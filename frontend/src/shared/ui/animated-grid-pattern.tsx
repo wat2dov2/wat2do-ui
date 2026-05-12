@@ -7,7 +7,7 @@ import {
   useState,
   startTransition,
 } from "react"
-import { motion } from "motion/react"
+import { m } from "framer-motion"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -156,7 +156,7 @@ export function AnimatedGridPattern({
       <rect width="100%" height="100%" fill={`url(#${id})`} />
       <svg x={x} y={y} className="overflow-visible">
         {squares.map(({ pos: [squareX, squareY], id, iteration }, index) => (
-          <motion.rect
+          <m.rect
             initial={{ opacity: 0 }}
             animate={{ opacity: maxOpacity }}
             transition={{

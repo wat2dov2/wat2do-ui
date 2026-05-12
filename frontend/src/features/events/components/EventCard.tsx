@@ -94,22 +94,31 @@ export function EventCard({
   const cardDate = formatCardDate(event, i18n.language || 'en-US');
   const cardTime = formatCardTime(event);
 
+  const handleCardActivate = () => {
+    tracker.track(event.id, "click");
+    if (onEventClick) {
+      onEventClick(event);
+    } else if (!disableModal) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set(QP.EVENT_ID, event.id.toString());
+      navigate(`/?${newParams.toString()}`, { replace: false });
+    }
+  };
+
   return (
     <>
       <article
         ref={cardRef}
         data-event-card
         data-event-id={event.id}
-        role="article"
+        role="button"
+        tabIndex={0}
         aria-label={`Event: ${event.title}`}
-        onClick={() => {
-          tracker.track(event.id, "click");
-          if (onEventClick) {
-            onEventClick(event);
-          } else if (!disableModal) {
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set(QP.EVENT_ID, event.id.toString());
-            navigate(`/?${newParams.toString()}`, { replace: false });
+        onClick={handleCardActivate}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleCardActivate();
           }
         }}
         className={`rounded-xl overflow-hidden border border-border hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
@@ -133,7 +142,7 @@ export function EventCard({
                     : "bg-linear-to-br from-muted to-muted/80"
                 } flex items-center justify-center`}
               >
-                <ImageOff className="w-8 h-8 text-muted-foreground/40" />
+                <ImageOff className="size-8 text-muted-foreground/40" />
               </div>
             }
             placeholder={
@@ -161,7 +170,7 @@ export function EventCard({
           {isPromoted && (
             <div className="absolute top-8 left-2 z-10">
               <span className="bg-linear-to-r from-amber-500 to-amber-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
+                <Sparkles className="size-3" />
                 {t("events.promoted")}
               </span>
             </div>
@@ -175,7 +184,7 @@ export function EventCard({
                   className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+                  <MoreHorizontal className="size-3.5" />
                 </button>
               </PopoverTrigger>
               <PopoverContent
@@ -195,7 +204,7 @@ export function EventCard({
                       }
                     }}
                   >
-                    <Share2 className="w-3.5 h-3.5" />
+                    <Share2 className="size-3.5" />
                     {t("common.share")}
                   </button>
                   <button
@@ -205,7 +214,7 @@ export function EventCard({
                       // Handle add to calendar
                     }}
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="size-3.5" />
                     {t("common.addToCalendar")}
                   </button>
                   <button
@@ -215,7 +224,7 @@ export function EventCard({
                       // Handle report
                     }}
                   >
-                    <Flag className="w-3.5 h-3.5" />
+                    <Flag className="size-3.5" />
                     {t("common.report")}
                   </button>
                   {canManageEvent && (
@@ -228,7 +237,7 @@ export function EventCard({
                           setShowDeleteConfirm(true);
                         }}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="size-3.5" />
                         {t("common.delete")}
                       </button>
                     </>
@@ -241,7 +250,7 @@ export function EventCard({
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
             <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center gap-1.5">
-              <Users className="w-3 h-3" strokeWidth={2} />
+              <Users className="size-3" strokeWidth={2} />
               <span className="truncate max-w-[100px]">
                 {event.organization || event.display_handle || ''}
               </span>

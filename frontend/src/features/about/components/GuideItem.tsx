@@ -31,7 +31,7 @@ export function GuideItem({
         >
           <span className="text-[20px]">{emoji}</span>
         </div>
-        <h3 className="font-sans font-bold text-[22px] text-foreground">
+        <h3 className="font-sans font-semibold text-[22px] text-foreground">
           {t(titleKey)}
         </h3>
       </div>

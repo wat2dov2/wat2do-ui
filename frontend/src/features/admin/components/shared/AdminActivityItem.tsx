@@ -28,15 +28,15 @@ export function AdminActivityItem({
   return (
     <div className="w-full p-4 hover:bg-secondary/50 transition-colors cursor-pointer">
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-          <Icon className="w-4 h-4 text-primary" />
+        <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+          <Icon className="size-4 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <p className="text-sm text-foreground mb-1">{title}</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="w-3 h-3" />
+                <Clock className="size-3" />
                 <span>{timestamp}</span>
                 {metadata}
               </div>
@@ -52,7 +52,7 @@ export function AdminActivityItem({
                 }}
               >
                 {viewLabel || "View"}
-                <ArrowRight className="w-3 h-3 ml-1" />
+                <ArrowRight className="size-3 ml-1" />
               </Button>
             )}
           </div>

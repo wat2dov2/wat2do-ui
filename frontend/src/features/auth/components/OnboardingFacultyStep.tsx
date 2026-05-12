@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 import {
   Select,
@@ -71,7 +71,7 @@ export function OnboardingFacultyStep({
       {splash && (
         <div className="fixed inset-0 pointer-events-none z-easter-egg" aria-hidden>
           {splashPoints.map((point, i) => (
-            <motion.div
+            <m.div
               key={i}
               className="absolute rounded-full"
               style={{
@@ -101,7 +101,7 @@ export function OnboardingFacultyStep({
           ))}
         </div>
       )}
-      <div className="flex flex-col items-center space-y-4 max-w-sm mx-auto">
+      <div className="flex flex-col items-center gap-y-4 max-w-sm mx-auto">
         <Select value={value} onValueChange={handleValueChange}>
           <SelectTrigger
             className={cn(
@@ -116,7 +116,7 @@ export function OnboardingFacultyStep({
               value={SELECT_PLACEHOLDER_VALUE}
               className="text-muted-foreground"
             >
-              Select...
+              Select…
             </SelectItem>
             {FACULTY_OPTIONS.map((item) => (
               <SelectItem key={item} value={item}>

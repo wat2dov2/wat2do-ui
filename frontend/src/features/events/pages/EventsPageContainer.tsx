@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { Utensils, Heart } from "lucide-react";
@@ -53,7 +53,7 @@ export function EventsPageContainer() {
       [
         {
           id: "freeFood",
-          icon: <Utensils className="w-3.5 h-3.5" />,
+          icon: <Utensils className="size-3.5" />,
           labelKey: "common.freeFood",
           active: filters.freeFoodFilter,
           onClick: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
@@ -64,7 +64,7 @@ export function EventsPageContainer() {
         },
         {
           id: "saved",
-          icon: <Heart className="w-3.5 h-3.5" />,
+          icon: <Heart className="size-3.5" />,
           labelKey: "filters.saved",
           active: filters.savedFilter,
           onClick: () => filters.setSavedFilter(!filters.savedFilter),
@@ -102,35 +102,28 @@ export function EventsPageContainer() {
             <div className="flex flex-wrap items-baseline gap-3">
               <EventCount count={filters.filteredEvents.length} />
               {latestAddedEvent && (
-                <button
-                  type="button"
+                <LatestAddedButton
+                  title={latestAddedEvent.title}
+                  addedAt={latestAddedEvent.added_at}
                   onClick={() => filters.setSearchQuery(latestAddedEvent.title)}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left relative -top-px"
-                  aria-label={t("events.latestAdded", {
-                    title: latestAddedEvent.title,
-                    timeAgo: formatDistanceToNow(new Date(latestAddedEvent.added_at), { addSuffix: true }),
-                  })}
-                >
-                  {t("events.latestAdded", {
-                    title: latestAddedEvent.title,
-                    timeAgo: formatDistanceToNow(new Date(latestAddedEvent.added_at), { addSuffix: true }),
-                  })}
-                </button>
+                />
               )}
             </div>
             <div className="relative flex flex-wrap items-center gap-2">
-              {filterConfigs
-                .filter((config) => config.visible !== false)
-                .map((config) => (
-                  <QuickFilterChip
-                    key={config.id}
-                    icon={config.icon}
-                    label={t(config.labelKey)}
-                    active={config.active}
-                    onClick={config.onClick}
-                    badge={config.badge}
-                  />
-                ))}
+              {filterConfigs.flatMap((config) =>
+                config.visible === false
+                  ? []
+                  : [
+                      <QuickFilterChip
+                        key={config.id}
+                        icon={config.icon}
+                        label={t(config.labelKey)}
+                        active={config.active}
+                        onClick={config.onClick}
+                        badge={config.badge}
+                      />,
+                    ],
+              )}
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}
@@ -174,5 +167,37 @@ export function EventsPageContainer() {
         )}
       </main>
     </div>
+  );
+}
+
+interface LatestAddedButtonProps {
+  title: string;
+  addedAt: string;
+  onClick: () => void;
+}
+
+// `formatDistanceToNow` reads the current time. We compute it inline (pure
+// render) and bump a `tick` counter once a minute so the relative-time label
+// stays fresh without setState-in-effect.
+function LatestAddedButton({ title, addedAt, onClick }: LatestAddedButtonProps) {
+  const { t } = useTranslation();
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((c) => c + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const timeAgo = formatDistanceToNow(new Date(addedAt), { addSuffix: true });
+  const label = t("events.latestAdded", { title, timeAgo });
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left relative -top-px"
+      aria-label={label}
+    >
+      {label}
+    </button>
   );
 }

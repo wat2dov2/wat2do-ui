@@ -84,19 +84,19 @@ export function AppearanceTab() {
               <SelectContent>
                 <SelectItem value="grid">
                   <div className="flex items-center gap-2">
-                    <Grid3x3 className="h-4 w-4" />
+                    <Grid3x3 className="size-4" />
                     <span>{t("settings.appearance.grid")}</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="calendar">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
+                    <Calendar className="size-4" />
                     <span>{t("settings.appearance.calendar")}</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="map">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="size-4" />
                     <span>{t("settings.appearance.map")}</span>
                   </div>
                 </SelectItem>

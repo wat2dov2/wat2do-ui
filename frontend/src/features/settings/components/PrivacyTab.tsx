@@ -46,13 +46,13 @@ export function PrivacyTab() {
               <SelectContent>
                 <SelectItem value="public">
                   <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
+                    <Eye className="size-4" />
                     <span>{t("settings.privacy.public")}</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="private">
                   <div className="flex items-center gap-2">
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="size-4" />
                     <span>{t("settings.privacy.private")}</span>
                   </div>
                 </SelectItem>

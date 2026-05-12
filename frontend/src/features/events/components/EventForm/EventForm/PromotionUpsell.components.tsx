@@ -61,7 +61,7 @@ export function RadioButton({ isSelected }: RadioButtonProps) {
       }`}
     >
       {isSelected && (
-        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+        <Check className="size-3 text-white" strokeWidth={3} />
       )}
     </div>
   );

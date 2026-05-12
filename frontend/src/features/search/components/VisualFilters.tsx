@@ -20,7 +20,7 @@ const PIE_ICON_MAP: Record<string, LucideIcon> = {
 function mapPieItems(items: Array<{ id: string; label: string; iconName: string }>) {
   return items.map((item) => {
     const Icon = PIE_ICON_MAP[item.iconName];
-    return { id: item.id, label: item.label, icon: Icon ? <Icon className="w-4 h-4" /> : undefined };
+    return { id: item.id, label: item.label, icon: Icon ? <Icon className="size-4" /> : undefined };
   });
 }
 
@@ -120,7 +120,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
                     .join(", ")
                 : t("forms.selectCategories")}
             </span>
-            <Tag className="w-4 h-4 text-muted-foreground" />
+            <Tag className="size-4 text-muted-foreground" />
           </button>
           <PieMenu
             items={categoryPieItemsWithIcons}
@@ -186,7 +186,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
                     .join(", ")
                 : t("forms.selectFoods")}
             </span>
-            <Utensils className="w-4 h-4 text-muted-foreground" />
+            <Utensils className="size-4 text-muted-foreground" />
           </button>
           <PieMenu
             items={foodPieItemsWithIcons}
@@ -226,7 +226,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
                     .join(", ")
                 : t("forms.selectDays")}
             </span>
-            <CalendarDays className="w-4 h-4 text-muted-foreground" />
+            <CalendarDays className="size-4 text-muted-foreground" />
           </button>
           <PieMenu
             items={dayPieItemsWithIcons}
@@ -320,7 +320,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
                 {t(`filters.${filters.sortBy}`)} (
                 {filters.sortOrder === "asc" ? t("filters.asc") : t("filters.desc")})
               </span>
-              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+              <ArrowUpDown className="size-4 text-muted-foreground" />
             </button>
             <PieMenu
               items={sortPieItemsWithIcons}
@@ -346,7 +346,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
               }
               className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-xl hover:bg-accent/60 transition-colors flex items-center gap-1.5"
             >
-              <ArrowUpDown className="w-3.5 h-3.5" />
+              <ArrowUpDown className="size-3.5" />
               <span>
                 {filters.sortOrder === "asc"
                   ? t("filters.ascending")

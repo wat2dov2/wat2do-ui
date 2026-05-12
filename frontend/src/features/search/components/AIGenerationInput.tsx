@@ -43,7 +43,7 @@ export function AIGenerationInput({
     <div className={className}>
       {showTitle && (
         <div className="flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
+          <Sparkles className="size-3.5 text-primary" />
           <span className="text-xs font-medium text-foreground">
             {displayTitle}
           </span>
@@ -71,7 +71,7 @@ export function AIGenerationInput({
             onClick={onAiPromptClear}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="size-3.5" />
           </button>
         )}
         {aiGenerating && (

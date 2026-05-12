@@ -83,7 +83,7 @@ export function QRCodeScansChart({
         {!hideTimeRangeSelector && (
           <Select value={timeRange} onValueChange={onTimeRangeChange}>
             <SelectTrigger className="w-[180px]">
-              <Calendar className="w-3.5 h-3.5 mr-2" />
+              <Calendar className="size-3.5 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

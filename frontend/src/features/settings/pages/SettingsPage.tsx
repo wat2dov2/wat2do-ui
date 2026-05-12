@@ -32,7 +32,7 @@ export function SettingsPage() {
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
+          <h1 className="text-2xl font-semibold text-foreground mb-2">
             {t("navigation.settings")}
           </h1>
           <p className="text-sm text-muted-foreground">

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { useOnboardingFlow } from "@/features/auth/hooks/useOnboardingFlow";
 import { useUpdateProfile } from "@/features/auth/hooks/useUpdateProfile";
 import { OnboardingEventGrid } from "@/features/auth/components/OnboardingEventGrid";
@@ -35,10 +35,12 @@ export function OnboardingPage() {
 
   // Signup flow hands the school over via router state so we can greet the
   // user by their institution on step 3 instead of the generic fallback.
+  // Depend on the whole router `location` (a new object per navigation) rather
+  // than `location.state` (a property read on a mutable-looking object).
   const initialSchool = useMemo(() => {
     const state = location.state as { school?: string } | null;
     return state?.school ?? "";
-  }, [location.state]);
+  }, [location]);
 
   const handleComplete = useCallback(
     (data: {
@@ -123,7 +125,7 @@ export function OnboardingPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 pt-20 py-8 pb-[220px]">
         <div className="w-full max-w-3xl flex-1 flex items-center justify-center">
           <AnimatePresence mode="wait">
-            <motion.div
+            <m.div
               key={flow.currentStep}
               variants={stepVariants}
               initial="enter"
@@ -133,7 +135,7 @@ export function OnboardingPage() {
               className="w-full"
             >
               {stepContent[flow.currentStep]}
-            </motion.div>
+            </m.div>
           </AnimatePresence>
         </div>
       </div>

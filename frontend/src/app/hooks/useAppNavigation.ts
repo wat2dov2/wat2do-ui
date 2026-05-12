@@ -89,8 +89,9 @@ export function useAppNavigation({
       }
       const event = events.find((e) => e.id === parseInt(eventId, 10));
       if (event) {
-        requestAnimationFrame(() => {
-          setTimeout(() => {
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        const rafId = requestAnimationFrame(() => {
+          timeoutId = setTimeout(() => {
             const eventCard = document.querySelector(
               `[data-event-id="${eventId}"]`,
             );
@@ -98,6 +99,10 @@ export function useAppNavigation({
           }, SCROLL_INTO_VIEW_DELAY_MS);
         });
         hasProcessedInitialScroll.current = true;
+        return () => {
+          cancelAnimationFrame(rafId);
+          if (timeoutId !== undefined) clearTimeout(timeoutId);
+        };
       } else {
         // Events are loaded but this event is not in the list — don't keep
         // re-entering. Mark as processed.

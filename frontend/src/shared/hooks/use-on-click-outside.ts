@@ -19,7 +19,9 @@ export function useOnClickOutside<T extends HTMLElement = HTMLElement>(
     };
 
     document.addEventListener("mousedown", listener);
-    document.addEventListener("touchstart", listener);
+    // Listener never calls preventDefault, so passive is safe and avoids
+    // blocking scroll on touch devices.
+    document.addEventListener("touchstart", listener, { passive: true });
 
     return () => {
       document.removeEventListener("mousedown", listener);

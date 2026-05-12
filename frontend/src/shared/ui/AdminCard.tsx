@@ -31,14 +31,14 @@ export function AdminCard({
       onClick={onClick}
       className={`${baseClasses} ${className}`}
     >
-      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-primary" />
+      <div className="size-10 rounded-lg bg-primary/20 flex items-center justify-center">
+        <Icon className="size-5 text-primary" />
       </div>
       <div className="flex-1">
         <h3 className="font-semibold text-foreground mb-1">{title}</h3>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      {onClick && <ArrowRight className="w-4 h-4 text-muted-foreground" />}
+      {onClick && <ArrowRight className="size-4 text-muted-foreground" />}
     </Component>
   );
 }

@@ -137,7 +137,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
                 setShowCommandPalette(false);
               }}
             >
-              <Heart className="mr-2 h-4 w-4" />
+              <Heart className="mr-2 size-4" />
               <span>{t("commands.savedEvents")}</span>
             </CommandItem>
           ) : (
@@ -147,7 +147,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
                 setShowCommandPalette(false);
               }}
             >
-              <LogIn className="mr-2 h-4 w-4" />
+              <LogIn className="mr-2 size-4" />
               <span>{t("commands.signInToUnlockFeatures")}</span>
             </CommandItem>
           )

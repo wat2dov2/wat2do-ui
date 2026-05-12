@@ -83,18 +83,18 @@ export function DiscordConnectModal({
                     {t("integrations.addBotDescription")}
                   </p>
                   <Button
-                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                    className="w-full bg-primary hover:bg-primary/90"
                     onClick={onAddBot}
                     disabled={botAdded || saving || !selectedClubId}
                   >
                     {botAdded ? (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className="size-4 mr-2" />
                         {t("integrations.botAdded")}
                       </>
                     ) : (
                       <>
-                        <ExternalLink className="w-4 h-4 mr-2" />
+                        <ExternalLink className="size-4 mr-2" />
                         {t("integrations.addToDiscord")}
                       </>
                     )}

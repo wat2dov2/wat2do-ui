@@ -53,13 +53,15 @@ export function useAdminPanel() {
 
   // Get recent activities
   const recentActivities = useMemo(() => {
-    const submissionItems: ActivityItem[] = submissions
-      .filter((s) => s.status === SUBMISSION_PENDING)
-      .map((s) => ({
-        type: "submission" as const,
-        data: s,
-        timestamp: new Date(s.submittedAt),
-      }));
+    const submissionItems: ActivityItem[] = submissions.flatMap((s) =>
+      s.status === SUBMISSION_PENDING
+        ? [{
+            type: "submission" as const,
+            data: s,
+            timestamp: new Date(s.submittedAt),
+          }]
+        : [],
+    );
 
     const scrapedItems: ActivityItem[] = scrapedEvents.map((s) => ({
       type: "scraped" as const,
@@ -68,13 +70,15 @@ export function useAdminPanel() {
     }));
 
     const userEmail = getSessionEmail() ?? "";
-    const createdPosters: ActivityItem[] = backendPosters
-      .filter((qr) => qr.createdBy === userEmail)
-      .map((qr) => ({
-        type: "poster" as const,
-        data: qr,
-        timestamp: new Date(qr.createdAt),
-      }));
+    const createdPosters: ActivityItem[] = backendPosters.flatMap((qr) =>
+      qr.createdBy === userEmail
+        ? [{
+            type: "poster" as const,
+            data: qr,
+            timestamp: new Date(qr.createdAt),
+          }]
+        : [],
+    );
 
     const all: ActivityItem[] = [...submissionItems, ...scrapedItems, ...createdPosters];
 

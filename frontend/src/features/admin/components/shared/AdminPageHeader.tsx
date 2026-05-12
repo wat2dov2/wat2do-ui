@@ -32,20 +32,20 @@ export function AdminPageHeader({
       <div className="flex items-center gap-3">
         {onBack && (
           <Button variant="secondary" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="size-4" />
           </Button>
         )}
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Icon className="w-6 h-6 text-primary" />
+        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
+          <Icon className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
       {action && (
         <Button onClick={action.onClick}>
-          {action.icon && <action.icon className="w-4 h-4 mr-2" />}
+          {action.icon && <action.icon className="size-4 mr-2" />}
           {action.label}
         </Button>
       )}

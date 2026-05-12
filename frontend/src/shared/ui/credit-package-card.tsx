@@ -49,7 +49,7 @@ export function CreditPackageCard({
             )}
           >
             {isSelected && (
-              <Check className="w-3 h-3 text-warning-foreground" strokeWidth={3} />
+              <Check className="size-3 text-warning-foreground" strokeWidth={3} />
             )}
           </div>
           <div>

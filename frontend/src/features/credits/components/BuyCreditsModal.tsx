@@ -95,7 +95,7 @@ export function BuyCreditsModal({
           <ModalContentWrapper>
             <FlexCol className="items-center text-center py-6">
               <div className="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-full mb-6">
-                <Coins className="w-5 h-5 text-warning" />
+                <Coins className="size-5 text-warning" />
                 <span className="font-bold text-amber-700">
                   {currentCredits + form.purchasedCredits} credits
                 </span>
@@ -132,7 +132,7 @@ export function BuyCreditsModal({
           <div className="space-y-3 mb-6">
             {CREDIT_PACKAGES.map((pkg, index) => (
               <CreditPackageCard
-                key={index}
+                key={pkg.credits}
                 package={pkg}
                 isSelected={form.selectedPackage === index}
                 onClick={() => form.setSelectedPackage(index)}
@@ -146,7 +146,7 @@ export function BuyCreditsModal({
               role="alert"
               className="flex items-start gap-2 p-3 mb-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm"
             >
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="size-4 mt-0.5 flex-shrink-0" />
               <span>{purchaseError}</span>
             </div>
           )}
@@ -160,7 +160,7 @@ export function BuyCreditsModal({
             size="lg"
           >
             <span className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
+              <CreditCard className="size-4" />
               {form.selectedPackage !== null
                 ? `Pay $${CREDIT_PACKAGES[form.selectedPackage].price}`
                 : t("forms.selectPackage")}

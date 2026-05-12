@@ -44,21 +44,30 @@ export const FilterSection = React.memo(function FilterSection({
           {indicator && (
             <span
               role="button"
+              tabIndex={0}
+              aria-label={`Clear ${title}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onClear?.();
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClear?.();
+                }
+              }}
               className="text-primary-foreground font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer bg-primary"
             >
-              <X className="w-2.5 h-2.5" strokeWidth={3} />
+              <X className="size-2.5" strokeWidth={3} />
               {indicator}
             </span>
           )}
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 transition-colors text-muted-foreground" />
+          <ChevronUp className="size-4 transition-colors text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-4 h-4 transition-colors text-muted-foreground" />
+          <ChevronDown className="size-4 transition-colors text-muted-foreground" />
         )}
       </button>
       {expanded && <div className="animate-in fade-in duration-200 px-4 pb-3">{children}</div>}
