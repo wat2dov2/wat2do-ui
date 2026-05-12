@@ -62,7 +62,7 @@ export function PreviewStyleEventCard({
       {...interactiveProps}
       data-event-id={dataEventId}
       className={cn(
-        "rounded-xl overflow-hidden flex flex-col bg-card border border-border",
+        "rounded-xl overflow-hidden flex flex-col bg-card",
         onClick && "cursor-pointer transition-shadow duration-200 hover:opacity-90",
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl"
       )}
@@ -102,13 +102,15 @@ export function PreviewStyleEventCard({
         </BadgeMask>
       </div>
 
-      <EventCardContent
-        title={event.title}
-        date={event.date}
-        time={event.time}
-        location={event.location}
-        badges={event.badges}
-      />
+      <div className="flex flex-col flex-1 border-l border-r border-b border-border rounded-b-xl overflow-hidden">
+        <EventCardContent
+          title={event.title}
+          date={event.date}
+          time={event.time}
+          location={event.location}
+          badges={event.badges}
+        />
+      </div>
     </div>
   );
 }

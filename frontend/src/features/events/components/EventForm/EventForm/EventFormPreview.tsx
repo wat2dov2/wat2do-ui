@@ -48,7 +48,7 @@ export function EventFormPreview() {
 
       {/* Preview Card - Matches EventCard styling exactly */}
       <article
-        className="rounded-xl overflow-hidden flex flex-col bg-card border border-border"
+        className="rounded-xl overflow-hidden flex flex-col bg-card"
       >
         {/* Event Image */}
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
@@ -91,14 +91,15 @@ export function EventFormPreview() {
           </BadgeMask>
         </div>
 
-        {/* Event Content */}
-        <EventCardContent
-          title={formData.title || t("events.eventTitle")}
-          date={cardDate || undefined}
-          time={cardTime || undefined}
-          location={formData.location || undefined}
-          badges={badges}
-        />
+        <div className="flex flex-col flex-1 border-l border-r border-b border-border rounded-b-xl overflow-hidden">
+          <EventCardContent
+            title={formData.title || t("events.eventTitle")}
+            date={cardDate || undefined}
+            time={cardTime || undefined}
+            location={formData.location || undefined}
+            badges={badges}
+          />
+        </div>
       </article>
 
       <p className="text-[10px] text-muted-foreground text-center">

@@ -121,7 +121,7 @@ export function EventCard({
             handleCardActivate();
           }
         }}
-        className={`rounded-xl overflow-hidden border border-border hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
+        className={`rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
           isPromoted
             ? "ring-2 ring-amber-400 shadow-amber-100 dark:shadow-amber-900/20 shadow-md"
             : ""
@@ -258,32 +258,35 @@ export function EventCard({
           </BadgeMask>
         </div>
 
-        {/* Event Content */}
-        <EventCardContent
-          title={event.title}
-          date={cardDate}
-          time={cardTime}
-          location={event.location}
-          badges={badges}
-        />
+        {/* Bottom section: bordered on left/right/bottom, wrapping content + interest button */}
+        <div className="flex flex-col flex-1 border-l border-r border-b border-border rounded-b-xl overflow-hidden">
+          {/* Event Content */}
+          <EventCardContent
+            title={event.title}
+            date={cardDate}
+            time={cardTime}
+            location={event.location}
+            badges={badges}
+          />
 
-        {/* I'm Interested button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (profileCompleted) toggleSaveEvent(event.id);
-          }}
-          disabled={!profileCompleted}
-          className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-t border-border ${
-            isSaved
-              ? "bg-error/10 text-error hover:bg-error/20"
-              : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
-          } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
-        >
-          <Heart className={`w-4 h-4 ${isSaved ? "fill-error" : ""}`} />
-          {isSaved ? t("common.saved") : t("common.imInterested")}
-        </button>
+          {/* I'm Interested button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (profileCompleted) toggleSaveEvent(event.id);
+            }}
+            disabled={!profileCompleted}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-t border-border ${
+              isSaved
+                ? "bg-error/10 text-error hover:bg-error/20"
+                : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+            } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
+          >
+            <Heart className={`w-4 h-4 ${isSaved ? "fill-error" : ""}`} />
+            {isSaved ? t("common.saved") : t("common.imInterested")}
+          </button>
+        </div>
       </article>
 
       {/* Event Details Modal */}
