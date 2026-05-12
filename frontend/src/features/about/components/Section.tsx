@@ -4,7 +4,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { sanitizeTranslationHTML } from "@/shared/utils/string";
+import { renderTranslatedRichText } from "@/shared/utils/renderTranslatedRichText";
 
 interface SectionProps {
   dateKey: string;
@@ -35,13 +35,9 @@ export function Section({
       </h2>
       <div className="font-sans text-[16px] text-foreground leading-relaxed space-y-4">
         {paragraphs.map((para) => (
-          <p
-            key={para.key}
-            className={para.className}
-            {...(para.isHTML
-              ? { dangerouslySetInnerHTML: { __html: sanitizeTranslationHTML(t(para.key)) } }
-              : { children: t(para.key) })}
-          />
+          <p key={para.key} className={para.className}>
+            {para.isHTML ? renderTranslatedRichText(t(para.key)) : t(para.key)}
+          </p>
         ))}
       </div>
     </div>

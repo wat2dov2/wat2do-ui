@@ -3,7 +3,7 @@ import { Section } from "@/features/about/components/Section";
 import { PhotoWithCaption } from "@/features/about/components/PhotoWithCaption";
 import { GuideSection } from "@/features/about/components/GuideSection";
 import { NewsletterForm } from "@/features/about/components/NewsletterForm";
-import { sanitizeTranslationHTML } from "@/shared/utils/string";
+import { renderTranslatedRichText } from "@/shared/utils/renderTranslatedRichText";
 
 export function AboutPage() {
   const { t } = useTranslation();
@@ -22,9 +22,9 @@ export function AboutPage() {
           </h1>
           <div className="font-sans text-[16px] text-foreground leading-relaxed space-y-4">
             <p>{t("about.openingParagraph1")}</p>
-            <p dangerouslySetInnerHTML={{ __html: sanitizeTranslationHTML(t("about.openingParagraph2")) }} />
-            <p dangerouslySetInnerHTML={{ __html: sanitizeTranslationHTML(t("about.openingParagraph3")) }} />
-            <p dangerouslySetInnerHTML={{ __html: sanitizeTranslationHTML(t("about.openingParagraph4")) }} />
+            <p>{renderTranslatedRichText(t("about.openingParagraph2"))}</p>
+            <p>{renderTranslatedRichText(t("about.openingParagraph3"))}</p>
+            <p>{renderTranslatedRichText(t("about.openingParagraph4"))}</p>
           </div>
         </div>
 
@@ -131,10 +131,9 @@ export function AboutPage() {
 
         {/* Footer */}
         <footer className="pt-12 border-t border-border space-y-6">
-          <p 
-            className="font-sans text-[14px] text-muted-foreground leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: sanitizeTranslationHTML(t("about.footerPS")) }}
-          />
+          <p className="font-sans text-[14px] text-muted-foreground leading-relaxed">
+            {renderTranslatedRichText(t("about.footerPS"))}
+          </p>
           <p className="font-sans text-[13px] text-muted-foreground">
             {t("about.footerCopyright")}
           </p>

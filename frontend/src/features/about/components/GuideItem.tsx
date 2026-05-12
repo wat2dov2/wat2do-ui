@@ -4,7 +4,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { sanitizeTranslationHTML } from "@/shared/utils/string";
+import { renderTranslatedRichText } from "@/shared/utils/renderTranslatedRichText";
 
 interface GuideItemProps {
   emoji: string;
@@ -37,10 +37,7 @@ export function GuideItem({
       </div>
       <div className="font-sans text-[15px] text-foreground leading-relaxed space-y-3 ml-13">
         {paragraphs.map((para) => (
-          <p
-            key={para.key}
-            dangerouslySetInnerHTML={{ __html: sanitizeTranslationHTML(t(para.key)) }}
-          />
+          <p key={para.key}>{renderTranslatedRichText(t(para.key))}</p>
         ))}
       </div>
     </section>

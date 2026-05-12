@@ -50,13 +50,12 @@ export function stripTrailingSlash(url: string): string {
  * Sanitize an HTML string to allow only safe inline formatting tags.
  *
  * Strips every HTML tag except `<strong>`, `</strong>`, `<em>`, and `</em>`.
- * Use this whenever translation strings are rendered via dangerouslySetInnerHTML
- * as defense-in-depth against stored XSS if translation sources are ever
- * compromised.
- *
  * The sanitizer rejects any attributes on allowed tags (so `<strong onclick>` is
  * stripped), tolerates extra whitespace (`<strong >`), and is immune to nul-byte
  * placeholder forgery: nul bytes are removed from input up front.
+ *
+ * Prefer `renderTranslatedRichText` over feeding the output into
+ * `dangerouslySetInnerHTML`; this helper is exported only for tests.
  */
 export function sanitizeTranslationHTML(html: string): string {
   // Drop nul bytes so an attacker cannot inject placeholder tokens that the
