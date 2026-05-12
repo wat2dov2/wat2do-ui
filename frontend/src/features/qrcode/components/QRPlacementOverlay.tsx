@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
 interface Placement {
   x: number;
@@ -15,8 +15,147 @@ interface QRPlacementOverlayProps {
   imageHeight: number;
 }
 
-type ResizeHandle = "nw" | "ne" | "sw" | "se" | null;
-type DragMode = "move" | "resize" | null;
+type ResizeHandle = "nw" | "ne" | "sw" | "se";
+type DragMode = "move" | "resize";
+
+interface DragSession {
+  mode: DragMode;
+  handle: ResizeHandle | null;
+  startPos: { x: number; y: number };
+  startPlacement: Placement;
+}
+
+const MIN_SIZE_RATIO = 0.05;
+
+// Constrain placement to a valid square within image bounds.
+function constrainPlacement(
+  p: Placement,
+  imageWidth: number,
+  imageHeight: number,
+): Placement {
+  let { x, y, width, height } = p;
+  const widthPx = width * imageWidth;
+  const heightPx = height * imageHeight;
+  const sizePx = Math.min(widthPx, heightPx);
+  width = sizePx / imageWidth;
+  height = sizePx / imageHeight;
+
+  const minSizePx = MIN_SIZE_RATIO * Math.min(imageWidth, imageHeight);
+  const minNormalized = minSizePx / Math.min(imageWidth, imageHeight);
+  width = Math.max(minNormalized, Math.min(width, 1));
+  height = Math.max(minNormalized, Math.min(height, 1));
+  x = Math.max(0, Math.min(x, 1 - width));
+  y = Math.max(0, Math.min(y, 1 - height));
+  return { x, y, width, height };
+}
+
+// Compute placement after resizing from a given handle.
+function resizeFromHandle(
+  handle: ResizeHandle,
+  start: Placement,
+  deltaXPx: number,
+  deltaYPx: number,
+  imageWidth: number,
+  imageHeight: number,
+): Placement {
+  const startXPx = start.x * imageWidth;
+  const startYPx = start.y * imageHeight;
+  const startSizePx = Math.min(
+    start.width * imageWidth,
+    start.height * imageHeight,
+  );
+  const sizeDeltaPx = Math.max(Math.abs(deltaXPx), Math.abs(deltaYPx));
+
+  let sizeChange = 0;
+  let newX = startXPx;
+  let newY = startYPx;
+
+  switch (handle) {
+    case "nw":
+      sizeChange = deltaXPx < 0 || deltaYPx < 0 ? sizeDeltaPx : -sizeDeltaPx;
+      newX = startXPx - sizeChange;
+      newY = startYPx - sizeChange;
+      break;
+    case "ne":
+      sizeChange = deltaXPx > 0 || deltaYPx < 0 ? sizeDeltaPx : -sizeDeltaPx;
+      newY = startYPx - sizeChange;
+      break;
+    case "sw":
+      sizeChange = deltaXPx < 0 || deltaYPx > 0 ? sizeDeltaPx : -sizeDeltaPx;
+      newX = startXPx - sizeChange;
+      break;
+    case "se":
+      sizeChange = deltaXPx > 0 || deltaYPx > 0 ? sizeDeltaPx : -sizeDeltaPx;
+      break;
+  }
+
+  const newSize = startSizePx + sizeChange;
+  return {
+    x: newX / imageWidth,
+    y: newY / imageHeight,
+    width: newSize / imageWidth,
+    height: newSize / imageHeight,
+  };
+}
+
+const HANDLE_SIZE = 8;
+
+const HANDLE_BASE_STYLE: React.CSSProperties = {
+  width: `${HANDLE_SIZE}px`,
+  height: `${HANDLE_SIZE}px`,
+  backgroundColor: "var(--primary)",
+  border: "2px solid white",
+  borderRadius: "2px",
+  position: "absolute",
+  cursor: "pointer",
+  zIndex: 10,
+};
+
+const HANDLE_CURSORS: Record<ResizeHandle, string> = {
+  nw: "nw-resize",
+  ne: "ne-resize",
+  sw: "sw-resize",
+  se: "se-resize",
+};
+
+interface ResizeHandleButtonProps {
+  handle: ResizeHandle;
+  onMouseDown: (e: React.MouseEvent, handle: ResizeHandle) => void;
+}
+
+function ResizeHandleButton({ handle, onMouseDown }: ResizeHandleButtonProps) {
+  const offset = `-${HANDLE_SIZE / 2}px`;
+  const positional: React.CSSProperties = {};
+  if (handle === "nw") {
+    positional.left = offset;
+    positional.top = offset;
+  } else if (handle === "ne") {
+    positional.right = offset;
+    positional.top = offset;
+  } else if (handle === "sw") {
+    positional.left = offset;
+    positional.bottom = offset;
+  } else {
+    positional.right = offset;
+    positional.bottom = offset;
+  }
+  return (
+    <div
+      role="button"
+      tabIndex={-1}
+      aria-label={`Resize from ${handle} corner`}
+      style={{
+        ...HANDLE_BASE_STYLE,
+        ...positional,
+        cursor: HANDLE_CURSORS[handle],
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        onMouseDown(e, handle);
+      }}
+    />
+  );
+}
 
 export function QRPlacementOverlay({
   placement,
@@ -25,282 +164,106 @@ export function QRPlacementOverlay({
   imageWidth,
   imageHeight,
 }: QRPlacementOverlayProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragMode, setDragMode] = useState<DragMode>(null);
-  const [resizeHandle, setResizeHandle] = useState<ResizeHandle>(null);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [startPlacement, setStartPlacement] = useState<Placement>(placement);
+  // dragMode is the only piece of state we need in render (drives cursor).
+  const [dragMode, setDragMode] = useState<DragMode | null>(null);
 
-  const minSize = 0.05; // Minimum 5% of container size
+  // The active drag session is only read inside handlers; a ref avoids
+  // re-renders and effect re-subscriptions on every mousemove.
+  const sessionRef = useRef<DragSession | null>(null);
 
-  // Constrain placement within bounds and maintain square aspect ratio in pixel space
-  const constrainPlacement = useCallback(
-    (p: Placement): Placement => {
-      let { x, y, width, height } = p;
+  // Mirror the latest onPlacementChange in a ref so the document-level
+  // mousemove listener doesn't need to be re-bound when the prop identity
+  // changes.
+  const onPlacementChangeRef = useRef(onPlacementChange);
+  onPlacementChangeRef.current = onPlacementChange;
 
-      // Convert to pixel dimensions
-      const widthPx = width * imageWidth;
-      const heightPx = height * imageHeight;
-
-      // Ensure square aspect ratio in pixel space - use the smaller pixel dimension
-      const sizePx = Math.min(widthPx, heightPx);
-
-      // Convert back to normalized coordinates
-      width = sizePx / imageWidth;
-      height = sizePx / imageHeight;
-
-      // Ensure minimum size (in normalized coordinates)
-      const minSizePx = minSize * Math.min(imageWidth, imageHeight);
-      const minSizeNormalized = minSizePx / Math.min(imageWidth, imageHeight);
-      width = Math.max(minSizeNormalized, width);
-      height = Math.max(minSizeNormalized, height);
-
-      // Constrain width/height to fit within bounds
-      width = Math.min(width, 1);
-      height = Math.min(height, 1);
-
-      // Constrain position
-      x = Math.max(0, Math.min(x, 1 - width));
-      y = Math.max(0, Math.min(y, 1 - height));
-
-      return { x, y, width, height };
-    },
-    [minSize, imageWidth, imageHeight]
-  );
-
-  // Constrain the placement prop whenever it changes to ensure it's always square
   const constrainedPlacement = useMemo(
-    () => constrainPlacement(placement),
-    [placement, constrainPlacement]
-  );
-
-  // Update parent if placement needs to be constrained (only when not dragging)
-  useEffect(() => {
-    if (!isDragging) {
-      if (
-        constrainedPlacement.width !== placement.width ||
-        constrainedPlacement.height !== placement.height ||
-        constrainedPlacement.x !== placement.x ||
-        constrainedPlacement.y !== placement.y
-      ) {
-        onPlacementChange(constrainedPlacement);
-      }
-    }
-  }, [constrainedPlacement, placement, onPlacementChange, isDragging]);
-
-  // Convert normalized coordinates (0-1) to pixel coordinates
-  const toPixels = useCallback(
-    (normalized: number, dimension: "width" | "height") => {
-      return normalized * (dimension === "width" ? imageWidth : imageHeight);
-    },
-    [imageWidth, imageHeight]
-  );
-
-  // Convert pixel coordinates to normalized (0-1)
-  const toNormalized = useCallback(
-    (pixels: number, dimension: "width" | "height") => {
-      const max = dimension === "width" ? imageWidth : imageHeight;
-      return max > 0 ? pixels / max : 0;
-    },
-    [imageWidth, imageHeight]
+    () => constrainPlacement(placement, imageWidth, imageHeight),
+    [placement, imageWidth, imageHeight],
   );
 
   const getMousePos = useCallback(
     (e: MouseEvent) => {
       if (!containerRef.current) return { x: 0, y: 0 };
       const rect = containerRef.current.getBoundingClientRect();
-      return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     },
-    [containerRef]
+    [containerRef],
   );
 
-  const handleMouseDown = useCallback(
+  const beginDrag = useCallback(
     (e: React.MouseEvent, mode: DragMode, handle?: ResizeHandle) => {
       e.preventDefault();
       e.stopPropagation();
       const pos = getMousePos(e.nativeEvent);
-      setIsDragging(true);
-      setDragMode(mode);
-      setResizeHandle(handle || null);
-      setStartPos(pos);
-      setStartPlacement(constrainedPlacement);
-    },
-    [getMousePos, constrainedPlacement]
-  );
-
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !dragMode) return;
-
-      const currentPos = getMousePos(e);
-      const deltaX = toNormalized(currentPos.x - startPos.x, "width");
-      const deltaY = toNormalized(currentPos.y - startPos.y, "height");
-
-      let newPlacement: Placement;
-
-      if (dragMode === "move") {
-        newPlacement = {
-          ...startPlacement,
-          x: startPlacement.x + deltaX,
-          y: startPlacement.y + deltaY,
-        };
-      } else if (dragMode === "resize" && resizeHandle) {
-        const { x: startX, y: startY, width: startW, height: startH } =
-          startPlacement;
-
-        // Convert start placement to pixel space
-        const startXPx = startX * imageWidth;
-        const startYPx = startY * imageHeight;
-        const startWidthPx = startW * imageWidth;
-        const startHeightPx = startH * imageHeight;
-        
-        // The square size in pixels (should be the same for width and height)
-        const startSizePx = Math.min(startWidthPx, startHeightPx);
-        
-        // Convert deltas to pixel space
-        const deltaXPx = deltaX * imageWidth;
-        const deltaYPx = deltaY * imageHeight;
-        
-        // Calculate the distance moved in pixel space
-        // Use the larger absolute delta to determine size change
-        const absDeltaXPx = Math.abs(deltaXPx);
-        const absDeltaYPx = Math.abs(deltaYPx);
-        const sizeDeltaPx = Math.max(absDeltaXPx, absDeltaYPx);
-        
-        // Determine the sign based on which corner is being dragged
-        let sizeChangePx = 0;
-
-        switch (resizeHandle) {
-          case "nw": {
-            // Northwest: dragging left/up increases size
-            sizeChangePx = deltaXPx < 0 || deltaYPx < 0 ? sizeDeltaPx : -sizeDeltaPx;
-            const newSizePx = startSizePx + sizeChangePx;
-            const newXPx = startXPx - sizeChangePx;
-            const newYPx = startYPx - sizeChangePx;
-            newPlacement = {
-              x: newXPx / imageWidth,
-              y: newYPx / imageHeight,
-              width: newSizePx / imageWidth,
-              height: newSizePx / imageHeight,
-            };
-            break;
-          }
-          case "ne": {
-            // Northeast: dragging right/up increases size
-            sizeChangePx = deltaXPx > 0 || deltaYPx < 0 ? sizeDeltaPx : -sizeDeltaPx;
-            const newSizePx = startSizePx + sizeChangePx;
-            const newYPx = startYPx - sizeChangePx;
-            newPlacement = {
-              x: startXPx / imageWidth,
-              y: newYPx / imageHeight,
-              width: newSizePx / imageWidth,
-              height: newSizePx / imageHeight,
-            };
-            break;
-          }
-          case "sw": {
-            // Southwest: dragging left/down increases size
-            sizeChangePx = deltaXPx < 0 || deltaYPx > 0 ? sizeDeltaPx : -sizeDeltaPx;
-            const newSizePx = startSizePx + sizeChangePx;
-            const newXPx = startXPx - sizeChangePx;
-            newPlacement = {
-              x: newXPx / imageWidth,
-              y: startYPx / imageHeight,
-              width: newSizePx / imageWidth,
-              height: newSizePx / imageHeight,
-            };
-            break;
-          }
-          case "se": {
-            // Southeast: dragging right/down increases size
-            sizeChangePx = deltaXPx > 0 || deltaYPx > 0 ? sizeDeltaPx : -sizeDeltaPx;
-            const newSizePx = startSizePx + sizeChangePx;
-            newPlacement = {
-              x: startXPx / imageWidth,
-              y: startYPx / imageHeight,
-              width: newSizePx / imageWidth,
-              height: newSizePx / imageHeight,
-            };
-            break;
-          }
-          default:
-            newPlacement = startPlacement;
-        }
-      } else {
-        return;
-      }
-
-      const constrained = constrainPlacement(newPlacement);
-      onPlacementChange(constrained);
-    },
-    [
-      isDragging,
-      dragMode,
-      resizeHandle,
-      startPos,
-      startPlacement,
-      getMousePos,
-      toNormalized,
-      constrainPlacement,
-      onPlacementChange,
-    ]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    setDragMode(null);
-    setResizeHandle(null);
-  }, []);
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
+      sessionRef.current = {
+        mode,
+        handle: handle ?? null,
+        startPos: pos,
+        startPlacement: constrainedPlacement,
       };
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+      setDragMode(mode);
 
-  const handleSize = 8;
-  const x = toPixels(constrainedPlacement.x, "width");
-  const y = toPixels(constrainedPlacement.y, "height");
-  const width = toPixels(constrainedPlacement.width, "width");
-  const height = toPixels(constrainedPlacement.height, "height");
+      const onMove = (ev: MouseEvent) => {
+        const session = sessionRef.current;
+        if (!session) return;
+        const cur = getMousePos(ev);
+        const deltaXPx = cur.x - session.startPos.x;
+        const deltaYPx = cur.y - session.startPos.y;
+        const deltaX = deltaXPx / imageWidth;
+        const deltaY = deltaYPx / imageHeight;
 
-  const handleStyle: React.CSSProperties = {
-    width: `${handleSize}px`,
-    height: `${handleSize}px`,
-    backgroundColor: "var(--primary)",
-    border: "2px solid white",
-    borderRadius: "2px",
-    position: "absolute",
-    cursor: "pointer",
-    zIndex: 10,
-  };
+        let next: Placement;
+        if (session.mode === "move") {
+          next = {
+            ...session.startPlacement,
+            x: session.startPlacement.x + deltaX,
+            y: session.startPlacement.y + deltaY,
+          };
+        } else if (session.handle) {
+          next = resizeFromHandle(
+            session.handle,
+            session.startPlacement,
+            deltaXPx,
+            deltaYPx,
+            imageWidth,
+            imageHeight,
+          );
+        } else {
+          return;
+        }
+        onPlacementChangeRef.current(
+          constrainPlacement(next, imageWidth, imageHeight),
+        );
+      };
 
-  const getHandleCursor = (handle: ResizeHandle) => {
-    switch (handle) {
-      case "nw":
-        return "nw-resize";
-      case "ne":
-        return "ne-resize";
-      case "sw":
-        return "sw-resize";
-      case "se":
-        return "se-resize";
-      default:
-        return "default";
-    }
-  };
+      const onUp = () => {
+        sessionRef.current = null;
+        setDragMode(null);
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      };
+
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    },
+    [constrainedPlacement, getMousePos, imageWidth, imageHeight],
+  );
+
+  const handleResizeMouseDown = useCallback(
+    (e: React.MouseEvent, handle: ResizeHandle) => {
+      beginDrag(e, "resize", handle);
+    },
+    [beginDrag],
+  );
+
+  const x = constrainedPlacement.x * imageWidth;
+  const y = constrainedPlacement.y * imageHeight;
+  const width = constrainedPlacement.width * imageWidth;
+  const height = constrainedPlacement.height * imageHeight;
 
   return (
     <>
-      {/* Background overlay with opacity */}
       <div
         className="absolute pointer-events-none"
         style={{
@@ -313,7 +276,6 @@ export function QRPlacementOverlay({
           borderRadius: "4px",
         }}
       />
-      {/* Border and interactive area */}
       <div
         className="absolute pointer-events-auto select-none"
         role="button"
@@ -328,73 +290,12 @@ export function QRPlacementOverlay({
           borderRadius: "4px",
           cursor: dragMode === "move" ? "move" : "default",
         }}
-        onMouseDown={(e) => handleMouseDown(e, "move")}
+        onMouseDown={(e) => beginDrag(e, "move")}
       >
-      {/* Resize handles */}
-      {/* Northwest */}
-      <div
-        role="button"
-        tabIndex={-1}
-        aria-label="Resize from northwest corner"
-        style={{
-          ...handleStyle,
-          left: `-${handleSize / 2}px`,
-          top: `-${handleSize / 2}px`,
-          cursor: getHandleCursor("nw"),
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          handleMouseDown(e, "resize", "nw");
-        }}
-      />
-      {/* Northeast */}
-      <div
-        role="button"
-        tabIndex={-1}
-        aria-label="Resize from northeast corner"
-        style={{
-          ...handleStyle,
-          right: `-${handleSize / 2}px`,
-          top: `-${handleSize / 2}px`,
-          cursor: getHandleCursor("ne"),
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          handleMouseDown(e, "resize", "ne");
-        }}
-      />
-      {/* Southwest */}
-      <div
-        role="button"
-        tabIndex={-1}
-        aria-label="Resize from southwest corner"
-        style={{
-          ...handleStyle,
-          left: `-${handleSize / 2}px`,
-          bottom: `-${handleSize / 2}px`,
-          cursor: getHandleCursor("sw"),
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          handleMouseDown(e, "resize", "sw");
-        }}
-      />
-      {/* Southeast */}
-      <div
-        role="button"
-        tabIndex={-1}
-        aria-label="Resize from southeast corner"
-        style={{
-          ...handleStyle,
-          right: `-${handleSize / 2}px`,
-          bottom: `-${handleSize / 2}px`,
-          cursor: getHandleCursor("se"),
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          handleMouseDown(e, "resize", "se");
-        }}
-      />
+        <ResizeHandleButton handle="nw" onMouseDown={handleResizeMouseDown} />
+        <ResizeHandleButton handle="ne" onMouseDown={handleResizeMouseDown} />
+        <ResizeHandleButton handle="sw" onMouseDown={handleResizeMouseDown} />
+        <ResizeHandleButton handle="se" onMouseDown={handleResizeMouseDown} />
       </div>
     </>
   );
