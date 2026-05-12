@@ -181,8 +181,10 @@ export function EventCard({
             <Popover>
               <PopoverTrigger asChild>
                 <button
+                  type="button"
                   className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
                   onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="size-3.5" />
                 </button>

@@ -4,6 +4,15 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
 
+function isNestedPortalTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+  return Boolean(
+    target.closest("[data-pie-menu]") ||
+      target.closest("[data-slot='popover-content']") ||
+      target.closest("[data-slot='popover-trigger']")
+  )
+}
+
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -43,7 +52,7 @@ const DialogOverlay = React.forwardRef<
     onClick={(e) => {
       // Don't close when clicking on pie menu
       const target = e.target as HTMLElement;
-      if (target.closest("[data-pie-menu]")) {
+      if (isNestedPortalTarget(target)) {
         e.stopPropagation();
       }
     }}
@@ -70,23 +79,17 @@ function DialogContent({
           className
         )}
         onPointerDownOutside={(e) => {
-          // Don't close dialog when clicking on pie menu
-          const target = e.target as HTMLElement;
-          if (target.closest("[data-pie-menu]")) {
+          if (isNestedPortalTarget(e.target)) {
             e.preventDefault();
           }
         }}
         onInteractOutside={(e) => {
-          // Don't close dialog when interacting with pie menu
-          const target = e.target as HTMLElement;
-          if (target.closest("[data-pie-menu]")) {
+          if (isNestedPortalTarget(e.target)) {
             e.preventDefault();
           }
         }}
         onFocusOutside={(e) => {
-          // Allow focus to go to pie menu
-          const target = e.target as HTMLElement;
-          if (target.closest("[data-pie-menu]")) {
+          if (isNestedPortalTarget(e.target)) {
             e.preventDefault();
           }
         }}
