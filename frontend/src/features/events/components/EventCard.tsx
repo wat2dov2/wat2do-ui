@@ -24,6 +24,7 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { getUserId } from "@/features/auth";
 import { shareEvent } from "@/shared/utils/shareEvent";
+import { downloadICS } from "@/shared/utils/generateICS";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
@@ -213,7 +214,7 @@ export function EventCard({
                     className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Handle add to calendar
+                      downloadICS(event);
                     }}
                   >
                     <Download className="size-3.5" />

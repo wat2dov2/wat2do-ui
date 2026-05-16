@@ -111,7 +111,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="relative">
           <button
             onClick={categoryPieMenu.open}
-            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.selectedCategories.length > 0
@@ -174,7 +174,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="relative">
           <button
             onClick={foodPieMenu.open}
-            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.selectedFoods.length > 0
@@ -217,7 +217,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="relative">
           <button
             onClick={dayPieMenu.open}
-            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
+            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
               {filters.selectedDays.length > 0
@@ -314,7 +314,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           <div className="relative">
             <button
               onClick={sortPieMenu.open}
-              className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-accent/60 transition-colors flex items-center justify-between cursor-pointer"
+              className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
             >
               <span>
                 {t(`filters.${filters.sortBy}`)} (
@@ -344,7 +344,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
                   filters.sortOrder === "asc" ? "desc" : "asc",
                 )
               }
-              className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-xl hover:bg-accent/60 transition-colors flex items-center gap-1.5"
+              className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-xl hover:bg-muted/60 transition-colors flex items-center gap-1.5"
             >
               <ArrowUpDown className="size-3.5" />
               <span>

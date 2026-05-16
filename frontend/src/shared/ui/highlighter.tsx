@@ -28,7 +28,7 @@ interface HighlighterProps {
 export function Highlighter({
   children,
   action = "highlight",
-  color = "var(--accent)",
+  color = "var(--muted)",
   strokeWidth = 1.5,
   animationDuration = 600,
   iterations = 2,

@@ -32,8 +32,8 @@ export const SidebarButton = React.memo(function SidebarButton({
         "group/sidebar w-full font-medium text-[11px] rounded-xl text-left",
         "flex items-center px-2 py-1.5 gap-2",
         "text-muted-foreground transition-colors",
-        "hover:bg-accent/60 hover:text-foreground",
-        isActive && "bg-accent text-foreground",
+        "hover:bg-muted/60 hover:text-foreground",
+        isActive && "bg-muted text-foreground",
         className
       )}
     >

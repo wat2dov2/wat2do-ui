@@ -27,7 +27,7 @@ export function MoreFiltersButton({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             open || filterCount > 0
               ? "bg-primary/80 text-primary-foreground"
-              : "bg-secondary text-muted-foreground hover:bg-accent/60 dark:hover:bg-accent/60"
+              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
         >
           <SlidersHorizontal className="size-3.5" />

@@ -27,7 +27,7 @@ function resolveColorToken(token: string, fallback: string): string {
 function getThemeConfettiColors(): string[] {
   return [
     resolveColorToken("--primary", "rgb(0, 82, 255)"),
-    resolveColorToken("--accent", "rgb(217, 230, 241)"),
+    resolveColorToken("--muted", "rgb(217, 230, 241)"),
     resolveColorToken("--success", "rgb(34, 197, 94)"),
     resolveColorToken("--warning", "rgb(245, 158, 11)"),
   ];
