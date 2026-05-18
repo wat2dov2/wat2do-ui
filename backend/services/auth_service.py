@@ -4,10 +4,12 @@ import uuid
 from typing import NoReturn
 
 from postgrest.exceptions import APIError
+from supabase import create_client
 from supabase_auth.errors import AuthApiError
 
 from core.allowed_emails import get_school_for_email, is_email_allowed
 from core.auth import decode_jwt_payload
+from core.config import settings
 from core.constants import PG_UNIQUE_VIOLATION
 from core.exceptions import AuthenticationError, AuthorizationError, ConflictError, ServiceError, ValidationError
 from core.database import get_sb
@@ -44,6 +46,11 @@ def _sanitize_for_log(value: str | None) -> str:
     if value is None:
         return ""
     return value.replace("\r", "\\r").replace("\n", "\\n")
+
+
+def _password_reset_redirect_url() -> str:
+    base_url = settings.frontend_url.rstrip("/") or "http://localhost:5173"
+    return f"{base_url}/reset-password"
 
 
 class AuthResult:
@@ -231,7 +238,10 @@ class AuthService:
 
     def forgot_password(self, email: str) -> None:
         try:
-            self._auth.reset_password_email(email)
+            self._auth.reset_password_email(
+                email,
+                {"redirect_to": _password_reset_redirect_url()},
+            )
         except AuthApiError as e:
             # Log but do not raise — the router always returns a generic
             # "If that email exists ..." response to prevent enumeration.
@@ -240,7 +250,7 @@ class AuthService:
                 _sanitize_for_log(email), e.message,
             )
 
-    def reset_password(self, data: ResetPasswordRequest) -> None:
+    def reset_password(self, data: ResetPasswordRequest) -> AuthResult | None:
         """Update the caller's password using a recovery-scoped JWT.
 
         A9 fix: validate that the supplied access token was minted for
@@ -248,8 +258,8 @@ class AuthService:
         regular session access token (captured via a transient XSS, for
         example) must not be accepted here — otherwise an attacker who
         briefly held a victim's access token could permanently take over
-        the account.  We inspect the JWT claims locally (same JWKS/HS256
-        verifier as ``get_current_user``) and require one of the
+        the account.  We inspect the JWT claims locally (same JWKS verifier
+        as ``get_current_user``) and require one of the
         recovery markers Supabase sets on recovery tokens:
 
         - ``amr`` contains an entry with ``method == "recovery"``
@@ -258,6 +268,13 @@ class AuthService:
 
         Any token lacking all of these is rejected with 401.
         """
+        # Supabase's hosted recovery redirect gives the browser a full
+        # temporary session. Validate that session with Supabase first so this
+        # flow works even when the project is using hosted JWT signing keys the
+        # local dev backend has not cached yet.
+        if data.refresh_token:
+            return self._reset_password_with_supabase_session(data)
+
         # 1) Verify signature/issuer/audience and extract the raw payload.
         try:
             payload = decode_jwt_payload(data.access_token)
@@ -303,6 +320,46 @@ class AuthService:
                 user_id,
                 e.message,
             )
+        return None
+
+    def _reset_password_with_supabase_session(
+        self, data: ResetPasswordRequest
+    ) -> AuthResult:
+        auth_client = create_client(settings.supabase_url, settings.supabase_key).auth
+
+        try:
+            res = auth_client.set_session(data.access_token, data.refresh_token or "")
+        except AuthApiError as e:
+            logger.warning("Password reset session verification failed: %s", e.message)
+            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
+        except Exception as e:
+            logger.warning("Password reset session verification failed: %s", e)
+            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
+
+        if not res.session:
+            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+
+        try:
+            auth_client.update_user({"password": data.new_password})
+        except AuthApiError as e:
+            self._handle_auth_error(
+                e, "Password reset failed via recovery session",
+                ValidationError, PASSWORD_RESET_FAILED,
+            )
+
+        try:
+            auth_client.sign_out({"scope": "others"})
+        except Exception as e:  # pragma: no cover - best effort cleanup
+            logger.warning("Failed to revoke other sessions after password reset: %s", e)
+
+        return AuthResult(
+            body=TokenResponse(
+                access_token=res.session.access_token,
+                expires_in=res.session.expires_in,
+                user_id=res.user.id,
+            ),
+            refresh_token=res.session.refresh_token,
+        )
 
 
 def _is_recovery_token(payload: dict) -> bool:

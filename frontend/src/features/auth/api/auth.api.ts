@@ -241,4 +241,40 @@ export async function updateProfileAPI(profile: UserProfile): Promise<void> {
   // auth-state-refresh event.
 }
 
+export async function setDailyNewEventsEmailPreferenceAPI(
+  enabled: boolean,
+): Promise<void> {
+  await api.patch("/notification-preferences", {
+    preferences: [
+      {
+        notification_type: "daily_new_events",
+        enabled,
+      },
+    ],
+  });
+}
+
+export async function resetPasswordAPI(
+  accessToken: string,
+  refreshToken: string,
+  newPassword: string,
+): Promise<boolean> {
+  const res = await api.post<ApiTokenResponse | { message: string }>("/auth/reset-password", {
+    access_token: accessToken,
+    refresh_token: refreshToken || undefined,
+    new_password: newPassword,
+  });
+
+  if ("access_token" in res) {
+    saveAccessToken(res.access_token);
+    await fetchProfileAPI();
+    dispatchAuthUserLogin();
+    return true;
+  }
+
+  clearAllAuthData();
+  lastProfileFetchAt = 0;
+  return false;
+}
+
 export { AUTH_STATE_REFRESH_EVENT } from "@/features/auth/api/userRepository";

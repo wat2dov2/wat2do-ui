@@ -40,6 +40,7 @@ def test_get_returns_full_preferences_list(authenticated_client, monkeypatch):
         _resp(notification_type="morning_digest", enabled=True),
         _resp(notification_type="weekly_digest", enabled=False),
         _resp(notification_type="event_change", enabled=True),
+        _resp(notification_type="daily_new_events", enabled=False),
     ])
     monkeypatch.setattr(notification_service, "get_preferences", mock_get)
 
@@ -48,7 +49,12 @@ def test_get_returns_full_preferences_list(authenticated_client, monkeypatch):
     assert resp.status_code == 200
     body = resp.json()
     types = [p["notification_type"] for p in body["preferences"]]
-    assert types == ["morning_digest", "weekly_digest", "event_change"]
+    assert types == [
+        "morning_digest",
+        "weekly_digest",
+        "event_change",
+        "daily_new_events",
+    ]
     # The opt-out we set through to the response.
     assert body["preferences"][1]["enabled"] is False
 
@@ -64,6 +70,7 @@ def test_patch_calls_set_preferences_with_payload(authenticated_client, monkeypa
             "preferences": [
                 {"notification_type": "morning_digest", "enabled": False},
                 {"notification_type": "event_change", "enabled": True},
+                {"notification_type": "daily_new_events", "enabled": True},
             ]
         },
     )
@@ -71,9 +78,11 @@ def test_patch_calls_set_preferences_with_payload(authenticated_client, monkeypa
     assert resp.status_code == 204
     args, _ = mock_set.call_args
     # args: (user_id, updates)
-    assert len(args[1]) == 2
+    assert len(args[1]) == 3
     assert args[1][0].notification_type == "morning_digest"
     assert args[1][0].enabled is False
+    assert args[1][2].notification_type == "daily_new_events"
+    assert args[1][2].enabled is True
 
 
 def test_patch_rejects_empty_preferences(authenticated_client, monkeypatch):

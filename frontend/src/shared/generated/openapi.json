@@ -345,7 +345,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TokenResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageResponse"
+                    }
+                  ],
+                  "title": "Response Reset Password Auth Reset Password Post"
                 }
               }
             }
@@ -1259,6 +1267,131 @@
                   },
                   "type": "array",
                   "title": "Response Get Active Promoted Ids Promotions Active Ids Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/event-rsvps/": {
+      "get": {
+        "tags": [
+          "event-rsvps"
+        ],
+        "summary": "List Rsvp Events",
+        "description": "Return event IDs the current user has RSVP'd 'going' to.",
+        "operationId": "list_rsvp_events_event_rsvps__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array",
+                  "title": "Response List Rsvp Events Event Rsvps  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/event-rsvps/{event_id}": {
+      "put": {
+        "tags": [
+          "event-rsvps"
+        ],
+        "summary": "Rsvp Event",
+        "description": "RSVP 'going' to an event.\n\n- 404 if the event does not exist.\n- 400 if the user has already hit ``MAX_RSVPS_PER_USER``.",
+        "operationId": "rsvp_event_event_rsvps__event_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpEventStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "event-rsvps"
+        ],
+        "summary": "Unrsvp Event",
+        "description": "Cancel an RSVP.",
+        "operationId": "unrsvp_event_event_rsvps__event_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpEventStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -4764,11 +4897,11 @@
           "status": {
             "type": "string",
             "enum": [
-              "active",
-              "cancelled"
+              "CONFIRMED",
+              "CANCELLED"
             ],
             "title": "Status",
-            "default": "active"
+            "default": "CONFIRMED"
           }
         },
         "type": "object",
@@ -5029,11 +5162,11 @@
           "status": {
             "type": "string",
             "enum": [
-              "active",
-              "cancelled"
+              "CONFIRMED",
+              "CANCELLED"
             ],
             "title": "Status",
-            "default": "active"
+            "default": "CONFIRMED"
           }
         },
         "type": "object",
@@ -5158,6 +5291,17 @@
             ],
             "title": "Display Handle"
           },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
           "added_at": {
             "type": "string",
             "format": "date-time",
@@ -5166,11 +5310,11 @@
           "status": {
             "type": "string",
             "enum": [
-              "active",
-              "cancelled"
+              "CONFIRMED",
+              "CANCELLED"
             ],
             "title": "Status",
-            "default": "active"
+            "default": "CONFIRMED"
           }
         },
         "type": "object",
@@ -5226,8 +5370,8 @@
               {
                 "type": "string",
                 "enum": [
-                  "active",
-                  "cancelled"
+                  "CONFIRMED",
+                  "CANCELLED"
                 ]
               },
               {
@@ -5679,7 +5823,8 @@
             "enum": [
               "morning_digest",
               "weekly_digest",
-              "event_change"
+              "event_change",
+              "daily_new_events"
             ],
             "title": "Notification Type"
           },
@@ -5715,7 +5860,8 @@
             "enum": [
               "morning_digest",
               "weekly_digest",
-              "event_change"
+              "event_change",
+              "daily_new_events"
             ],
             "title": "Notification Type"
           },
@@ -5825,7 +5971,7 @@
       "OccurrenceResponse": {
         "properties": {
           "id": {
-            "type": "string",
+            "type": "integer",
             "title": "Id"
           },
           "event_id": {
@@ -6637,6 +6783,19 @@
             "minLength": 1,
             "title": "Access Token"
           },
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          },
           "new_password": {
             "type": "string",
             "maxLength": 128,
@@ -6650,6 +6809,24 @@
           "new_password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "RsvpEventStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "going",
+              "not_going"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "RsvpEventStatusResponse",
+        "description": "Response for ``PUT /event-rsvps/{id}`` / ``DELETE /event-rsvps/{id}``."
       },
       "SaveEventStatusResponse": {
         "properties": {

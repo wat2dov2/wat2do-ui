@@ -19,21 +19,13 @@ initClarity(import.meta.env.VITE_CLARITY_PROJECT_ID)
 // After a silent 401 token refresh, re-fetch /users/me so cached
 // role/hasClub stay in sync with the backend (AUTH-010). The main.tsx
 // bootstrap is the single place wiring this — no cycle with auth.api.ts.
+const DevClickToComponent = import.meta.env.DEV ? ClickToComponent : null;
+
 setOnAfterRefresh(() => {
   fetchProfileAPI().catch((err) =>
     console.error('Post-refresh profile fetch failed:', err),
   )
 })
-
-if (import.meta.env.DEV) {
-  try {
-    // ClickToComponent is typed as a React component but exported as a plain function
-    // in dev mode. Cast to a generic callable to invoke it without JSX.
-    (ClickToComponent as unknown as () => void)();
-  } catch (err) {
-    console.error("ClickToComponent initialization failed (requires editor environment):", err);
-  }
-}
 
 // Initialize app - load translations, constants, and auth before rendering.
 // Each step is individually guarded so the app always renders, even if
@@ -73,6 +65,7 @@ async function initApp() {
     <StrictMode>
       <ErrorBoundary>
         <BrowserRouter>
+          {DevClickToComponent ? <DevClickToComponent /> : null}
           <App />
         </BrowserRouter>
       </ErrorBoundary>

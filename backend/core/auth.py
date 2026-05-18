@@ -73,24 +73,16 @@ def _get_user_service():
 
 
 def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
-    """Validate a Bearer token locally via JWT signature verification.
-
-    Tries JWKS discovery first (asymmetric signing keys — ES256/RS256).
-    Falls back to SUPABASE_JWT_SECRET (HS256) for legacy projects.
-    """
+    """Validate a Bearer token locally via JWKS signature verification."""
     return _decode_jwt(token.credentials)
 
 
 def _decode_jwt(credentials: str) -> dict:
     """Decode and verify a raw JWT string. Returns the auth-user dict.
 
-    A21: narrowed the exception surface of the JWKS branch so that signature
-    failures surface clearly.  Only JWKS-specific (``PyJWKClientError``) and
-    signature-specific (``InvalidTokenError``) errors trigger the HS256
-    fallback — arbitrary bugs no longer silently downgrade the verification.
+    A21: narrowed the exception surface so signature failures surface clearly.
     Failures are logged at ``warning`` so operators see JWKS regressions.
     """
-    # 1) JWKS discovery (asymmetric signing keys only — never HS256)
     try:
         signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials)
         payload = jwt.decode(
@@ -101,24 +93,9 @@ def _decode_jwt(credentials: str) -> dict:
             issuer=_EXPECTED_ISSUER,
         )
         return _payload_to_user(payload)
-    except (jwt.PyJWKClientError, jwt.InvalidTokenError) as e:
-        log.warning("JWKS verification failed (%s), trying JWT secret fallback", e)
-
-    # 2) Shared secret fallback (legacy HS256)
-    if settings.supabase_jwt_secret:
-        try:
-            payload = jwt.decode(
-                credentials,
-                settings.supabase_jwt_secret,
-                algorithms=["HS256"],
-                audience="authenticated",
-                issuer=_EXPECTED_ISSUER,
-            )
-            return _payload_to_user(payload)
-        except jwt.InvalidTokenError as e:
-            log.warning("JWT HS256 fallback verification failed: %s", e)
-
-    raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+    except (jwt.PyJWKClientError, jwt.PyJWKSetError, jwt.InvalidTokenError) as e:
+        log.warning("JWKS verification failed: %s", e)
+        raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
 
 
 def decode_jwt_payload(credentials: str) -> dict:
@@ -140,22 +117,9 @@ def decode_jwt_payload(credentials: str) -> dict:
             audience="authenticated",
             issuer=_EXPECTED_ISSUER,
         )
-    except (jwt.PyJWKClientError, jwt.InvalidTokenError) as e:
-        log.warning("JWKS payload decode failed (%s), trying HS256 fallback", e)
-
-    if settings.supabase_jwt_secret:
-        try:
-            return jwt.decode(
-                credentials,
-                settings.supabase_jwt_secret,
-                algorithms=["HS256"],
-                audience="authenticated",
-                issuer=_EXPECTED_ISSUER,
-            )
-        except jwt.InvalidTokenError as e:
-            log.warning("HS256 payload decode failed: %s", e)
-
-    raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+    except (jwt.PyJWKClientError, jwt.PyJWKSetError, jwt.InvalidTokenError) as e:
+        log.warning("JWKS payload decode failed: %s", e)
+        raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
 
 
 def _payload_to_user(payload: dict) -> AuthUser:

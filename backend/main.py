@@ -31,8 +31,13 @@ if "*" in settings.cors_origins:
         "Set explicit origins, e.g. CORS_ORIGINS=[\"https://wat2do.app\"]"
     )
 
+# Security headers (CSP, X-Content-Type-Options, X-Frame-Options, etc.).
+app.add_middleware(SecurityHeadersMiddleware)
+
 log.info("CORS allowed origins: %s", settings.cors_origins)
 
+# Add CORS last so it is the outermost user middleware and still decorates
+# error responses that would otherwise look like browser-side CORS failures.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -40,10 +45,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Security headers (CSP, X-Content-Type-Options, X-Frame-Options, etc.)
-# Added after CORS so it wraps every response including preflight.
-app.add_middleware(SecurityHeadersMiddleware)
 
 
 # Auto-discover routers: every module in `routers/` that exports an

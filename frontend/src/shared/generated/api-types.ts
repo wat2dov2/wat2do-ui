@@ -449,6 +449,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/event-rsvps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Rsvp Events
+         * @description Return event IDs the current user has RSVP'd 'going' to.
+         */
+        get: operations["list_rsvp_events_event_rsvps__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/event-rsvps/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rsvp Event
+         * @description RSVP 'going' to an event.
+         *
+         *     - 404 if the event does not exist.
+         *     - 400 if the user has already hit ``MAX_RSVPS_PER_USER``.
+         */
+        put: operations["rsvp_event_event_rsvps__event_id__put"];
+        post?: never;
+        /**
+         * Unrsvp Event
+         * @description Cancel an RSVP.
+         */
+        delete: operations["unrsvp_event_event_rsvps__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/latest-added": {
         parameters: {
             query?: never;
@@ -1443,10 +1490,10 @@ export interface components {
             added_at: string;
             /**
              * Status
-             * @default active
+             * @default CONFIRMED
              * @enum {string}
              */
-            status: "active" | "cancelled";
+            status: "CONFIRMED" | "CANCELLED";
         };
         /**
          * EventResponse
@@ -1524,10 +1571,10 @@ export interface components {
             created_by?: string | null;
             /**
              * Status
-             * @default active
+             * @default CONFIRMED
              * @enum {string}
              */
-            status: "active" | "cancelled";
+            status: "CONFIRMED" | "CANCELLED";
         };
         /**
          * EventSummaryResponse
@@ -1576,10 +1623,10 @@ export interface components {
             added_at: string;
             /**
              * Status
-             * @default active
+             * @default CONFIRMED
              * @enum {string}
              */
-            status: "active" | "cancelled";
+            status: "CONFIRMED" | "CANCELLED";
         };
         /** EventUpdate */
         EventUpdate: {
@@ -1590,7 +1637,7 @@ export interface components {
             /** Location */
             location?: string | null;
             /** Status */
-            status?: ("active" | "cancelled") | null;
+            status?: ("CONFIRMED" | "CANCELLED") | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceCreate"][] | null;
             /** Price */
@@ -1764,7 +1811,7 @@ export interface components {
              * Notification Type
              * @enum {string}
              */
-            notification_type: "morning_digest" | "weekly_digest" | "event_change";
+            notification_type: "morning_digest" | "weekly_digest" | "event_change" | "daily_new_events";
             /** Enabled */
             enabled: boolean;
             /** Updated At */
@@ -1779,7 +1826,7 @@ export interface components {
              * Notification Type
              * @enum {string}
              */
-            notification_type: "morning_digest" | "weekly_digest" | "event_change";
+            notification_type: "morning_digest" | "weekly_digest" | "event_change" | "daily_new_events";
             /** Enabled */
             enabled: boolean;
         };
@@ -1827,7 +1874,7 @@ export interface components {
         /** OccurrenceResponse */
         OccurrenceResponse: {
             /** Id */
-            id: string;
+            id: number;
             /** Event Id */
             event_id: number;
             /**
@@ -2164,8 +2211,21 @@ export interface components {
         ResetPasswordRequest: {
             /** Access Token */
             access_token: string;
+            /** Refresh Token */
+            refresh_token?: string | null;
             /** New Password */
             new_password: string;
+        };
+        /**
+         * RsvpEventStatusResponse
+         * @description Response for ``PUT /event-rsvps/{id}`` / ``DELETE /event-rsvps/{id}``.
+         */
+        RsvpEventStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "going" | "not_going";
         };
         /**
          * SaveEventStatusResponse
@@ -2693,7 +2753,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MessageResponse"];
+                    "application/json": components["schemas"]["TokenResponse"] | components["schemas"]["MessageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3245,6 +3305,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": number[];
+                };
+            };
+        };
+    };
+    list_rsvp_events_event_rsvps__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    rsvp_event_event_rsvps__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RsvpEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unrsvp_event_event_rsvps__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RsvpEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

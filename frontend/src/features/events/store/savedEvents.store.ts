@@ -34,6 +34,48 @@ interface SavedEventsState {
 let _savedFetchInFlight = false;
 /** Module-level retry guard: when the prior fetch failed, allow another attempt. */
 let _lastFetchErrored = false;
+let _savedMutationVersion = 0;
+type SavedMutationIntent = { shouldSave: boolean; version: number };
+/**
+ * Saved-events fetches can overlap with an optimistic save click, especially
+ * right after login/reset when hydration is still running. Keep in-flight local
+ * intent here so stale fetch responses don't flip the card back.
+ */
+const _pendingSavedMutations = new Map<number, SavedMutationIntent>();
+const _recentSavedMutations = new Map<number, SavedMutationIntent>();
+
+function normalizeSavedIds(ids: number[]) {
+  return Array.from(new Set(ids.map(Number).filter(Number.isFinite)));
+}
+
+function applyMutationIntent(ids: Set<number>, eventId: number, intent: SavedMutationIntent) {
+  if (intent.shouldSave) {
+    ids.add(eventId);
+  } else {
+    ids.delete(eventId);
+  }
+}
+
+function applyLocalSavedMutations(ids: number[], fetchStartedAtMutationVersion: number) {
+  const merged = new Set(normalizeSavedIds(ids));
+  _recentSavedMutations.forEach((intent, eventId) => {
+    if (intent.version > fetchStartedAtMutationVersion) {
+      applyMutationIntent(merged, eventId, intent);
+    }
+  });
+  _pendingSavedMutations.forEach((intent, eventId) => {
+    applyMutationIntent(merged, eventId, intent);
+  });
+  return Array.from(merged);
+}
+
+function pruneRecentSavedMutations(upToVersion: number) {
+  _recentSavedMutations.forEach((intent, eventId) => {
+    if (intent.version <= upToVersion && !_pendingSavedMutations.has(eventId)) {
+      _recentSavedMutations.delete(eventId);
+    }
+  });
+}
 
 export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
   savedEventIds: [],
@@ -53,11 +95,17 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
     if (_savedFetchInFlight) return;
     if (state.hasLoaded && !_lastFetchErrored) return;
     _savedFetchInFlight = true;
+    const fetchStartedAtMutationVersion = _savedMutationVersion;
     set({ isLoading: true });
     try {
       const ids = await fetchSavedEventIdsFromBackend();
       _lastFetchErrored = false;
-      set({ savedEventIds: ids, isLoading: false, hasLoaded: true });
+      set({
+        savedEventIds: applyLocalSavedMutations(ids, fetchStartedAtMutationVersion),
+        isLoading: false,
+        hasLoaded: true,
+      });
+      pruneRecentSavedMutations(fetchStartedAtMutationVersion);
     } catch (err) {
       console.error("Failed to fetch saved event IDs:", err);
       _lastFetchErrored = true;
@@ -69,6 +117,8 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
 
   reset: () => {
     _lastFetchErrored = false;
+    _pendingSavedMutations.clear();
+    _recentSavedMutations.clear();
     set({ savedEventIds: [], isLoading: false, hasLoaded: false });
   },
 
@@ -81,29 +131,52 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
   toggleSaveEvent: (eventId) => {
     const prev = get().savedEventIds;
     const wasSaved = prev.includes(eventId);
+    const shouldSave = !wasSaved;
+    const authenticated = isAuthenticated();
+    const mutationIntent: SavedMutationIntent = {
+      shouldSave,
+      version: ++_savedMutationVersion,
+    };
 
     // Pure local state mutation (optimistic)
+    if (authenticated) {
+      _pendingSavedMutations.set(eventId, mutationIntent);
+      _recentSavedMutations.set(eventId, mutationIntent);
+    }
     get()._toggleLocal(eventId);
 
     // Backend sync — revert local state on failure so UI and server don't drift.
-    if (isAuthenticated()) {
+    if (authenticated) {
       const backendCall = wasSaved
         ? unsaveEventFromBackend(eventId)
         : saveEventToBackend(eventId);
-      backendCall.catch((err) => {
-        console.error(
-          wasSaved ? "Failed to unsave event:" : "Failed to save event:",
-          err,
-        );
-        // Revert the optimistic toggle so UI matches backend truth.
-        get()._toggleLocal(eventId);
-        // Surface the rollback to the user — silent revert made it look
-        // like the save succeeded and left them with incorrect state.
-        showToast(
-          wasSaved ? "Couldn't unsave this event" : "Couldn't save this event",
-          "error",
-        );
-      });
+      backendCall
+        .then(() => {
+          if (_pendingSavedMutations.get(eventId) === mutationIntent) {
+            _pendingSavedMutations.delete(eventId);
+          }
+        })
+        .catch((err) => {
+          console.error(
+            wasSaved ? "Failed to unsave event:" : "Failed to save event:",
+            err,
+          );
+          if (_pendingSavedMutations.get(eventId) !== mutationIntent) {
+            return;
+          }
+          _pendingSavedMutations.delete(eventId);
+          if (_recentSavedMutations.get(eventId) === mutationIntent) {
+            _recentSavedMutations.delete(eventId);
+          }
+          // Revert the optimistic toggle so UI matches backend truth.
+          get()._toggleLocal(eventId);
+          // Surface the rollback to the user — silent revert made it look
+          // like the save succeeded and left them with incorrect state.
+          showToast(
+            wasSaved ? "Couldn't unsave this event" : "Couldn't save this event",
+            "error",
+          );
+        });
     }
 
     tracker.track(eventId, wasSaved ? "unsave" : "save");

@@ -43,8 +43,6 @@ class Settings(BaseSettings):
     # Browser-visible path for the refresh cookie. Keep local/dev at the API
     # route; set to /api/auth/refresh when the frontend proxies API calls.
     refresh_cookie_path: str = "/auth/refresh"
-    # JWT secret for local token verification. Dashboard > Settings > API > JWT Secret.
-    supabase_jwt_secret: str = ""
     # Trusted reverse-proxy IPs.  When a request arrives from one of these
     # addresses, ``get_client_ip()`` reads the real client IP from the
     # ``X-Forwarded-For`` / ``X-Real-IP`` headers instead of
@@ -61,12 +59,12 @@ class Settings(BaseSettings):
     trusted_proxies: list[str] = ["127.0.0.1", "::1"]
 
     # --- Email provider (notifications v1) -------------------------------
-    # Empty string => dry-run mode (log-only). Set to ``resend`` or
-    # ``postmark`` when wiring the real provider, and populate
-    # ``email_provider_api_key`` + ``email_from``.
+    # Empty string => dry-run mode (log-only). Set to ``resend`` to send
+    # via Resend, and populate ``email_provider_api_key`` + ``email_from``.
     email_provider: str = ""
     email_provider_api_key: str = ""
     email_from: str = "wat2do <notifications@wat2do.app>"
+    frontend_url: str = "http://localhost:5173"
 
     @property
     def is_production(self) -> bool:

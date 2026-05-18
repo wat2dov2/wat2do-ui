@@ -20,6 +20,7 @@ interface UseOnboardingFlowOptions {
     selectedEventIds: number[];
     faculty: string;
     isFirstYear: boolean;
+    dailyNewEventsOptIn: boolean;
   }) => void;
   /**
    * School name to pre-populate on mount (e.g. derived from the signup
@@ -36,6 +37,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
   const [faculty, setFaculty] = useState("");
   const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
+  const [dailyNewEventsOptIn, setDailyNewEventsOptIn] = useState(false);
 
   const validTopics = useMemo(
     () => selectedTopics.filter((t) => EVENT_CATEGORIES.includes(t as EventCategory)),
@@ -67,6 +69,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
         selectedEventIds,
         faculty,
         isFirstYear: isFirstYear ?? false,
+        dailyNewEventsOptIn,
       });
       return;
     }
@@ -80,6 +83,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     isFirstYear,
     step,
     selectedEventIds,
+    dailyNewEventsOptIn,
     onComplete,
   ]);
 
@@ -95,9 +99,11 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     selectedEventIds,
     faculty,
     isFirstYear,
+    dailyNewEventsOptIn,
     canContinue,
     setFaculty,
     setIsFirstYear,
+    setDailyNewEventsOptIn,
     toggleTopic,
     toggleEventId,
     goNext,

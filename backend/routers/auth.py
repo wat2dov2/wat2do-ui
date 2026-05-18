@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from core.client_ip import get_client_ip
 from core.config import settings
 from core.errors import INVALID_OR_EXPIRED_TOKEN, NO_REFRESH_TOKEN
 from core.exceptions import AuthenticationError, ServiceError
@@ -21,7 +22,7 @@ from schemas.auth import (
     TokenResponse,
     MessageResponse,
 )
-from services.auth_service import auth
+from services.auth_service import AuthResult, auth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -143,7 +144,6 @@ def login(
 def refresh(
     request: Request,
     response: Response,
-    _rl: None = Depends(auth_refresh_rate_limiter.ip_dependency()),
 ):
     # A32: require that the request originated from a trusted origin.
     # SameSite=Lax does not block top-level cross-site POSTs, so without
@@ -160,6 +160,7 @@ def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=NO_REFRESH_TOKEN,
         )
+    auth_refresh_rate_limiter.check(get_client_ip(request))
     result = auth.refresh(refresh_token)
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token)
@@ -224,14 +225,17 @@ def forgot_password(
     return MessageResponse(message="If that email exists, a reset link has been sent")
 
 
-@router.post("/reset-password", response_model=MessageResponse)
+@router.post("/reset-password", response_model=TokenResponse | MessageResponse)
 def reset_password(
     data: ResetPasswordRequest,
     response: Response,
     _rl: None = Depends(reset_password_rate_limiter.ip_dependency()),
 ):
-    auth.reset_password(data)
-    # All sessions were revoked server-side; clear the caller's refresh cookie
-    # so the browser doesn't hold a now-invalid token.
+    result = auth.reset_password(data)
+    if isinstance(result, AuthResult) and result.refresh_token:
+        _set_refresh_cookie(response, result.refresh_token)
+        return result.body
+
+    # Legacy recovery JWT path cannot mint an app refresh cookie.
     _clear_refresh_cookie(response)
     return MessageResponse(message="Password updated successfully")

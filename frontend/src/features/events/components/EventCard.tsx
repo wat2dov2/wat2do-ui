@@ -12,19 +12,30 @@ import {
   Share2,
   Flag,
   Trash2,
+  CalendarPlus,
 } from "lucide-react";
 import { BadgeMask } from "@/shared/ui/badge-mask";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { DeleteEventDialog } from "@/features/events/components/DeleteEventDialog";
+import { EventShareDialog } from "@/features/events/components/EventShareDialog";
+import { EventReportDialog } from "@/features/events/components/EventReportDialog";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { getUserId } from "@/features/auth";
-import { shareEvent } from "@/shared/utils/shareEvent";
-import { downloadICS } from "@/shared/utils/generateICS";
+import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
@@ -66,6 +77,9 @@ export function EventCard({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { t, i18n } = useTranslation();
 
   const profileCompleted = useProfileCompleted();
@@ -179,75 +193,91 @@ export function EventCard({
 
           {/* Menu Badge - Top Right */}
           <BadgeMask variant="top-right">
-            <Popover>
-              <PopoverTrigger asChild>
+            <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <DropdownMenuTrigger asChild>
                 <button
                   type="button"
+                  aria-label="Event actions"
                   className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="size-3.5" />
                 </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-48 p-1"
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-48"
                 align="end"
                 onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               >
-                <div className="flex flex-col gap-0.5">
-                  <button
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        await shareEvent(event);
-                      } catch (error) {
-                        console.error("Failed to share event:", error);
-                      }
-                    }}
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setIsMenuOpen(false);
+                    setShowShareDialog(true);
+                  }}
+                >
+                  <Share2 />
+                  {t("common.share")}
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Download />
+                    <span>{t("common.addToCalendar")}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent
+                    sideOffset={8}
+                    alignOffset={-4}
                   >
-                    <Share2 className="size-3.5" />
-                    {t("common.share")}
-                  </button>
-                  <button
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      downloadICS(event);
-                    }}
-                  >
-                    <Download className="size-3.5" />
-                    {t("common.addToCalendar")}
-                  </button>
-                  <button
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-secondary text-foreground transition-colors text-left"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Handle report
-                    }}
-                  >
-                    <Flag className="size-3.5" />
-                    {t("common.report")}
-                  </button>
-                  {canManageEvent && (
-                    <>
-                      <div className="h-px bg-border my-0.5" />
-                      <button
-                        className="flex items-center gap-2 px-2 py-1.5 text-xs rounded-xl hover:bg-error/10 text-error transition-colors text-left"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDeleteConfirm(true);
-                        }}
-                      >
-                        <Trash2 className="size-3.5" />
-                        {t("common.delete")}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        setIsMenuOpen(false);
+                        openGoogleCalendar(event);
+                      }}
+                    >
+                      <CalendarPlus />
+                      Google Calendar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        setIsMenuOpen(false);
+                        downloadICS(event);
+                      }}
+                    >
+                      <Download />
+                      iCal
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setIsMenuOpen(false);
+                    setShowReportDialog(true);
+                  }}
+                >
+                  <Flag />
+                  {t("common.report")}
+                </DropdownMenuItem>
+                {canManageEvent && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setIsMenuOpen(false);
+                        setShowDeleteConfirm(true);
+                      }}
+                    >
+                      <Trash2 />
+                      {t("common.delete")}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </BadgeMask>
 
           {/* Club/Organization Badge - Bottom Left */}
@@ -282,11 +312,11 @@ export function EventCard({
             disabled={!profileCompleted}
             className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-t border-border ${
               isSaved
-                ? "bg-error/10 text-error hover:bg-error/20"
+                ? "bg-card text-foreground hover:bg-secondary"
                 : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
             } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
           >
-            <Heart className={`w-4 h-4 ${isSaved ? "fill-error" : ""}`} />
+            <Heart className={`w-4 h-4 ${isSaved ? "fill-error text-error" : ""}`} />
             {isSaved ? t("common.saved") : t("common.imInterested")}
           </button>
         </div>
@@ -311,6 +341,19 @@ export function EventCard({
         onOpenChange={setShowDeleteConfirm}
         eventTitle={event.title}
         onConfirm={() => onDelete?.(event.id)}
+      />
+
+      <EventShareDialog
+        event={event}
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+      />
+
+      <EventReportDialog
+        eventId={event.id}
+        eventTitle={event.title}
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
       />
     </>
   );

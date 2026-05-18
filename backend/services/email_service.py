@@ -1,16 +1,15 @@
-"""Email-sending gateway for the notifications feature.
+"""Email-sending gateway for transactional app email.
 
 Class-based because it wraps an external client (per the layered
 architecture convention — see backend-architecture.md). The module-level
 singleton ``email_service`` is what callers import; tests monkeypatch
 the instance directly.
 
-v1 is DRY-RUN by default: if no ``EMAIL_PROVIDER`` is set in settings,
+DRY-RUN by default: if no ``EMAIL_PROVIDER`` is set in settings,
 ``send()`` logs the message and returns success without dispatching. That
 lets the rest of the notifications pipeline (enqueue, dedup, log writes,
 cron composition) run end-to-end locally and in CI without a provider
-API key. Flipping the provider on is a config change plus one new branch
-in ``send()`` — no call-site changes.
+API key.
 """
 
 from __future__ import annotations
@@ -18,9 +17,13 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+import httpx
+
 from core.config import settings
 
 log = logging.getLogger(__name__)
+
+RESEND_EMAILS_URL = "https://api.resend.com/emails"
 
 
 @dataclass
@@ -63,12 +66,41 @@ class EmailService:
             )
             return True
 
-        # v2 flip: replace this branch with provider-specific dispatch.
-        # Keeping the raise here so a half-configured deploy fails loud
-        # instead of silently dropping mail.
+        if provider == "resend":
+            return self._dispatch_resend(msg)
+
         raise NotImplementedError(
             f"email provider {provider!r} configured but dispatch is not wired yet"
         )
+
+    def _dispatch_resend(self, msg: EmailMessage) -> bool:
+        api_key = settings.email_provider_api_key.strip()
+        if not api_key:
+            raise RuntimeError(
+                "EMAIL_PROVIDER_API_KEY is required when EMAIL_PROVIDER=resend"
+            )
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        if msg.idempotency_key:
+            headers["Idempotency-Key"] = msg.idempotency_key
+
+        response = httpx.post(
+            RESEND_EMAILS_URL,
+            json={
+                "from": settings.email_from,
+                "to": msg.to,
+                "subject": msg.subject,
+                "html": msg.body_html,
+                "text": msg.body_text,
+            },
+            headers=headers,
+            timeout=10,
+        )
+        response.raise_for_status()
+        return True
 
 
 email_service = EmailService()

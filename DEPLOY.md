@@ -36,7 +36,8 @@ were artefacts of building this PR, not reference material a deployer needs.
 | `COOKIE_DOMAIN` | String | Empty for local; the production domain otherwise. |
 | `TRUSTED_PROXIES` | JSON list | `/32` IPs the backend trusts for `X-Forwarded-For`. Default loopback only. |
 | `ENVIRONMENT` | `production` / `development` | Disables `/docs`, `/redoc`, `/openapi.json` in prod. |
-| `EMAIL_PROVIDER` | `resend` / `postmark` / empty | Empty = log-only dry-run. |
+| `FRONTEND_URL` | Public app URL | Used as the Supabase password-reset redirect base. Defaults to `http://localhost:5173`. |
+| `EMAIL_PROVIDER` | `resend` / empty | Empty = log-only dry-run. |
 | `EMAIL_PROVIDER_API_KEY` | Provider key | Required when `EMAIL_PROVIDER` is set. |
 | `EMAIL_FROM` | RFC 5322 string | Notifications "From" header. |
 
@@ -47,6 +48,13 @@ were artefacts of building this PR, not reference material a deployer needs.
 | `VITE_API_URL` | Backend base URL, e.g. `https://api.wat2do.app` |
 | `VITE_MAPBOX_TOKEN` | Mapbox GL token. Optional unless map view enabled. |
 | `VITE_CLARITY_PROJECT_ID` | Microsoft Clarity. Optional. |
+
+### GitHub Actions secrets
+
+| Secret | Purpose |
+|---|---|
+| `RESEND_API_KEY` | Resend key used by the daily new-events email workflow. |
+| `RESEND_FROM_EMAIL` | Verified sender email; workflow formats it as `wat2do <email>`. |
 
 ## What still needs to happen
 

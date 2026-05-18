@@ -99,7 +99,10 @@ export function EventList({
   // Grid view with content-visibility for performance
   return (
     <div
-      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4"
+      className="grid justify-center gap-4"
+      style={{
+        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 260px))",
+      }}
       role="list"
       aria-label={`${events.length} events found`}
     >

@@ -1,0 +1,53 @@
+name: Daily new-events email
+
+on:
+  schedule:
+    # GitHub cron is UTC-only. Run at minute 30 every hour; the backend
+    # sends only for schools whose local time is exactly 10:30am.
+    - cron: '30 * * * *'
+  workflow_dispatch:
+    inputs:
+      now:
+        description: 'Optional ISO-8601 UTC timestamp for a test run'
+        required: false
+        type: string
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      ENVIRONMENT: production
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      EMAIL_PROVIDER: resend
+      EMAIL_PROVIDER_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      EMAIL_FROM: "wat2do <${{ secrets.RESEND_FROM_EMAIL }}>"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install --prefer-binary -r requirements.txt
+
+      - name: Send daily new-events email
+        working-directory: backend
+        env:
+          NOW_INPUT: ${{ github.event.inputs.now || '' }}
+        run: |
+          if [ -n "$NOW_INPUT" ]; then
+            python jobs/send_notifications.py --only daily-new-events --now "$NOW_INPUT"
+          else
+            python jobs/send_notifications.py --only daily-new-events
+          fi

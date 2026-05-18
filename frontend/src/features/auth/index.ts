@@ -18,6 +18,7 @@ export { GooseDialogue } from "./components/GooseDialogue";
 export { AuthEntryPage } from "./pages/AuthEntryPage";
 export { OnboardingPage } from "./pages/OnboardingPage";
 export { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+export { ResetPasswordPage } from "./pages/ResetPasswordPage";
 
 // Hooks
 export { useAuthEntryFlow } from "./hooks/useAuthEntryFlow";
@@ -50,6 +51,8 @@ export {
   logoutAPI,
   fetchProfileAPI,
   updateProfileAPI,
+  resetPasswordAPI,
+  setDailyNewEventsEmailPreferenceAPI,
   getLastProfileFetchAt,
   AUTH_STATE_REFRESH_EVENT,
   type UserProfile,

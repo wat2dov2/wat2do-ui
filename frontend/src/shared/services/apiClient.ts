@@ -4,6 +4,9 @@ import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 
 // In-memory access token — never stored in localStorage
 let accessToken: string | null = null;
+let authSessionInvalid = false;
+let authFailureNotified = false;
+const AUTH_STATE_REFRESH_EVENT = "auth-state-refresh";
 
 export function getAccessToken(): string | null {
   return accessToken;
@@ -11,6 +14,8 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string): void {
   accessToken = token;
+  authSessionInvalid = false;
+  authFailureNotified = false;
 }
 
 export function clearAccessToken(): void {
@@ -60,10 +65,10 @@ interface TokenRefreshResponse {
 }
 
 /**
- * Optional hook invoked after a successful silent access-token refresh.
- * The auth feature installs this at app startup so a silent 401 retry
- * also re-fetches /users/me, which keeps cached role/hasClub in sync with
- * the backend when a session quietly rotates after hours of idle time.
+ * Optional hook invoked after a successful silent access-token refresh and
+ * successful retry of the original request. Waiting for the retry matters:
+ * if the backend still rejects the fresh token, re-fetching /users/me here
+ * would recursively create another refresh cycle.
  *
  * Lives here (not in auth.api.ts) to avoid an import cycle — auth.api.ts
  * already depends on apiClient.
@@ -74,12 +79,21 @@ export function setOnAfterRefresh(fn: (() => void) | null): void {
   onAfterRefresh = fn;
 }
 
+function notifyAfterSuccessfulRefresh(): void {
+  try {
+    onAfterRefresh?.();
+  } catch (err) {
+    console.error("onAfterRefresh hook threw:", err);
+  }
+}
+
 /**
  * Attempt to refresh the access token. Returns true if a new token was
  * obtained, false otherwise. Concurrent callers share one in-flight request.
  * Exported for use by uploadService which makes raw fetch calls.
  */
 export function refreshAccessToken(): Promise<boolean> {
+  if (authSessionInvalid) return Promise.resolve(false);
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
@@ -94,11 +108,6 @@ export function refreshAccessToken(): Promise<boolean> {
 
       const data: TokenRefreshResponse = await res.json();
       setAccessToken(data.access_token);
-      try {
-        onAfterRefresh?.();
-      } catch (err) {
-        console.error("onAfterRefresh hook threw:", err);
-      }
       return true;
     } catch (err) {
       console.error("Token refresh request failed:", err);
@@ -112,8 +121,9 @@ export function refreshAccessToken(): Promise<boolean> {
 }
 
 /**
- * Called when token refresh fails — clears in-memory token and redirects
- * to login. Uses window.location so it works outside of React Router.
+ * Called when token refresh fails — clears stale local auth state and notifies
+ * subscribers. ProtectedRoute handles navigation for protected pages; public
+ * pages should not be yanked to login by a background/auth-gated request.
  * Exported for use by uploadService which makes raw fetch calls.
  *
  * Skips the redirect when there's no cached email, since that means the
@@ -122,17 +132,15 @@ export function refreshAccessToken(): Promise<boolean> {
  * /login on the first auth-gated fetch is a bad UX.
  */
 export function handleAuthFailure(): void {
-  // Capture whether there was a token BEFORE clearing it.
-  const hadToken = hasAccessToken();
+  authSessionInvalid = true;
   clearAccessToken();
-  // Only redirect when the user had a real session (access token + cached email).
-  // A 401 without ever having a token means the user was never fully
-  // authenticated (e.g. confirmation-required signup) — don't bounce them.
-  const hasCachedEmail =
-    StorageService.getItem<string | null>(STORAGE_KEYS.USER_EMAIL, null) !== null;
-  if (!hadToken || !hasCachedEmail) return;
-  if (!window.location.pathname.startsWith("/login")) {
-    window.location.href = "/login";
+  StorageService.removeItem(STORAGE_KEYS.USER_EMAIL);
+  StorageService.removeItem(STORAGE_KEYS.USER_PROFILE);
+  if (authFailureNotified) return;
+  authFailureNotified = true;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_STATE_REFRESH_EVENT));
+    window.dispatchEvent(new Event("auth-user-logout"));
   }
 }
 
@@ -191,12 +199,15 @@ async function request<T>(
   if (!res.ok) {
     if (
       res.status === 401 &&
-      !path.startsWith("/auth/") &&
-      retryCount === 0
+      !path.startsWith("/auth/")
     ) {
-      const refreshed = await refreshAccessToken();
-      if (refreshed) {
-        return request<T>(path, options, retryCount + 1);
+      if (!authSessionInvalid && retryCount === 0) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed && !authSessionInvalid) {
+          const result = await request<T>(path, options, retryCount + 1);
+          notifyAfterSuccessfulRefresh();
+          return result;
+        }
       }
       handleAuthFailure();
     }

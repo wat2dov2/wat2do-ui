@@ -3,14 +3,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import { AnimatePresence, m } from "framer-motion";
+import { Mail } from "lucide-react";
 import { useOnboardingFlow } from "@/features/auth/hooks/useOnboardingFlow";
 import { useUpdateProfile } from "@/features/auth/hooks/useUpdateProfile";
+import { setDailyNewEventsEmailPreferenceAPI } from "@/features/auth/api/auth.api";
 import { OnboardingEventGrid } from "@/features/auth/components/OnboardingEventGrid";
 import { OnboardingInterestsCombobox } from "@/features/auth/components/OnboardingInterestsCombobox";
 import { OnboardingFacultyStep } from "@/features/auth/components/OnboardingFacultyStep";
 import { GooseDialogue } from "@/features/auth/components/GooseDialogue";
 import { OnboardingProgressDots } from "@/features/auth/components/OnboardingProgressDots";
 import { LanguageSelector } from "@/shared/ui/language-selector";
+import { Switch } from "@/shared/ui/switch";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 
 const stepVariants = {
@@ -26,6 +29,44 @@ const GOOSE_MESSAGE_KEYS: Record<number, string> = {
   4: "onboarding.gooseStep4",
   5: "onboarding.gooseStep5",
 };
+
+interface OnboardingEmailOptInStepProps {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}
+
+function OnboardingEmailOptInStep({
+  checked,
+  onCheckedChange,
+}: OnboardingEmailOptInStepProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="w-full max-w-md mx-auto">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-4 shadow-sm">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="size-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+            <Mail className="size-4 text-foreground" />
+          </div>
+          <div className="space-y-1 min-w-0">
+            <label htmlFor="daily-new-events-opt-in" className="text-sm font-semibold text-foreground">
+              {t("onboarding.emailDigestTitle")}
+            </label>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t("onboarding.emailDigestDescription")}
+            </p>
+          </div>
+        </div>
+        <Switch
+          id="daily-new-events-opt-in"
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          aria-label={t("onboarding.emailDigestTitle")}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -49,6 +90,7 @@ export function OnboardingPage() {
       selectedEventIds: number[];
       faculty: string;
       isFirstYear: boolean;
+      dailyNewEventsOptIn: boolean;
     }) => {
       const profile = {
         faculty: data.faculty,
@@ -63,6 +105,11 @@ export function OnboardingPage() {
       // before the next render triggered by `navigate`. This replaces the old
       // monotonic-flip workaround in UserContext.
       persistProfile(profile);
+      if (data.dailyNewEventsOptIn) {
+        setDailyNewEventsEmailPreferenceAPI(true).catch((err) =>
+          console.error("Failed to persist daily new-events email preference:", err)
+        );
+      }
 
       navigate(ROUTES.HOME);
     },
@@ -95,7 +142,12 @@ export function OnboardingPage() {
         onFacultyChange={flow.setFaculty}
       />
     ),
-    5: <div className="w-full min-h-[120px]" aria-hidden />,
+    5: (
+      <OnboardingEmailOptInStep
+        checked={flow.dailyNewEventsOptIn}
+        onCheckedChange={flow.setDailyNewEventsOptIn}
+      />
+    ),
   };
 
   const gooseMessage = useMemo(() => {

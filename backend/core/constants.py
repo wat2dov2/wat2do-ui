@@ -51,20 +51,24 @@ EVENT_STATUSES = (EVENT_STATUS_ACTIVE, EVENT_STATUS_CANCELLED)
 NOTIFICATION_TYPE_MORNING_DIGEST: Final = "morning_digest"
 NOTIFICATION_TYPE_WEEKLY_DIGEST: Final = "weekly_digest"
 NOTIFICATION_TYPE_EVENT_CHANGE: Final = "event_change"
+NOTIFICATION_TYPE_DAILY_NEW_EVENTS: Final = "daily_new_events"
 
 NOTIFICATION_TYPES = (
     NOTIFICATION_TYPE_MORNING_DIGEST,
     NOTIFICATION_TYPE_WEEKLY_DIGEST,
     NOTIFICATION_TYPE_EVENT_CHANGE,
+    NOTIFICATION_TYPE_DAILY_NEW_EVENTS,
 )
 
 # Default opt-in state when a user has no row in notification_preferences.
-# All types default-on in v1; users explicitly opt out. The worker's
-# ``is_enabled`` helper falls back to this mapping.
+# The daily new-events digest is opt-in only: onboarding creates an
+# explicit row when the user asks for it. The worker's ``is_enabled``
+# helper falls back to this mapping.
 NOTIFICATION_DEFAULT_ENABLED: dict[str, bool] = {
     NOTIFICATION_TYPE_MORNING_DIGEST: True,
     NOTIFICATION_TYPE_WEEKLY_DIGEST: True,
     NOTIFICATION_TYPE_EVENT_CHANGE: True,
+    NOTIFICATION_TYPE_DAILY_NEW_EVENTS: False,
 }
 
 # notifications_log.status — terminal state space. No retry_count because

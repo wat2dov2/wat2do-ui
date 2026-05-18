@@ -73,6 +73,11 @@ const ForgotPasswordPage = lazy(() =>
     default: module.ForgotPasswordPage,
   }))
 );
+const ResetPasswordPage = lazy(() =>
+  import("@/features/auth").then((module) => ({
+    default: module.ResetPasswordPage,
+  }))
+);
 
 export default function App() {
   const location = useLocation();
@@ -105,6 +110,11 @@ export default function App() {
  */
 function AppContent() {
   const location = useLocation();
+  const isAuthFlowRoute =
+    location.pathname === ROUTES.LOGIN ||
+    location.pathname === ROUTES.FORGOT_PASSWORD ||
+    location.pathname === ROUTES.RESET_PASSWORD ||
+    location.pathname === ROUTES.ONBOARDING;
 
   const userEmail = useUserEmail();
   // Setter-only subscription. Setter refs are stable in Zustand, so this
@@ -124,12 +134,13 @@ function AppContent() {
   // credits, promotions) also listen to "auth-user-login" events so a
   // post-mount login refetches without needing this useEffect to re-run.
   useEffect(() => {
+    if (isAuthFlowRoute) return;
     useEventsStore.getState().fetchEvents();
     useSavedEventsStore.getState().fetchSavedEvents();
     useEventRsvpsStore.getState().fetchRsvps();
     useCreditsStore.getState().fetchBalance();
     usePromotionsStore.getState().fetchActivePromotedEventIds();
-  }, []);
+  }, [isAuthFlowRoute]);
 
   // ── Edit event state (local UI) ──────────────────────────────
   // Owned here (not in ModalContainer) because adminConfig and
@@ -202,12 +213,11 @@ function AppContent() {
     [events, handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
   );
 
-  const isAuthFlowRoute = location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.FORGOT_PASSWORD || location.pathname === ROUTES.ONBOARDING;
-
   const appRoutes = (
     <Routes>
       <Route path={ROUTES.LOGIN} element={<AuthEntryPage />} />
       <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+      <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
       <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
       <Route
         path={ROUTES.HOME}

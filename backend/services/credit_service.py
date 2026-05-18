@@ -169,13 +169,24 @@ def get_active_promoted_event_ids() -> list[int]:
     both queries.
     """
     now = datetime.now(timezone.utc).isoformat()
-    r = (
-        get_sb()
-        .table(EVENT_PROMOTIONS)
-        .select("event_id")
-        .gt("end_date", now)
-        .execute()
-    )
+    try:
+        r = (
+            get_sb()
+            .table(EVENT_PROMOTIONS)
+            .select("event_id")
+            .gt("end_date", now)
+            .execute()
+        )
+    except APIError as exc:
+        if exc.code != "42703" or "end_date" not in (exc.message or ""):
+            raise
+        r = (
+            get_sb()
+            .table(EVENT_PROMOTIONS)
+            .select("event_id")
+            .gt("expires_at", now)
+            .execute()
+        )
     return list({row["event_id"] for row in (r.data or [])})
 
 

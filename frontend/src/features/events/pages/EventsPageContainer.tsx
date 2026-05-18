@@ -25,7 +25,7 @@ export function EventsPageContainer() {
   const { isDarkMode } = useDarkMode();
   const profileCompleted = useProfileCompleted();
   const { t } = useTranslation();
-  const { activeEasterEgg, clearEasterEgg, checkSearchQuery } = useEasterEggs();
+  const { checkSearchQuery } = useEasterEggs();
 
   const {
     isLoading,
@@ -77,14 +77,14 @@ export function EventsPageContainer() {
 
   return (
     // Cancel the AppLayout scroll container's p-6 so the sticky toolbar can
-    // sit flush against the scrollport edges. Re-add equivalent padding on
-    // the sticky inner content and <main> so the visible layout is unchanged.
+    // sit flush against the scrollport edges. Re-add tighter padding on
+    // the sticky inner content and <main> for a denser events surface.
     <div className="-m-6 isolate">
       {/* Sticky toolbar: search + filter row stay pinned as the user scrolls.
-          -top-6 + pt-10 covers the scroll container's p-6 top padding so event
+          -top-6 + top padding covers the scroll container's p-6 top padding so event
           cards scrolling up don't bleed through the gap between the fixed
           TopNav and the toolbar. */}
-      <div className="sticky -top-6 z-20 bg-background px-6 pt-7 pb-3 space-y-5">
+      <div className="sticky -top-6 z-20 bg-background px-6 pt-4 pb-2 space-y-3 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-2 after:h-2 after:bg-linear-to-b after:from-foreground/5 after:to-transparent">
         <SearchBar
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {
@@ -143,7 +143,7 @@ export function EventsPageContainer() {
       </div>
 
       {/* Main Content */}
-      <main className="w-full px-6 pt-5 pb-6" role="main" aria-label={t("search.ariaLabel")}>
+      <main className="w-full px-6 pt-3 pb-6" role="main" aria-label={t("search.ariaLabel")}>
         {isLoading || recsLoading ? (
           <LoadingPage />
         ) : error ? (

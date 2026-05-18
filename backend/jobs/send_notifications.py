@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Hourly notifications dispatcher.
+"""Scheduled notifications dispatcher.
 
-Runs once an hour. For every user, asks the notification_service
+Runs on a schedule. For every user, asks the notification_service
 whether it's digest-time *in the user's timezone* and dispatches as
-appropriate. Per-user iteration is fine at v1 scale (single-school,
-thousands of users at most) and simpler than a per-school batch.
+appropriate. Per-user iteration is fine at v1 scale and simpler than a
+per-school batch.
 
 Usage:
-    python jobs/send_notifications.py
+    python jobs/send_notifications.py --only daily-new-events
 """
 
 import argparse
@@ -41,6 +41,12 @@ def main() -> None:
         help="ISO-8601 UTC timestamp to run against (default: now). "
         "Use for testing specific firing hours without the wall clock.",
     )
+    parser.add_argument(
+        "--only",
+        choices=("all", "daily-new-events"),
+        default="all",
+        help="Limit dispatch to one notification family.",
+    )
     args = parser.parse_args()
 
     now_utc = (
@@ -56,11 +62,22 @@ def main() -> None:
     users = _fetch_users()
     log.info("Loaded %d users", len(users))
 
+    sent_daily_new_events = 0
     sent_morning = 0
     sent_weekly = 0
 
     for user in users:
         try:
+            if args.only in ("all", "daily-new-events"):
+                if notification_service.is_daily_new_events_time(user, now_utc):
+                    if notification_service.send_daily_new_events_digest(
+                        user, now_utc
+                    ):
+                        sent_daily_new_events += 1
+
+            if args.only != "all":
+                continue
+
             local_date = notification_service.is_morning_digest_time(
                 user, now_utc
             )
@@ -83,7 +100,8 @@ def main() -> None:
             )
 
     log.info(
-        "Notifications cron done — morning=%d weekly=%d",
+        "Notifications cron done — daily_new_events=%d morning=%d weekly=%d",
+        sent_daily_new_events,
         sent_morning,
         sent_weekly,
     )

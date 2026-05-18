@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from core.constants import (
+    NOTIFICATION_TYPE_DAILY_NEW_EVENTS,
     NOTIFICATION_TYPE_EVENT_CHANGE,
     NOTIFICATION_TYPE_MORNING_DIGEST,
     NOTIFICATION_TYPE_WEEKLY_DIGEST,
@@ -47,6 +48,7 @@ def test_is_enabled_missing_row_returns_default(fake_sb, patch_sb):
     fake_sb.set_response(data=[])
 
     assert notification_service.is_enabled("user-uuid", NOTIFICATION_TYPE_EVENT_CHANGE) is True
+    assert notification_service.is_enabled("user-uuid", NOTIFICATION_TYPE_DAILY_NEW_EVENTS) is False
     fake_sb.eq.assert_any_call("user_id", "user-uuid")
     fake_sb.eq.assert_any_call("notification_type", NOTIFICATION_TYPE_EVENT_CHANGE)
 
@@ -95,10 +97,13 @@ def test_get_preferences_merges_default_for_missing_types(fake_sb, patch_sb):
     assert NOTIFICATION_TYPE_MORNING_DIGEST in types
     assert NOTIFICATION_TYPE_WEEKLY_DIGEST in types
     assert NOTIFICATION_TYPE_EVENT_CHANGE in types
+    assert NOTIFICATION_TYPE_DAILY_NEW_EVENTS in types
     morning = next(p for p in prefs if p.notification_type == NOTIFICATION_TYPE_MORNING_DIGEST)
     assert morning.enabled is False  # explicit opt-out
     weekly = next(p for p in prefs if p.notification_type == NOTIFICATION_TYPE_WEEKLY_DIGEST)
     assert weekly.enabled is True  # default
+    daily_new = next(p for p in prefs if p.notification_type == NOTIFICATION_TYPE_DAILY_NEW_EVENTS)
+    assert daily_new.enabled is False  # opt-in only
 
 
 # ---------------------------------------------------------------------------
@@ -317,7 +322,113 @@ def test_is_weekly_digest_time_returns_none_sunday_off_hour():
 
 def test_unknown_school_falls_back_to_utc():
     """User with an unrecognised school gets UTC — digest still fires, just on UTC clock."""
-    user = _user(school="Some Unknown University")
+    user = _user(email="person@example.edu", school="Some Unknown University")
     # 9am UTC directly
     now_utc = datetime(2026, 5, 1, 9, 0, tzinfo=timezone.utc)
     assert notification_service.is_morning_digest_time(user, now_utc) == date(2026, 5, 1)
+
+
+def test_is_daily_new_events_time_returns_local_timestamp_at_1030():
+    """Waterloo (America/Toronto) at 14:30 UTC is 10:30 local (EDT in May)."""
+    user = _user(school="university of waterloo")
+    now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
+    result = notification_service.is_daily_new_events_time(user, now_utc)
+    assert result is not None
+    assert result.date() == date(2026, 5, 1)
+    assert result.hour == 10
+    assert result.minute == 30
+
+
+def test_is_daily_new_events_time_returns_none_off_minute():
+    user = _user(school="university of waterloo")
+    now_utc = datetime(2026, 5, 1, 14, 0, tzinfo=timezone.utc)
+    assert notification_service.is_daily_new_events_time(user, now_utc) is None
+
+
+def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
+    user = _user(id="user-uuid", school="University of Waterloo")
+    now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
+    previous_sent_at = datetime(2026, 4, 30, 14, 30, tzinfo=timezone.utc)
+    event = {
+        "id": 123,
+        "title": "Tea Tasting",
+        "location": "SLC",
+        "dtstart_utc": "2026-05-03T18:00:00+00:00",
+        "source_image_url": "https://example.com/tea.jpg",
+        "category": "Food",
+        "organization": "Tea Club",
+        "added_at": "2026-05-01T12:00:00+00:00",
+    }
+    sent = MagicMock()
+    mark_sent = MagicMock()
+    captured = {}
+
+    monkeypatch.setattr(notification_service, "is_enabled", lambda *_: True)
+    monkeypatch.setattr(
+        notification_service,
+        "_last_successful_send_at",
+        lambda *_: previous_sent_at,
+    )
+
+    def fake_fetch(*, school, start_utc, end_utc):
+        captured.update(
+            {"school": school, "start_utc": start_utc, "end_utc": end_utc}
+        )
+        return [event]
+
+    monkeypatch.setattr(notification_service, "_fetch_new_events_added_since", fake_fetch)
+    monkeypatch.setattr(notification_service, "_try_insert_log_row", lambda **_: "row-1")
+    monkeypatch.setattr(notification_service, "_mark_log_sent", mark_sent)
+    monkeypatch.setattr(notification_service.email_service, "send", sent)
+
+    assert notification_service.send_daily_new_events_digest(user, now_utc) is True
+
+    assert captured == {
+        "school": "University of Waterloo",
+        "start_utc": previous_sent_at,
+        "end_utc": now_utc,
+    }
+    sent.assert_called_once()
+    msg = sent.call_args.args[0]
+    assert msg.to == "alice@uwaterloo.ca"
+    assert msg.subject == "1 new event at University of Waterloo"
+    assert "Tea Tasting" in msg.body_text
+    assert "Tea Tasting" in msg.body_html
+    assert "https://example.com/tea.jpg" in msg.body_html
+    assert msg.idempotency_key == "daily_new_events:user-uuid:2026-05-01"
+    mark_sent.assert_called_once_with("row-1")
+
+
+def test_send_daily_new_events_digest_skips_without_events(monkeypatch):
+    user = _user(id="user-uuid", school="University of Waterloo")
+    monkeypatch.setattr(notification_service, "is_enabled", lambda *_: True)
+    monkeypatch.setattr(notification_service, "_last_successful_send_at", lambda *_: None)
+    monkeypatch.setattr(notification_service, "_fetch_new_events_added_since", lambda **_: [])
+    insert = MagicMock()
+    monkeypatch.setattr(notification_service, "_try_insert_log_row", insert)
+
+    now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
+    assert notification_service.send_daily_new_events_digest(user, now_utc) is False
+    insert.assert_not_called()
+
+
+def test_render_daily_new_events_html_escapes_event_text():
+    html = notification_service._render_daily_new_events_html(
+        subject="1 new event at University of Waterloo",
+        school="University of Waterloo",
+        events=[
+            {
+                "title": "<script>alert(1)</script>",
+                "location": "SLC & DC",
+                "dtstart_utc": "2026-05-03T18:00:00+00:00",
+                "category": "Technology",
+                "organization": "Hack Club",
+            }
+        ],
+        tz=ZoneInfo("America/Toronto"),
+        window_start=datetime(2026, 4, 30, 14, 30, tzinfo=timezone.utc),
+        window_end=datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc),
+    )
+    assert "<script>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+    assert "SLC &amp; DC" in html

@@ -8,6 +8,10 @@ function escapeICS(text: string): string {
   return text.replace(/[\\;,]/g, "\\$&").replace(/\n/g, "\\n");
 }
 
+function toGoogleCalendarDate(isoString: string): string {
+  return isoString.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
 export function generateICS(event: Event): string {
   const now = toICSDate(new Date().toISOString());
   const lines = [
@@ -40,4 +44,29 @@ export function downloadICS(event: Event): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+export function buildGoogleCalendarUrl(event: Event): string {
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: event.title,
+  });
+
+  if (event.description) {
+    params.set("details", event.description);
+  }
+  if (event.location) {
+    params.set("location", event.location);
+  }
+  if (event.dtstart_utc) {
+    const start = toGoogleCalendarDate(event.dtstart_utc);
+    const end = event.dtend_utc ? toGoogleCalendarDate(event.dtend_utc) : start;
+    params.set("dates", `${start}/${end}`);
+  }
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+export function openGoogleCalendar(event: Event): void {
+  window.open(buildGoogleCalendarUrl(event), "_blank", "noopener,noreferrer");
 }
