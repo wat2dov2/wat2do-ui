@@ -84,7 +84,7 @@ export function EventsPageContainer() {
           -top-6 + top padding covers the scroll container's p-6 top padding so event
           cards scrolling up don't bleed through the gap between the fixed
           TopNav and the toolbar. */}
-      <div className="sticky -top-6 z-20 bg-background px-6 pt-4 pb-2 space-y-3 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-2 after:h-2 after:bg-linear-to-b after:from-foreground/5 after:to-transparent">
+      <div className="sticky -top-6 z-20 bg-background px-6 py-4 space-y-3 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-5 after:h-5 after:bg-linear-to-b after:from-black/[0.025] after:to-transparent">
         <SearchBar
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {

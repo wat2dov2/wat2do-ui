@@ -240,6 +240,7 @@ export function FormDatePicker({
             type="button"
             id={id}
             data-empty={!value}
+            data-elevation="control"
             className={cn(
               "flex w-full items-center justify-between gap-2 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1 text-base md:text-sm h-9 whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[empty=true]:text-muted-foreground [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:opacity-50",
               hasError && "ring-2 ring-destructive/50 bg-destructive/10"

@@ -12,6 +12,7 @@ export function QuickFilterChip({ icon, label, active, onClick, badge }: QuickFi
   return (
     <button
       onClick={onClick}
+      data-elevation="control"
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
         active
           ? "bg-primary/80 text-primary-foreground"

@@ -56,6 +56,7 @@ export const InteractiveHoverButton = React.forwardRef<
   return (
     <button
       ref={ref}
+      data-elevation="control"
       className={cn("interactive-hover-button", interactiveHoverButtonVariants({ variant, size, className }))}
       {...props}
     >

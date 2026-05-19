@@ -44,6 +44,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       data-variant={variant}
+      data-elevation={variant === "default" ? "control" : undefined}
       className={cn(tabsListVariants({ variant }), className)}
       {...props}
     />
@@ -57,6 +58,7 @@ function TabsTrigger({
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
+      data-elevation="control-active"
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium ring-offset-background transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "group-data-[variant=default]/tabs-list:data-[state=active]:bg-background group-data-[variant=default]/tabs-list:data-[state=active]:text-foreground group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm",

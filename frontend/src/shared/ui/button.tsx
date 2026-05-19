@@ -49,6 +49,7 @@ const Button = React.forwardRef<
     <Comp
       ref={ref}
       data-slot="button"
+      data-elevation="control"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

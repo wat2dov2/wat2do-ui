@@ -123,6 +123,14 @@
   --radius-3xl: var(--app-radius-4);
   --radius-4xl: var(--app-radius-4);
 
+  /* Shadow scale mapped from design tokens */
+  --shadow-xs: var(--app-shadow-xs);
+  --shadow-sm: var(--app-shadow-sm);
+  --shadow-md: var(--app-shadow-md);
+  --shadow-lg: var(--app-shadow-lg);
+  --shadow-xl: var(--app-shadow-xl);
+  --shadow-control: var(--app-shadow-control);
+
   /* Z-index scale — keep in sync with shared/constants/zIndex.ts */
   --z-index-sidebar: 30;
   --z-index-nav: 40;
@@ -175,9 +183,11 @@
   [data-slot="dialog-content"],
   [data-slot="tooltip-content"],
   [data-radix-popper-content-wrapper] > * {
-    box-shadow:
-      0 1px 2px 0 rgb(0 0 0 / 0.04),
-      0 8px 24px -4px rgb(0 0 0 / 0.10) !important;
+    box-shadow: var(--app-shadow-floating) !important;
+  }
+  [data-elevation="control"],
+  [data-elevation="control-active"][data-state="active"] {
+    box-shadow: var(--app-shadow-control) !important;
   }
   body {
     @apply bg-background text-foreground;
@@ -231,6 +241,48 @@
   
   .no-visible-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  .event-card-waterpaint {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .event-card-waterpaint::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: -24%;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse at var(--waterpaint-color-1-x, 14%) var(--waterpaint-color-1-y, 16%), currentColor 0 9%, transparent 34%),
+      radial-gradient(ellipse at var(--waterpaint-color-2-x, 84%) var(--waterpaint-color-2-y, 10%), currentColor 0 8%, transparent 30%),
+      radial-gradient(ellipse at var(--waterpaint-color-3-x, 56%) var(--waterpaint-color-3-y, 64%), currentColor 0 12%, transparent 38%),
+      radial-gradient(ellipse at var(--waterpaint-color-4-x, 8%) var(--waterpaint-color-4-y, 94%), currentColor 0 7%, transparent 28%);
+    filter: blur(22px);
+    opacity: 0.11;
+    transform: rotate(var(--waterpaint-color-rotate, -4deg));
+  }
+
+  .event-card-waterpaint::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: -12%;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse at var(--waterpaint-light-1-x, 22%) var(--waterpaint-light-1-y, 18%), var(--card) 0 7%, transparent 22%),
+      radial-gradient(ellipse at var(--waterpaint-light-2-x, 72%) var(--waterpaint-light-2-y, 22%), var(--card) 0 6%, transparent 20%),
+      radial-gradient(ellipse at var(--waterpaint-light-3-x, 38%) var(--waterpaint-light-3-y, 66%), var(--card) 0 9%, transparent 26%),
+      radial-gradient(ellipse at var(--waterpaint-light-4-x, 86%) var(--waterpaint-light-4-y, 86%), var(--card) 0 7%, transparent 24%);
+    filter: blur(16px);
+    opacity: 0.48;
+    transform: rotate(var(--waterpaint-light-rotate, 5deg));
+  }
+
+  .event-card-waterpaint > * {
+    position: relative;
+    z-index: 1;
   }
 
   /* WCAG 2.3.3: honour prefers-reduced-motion by collapsing animations and

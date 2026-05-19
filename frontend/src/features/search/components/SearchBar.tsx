@@ -29,6 +29,7 @@ export function SearchBar({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
+          data-elevation="control"
           placeholder={t("search.placeholder")}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}

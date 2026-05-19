@@ -24,6 +24,7 @@ export function MoreFiltersButton({
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <button
+          data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             open || filterCount > 0
               ? "bg-primary/80 text-primary-foreground"

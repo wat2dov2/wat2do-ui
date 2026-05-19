@@ -126,49 +126,75 @@ export function translateCategory(category: string, t: (key: string) => string):
   return category;
 }
 
+type CategoryClasses = { bg: string; text: string; border: string };
+
 /** Default category style when no mapping exists */
-const DEFAULT_CATEGORY_STYLE = { bg: "bg-category-default-bg", text: "text-category-default-text" };
+const DEFAULT_CATEGORY_STYLE: CategoryClasses = {
+  bg: "bg-category-default-bg",
+  text: "text-category-default-text",
+  border: "border-category-default-text/25",
+};
+
+function categoryStyle(bg: string, text: string, border: string): CategoryClasses {
+  return { bg, text, border };
+}
 
 /**
  * Get category color classes for styling.
  * Matches EVENT_CATEGORIES (onboarding + create event modal).
  */
-export function getCategoryClasses(category: string): { bg: string; text: string } {
-  const mapping: Record<string, { bg: string; text: string }> = {
-    Academics: { bg: "bg-category-academic-bg", text: "text-category-academic-text" },
-    Studying: { bg: "bg-category-academic-bg", text: "text-category-academic-text" },
-    Career: { bg: "bg-category-career-bg", text: "text-category-career-text" },
-    Networking: { bg: "bg-category-career-bg", text: "text-category-career-text" },
-    Games: { bg: "bg-category-social-bg", text: "text-category-social-text" },
-    Partying: { bg: "bg-category-social-bg", text: "text-category-social-text" },
-    Athletics: { bg: "bg-category-sports-bg", text: "text-category-sports-text" },
-    Sports: { bg: "bg-category-sports-bg", text: "text-category-sports-text" },
-    Art: { bg: "bg-category-arts-bg", text: "text-category-arts-text" },
-    Dance: { bg: "bg-category-arts-bg", text: "text-category-arts-text" },
-    Design: { bg: "bg-category-arts-bg", text: "text-category-arts-text" },
-    Culture: { bg: "bg-category-cultural-bg", text: "text-category-cultural-text" },
-    Religion: { bg: "bg-category-religious-bg", text: "text-category-religious-text" },
-    Advocacy: DEFAULT_CATEGORY_STYLE,
-    Technology: { bg: "bg-category-technology-bg", text: "text-category-technology-text" },
-    Entrepreneurship: { bg: "bg-category-entrepreneurship-bg", text: "text-category-entrepreneurship-text" },
-    Health: { bg: "bg-category-health-bg", text: "text-category-health-text" },
-    Wellness: { bg: "bg-category-health-bg", text: "text-category-health-text" },
-    "Mental Health": { bg: "bg-category-health-bg", text: "text-category-health-text" },
-    Music: { bg: "bg-category-music-bg", text: "text-category-music-text" },
-    Food: DEFAULT_CATEGORY_STYLE,
-    Volunteering: DEFAULT_CATEGORY_STYLE,
-    Events: { bg: "bg-category-events-bg", text: "text-category-events-text" },
-    Clubs: { bg: "bg-category-clubs-bg", text: "text-category-clubs-text" },
-    Academic: { bg: "bg-category-academic-bg", text: "text-category-academic-text" },
-    Religious: { bg: "bg-category-religious-bg", text: "text-category-religious-text" },
-    Cultural: { bg: "bg-category-cultural-bg", text: "text-category-cultural-text" },
-    "Social & Games": { bg: "bg-category-social-bg", text: "text-category-social-text" },
-    "Sports & Fitness": { bg: "bg-category-sports-bg", text: "text-category-sports-text" },
-    "Career & Networking": { bg: "bg-category-career-bg", text: "text-category-career-text" },
-    "Creative Arts": { bg: "bg-category-arts-bg", text: "text-category-arts-text" },
-    "Arts & Crafts": { bg: "bg-category-arts-bg", text: "text-category-arts-text" },
-    "Health & Wellness": { bg: "bg-category-health-bg", text: "text-category-health-text" },
-    "Music & Performance": { bg: "bg-category-music-bg", text: "text-category-music-text" },
+export function getCategoryClasses(category: string): CategoryClasses {
+  const academic = categoryStyle("bg-category-academic-bg", "text-category-academic-text", "border-category-academic-text/25");
+  const career = categoryStyle("bg-category-career-bg", "text-category-career-text", "border-category-career-text/25");
+  const social = categoryStyle("bg-category-social-bg", "text-category-social-text", "border-category-social-text/25");
+  const sports = categoryStyle("bg-category-sports-bg", "text-category-sports-text", "border-category-sports-text/25");
+  const arts = categoryStyle("bg-category-arts-bg", "text-category-arts-text", "border-category-arts-text/25");
+  const cultural = categoryStyle("bg-category-cultural-bg", "text-category-cultural-text", "border-category-cultural-text/25");
+  const religious = categoryStyle("bg-category-religious-bg", "text-category-religious-text", "border-category-religious-text/25");
+  const technology = categoryStyle("bg-category-technology-bg", "text-category-technology-text", "border-category-technology-text/25");
+  const entrepreneurship = categoryStyle(
+    "bg-category-entrepreneurship-bg",
+    "text-category-entrepreneurship-text",
+    "border-category-entrepreneurship-text/25"
+  );
+  const health = categoryStyle("bg-category-health-bg", "text-category-health-text", "border-category-health-text/25");
+  const music = categoryStyle("bg-category-music-bg", "text-category-music-text", "border-category-music-text/25");
+
+  const mapping: Record<string, CategoryClasses> = {
+    Academics: academic,
+    Studying: academic,
+    Career: career,
+    Networking: career,
+    Games: social,
+    Partying: social,
+    Athletics: sports,
+    Sports: sports,
+    Art: arts,
+    Dance: arts,
+    Design: arts,
+    Culture: cultural,
+    Religion: religious,
+    Advocacy: cultural,
+    Technology: technology,
+    Entrepreneurship: entrepreneurship,
+    Health: health,
+    Wellness: health,
+    "Mental Health": health,
+    Music: music,
+    Food: academic,
+    Volunteering: entrepreneurship,
+    Events: categoryStyle("bg-category-events-bg", "text-category-events-text", "border-category-events-text/25"),
+    Clubs: categoryStyle("bg-category-clubs-bg", "text-category-clubs-text", "border-category-clubs-text/25"),
+    Academic: academic,
+    Religious: religious,
+    Cultural: cultural,
+    "Social & Games": social,
+    "Sports & Fitness": sports,
+    "Career & Networking": career,
+    "Creative Arts": arts,
+    "Arts & Crafts": arts,
+    "Health & Wellness": health,
+    "Music & Performance": music,
   };
   return mapping[category] || DEFAULT_CATEGORY_STYLE;
 }

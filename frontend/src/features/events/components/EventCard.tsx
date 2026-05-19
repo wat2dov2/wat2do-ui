@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -36,13 +37,12 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { getUserId } from "@/features/auth";
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
-import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
+import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
-import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 import { QP } from "@/shared/constants/queryParams";
 
 interface EventCardProps {
@@ -53,6 +53,37 @@ interface EventCardProps {
   disableModal?: boolean;
   /** Called when the user confirms deletion (shown only to owners/admins). */
   onDelete?: (eventId: number) => void;
+}
+
+type WaterpaintStyle = CSSProperties & Record<`--waterpaint-${string}`, string>;
+
+function seededPercent(seed: number, salt: number, min: number, max: number): string {
+  const x = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
+  const fraction = x - Math.floor(x);
+  return `${Math.round(min + fraction * (max - min))}%`;
+}
+
+function getWaterpaintStyle(eventId: number): WaterpaintStyle {
+  return {
+    "--waterpaint-color-1-x": seededPercent(eventId, 1, 6, 24),
+    "--waterpaint-color-1-y": seededPercent(eventId, 2, 8, 30),
+    "--waterpaint-color-2-x": seededPercent(eventId, 3, 70, 94),
+    "--waterpaint-color-2-y": seededPercent(eventId, 4, 4, 24),
+    "--waterpaint-color-3-x": seededPercent(eventId, 5, 36, 70),
+    "--waterpaint-color-3-y": seededPercent(eventId, 6, 48, 78),
+    "--waterpaint-color-4-x": seededPercent(eventId, 7, 4, 22),
+    "--waterpaint-color-4-y": seededPercent(eventId, 8, 76, 104),
+    "--waterpaint-light-1-x": seededPercent(eventId, 9, 12, 38),
+    "--waterpaint-light-1-y": seededPercent(eventId, 10, 8, 34),
+    "--waterpaint-light-2-x": seededPercent(eventId, 11, 58, 88),
+    "--waterpaint-light-2-y": seededPercent(eventId, 12, 12, 38),
+    "--waterpaint-light-3-x": seededPercent(eventId, 13, 28, 58),
+    "--waterpaint-light-3-y": seededPercent(eventId, 14, 54, 84),
+    "--waterpaint-light-4-x": seededPercent(eventId, 15, 70, 98),
+    "--waterpaint-light-4-y": seededPercent(eventId, 16, 72, 104),
+    "--waterpaint-color-rotate": `${Number.parseInt(seededPercent(eventId, 17, -8, 4), 10)}deg`,
+    "--waterpaint-light-rotate": `${Number.parseInt(seededPercent(eventId, 18, -2, 10), 10)}deg`,
+  };
 }
 
 
@@ -104,6 +135,8 @@ export function EventCard({
 
   // Use extracted hook for badges
   const badges = useEventBadges(event);
+  const eventCategory = getEventCategory(event);
+  const categoryClasses = getCategoryClasses(eventCategory);
 
   // Format date and time using extracted utilities
   const cardDate = formatCardDate(event, i18n.language || 'en-US');
@@ -154,10 +187,10 @@ export function EventCard({
                 className={`absolute inset-0 ${
                   isPromoted
                     ? "bg-linear-to-br from-yellow-100 to-yellow-50"
-                    : "bg-linear-to-br from-muted to-muted/80"
+                    : categoryClasses.bg
                 } flex items-center justify-center`}
               >
-                <ImageOff className="size-8 text-muted-foreground/40" />
+                <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
               </div>
             }
             placeholder={
@@ -165,7 +198,7 @@ export function EventCard({
                 className={`absolute inset-0 ${
                   isPromoted
                     ? "bg-linear-to-br from-yellow-100 to-yellow-50"
-                    : "bg-linear-to-br from-muted to-muted/80"
+                    : categoryClasses.bg
                 } animate-pulse`}
               />
             }
@@ -173,11 +206,9 @@ export function EventCard({
           {/* Category Badge - Top Left (Pastel styling) */}
           <BadgeMask variant="top-left">
             <span
-              className={`font-bold text-[10px] px-2 py-0.5 block rounded-full ${
-                getCategoryClasses(event.category || DEFAULT_EVENT_CATEGORY).bg
-              } ${getCategoryClasses(event.category || DEFAULT_EVENT_CATEGORY).text}`}
+              className={`font-bold text-[10px] px-2 py-0.5 block rounded-full ${categoryClasses.bg} ${categoryClasses.text}`}
             >
-              {translateCategory(event.category || DEFAULT_EVENT_CATEGORY, t)}
+              {translateCategory(eventCategory, t)}
             </span>
           </BadgeMask>
 
@@ -292,7 +323,10 @@ export function EventCard({
         </div>
 
         {/* Bottom section: bordered on left/right/bottom, wrapping content + interest button */}
-        <div className="flex flex-col flex-1 border-l border-r border-b border-border rounded-b-xl overflow-hidden">
+        <div
+          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          style={getWaterpaintStyle(event.id)}
+        >
           {/* Event Content */}
           <EventCardContent
             title={event.title}
@@ -300,6 +334,9 @@ export function EventCard({
             time={cardTime}
             location={event.location}
             badges={badges}
+            textClassName={categoryClasses.text}
+            secondaryTextClassName={categoryClasses.text}
+            badgeClassName={`border-current ${categoryClasses.text}`}
           />
 
           {/* I'm Interested button */}
@@ -310,10 +347,10 @@ export function EventCard({
               if (profileCompleted) toggleSaveEvent(event.id);
             }}
             disabled={!profileCompleted}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-t border-border ${
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-t ${categoryClasses.border} ${
               isSaved
-                ? "bg-card text-foreground hover:bg-secondary"
-                : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
+                : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
             } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
           >
             <Heart className={`w-4 h-4 ${isSaved ? "fill-error text-error" : ""}`} />
