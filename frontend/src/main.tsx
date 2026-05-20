@@ -27,40 +27,7 @@ setOnAfterRefresh(() => {
   )
 })
 
-// Initialize app - load translations, constants, and auth before rendering.
-// Each step is individually guarded so the app always renders, even if
-// non-critical initialization fails (English-only > white screen).
-async function initApp() {
-  try {
-    const initialLang = getStoredLanguage();
-    await loadLanguage(initialLang);
-    i18n.changeLanguage(initialLang);
-  } catch (err) {
-    console.error("Language initialization failed, falling back to English:", err);
-  }
-
-  try {
-    await loadAppConstants();
-  } catch (err) {
-    console.error("App constants initialization failed, using fallbacks:", err);
-  }
-
-  // A14: cap the auth bootstrap on a hard 5 s timeout so a hanging refresh
-  // request (Supabase slowness, DNS weirdness, etc.) cannot stall the whole
-  // splash screen indefinitely.  Errors/timeouts are swallowed — the app still
-  // renders in an unauthenticated state.
-  try {
-    await Promise.race([
-      initializeAuth(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("initializeAuth timed out")), 5000),
-      ),
-    ]);
-  } catch (err) {
-    console.error("Auth initialization failed or timed out, continuing without session:", err);
-  }
-
-  // Always render — a degraded app is better than a white screen.
+function renderApp() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>
@@ -71,6 +38,49 @@ async function initApp() {
       </ErrorBoundary>
     </StrictMode>,
   )
+}
+
+async function bootstrapConstants() {
+  try {
+    await loadAppConstants();
+  } catch (err) {
+    console.error("App constants initialization failed, using fallbacks:", err);
+  }
+}
+
+async function bootstrapAuth() {
+  // A14: cap the auth bootstrap on a hard 5 s timeout so a hanging refresh
+  // request (Supabase slowness, DNS weirdness, etc.) cannot stall the app.
+  try {
+    const ok = await Promise.race([
+      initializeAuth(),
+      new Promise<boolean>((_, reject) =>
+        setTimeout(() => reject(new Error("initializeAuth timed out")), 5000),
+      ),
+    ]);
+    if (ok && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth-user-login"));
+    }
+  } catch (err) {
+    console.error("Auth initialization failed or timed out, continuing without session:", err);
+  }
+}
+
+// Initialize app. Language is the only render-blocking work; constants have
+// compiled fallbacks and auth can hydrate from localStorage before the refresh
+// request completes, so both run after first paint.
+async function initApp() {
+  try {
+    const initialLang = getStoredLanguage();
+    await loadLanguage(initialLang);
+    i18n.changeLanguage(initialLang);
+  } catch (err) {
+    console.error("Language initialization failed, falling back to English:", err);
+  }
+
+  renderApp();
+  void bootstrapConstants();
+  void bootstrapAuth();
 }
 
 initApp().catch((err) =>

@@ -33,7 +33,6 @@ export function EventsPageContainer() {
     fetchEvents,
     savedEventIds,
     latestAddedEvent,
-    recsLoading,
     filters,
     orderedEvents,
     handleDeleteEvent,
@@ -96,8 +95,8 @@ export function EventsPageContainer() {
           onViewModeChange={handleViewModeChange}
         />
 
-        {/* Filters - only show when events and recommendations are loaded */}
-        {!isLoading && !recsLoading && (
+        {/* Filters - only show once the event list is available */}
+        {!isLoading && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-baseline gap-3">
               <EventCount count={filters.filteredEvents.length} />
@@ -144,7 +143,7 @@ export function EventsPageContainer() {
 
       {/* Main Content */}
       <main className="w-full px-6 pt-3 pb-6" role="main" aria-label={t("search.ariaLabel")}>
-        {isLoading || recsLoading ? (
+        {isLoading ? (
           <LoadingPage />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4">

@@ -15,6 +15,7 @@ interface CachedResult {
 // transitions) never see stale recommendations from another session.
 // "anonymous" key is used for logged-out popular recommendations.
 const cacheByUser = new Map<string, CachedResult>();
+const inFlightByUser = new Map<string, Promise<RecommendationItem[]>>();
 
 function getCacheKey(): string {
   return getUserId() ?? "anonymous";
@@ -43,7 +44,18 @@ export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
       }
 
       setIsLoading(true);
-      fetchRecommendations(limit)
+      let request = inFlightByUser.get(key);
+      if (!request) {
+        request = fetchRecommendations(limit);
+        inFlightByUser.set(key, request);
+        request.finally(() => {
+          if (inFlightByUser.get(key) === request) {
+            inFlightByUser.delete(key);
+          }
+        });
+      }
+
+      request
         .then((data) => {
           if (!mountedRef.current) return;
           cacheByUser.set(key, { data, timestamp: Date.now() });
@@ -65,8 +77,9 @@ export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
   // Re-fetch when user identity changes (login/logout)
   useEffect(() => {
     mountedRef.current = true;
-    load();
+    const task = window.setTimeout(() => load(), 600);
     return () => {
+      window.clearTimeout(task);
       mountedRef.current = false;
     };
   }, [load, cacheKey]);

@@ -18,6 +18,8 @@ function queryReducer<T>(state: QueryState<T>, action: QueryAction<T>): QuerySta
   }
 }
 
+const inFlightQueries = new Map<() => Promise<unknown>, Promise<unknown>>();
+
 /**
  * Generic fetch hook that deduplicates the loading/error/data pattern
  * used by backend query hooks.
@@ -36,7 +38,17 @@ export function useBackendQuery<T>(
   useEffect(() => {
     let cancelled = false;
     dispatch({ type: "fetch_start" });
-    fetchFn()
+    let promise = inFlightQueries.get(fetchFn) as Promise<T> | undefined;
+    if (!promise) {
+      promise = fetchFn();
+      inFlightQueries.set(fetchFn, promise);
+      promise.finally(() => {
+        if (inFlightQueries.get(fetchFn) === promise) {
+          inFlightQueries.delete(fetchFn);
+        }
+      });
+    }
+    promise
       .then((result) => {
         if (!cancelled) dispatch({ type: "fetch_success", data: result });
       })

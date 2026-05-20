@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import type { CSSProperties } from "react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -28,10 +28,6 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
-import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
-import { DeleteEventDialog } from "@/features/events/components/DeleteEventDialog";
-import { EventShareDialog } from "@/features/events/components/EventShareDialog";
-import { EventReportDialog } from "@/features/events/components/EventReportDialog";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
@@ -44,6 +40,27 @@ import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
+
+const EventDetailsModal = lazy(() =>
+  import("@/features/events/components/EventDetailsModal").then((module) => ({
+    default: module.EventDetailsModal,
+  })),
+);
+const DeleteEventDialog = lazy(() =>
+  import("@/features/events/components/DeleteEventDialog").then((module) => ({
+    default: module.DeleteEventDialog,
+  })),
+);
+const EventShareDialog = lazy(() =>
+  import("@/features/events/components/EventShareDialog").then((module) => ({
+    default: module.EventShareDialog,
+  })),
+);
+const EventReportDialog = lazy(() =>
+  import("@/features/events/components/EventReportDialog").then((module) => ({
+    default: module.EventReportDialog,
+  })),
+);
 
 interface EventCardProps {
   event: Event;
@@ -361,37 +378,50 @@ export function EventCard({
 
       {/* Event Details Modal */}
       {showDetailsModal && (
-        <EventDetailsModal
-          event={event}
-          onClose={() => {
-            const newParams = new URLSearchParams(searchParams);
-            newParams.delete(QP.EVENT_ID);
-            navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
-          }}
-          allEvents={allEvents}
-        />
+        <Suspense fallback={null}>
+          <EventDetailsModal
+            event={event}
+            onClose={() => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.delete(QP.EVENT_ID);
+              navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
+            }}
+            allEvents={allEvents}
+          />
+        </Suspense>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteEventDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        eventTitle={event.title}
-        onConfirm={() => onDelete?.(event.id)}
-      />
+      {showDeleteConfirm && (
+        <Suspense fallback={null}>
+          <DeleteEventDialog
+            open={showDeleteConfirm}
+            onOpenChange={setShowDeleteConfirm}
+            eventTitle={event.title}
+            onConfirm={() => onDelete?.(event.id)}
+          />
+        </Suspense>
+      )}
 
-      <EventShareDialog
-        event={event}
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-      />
+      {showShareDialog && (
+        <Suspense fallback={null}>
+          <EventShareDialog
+            event={event}
+            open={showShareDialog}
+            onOpenChange={setShowShareDialog}
+          />
+        </Suspense>
+      )}
 
-      <EventReportDialog
-        eventId={event.id}
-        eventTitle={event.title}
-        open={showReportDialog}
-        onOpenChange={setShowReportDialog}
-      />
+      {showReportDialog && (
+        <Suspense fallback={null}>
+          <EventReportDialog
+            eventId={event.id}
+            eventTitle={event.title}
+            open={showReportDialog}
+            onOpenChange={setShowReportDialog}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

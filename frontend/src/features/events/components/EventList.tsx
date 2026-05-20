@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
@@ -18,6 +18,9 @@ interface EventListProps {
   onClearFilters?: () => void;
 }
 
+const INITIAL_RENDER_COUNT = 8;
+const RENDER_CHUNK_SIZE = 24;
+
 /**
  * Event list component.
  *
@@ -36,6 +39,7 @@ export function EventList({
   onClearFilters,
 }: EventListProps) {
   const { t } = useTranslation();
+  const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT);
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
   // Custom equality: the store re-sets this array on every reconcile, so the
   // reference changes even when the ID set is identical. ``useShallow`` does
@@ -54,6 +58,18 @@ export function EventList({
     () => new Set(activePromotedEventIds),
     [activePromotedEventIds],
   );
+  const visibleEvents = useMemo(
+    () => events.slice(0, Math.min(visibleCount, events.length)),
+    [events, visibleCount],
+  );
+
+  useEffect(() => {
+    if (visibleCount >= events.length) return;
+    const id = window.setTimeout(() => {
+      setVisibleCount((count) => Math.min(count + RENDER_CHUNK_SIZE, events.length));
+    }, 140);
+    return () => window.clearTimeout(id);
+  }, [events.length, visibleCount]);
 
   // Early returns AFTER all hooks
   if (viewMode === "calendar") {
@@ -106,7 +122,7 @@ export function EventList({
       role="list"
       aria-label={`${events.length} events found`}
     >
-      {events.map((event) => (
+      {visibleEvents.map((event) => (
         <div
           key={event.id}
           role="listitem"
