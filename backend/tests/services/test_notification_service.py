@@ -1,4 +1,4 @@
-"""Service-level tests for notification_service.
+"""Service-level tests for the split notifications service.
 
 Covers the pieces router tests can't reach:
 - Preference resolution (default fallback, explicit rows).
@@ -24,7 +24,14 @@ from core.constants import (
     NOTIFICATION_TYPE_WEEKLY_DIGEST,
     PG_UNIQUE_VIOLATION,
 )
-from services import notification_service
+from services.notifications import (
+    delivery_log,
+    digests,
+    event_change,
+    preferences,
+    rendering,
+    schedule,
+)
 
 
 def _user(**overrides) -> dict:
@@ -44,28 +51,28 @@ def _user(**overrides) -> dict:
 
 def test_is_enabled_missing_row_returns_default(fake_sb, patch_sb):
     """No row in prefs table → code default (True for all v1 types)."""
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.preferences")
     fake_sb.set_response(data=[])
 
-    assert notification_service.is_enabled("user-uuid", NOTIFICATION_TYPE_EVENT_CHANGE) is True
-    assert notification_service.is_enabled("user-uuid", NOTIFICATION_TYPE_DAILY_NEW_EVENTS) is False
+    assert preferences.is_enabled("user-uuid", NOTIFICATION_TYPE_EVENT_CHANGE) is True
+    assert preferences.is_enabled("user-uuid", NOTIFICATION_TYPE_DAILY_NEW_EVENTS) is False
     fake_sb.eq.assert_any_call("user_id", "user-uuid")
     fake_sb.eq.assert_any_call("notification_type", NOTIFICATION_TYPE_EVENT_CHANGE)
 
 
 def test_is_enabled_explicit_row_returns_value(fake_sb, patch_sb):
     """Explicit row overrides the default (opt-out stays opt-out)."""
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.preferences")
     fake_sb.set_response(data=[{"enabled": False}])
 
-    assert notification_service.is_enabled("user-uuid", NOTIFICATION_TYPE_MORNING_DIGEST) is False
+    assert preferences.is_enabled("user-uuid", NOTIFICATION_TYPE_MORNING_DIGEST) is False
 
 
 def test_set_preferences_upserts_with_conflict_key(fake_sb, patch_sb):
     """Upsert must target the (user_id, notification_type) uniqueness key."""
     from schemas.notification_preference import NotificationPreferenceUpdate
 
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.preferences")
     fake_sb.set_response(data=[])
 
     updates = [
@@ -73,7 +80,7 @@ def test_set_preferences_upserts_with_conflict_key(fake_sb, patch_sb):
             notification_type=NOTIFICATION_TYPE_MORNING_DIGEST, enabled=False
         ),
     ]
-    notification_service.set_preferences("user-uuid", updates)
+    preferences.set_preferences("user-uuid", updates)
 
     fake_sb.upsert.assert_called_once()
     payload, kwargs = fake_sb.upsert.call_args
@@ -84,7 +91,7 @@ def test_set_preferences_upserts_with_conflict_key(fake_sb, patch_sb):
 
 def test_get_preferences_merges_default_for_missing_types(fake_sb, patch_sb):
     """Types with no row in the table come back as defaults, not omitted."""
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.preferences")
     fake_sb.set_response(
         data=[
             {
@@ -95,7 +102,7 @@ def test_get_preferences_merges_default_for_missing_types(fake_sb, patch_sb):
         ]
     )
 
-    prefs = notification_service.get_preferences("user-uuid")
+    prefs = preferences.get_preferences("user-uuid")
 
     types = [p.notification_type for p in prefs]
     assert NOTIFICATION_TYPE_MORNING_DIGEST in types
@@ -116,10 +123,10 @@ def test_get_preferences_merges_default_for_missing_types(fake_sb, patch_sb):
 
 
 def test_try_insert_log_row_returns_id_on_success(fake_sb, patch_sb):
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.delivery_log")
     fake_sb.set_response(data=[{"id": "log-row-uuid"}])
 
-    row_id = notification_service._try_insert_log_row(
+    row_id = delivery_log._try_insert_log_row(
         user_id="user-uuid",
         notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
         target_id="42:abc123",
@@ -129,10 +136,10 @@ def test_try_insert_log_row_returns_id_on_success(fake_sb, patch_sb):
 
 def test_try_insert_log_row_returns_none_on_unique_violation(fake_sb, patch_sb):
     """Dedup: unique-violation on the INSERT must collapse to None, not raise."""
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.delivery_log")
     fake_sb.raise_on_execute(Exception(f"duplicate key value ... {PG_UNIQUE_VIOLATION}"))
 
-    row_id = notification_service._try_insert_log_row(
+    row_id = delivery_log._try_insert_log_row(
         user_id="user-uuid",
         notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
         target_id="42:abc123",
@@ -142,11 +149,11 @@ def test_try_insert_log_row_returns_none_on_unique_violation(fake_sb, patch_sb):
 
 def test_try_insert_log_row_reraises_other_errors(fake_sb, patch_sb):
     """Non-uniqueness errors must not be swallowed."""
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.delivery_log")
     fake_sb.raise_on_execute(RuntimeError("connection refused"))
 
     with pytest.raises(RuntimeError, match="connection refused"):
-        notification_service._try_insert_log_row(
+        delivery_log._try_insert_log_row(
             user_id="user-uuid",
             notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
             target_id="42:abc123",
@@ -160,7 +167,7 @@ def test_try_insert_log_row_reraises_other_errors(fake_sb, patch_sb):
 
 def test_enqueue_event_change_empty_diff_noop():
     """Empty diff = nothing to notify. No DB calls, no-op return 0."""
-    assert notification_service.enqueue_event_change(42, {}) == 0
+    assert event_change.enqueue_event_change(42, {}) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +196,7 @@ def test_render_event_change_text_renders_added_occurrence():
         },
     }
     summary = {"title": "Tea Tasting", "location": "SLC"}
-    text = notification_service._render_event_change_text(summary, diff)
+    text = rendering._render_event_change_text(summary, diff)
     assert "+ added 2026-06-01 18:00 UTC" in text
     # The unchanged date should NOT appear under added/removed.
     assert "+ added 2026-05-01" not in text
@@ -205,7 +212,7 @@ def test_render_event_change_text_renders_removed_occurrence():
         },
     }
     summary = {"title": "Tea Tasting", "location": "SLC"}
-    text = notification_service._render_event_change_text(summary, diff)
+    text = rendering._render_event_change_text(summary, diff)
     assert "- removed 2026-06-01 18:00 UTC" in text
 
 
@@ -218,7 +225,7 @@ def test_render_event_change_html_lists_added_and_removed():
         },
     }
     summary = {"title": "Tea Tasting", "location": "SLC"}
-    html = notification_service._render_event_change_html(summary, diff)
+    html = rendering._render_event_change_html(summary, diff)
     assert "<strong>dates</strong>" in html
     assert "added <strong>2026-06-01 18:00 UTC</strong>" in html
     assert "removed <strong>2026-05-01 18:00 UTC</strong>" in html
@@ -238,7 +245,7 @@ def test_render_event_change_falls_back_to_edited_when_only_metadata_changed():
         },
     }
     summary = {"title": "Tea Tasting", "location": "SLC"}
-    text = notification_service._render_event_change_text(summary, diff)
+    text = rendering._render_event_change_text(summary, diff)
     assert "dates: edited" in text
 
 
@@ -253,22 +260,22 @@ def test_render_event_change_text_handles_malformed_iso_gracefully():
     }
     summary = {"title": "X", "location": "Y"}
     # Should not raise.
-    text = notification_service._render_event_change_text(summary, diff)
+    text = rendering._render_event_change_text(summary, diff)
     assert "not-a-date" in text  # raw value preserved
 
 
 def test_enqueue_event_change_missing_event_returns_zero(fake_sb, patch_sb):
     """Event row fetched but empty → log warn, return 0."""
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.event_change")
     fake_sb.set_response(data=[])
 
     diff = {"status": {"old": "CONFIRMED", "new": "CANCELLED"}}
-    assert notification_service.enqueue_event_change(9999, diff) == 0
+    assert event_change.enqueue_event_change(9999, diff) == 0
 
 
 def test_enqueue_event_change_no_saved_users_returns_zero(fake_sb, patch_sb):
     """Event exists but no one saved it → no fanout."""
-    patch_sb("services.notification_service")
+    patch_sb("services.notifications.event_change")
     fake_sb.queue_responses(
         [
             # 1: fetch event
@@ -279,7 +286,7 @@ def test_enqueue_event_change_no_saved_users_returns_zero(fake_sb, patch_sb):
     )
 
     diff = {"status": {"old": "CONFIRMED", "new": "CANCELLED"}}
-    assert notification_service.enqueue_event_change(42, diff) == 0
+    assert event_change.enqueue_event_change(42, diff) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -291,14 +298,14 @@ def test_is_morning_digest_time_returns_date_at_9am_local():
     """Waterloo (America/Toronto) at 13:00 UTC is 09:00 local (EDT in May)."""
     user = _user(school="university of waterloo")
     now_utc = datetime(2026, 5, 1, 13, 0, tzinfo=timezone.utc)
-    result = notification_service.is_morning_digest_time(user, now_utc)
+    result = schedule.is_morning_digest_time(user, now_utc)
     assert result == date(2026, 5, 1)
 
 
 def test_is_morning_digest_time_returns_none_off_hour():
     user = _user(school="university of waterloo")
     now_utc = datetime(2026, 5, 1, 16, 0, tzinfo=timezone.utc)  # noon local
-    assert notification_service.is_morning_digest_time(user, now_utc) is None
+    assert schedule.is_morning_digest_time(user, now_utc) is None
 
 
 def test_is_weekly_digest_time_returns_next_monday_on_sunday_6pm():
@@ -306,7 +313,7 @@ def test_is_weekly_digest_time_returns_next_monday_on_sunday_6pm():
     user = _user(school="university of waterloo")
     # 2026-05-03 is a Sunday; 18:00 EDT = 22:00 UTC
     now_utc = datetime(2026, 5, 3, 22, 0, tzinfo=timezone.utc)
-    result = notification_service.is_weekly_digest_time(user, now_utc)
+    result = schedule.is_weekly_digest_time(user, now_utc)
     assert result == date(2026, 5, 4)  # Monday
     assert result.weekday() == 0  # Monday
 
@@ -316,14 +323,14 @@ def test_is_weekly_digest_time_returns_none_not_sunday():
     user = _user(school="university of waterloo")
     # 2026-05-04 is a Monday; 18:00 EDT = 22:00 UTC
     now_utc = datetime(2026, 5, 4, 22, 0, tzinfo=timezone.utc)
-    assert notification_service.is_weekly_digest_time(user, now_utc) is None
+    assert schedule.is_weekly_digest_time(user, now_utc) is None
 
 
 def test_is_weekly_digest_time_returns_none_sunday_off_hour():
     user = _user(school="university of waterloo")
     # 2026-05-03 is Sunday; 15:00 UTC = 11am local, not 6pm
     now_utc = datetime(2026, 5, 3, 15, 0, tzinfo=timezone.utc)
-    assert notification_service.is_weekly_digest_time(user, now_utc) is None
+    assert schedule.is_weekly_digest_time(user, now_utc) is None
 
 
 def test_unknown_school_falls_back_to_utc():
@@ -331,14 +338,14 @@ def test_unknown_school_falls_back_to_utc():
     user = _user(email="person@example.edu", school="Some Unknown University")
     # 9am UTC directly
     now_utc = datetime(2026, 5, 1, 9, 0, tzinfo=timezone.utc)
-    assert notification_service.is_morning_digest_time(user, now_utc) == date(2026, 5, 1)
+    assert schedule.is_morning_digest_time(user, now_utc) == date(2026, 5, 1)
 
 
 def test_is_daily_new_events_time_returns_local_timestamp_at_1030():
     """Waterloo (America/Toronto) at 14:30 UTC is 10:30 local (EDT in May)."""
     user = _user(school="university of waterloo")
     now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
-    result = notification_service.is_daily_new_events_time(user, now_utc)
+    result = schedule.is_daily_new_events_time(user, now_utc)
     assert result is not None
     assert result.date() == date(2026, 5, 1)
     assert result.hour == 10
@@ -348,7 +355,7 @@ def test_is_daily_new_events_time_returns_local_timestamp_at_1030():
 def test_is_daily_new_events_time_returns_none_off_minute():
     user = _user(school="university of waterloo")
     now_utc = datetime(2026, 5, 1, 14, 0, tzinfo=timezone.utc)
-    assert notification_service.is_daily_new_events_time(user, now_utc) is None
+    assert schedule.is_daily_new_events_time(user, now_utc) is None
 
 
 def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
@@ -369,9 +376,9 @@ def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
     mark_sent = MagicMock()
     captured = {}
 
-    monkeypatch.setattr(notification_service, "is_enabled", lambda *_: True)
+    monkeypatch.setattr(digests, "is_enabled", lambda *_: True)
     monkeypatch.setattr(
-        notification_service,
+        digests,
         "_last_successful_send_at",
         lambda *_: previous_sent_at,
     )
@@ -380,12 +387,12 @@ def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
         captured.update({"school": school, "start_utc": start_utc, "end_utc": end_utc})
         return [event]
 
-    monkeypatch.setattr(notification_service, "_fetch_new_events_added_since", fake_fetch)
-    monkeypatch.setattr(notification_service, "_try_insert_log_row", lambda **_: "row-1")
-    monkeypatch.setattr(notification_service, "_mark_log_sent", mark_sent)
-    monkeypatch.setattr(notification_service.email_service, "send", sent)
+    monkeypatch.setattr(digests, "_fetch_new_events_added_since", fake_fetch)
+    monkeypatch.setattr(digests, "_try_insert_log_row", lambda **_: "row-1")
+    monkeypatch.setattr(digests, "_mark_log_sent", mark_sent)
+    monkeypatch.setattr(digests.email_service, "send", sent)
 
-    assert notification_service.send_daily_new_events_digest(user, now_utc) is True
+    assert digests.send_daily_new_events_digest(user, now_utc) is True
 
     assert captured == {
         "school": "University of Waterloo",
@@ -405,19 +412,19 @@ def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
 
 def test_send_daily_new_events_digest_skips_without_events(monkeypatch):
     user = _user(id="user-uuid", school="University of Waterloo")
-    monkeypatch.setattr(notification_service, "is_enabled", lambda *_: True)
-    monkeypatch.setattr(notification_service, "_last_successful_send_at", lambda *_: None)
-    monkeypatch.setattr(notification_service, "_fetch_new_events_added_since", lambda **_: [])
+    monkeypatch.setattr(digests, "is_enabled", lambda *_: True)
+    monkeypatch.setattr(digests, "_last_successful_send_at", lambda *_: None)
+    monkeypatch.setattr(digests, "_fetch_new_events_added_since", lambda **_: [])
     insert = MagicMock()
-    monkeypatch.setattr(notification_service, "_try_insert_log_row", insert)
+    monkeypatch.setattr(digests, "_try_insert_log_row", insert)
 
     now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
-    assert notification_service.send_daily_new_events_digest(user, now_utc) is False
+    assert digests.send_daily_new_events_digest(user, now_utc) is False
     insert.assert_not_called()
 
 
 def test_render_daily_new_events_html_escapes_event_text():
-    html = notification_service._render_daily_new_events_html(
+    html = rendering._render_daily_new_events_html(
         subject="1 new event at University of Waterloo",
         school="University of Waterloo",
         events=[

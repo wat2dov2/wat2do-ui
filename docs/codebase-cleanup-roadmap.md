@@ -33,6 +33,16 @@ First cleanup pass completed:
 - Moved deployment and integration docs under `docs/`, converted `CLAUDE.md`
   into a small pointer to `AGENTS.md`, and removed generated cache docs.
 
+Questions raised during cleanup:
+
+- Notification tests were reaching into private helpers because
+  `notification_service.py` mixed preference CRUD, delivery-log dedup,
+  scheduling, digest composition, fanout, and rendering in one module.
+- Future notification types should probably land as focused strategy modules
+  rather than more functions in a single service file.
+- Local `backend/models` and `backend/scraping` directories contain only
+  ignored cache artifacts; they are not repo source.
+
 ## Backend Structure Audit
 
 Keep the backend layered by responsibility, not by feature. The existing
