@@ -297,7 +297,7 @@ export function EventCard({
 
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
-            <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center">
+            <span className="text-[10px] px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
               <span className="truncate max-w-[100px]">
                 {event.organization || event.display_handle || ''}
               </span>
