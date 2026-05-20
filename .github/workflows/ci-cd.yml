@@ -74,29 +74,30 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
     env:
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_PROJECT_ID: 6909c9a0-220a-4d6b-a22f-ae1686ea54d8
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Node
-        if: env.RAILWAY_TOKEN != ''
+        if: env.RAILWAY_API_TOKEN != ''
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Install Railway CLI
-        if: env.RAILWAY_TOKEN != ''
+        if: env.RAILWAY_API_TOKEN != ''
         run: npm install -g @railway/cli
 
       - name: Skip Railway deploy until token is configured
-        if: env.RAILWAY_TOKEN == ''
+        if: env.RAILWAY_API_TOKEN == ''
         run: echo "::notice::Set the RAILWAY_TOKEN repository secret to enable automatic Railway deploys."
 
       - name: Deploy backend
-        if: env.RAILWAY_TOKEN != ''
+        if: env.RAILWAY_API_TOKEN != ''
         working-directory: backend
-        run: railway up --service wat2do-api --environment production --detach
+        run: railway up --project "$RAILWAY_PROJECT_ID" --service wat2do-api --environment production --detach
 
   deploy-frontend:
     name: Deploy frontend to Vercel
