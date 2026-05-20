@@ -88,7 +88,7 @@ jobs:
 
       - name: Install Railway CLI
         if: env.RAILWAY_API_TOKEN != ''
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@4.57.5
 
       - name: Skip Railway deploy until token is configured
         if: env.RAILWAY_API_TOKEN == ''
