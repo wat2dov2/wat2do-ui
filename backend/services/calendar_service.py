@@ -20,12 +20,12 @@ from icalendar import Calendar
 from icalendar import Event as ICalEvent
 
 from core.config import settings
-from core.constants import SCHOOL_ALIASES, SCHOOL_TIMEZONES
 from core.database import get_sb
 from core.tables import EVENTS, USERS
 from schemas.event import EventResponse
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service, saved_event_service
+from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
 
@@ -36,34 +36,6 @@ _TOKEN_BYTES = 32
 
 # Product identifier in the emitted VCALENDAR (required by RFC 5545).
 _PRODID = "-//wat2do//calendar feed//EN"
-
-# Fallback when a school is missing from the timezone map.  The log
-# warning in ``resolve_school_timezone`` is the signal to add it.
-_UTC_TZID = "UTC"
-
-
-def resolve_school_timezone(school: str | None) -> str:
-    """Return the IANA timezone for an ``events.school`` value.
-
-    Lowercase + strip, alias-map, dict lookup, UTC fallback.  Unknown
-    values log at ``warning`` so operators see which schools still need
-    to be added to ``SCHOOL_TIMEZONES``.
-    """
-    if not school:
-        return _UTC_TZID
-    key = school.strip().lower()
-    if not key:
-        return _UTC_TZID
-    canonical = SCHOOL_ALIASES.get(key, key)
-    tz = SCHOOL_TIMEZONES.get(canonical)
-    if tz is None:
-        log.warning(
-            "Unknown school %r (canonical %r) in calendar feed — falling back to UTC",
-            school,
-            canonical,
-        )
-        return _UTC_TZID
-    return tz
 
 
 def get_or_create_token(user_id: str) -> str:

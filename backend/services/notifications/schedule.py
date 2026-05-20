@@ -1,13 +1,13 @@
-"""Notification local-time scheduling and school timezone resolution."""
+"""Notification local-time scheduling."""
 
-import logging
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from core.allowed_emails import get_school_for_email
-from core.constants import SCHOOL_ALIASES, SCHOOL_TIMEZONES
-
-log = logging.getLogger(__name__)
+from services.school_context import (
+    canonical_school_key,
+    resolve_user_timezone,
+    school_for_user,
+)
 
 # Cron-firing constants — hour-of-day / day-of-week in the user's local
 # timezone. The hourly cron iterates users, converts UTC → local per
@@ -27,30 +27,15 @@ def _ensure_aware_utc(value: datetime) -> datetime:
 
 
 def _canonical_school_key(school: str | None) -> str:
-    raw = (school or "").strip().lower()
-    return SCHOOL_ALIASES.get(raw, raw)
+    return canonical_school_key(school)
 
 
 def _school_for_user(user: dict) -> str | None:
-    email_school = get_school_for_email(user.get("email") or "")
-    if email_school:
-        return email_school
-    explicit = (user.get("school") or "").strip()
-    return explicit or None
+    return school_for_user(user)
 
 
 def _user_tz(user: dict) -> ZoneInfo:
-    school = _school_for_user(user)
-    canonical = _canonical_school_key(school)
-    tz_name = SCHOOL_TIMEZONES.get(canonical)
-    if not tz_name:
-        log.warning(
-            "unresolved school=%r for user=%s; falling back to UTC",
-            school,
-            user.get("id"),
-        )
-        return ZoneInfo("UTC")
-    return ZoneInfo(tz_name)
+    return resolve_user_timezone(user)
 
 
 def is_daily_new_events_time(user: dict, now_utc: datetime) -> datetime | None:

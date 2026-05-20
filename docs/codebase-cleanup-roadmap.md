@@ -53,9 +53,18 @@ Questions raised during cleanup:
   re-exports underscored helpers for tests; decide whether those helpers are
   intentionally supported test surface or should be imported from focused
   notification modules.
-- School timezone resolution is split across calendar, scraping dates, and
-  notification scheduling. A shared helper may be clearer than duplicating
-  canonicalization in each service.
+- `services.school_context` now owns school canonicalization, school timezone
+  lookup, user-school resolution, and semester-end lookup for calendar,
+  notification, and scraping callers.
+- Notification scheduling still lets a verified email domain override an
+  explicit profile school; decide whether that should remain the policy if
+  cross-school users become common.
+- Academic calendar differences are still represented as constant tuples.
+  Future school-specific date rules may need a strategy/module pattern rather
+  than expanding `SCHOOL_SEMESTER_ENDS`.
+- Calendar, wat2do, and notification modules still expose compatibility
+  imports for school/time helpers; retire those facades only after callers
+  have moved to `services.school_context`.
 - Frontend route and language constants files also export small helper
   functions. Decide whether those helpers should move to `shared/utils` once
   their usage grows.
