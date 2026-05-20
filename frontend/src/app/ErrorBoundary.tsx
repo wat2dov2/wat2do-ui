@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 import { AlertCircle } from "lucide-react";
 import { withTranslation } from "react-i18next";
@@ -69,4 +69,6 @@ class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-export default withTranslation()(ErrorBoundary);
+const TranslatedErrorBoundary = withTranslation()(ErrorBoundary);
+
+export default TranslatedErrorBoundary;

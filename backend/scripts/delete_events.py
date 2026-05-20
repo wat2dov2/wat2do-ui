@@ -27,7 +27,9 @@ def main(titles: list[str]) -> None:
         if not r.data:
             continue
         for row in r.data:
-            print(f"Deleting id={row['id']} title={row['title']!r} org={row.get('organization') or ''!r}")
+            print(
+                f"Deleting id={row['id']} title={row['title']!r} org={row.get('organization') or ''!r}"
+            )
             sb.table(EVENTS).delete().eq("id", row["id"]).execute()
     print("Done.")
 

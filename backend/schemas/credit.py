@@ -11,6 +11,7 @@ PromotionPackage = Literal["featured", "email", "combo"]
 
 class CreditRow(BaseModel):
     """Internal representation of a user_credits row."""
+
     id: str
     user_id: str
     balance: int

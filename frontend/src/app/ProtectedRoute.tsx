@@ -42,13 +42,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   useEffect(() => {
     if (!needsFreshRole) return;
     const stale = Date.now() - getLastProfileFetchAt() > ADMIN_ROLE_FRESHNESS_TTL_MS;
-    if (!stale) {
-      setRefreshing(false);
-      return;
-    }
+    if (!stale) return;
 
     let cancelled = false;
-    setRefreshing(true);
     fetchProfileAPI()
       .catch((err) => {
         console.error("ProtectedRoute: failed to refresh profile for admin gate:", err);

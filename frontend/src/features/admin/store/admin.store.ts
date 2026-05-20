@@ -3,7 +3,7 @@
  *
  * Caches backend-owned admin resources (submissions, reported event IDs,
  * scraped events) behind a 60-second TTL so navigating between admin pages
- * doesn't re-hit the backend. Backend remains authoritative; per CLAUDE.md
+ * doesn't re-hit the backend. Backend remains authoritative; per AGENTS.md
  * admin data is never persisted to localStorage.
  *
  * Status mutations (approve / reject) patch the local submissions list on

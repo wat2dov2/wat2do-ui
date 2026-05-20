@@ -1,4 +1,4 @@
-import React from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -11,7 +11,7 @@ import { cn } from "@/shared/lib/utils";
 
 interface TagInputProps {
   label: string;
-  labelIcon?: React.ReactNode;
+  labelIcon?: ReactNode;
   value: string[]; // Array of tags
   inputValue: string; // Current input value
   onInputChange: (value: string) => void;
@@ -49,13 +49,12 @@ export function TagInput({
   touched,
   tagColor = "warning",
   className,
-  allowDuplicates = false,
   required = false,
 }: TagInputProps) {
   const hasError = touched && error;
   const id = `tag-input-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       onAdd();

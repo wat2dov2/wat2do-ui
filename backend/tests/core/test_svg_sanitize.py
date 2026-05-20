@@ -41,11 +41,7 @@ class TestSanitizeSvg:
 
     def test_strips_nested_script(self):
         """Scripts nested inside groups are still removed."""
-        svg = (
-            b'<svg xmlns="http://www.w3.org/2000/svg">'
-            b"<g><script>alert(1)</script></g>"
-            b"</svg>"
-        )
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg"><g><script>alert(1)</script></g></svg>'
         result = sanitize_svg(svg)
         assert b"<script" not in result
         assert b"alert" not in result
@@ -84,11 +80,7 @@ class TestSanitizeSvg:
 
     def test_strips_onerror(self):
         """onerror attribute is removed."""
-        svg = (
-            b'<svg xmlns="http://www.w3.org/2000/svg">'
-            b'<image href="x" onerror="alert(1)"/>'
-            b"</svg>"
-        )
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg"><image href="x" onerror="alert(1)"/></svg>'
         result = sanitize_svg(svg)
         assert b"onerror" not in result
 
@@ -213,11 +205,7 @@ class TestSanitizeSvg:
 
     def test_empty_href_preserved(self):
         """Empty href is kept (not dangerous)."""
-        svg = (
-            b'<svg xmlns="http://www.w3.org/2000/svg">'
-            b'<a href=""><text>link</text></a>'
-            b"</svg>"
-        )
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg"><a href=""><text>link</text></a></svg>'
         result = sanitize_svg(svg)
         assert b'href=""' in result
 
@@ -354,11 +342,7 @@ class TestSanitizeSvg:
         assert b"iframe" not in result
 
     def test_strips_embed(self):
-        svg = (
-            b'<svg xmlns="http://www.w3.org/2000/svg">'
-            b'<embed src="https://evil.com"/>'
-            b"</svg>"
-        )
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg"><embed src="https://evil.com"/></svg>'
         result = sanitize_svg(svg)
         assert b"embed" not in result.lower()
 
@@ -557,7 +541,7 @@ class TestSanitizeSvg:
         """Inline style attribute with url() is sanitized."""
         svg = (
             b'<svg xmlns="http://www.w3.org/2000/svg">'
-            b"<rect width=\"50\" height=\"50\" style=\"background: url('https://evil.com/track.gif');\"/>"
+            b'<rect width="50" height="50" style="background: url(\'https://evil.com/track.gif\');"/>'
             b"</svg>"
         )
         result = sanitize_svg(svg)
@@ -620,7 +604,9 @@ class TestLooksLikeSvg:
         assert looks_like_svg(svg) is True
 
     def test_detects_svg_with_xml_declaration(self):
-        svg = b'<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg"></svg>'
+        svg = (
+            b'<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg"></svg>'
+        )
         assert looks_like_svg(svg) is True
 
     def test_detects_svg_with_doctype(self):
@@ -780,12 +766,9 @@ class TestLooksLikeSvg:
         the fallback loop walks past all whitespace/comments.
         """
         huge_lead = (
-            b"<!-- "
-            + b"x" * 5000
-            + b" -->\n"
-            + b'<svg xmlns="http://www.w3.org/2000/svg">'
-              b"<script>alert(1)</script>"
-              b"</svg>"
+            b"<!-- " + b"x" * 5000 + b" -->\n" + b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b"<script>alert(1)</script>"
+            b"</svg>"
         )
         assert looks_like_svg(huge_lead) is True
 
@@ -796,7 +779,7 @@ class TestLooksLikeSvg:
             b"<?xml version='1.0'?>\n"
             b"<?xml-stylesheet href='a'?>\n"
             b"<!DOCTYPE svg [\n"
-            b"<!ENTITY e \"bar\">\n"
+            b'<!ENTITY e "bar">\n'
             b"]>\n"
             b'<svg xmlns="http://www.w3.org/2000/svg">'
             b"<script>alert(1)</script>"

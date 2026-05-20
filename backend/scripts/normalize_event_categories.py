@@ -15,10 +15,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core.constants import CATEGORY_NORMALIZE_MAP, EVENT_CATEGORIES
 from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.tables import EVENTS
-from core.constants import EVENT_CATEGORIES, CATEGORY_NORMALIZE_MAP
 
 log = logging.getLogger(__name__)
 

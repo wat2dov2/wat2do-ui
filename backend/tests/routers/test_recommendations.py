@@ -27,6 +27,7 @@ def client():
 @pytest.fixture
 def optional_auth_client():
     """Client with get_optional_user overridden to return a fake user."""
+
     def fake_user():
         return FAKE_USER
 
@@ -56,8 +57,8 @@ def test_recommendations_200_without_auth(client, monkeypatch):
 
 def test_recommendations_returns_popular_when_no_db_user(optional_auth_client, monkeypatch):
     """Authenticated user with no DB row falls back to popular recommendations."""
-    from services.recommendation_service import engine
     from services import user_service
+    from services.recommendation_service import engine
 
     recs = _mock_recs(3)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
@@ -74,9 +75,9 @@ def test_recommendations_returns_popular_when_no_db_user(optional_auth_client, m
 def test_recommendations_200_with_auth_personalized(optional_auth_client, monkeypatch):
     """GET /recommendations/ returns personalized recs when user is authenticated and has a DB row."""
     from schemas.user import UserResponse
-    from services.recommendation_service import engine
-    from services.ab_test_service import ab_test
     from services import user_service
+    from services.ab_test_service import ab_test
+    from services.recommendation_service import engine
 
     db_user = UserResponse(
         id="00000000-0000-0000-0000-000000000001",
@@ -120,9 +121,9 @@ def test_recommendations_respects_limit_param(client, monkeypatch):
 def test_recommendations_ab_impression_failure_doesnt_break(optional_auth_client, monkeypatch):
     """If AB impression recording fails, recommendations are still returned."""
     from schemas.user import UserResponse
-    from services.recommendation_service import engine
-    from services.ab_test_service import ab_test
     from services import user_service
+    from services.ab_test_service import ab_test
+    from services.recommendation_service import engine
 
     db_user = UserResponse(
         id="00000000-0000-0000-0000-000000000002",
@@ -135,7 +136,9 @@ def test_recommendations_ab_impression_failure_doesnt_break(optional_auth_client
     recs = _mock_recs()
     monkeypatch.setattr(engine, "get_recommendations", MagicMock(return_value=recs))
     monkeypatch.setattr(ab_test, "get_user_variant", MagicMock(return_value="treatment"))
-    monkeypatch.setattr(ab_test, "record_impressions", MagicMock(side_effect=RuntimeError("DB down")))
+    monkeypatch.setattr(
+        ab_test, "record_impressions", MagicMock(side_effect=RuntimeError("DB down"))
+    )
 
     resp = optional_auth_client.get("/recommendations/")
     assert resp.status_code == 200

@@ -48,12 +48,7 @@ def get_scraped_events(
     Returns (items, total_count).  When *limit* is None the query is
     unbounded (legacy behaviour for non-paginated callers).
     """
-    q = (
-        get_sb()
-        .table(SCRAPED_EVENTS)
-        .select("*", count="exact")
-        .order("scraped_at", desc=True)
-    )
+    q = get_sb().table(SCRAPED_EVENTS).select("*", count="exact").order("scraped_at", desc=True)
     if limit is not None:
         q = q.range(offset, offset + limit - 1)
     r = q.execute()

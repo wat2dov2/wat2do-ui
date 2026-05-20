@@ -3,7 +3,6 @@
  * Reusable component for credit package selection
  */
 
-import React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 

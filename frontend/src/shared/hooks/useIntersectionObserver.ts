@@ -17,7 +17,10 @@ export function useIntersectionObserver<T extends HTMLElement = HTMLDivElement>(
   // Mirror hasIntersected into a ref so the effect can read it without
   // re-subscribing when the state flips.
   const hasIntersectedRef = useRef(hasIntersected);
-  hasIntersectedRef.current = hasIntersected;
+
+  useEffect(() => {
+    hasIntersectedRef.current = hasIntersected;
+  }, [hasIntersected]);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -44,4 +47,3 @@ export function useIntersectionObserver<T extends HTMLElement = HTMLDivElement>(
 
   return { ref: elementRef, isIntersecting, hasIntersected };
 }
-

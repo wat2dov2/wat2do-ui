@@ -23,7 +23,9 @@ router = APIRouter(prefix="/qr", tags=["qr"])
 def _get_poster_or_404_authorized(qr_code_id: str, db_user: UserResponse) -> QrCodeResponse:
     """Fetch a poster by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
     return get_authorized_resource(
-        lambda: qr_code_service.get_qr_code_by_id(qr_code_id), POSTER_NOT_FOUND, db_user,
+        lambda: qr_code_service.get_qr_code_by_id(qr_code_id),
+        POSTER_NOT_FOUND,
+        db_user,
     )
 
 
@@ -70,8 +72,18 @@ def list_scans(
 def resolve_qr_and_record_scan(
     qr_code_id: str,
     request: Request,
-    lat: float | None = Query(None, ge=-90, le=90, description="Scanner latitude (required for first scan to activate poster)"),
-    lon: float | None = Query(None, ge=-180, le=180, description="Scanner longitude (required for first scan to activate poster)"),
+    lat: float | None = Query(
+        None,
+        ge=-90,
+        le=90,
+        description="Scanner latitude (required for first scan to activate poster)",
+    ),
+    lon: float | None = Query(
+        None,
+        ge=-180,
+        le=180,
+        description="Scanner longitude (required for first scan to activate poster)",
+    ),
     _rl: None = Depends(qr_scan_rate_limiter.ip_dependency()),
 ):
     session_id_raw = request.headers.get("x-session-id")

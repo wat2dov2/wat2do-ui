@@ -45,7 +45,9 @@ def test_list_saved_events_requires_auth(client):
 def test_list_saved_events_succeeds(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(saved_event_service, "get_saved_event_ids", MagicMock(return_value=[1, 3, 7]))
+    monkeypatch.setattr(
+        saved_event_service, "get_saved_event_ids", MagicMock(return_value=[1, 3, 7])
+    )
 
     resp = authenticated_client.get("/saved-events/")
     assert resp.status_code == 200
@@ -89,7 +91,9 @@ def test_save_event_at_cap_returns_400(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=_mock_event()))
-    monkeypatch.setattr(saved_event_service, "count_saved_events", MagicMock(return_value=MAX_SAVED_EVENTS_PER_USER))
+    monkeypatch.setattr(
+        saved_event_service, "count_saved_events", MagicMock(return_value=MAX_SAVED_EVENTS_PER_USER)
+    )
 
     resp = authenticated_client.put("/saved-events/42")
     assert resp.status_code == 400

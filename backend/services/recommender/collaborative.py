@@ -5,8 +5,15 @@ import math
 
 from core.cache import TTLCache
 from services import saved_event_service
+from services.recommender.config import (
+    CACHE_TTL_SECONDS,
+    CF_BLEND_WEIGHT,
+    CF_MAX_USER_EVENT_SCORE,
+    CF_MIN_INTERACTIONS,
+    CF_NEIGHBOR_K,
+    CF_SAVE_WEIGHT,
+)
 from services.recommender.interaction_scores import get_interaction_matrix
-from services.recommender.config import CF_MIN_INTERACTIONS, CF_NEIGHBOR_K, CF_BLEND_WEIGHT, CF_SAVE_WEIGHT, CF_MAX_USER_EVENT_SCORE, CACHE_TTL_SECONDS
 from services.recommender.utils import normalize_scores
 
 log = logging.getLogger(__name__)
@@ -178,8 +185,8 @@ def _cosine_similarity(a: dict[int, float], b: dict[int, float]) -> float:
     if not common:
         return 0.0
     dot = sum(a[k] * b[k] for k in common)
-    mag_a = math.sqrt(sum(v ** 2 for v in a.values()))
-    mag_b = math.sqrt(sum(v ** 2 for v in b.values()))
+    mag_a = math.sqrt(sum(v**2 for v in a.values()))
+    mag_b = math.sqrt(sum(v**2 for v in b.values()))
     if mag_a == 0 or mag_b == 0:
         return 0.0
     return dot / (mag_a * mag_b)
@@ -195,8 +202,8 @@ def _cosine_similarity_generic(a: dict[str, float], b: dict[str, float]) -> floa
     if not common:
         return 0.0
     dot = sum(a[k] * b[k] for k in common)
-    mag_a = math.sqrt(sum(v ** 2 for v in a.values()))
-    mag_b = math.sqrt(sum(v ** 2 for v in b.values()))
+    mag_a = math.sqrt(sum(v**2 for v in a.values()))
+    mag_b = math.sqrt(sum(v**2 for v in b.values()))
     if mag_a == 0 or mag_b == 0:
         return 0.0
     return dot / (mag_a * mag_b)

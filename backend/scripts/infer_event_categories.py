@@ -317,7 +317,6 @@ def infer_category(row: dict) -> str:
     title = _normalize_text(row.get("title"))
     organization = _normalize_text(row.get("organization"))
     description = _normalize_text(row.get("description"))
-    haystack = " ".join(part for part in (title, organization, description) if part)
 
     scores: Counter[str] = Counter()
     for category, keywords in CATEGORY_KEYWORDS.items():
@@ -360,7 +359,9 @@ def main() -> None:
     args = parser.parse_args()
 
     allowed = set(EVENT_CATEGORIES)
-    classifier_categories = set(CATEGORY_KEYWORDS) | set(CATEGORY_PRIORITY) | set(CLUB_TYPE_FALLBACK.values())
+    classifier_categories = (
+        set(CATEGORY_KEYWORDS) | set(CATEGORY_PRIORITY) | set(CLUB_TYPE_FALLBACK.values())
+    )
     invalid = sorted(classifier_categories - allowed)
     if invalid:
         raise RuntimeError(f"Classifier contains non-canonical categories: {invalid}")

@@ -3,7 +3,6 @@
  * Displays filtered results count
  */
 
-import React from "react";
 
 interface AdminResultsCountProps {
   count: number;

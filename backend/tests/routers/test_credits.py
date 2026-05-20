@@ -182,7 +182,10 @@ def test_list_promotions_forwards_pagination_and_active_filter(authenticated_cli
     resp = authenticated_client.get("/promotions/?active=true&limit=25&offset=50")
     assert resp.status_code == 200
     mock_get.assert_called_once_with(
-        str(db_user.id), active=True, limit=25, offset=50,
+        str(db_user.id),
+        active=True,
+        limit=25,
+        offset=50,
     )
 
 
@@ -294,7 +297,9 @@ def test_create_promotion_admin_can_promote_any_event(admin_client, monkeypatch)
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=admin_db_user))
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=admin_db_user)
+    )
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
     monkeypatch.setattr(credit_service, "create_promotion", MagicMock(return_value=promo))
 
@@ -324,7 +329,9 @@ def test_create_promotion_legacy_event_non_admin_rejected(authenticated_client, 
 
 def test_active_promoted_ids_public(client, monkeypatch):
     """This endpoint requires no auth — it returns active promotion IDs publicly."""
-    monkeypatch.setattr(credit_service, "get_active_promoted_event_ids", MagicMock(return_value=[1, 5, 9]))
+    monkeypatch.setattr(
+        credit_service, "get_active_promoted_event_ids", MagicMock(return_value=[1, 5, 9])
+    )
 
     resp = client.get("/promotions/active-ids")
     assert resp.status_code == 200

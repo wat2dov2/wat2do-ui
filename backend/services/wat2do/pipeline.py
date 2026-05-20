@@ -44,6 +44,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class HandleResult:
     """Per-handle pipeline result. Aggregated by the caller for summary logs."""
+
     ig_handle: str
     posts_fetched: int = 0
     posts_new: int = 0
@@ -60,6 +61,7 @@ class HandleResult:
 @dataclass
 class PipelineResult:
     """Aggregate result across all handles in one run."""
+
     handles: list[HandleResult] = field(default_factory=list)
     dry_run: bool = False
 
@@ -105,12 +107,16 @@ def run_pipeline(
         return PipelineResult(handles=[], dry_run=dry_run)
 
     from services.wat2do.instagram_scraper import get_scraper
+
     scraper = get_scraper()
 
     seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes()
     log.info(
         "Pipeline start: %d username(s), school=%s, cutoff_days=%d, dry_run=%s",
-        len(usernames), school, cutoff_days, dry_run,
+        len(usernames),
+        school,
+        cutoff_days,
+        dry_run,
     )
 
     posts, pinned_warning = scraper.scrape(
@@ -143,12 +149,16 @@ def run_pipeline(
                 continue
 
             new_posts = _filter_new_posts(
-                handle_posts, seen_shortcodes=seen_shortcodes, cutoff=cutoff_dt,
+                handle_posts,
+                seen_shortcodes=seen_shortcodes,
+                cutoff=cutoff_dt,
             )
             result.posts_new = len(new_posts)
 
             for post in new_posts:
-                _process_one_post(post, handle=handle, school=school, result=result, dry_run=dry_run)
+                _process_one_post(
+                    post, handle=handle, school=school, result=result, dry_run=dry_run
+                )
 
             handle_results.append(result)
             _finalize(result, dry_run=dry_run)
@@ -253,7 +263,9 @@ def _process_one_post(
         if dry_run:
             log.info(
                 "[%s] DRY-RUN would save %r with %d occurrence(s)",
-                handle, event.get("title"), len(event.get("occurrences", [])),
+                handle,
+                event.get("title"),
+                len(event.get("occurrences", [])),
             )
             result.events_saved += 1
             continue

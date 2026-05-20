@@ -33,7 +33,10 @@ class TestSanitizePostgrestValue:
 
     def test_comma_stripped(self):
         """Commas separate filter conditions in PostgREST .or_() syntax."""
-        assert sanitize_postgrest_value("a]],secret_col.eq.1,title.ilike.[%b") == "asecret_coleq1titleilike%b"
+        assert (
+            sanitize_postgrest_value("a]],secret_col.eq.1,title.ilike.[%b")
+            == "asecret_coleq1titleilike%b"
+        )
 
     def test_period_stripped(self):
         """Periods separate column.operator in PostgREST filter syntax."""

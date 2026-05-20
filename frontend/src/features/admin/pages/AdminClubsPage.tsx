@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Users, Edit, Trash2, Plus, Instagram, MessageCircle } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import {
-  TableBody,
   TableCell,
   TableRow,
 } from "@/shared/ui/table";
@@ -70,9 +69,7 @@ export function AdminClubsPage({
   const handleDelete = async (clubId: number) => {
     setIsDeleting(true);
     try {
-      if (onDeleteClub) {
-        await onDeleteClub(clubId);
-      }
+      await onDeleteClub(clubId);
       await refreshClubs();
     } catch (error) {
       console.error("Failed to delete club:", error);
@@ -85,13 +82,9 @@ export function AdminClubsPage({
   const handleSave = async (club: Club) => {
     try {
       if (editingClub) {
-        if (onEditClub) {
-          await onEditClub(club);
-        }
+        await onEditClub(club);
       } else {
-        if (onAddClub) {
-          await onAddClub(club);
-        }
+        await onAddClub(club);
       }
       await refreshClubs();
       closeModal();

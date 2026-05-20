@@ -1,0 +1,117 @@
+@import "./styles/tokens.css";
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-Variable.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-VariableItalic.woff2") format("woff2");
+  font-display: swap;
+  font-style: italic;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Satoshi", system-ui, sans-serif;
+  font-weight: 450;
+  color: var(--text-900);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Satoshi", system-ui, sans-serif;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+strong, b {
+  font-family: "Satoshi", system-ui, sans-serif;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Swiper container fills viewport */
+.swiper {
+  width: 100vw;
+  height: 100vh;
+}
+
+.swiper-pagination-bullet {
+  background: var(--brand-primary) !important;
+  opacity: 0.35;
+}
+.swiper-pagination-bullet-active {
+  opacity: 1;
+}
+
+.swiper-button-prev,
+.swiper-button-next {
+  color: var(--brand-primary) !important;
+  transform: scale(0.55);
+  opacity: 0.55;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  opacity: 0.9;
+}
+
+.swiper-pagination {
+  bottom: 18px !important;
+}
+
+/* Live pulse (mirrors prod) */
+@keyframes pulse-live {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.89);
+  }
+  35%, 100% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+.pulse-live {
+  animation: pulse-live 2.6s ease-in-out infinite;
+}
+
+/* Floating-image background animation */
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes wave-drift {
+  0% { transform: rotate(-6deg) translate3d(0, 0, 0); }
+  50% { transform: rotate(-5deg) translate3d(0, -12px, 0); }
+  100% { transform: rotate(-6deg) translate3d(0, 0, 0); }
+}
+.brand-wave {
+  animation: wave-drift 18s ease-in-out infinite;
+}

@@ -198,7 +198,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
     if (step !== 2) return;
     if (!selectedAsset || selectedAsset.placement) return;
     setPlacementForAsset(selectedAsset.id, DEFAULT_IMAGE_PLACEMENT);
-  }, [step, selectedAsset?.id, setPlacementForAsset]);
+  }, [step, selectedAsset, setPlacementForAsset]);
 
   // Reset image dimensions when switching assets (the new image's onLoad will set them).
   // Use the prop-tracking-during-render pattern instead of an effect.

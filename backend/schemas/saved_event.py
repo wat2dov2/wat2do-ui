@@ -15,6 +15,7 @@ class SavedEventResponse(BaseModel):
 
 class UserEventPair(BaseModel):
     """Minimal (user_id, event_id) pair used by collaborative filtering."""
+
     user_id: str
     event_id: int
 

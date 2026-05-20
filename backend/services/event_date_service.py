@@ -66,25 +66,29 @@ def replace_occurrences(
             try:
                 payload = []
                 for occ in snapshot:
-                    payload.append({
-                        "event_id": event_id,
-                        "dtstart_utc": occ.dtstart_utc.isoformat(),
-                        "dtend_utc": occ.dtend_utc.isoformat() if occ.dtend_utc else None,
-                        "duration": occ.duration,
-                        "tz": occ.tz,
-                    })
+                    payload.append(
+                        {
+                            "event_id": event_id,
+                            "dtstart_utc": occ.dtstart_utc.isoformat(),
+                            "dtend_utc": occ.dtend_utc.isoformat() if occ.dtend_utc else None,
+                            "duration": occ.duration,
+                            "tz": occ.tz,
+                        }
+                    )
                 sb.table(EVENT_DATES).insert(payload).execute()
                 log.warning(
                     "replace_occurrences for event_id=%s failed; "
                     "restored %d original occurrence(s) from snapshot",
-                    event_id, len(snapshot),
+                    event_id,
+                    len(snapshot),
                 )
             except Exception as restore_err:
                 log.error(
                     "replace_occurrences for event_id=%s failed AND "
                     "snapshot restore failed; event has no occurrences. "
                     "Restore error: %s",
-                    event_id, restore_err,
+                    event_id,
+                    restore_err,
                 )
         raise
 

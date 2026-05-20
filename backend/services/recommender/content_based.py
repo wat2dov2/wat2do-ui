@@ -13,19 +13,19 @@ from core.constants import INTEREST_TO_CATEGORIES
 from core.database import get_sb
 from core.tables import EVENTS
 from schemas.event import EventResponse
-from services.recommender.utils import normalize_scores
 from services.recommender.config import (
     CB_CATEGORY_MATCH,
     CB_CATEGORY_NO_PROFILE,
-    CB_SCHOOL_MATCH,
-    CB_ORG_AFFINITY,
-    CB_TEMPORAL_TIERS,
-    CB_TEMPORAL_FALLBACK,
+    CB_FIRST_YEAR,
     CB_FREE_EVENT,
     CB_HAS_FOOD,
-    CB_FIRST_YEAR,
+    CB_ORG_AFFINITY,
+    CB_SCHOOL_MATCH,
+    CB_TEMPORAL_FALLBACK,
+    CB_TEMPORAL_TIERS,
     FIRST_YEAR_CATEGORIES,
 )
+from services.recommender.utils import normalize_scores
 
 log = logging.getLogger(__name__)
 
@@ -150,13 +150,7 @@ def _compute_org_affinity(
     missing_ids = [eid for eid in user_scores if eid not in id_to_org]
     if missing_ids:
         try:
-            r = (
-                get_sb()
-                .table(EVENTS)
-                .select("id, organization")
-                .in_("id", missing_ids)
-                .execute()
-            )
+            r = get_sb().table(EVENTS).select("id, organization").in_("id", missing_ids).execute()
             for row in r.data or []:
                 if row.get("organization"):
                     id_to_org[row["id"]] = row["organization"]

@@ -42,23 +42,40 @@ def _apify_post(handle: str = "uwteaclub") -> dict:
 
 
 def _extracted_event_with_three_occurrences() -> list[dict]:
-    return [{
-        "title": "Tea Tasting Series",
-        "description": "Tea tasting series — Mondays in December",
-        "location": "SLC 3223",
-        "organization": "UW Tea Club",
-        "categories": ["Food"],
-        "image_index": 0,
-        "price": 0.0,
-        "food": "Yes!",
-        "registration": False,
-        "school": "University of Waterloo",
-        "occurrences": [
-            {"dtstart_utc": _future_iso(2),  "dtend_utc": "", "duration": "", "tz": "America/Toronto"},
-            {"dtstart_utc": _future_iso(9),  "dtend_utc": "", "duration": "", "tz": "America/Toronto"},
-            {"dtstart_utc": _future_iso(16), "dtend_utc": "", "duration": "", "tz": "America/Toronto"},
-        ],
-    }]
+    return [
+        {
+            "title": "Tea Tasting Series",
+            "description": "Tea tasting series — Mondays in December",
+            "location": "SLC 3223",
+            "organization": "UW Tea Club",
+            "categories": ["Food"],
+            "image_index": 0,
+            "price": 0.0,
+            "food": "Yes!",
+            "registration": False,
+            "school": "University of Waterloo",
+            "occurrences": [
+                {
+                    "dtstart_utc": _future_iso(2),
+                    "dtend_utc": "",
+                    "duration": "",
+                    "tz": "America/Toronto",
+                },
+                {
+                    "dtstart_utc": _future_iso(9),
+                    "dtend_utc": "",
+                    "duration": "",
+                    "tz": "America/Toronto",
+                },
+                {
+                    "dtstart_utc": _future_iso(16),
+                    "dtend_utc": "",
+                    "duration": "",
+                    "tz": "America/Toronto",
+                },
+            ],
+        }
+    ]
 
 
 def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb, patch_sb):
@@ -77,12 +94,14 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     fake_scraper = MagicMock()
     fake_scraper.scrape = MagicMock(return_value=([_apify_post()], False))
     import services.wat2do.instagram_scraper as ig_mod
+
     monkeypatch.setattr(ig_mod, "get_scraper", lambda: fake_scraper)
 
     # Storage skip + canned extractor + no dedup matches.
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
     monkeypatch.setattr(
-        pipeline_module, "extract_events_from_post",
+        pipeline_module,
+        "extract_events_from_post",
         lambda **_kw: _extracted_event_with_three_occurrences(),
     )
     monkeypatch.setattr(event_writer, "find_match", lambda **_kw: None)
@@ -103,43 +122,64 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
             inserts.append(payload)
             if isinstance(payload, dict):
                 if "ig_username" in payload:  # scrape_runs row
-                    return MagicMock(data=[{
-                        "id": "00000000-0000-0000-0000-000000000aaa",
-                        "ig_username": payload["ig_username"],
-                        "github_run_id": payload.get("github_run_id"),
-                        "status": "running",
-                        "posts_fetched": 0, "posts_new": 0,
-                        "events_extracted": 0, "events_saved": 0,
-                        "pinned_post_warning": False,
-                        "error_message": None,
-                        "started_at": occ_now, "finished_at": None,
-                    }], count=0)
+                    return MagicMock(
+                        data=[
+                            {
+                                "id": "00000000-0000-0000-0000-000000000aaa",
+                                "ig_username": payload["ig_username"],
+                                "github_run_id": payload.get("github_run_id"),
+                                "status": "running",
+                                "posts_fetched": 0,
+                                "posts_new": 0,
+                                "events_extracted": 0,
+                                "events_saved": 0,
+                                "pinned_post_warning": False,
+                                "error_message": None,
+                                "started_at": occ_now,
+                                "finished_at": None,
+                            }
+                        ],
+                        count=0,
+                    )
                 # events row insert
                 return MagicMock(data=[{**payload, "id": 7}], count=0)
             elif isinstance(payload, list):
                 # event_dates bulk insert — echo with fabricated ids/times.
-                rows = [{
-                    "id": i,
-                    "event_id": row["event_id"],
-                    "dtstart_utc": row["dtstart_utc"],
-                    "dtend_utc": row.get("dtend_utc"),
-                    "duration": row.get("duration"),
-                    "tz": row.get("tz"),
-                    "created_at": occ_now,
-                } for i, row in enumerate(payload)]
+                rows = [
+                    {
+                        "id": i,
+                        "event_id": row["event_id"],
+                        "dtstart_utc": row["dtstart_utc"],
+                        "dtend_utc": row.get("dtend_utc"),
+                        "duration": row.get("duration"),
+                        "tz": row.get("tz"),
+                        "created_at": occ_now,
+                    }
+                    for i, row in enumerate(payload)
+                ]
                 return MagicMock(data=rows, count=0)
         if fake_sb.update.call_count > 0:
             # mark_finished returns one updated row; we don't need a
             # specific shape for the assertions.
-            return MagicMock(data=[{
-                "id": "00000000-0000-0000-0000-000000000aaa",
-                "ig_username": "uwteaclub", "github_run_id": None,
-                "status": "success",
-                "posts_fetched": 1, "posts_new": 1,
-                "events_extracted": 1, "events_saved": 1,
-                "pinned_post_warning": False, "error_message": None,
-                "started_at": occ_now, "finished_at": occ_now,
-            }], count=0)
+            return MagicMock(
+                data=[
+                    {
+                        "id": "00000000-0000-0000-0000-000000000aaa",
+                        "ig_username": "uwteaclub",
+                        "github_run_id": None,
+                        "status": "success",
+                        "posts_fetched": 1,
+                        "posts_new": 1,
+                        "events_extracted": 1,
+                        "events_saved": 1,
+                        "pinned_post_warning": False,
+                        "error_message": None,
+                        "started_at": occ_now,
+                        "finished_at": occ_now,
+                    }
+                ],
+                count=0,
+            )
         # Pure read (existing_shortcodes, clubs lookup) — empty result.
         return MagicMock(data=[], count=0)
 
@@ -171,7 +211,8 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     assert len(events_inserts) == 1
 
     occurrence_inserts = [
-        c for c in list_inserts
+        c
+        for c in list_inserts
         if c[0][0] and "dtstart_utc" in c[0][0][0] and "event_id" in c[0][0][0]
     ]
     assert len(occurrence_inserts) == 1
@@ -195,11 +236,13 @@ def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     fake_scraper = MagicMock()
     fake_scraper.scrape = MagicMock(return_value=([_apify_post()], False))
     import services.wat2do.instagram_scraper as ig_mod
+
     monkeypatch.setattr(ig_mod, "get_scraper", lambda: fake_scraper)
 
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
     monkeypatch.setattr(
-        pipeline_module, "extract_events_from_post",
+        pipeline_module,
+        "extract_events_from_post",
         lambda **_kw: _extracted_event_with_three_occurrences(),
     )
 

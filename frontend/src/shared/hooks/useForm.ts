@@ -36,7 +36,7 @@ export function useForm<T extends object>(
       return getDefaults();
     }
     return {} as T;
-  }, [isEditMode, getDefaults]);
+  }, [isEditMode, initialData, getDefaults]);
 
   const [formData, setFormData] = useState<T>(getInitialFormData);
   const [touched, setTouched] = useState<Record<string, boolean>>({});

@@ -30,10 +30,9 @@ from services.recommender.config import (
     DEFAULT_LAMBDA,
     DEFAULT_LIMIT,
     PRICE_NORMALIZATION_CAP,
-    TIME_BUCKET_MORNING_END,
     TIME_BUCKET_AFTERNOON_END,
+    TIME_BUCKET_MORNING_END,
 )
-
 
 # One-hot dimension for categories.
 CATEGORY_INDEX = {cat: i for i, cat in enumerate(EVENT_CATEGORIES)}
@@ -53,6 +52,7 @@ _VECTOR_DIM = NUM_CATEGORIES + 1 + len(TIME_BUCKETS)  # 27
 # Instead of a dense list[float] we store only the non-zero entries and the
 # pre-computed magnitude.  This makes dot-product O(min(|nz_a|, |nz_b|))
 # instead of O(dim) and eliminates redundant magnitude calculations.
+
 
 class _SparseVec:
     """Immutable sparse vector with cached magnitude."""
@@ -85,6 +85,7 @@ def _sparse_cosine_sim(a: _SparseVec, b: _SparseVec) -> float:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def mmr_rerank(
     scored_events: list[tuple[int, float]],
@@ -167,6 +168,7 @@ def mmr_rerank(
 # Feature vector construction (sparse)
 # ---------------------------------------------------------------------------
 
+
 def _build_sparse_vector(
     meta: EventResponse | None,
     *,
@@ -228,7 +230,8 @@ def _get_time_bucket(dtstart: str, *, user_timezone: str | None = None) -> str:
                 dt = dt.astimezone(tz)
             except ZoneInfoNotFoundError:
                 log.warning(
-                    "Unknown user_timezone %r, bucketing in UTC", user_timezone,
+                    "Unknown user_timezone %r, bucketing in UTC",
+                    user_timezone,
                 )
         if dt.weekday() >= 5:
             return "weekend"
@@ -247,6 +250,7 @@ def _get_time_bucket(dtstart: str, *, user_timezone: str | None = None) -> str:
 # ---------------------------------------------------------------------------
 # Backwards-compatible dense helpers (kept for any external callers / tests)
 # ---------------------------------------------------------------------------
+
 
 def _build_feature_vector(meta: EventResponse | None) -> list[float]:
     """Dense feature vector -- retained for test compatibility."""

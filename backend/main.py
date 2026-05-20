@@ -28,7 +28,7 @@ register_error_handlers(app)
 if "*" in settings.cors_origins:
     raise RuntimeError(
         "CORS_ORIGINS must not contain '*' when credentials are enabled. "
-        "Set explicit origins, e.g. CORS_ORIGINS=[\"https://wat2do.app\"]"
+        'Set explicit origins, e.g. CORS_ORIGINS=["https://wat2do.app"]'
     )
 
 # Security headers (CSP, X-Content-Type-Options, X-Frame-Options, etc.).

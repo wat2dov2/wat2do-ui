@@ -1,15 +1,16 @@
-import React from "react";
+import { memo } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { cn } from "@/shared/lib/utils";
 
 interface SidebarButtonProps {
-  icon: React.ComponentType<{
+  icon: ComponentType<{
     className?: string;
     strokeWidth?: number | string;
   }>;
   label: string;
   isActive?: boolean;
   onClick?: () => void;
-  badge?: React.ReactNode;
+  badge?: ReactNode;
   className?: string;
 }
 
@@ -17,7 +18,7 @@ interface SidebarButtonProps {
  * Reusable sidebar button component
  * Reduces Tailwind class duplication across Sidebar
  */
-export const SidebarButton = React.memo(function SidebarButton({
+export const SidebarButton = memo(function SidebarButton({
   icon: Icon,
   label,
   isActive = false,

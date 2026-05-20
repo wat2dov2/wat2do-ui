@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 import { Calendar as CalendarIcon, ChevronDownIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -31,7 +31,7 @@ interface BaseFormFieldProps {
   error?: string;
   touched?: boolean;
   onBlur?: () => void;
-  labelIcon?: React.ReactNode;
+  labelIcon?: ReactNode;
   className?: string;
 }
 

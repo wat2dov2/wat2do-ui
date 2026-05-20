@@ -58,9 +58,7 @@ class NotificationPreferencesBulkUpdate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    preferences: list[NotificationPreferenceUpdate] = Field(
-        ..., min_length=1, max_length=32
-    )
+    preferences: list[NotificationPreferenceUpdate] = Field(..., min_length=1, max_length=32)
 
 
 class NotificationPreferencesListResponse(BaseModel):

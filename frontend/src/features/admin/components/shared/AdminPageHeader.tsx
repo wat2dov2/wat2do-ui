@@ -3,7 +3,6 @@
  * Reusable page header with icon, title, and action button
  */
 
-import React from "react";
 import { ArrowLeft } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";

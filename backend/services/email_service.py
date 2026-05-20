@@ -76,9 +76,7 @@ class EmailService:
     def _dispatch_resend(self, msg: EmailMessage) -> bool:
         api_key = settings.email_provider_api_key.strip()
         if not api_key:
-            raise RuntimeError(
-                "EMAIL_PROVIDER_API_KEY is required when EMAIL_PROVIDER=resend"
-            )
+            raise RuntimeError("EMAIL_PROVIDER_API_KEY is required when EMAIL_PROVIDER=resend")
 
         headers = {
             "Authorization": f"Bearer {api_key}",

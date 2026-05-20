@@ -82,17 +82,21 @@ class ABTestService:
         except Exception as e:
             log.warning(
                 "Failed to look up AB assignment for user %s in %s, falling back to hash: %s",
-                user_id, self.experiment_name, e,
+                user_id,
+                self.experiment_name,
+                e,
             )
             return self._compute_variant(user_id)
 
         variant = self._compute_variant(user_id)
         try:
-            sb.table(AB_ASSIGNMENTS).insert({
-                "user_id": user_id,
-                "experiment_name": self.experiment_name,
-                "variant": variant,
-            }).execute()
+            sb.table(AB_ASSIGNMENTS).insert(
+                {
+                    "user_id": user_id,
+                    "experiment_name": self.experiment_name,
+                    "variant": variant,
+                }
+            ).execute()
         except Exception as e:
             # Race between concurrent assigns resolves via unique key on
             # (user_id, experiment_name); subsequent lookups will see the
@@ -100,7 +104,9 @@ class ABTestService:
             # gets a deterministic variant from the hash.
             log.warning(
                 "Failed to persist AB assignment for user %s in %s: %s",
-                user_id, self.experiment_name, e,
+                user_id,
+                self.experiment_name,
+                e,
             )
         return variant
 
@@ -110,13 +116,17 @@ class ABTestService:
 
     def record_impression(self, user_id: str, event_id: int, variant: str) -> None:
         """Record that an event was shown to the user."""
-        get_sb().table(AB_TEST_EVENTS).insert([{
-            "user_id": user_id,
-            "event_id": event_id,
-            "variant": variant,
-            "event_type": AB_EVENT_IMPRESSION,
-            "experiment_name": self.experiment_name,
-        }]).execute()
+        get_sb().table(AB_TEST_EVENTS).insert(
+            [
+                {
+                    "user_id": user_id,
+                    "event_id": event_id,
+                    "variant": variant,
+                    "event_type": AB_EVENT_IMPRESSION,
+                    "experiment_name": self.experiment_name,
+                }
+            ]
+        ).execute()
 
     def record_impressions(self, user_id: str, event_ids: list[int], variant: str) -> None:
         """Batch-record impressions for multiple events in a single insert."""
@@ -136,13 +146,17 @@ class ABTestService:
 
     def record_click(self, user_id: str, event_id: int, variant: str) -> None:
         """Record that the user clicked on a recommended event."""
-        get_sb().table(AB_TEST_EVENTS).insert([{
-            "user_id": user_id,
-            "event_id": event_id,
-            "variant": variant,
-            "event_type": AB_EVENT_CLICK,
-            "experiment_name": self.experiment_name,
-        }]).execute()
+        get_sb().table(AB_TEST_EVENTS).insert(
+            [
+                {
+                    "user_id": user_id,
+                    "event_id": event_id,
+                    "variant": variant,
+                    "event_type": AB_EVENT_CLICK,
+                    "experiment_name": self.experiment_name,
+                }
+            ]
+        ).execute()
 
     # ------------------------------------------------------------------
     # Metrics
@@ -164,16 +178,19 @@ class ABTestService:
         return _metrics_cache.get_or_compute(cache_key, self._compute_ctr_by_variant)
 
     def _compute_ctr_by_variant(self) -> dict[str, dict]:
-        r = get_sb().rpc(
-            "get_ab_test_ctr",
-            {"p_experiment_name": self.experiment_name},
-        ).execute()
+        r = (
+            get_sb()
+            .rpc(
+                "get_ab_test_ctr",
+                {"p_experiment_name": self.experiment_name},
+            )
+            .execute()
+        )
 
         # Build result dict, starting with zeros for all known variants
         # so the response always includes both even if one has no data yet.
         result: dict[str, dict] = {
-            v: {"impressions": 0, "clicks": 0, "ctr": 0.0}
-            for v in self.variants
+            v: {"impressions": 0, "clicks": 0, "ctr": 0.0} for v in self.variants
         }
 
         for row in r.data or []:

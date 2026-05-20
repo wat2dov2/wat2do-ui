@@ -1,25 +1,25 @@
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_authorized_resource, get_current_user, get_db_user
-from schemas.user import UserResponse
-from core.exceptions import get_or_404
 from core.constants import (
     DEFAULT_LIST_LIMIT,
-    MAX_LIST_LIMIT,
     MAX_EVENT_CLUB_TYPE_LENGTH,
+    MAX_LIST_LIMIT,
     MAX_SEARCH_QUERY_LENGTH,
 )
+from core.errors import CLUB_NOT_FOUND
+from core.exceptions import get_or_404
 from schemas.club import (
     ClubCreate,
-    ClubUpdate,
-    ClubResponse,
-    DiscordIntegrationOptionsResponse,
-    ClubIntegrationUpdate,
     ClubIntegrationResponse,
+    ClubIntegrationUpdate,
+    ClubResponse,
+    ClubUpdate,
+    DiscordIntegrationOptionsResponse,
     IntegrationPlatform,
     PlatformIntegrationOptionsResponse,
 )
-from core.errors import CLUB_NOT_FOUND
+from schemas.user import UserResponse
 from services import club_service
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
@@ -31,7 +31,9 @@ INTEGRATION_NOT_FOUND = "Integration not found"
 def _get_club_or_403(club_id: int, db_user: UserResponse) -> ClubResponse:
     """Fetch a club by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
     return get_authorized_resource(
-        lambda: club_service.get_club(club_id), CLUB_NOT_FOUND, db_user,
+        lambda: club_service.get_club(club_id),
+        CLUB_NOT_FOUND,
+        db_user,
     )
 
 
@@ -95,7 +97,9 @@ def get_platform_integration(
     db_user: UserResponse = Depends(get_db_user),
 ):
     return _authorize_and_exec(
-        club_id, db_user, lambda: club_service.get_platform_integration(club_id, platform),
+        club_id,
+        db_user,
+        lambda: club_service.get_platform_integration(club_id, platform),
     )
 
 
@@ -110,7 +114,9 @@ def upsert_platform_integration(
     db_user: UserResponse = Depends(get_db_user),
 ):
     return _authorize_and_exec(
-        club_id, db_user, lambda: club_service.upsert_platform_integration(
+        club_id,
+        db_user,
+        lambda: club_service.upsert_platform_integration(
             club_id=club_id,
             platform=platform,
             name=data.name,
@@ -129,7 +135,9 @@ def disconnect_platform_integration(
     db_user: UserResponse = Depends(get_db_user),
 ):
     return _authorize_and_exec(
-        club_id, db_user, lambda: club_service.disconnect_platform_integration(club_id, platform),
+        club_id,
+        db_user,
+        lambda: club_service.disconnect_platform_integration(club_id, platform),
     )
 
 

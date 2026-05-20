@@ -253,12 +253,8 @@ function SubmitEventModalContent({
 
   const [resolvedInitialData, setResolvedInitialData] = useState<EventFormData | undefined>(undefined);
   useEffect(() => {
-    if (!isOpen || !editEventId || !loadEventForEdit) {
-      setResolvedInitialData(undefined);
-      return;
-    }
+    if (!isOpen || !editEventId || !loadEventForEdit) return;
     let cancelled = false;
-    setResolvedInitialData(undefined);
     loadEventForEdit(editEventId)
       .then((data) => {
         if (!cancelled) setResolvedInitialData(data);
@@ -322,4 +318,3 @@ export function SubmitEventModal(props: SubmitEventModalProps) {
     />
   );
 }
-

@@ -1,4 +1,4 @@
-import type { QRCode, Event, FilterState } from "@/shared/types";
+import type { QRCode, FilterState } from "@/shared/types";
 import { getUniqueEvents as getUniqueEventsFromUtils } from "@/shared/utils/event";
 
 /**

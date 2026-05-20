@@ -50,7 +50,7 @@ export function stripTrailingSlash(url: string): string {
 export function sanitizeTranslationHTML(html: string): string {
   // Drop nul bytes so an attacker cannot inject placeholder tokens that the
   // old regex-based approach used internally.
-  const cleaned = html.replace(/\x00/g, "");
+  const cleaned = html.split(String.fromCharCode(0)).join("");
   // Match any tag-like token `<...>`. Only replace with the canonical form when
   // the token is exactly one of our allowed tags (ignoring case and surrounding
   // whitespace, and rejecting attributes). All other tag-like tokens are stripped.

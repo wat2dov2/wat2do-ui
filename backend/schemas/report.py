@@ -24,9 +24,7 @@ def _reject_html_in_free_text(v: str) -> str:
     lowered = v.lower()
     for bad in _FORBIDDEN_REASON_SUBSTRINGS:
         if bad in lowered:
-            raise ValueError(
-                "free-text field may not contain HTML tags or dangerous URL schemes"
-            )
+            raise ValueError("free-text field may not contain HTML tags or dangerous URL schemes")
     return v
 
 

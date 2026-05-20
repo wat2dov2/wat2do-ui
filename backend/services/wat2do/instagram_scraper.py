@@ -81,7 +81,9 @@ class InstagramScraper:
 
         log.info(
             "Apify scrape start: %d users, limit=%s, cutoff=%s",
-            len(username_list), results_limit, cutoff_str,
+            len(username_list),
+            results_limit,
+            cutoff_str,
         )
 
         try:
@@ -122,9 +124,7 @@ class InstagramScraper:
             return [], False
 
         try:
-            dataset_items = list(
-                self._client.dataset(run["defaultDatasetId"]).list_items().items
-            )
+            dataset_items = list(self._client.dataset(run["defaultDatasetId"]).list_items().items)
         except Exception as e:
             log.error("Failed to fetch Apify dataset for %s: %s", run_id, e)
             return [], False

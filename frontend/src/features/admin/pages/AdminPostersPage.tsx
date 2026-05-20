@@ -1,4 +1,4 @@
-import React, { lazy, useMemo } from "react";
+import { lazy, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
@@ -12,7 +12,7 @@ export function AdminPostersPage() {
   const events = useEventsStore((s) => s.events);
   const userEmail = useUserEmail();
   const navigate = useNavigate();
-  const onBack = useMemo(() => () => navigate(ROUTES.ADMIN), [navigate]);
+  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
 
   return (
     <PostersPageContent

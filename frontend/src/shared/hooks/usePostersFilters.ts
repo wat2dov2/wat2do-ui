@@ -16,14 +16,13 @@ interface UsePostersFiltersOptions {
  * Shared by admin and club-panel posters pages.
  */
 export function usePostersFilters({
-  refreshKey,
   backendPosters,
   backendScans,
 }: UsePostersFiltersOptions) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("alltime");
 
-  const qrCodes = useMemo(() => backendPosters, [refreshKey, backendPosters]);
-  const allScans = useMemo(() => backendScans, [refreshKey, backendScans]);
+  const qrCodes = backendPosters;
+  const allScans = backendScans;
 
   // Filter scans by time range
   const filteredScans = useMemo(() => {

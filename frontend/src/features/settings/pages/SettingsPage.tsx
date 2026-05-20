@@ -6,7 +6,6 @@
  * All business logic is delegated to hooks and components.
  */
 
-import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";

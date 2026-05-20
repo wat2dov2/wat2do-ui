@@ -1,0 +1,56 @@
+<svg width="720" height="860" viewBox="0 0 720 860" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Goose university crest</title>
+  <desc id="desc">A blue university-style shield with a white chevron and three goose emblems wearing different glasses.</desc>
+
+  <defs>
+    <clipPath id="shieldClip">
+      <path d="M120 70H600V405C600 595 485 735 360 805C235 735 120 595 120 405V70Z"/>
+    </clipPath>
+
+    <g id="gooseBase">
+      <ellipse cx="0" cy="32" rx="62" ry="46" fill="#F7F2E8" stroke="#101820" stroke-width="8"/>
+      <path d="M-33 18C-48 -10 -40 -46 -11 -59C17 -72 49 -54 55 -24C60 1 47 22 25 33" fill="#F7F2E8"/>
+      <path d="M-33 18C-48 -10 -40 -46 -11 -59C17 -72 49 -54 55 -24C60 1 47 22 25 33" stroke="#101820" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M49 -31L86 -18L51 -2Z" fill="#F0A12B" stroke="#101820" stroke-width="7" stroke-linejoin="round"/>
+      <circle cx="18" cy="-32" r="6" fill="#101820"/>
+      <path d="M-42 38C-18 50 11 47 35 31" stroke="#D9CDB8" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-38 81L-53 103" stroke="#F0A12B" stroke-width="8" stroke-linecap="round"/>
+      <path d="M9 82L-3 106" stroke="#F0A12B" stroke-width="8" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <path d="M93 43H627V405C627 622 494 775 360 841C226 775 93 622 93 405V43Z" fill="#101820"/>
+  <path d="M120 70H600V405C600 595 485 735 360 805C235 735 120 595 120 405V70Z" fill="#0056A8"/>
+
+  <g clip-path="url(#shieldClip)">
+    <path d="M120 70H600V405C600 595 485 735 360 805C235 735 120 595 120 405V70Z" fill="#0056A8"/>
+    <path d="M90 330L195 240L360 395L525 240L630 330L360 590L90 330Z" fill="#F8FAFC" stroke="#101820" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M118 345L195 282L360 438L525 282L602 345L360 540L118 345Z" fill="#0056A8"/>
+
+    <g transform="translate(245 210) scale(0.82)">
+      <use href="#gooseBase"/>
+      <circle cx="1" cy="-32" r="20" fill="none" stroke="#F8FAFC" stroke-width="7"/>
+      <circle cx="39" cy="-27" r="20" fill="none" stroke="#F8FAFC" stroke-width="7"/>
+      <path d="M21 -30L20 -30" stroke="#F8FAFC" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-18 -34L-32 -41M59 -25L72 -30" stroke="#F8FAFC" stroke-width="7" stroke-linecap="round"/>
+    </g>
+
+    <g transform="translate(475 210) scale(0.82)">
+      <use href="#gooseBase"/>
+      <path d="M-22 -45C-3 -53 14 -46 26 -32C39 -44 60 -47 78 -36L64 -9C49 -15 35 -20 24 -31C12 -20 -5 -15 -22 -18Z" fill="#101820" stroke="#101820" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M-9 -39C0 -41 9 -39 16 -33M43 -34C51 -37 59 -37 67 -33" stroke="#4BE3FF" stroke-width="5" stroke-linecap="round"/>
+    </g>
+
+    <g transform="translate(360 610) scale(0.95)">
+      <use href="#gooseBase"/>
+      <rect x="-21" y="-51" width="42" height="34" rx="5" fill="none" stroke="#F8FAFC" stroke-width="7"/>
+      <rect x="29" y="-46" width="42" height="34" rx="5" fill="none" stroke="#F8FAFC" stroke-width="7"/>
+      <path d="M21 -34L29 -33" stroke="#F8FAFC" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-21 -36L-37 -43M71 -29L83 -32" stroke="#F8FAFC" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-14 -42L13 -25M37 -39L62 -20" stroke="#D7F5FF" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+    </g>
+  </g>
+
+  <path d="M120 70H600V405C600 595 485 735 360 805C235 735 120 595 120 405V70Z" stroke="#101820" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M148 98H572V404C572 567 479 693 360 764C241 693 148 567 148 404V98Z" stroke="#F8FAFC" stroke-width="8" stroke-linejoin="round"/>
+</svg>

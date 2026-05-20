@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from schemas.club import ClubResponse
 from services import club_service
-from tests.conftest import FAKE_USER, OTHER_USER, ADMIN_USER
+from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
 def _mock_club(**overrides) -> ClubResponse:
@@ -159,14 +159,16 @@ def test_integration_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(
         club_service,
         "get_platform_integration",
-        MagicMock(return_value={
-            "club_id": 1,
-            "platform": "discord",
-            "connected": False,
-            "name": None,
-            "last_sync": None,
-            "metadata": {},
-        }),
+        MagicMock(
+            return_value={
+                "club_id": 1,
+                "platform": "discord",
+                "connected": False,
+                "name": None,
+                "last_sync": None,
+                "metadata": {},
+            }
+        ),
     )
 
     resp = authenticated_client.get("/clubs/1/integrations/discord")

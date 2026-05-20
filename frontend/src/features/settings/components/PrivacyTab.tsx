@@ -3,7 +3,6 @@
  * UI component for privacy preferences
  */
 
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";

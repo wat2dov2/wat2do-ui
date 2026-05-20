@@ -6,8 +6,9 @@
  * separate chunk that only club managers ever download.
  */
 
-import React, { lazy, Suspense, useMemo } from "react";
-import type { Event, EventFormData } from "@/shared/types";
+import { lazy, Suspense, useCallback } from "react";
+import type { ReactNode } from "react";
+import type { Event } from "@/shared/types";
 import { useNavigate } from "react-router-dom";
 import { ROUTES, CLUB_PANEL_ROUTE_MAP } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -26,12 +27,8 @@ const ClubPanelMembersPage = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanelMembersPage }))
 );
 
-interface ClubPanelRoutesConfig {
+interface ClubPanelPostersRouteConfig {
   events: Event[];
-  onEditEvent: (event: Event) => void;
-  onDeleteEvent: (eventId: number) => Promise<void>;
-  onCreateEvent: () => void;
-  onAddEvent: (eventData: EventFormData) => Promise<number>;
   userEmail: string | null;
 }
 
@@ -41,8 +38,8 @@ interface ClubPanelRoutesConfig {
 function useClubPanelNavigation() {
   const navigate = useNavigate();
 
-  return useMemo(
-    () => (page: string) => {
+  return useCallback(
+    (page: string) => {
       navigate(CLUB_PANEL_ROUTE_MAP[page] || ROUTES.CLUB_PANEL);
     },
     [navigate]
@@ -50,7 +47,7 @@ function useClubPanelNavigation() {
 }
 
 /** Suspense wrapper for lazy-loaded club-panel pages. */
-function ClubPanelSuspense({ children }: { children: React.ReactNode }) {
+function ClubPanelSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
       {children}
@@ -61,7 +58,7 @@ function ClubPanelSuspense({ children }: { children: React.ReactNode }) {
 /**
  * Club Panel Route Component
  */
-export function ClubPanelRoute({ config }: { config: ClubPanelRoutesConfig }) {
+export function ClubPanelRoute() {
   const handleNavigate = useClubPanelNavigation();
 
   return (
@@ -74,10 +71,10 @@ export function ClubPanelRoute({ config }: { config: ClubPanelRoutesConfig }) {
 /**
  * Club Panel Posters Route Component
  */
-export function ClubPanelPostersRoute({ config }: { config: ClubPanelRoutesConfig }) {
+export function ClubPanelPostersRoute({ config }: { config: ClubPanelPostersRouteConfig }) {
   const navigate = useNavigate();
 
-  const onBack = useMemo(() => () => navigate(ROUTES.CLUB_PANEL), [navigate]);
+  const onBack = useCallback(() => navigate(ROUTES.CLUB_PANEL), [navigate]);
 
   return (
     <ClubPanelSuspense>

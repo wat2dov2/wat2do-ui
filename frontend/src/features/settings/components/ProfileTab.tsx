@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import { Mail, Camera } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
-import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Switch } from "@/shared/ui/switch";
 import { Separator } from "@/shared/ui/separator";

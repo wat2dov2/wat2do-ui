@@ -3,10 +3,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, TypedDict, TypeVar
 
 import jwt
-from jwt import PyJWKClient
-
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import PyJWKClient
 
 from core.config import settings
 from core.constants import ROLE_ADMIN
@@ -42,6 +41,7 @@ class AuthUser(TypedDict):
     aud: str | None
     role: str | None
 
+
 # JWKS client — fetches public keys from Supabase's discovery endpoint
 # and caches them in-memory for 10 minutes.
 _jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
@@ -68,6 +68,7 @@ def _get_user_service():
     global _user_service
     if _user_service is None:
         from services import user_service
+
         _user_service = user_service
     return _user_service
 
@@ -228,9 +229,7 @@ def is_admin(db_user: "UserResponse") -> bool:
     return db_user.role == ROLE_ADMIN
 
 
-def require_owner_or_admin(
-    db_user: "UserResponse", resource_owner_id: str | None
-) -> None:
+def require_owner_or_admin(db_user: "UserResponse", resource_owner_id: str | None) -> None:
     """Raise 403 if *db_user* is neither the resource owner nor an admin.
 
     Ownership is compared against the internal ``users.id`` UUID — every

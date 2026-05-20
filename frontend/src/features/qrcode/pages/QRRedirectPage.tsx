@@ -4,7 +4,6 @@
  * No app chrome so the scan experience is minimal.
  */
 
-import React from "react";
 import { useQRRedirect } from "@/features/qrcode/hooks/useQRRedirect";
 import { LoadingPage } from "@/shared/ui/loading-page";
 

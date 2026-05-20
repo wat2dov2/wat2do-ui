@@ -103,7 +103,8 @@ def find_match(
         return None
 
     same_club = _check_same_club_update(
-        ig_handle=ig_handle, candidate_title=title,
+        ig_handle=ig_handle,
+        candidate_title=title,
     )
     if same_club is not None:
         return MatchResult("same_club", same_club)
@@ -179,10 +180,15 @@ def _check_same_club_update(
         if latest_end is None or latest_end < now:
             continue
 
-        if title_similarity(row.get("title") or "", candidate_title) > SCRAPING_SAME_CLUB_TITLE_THRESHOLD:
+        if (
+            title_similarity(row.get("title") or "", candidate_title)
+            > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
+        ):
             log.info(
                 "Same-club update candidate: %r matches existing event id=%s (%r)",
-                candidate_title, row.get("id"), row.get("title"),
+                candidate_title,
+                row.get("id"),
+                row.get("title"),
             )
             return row
     return None
@@ -239,10 +245,9 @@ def _check_same_day_duplicate(
         existing_description = event.get("description") or ""
 
         loc_sim = jaccard_similarity(existing_location, candidate_location)
-        substring_match = (
-            normalize(existing_title) in norm_candidate_title
-            or norm_candidate_title in normalize(existing_title)
-        )
+        substring_match = normalize(
+            existing_title
+        ) in norm_candidate_title or norm_candidate_title in normalize(existing_title)
 
         if substring_match:
             if loc_sim > SCRAPING_LOCATION_SIMILARITY_THRESHOLD:
@@ -271,9 +276,7 @@ def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
     """Return the latest dtend (or dtstart fallback) across occurrences."""
     candidates: list[datetime] = []
     for occ in occurrences:
-        end = _parse_iso8601_utc(occ.get("dtend_utc")) or _parse_iso8601_utc(
-            occ.get("dtstart_utc")
-        )
+        end = _parse_iso8601_utc(occ.get("dtend_utc")) or _parse_iso8601_utc(occ.get("dtstart_utc"))
         if end is not None:
             candidates.append(end)
     return max(candidates) if candidates else None
@@ -293,6 +296,7 @@ def existing_shortcodes() -> set[str]:
     1000 returned (and the order without ``.order()`` is undefined),
     causing previously-scraped posts to be re-inserted as duplicates.
     """
+
     def _page(offset: int, page_size: int) -> list[dict]:
         return (
             get_sb()

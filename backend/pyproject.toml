@@ -1,0 +1,54 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "supabase",
+]
+
+[tool.ruff.lint]
+select = [
+    "E7",
+    "E9",
+    "F",
+    "I",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    # Existing tests keep some imports/locals around for fixtures and patch targets.
+    "F401",
+    "F841",
+]
+
+[tool.mypy]
+python_version = "3.12"
+exclude = [
+    "^\\.venv/",
+    "^jobs/",
+    "^routers/",
+    "^schemas/",
+    "^scripts/",
+    "^seeds/",
+    "^services/",
+    "^supabase/",
+    "^tests/",
+    "^core/(auth|config|constants|database|error_handlers|rate_limit)\\.py$",
+]
+ignore_missing_imports = true
+warn_unused_configs = true
+no_implicit_optional = true
+show_error_codes = true
+pretty = true
+follow_imports = "skip"
+
+# The backend is being ratcheted into type checking. Start by validating typed
+# surfaces without forcing every legacy function to be fully annotated in this
+# cleanup batch.
+check_untyped_defs = false
+disallow_untyped_defs = false

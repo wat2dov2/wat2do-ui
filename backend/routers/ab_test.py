@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends
 
-from core.auth import get_current_user, get_admin_user, resolve_db_user
+from core.auth import get_admin_user, get_current_user, resolve_db_user
 from core.exceptions import NotFoundError
 from schemas.ab_test import ABMetricsResponse, ABVariantResponse
 from services.ab_test_service import ab_test

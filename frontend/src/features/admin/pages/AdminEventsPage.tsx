@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, MapPin, Tag, AlertTriangle, Edit, Trash2, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import {
-  TableBody,
   TableCell,
   TableRow,
 } from "@/shared/ui/table";

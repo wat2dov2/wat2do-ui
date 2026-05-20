@@ -62,7 +62,9 @@ def register_error_handlers(app: FastAPI) -> None:
         return JSONResponse(status_code=404, content={"detail": exc.detail})
 
     @app.exception_handler(AuthenticationError)
-    async def handle_authentication_error(request: Request, exc: AuthenticationError) -> JSONResponse:
+    async def handle_authentication_error(
+        request: Request, exc: AuthenticationError
+    ) -> JSONResponse:
         return JSONResponse(
             status_code=401,
             content={"detail": exc.detail},
@@ -94,7 +96,9 @@ def register_error_handlers(app: FastAPI) -> None:
         # service re-raises with context — sanitize before logging.
         logger.warning(
             "Unhandled ServiceError on %s %s: %s",
-            request.method, request.url.path, _safe(exc.detail),
+            request.method,
+            request.url.path,
+            _safe(exc.detail),
         )
         body: dict[str, object] = {"detail": exc.detail}
         if exc.code:
@@ -111,7 +115,10 @@ def register_error_handlers(app: FastAPI) -> None:
         # so a compromised/hostile upstream cannot forge log lines.
         logger.warning(
             "AuthApiError on %s %s [code=%s]: %s",
-            request.method, request.url.path, _safe(exc.code), _safe(exc.message),
+            request.method,
+            request.url.path,
+            _safe(exc.code),
+            _safe(exc.message),
         )
         return JSONResponse(status_code=status_code, content={"detail": AUTHENTICATION_ERROR})
 
@@ -122,7 +129,10 @@ def register_error_handlers(app: FastAPI) -> None:
             status_code, detail = mapped
             logger.warning(
                 "PostgREST error on %s %s [pg_code=%s]: %s",
-                request.method, request.url.path, _safe(exc.code), _safe(exc.message),
+                request.method,
+                request.url.path,
+                _safe(exc.code),
+                _safe(exc.message),
             )
         else:
             status_code = 502
@@ -134,13 +144,17 @@ def register_error_handlers(app: FastAPI) -> None:
             # default, and sanitize before logging to prevent CR/LF injection.
             logger.error(
                 "Unhandled PostgREST error on %s %s [code=%s]: %s",
-                request.method, request.url.path,
-                _safe(exc.code), _safe(exc.message),
+                request.method,
+                request.url.path,
+                _safe(exc.code),
+                _safe(exc.message),
             )
             logger.debug(
                 "PostgREST error extra for %s %s: hint=%s | details=%s",
-                request.method, request.url.path,
-                _safe(exc.hint), _safe(exc.details),
+                request.method,
+                request.url.path,
+                _safe(exc.hint),
+                _safe(exc.details),
             )
         return JSONResponse(status_code=status_code, content={"detail": detail})
 
@@ -156,7 +170,10 @@ def register_error_handlers(app: FastAPI) -> None:
     async def handle_ai_service_error(request: Request, exc: AIServiceError) -> JSONResponse:
         logger.warning(
             "AIServiceError on %s %s [kind=%s]: %s",
-            request.method, request.url.path, _safe(exc.error_kind), _safe(exc),
+            request.method,
+            request.url.path,
+            _safe(exc.error_kind),
+            _safe(exc),
         )
         if exc.error_kind == "config":
             return JSONResponse(
@@ -179,7 +196,9 @@ def register_error_handlers(app: FastAPI) -> None:
             raise exc
         logger.error(
             "Unhandled %s on %s %s:\n%s",
-            type(exc).__name__, request.method, request.url.path,
+            type(exc).__name__,
+            request.method,
+            request.url.path,
             traceback.format_exc(),
         )
         return JSONResponse(

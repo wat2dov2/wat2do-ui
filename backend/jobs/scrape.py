@@ -39,7 +39,6 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 import core.logging  # noqa: F401, E402  — triggers basicConfig for standalone execution
-
 from core.constants import (  # noqa: E402
     SCRAPING_DEFAULT_CUTOFF_DAYS,
     SCRAPING_HANDLES_PER_RUN,
@@ -110,10 +109,17 @@ def _read_handles(urls_file: Path) -> list[str]:
 
 
 def _chunked(items: list[str], size: int) -> list[list[str]]:
-    return [items[i:i + size] for i in range(0, len(items), size)]
+    return [items[i : i + size] for i in range(0, len(items), size)]
 
 
-def _format_summary(school: str, handles: list[str], total_inserted: int, total_extracted: int, total_posts: int, dry_run: bool) -> str:
+def _format_summary(
+    school: str,
+    handles: list[str],
+    total_inserted: int,
+    total_extracted: int,
+    total_posts: int,
+    dry_run: bool,
+) -> str:
     prefix = "[DRY-RUN] " if dry_run else ""
     return (
         f"{prefix}{school}: {len(handles)} handle(s), "
@@ -133,7 +139,9 @@ def _run_single_user_mode(target_username: str) -> int:
 
     log.info(
         "Single-user mode: username=%s, school=%s, cutoff_days=%d",
-        target_username, school, cutoff_days,
+        target_username,
+        school,
+        cutoff_days,
     )
 
     result = run_pipeline(
@@ -144,7 +152,16 @@ def _run_single_user_mode(target_username: str) -> int:
         github_run_id=os.getenv("GITHUB_RUN_ID"),
     )
 
-    print(_format_summary(school, [target_username], result.total_inserted, result.total_extracted, result.total_posts, dry_run=False))
+    print(
+        _format_summary(
+            school,
+            [target_username],
+            result.total_inserted,
+            result.total_extracted,
+            result.total_posts,
+            dry_run=False,
+        )
+    )
     return 0 if all(h.status != "error" for h in result.handles) else 1
 
 
@@ -165,7 +182,11 @@ def _run_big_scrape_mode(args: argparse.Namespace) -> int:
 
     log.info(
         "Big-scrape mode: school=%s, handles=%d, limit=%s, cutoff_days=%d, dry_run=%s",
-        args.school, len(handles), args.limit, args.cutoff_days, args.dry_run,
+        args.school,
+        len(handles),
+        args.limit,
+        args.cutoff_days,
+        args.dry_run,
     )
 
     total_inserted = 0
@@ -187,7 +208,11 @@ def _run_big_scrape_mode(args: argparse.Namespace) -> int:
         total_posts += result.total_posts
         any_error = any_error or any(h.status == "error" for h in result.handles)
 
-    print(_format_summary(args.school, handles, total_inserted, total_extracted, total_posts, dry_run=args.dry_run))
+    print(
+        _format_summary(
+            args.school, handles, total_inserted, total_extracted, total_posts, dry_run=args.dry_run
+        )
+    )
     return 1 if any_error else 0
 
 

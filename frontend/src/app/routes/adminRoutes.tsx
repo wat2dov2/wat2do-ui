@@ -6,8 +6,9 @@
  * separate chunk that only admin users ever download.
  */
 
-import React, { lazy, Suspense, useMemo } from "react";
-import type { Event, EventFormData, Club } from "@/shared/types";
+import { lazy, Suspense, useCallback } from "react";
+import type { ReactNode } from "react";
+import type { Event, Club } from "@/shared/types";
 import {
   adminCreateClub,
   adminUpdateClub,
@@ -34,11 +35,10 @@ const AdminPostersPage = lazy(() =>
   import("@/features/admin").then((m) => ({ default: m.AdminPostersPage }))
 );
 
-interface AdminRoutesConfig {
+interface AdminEventsRouteConfig {
   onEditEvent: (event: Event) => void | Promise<void>;
   onDeleteEvent: (eventId: number) => Promise<void>;
   onCreateEvent: () => void;
-  onAddEvent: (eventData: EventFormData) => Promise<number>;
 }
 
 /**
@@ -47,8 +47,8 @@ interface AdminRoutesConfig {
 function useAdminNavigation() {
   const navigate = useNavigate();
 
-  return useMemo(
-    () => (page: string) => {
+  return useCallback(
+    (page: string) => {
       navigate(ADMIN_ROUTE_MAP[page] || ROUTES.ADMIN);
     },
     [navigate]
@@ -56,7 +56,7 @@ function useAdminNavigation() {
 }
 
 /** Suspense wrapper for lazy-loaded admin pages. */
-function AdminSuspense({ children }: { children: React.ReactNode }) {
+function AdminSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
       {children}
@@ -67,7 +67,7 @@ function AdminSuspense({ children }: { children: React.ReactNode }) {
 /**
  * Admin Panel Route Component
  */
-export function AdminPanelRoute({ config: _config }: { config: AdminRoutesConfig }) {
+export function AdminPanelRoute() {
   const handleNavigate = useAdminNavigation();
 
   return (
@@ -83,9 +83,9 @@ export function AdminPanelRoute({ config: _config }: { config: AdminRoutesConfig
 /**
  * Admin Events Route Component
  */
-export function AdminEventsRoute({ config }: { config: AdminRoutesConfig }) {
+export function AdminEventsRoute({ config }: { config: AdminEventsRouteConfig }) {
   const navigate = useNavigate();
-  const onBack = useMemo(() => () => navigate(ROUTES.ADMIN), [navigate]);
+  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
 
   return (
     <AdminSuspense>
@@ -102,24 +102,24 @@ export function AdminEventsRoute({ config }: { config: AdminRoutesConfig }) {
 /**
  * Admin Clubs Route Component
  */
-export function AdminClubsRoute({ config: _config }: { config: AdminRoutesConfig }) {
+export function AdminClubsRoute() {
   const navigate = useNavigate();
-  const onBack = useMemo(() => () => navigate(ROUTES.ADMIN), [navigate]);
+  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
 
-  const onAddClub = useMemo(
-    () => async (club: Club) => {
+  const onAddClub = useCallback(
+    async (club: Club) => {
       await adminCreateClub(club);
     },
     [],
   );
-  const onEditClub = useMemo(
-    () => async (club: Club) => {
+  const onEditClub = useCallback(
+    async (club: Club) => {
       await adminUpdateClub(club, club);
     },
     [],
   );
-  const onDeleteClub = useMemo(
-    () => async (clubId: number) => {
+  const onDeleteClub = useCallback(
+    async (clubId: number) => {
       await adminDeleteClub(clubId);
     },
     [],
@@ -140,12 +140,13 @@ export function AdminClubsRoute({ config: _config }: { config: AdminRoutesConfig
 /**
  * Admin Submissions Route Component
  */
-export function AdminSubmissionsRoute({ config: _config }: { config: AdminRoutesConfig }) {
+export function AdminSubmissionsRoute() {
   const navigate = useNavigate();
+  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
 
   return (
     <AdminSuspense>
-      <AdminSubmissionsPage onBack={() => navigate(ROUTES.ADMIN)} />
+      <AdminSubmissionsPage onBack={onBack} />
     </AdminSuspense>
   );
 }
@@ -153,7 +154,7 @@ export function AdminSubmissionsRoute({ config: _config }: { config: AdminRoutes
 /**
  * Admin Posters Route Component
  */
-export function AdminPostersRoute({ config: _config }: { config: AdminRoutesConfig }) {
+export function AdminPostersRoute() {
   return (
     <AdminSuspense>
       <AdminPostersPage />

@@ -8,10 +8,10 @@ evaluation import from here.
 from services.recommender.config import (
     HOT_THRESHOLD,
     WARM_THRESHOLD,
+    WEIGHTS_COLD,
     WEIGHTS_HOT,
     WEIGHTS_WARM,
     WEIGHTS_WARM_NO_COLLAB,
-    WEIGHTS_COLD,
 )
 
 # ---------------------------------------------------------------------------
@@ -22,9 +22,9 @@ from services.recommender.config import (
 # ---------------------------------------------------------------------------
 _TEMP_TIERS: list[tuple] = [
     # (predicate(interaction_count, has_profile), weights)
-    (lambda count, profile, hot, warm: count >= hot,            WEIGHTS_HOT),
-    (lambda count, profile, hot, warm: count >= warm,           WEIGHTS_WARM),
-    (lambda count, profile, hot, warm: profile,                 WEIGHTS_WARM_NO_COLLAB),
+    (lambda count, profile, hot, warm: count >= hot, WEIGHTS_HOT),
+    (lambda count, profile, hot, warm: count >= warm, WEIGHTS_WARM),
+    (lambda count, profile, hot, warm: profile, WEIGHTS_WARM_NO_COLLAB),
 ]
 _TEMP_DEFAULT = WEIGHTS_COLD
 

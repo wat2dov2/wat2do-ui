@@ -3,14 +3,13 @@
 from datetime import datetime, timedelta, timezone
 
 from services.wat2do.dedup import (
+    _extract_shortcode,
     find_match,
     jaccard_similarity,
     normalize,
     sequence_similarity,
     title_similarity,
-    _extract_shortcode,
 )
-
 
 # ── Pure similarity helpers ───────────────────────────────────────────
 
@@ -85,8 +84,10 @@ def test_extract_shortcode_profile_url_returns_none():
 
 
 def test_extract_shortcode_unrelated_url_returns_none():
-    assert _extract_shortcode("https://example.com/p/hello/") is None or \
-        _extract_shortcode("https://example.com/p/hello/") == "hello"
+    assert (
+        _extract_shortcode("https://example.com/p/hello/") is None
+        or _extract_shortcode("https://example.com/p/hello/") == "hello"
+    )
     # The current regex matches any /p/<id>/ path — that's intentional
     # (the seen set holds shortcodes regardless of host); the dedup
     # tolerates false positives because they only cause a real IG post
@@ -105,7 +106,11 @@ def _occ(start_iso: str) -> dict:
 def test_find_match_returns_none_without_occurrences():
     """No occurrence -> no match (we have nothing to compare temporally)."""
     result = find_match(
-        title="Foo", location="Bar", description="", occurrences=[], ig_handle="x",
+        title="Foo",
+        location="Bar",
+        description="",
+        occurrences=[],
+        ig_handle="x",
     )
     assert result is None
 
@@ -121,17 +126,21 @@ def test_find_match_same_club_update(fake_sb, patch_sb):
     patch_sb("services.wat2do.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
-    fake_sb.queue_responses([
-        # Same-club lookup — events row with embedded event_dates list.
-        [{
-            "id": 42,
-            "title": "Tea Tasting Night",
-            "ig_handle": "uwteaclub",
-            "location": "SLC",
-            "description": "...",
-            "event_dates": [{"dtstart_utc": future, "dtend_utc": future}],
-        }],
-    ])
+    fake_sb.queue_responses(
+        [
+            # Same-club lookup — events row with embedded event_dates list.
+            [
+                {
+                    "id": 42,
+                    "title": "Tea Tasting Night",
+                    "ig_handle": "uwteaclub",
+                    "location": "SLC",
+                    "description": "...",
+                    "event_dates": [{"dtstart_utc": future, "dtend_utc": future}],
+                }
+            ],
+        ]
+    )
 
     result = find_match(
         title="Tea Tasting Evening",  # similarity > 0.8
@@ -151,19 +160,23 @@ def test_find_match_skips_past_same_club_events(fake_sb, patch_sb):
 
     past = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
-    fake_sb.queue_responses([
-        # Same-club lookup returns past event only -> no match.
-        [{
-            "id": 99,
-            "title": "Tea Tasting Night",
-            "ig_handle": "uwteaclub",
-            "location": "SLC",
-            "description": "",
-            "event_dates": [{"dtstart_utc": past, "dtend_utc": past}],
-        }],
-        # Same-day lookup returns nothing.
-        [],
-    ])
+    fake_sb.queue_responses(
+        [
+            # Same-club lookup returns past event only -> no match.
+            [
+                {
+                    "id": 99,
+                    "title": "Tea Tasting Night",
+                    "ig_handle": "uwteaclub",
+                    "location": "SLC",
+                    "description": "",
+                    "event_dates": [{"dtstart_utc": past, "dtend_utc": past}],
+                }
+            ],
+            # Same-day lookup returns nothing.
+            [],
+        ]
+    )
 
     result = find_match(
         title="Tea Tasting Night",
@@ -184,21 +197,25 @@ def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
     patch_sb("services.wat2do.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
-    fake_sb.queue_responses([
-        # Same-club lookup returns nothing (different ig_handle in DB).
-        [],
-        # Same-day lookup: each row is one event_date with embedded events.
-        [{
-            "event_id": 17,
-            "events": {
-                "id": 17,
-                "title": "Movie Night",
-                "ig_handle": "otherclub",
-                "location": "DC Library",
-                "description": "Free popcorn",
-            },
-        }],
-    ])
+    fake_sb.queue_responses(
+        [
+            # Same-club lookup returns nothing (different ig_handle in DB).
+            [],
+            # Same-day lookup: each row is one event_date with embedded events.
+            [
+                {
+                    "event_id": 17,
+                    "events": {
+                        "id": 17,
+                        "title": "Movie Night",
+                        "ig_handle": "otherclub",
+                        "location": "DC Library",
+                        "description": "Free popcorn",
+                    },
+                }
+            ],
+        ]
+    )
 
     result = find_match(
         title="Friday Movie Night",  # contains "Movie Night"

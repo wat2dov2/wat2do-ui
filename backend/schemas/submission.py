@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from typing import Literal
 
@@ -13,9 +12,7 @@ from core.constants import (
 )
 from schemas.event import EventCreate
 
-SubmissionStatus = Literal[
-    SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED
-]
+SubmissionStatus = Literal[SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED]
 
 
 class SubmissionCreate(BaseModel):

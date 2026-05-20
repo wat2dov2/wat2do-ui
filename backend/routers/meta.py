@@ -10,8 +10,8 @@ from fastapi import APIRouter, Response
 from core.constants import (
     EVENT_CATEGORIES,
     INTEREST_TO_CATEGORIES,
-    SUBMISSION_STATUSES,
     REPORT_STATUSES,
+    SUBMISSION_STATUSES,
 )
 from schemas.meta import AppConstantsResponse
 

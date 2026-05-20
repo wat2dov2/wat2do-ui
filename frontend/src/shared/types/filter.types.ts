@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 
 /**
  * Filter-related types
@@ -18,7 +18,7 @@ export type FilterViewMode = "visual" | "json";
 
 export interface QuickFilterConfig {
   id: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   labelKey: string; // i18n key
   active: boolean;
   onClick: () => void;

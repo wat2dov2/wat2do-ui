@@ -27,10 +27,10 @@ not decisions (see migration comments).
 from __future__ import annotations
 
 import hashlib
-from html import escape
 import json
 import logging
 from datetime import date, datetime, time, timedelta, timezone
+from html import escape
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -55,10 +55,10 @@ from core.database import get_sb
 from core.tables import (
     EVENTS,
     EVENTS_LISTING,
-    NOTIFICATIONS_LOG,
     NOTIFICATION_PREFERENCES,
-    USERS,
+    NOTIFICATIONS_LOG,
     USER_SAVED_EVENTS,
+    USERS,
 )
 from schemas.notification_preference import (
     NotificationPreferenceResponse,
@@ -115,9 +115,7 @@ def get_preferences(user_id: str) -> list[NotificationPreferenceResponse]:
     return prefs
 
 
-def set_preferences(
-    user_id: str, updates: list[NotificationPreferenceUpdate]
-) -> None:
+def set_preferences(user_id: str, updates: list[NotificationPreferenceUpdate]) -> None:
     """Upsert one row per (user, type) pair from ``updates``."""
     if not updates:
         return
@@ -171,9 +169,7 @@ def _compute_change_hash(diff: dict[str, dict[str, Any]]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
-def enqueue_event_change(
-    event_id: int, diff: dict[str, dict[str, Any]]
-) -> int:
+def enqueue_event_change(event_id: int, diff: dict[str, dict[str, Any]]) -> int:
     """Fanout an event_change alert to everyone who saved the event.
 
     Returns the number of emails actually sent (after prefs + dedup).
@@ -196,23 +192,13 @@ def enqueue_event_change(
     event_summary = event_row[0]
 
     saved_rows = (
-        get_sb()
-        .table(USER_SAVED_EVENTS)
-        .select("user_id")
-        .eq("event_id", event_id)
-        .execute()
+        get_sb().table(USER_SAVED_EVENTS).select("user_id").eq("event_id", event_id).execute()
     ).data or []
     user_ids = [r["user_id"] for r in saved_rows]
     if not user_ids:
         return 0
 
-    users = (
-        get_sb()
-        .table(USERS)
-        .select("id, email")
-        .in_("id", user_ids)
-        .execute()
-    ).data or []
+    users = (get_sb().table(USERS).select("id, email").in_("id", user_ids).execute()).data or []
     by_id = {u["id"]: u for u in users}
 
     change_hash = _compute_change_hash(diff)
@@ -266,9 +252,7 @@ def _send_event_change(
             )
         )
     except Exception as e:
-        log.warning(
-            "event_change send failed user=%s event=%s: %s", user_id, event_id, e
-        )
+        log.warning("event_change send failed user=%s event=%s: %s", user_id, event_id, e)
         _mark_log_failed(row_id)
         return False
     _mark_log_sent(row_id)
@@ -366,9 +350,7 @@ def send_daily_new_events_digest(user: dict, now_utc: datetime) -> bool:
 
     now_utc = _ensure_aware_utc(now_utc)
     local_now = now_utc.astimezone(_user_tz(user))
-    previous_sent_at = _last_successful_send_at(
-        user_id, NOTIFICATION_TYPE_DAILY_NEW_EVENTS
-    )
+    previous_sent_at = _last_successful_send_at(user_id, NOTIFICATION_TYPE_DAILY_NEW_EVENTS)
     start_utc = previous_sent_at or (now_utc - timedelta(days=1))
     school = _school_for_user(user)
     events = _fetch_new_events_added_since(
@@ -417,9 +399,7 @@ def send_daily_new_events_digest(user: dict, now_utc: datetime) -> bool:
                     window_start=start_utc,
                     window_end=now_utc,
                 ),
-                idempotency_key=(
-                    f"{NOTIFICATION_TYPE_DAILY_NEW_EVENTS}:{user_id}:{target_id}"
-                ),
+                idempotency_key=(f"{NOTIFICATION_TYPE_DAILY_NEW_EVENTS}:{user_id}:{target_id}"),
             )
         )
     except Exception as e:
@@ -457,10 +437,7 @@ def is_weekly_digest_time(user: dict, now_utc: datetime) -> date | None:
     returned date is ``local.date() + 1 day`` — always a Monday.
     """
     local = now_utc.astimezone(_user_tz(user))
-    if (
-        local.weekday() == WEEKLY_DIGEST_WEEKDAY
-        and local.hour == WEEKLY_DIGEST_HOUR
-    ):
+    if local.weekday() == WEEKLY_DIGEST_WEEKDAY and local.hour == WEEKLY_DIGEST_HOUR:
         return local.date() + timedelta(days=1)
     return None
 
@@ -606,9 +583,7 @@ def _user_tz(user: dict) -> ZoneInfo:
     return ZoneInfo(tz_name)
 
 
-def _fetch_events_for_day(
-    *, school: str | None, local_date: date, tz: ZoneInfo
-) -> list[dict]:
+def _fetch_events_for_day(*, school: str | None, local_date: date, tz: ZoneInfo) -> list[dict]:
     start_local = datetime.combine(local_date, time.min, tzinfo=tz)
     end_local = datetime.combine(local_date, time.max, tzinfo=tz)
     return _fetch_events_in_utc_range(
@@ -692,9 +667,7 @@ def _last_successful_send_at(user_id: str, notification_type: str) -> datetime |
     if isinstance(sent_at, datetime):
         return _ensure_aware_utc(sent_at)
     try:
-        return _ensure_aware_utc(
-            datetime.fromisoformat(str(sent_at).replace("Z", "+00:00"))
-        )
+        return _ensure_aware_utc(datetime.fromisoformat(str(sent_at).replace("Z", "+00:00")))
     except ValueError:
         log.warning(
             "invalid sent_at=%r for user=%s type=%s",
@@ -753,9 +726,7 @@ def _daily_new_events_subject(count: int, school: str) -> str:
     return f"{count} new {noun} at {school}"
 
 
-def _format_event_date_time(
-    event: dict, tz: ZoneInfo
-) -> tuple[str, str]:
+def _format_event_date_time(event: dict, tz: ZoneInfo) -> tuple[str, str]:
     raw = event.get("dtstart_utc")
     if not raw:
         return "Date TBA", "Time TBA"
@@ -770,9 +741,7 @@ def _format_event_date_time(
     return date_label, f"{hour}{minute} {am_pm}"
 
 
-def _format_digest_window(
-    window_start: datetime, window_end: datetime, tz: ZoneInfo
-) -> str:
+def _format_digest_window(window_start: datetime, window_end: datetime, tz: ZoneInfo) -> str:
     start = _ensure_aware_utc(window_start).astimezone(tz)
     end = _ensure_aware_utc(window_end).astimezone(tz)
     return (
@@ -831,7 +800,7 @@ def _render_email_event_card(event: dict, tz: ZoneInfo) -> str:
     else:
         media = (
             '<div style="height:180px;background:linear-gradient(135deg,#f4f4f5,#e4e4e7);'
-            'display:flex;align-items:center;justify-content:center;color:#a1a1aa;'
+            "display:flex;align-items:center;justify-content:center;color:#a1a1aa;"
             'font:600 13px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;">'
             "No image</div>"
         )
@@ -841,12 +810,12 @@ def _render_email_event_card(event: dict, tz: ZoneInfo) -> str:
         f'<div style="position:relative;">{media}'
         '<div style="position:absolute;top:10px;left:10px;">'
         f'<span style="display:inline-block;background:{category_bg};color:{category_fg};'
-        'border-radius:999px;padding:4px 9px;font:700 11px -apple-system,'
+        "border-radius:999px;padding:4px 9px;font:700 11px -apple-system,"
         f'BlinkMacSystemFont,Segoe UI,sans-serif;">{escape(category)}</span>'
         "</div>"
         '<div style="position:absolute;bottom:10px;left:10px;">'
         '<span style="display:inline-block;background:#ffffff;border:1px solid #18181b;'
-        'color:#18181b;border-radius:999px;padding:4px 9px;font:700 11px '
+        "color:#18181b;border-radius:999px;padding:4px 9px;font:700 11px "
         f'-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;">{organization}</span>'
         "</div>"
         "</div>"
@@ -855,9 +824,9 @@ def _render_email_event_card(event: dict, tz: ZoneInfo) -> str:
         f'-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;">{title}</h2>'
         '<div style="color:#71717a;font:500 12px/1.5 -apple-system,'
         'BlinkMacSystemFont,Segoe UI,sans-serif;">'
-        f'<div>{escape(date_label)}</div>'
-        f'<div>{escape(time_label)}</div>'
-        f'<div>{location}</div>'
+        f"<div>{escape(date_label)}</div>"
+        f"<div>{escape(time_label)}</div>"
+        f"<div>{location}</div>"
         "</div>"
         "</div>"
         "</div>"
@@ -904,13 +873,13 @@ def _render_daily_new_events_html(
         '<div style="max-width:640px;margin:0 auto;padding:28px 18px 32px 18px;">'
         '<div style="margin:0 0 18px 0;">'
         '<p style="margin:0 0 8px 0;color:#71717a;font:700 12px/1.4 '
-        '-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;text-transform:uppercase;'
+        "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;text-transform:uppercase;"
         'letter-spacing:.08em;">wat2do</p>'
         f'<h1 style="margin:0;color:#18181b;font:800 28px/1.1 '
         f'-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;">{escape(subject)}</h1>'
         f'<p style="margin:10px 0 0 0;color:#52525b;font:500 14px/1.5 '
         f'-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;">Newly added events for '
-        f'{escape(school)} from {escape(_format_digest_window(window_start, window_end, tz))}.</p>'
+        f"{escape(school)} from {escape(_format_digest_window(window_start, window_end, tz))}.</p>"
         "</div>"
         f"{cards}"
         '<p style="margin:18px 0 0 0;color:#71717a;font:500 12px/1.5 '
@@ -931,9 +900,7 @@ def _render_event_change_text(summary: dict, diff: dict) -> str:
         if field == "occurrences":
             lines.extend(_render_occurrence_diff_text(change))
         else:
-            lines.append(
-                f"  {field}: {change.get('old')} -> {change.get('new')}"
-            )
+            lines.append(f"  {field}: {change.get('old')} -> {change.get('new')}")
     lines.append("")
     lines.append(f"Location: {summary.get('location', '')}")
     return "\n".join(lines)
@@ -946,8 +913,7 @@ def _render_event_change_html(summary: dict, diff: dict) -> str:
             parts.append(_render_occurrence_diff_html(change))
         else:
             parts.append(
-                f"<li><strong>{field}</strong>: "
-                f"{change.get('old')} &rarr; {change.get('new')}</li>"
+                f"<li><strong>{field}</strong>: {change.get('old')} &rarr; {change.get('new')}</li>"
             )
     rows = "".join(parts)
     return (
@@ -1018,17 +984,14 @@ def _render_occurrence_diff_html(change: dict) -> str:
         items.append(f"<li>added <strong>{_format_occurrence_dt(ts)}</strong></li>")
     for ts in removed:
         items.append(f"<li>removed <strong>{_format_occurrence_dt(ts)}</strong></li>")
-    return (
-        f"<li><strong>dates</strong>:<ul>{''.join(items)}</ul></li>"
-    )
+    return f"<li><strong>dates</strong>:<ul>{''.join(items)}</ul></li>"
 
 
 def _render_digest_text(subject: str, events: list[dict]) -> str:
     lines = [subject, ""]
     for e in events:
         lines.append(
-            f"  - {e.get('title', '')} @ {e.get('location', '')} "
-            f"({e.get('dtstart_utc', '')})"
+            f"  - {e.get('title', '')} @ {e.get('location', '')} ({e.get('dtstart_utc', '')})"
         )
     return "\n".join(lines)
 

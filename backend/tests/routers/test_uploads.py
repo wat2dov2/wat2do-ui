@@ -5,10 +5,10 @@ from unittest.mock import MagicMock
 import pytest
 from PIL import Image
 
-from schemas.event import EventResponse
 from schemas.club import ClubResponse
+from schemas.event import EventResponse
+from services import club_service, event_service
 from services.storage_service import storage
-from services import event_service, club_service
 from tests.conftest import FAKE_USER, OTHER_USER
 
 
@@ -37,13 +37,13 @@ def _real_jpeg_with_exif() -> bytes:
     # the TIFF magic + header is enough for the test to find the marker
     # before stripping.
     exif_bytes = (
-        b"Exif\x00\x00"                      # APP1 marker identifier
-        b"MM\x00*\x00\x00\x00\x08"           # TIFF header (big-endian)
-        b"\x00\x01"                          # 1 IFD entry
+        b"Exif\x00\x00"  # APP1 marker identifier
+        b"MM\x00*\x00\x00\x00\x08"  # TIFF header (big-endian)
+        b"\x00\x01"  # 1 IFD entry
         b"\x01\x0f\x00\x02\x00\x00\x00\x06"  # tag 0x010f = Make, ASCII, count=6
-        b"\x00\x00\x00\x1a"                  # offset to value
-        b"\x00\x00\x00\x00"                  # end of IFD
-        b"LEAKED"                            # the literal value
+        b"\x00\x00\x00\x1a"  # offset to value
+        b"\x00\x00\x00\x00"  # end of IFD
+        b"LEAKED"  # the literal value
     )
     img.save(buf, format="JPEG", exif=exif_bytes)
     return buf.getvalue()
@@ -211,7 +211,9 @@ def test_upload_event_image_owner_allowed(authenticated_client, monkeypatch):
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
     monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
-    monkeypatch.setattr(storage, "upload_file", MagicMock(return_value="https://example.com/img.png"))
+    monkeypatch.setattr(
+        storage, "upload_file", MagicMock(return_value="https://example.com/img.png")
+    )
 
     from services import user_service
 
@@ -240,7 +242,9 @@ def test_upload_club_logo_owner_allowed(authenticated_client, monkeypatch):
     club = _mock_club(created_by=FAKE_USER["id"])
     monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
     monkeypatch.setattr(club_service, "update_club", MagicMock(return_value=club))
-    monkeypatch.setattr(storage, "upload_file", MagicMock(return_value="https://example.com/logo.png"))
+    monkeypatch.setattr(
+        storage, "upload_file", MagicMock(return_value="https://example.com/logo.png")
+    )
 
     from services import user_service
 
@@ -310,11 +314,7 @@ def test_svg_disguised_as_png_blocked_on_non_svg_bucket(authenticated_client, mo
 
     from services import user_service
 
-    malicious_svg = (
-        b'<svg xmlns="http://www.w3.org/2000/svg">'
-        b"<script>alert('xss')</script>"
-        b"</svg>"
-    )
+    malicious_svg = b"<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert('xss')</script></svg>"
     # event-images bucket does NOT allow image/svg+xml
     files = _make_file("evil.png", malicious_svg, "image/png")
     resp = authenticated_client.post("/uploads/event-image/1", files=files)
@@ -326,7 +326,9 @@ def test_svg_disguised_as_png_blocked_on_non_svg_bucket(authenticated_client, mo
 # ── Regression: audit U6 — Content-Length pre-check before body buffering ──
 
 
-def test_upload_rejects_oversized_content_length_without_reading_body(authenticated_client, monkeypatch):
+def test_upload_rejects_oversized_content_length_without_reading_body(
+    authenticated_client, monkeypatch
+):
     """A POST whose Content-Length exceeds the bucket limit is rejected
     with 413 by the ``_enforce_content_length`` dependency — without
     FastAPI parsing the multipart body first.  A naive implementation
@@ -356,6 +358,7 @@ def test_upload_accepts_at_limit_content_length(authenticated_client, monkeypatc
     framing slack) is accepted — the pre-check must not over-zealously
     reject legitimate uploads of close-to-limit files.
     """
+
     # A 4-byte PNG is comfortably under any reasonable limit.
     def fake_upload_file(*args, **kwargs):
         return "https://example.com/qr-assets/ok.png"
@@ -471,6 +474,7 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
     monkeypatch.setattr(storage, "upload_file", fake_upload_file)
 
     from services import user_service
+
     monkeypatch.setattr(user_service, "update_user", MagicMock())
 
     # get_db_user dep returns the DB user — stub it directly since the
@@ -482,9 +486,12 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
         avatar_url = None
 
     from routers import uploads as uploads_router
+
     monkeypatch.setattr(
-        uploads_router, "get_db_user",
-        lambda: _StubDbUser(), raising=False,
+        uploads_router,
+        "get_db_user",
+        lambda: _StubDbUser(),
+        raising=False,
     )
 
     exif_jpeg = _real_jpeg_with_exif()
@@ -501,7 +508,10 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
         # The dependency override couldn't be stubbed here — verify the
         # core invariant at the service layer instead.
         cleaned, ct = storage.validate_and_prepare(
-            "avatars", exif_jpeg, "image/jpeg", "photo.jpg",
+            "avatars",
+            exif_jpeg,
+            "image/jpeg",
+            "photo.jpg",
         )
         assert ct == "image/jpeg"
         assert b"LEAKED" not in cleaned
@@ -513,11 +523,11 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
 
 def test_validate_and_prepare_strips_exif_directly():
     """Service-level check: EXIF bytes don't survive validate_and_prepare."""
-    exif_jpeg = (lambda: None)
     buf = BytesIO()
     img = Image.new("RGB", (4, 4), color=(128, 128, 0))
     img.save(
-        buf, format="JPEG",
+        buf,
+        format="JPEG",
         exif=(
             b"Exif\x00\x00"
             b"MM\x00*\x00\x00\x00\x08"

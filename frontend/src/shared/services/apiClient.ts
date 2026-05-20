@@ -249,4 +249,37 @@ export const api = {
   },
 };
 
+interface PaginatedApiResponse<T> {
+  items: T[];
+  page: number;
+  total_pages: number;
+}
+
+const MAX_BACKEND_PAGE_SIZE = 100;
+
+function withPaginationParams(path: string, page: number, pageSize: number): string {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}page=${page}&page_size=${pageSize}`;
+}
+
+export async function getPaginatedItems<T>(
+  path: string,
+  pageSize = MAX_BACKEND_PAGE_SIZE,
+): Promise<T[]> {
+  const items: T[] = [];
+  let page = 1;
+
+  while (true) {
+    const response = await api.get<PaginatedApiResponse<T>>(
+      withPaginationParams(path, page, pageSize),
+    );
+    items.push(...response.items);
+
+    if (response.page >= response.total_pages || response.items.length === 0) {
+      return items;
+    }
+    page = response.page + 1;
+  }
+}
+
 export { ApiError };

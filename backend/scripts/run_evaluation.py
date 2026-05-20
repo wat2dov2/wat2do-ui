@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """CLI script to run offline evaluation of the recommendation engine."""
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 

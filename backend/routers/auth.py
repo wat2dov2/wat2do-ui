@@ -14,13 +14,13 @@ from core.rate_limit import (
     signup_rate_limiter,
 )
 from schemas.auth import (
+    ForgotPasswordRequest,
+    LoginRequest,
+    MessageResponse,
+    ResetPasswordRequest,
     SignupRequest,
     SignupResponse,
-    LoginRequest,
-    ForgotPasswordRequest,
-    ResetPasswordRequest,
     TokenResponse,
-    MessageResponse,
 )
 from services.auth_service import AuthResult, auth
 
@@ -168,7 +168,8 @@ def refresh(
 
 
 def _error_response_with_cleared_cookie(
-    status_code: int, detail: str,
+    status_code: int,
+    detail: str,
 ) -> JSONResponse:
     """Build a JSONResponse that clears the refresh cookie.
 

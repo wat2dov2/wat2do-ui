@@ -31,18 +31,14 @@ log = logging.getLogger(__name__)
 CSP_DIRECTIVES: list[tuple[str, str]] = [
     # Fallback for any directive not listed below.
     ("default-src", "'self'"),
-
     # Scripts: only our own bundle.  No eval, no inline (except Vite dev
     # which injects module scripts — the dev server doesn't go through this
     # middleware anyway).
     ("script-src", "'self'"),
-
     # Styles: self + Google Fonts stylesheet + inline (Tailwind runtime).
     ("style-src", "'self' 'unsafe-inline' https://fonts.googleapis.com"),
-
     # Fonts: self + Google Fonts static files.
     ("font-src", "'self' https://fonts.gstatic.com"),
-
     # Images: self + Supabase storage + S3 event images + Unsplash editorial
     # images + Mapbox tiles + data: URIs (SVG fallbacks) + blob: (QR generator).
     (
@@ -54,7 +50,6 @@ CSP_DIRECTIVES: list[tuple[str, str]] = [
         "https://api.mapbox.com "
         "https://*.tiles.mapbox.com",
     ),
-
     # XHR / fetch / WebSocket connections: own API + Supabase + Mapbox.
     (
         "connect-src",
@@ -64,19 +59,14 @@ CSP_DIRECTIVES: list[tuple[str, str]] = [
         "https://*.tiles.mapbox.com "
         "https://events.mapbox.com",
     ),
-
     # Web workers used by mapbox-gl.
     ("worker-src", "'self' blob:"),
-
     # Disallow <object>, <embed>, <applet>.
     ("object-src", "'none'"),
-
     # Only allow our own origin to frame the page.
     ("frame-ancestors", "'self'"),
-
     # Restrict <base href> to prevent base-tag hijacking.
     ("base-uri", "'self'"),
-
     # Restrict form targets.
     ("form-action", "'self'"),
 ]
@@ -91,14 +81,11 @@ _SECURITY_HEADERS: dict[str, str] = {
     # Prevent MIME-type sniffing (stops browsers from executing uploaded files
     # as scripts if the Content-Type is wrong).
     "X-Content-Type-Options": "nosniff",
-
     # Clickjacking protection (redundant with frame-ancestors CSP but still
     # respected by older browsers that ignore CSP).
     "X-Frame-Options": "SAMEORIGIN",
-
     # Control what the Referer header leaks to other origins.
     "Referrer-Policy": "strict-origin-when-cross-origin",
-
     # Opt out of FLoC / Topics API tracking.
     "Permissions-Policy": "interest-cohort=()",
 }

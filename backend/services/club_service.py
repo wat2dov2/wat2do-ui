@@ -9,16 +9,15 @@ log = logging.getLogger(__name__)
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.sanitize import sanitize_postgrest_value
-from core.tables import CLUBS, CLUB_INTEGRATIONS
+from core.tables import CLUB_INTEGRATIONS, CLUBS
 from schemas.club import (
     ClubCreate,
-    ClubUpdate,
-    ClubResponse,
     ClubIntegrationResponse,
+    ClubResponse,
+    ClubUpdate,
     DiscordIntegrationResponse,
     IntegrationPlatform,
 )
-
 
 SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = get_args(IntegrationPlatform)
 
@@ -196,11 +195,20 @@ def get_discord_options() -> dict:
 # ---------------------------------------------------------------------------
 
 # DB columns that store well-known metadata values.
-_METADATA_COLUMNS = frozenset({
-    "server_id", "server_name",
-    "channel_id", "channel_name", "handle", "group_id", "group_name",
-    "page_id", "page_name", "connection_type",
-})
+_METADATA_COLUMNS = frozenset(
+    {
+        "server_id",
+        "server_name",
+        "channel_id",
+        "channel_name",
+        "handle",
+        "group_id",
+        "group_name",
+        "page_id",
+        "page_name",
+        "connection_type",
+    }
+)
 
 # Per-platform column-to-metadata-key aliases. When a platform stores a value
 # in a generic column (e.g. server_id) but the API should emit a different key
@@ -292,7 +300,9 @@ def _row_to_integration_response(row: dict) -> ClubIntegrationResponse:
     )
 
 
-def _empty_integration_response(club_id: int, platform: IntegrationPlatform) -> ClubIntegrationResponse:
+def _empty_integration_response(
+    club_id: int, platform: IntegrationPlatform
+) -> ClubIntegrationResponse:
     """Return a disconnected placeholder for a platform with no DB row."""
     return ClubIntegrationResponse(
         club_id=club_id,
@@ -304,7 +314,9 @@ def _empty_integration_response(club_id: int, platform: IntegrationPlatform) -> 
     )
 
 
-def get_platform_integration(club_id: int, platform: IntegrationPlatform) -> ClubIntegrationResponse | None:
+def get_platform_integration(
+    club_id: int, platform: IntegrationPlatform
+) -> ClubIntegrationResponse | None:
     club = get_club(club_id)
     if club is None:
         return None
@@ -341,19 +353,16 @@ def upsert_platform_integration(
         "updated_at": now,
         **columns,
     }
-    r = (
-        get_sb()
-        .table(CLUB_INTEGRATIONS)
-        .upsert(payload, on_conflict="club_id,platform")
-        .execute()
-    )
+    r = get_sb().table(CLUB_INTEGRATIONS).upsert(payload, on_conflict="club_id,platform").execute()
     if not r.data:
         log.warning("Failed to upsert integration for club_id=%s platform=%s", club_id, platform)
         return None
     return _row_to_integration_response(r.data[0])
 
 
-def disconnect_platform_integration(club_id: int, platform: IntegrationPlatform) -> ClubIntegrationResponse | None:
+def disconnect_platform_integration(
+    club_id: int, platform: IntegrationPlatform
+) -> ClubIntegrationResponse | None:
     club = get_club(club_id)
     if club is None:
         return None

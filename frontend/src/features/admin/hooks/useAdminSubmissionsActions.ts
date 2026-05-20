@@ -15,7 +15,7 @@ interface UseAdminSubmissionsActionsOptions {
  *
  * Delegates mutations to the admin store, which patches the local submissions
  * list on success — no refreshKey needed. All API calls are wrapped in
- * try/catch and errors are logged per CLAUDE.md.
+ * try/catch and errors are logged per AGENTS.md.
  */
 export function useAdminSubmissionsActions({
   searchParams,

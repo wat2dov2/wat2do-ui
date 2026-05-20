@@ -3,7 +3,6 @@
  * Extracted from AdminSubmissionsPage to reduce complexity
  */
 
-import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,

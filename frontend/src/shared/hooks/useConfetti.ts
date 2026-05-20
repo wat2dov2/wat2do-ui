@@ -56,7 +56,7 @@ export function useConfetti(): UseConfettiReturn {
   }, []);
 
   const triggerBurst = useCallback((count: number = 3) => {
-    const end = Date.now() + 2 * 1000; // 2 seconds
+    const end = Date.now() + count * 650;
     const colors = getThemeConfettiColors();
 
     const frame = () => {

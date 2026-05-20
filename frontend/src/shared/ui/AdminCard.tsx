@@ -3,7 +3,6 @@
  * Reusable card component for admin navigation and activity items
  */
 
-import React from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 

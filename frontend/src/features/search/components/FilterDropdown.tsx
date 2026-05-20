@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { AIGenerationInput } from "@/features/search/components/AIGenerationInput";

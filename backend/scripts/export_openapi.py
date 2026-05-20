@@ -14,7 +14,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from main import app  # noqa: E402
 
-OUTPUT = Path(__file__).resolve().parent.parent.parent / "frontend" / "src" / "shared" / "generated" / "openapi.json"
+OUTPUT = (
+    Path(__file__).resolve().parent.parent.parent
+    / "frontend"
+    / "src"
+    / "shared"
+    / "generated"
+    / "openapi.json"
+)
 
 
 def main() -> None:

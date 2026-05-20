@@ -58,12 +58,15 @@ def test_current_semester_end_unknown_school_returns_none():
     assert current_semester_end("") is None
 
 
-@pytest.mark.parametrize("school", [
-    "University of Waterloo",
-    "Wilfrid Laurier University",
-    "University of Guelph",
-    "Conestoga College",
-])
+@pytest.mark.parametrize(
+    "school",
+    [
+        "University of Waterloo",
+        "Wilfrid Laurier University",
+        "University of Guelph",
+        "Conestoga College",
+    ],
+)
 def test_current_semester_end_canadian_schools_have_data(school):
     """Existing Canadian schools must remain mapped (no regression on the legacy 4)."""
     assert current_semester_end(school, now=datetime(2026, 3, 1)) == "20260430T235959Z"

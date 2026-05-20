@@ -3,7 +3,7 @@
  * No editing, no Save, no Download QR button.
  */
 
-import React, { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import { Eye, Megaphone } from "lucide-react";

@@ -16,29 +16,28 @@ from typing import Callable
 from postgrest.exceptions import APIError
 
 from core.cache import TTLCache
-from core.retry import supabase_retry
 from core.database import get_sb
 from core.pagination import iter_all_pages
+from core.retry import supabase_retry
 from core.tables import EVENTS_LISTING, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
 from schemas.recommendation import RecommendationItem
-from services import user_service, interaction_service
+from services import interaction_service, user_service
 from services.ab_test_service import ab_test
-from services.recommender.interaction_scores import get_user_event_scores
-from services.recommender.content_based import get_content_scores
 from services.recommender.collaborative import get_collaborative_scores
-from services.recommender.popularity import get_popularity_scores
-from services.recommender.reranker import mmr_rerank
 from services.recommender.config import (
-    DEFAULT_LIMIT,
-    MAX_LIMIT,
+    CANDIDATE_EVENTS_CACHE_TTL,
+    CANDIDATE_POOL_SIZE,
     DEFAULT_LAMBDA,
+    DEFAULT_LIMIT,
     HOT_THRESHOLD,
     WARM_THRESHOLD,
-    CANDIDATE_POOL_SIZE,
-    CANDIDATE_EVENTS_CACHE_TTL,
 )
-from services.recommender.scoring import select_weights, blend_scores
+from services.recommender.content_based import get_content_scores
+from services.recommender.interaction_scores import get_user_event_scores
+from services.recommender.popularity import get_popularity_scores
+from services.recommender.reranker import mmr_rerank
+from services.recommender.scoring import blend_scores, select_weights
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +97,9 @@ class RecommendationEngine:
         self._collab_scorer = collab_scorer or get_collaborative_scores
         self._popularity_scorer = popularity_scorer or get_popularity_scores
         self._reranker = reranker or mmr_rerank
-        self._executor_factory = executor_factory or (lambda max_workers: ThreadPoolExecutor(max_workers=max_workers))
+        self._executor_factory = executor_factory or (
+            lambda max_workers: ThreadPoolExecutor(max_workers=max_workers)
+        )
         self.hot_threshold = hot_threshold
         self.warm_threshold = warm_threshold
         self.default_lambda = default_lambda
@@ -111,7 +112,9 @@ class RecommendationEngine:
     # Online: thin serving layer — reads pre-computed recs, applies real-time filters
     # ---------------------------------------------------------------------------
 
-    def get_recommendations(self, user_id: str, limit: int = DEFAULT_LIMIT) -> list[RecommendationItem]:
+    def get_recommendations(
+        self, user_id: str, limit: int = DEFAULT_LIMIT
+    ) -> list[RecommendationItem]:
         """
         Read pre-computed recs from user_recommendations.
         Apply real-time filters: strip events the user has interacted with since
@@ -145,12 +148,8 @@ class RecommendationEngine:
             now = datetime.now(timezone.utc).isoformat()
 
             with self.make_executor(max_workers=2) as pool:
-                actions_future = pool.submit(
-                    self._fetch_recent_actions, user_id, computed_at
-                )
-                future_future = pool.submit(
-                    self._fetch_future_event_ids, rec_event_ids, now
-                )
+                actions_future = pool.submit(self._fetch_recent_actions, user_id, computed_at)
+                future_future = pool.submit(self._fetch_future_event_ids, rec_event_ids, now)
 
                 try:
                     exclude = actions_future.result()
@@ -176,11 +175,13 @@ class RecommendationEngine:
                     continue
                 if future_ids is not None and eid not in future_ids:
                     continue
-                results.append(RecommendationItem(
-                    event_id=eid,
-                    score=round(rec["predicted_score"], 4),
-                    reason=rec.get("reason") or "Recommended for you",
-                ))
+                results.append(
+                    RecommendationItem(
+                        event_id=eid,
+                        score=round(rec["predicted_score"], 4),
+                        reason=rec.get("reason") or "Recommended for you",
+                    )
+                )
                 if len(results) >= limit:
                     break
 
@@ -267,7 +268,9 @@ class RecommendationEngine:
         ]
 
     def get_personalized_recommendations(
-        self, user_id: str, limit: int = DEFAULT_LIMIT,
+        self,
+        user_id: str,
+        limit: int = DEFAULT_LIMIT,
     ) -> list[RecommendationItem]:
         """Full personalized flow: get recs, resolve AB variant, record impressions.
 
@@ -277,9 +280,7 @@ class RecommendationEngine:
         variant = ab_test.get_user_variant(user_id)
         recs = self.get_recommendations(user_id=user_id, limit=limit)
         try:
-            ab_test.record_impressions(
-                user_id, [r.event_id for r in recs], variant
-            )
+            ab_test.record_impressions(user_id, [r.event_id for r in recs], variant)
         except Exception:
             log.warning("Failed to record AB impressions for user %s", user_id, exc_info=True)
         return recs
@@ -303,14 +304,16 @@ class RecommendationEngine:
         now = datetime.now(timezone.utc).isoformat()
         rows = []
         for i, rec in enumerate(results):
-            rows.append({
-                "user_id": user_id,
-                "event_id": rec.event_id,
-                "rank": i + 1,
-                "predicted_score": rec.score,
-                "reason": rec.reason,
-                "computed_at": now,
-            })
+            rows.append(
+                {
+                    "user_id": user_id,
+                    "event_id": rec.event_id,
+                    "rank": i + 1,
+                    "predicted_score": rec.score,
+                    "reason": rec.reason,
+                    "computed_at": now,
+                }
+            )
 
         try:
             self._store_user_recs(user_id, rows)
@@ -337,12 +340,14 @@ class RecommendationEngine:
                 rows, on_conflict="user_id,event_id"
             ).execute()
             # Remove stale rows from previous computes
-            (get_sb()
-             .table(USER_RECOMMENDATIONS)
-             .delete()
-             .eq("user_id", user_id)
-             .lt("computed_at", computed_at)
-             .execute())
+            (
+                get_sb()
+                .table(USER_RECOMMENDATIONS)
+                .delete()
+                .eq("user_id", user_id)
+                .lt("computed_at", computed_at)
+                .execute()
+            )
 
     # ---------------------------------------------------------------------------
     # Core pipeline (shared by live and offline)
@@ -376,7 +381,9 @@ class RecommendationEngine:
             try:
                 user = user_future.result()
             except Exception as e:
-                log.warning("Failed to fetch user profile for %s, degrading to cold-start: %s", user_id, e)
+                log.warning(
+                    "Failed to fetch user profile for %s, degrading to cold-start: %s", user_id, e
+                )
 
             try:
                 interaction_count = count_future.result()
@@ -402,8 +409,11 @@ class RecommendationEngine:
 
             if has_profile:
                 futures["content"] = pool.submit(
-                    self._content_scorer, user_id, candidates,
-                    user=user, user_scores=user_scores,
+                    self._content_scorer,
+                    user_id,
+                    candidates,
+                    user=user,
+                    user_scores=user_scores,
                 )
 
             if interaction_count >= self.warm_threshold:
@@ -427,12 +437,17 @@ class RecommendationEngine:
                     log.warning("Collaborative scoring failed for user %s: %s", user_id, e)
 
         weights = select_weights(
-            interaction_count, has_profile,
+            interaction_count,
+            has_profile,
             hot_threshold=self.hot_threshold,
             warm_threshold=self.warm_threshold,
         )
         blended = blend_scores(
-            candidate_ids, content_scores, collab_scores, pop_scores, weights,
+            candidate_ids,
+            content_scores,
+            collab_scores,
+            pop_scores,
+            weights,
         )
 
         if not blended:
@@ -440,7 +455,8 @@ class RecommendationEngine:
             # returning dtstart-sorted candidates with score=0.0.
             log.warning(
                 "Blend empty for user %s (candidates=%d); falling back to popular recs",
-                user_id, len(candidate_ids),
+                user_id,
+                len(candidate_ids),
             )
             return self.get_popular_recommendations(limit)
 
@@ -459,11 +475,13 @@ class RecommendationEngine:
             reason = self._generate_reason(
                 eid, content_scores, collab_scores, pop_scores, events_by_id, weights
             )
-            results.append(RecommendationItem(
-                event_id=eid,
-                score=round(blended.get(eid, 0), 4),
-                reason=reason,
-            ))
+            results.append(
+                RecommendationItem(
+                    event_id=eid,
+                    score=round(blended.get(eid, 0), 4),
+                    reason=reason,
+                )
+            )
 
         return results
 
@@ -476,6 +494,7 @@ class RecommendationEngine:
         round-trip.  The TTL is kept short (60s) to avoid serving stale
         event data to live users.
         """
+
         def _fetch_candidates() -> list[EventResponse]:
             log.debug("Candidate events cache MISS — querying DB")
             now = datetime.now(timezone.utc).isoformat()
@@ -574,7 +593,11 @@ class BatchRecommendationRunner:
         # small enough that we don't materialise all futures upfront.
         in_flight_cap = max(max_workers * 4, max_workers + 2)
 
-        log.info("Starting recommendation batch (max_workers=%d, in_flight_cap=%d)", max_workers, in_flight_cap)
+        log.info(
+            "Starting recommendation batch (max_workers=%d, in_flight_cap=%d)",
+            max_workers,
+            in_flight_cap,
+        )
 
         user_iter: Iterator[dict] = self._iter_all_user_ids()
 
@@ -611,7 +634,10 @@ class BatchRecommendationRunner:
                 if len(future_to_uid) >= in_flight_cap:
                     _drain_one()
                 fut = pool.submit(
-                    self._engine.compute_and_store, user["id"], limit, lambda_param,
+                    self._engine.compute_and_store,
+                    user["id"],
+                    limit,
+                    lambda_param,
                 )
                 future_to_uid[fut] = user["id"]
 
@@ -626,7 +652,10 @@ class BatchRecommendationRunner:
             "failed": failed,
             "failed_ids": failed_ids,
         }
-        log.info("Recommendation batch complete: %s", {k: v for k, v in stats.items() if k != "failed_ids"})
+        log.info(
+            "Recommendation batch complete: %s",
+            {k: v for k, v in stats.items() if k != "failed_ids"},
+        )
         return stats
 
     @staticmethod
@@ -638,13 +667,16 @@ class BatchRecommendationRunner:
         """
         return iter_all_pages(
             lambda offset, ps: (
-                get_sb()
-                .table(USERS)
-                .select("id")
-                .order("id")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
+                (
+                    get_sb()
+                    .table(USERS)
+                    .select("id")
+                    .order("id")
+                    .range(offset, offset + ps - 1)
+                    .execute()
+                ).data
+                or []
+            ),
         )
 
 

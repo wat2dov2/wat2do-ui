@@ -31,11 +31,25 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
 
       - name: Install dependencies
         working-directory: backend
-        run: pip install --prefer-binary -r requirements.txt
+        run: pip install --prefer-binary -r requirements-dev.txt
+
+      - name: Check formatting
+        working-directory: backend
+        run: ruff format --check .
+
+      - name: Lint
+        working-directory: backend
+        run: ruff check .
+
+      - name: Type check
+        working-directory: backend
+        run: mypy .
 
       - name: Run tests
         working-directory: backend
@@ -58,6 +72,10 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Check frontend
+        working-directory: frontend
+        run: npm run check
 
       - name: Build
         working-directory: frontend

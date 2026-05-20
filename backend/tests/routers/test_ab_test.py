@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from core.constants import AB_DEFAULT_VARIANTS, ROLE_ADMIN
 from main import app
 from schemas.user import UserResponse
-from tests.conftest import FAKE_USER, ADMIN_USER
+from tests.conftest import ADMIN_USER, FAKE_USER
 
 
 @pytest.fixture
@@ -162,6 +162,7 @@ def test_get_user_variant_reads_persisted_assignment(monkeypatch):
                     key = (row["user_id"], row["experiment_name"])
                     self._data.setdefault(key, row["variant"])
                     return MagicMock(data=[row])
+
             return _Exec()
 
     fake_sb = MagicMock()

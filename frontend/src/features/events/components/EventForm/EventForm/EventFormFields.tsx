@@ -1,7 +1,5 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { MapPin, DollarSign, Utensils } from "lucide-react";
-import { Button } from "@/shared/ui/button";
 import {
   Field,
   FieldDescription,

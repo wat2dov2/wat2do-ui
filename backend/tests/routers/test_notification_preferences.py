@@ -36,12 +36,14 @@ def test_patch_requires_auth(client):
 
 def test_get_returns_full_preferences_list(authenticated_client, monkeypatch):
     """GET should return every supported type, one entry each."""
-    mock_get = MagicMock(return_value=[
-        _resp(notification_type="morning_digest", enabled=True),
-        _resp(notification_type="weekly_digest", enabled=False),
-        _resp(notification_type="event_change", enabled=True),
-        _resp(notification_type="daily_new_events", enabled=False),
-    ])
+    mock_get = MagicMock(
+        return_value=[
+            _resp(notification_type="morning_digest", enabled=True),
+            _resp(notification_type="weekly_digest", enabled=False),
+            _resp(notification_type="event_change", enabled=True),
+            _resp(notification_type="daily_new_events", enabled=False),
+        ]
+    )
     monkeypatch.setattr(notification_service, "get_preferences", mock_get)
 
     resp = authenticated_client.get("/notification-preferences")
@@ -87,21 +89,15 @@ def test_patch_calls_set_preferences_with_payload(authenticated_client, monkeypa
 
 def test_patch_rejects_empty_preferences(authenticated_client, monkeypatch):
     """Bulk update requires at least one entry — 422 on empty list."""
-    monkeypatch.setattr(
-        notification_service, "set_preferences", MagicMock(return_value=None)
-    )
+    monkeypatch.setattr(notification_service, "set_preferences", MagicMock(return_value=None))
 
-    resp = authenticated_client.patch(
-        "/notification-preferences", json={"preferences": []}
-    )
+    resp = authenticated_client.patch("/notification-preferences", json={"preferences": []})
     assert resp.status_code == 422
 
 
 def test_patch_rejects_unknown_notification_type(authenticated_client, monkeypatch):
     """Literal-typed notification_type rejects values outside the allowed set."""
-    monkeypatch.setattr(
-        notification_service, "set_preferences", MagicMock(return_value=None)
-    )
+    monkeypatch.setattr(notification_service, "set_preferences", MagicMock(return_value=None))
 
     resp = authenticated_client.patch(
         "/notification-preferences",

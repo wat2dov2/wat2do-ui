@@ -160,18 +160,18 @@ BUCKET_QR_ASSETS = "qr-assets"
 # and the uploads router validation.  Keep in sync with the bucket
 # file_size_limit values in supabase/migrations/.
 # ---------------------------------------------------------------------------
-MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024   # 5 MB  – event images, QR assets
+MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB  – event images, QR assets
 MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB  – avatars, club logos
 
 # ---------------------------------------------------------------------------
 # List / pagination defaults for non-recommendation endpoints
 # ---------------------------------------------------------------------------
-DEFAULT_LIST_LIMIT = 100     # events & clubs list default
-MAX_LIST_LIMIT = 500         # upper bound enforced by Query(le=...)
+DEFAULT_LIST_LIMIT = 100  # events & clubs list default
+MAX_LIST_LIMIT = 500  # upper bound enforced by Query(le=...)
 
 # Admin list pagination (page-based)
-DEFAULT_PAGE_SIZE = 50       # default items per page for admin endpoints
-MAX_PAGE_SIZE = 100          # upper bound for page_size query param
+DEFAULT_PAGE_SIZE = 50  # default items per page for admin endpoints
+MAX_PAGE_SIZE = 100  # upper bound for page_size query param
 # Upper bound for page number.  Combined with ``MAX_PAGE_SIZE`` this caps
 # the worst-case ``OFFSET`` at ~100k rows — large enough for legitimate
 # admin navigation, small enough to stay within sane DB scan budgets.
@@ -181,12 +181,12 @@ MAX_PAGE_NUMBER = 1_000
 # ---------------------------------------------------------------------------
 # Interaction defaults
 # ---------------------------------------------------------------------------
-DEFAULT_INTERACTION_LIMIT = 50   # default limit for popularity queries
+DEFAULT_INTERACTION_LIMIT = 50  # default limit for popularity queries
 MAX_INTERACTION_BATCH_SIZE = 50  # max interactions per single batch request
 MAX_INTERACTION_METADATA_BYTES = 2048  # max serialised size of metadata per interaction
 # Deduplication: max identical (user, event, type) interactions within window
 MAX_DUPLICATE_INTERACTIONS = 3
-DEDUP_WINDOW_MINUTES = 60        # sliding window for deduplication check
+DEDUP_WINDOW_MINUTES = 60  # sliding window for deduplication check
 # Global cap: max total interactions a single user can record per dedup window,
 # regardless of how many distinct events/types they target.  Prevents a bot
 # account from gaming popularity by spreading interactions across many events.
@@ -195,52 +195,52 @@ MAX_USER_INTERACTIONS_PER_WINDOW = 100
 # ---------------------------------------------------------------------------
 # Input size limits for Pydantic schemas
 # ---------------------------------------------------------------------------
-MAX_SESSION_ID_LENGTH = 128          # UUIDs / short opaque tokens
-MAX_USERNAME_LENGTH = 100            # matches DB VARCHAR(100)
-MAX_FULL_NAME_LENGTH = 255           # matches DB VARCHAR(255)
-MAX_FACULTY_LENGTH = 255             # matches DB VARCHAR(255)
-MAX_SCHOOL_LENGTH = 255              # matches DB VARCHAR(255)
-MAX_INTEREST_LENGTH = 100            # single interest tag
-MAX_INTERESTS_COUNT = 50             # max items in interests list
-MAX_REPORT_REASON_LENGTH = 2000      # free-text report reason
-MAX_REJECTION_REASON_LENGTH = 2000   # admin rejection reason
-MAX_AVATAR_URL_LENGTH = 2048         # URL length (RFC 2616 practical limit)
-MAX_URL_LENGTH = 2048                # general URL length (RFC 2616 practical limit)
-MAX_EVENT_DATA_BYTES = 32_768        # 32 KB – serialised submission event_data
+MAX_SESSION_ID_LENGTH = 128  # UUIDs / short opaque tokens
+MAX_USERNAME_LENGTH = 100  # matches DB VARCHAR(100)
+MAX_FULL_NAME_LENGTH = 255  # matches DB VARCHAR(255)
+MAX_FACULTY_LENGTH = 255  # matches DB VARCHAR(255)
+MAX_SCHOOL_LENGTH = 255  # matches DB VARCHAR(255)
+MAX_INTEREST_LENGTH = 100  # single interest tag
+MAX_INTERESTS_COUNT = 50  # max items in interests list
+MAX_REPORT_REASON_LENGTH = 2000  # free-text report reason
+MAX_REJECTION_REASON_LENGTH = 2000  # admin rejection reason
+MAX_AVATAR_URL_LENGTH = 2048  # URL length (RFC 2616 practical limit)
+MAX_URL_LENGTH = 2048  # general URL length (RFC 2616 practical limit)
+MAX_EVENT_DATA_BYTES = 32_768  # 32 KB – serialised submission event_data
 
 # Query-parameter limits (search / filter strings in GET endpoints)
-MAX_SEARCH_QUERY_LENGTH = 200        # free-text search terms
-MAX_STATUS_FILTER_LENGTH = 30        # status enum filter (e.g. "pending", "approved")
+MAX_SEARCH_QUERY_LENGTH = 200  # free-text search terms
+MAX_STATUS_FILTER_LENGTH = 30  # status enum filter (e.g. "pending", "approved")
 
 # Event fields
-MAX_EVENT_TITLE_LENGTH = 300         # generous for long event names
+MAX_EVENT_TITLE_LENGTH = 300  # generous for long event names
 MAX_EVENT_DESCRIPTION_LENGTH = 5000  # detailed descriptions, not unbounded
-MAX_EVENT_LOCATION_LENGTH = 500      # full address / venue name
+MAX_EVENT_LOCATION_LENGTH = 500  # full address / venue name
 MAX_EVENT_ORGANIZATION_LENGTH = 255  # organisation name
-MAX_EVENT_CLUB_TYPE_LENGTH = 100     # short classification value
-MAX_EVENT_SCHOOL_LENGTH = 255        # school name (matches user school limit)
-MAX_EVENT_CATEGORY_LENGTH = 100      # category enum value
-MAX_EVENT_HANDLE_LENGTH = 255        # social-media handle or profile URL
-MAX_EVENT_FOOD_ITEM_LENGTH = 100     # single food item tag
-MAX_EVENT_FOOD_COUNT = 20            # max food items per event
+MAX_EVENT_CLUB_TYPE_LENGTH = 100  # short classification value
+MAX_EVENT_SCHOOL_LENGTH = 255  # school name (matches user school limit)
+MAX_EVENT_CATEGORY_LENGTH = 100  # category enum value
+MAX_EVENT_HANDLE_LENGTH = 255  # social-media handle or profile URL
+MAX_EVENT_FOOD_ITEM_LENGTH = 100  # single food item tag
+MAX_EVENT_FOOD_COUNT = 20  # max food items per event
 
 # Club fields
-MAX_CLUB_NAME_LENGTH = 200           # club display name
-MAX_CLUB_TYPE_LENGTH = 100           # short classification value (mirrors event)
-MAX_CLUB_CATEGORY_LENGTH = 100       # single category tag
-MAX_CLUB_CATEGORY_COUNT = 20         # max categories per club
-MAX_INTEGRATION_METADATA_KEYS = 20   # max metadata keys per integration
-MAX_INTEGRATION_METADATA_KEY_LENGTH = 64    # max key length for integration metadata
-MAX_INTEGRATION_METADATA_VALUE_LENGTH = 512 # max value length for integration metadata
-MAX_INTEGRATION_NAME_LENGTH = 200    # integration "name" field (display label)
+MAX_CLUB_NAME_LENGTH = 200  # club display name
+MAX_CLUB_TYPE_LENGTH = 100  # short classification value (mirrors event)
+MAX_CLUB_CATEGORY_LENGTH = 100  # single category tag
+MAX_CLUB_CATEGORY_COUNT = 20  # max categories per club
+MAX_INTEGRATION_METADATA_KEYS = 20  # max metadata keys per integration
+MAX_INTEGRATION_METADATA_KEY_LENGTH = 64  # max key length for integration metadata
+MAX_INTEGRATION_METADATA_VALUE_LENGTH = 512  # max value length for integration metadata
+MAX_INTEGRATION_NAME_LENGTH = 200  # integration "name" field (display label)
 
 # Price bounds for events (matches max_price query guard in list_events)
-MAX_EVENT_PRICE = 100_000            # upper bound for event.price (defensive cap)
+MAX_EVENT_PRICE = 100_000  # upper bound for event.price (defensive cap)
 
 # ---------------------------------------------------------------------------
 # QR / scan recording
 # ---------------------------------------------------------------------------
-MAX_USER_AGENT_LENGTH = 512      # truncate user-agent header to this length
+MAX_USER_AGENT_LENGTH = 512  # truncate user-agent header to this length
 
 # ---------------------------------------------------------------------------
 # Interaction types  (validated in schemas/interaction.py via field_validator)
@@ -275,7 +275,7 @@ AB_DEFAULT_VARIANTS = (AB_VARIANT_CONTROL, AB_VARIANT_TREATMENT)
 # Credits
 # ---------------------------------------------------------------------------
 DEFAULT_CREDIT_BALANCE = 100
-MAX_CREDITS_PER_ADD = 10_000   # upper bound for a single add_credits call
+MAX_CREDITS_PER_ADD = 10_000  # upper bound for a single add_credits call
 
 # ---------------------------------------------------------------------------
 # Promotion packages — server-authoritative pricing
@@ -291,15 +291,15 @@ PROMOTION_PACKAGES: dict[str, tuple[int, int]] = {
 # ---------------------------------------------------------------------------
 # Rate limiting (per-user sliding window)
 # ---------------------------------------------------------------------------
-RATE_LIMIT_MAX_REQUESTS = 10     # max requests allowed in the window
-RATE_LIMIT_WINDOW_SECONDS = 60   # window duration in seconds
+RATE_LIMIT_MAX_REQUESTS = 10  # max requests allowed in the window
+RATE_LIMIT_WINDOW_SECONDS = 60  # window duration in seconds
 
 # Auth endpoints — per-IP limits (unauthenticated, stricter)
-AUTH_RATE_LIMIT_MAX_REQUESTS = 10        # login & signup
+AUTH_RATE_LIMIT_MAX_REQUESTS = 10  # login & signup
 AUTH_RATE_LIMIT_WINDOW_SECONDS = 60
-AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS = 5   # forgot-password & reset-password
+AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS = 5  # forgot-password & reset-password
 AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS = 60
-AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS = 30    # token refresh (legitimate clients auto-refresh)
+AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS = 30  # token refresh (legitimate clients auto-refresh)
 AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS = 60
 
 # Anonymous interaction batches — per-IP (no user identity to key on).
@@ -320,7 +320,7 @@ QR_SCAN_RATE_LIMIT_WINDOW_SECONDS = 60
 SUBMISSION_RATE_LIMIT_MAX_REQUESTS = 10
 SUBMISSION_RATE_LIMIT_WINDOW_SECONDS = 3600  # 10 submissions per hour per user
 REPORT_RATE_LIMIT_MAX_REQUESTS = 5
-REPORT_RATE_LIMIT_WINDOW_SECONDS = 60        # 5 reports per minute per user
+REPORT_RATE_LIMIT_WINDOW_SECONDS = 60  # 5 reports per minute per user
 
 # Saved events cap — hard ceiling enforced at the save endpoint to prevent
 # a single account from growing an unbounded bookmark list (DoS vector).

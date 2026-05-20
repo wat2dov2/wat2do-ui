@@ -47,7 +47,9 @@ def create_submission(user_id: str, event_data: EventCreate | dict) -> Submissio
     r = get_sb().table(EVENT_SUBMISSIONS).insert(payload).execute()
     if r.data:
         return SubmissionResponse.model_validate(r.data[0])
-    log.warning("Insert returned no data for create_submission(user_id=%s), using payload fallback", user_id)
+    log.warning(
+        "Insert returned no data for create_submission(user_id=%s), using payload fallback", user_id
+    )
     return SubmissionResponse(**payload, submitted_at=datetime.now(timezone.utc).isoformat())
 
 
@@ -75,13 +77,7 @@ def get_submissions(
 
 def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
     """Return a single submission by ID."""
-    r = (
-        get_sb()
-        .table(EVENT_SUBMISSIONS)
-        .select("*")
-        .eq("id", submission_id)
-        .execute()
-    )
+    r = get_sb().table(EVENT_SUBMISSIONS).select("*").eq("id", submission_id).execute()
     return SubmissionResponse.model_validate(r.data[0]) if r.data else None
 
 
@@ -118,23 +114,11 @@ def update_submission(
     if rejection_reason is not None:
         payload["rejection_reason"] = rejection_reason
 
-    r = (
-        get_sb()
-        .table(EVENT_SUBMISSIONS)
-        .update(payload)
-        .eq("id", submission_id)
-        .execute()
-    )
+    r = get_sb().table(EVENT_SUBMISSIONS).update(payload).eq("id", submission_id).execute()
     return SubmissionResponse.model_validate(r.data[0]) if r.data else None
 
 
 def delete_submission(submission_id: str) -> bool:
     """Delete a submission. Returns True if a row was deleted."""
-    r = (
-        get_sb()
-        .table(EVENT_SUBMISSIONS)
-        .delete()
-        .eq("id", submission_id)
-        .execute()
-    )
+    r = get_sb().table(EVENT_SUBMISSIONS).delete().eq("id", submission_id).execute()
     return bool(r.data)

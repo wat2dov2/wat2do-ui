@@ -1,0 +1,141 @@
+# Codebase Cleanup Roadmap
+
+## Summary
+
+This roadmap keeps cleanup audit-first and backend-first. The goal is to make
+the codebase easier to change without rewriting behavior in the same pass.
+
+Current architecture should stay split by runtime:
+
+- Backend: layered FastAPI structure in `backend/routers`, `backend/services`,
+  `backend/schemas`, and `backend/core`.
+- Frontend: feature-sliced React structure in `frontend/src/app`,
+  `frontend/src/features`, and `frontend/src/shared`.
+
+Baseline from the initial audit:
+
+- Backend tests pass locally: `606 passed`.
+- Backend CI now runs Ruff format, Ruff lint, mypy, and pytest.
+- Frontend CI now runs `npm run check` before `npm run build`.
+- The frontend worktree has existing dirty files, so backend cleanup should not
+  rewrite frontend files until that work stabilizes.
+
+First cleanup pass completed:
+
+- Enabled Ruff import-order enforcement and applied the import sort.
+- Moved the floating dock into `frontend/src/shared/ui`.
+- Added an ESLint boundary to prevent new imports from the legacy
+  `frontend/src/components` tree.
+- Enabled frontend unused-local/unused-parameter checks and removed stale
+  React default imports exposed by that setting.
+- Narrowed admin and club-panel route wrapper props so route components only
+  receive the data they actually use.
+- Moved deployment and integration docs under `docs/`, converted `CLAUDE.md`
+  into a small pointer to `AGENTS.md`, and removed generated cache docs.
+
+## Backend Structure Audit
+
+Keep the backend layered by responsibility, not by feature. The existing
+`.claude/rules/backend-architecture.md` is the source of truth for this shape.
+
+Immediate cleanup targets:
+
+- Start mypy on the configured stable-core baseline in `backend/pyproject.toml`;
+  widen that include set as service and router typing is cleaned up.
+- Keep route paths and response models stable in the first cleanup batch.
+- Keep `main.py` router auto-discovery; do not manually add router imports.
+- Preserve services as the DB/business logic layer and routers as HTTP/auth
+  wiring only.
+
+Risks and follow-up audit notes:
+
+- Pagination styles are mixed across routers:
+  - Newer admin/internal lists use `PaginationParams` and
+    `PaginatedResponse`.
+  - Older public lists still use `skip`/`limit`.
+  - Promotions use `offset`/`limit`.
+- Some service modules are large enough to deserve later decomposition:
+  `notification_service.py`, `recommendation_service.py`, `ai_service.py`,
+  and `club_service.py`.
+- Local imports used to avoid cycles should be reviewed after lint/type tooling
+  is stable.
+- `backend/.venv`, `__pycache__`, `.pytest_cache`, `models`, and `scraping`
+  are workspace hygiene concerns. Ignored artifacts should not become PR
+  content; empty legacy directories should be removed only in a dedicated
+  cleanup change after confirming they are untracked and unused.
+
+## Frontend Structure Audit
+
+Frontend cleanup should follow backend enforcement after current frontend edits
+are stabilized.
+
+Follow-up targets:
+
+- Reduce deep cross-feature imports by using feature `index.ts` barrels where
+  they already exist.
+- Split large components/hooks in later focused batches, especially QR asset
+  generation, event card/modal flows, and shared UI primitives.
+- Keep widening frontend type strictness after nullability mismatches are
+  normalized; `noUnusedLocals` and `noUnusedParameters` are now enforced.
+
+## Route And API Efficiency
+
+Do not rename routes or change response shapes in the first cleanup batch.
+Instead, maintain an endpoint matrix and use it to rank later refactors.
+
+| Area | Current Shape | Pagination | Frontend Call Pattern | Cleanup Direction |
+| --- | --- | --- | --- | --- |
+| Events browse | `GET /events/` list of event summaries | `skip`/`limit` | Home/events store fetches summary list | Keep stable; later add stable ordering and server-backed pagination if browse volume grows. |
+| Clubs browse | `GET /clubs/` list of clubs | `skip`/`limit` | Clubs page loads list | Keep stable; later align query names or add paginated envelope if needed. |
+| Users admin | `GET /users/` admin list | `skip`/`limit` | Admin-only | Candidate for `PaginationParams` after generated types and callers are updated. |
+| Reports admin | `GET /reports/` paginated envelope | `page`/`page_size` | `getPaginatedItems` loads all pages | Acceptable for admin; monitor result size. |
+| Submissions admin | `GET /submissions/` paginated envelope | `page`/`page_size` | `getPaginatedItems` loads all pages | Acceptable for admin; monitor result size. |
+| QR admin | `GET /qr/`, `GET /qr/scans` paginated envelope | `page`/`page_size` | Poster/scans helpers load all pages | Keep admin/internal; avoid using fetch-all patterns in public user flows. |
+| Scraped events admin | `GET /scraped-events/` paginated envelope | `page`/`page_size` | Admin fetch-all | Acceptable for admin. |
+| Promotions | `GET /promotions/` list response | `offset`/`limit` | Credit/promotion stores | Candidate for later pagination normalization. |
+
+Generated OpenAPI files in `frontend/src/shared/generated` are intentional and
+should be regenerated only through the existing generation script when backend
+contracts change.
+
+## Risk-Ranked Cleanup Batches
+
+1. Backend enforcement and audit docs.
+   - Add Ruff, mypy, and CI gates.
+   - Keep behavior unchanged.
+   - Verify with format check, lint, type check, and tests.
+2. Backend route consistency audit.
+   - Document pagination/auth/response shapes per endpoint.
+   - Add focused router tests before changing any route behavior.
+3. Backend service decomposition.
+   - Split large services only around clear domain seams.
+   - Avoid unrelated refactors while moving code.
+4. Frontend architecture cleanup.
+   - Move the legacy floating dock to the canonical UI location.
+   - Replace cross-feature deep imports with existing public barrels.
+   - Add frontend `npm run check` to CI.
+5. Route/API efficiency improvements.
+   - Convert only selected endpoints to a common pagination model.
+   - Regenerate OpenAPI and frontend types in the same change.
+   - Update callers and tests together.
+
+## Verification Commands
+
+Backend:
+
+```bash
+cd backend
+python -m ruff format --check .
+python -m ruff check .
+python -m mypy .
+python -m pytest -q
+```
+
+Frontend follow-up:
+
+```bash
+cd frontend
+npm run lint
+npm run type-check
+npm run build
+```

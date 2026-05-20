@@ -171,12 +171,6 @@ export function QRPlacementOverlay({
   // re-renders and effect re-subscriptions on every mousemove.
   const sessionRef = useRef<DragSession | null>(null);
 
-  // Mirror the latest onPlacementChange in a ref so the document-level
-  // mousemove listener doesn't need to be re-bound when the prop identity
-  // changes.
-  const onPlacementChangeRef = useRef(onPlacementChange);
-  onPlacementChangeRef.current = onPlacementChange;
-
   const constrainedPlacement = useMemo(
     () => constrainPlacement(placement, imageWidth, imageHeight),
     [placement, imageWidth, imageHeight],
@@ -232,9 +226,7 @@ export function QRPlacementOverlay({
         } else {
           return;
         }
-        onPlacementChangeRef.current(
-          constrainPlacement(next, imageWidth, imageHeight),
-        );
+        onPlacementChange(constrainPlacement(next, imageWidth, imageHeight));
       };
 
       const onUp = () => {
@@ -247,7 +239,7 @@ export function QRPlacementOverlay({
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     },
-    [constrainedPlacement, getMousePos, imageWidth, imageHeight],
+    [constrainedPlacement, getMousePos, imageWidth, imageHeight, onPlacementChange],
   );
 
   const handleResizeMouseDown = useCallback(

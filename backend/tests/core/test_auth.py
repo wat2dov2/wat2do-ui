@@ -1,6 +1,6 @@
-from fastapi.security import HTTPAuthorizationCredentials
 import jwt
 import pytest
+from fastapi.security import HTTPAuthorizationCredentials
 
 from core import auth
 from core.errors import INVALID_OR_EXPIRED_TOKEN

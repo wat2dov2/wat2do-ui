@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import {
@@ -10,14 +11,14 @@ import {
   Plus,
 } from "lucide-react";
 import { TopNav } from "@/app/TopNav";
-import { FloatingDock } from "@/components/ui/floating-dock";
-import type { FloatingDockItem } from "@/components/ui/floating-dock";
+import { FloatingDock } from "@/shared/ui/floating-dock";
+import type { FloatingDockItem } from "@/shared/ui/floating-dock";
 import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
 import { useModalStore } from "@/shared/store/modal.store";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AppLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {

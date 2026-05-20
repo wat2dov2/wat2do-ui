@@ -3,7 +3,6 @@
  * Reusable search input with clear button
  */
 
-import React from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/shared/ui/input";
 

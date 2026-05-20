@@ -165,7 +165,6 @@ def canonicalize_key(*parts: object) -> str:
         return repr(obj)
 
     payload = [
-        json.dumps(part, sort_keys=True, default=_default, separators=(",", ":"))
-        for part in parts
+        json.dumps(part, sort_keys=True, default=_default, separators=(",", ":")) for part in parts
     ]
     return "|".join(payload)

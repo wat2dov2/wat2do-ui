@@ -3,7 +3,6 @@
  * Reusable status badge with consistent styling
  */
 
-import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   SUBMISSION_PENDING,

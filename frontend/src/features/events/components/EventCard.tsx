@@ -1,10 +1,8 @@
 import { lazy, Suspense, useState } from "react";
-import type { CSSProperties } from "react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  Users,
   Download,
   Heart,
   Sparkles,
@@ -34,6 +32,7 @@ import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthSt
 import { getUserId } from "@/features/auth";
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
+import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
@@ -71,38 +70,6 @@ interface EventCardProps {
   /** Called when the user confirms deletion (shown only to owners/admins). */
   onDelete?: (eventId: number) => void;
 }
-
-type WaterpaintStyle = CSSProperties & Record<`--waterpaint-${string}`, string>;
-
-function seededPercent(seed: number, salt: number, min: number, max: number): string {
-  const x = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
-  const fraction = x - Math.floor(x);
-  return `${Math.round(min + fraction * (max - min))}%`;
-}
-
-function getWaterpaintStyle(eventId: number): WaterpaintStyle {
-  return {
-    "--waterpaint-color-1-x": seededPercent(eventId, 1, 6, 24),
-    "--waterpaint-color-1-y": seededPercent(eventId, 2, 8, 30),
-    "--waterpaint-color-2-x": seededPercent(eventId, 3, 70, 94),
-    "--waterpaint-color-2-y": seededPercent(eventId, 4, 4, 24),
-    "--waterpaint-color-3-x": seededPercent(eventId, 5, 36, 70),
-    "--waterpaint-color-3-y": seededPercent(eventId, 6, 48, 78),
-    "--waterpaint-color-4-x": seededPercent(eventId, 7, 4, 22),
-    "--waterpaint-color-4-y": seededPercent(eventId, 8, 76, 104),
-    "--waterpaint-light-1-x": seededPercent(eventId, 9, 12, 38),
-    "--waterpaint-light-1-y": seededPercent(eventId, 10, 8, 34),
-    "--waterpaint-light-2-x": seededPercent(eventId, 11, 58, 88),
-    "--waterpaint-light-2-y": seededPercent(eventId, 12, 12, 38),
-    "--waterpaint-light-3-x": seededPercent(eventId, 13, 28, 58),
-    "--waterpaint-light-3-y": seededPercent(eventId, 14, 54, 84),
-    "--waterpaint-light-4-x": seededPercent(eventId, 15, 70, 98),
-    "--waterpaint-light-4-y": seededPercent(eventId, 16, 72, 104),
-    "--waterpaint-color-rotate": `${Number.parseInt(seededPercent(eventId, 17, -8, 4), 10)}deg`,
-    "--waterpaint-light-rotate": `${Number.parseInt(seededPercent(eventId, 18, -2, 10), 10)}deg`,
-  };
-}
-
 
 /**
  * Data flow:
@@ -330,8 +297,7 @@ export function EventCard({
 
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
-            <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center gap-1.5">
-              <Users className="size-3" strokeWidth={2} />
+            <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center">
               <span className="truncate max-w-[100px]">
                 {event.organization || event.display_handle || ''}
               </span>
@@ -342,7 +308,7 @@ export function EventCard({
         {/* Bottom section: bordered on left/right/bottom, wrapping content + interest button */}
         <div
           className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
-          style={getWaterpaintStyle(event.id)}
+          style={getEventCardWaterpaintStyle(event.id)}
         >
           {/* Event Content */}
           <EventCardContent

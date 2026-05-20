@@ -43,7 +43,10 @@ export function useQRRedirect(): { message: string } {
   // Hold `t` in a ref so i18n rehydration doesn't re-run the effect and
   // cause duplicate backend scans / redirect races.
   const tRef = useRef(t);
-  tRef.current = t;
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   useEffect(() => {
     if (!qrCodeId) {
@@ -51,10 +54,14 @@ export function useQRRedirect(): { message: string } {
       return;
     }
 
-    setMessage(tRef.current("common.loading") || "Loading...");
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setMessage(tRef.current("common.loading") || "Loading...");
+    });
 
     fetchQrRedirectFromBackend(qrCodeId)
       .then((result) => {
+        if (cancelled) return;
         if (result === null) {
           navigate(ROUTES.HOME, { replace: true });
           return;
@@ -63,10 +70,12 @@ export function useQRRedirect(): { message: string } {
           setMessage(tRef.current("qrCode.gettingLocation") || "Getting location...");
           getGeolocation().then(({ latitude, longitude }) =>
             fetchQrRedirectWithLocation(qrCodeId, latitude, longitude)
-              .then((config) => redirectFromConfig(config))
+              .then((config) => {
+                if (!cancelled) redirectFromConfig(config);
+              })
               .catch((err) => {
                 console.error("QR redirect failed:", err);
-                navigate(ROUTES.HOME, { replace: true });
+                if (!cancelled) navigate(ROUTES.HOME, { replace: true });
               })
           );
           return;
@@ -80,8 +89,11 @@ export function useQRRedirect(): { message: string } {
       })
       .catch((err) => {
         console.error("QR redirect failed:", err);
-        navigate(ROUTES.HOME, { replace: true });
+        if (!cancelled) navigate(ROUTES.HOME, { replace: true });
       });
+    return () => {
+      cancelled = true;
+    };
   }, [qrCodeId, navigate]);
 
   return { message };

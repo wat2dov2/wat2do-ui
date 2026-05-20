@@ -16,14 +16,17 @@ def get_rsvp_event_ids(user_id: str) -> list[int]:
     """Return event IDs the user has RSVP'd 'going' to."""
     rows = fetch_all_pages(
         lambda offset, ps: (
-            get_sb()
-            .table(USER_EVENT_RSVPS)
-            .select("event_id")
-            .eq("user_id", user_id)
-            .order("rsvped_at", desc=True)
-            .range(offset, offset + ps - 1)
-            .execute()
-        ).data or [],
+            (
+                get_sb()
+                .table(USER_EVENT_RSVPS)
+                .select("event_id")
+                .eq("user_id", user_id)
+                .order("rsvped_at", desc=True)
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data
+            or []
+        ),
     )
     return [row["event_id"] for row in rows]
 
@@ -73,12 +76,7 @@ def rsvp_event(user_id: str, event_id: int) -> EventRsvpResponse:
         "user_id": user_id,
         "event_id": event_id,
     }
-    r = (
-        get_sb()
-        .table(USER_EVENT_RSVPS)
-        .insert(payload)
-        .execute()
-    )
+    r = get_sb().table(USER_EVENT_RSVPS).insert(payload).execute()
     if r.data:
         return EventRsvpResponse.model_validate(r.data[0])
     log.warning(

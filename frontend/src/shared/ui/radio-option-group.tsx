@@ -1,4 +1,3 @@
-import React from "react";
 import { Circle } from "lucide-react";
 
 interface RadioOption {

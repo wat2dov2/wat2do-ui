@@ -17,9 +17,8 @@ lazily so a typo elsewhere fails fast at call time rather than silently
 swapping clients.
 """
 
-from supabase import create_client, Client
-
 from core.config import settings
+from supabase import Client, create_client
 
 # --- Fail-fast: service-role key is required for backend operation ----------
 # Every table has RLS enabled with no permissive policies.  Without the
@@ -39,9 +38,7 @@ if not settings.supabase_secret_key:
 supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
 
 # Service-role client for backend table access (bypasses RLS).
-supabase_admin: Client = create_client(
-    settings.supabase_url, settings.supabase_secret_key
-)
+supabase_admin: Client = create_client(settings.supabase_url, settings.supabase_secret_key)
 
 
 def get_sb() -> Client:

@@ -15,7 +15,6 @@ interface UseEventFormPromotionOptions {
  */
 export function useEventFormPromotion({
   createdEventId,
-  userCredits,
   onPromote,
 }: UseEventFormPromotionOptions) {
   const { trigger } = useConfetti();

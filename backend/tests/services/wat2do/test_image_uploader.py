@@ -50,6 +50,7 @@ def test_metadata_service_rejected_even_if_host_allowlisted(monkeypatch):
 def test_loopback_ip_rejected():
     def _loop(host, port):
         return [(2, 1, 6, "", ("127.0.0.1", 0))]
+
     with patch("services.wat2do.image_uploader.socket.getaddrinfo", _loop):
         assert not _is_safe_image_url("https://scontent-iad-1.cdninstagram.com/v/abc.jpg")
 
@@ -57,14 +58,17 @@ def test_loopback_ip_rejected():
 def test_private_ip_rejected():
     def _priv(host, port):
         return [(2, 1, 6, "", ("10.0.0.5", 0))]
+
     with patch("services.wat2do.image_uploader.socket.getaddrinfo", _priv):
         assert not _is_safe_image_url("https://scontent.fora1-1.fna.fbcdn.net/v/x.jpg")
 
 
 def test_unresolvable_host_rejected():
     import socket
+
     def _gai(host, port):
         raise socket.gaierror("name or service not known")
+
     with patch("services.wat2do.image_uploader.socket.getaddrinfo", _gai):
         assert not _is_safe_image_url("https://scontent-iad-1.cdninstagram.com/v/abc.jpg")
 

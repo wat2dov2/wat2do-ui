@@ -38,7 +38,6 @@ export function useAdminPanel() {
   // Fetch submissions and scraped events via the store (cached with TTL).
   useEffect(() => {
     let cancelled = false;
-    setAdminDataLoading(true);
     Promise.all([fetchSubmissions(), fetchScrapedEvents()])
       .catch((err) => console.error("Failed to load admin data:", err))
       .finally(() => {

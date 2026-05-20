@@ -22,6 +22,7 @@ def _mock_scraped_event(**overrides) -> ScrapedEventResponse:
 # GET /scraped-events/ -- requires get_admin_user, returns paginated response
 # ---------------------------------------------------------------------------
 
+
 def test_list_scraped_events_requires_auth(client):
     """GET /scraped-events/ without auth returns 401."""
     resp = client.get("/scraped-events/")
@@ -37,7 +38,8 @@ def test_list_scraped_events_forbidden_for_non_admin(authenticated_client):
 def test_list_scraped_events_admin(admin_client, monkeypatch):
     """GET /scraped-events/ as admin returns paginated 200."""
     monkeypatch.setattr(
-        scraped_event_service, "get_scraped_events",
+        scraped_event_service,
+        "get_scraped_events",
         MagicMock(return_value=([_mock_scraped_event()], 1)),
     )
 
@@ -73,6 +75,7 @@ def test_list_scraped_events_with_pagination_params(admin_client, monkeypatch):
 # POST /scraped-events/ -- requires get_admin_user
 # ---------------------------------------------------------------------------
 
+
 def test_create_scraped_event_requires_auth(client):
     """POST /scraped-events/ without auth returns 401."""
     resp = client.post("/scraped-events/", json={"source": "test-scraper"})
@@ -103,6 +106,7 @@ def test_create_scraped_event_admin(admin_client, monkeypatch):
 # M9 — source field length cap & non-empty
 # ---------------------------------------------------------------------------
 
+
 def test_create_scraped_event_rejects_empty_source(admin_client):
     """Empty source is rejected with 422 (audit M9)."""
     resp = admin_client.post(
@@ -124,6 +128,7 @@ def test_create_scraped_event_rejects_oversize_source(admin_client):
 # ---------------------------------------------------------------------------
 # M9 / M12 — raw_data size cap
 # ---------------------------------------------------------------------------
+
 
 def test_create_scraped_event_rejects_oversize_raw_data(admin_client):
     """raw_data larger than the schema's raw_data byte cap is rejected (audit M9/M12)."""

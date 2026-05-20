@@ -16,7 +16,8 @@ import secrets
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from icalendar import Calendar, Event as ICalEvent
+from icalendar import Calendar
+from icalendar import Event as ICalEvent
 
 from core.config import settings
 from core.constants import SCHOOL_ALIASES, SCHOOL_TIMEZONES
@@ -58,7 +59,8 @@ def resolve_school_timezone(school: str | None) -> str:
     if tz is None:
         log.warning(
             "Unknown school %r (canonical %r) in calendar feed — falling back to UTC",
-            school, canonical,
+            school,
+            canonical,
         )
         return _UTC_TZID
     return tz
@@ -66,14 +68,7 @@ def resolve_school_timezone(school: str | None) -> str:
 
 def get_or_create_token(user_id: str) -> str:
     """Return the user's calendar-feed token, generating one if absent."""
-    r = (
-        get_sb()
-        .table(USERS)
-        .select("calendar_feed_token")
-        .eq("id", user_id)
-        .limit(1)
-        .execute()
-    )
+    r = get_sb().table(USERS).select("calendar_feed_token").eq("id", user_id).limit(1).execute()
     if r.data:
         existing = r.data[0].get("calendar_feed_token")
         if existing:
@@ -92,26 +87,13 @@ def regenerate_token(user_id: str) -> str:
 
 def _generate_and_store_token(user_id: str) -> str:
     token = secrets.token_urlsafe(_TOKEN_BYTES)
-    (
-        get_sb()
-        .table(USERS)
-        .update({"calendar_feed_token": token})
-        .eq("id", user_id)
-        .execute()
-    )
+    (get_sb().table(USERS).update({"calendar_feed_token": token}).eq("id", user_id).execute())
     return token
 
 
 def get_user_id_by_token(token: str) -> str | None:
     """Reverse-lookup: return the user id for a feed token, or None."""
-    r = (
-        get_sb()
-        .table(USERS)
-        .select("id")
-        .eq("calendar_feed_token", token)
-        .limit(1)
-        .execute()
-    )
+    r = get_sb().table(USERS).select("id").eq("calendar_feed_token", token).limit(1).execute()
     if not r.data:
         return None
     return r.data[0]["id"]
@@ -161,9 +143,7 @@ def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
         row = rows_by_id.get(eid)
         if row is not None:
             payload = dict(row)
-            payload["occurrences"] = [
-                o.model_dump(mode="json") for o in occ_by_event.get(eid, [])
-            ]
+            payload["occurrences"] = [o.model_dump(mode="json") for o in occ_by_event.get(eid, [])]
             # Calendar feed only iterates ``occurrences``; the primary
             # date convenience fields are unused, so leave them None to
             # avoid an extra _pick_primary call here.
@@ -204,14 +184,16 @@ def _event_to_vevents(event: EventResponse, dtstamp: datetime) -> list[ICalEvent
 
     components: list[ICalEvent] = []
     for occ in event.occurrences:
-        components.append(_occurrence_to_vevent(
-            event=event,
-            occurrence=occ,
-            tzinfo=tzinfo,
-            event_url=event_url,
-            description=description,
-            dtstamp=dtstamp,
-        ))
+        components.append(
+            _occurrence_to_vevent(
+                event=event,
+                occurrence=occ,
+                tzinfo=tzinfo,
+                event_url=event_url,
+                description=description,
+                dtstamp=dtstamp,
+            )
+        )
     return components
 
 

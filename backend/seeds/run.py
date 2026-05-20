@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.config import settings
-from seeds import users, events, clubs
+from seeds import clubs, events, users
 
 if __name__ == "__main__":
     # Hard guard — the individual seed() functions also check, but keep a

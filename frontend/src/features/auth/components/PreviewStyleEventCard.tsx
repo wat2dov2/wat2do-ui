@@ -5,9 +5,10 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Users, ImageOff } from "lucide-react";
+import { ImageOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
+import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventCardContent } from "@/shared/ui/event-card-content";
@@ -73,12 +74,12 @@ export function PreviewStyleEventCard({
           alt={event.title}
           className="absolute inset-0 w-full h-full"
           fallback={
-            <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 flex items-center justify-center">
-              <ImageOff className="size-8 text-muted-foreground/40" />
+            <div className={cn("absolute inset-0 flex items-center justify-center", catClasses.bg)}>
+              <ImageOff className={cn("size-8 opacity-40", catClasses.text)} />
             </div>
           }
           placeholder={
-            <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 animate-pulse" />
+            <div className={cn("absolute inset-0 animate-pulse", catClasses.bg)} />
           }
         />
 
@@ -95,20 +96,30 @@ export function PreviewStyleEventCard({
         </BadgeMask>
 
         <BadgeMask variant="bottom-left">
-          <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center gap-1.5">
-            <Users className="size-3" strokeWidth={2} />
+          <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center">
             <span className="truncate max-w-[80px]">{event.org}</span>
           </span>
         </BadgeMask>
       </div>
 
-      <div className="flex flex-col flex-1 border-l border-r border-b border-border rounded-b-xl overflow-hidden">
+      <div
+        className={cn(
+          "event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden",
+          catClasses.bg,
+          catClasses.text,
+          catClasses.border
+        )}
+        style={getEventCardWaterpaintStyle(`${event.category}-${event.title}`)}
+      >
         <EventCardContent
           title={event.title}
           date={event.date}
           time={event.time}
           location={event.location}
           badges={event.badges}
+          textClassName={catClasses.text}
+          secondaryTextClassName={catClasses.text}
+          badgeClassName={cn("border-current", catClasses.text)}
         />
       </div>
     </div>

@@ -8,14 +8,21 @@ from core.rate_limit import (
     ai_generate_filters_rate_limiter,
 )
 
+
 # Key function for per-user rate limiting: extracts user ID from the auth token.
 def _user_id_key(user: dict = Depends(get_current_user)) -> str:
     return user["id"]
-from schemas.ai import AIPromptRequest, FilterStateResponse, EventFormDataResponse
+
+
+from schemas.ai import AIPromptRequest, EventFormDataResponse, FilterStateResponse
+from services.ai_service import (
+    generate_event as svc_generate_event,
+)
+from services.ai_service import (
+    generate_filters as svc_generate_filters,
+)
 from services.ai_service import (
     get_openai_client,
-    generate_filters as svc_generate_filters,
-    generate_event as svc_generate_event,
 )
 
 log = logging.getLogger(__name__)

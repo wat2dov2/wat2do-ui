@@ -44,10 +44,12 @@ def test_replace_occurrences_restores_snapshot_on_insert_failure(fake_sb, patch_
     #   2. delete eq("event_id", 42)   -> [] (delete returns [])
     #   3. insert(new_payload)         -> RAISES
     #   4. insert(snapshot_payload)    -> [restored row]
-    fake_sb.queue_responses([
-        [_occ_row(42, "2026-05-01T18:00:00+00:00", 99)],  # snapshot fetch
-        [],                                                       # delete
-    ])
+    fake_sb.queue_responses(
+        [
+            [_occ_row(42, "2026-05-01T18:00:00+00:00", 99)],  # snapshot fetch
+            [],  # delete
+        ]
+    )
     # The third execute (the insert that should fail) — set up via raise_on_execute
     # but queue_responses owns the side_effect, so swap to a smarter side_effect.
     state = {"call": 0}
@@ -67,12 +69,11 @@ def test_replace_occurrences_restores_snapshot_on_insert_failure(fake_sb, patch_
         if n == 4:
             return restored_resp
         return MagicMock(data=[], count=0)
+
     fake_sb.execute.side_effect = _smart
 
     with pytest.raises(RuntimeError, match="simulated INSERT failure"):
-        event_date_service.replace_occurrences(
-            42, [_occ_create("2026-06-01T18:00:00+00:00")]
-        )
+        event_date_service.replace_occurrences(42, [_occ_create("2026-06-01T18:00:00+00:00")])
 
     # Confirm the restore-insert ran (call #4).
     assert state["call"] == 4

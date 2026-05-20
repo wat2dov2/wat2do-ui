@@ -1,6 +1,5 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
-import { Instagram, MessageCircle, Tag, ExternalLink } from "lucide-react";
+import { Instagram, MessageCircle, Tag } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import type { Club } from "@/shared/types";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -13,13 +12,6 @@ interface ClubCardProps {
 
 export function ClubCard({ club }: ClubCardProps) {
   const { t } = useTranslation();
-
-  const handleClubPageClick = () => {
-    const safe = sanitizeHref(club.club_page);
-    if (safe) {
-      window.open(safe, "_blank", "noopener,noreferrer");
-    }
-  };
 
   return (
     <article className="rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card border border-border">

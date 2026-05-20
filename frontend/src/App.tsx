@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useMemo, useState, useEffect, useCallback } from "react";
+import { Suspense, lazy, useMemo, useState, useEffect, useCallback } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { LazyMotion, domAnimation } from "framer-motion";
 import { TooltipProvider } from "@/shared/ui/tooltip";
@@ -127,7 +127,6 @@ function AppContent() {
 
   // ── Store data (single source of truth) ──────────────────────
   const events = useEventsStore((s) => s.events);
-  const addEvent = useEventsStore((s) => s.addEvent);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
 
   // Trigger store fetches once on mount. Per-user stores (savedEvents,
@@ -143,8 +142,7 @@ function AppContent() {
   }, [isAuthFlowRoute]);
 
   // ── Edit event state (local UI) ──────────────────────────────
-  // Owned here (not in ModalContainer) because adminConfig and
-  // clubPanelConfig call handleEditEventAndOpenModal, which needs to
+  // Owned here (not in ModalContainer) because admin event routes need to
   // populate `editingEvent` before opening SubmitEventModal.
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
@@ -195,22 +193,17 @@ function AppContent() {
       onEditEvent: handleEditEventAndOpenModal,
       onDeleteEvent: deleteEvent,
       onCreateEvent: () => setShowSubmitEvent(true),
-      onAddEvent: addEvent,
     }),
-    [handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent]
+    [handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent]
   );
 
-  // Club-panel routes still consume events + userEmail via a shared config.
+  // Club-panel poster routes only need events + userEmail.
   const clubPanelConfig = useMemo(
     () => ({
       events,
-      onEditEvent: handleEditEventAndOpenModal,
-      onDeleteEvent: deleteEvent,
-      onCreateEvent: () => setShowSubmitEvent(true),
-      onAddEvent: addEvent,
       userEmail,
     }),
-    [events, handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent, addEvent, userEmail]
+    [events, userEmail]
   );
 
   const appRoutes = (
@@ -228,7 +221,7 @@ function AppContent() {
       <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route
         path={ROUTES.ADMIN}
-        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminPanelRoute config={adminConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminPanelRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.ADMIN_EVENTS}
@@ -236,15 +229,15 @@ function AppContent() {
       />
       <Route
         path={ROUTES.ADMIN_CLUBS}
-        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminClubsRoute config={adminConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminClubsRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.ADMIN_SUBMISSIONS}
-        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminSubmissionsRoute config={adminConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminSubmissionsRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.ADMIN_POSTERS}
-        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminPostersRoute config={adminConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminPostersRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.MARKETING}
@@ -259,7 +252,7 @@ function AppContent() {
       />
       <Route
         path={ROUTES.CLUB_PANEL}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelRoute config={clubPanelConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.CLUB_PANEL_POSTERS}

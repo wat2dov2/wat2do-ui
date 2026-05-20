@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Coins, Check, CreditCard, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useConfetti } from "@/shared/hooks/useConfetti";

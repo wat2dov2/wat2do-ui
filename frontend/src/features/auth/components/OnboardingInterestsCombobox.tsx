@@ -3,7 +3,7 @@
  * User can type to filter and click options to toggle selection; selected shown as tags.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -39,13 +39,15 @@ export function OnboardingInterestsCombobox({
     cat.toLowerCase().includes(search.toLowerCase().trim())
   );
 
-  useEffect(() => {
-    if (!open) setSearch("");
-  }, [open]);
-
   return (
     <div className={cn("flex flex-col gap-2 w-full max-w-md mx-auto", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) setSearch("");
+        }}
+      >
         <PopoverAnchor asChild>
           <div
             className="flex w-full items-center gap-2 rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs cursor-text focus-within:ring-2 focus-within:ring-ring focus-within:outline-none"

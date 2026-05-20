@@ -1,10 +1,9 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 from core.config import settings
 from core.constants import BUCKET_EVENT_IMAGES
 from core.database import get_sb
 from core.tables import EVENT_DATES, EVENTS
-from core.constants import EVENT_CATEGORIES
 
 
 def _public_url(bucket: str, path: str) -> str | None:
@@ -86,22 +85,26 @@ for i in range(4, 31):
     cat = CATEGORIES[(i - 4) % len(CATEGORIES)]
     start = BASE + timedelta(days=i - 4, hours=((i - 4) % 5) * 2)
     end = start + timedelta(hours=2)
-    SEED_EVENTS.append({
-        "title": f"Seed Event {i:02d}: {cat}",
-        "description": f"A seeded {cat.lower()} event hosted by {org}.",
-        "location": ["SLC Great Hall", "DC 1351", "HH 138", "PAC Gym", "E7 Atrium"][(i - 4) % 5],
-        "dtstart_utc": _to_iso(start),
-        "dtend_utc": _to_iso(end),
-        "registration": (i % 3 == 0),
-        "club_type": "WUSA" if "UW" in org else "University",
-        "school": "University of Waterloo",
-        "category": cat,
-        "organization": org,
-        "price": 0 if i % 4 else 5,
-        "food": ["pizza"] if i % 5 == 0 else [],
-        "source_image_url": _seed_image(i),
-        "display_handle": org.lower().replace(" ", "")[:24],
-    })
+    SEED_EVENTS.append(
+        {
+            "title": f"Seed Event {i:02d}: {cat}",
+            "description": f"A seeded {cat.lower()} event hosted by {org}.",
+            "location": ["SLC Great Hall", "DC 1351", "HH 138", "PAC Gym", "E7 Atrium"][
+                (i - 4) % 5
+            ],
+            "dtstart_utc": _to_iso(start),
+            "dtend_utc": _to_iso(end),
+            "registration": (i % 3 == 0),
+            "club_type": "WUSA" if "UW" in org else "University",
+            "school": "University of Waterloo",
+            "category": cat,
+            "organization": org,
+            "price": 0 if i % 4 else 5,
+            "food": ["pizza"] if i % 5 == 0 else [],
+            "source_image_url": _seed_image(i),
+            "display_handle": org.lower().replace(" ", "")[:24],
+        }
+    )
 
 
 def seed():
@@ -130,10 +133,12 @@ def seed():
             continue
         new_id = inserted.data[0]["id"]
         if dtstart:
-            sb.table(EVENT_DATES).insert({
-                "event_id": new_id,
-                "dtstart_utc": dtstart,
-                "dtend_utc": dtend,
-            }).execute()
+            sb.table(EVENT_DATES).insert(
+                {
+                    "event_id": new_id,
+                    "dtstart_utc": dtstart,
+                    "dtend_utc": dtend,
+                }
+            ).execute()
         created += 1
     print(f"Seeded {created} new events ({len(SEED_EVENTS)} total in seed list)")

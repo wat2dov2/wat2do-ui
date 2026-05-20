@@ -12,11 +12,48 @@ def _public_url(bucket: str, path: str) -> str | None:
 
 
 SEED_CLUBS = [
-    {"club_name": "Pre-Pharmacy, UW", "categories": ["Academic"], "club_page": "152", "ig": "uwprepharmacy", "club_type": "WUSA", "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-001.jpg")},
-    {"club_name": "UW Board Games Club", "categories": ["Social & Games"], "club_page": "200", "ig": "uwboardgames", "discord": "uwboardgames", "club_type": "WUSA", "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-002.jpg")},
-    {"club_name": "UW Computer Science Club", "categories": ["Academic", "Technology"], "club_page": "310", "ig": "uwcsclub", "discord": "uwcsclub", "club_type": "WUSA", "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-003.jpg")},
-    {"club_name": "UW Music Society", "categories": ["Cultural"], "club_page": "420", "ig": "uwmusic", "club_type": "WUSA", "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-004.jpg")},
-    {"club_name": "UW Intramurals", "categories": ["Sports"], "club_page": "515", "ig": "uwintramurals", "club_type": "University", "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-005.jpg")},
+    {
+        "club_name": "Pre-Pharmacy, UW",
+        "categories": ["Academic"],
+        "club_page": "152",
+        "ig": "uwprepharmacy",
+        "club_type": "WUSA",
+        "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-001.jpg"),
+    },
+    {
+        "club_name": "UW Board Games Club",
+        "categories": ["Social & Games"],
+        "club_page": "200",
+        "ig": "uwboardgames",
+        "discord": "uwboardgames",
+        "club_type": "WUSA",
+        "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-002.jpg"),
+    },
+    {
+        "club_name": "UW Computer Science Club",
+        "categories": ["Academic", "Technology"],
+        "club_page": "310",
+        "ig": "uwcsclub",
+        "discord": "uwcsclub",
+        "club_type": "WUSA",
+        "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-003.jpg"),
+    },
+    {
+        "club_name": "UW Music Society",
+        "categories": ["Cultural"],
+        "club_page": "420",
+        "ig": "uwmusic",
+        "club_type": "WUSA",
+        "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-004.jpg"),
+    },
+    {
+        "club_name": "UW Intramurals",
+        "categories": ["Sports"],
+        "club_page": "515",
+        "ig": "uwintramurals",
+        "club_type": "University",
+        "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-005.jpg"),
+    },
 ]
 
 

@@ -1,4 +1,4 @@
-# Integrations Setup README
+# Integrations Setup
 
 This guide explains how to configure third-party integrations for `wat2do-v2`, including how to acquire OAuth credentials and where to store them.
 
@@ -189,4 +189,3 @@ Before coding OAuth:
 2. Restart backend server after env edits.
 3. Verify your provider dashboard has the exact callback URL (character-for-character).
 4. Verify frontend points to backend via `VITE_API_URL`.
-

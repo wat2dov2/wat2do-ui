@@ -4,7 +4,7 @@
  * Single source of truth — prevents silent key drift and makes it easy
  * to audit what the app persists on the device.
  *
- * Allowed per CLAUDE.md localStorage policy:
+ * Allowed per AGENTS.md localStorage policy:
  *   theme, userEmail, userProfile, viewMode, filterViewMode,
  *   i18n-language, notificationPreferences, privacyPreferences,
  *   wat2do-app-prefs (composite of viewMode + filterViewMode via Zustand persist)

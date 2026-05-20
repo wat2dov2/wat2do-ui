@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from core.database import get_sb
 from core.tables import EVENTS
 from schemas.event import EventTimeMeta
-from services.recommender.config import POP_HALF_LIFE_DAYS, POP_FALLBACK_SCORE, POP_CANDIDATE_LIMIT
+from services.recommender.config import POP_CANDIDATE_LIMIT, POP_FALLBACK_SCORE, POP_HALF_LIFE_DAYS
 from services.recommender.interaction_scores import get_event_popularity
 from services.recommender.utils import normalize_scores
 
@@ -69,14 +69,5 @@ def _load_events_meta(event_ids: list[int]) -> dict[int, EventTimeMeta]:
     """
     if not event_ids:
         return {}
-    r = (
-        get_sb()
-        .table(EVENTS)
-        .select("id, added_at")
-        .in_("id", event_ids)
-        .execute()
-    )
-    return {
-        row["id"]: EventTimeMeta.model_validate(row)
-        for row in (r.data or [])
-    }
+    r = get_sb().table(EVENTS).select("id, added_at").in_("id", event_ids).execute()
+    return {row["id"]: EventTimeMeta.model_validate(row) for row in (r.data or [])}

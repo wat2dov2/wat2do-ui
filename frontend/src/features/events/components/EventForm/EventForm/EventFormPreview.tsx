@@ -1,11 +1,12 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, ImageOff } from "lucide-react";
+import { ImageOff } from "lucide-react";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
+import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
@@ -13,18 +14,12 @@ import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 export function EventFormPreview() {
   const { t, i18n } = useTranslation();
   const { formData } = useEventFormContext();
+  const categoryClasses = getCategoryClasses(formData.category);
 
   // Generate badges matching EventCard structure
-  const previewBadgeStyles = useMemo(() => ({
-    freeBg: "bg-success/20",
-    freeText: "text-success",
-    foodBg: "bg-warning/20",
-    foodText: "text-warning",
-  }), []);
-
   const badges = useMemo(
-    () => computeEventBadges(formData, t, previewBadgeStyles),
-    [formData.price, formData.food, formData.requiresRegistration, t, previewBadgeStyles],
+    () => computeEventBadges(formData, t),
+    [formData, t],
   );
 
   // Format date and time for preview (matching EventCard format)
@@ -58,12 +53,12 @@ export function EventFormPreview() {
             alt={formData.title || t("events.eventTitle")}
             className="absolute inset-0 w-full h-full"
             fallback={
-              <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
-                <ImageOff className="size-8 text-muted-foreground/40" />
+              <div className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}>
+                <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
               </div>
             }
             placeholder={
-              <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 animate-pulse" />
+              <div className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`} />
             }
           />
           
@@ -72,8 +67,8 @@ export function EventFormPreview() {
             <BadgeMask variant="top-left">
               <span
                 className={`font-bold text-[10px] px-2 py-0.5 block rounded-full ${
-                  getCategoryClasses(formData.category).bg
-                } ${getCategoryClasses(formData.category).text}`}
+                  categoryClasses.bg
+                } ${categoryClasses.text}`}
               >
                 {translateCategory(formData.category, t)}
               </span>
@@ -82,8 +77,7 @@ export function EventFormPreview() {
 
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
-            <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center gap-1.5">
-              <Users className="size-3" strokeWidth={2} />
+            <span className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-background border border-foreground text-foreground flex items-center">
               <span className="truncate max-w-[100px]">
                 {formData.organization || t("events.organization")}
               </span>
@@ -91,13 +85,19 @@ export function EventFormPreview() {
           </BadgeMask>
         </div>
 
-        <div className="flex flex-col flex-1 border-l border-r border-b border-border rounded-b-xl overflow-hidden">
+        <div
+          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          style={getEventCardWaterpaintStyle(`${formData.category}-${formData.title || "preview"}`)}
+        >
           <EventCardContent
             title={formData.title || t("events.eventTitle")}
             date={cardDate || undefined}
             time={cardTime || undefined}
             location={formData.location || undefined}
             badges={badges}
+            textClassName={categoryClasses.text}
+            secondaryTextClassName={categoryClasses.text}
+            badgeClassName={`border-current ${categoryClasses.text}`}
           />
         </div>
       </article>

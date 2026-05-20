@@ -10,8 +10,8 @@ from core.constants import (
     MAX_CLUB_CATEGORY_LENGTH,
     MAX_CLUB_NAME_LENGTH,
     MAX_CLUB_TYPE_LENGTH,
-    MAX_INTEGRATION_METADATA_KEYS,
     MAX_INTEGRATION_METADATA_KEY_LENGTH,
+    MAX_INTEGRATION_METADATA_KEYS,
     MAX_INTEGRATION_METADATA_VALUE_LENGTH,
     MAX_INTEGRATION_NAME_LENGTH,
     MAX_URL_LENGTH,
@@ -227,9 +227,7 @@ class ClubIntegrationUpdate(BaseModel):
         if m is None:
             return self
         if len(m) > MAX_INTEGRATION_METADATA_KEYS:
-            raise ValueError(
-                f"metadata exceeds maximum of {MAX_INTEGRATION_METADATA_KEYS} keys"
-            )
+            raise ValueError(f"metadata exceeds maximum of {MAX_INTEGRATION_METADATA_KEYS} keys")
         for k, v in m.items():
             if len(k) > MAX_INTEGRATION_METADATA_KEY_LENGTH:
                 raise ValueError(

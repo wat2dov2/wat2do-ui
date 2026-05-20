@@ -3,7 +3,6 @@
  * Reusable pagination controls shared across features.
  */
 
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/shared/ui/button";

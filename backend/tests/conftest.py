@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock
 
 from core.auth import get_current_user
 from core.constants import ROLE_ADMIN, ROLE_USER

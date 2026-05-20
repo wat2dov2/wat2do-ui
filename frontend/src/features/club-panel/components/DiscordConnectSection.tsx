@@ -6,7 +6,7 @@
  * Maps hook field names to modal prop names via a stable adapter object.
  */
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { DiscordConnectModal } from "./DiscordConnectModal";
 import { useDiscordIntegration } from "../hooks/useDiscordIntegration";
 

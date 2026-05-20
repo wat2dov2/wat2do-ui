@@ -34,15 +34,17 @@ def _event(**overrides) -> EventResponse:
 
 def _occurrence(dtstart: datetime, dtend: datetime | None = None) -> OccurrenceResponse:
     """Helper: build an OccurrenceResponse the diff helper can iterate."""
-    return OccurrenceResponse.model_validate({
-        "id": 0,
-        "event_id": 1,
-        "dtstart_utc": dtstart,
-        "dtend_utc": dtend,
-        "duration": None,
-        "tz": None,
-        "created_at": datetime.now(timezone.utc),
-    })
+    return OccurrenceResponse.model_validate(
+        {
+            "id": 0,
+            "event_id": 1,
+            "dtstart_utc": dtstart,
+            "dtend_utc": dtend,
+            "duration": None,
+            "tz": None,
+            "created_at": datetime.now(timezone.utc),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -63,10 +65,12 @@ def test_diff_non_material_fields_ignored():
 
 def test_diff_description_change_ignored():
     old = _event()
-    new = EventResponse.model_validate({
-        **old.model_dump(),
-        "description": "Whole new copy",
-    })
+    new = EventResponse.model_validate(
+        {
+            **old.model_dump(),
+            "description": "Whole new copy",
+        }
+    )
     assert event_service.compute_event_diff(old, new) == {}
 
 
@@ -76,9 +80,7 @@ def test_diff_status_change_populates_dict():
 
     diff = event_service.compute_event_diff(old, new)
 
-    assert diff == {
-        "status": {"old": EVENT_STATUS_ACTIVE, "new": EVENT_STATUS_CANCELLED}
-    }
+    assert diff == {"status": {"old": EVENT_STATUS_ACTIVE, "new": EVENT_STATUS_CANCELLED}}
 
 
 def test_diff_location_change_populates_dict():
@@ -104,18 +106,22 @@ def test_diff_occurrence_change_serialises_to_iso():
 
     assert diff == {
         "occurrences": {
-            "old": [{
-                "dtstart_utc": old_ts.isoformat(),
-                "dtend_utc": None,
-                "duration": None,
-                "tz": None,
-            }],
-            "new": [{
-                "dtstart_utc": new_ts.isoformat(),
-                "dtend_utc": None,
-                "duration": None,
-                "tz": None,
-            }],
+            "old": [
+                {
+                    "dtstart_utc": old_ts.isoformat(),
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                }
+            ],
+            "new": [
+                {
+                    "dtstart_utc": new_ts.isoformat(),
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                }
+            ],
         }
     }
 
@@ -145,24 +151,28 @@ def test_diff_reshuffle_with_same_dates_produces_no_diff():
     they happened to have.
     """
     ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
-    old_occ = OccurrenceResponse.model_validate({
-        "id": 999,
-        "event_id": 1,
-        "dtstart_utc": ts,
-        "dtend_utc": None,
-        "duration": None,
-        "tz": "America/Toronto",
-        "created_at": datetime.now(timezone.utc),
-    })
-    new_occ = OccurrenceResponse.model_validate({
-        "id": 888,
-        "event_id": 1,
-        "dtstart_utc": ts,
-        "dtend_utc": None,
-        "duration": None,
-        "tz": "America/Toronto",
-        "created_at": datetime.now(timezone.utc),
-    })
+    old_occ = OccurrenceResponse.model_validate(
+        {
+            "id": 999,
+            "event_id": 1,
+            "dtstart_utc": ts,
+            "dtend_utc": None,
+            "duration": None,
+            "tz": "America/Toronto",
+            "created_at": datetime.now(timezone.utc),
+        }
+    )
+    new_occ = OccurrenceResponse.model_validate(
+        {
+            "id": 888,
+            "event_id": 1,
+            "dtstart_utc": ts,
+            "dtend_utc": None,
+            "duration": None,
+            "tz": "America/Toronto",
+            "created_at": datetime.now(timezone.utc),
+        }
+    )
     old = _event(occurrences=[old_occ])
     new = _event(occurrences=[new_occ])
 
@@ -180,12 +190,14 @@ def test_diff_occurrence_added_from_none():
     assert event_service.compute_event_diff(old, new) == {
         "occurrences": {
             "old": [],
-            "new": [{
-                "dtstart_utc": new_ts.isoformat(),
-                "dtend_utc": None,
-                "duration": None,
-                "tz": None,
-            }],
+            "new": [
+                {
+                    "dtstart_utc": new_ts.isoformat(),
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                }
+            ],
         }
     }
 
@@ -234,23 +246,28 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
     fetch occurrences and call the same picker.
     """
     from datetime import timedelta
+
     from services import event_date_service
 
     patch_sb("services.event_service")
 
     # The view returns one row per (event, occurrence). Dedup keeps id=42
     # once. The view's first row has dtstart_utc=May 15 (with desc=True).
-    fake_sb.set_response(data=[{
-        "id": 42,
-        "title": "Tea Tasting Series",
-        "location": "SLC",
-        "organization": "UW Tea Club",
-        "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
-        "status": EVENT_STATUS_ACTIVE,
-        # The view's joined date columns — would have been used pre-fix.
-        "dtstart_utc": datetime(2026, 5, 15, tzinfo=timezone.utc).isoformat(),
-        "dtend_utc": None,
-    }])
+    fake_sb.set_response(
+        data=[
+            {
+                "id": 42,
+                "title": "Tea Tasting Series",
+                "location": "SLC",
+                "organization": "UW Tea Club",
+                "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
+                "status": EVENT_STATUS_ACTIVE,
+                # The view's joined date columns — would have been used pre-fix.
+                "dtstart_utc": datetime(2026, 5, 15, tzinfo=timezone.utc).isoformat(),
+                "dtend_utc": None,
+            }
+        ]
+    )
 
     # Mock the post-dedup occurrence batch fetch with the FULL list,
     # including a future May 1 — that's what _pick_primary should pick.
@@ -259,12 +276,15 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
     future_2 = now + timedelta(days=9)
     future_3 = now + timedelta(days=16)
     monkeypatch.setattr(
-        event_date_service, "list_for_events",
-        lambda ids: {42: [
-            _occ_response(future_1, occ_id=1),
-            _occ_response(future_2, occ_id=2),
-            _occ_response(future_3, occ_id=3),
-        ]},
+        event_date_service,
+        "list_for_events",
+        lambda ids: {
+            42: [
+                _occ_response(future_1, occ_id=1),
+                _occ_response(future_2, occ_id=2),
+                _occ_response(future_3, occ_id=3),
+            ]
+        },
     )
 
     summary_results = event_service.list_events(summary=True)
@@ -276,12 +296,14 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
 
 def _occ_response(dtstart, dtend=None, occ_id=1):
     """Helper: build an OccurrenceResponse for the test above."""
-    return OccurrenceResponse.model_validate({
-        "id": occ_id,
-        "event_id": 42,
-        "dtstart_utc": dtstart,
-        "dtend_utc": dtend,
-        "duration": None,
-        "tz": None,
-        "created_at": datetime.now(timezone.utc),
-    })
+    return OccurrenceResponse.model_validate(
+        {
+            "id": occ_id,
+            "event_id": 42,
+            "dtstart_utc": dtstart,
+            "dtend_utc": dtend,
+            "duration": None,
+            "tz": None,
+            "created_at": datetime.now(timezone.utc),
+        }
+    )

@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles } from "lucide-react";
 import { Input } from "@/shared/ui/input";

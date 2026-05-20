@@ -5,7 +5,8 @@
  * are passed in via props so this module has zero feature imports.
  */
 
-import React, { Suspense } from "react";
+import { Suspense } from "react";
+import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Megaphone, ArrowLeft, MapPin } from "lucide-react";
@@ -67,11 +68,11 @@ interface PostersPageContentProps {
   onBack: () => void;
   userEmail: string;
   /** Lazy-loaded scan map component. */
-  ScanMapComponent: React.ComponentType<ScanMapProps>;
+  ScanMapComponent: ComponentType<ScanMapProps>;
   /** QR code details modal component. */
-  DetailsModalComponent: React.ComponentType<DetailsModalProps>;
+  DetailsModalComponent: ComponentType<DetailsModalProps>;
   /** QR asset wizard component. */
-  AssetWizardComponent: React.ComponentType<AssetWizardProps>;
+  AssetWizardComponent: ComponentType<AssetWizardProps>;
 }
 
 export function PostersPageContent({

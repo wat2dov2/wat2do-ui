@@ -3,7 +3,6 @@
  * computeEventBadges is the single source of truth for badge logic.
  */
 
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Event } from "@/shared/types";
 import type { TFunction } from "i18next";
@@ -86,9 +85,5 @@ export function computeEventBadges(
  */
 export function useEventBadges(event: Event): EventBadge[] {
   const { t } = useTranslation();
-
-  return useMemo(
-    () => computeEventBadges(event, t),
-    [event.price, event.food, event.requiresRegistration, event.registration, t],
-  );
+  return computeEventBadges(event, t);
 }

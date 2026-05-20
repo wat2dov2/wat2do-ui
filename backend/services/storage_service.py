@@ -6,17 +6,17 @@ import uuid
 from io import BytesIO
 
 from core.constants import (
-    BUCKET_EVENT_IMAGES,
     BUCKET_AVATARS,
     BUCKET_CLUB_LOGOS,
+    BUCKET_EVENT_IMAGES,
     BUCKET_QR_ASSETS,
     MAX_AVATAR_SIZE_BYTES,
     MAX_IMAGE_SIZE_BYTES,
 )
-from core.retry import supabase_retry
 from core.database import supabase_admin
 from core.exceptions import ValidationError
 from core.logging import logger
+from core.retry import supabase_retry
 from core.svg_sanitize import looks_like_svg, sanitize_svg
 
 log = logging.getLogger(__name__)
@@ -24,12 +24,14 @@ log = logging.getLogger(__name__)
 # MIME types whose bytes we re-encode through Pillow to strip EXIF / XMP
 # metadata (GPS coordinates, device serial, capture timestamps, etc.)
 # SVG metadata stripping happens inside ``sanitize_svg``.
-_EXIF_STRIP_MIMES = frozenset({
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-})
+_EXIF_STRIP_MIMES = frozenset(
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+    }
+)
 
 
 _DEFAULT_BUCKETS: dict[str, dict] = {
@@ -127,9 +129,7 @@ class StorageService:
 
         # Client claims SVG but content is not actually SVG — reject.
         if content_type == "image/svg+xml":
-            raise ValidationError(
-                "File declared as SVG but content is not valid SVG."
-            )
+            raise ValidationError("File declared as SVG but content is not valid SVG.")
 
         # Strip EXIF / XMP metadata from raster images so user-uploaded
         # photos don't leak GPS coordinates, device serials, or capture
@@ -219,7 +219,7 @@ class StorageService:
         idx = url.find(marker)
         if idx == -1:
             return None
-        path = url[idx + len(marker):]
+        path = url[idx + len(marker) :]
         if not _is_safe_storage_path(path):
             return None
         return path
@@ -305,9 +305,7 @@ def _strip_image_metadata(data: bytes, content_type: str) -> bytes:
             return out.getvalue()
     except Exception as exc:
         log.warning("Image metadata strip failed for %s: %s", content_type, exc)
-        raise ValidationError(
-            "Uploaded file could not be decoded as a valid image."
-        ) from exc
+        raise ValidationError("Uploaded file could not be decoded as a valid image.") from exc
 
 
 storage = StorageService(supabase_admin.storage)

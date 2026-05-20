@@ -7,7 +7,7 @@ from cachetools import TTLCache
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.tables import USERS
-from schemas.user import UserUpdate, UserResponse
+from schemas.user import UserResponse, UserUpdate
 
 # Short-lived cache for get_user_by_supabase_id to avoid redundant DB
 # round-trips when multiple endpoints resolve the same user in parallel.
@@ -100,13 +100,7 @@ def set_role(user_id: UUID, role: str) -> UserResponse | None:
     if existing is None:
         return None
     _supabase_id_cache.clear()
-    r = (
-        get_sb()
-        .table(USERS)
-        .update({"role": role})
-        .eq("id", str(user_id))
-        .execute()
-    )
+    r = get_sb().table(USERS).update({"role": role}).eq("id", str(user_id)).execute()
     return UserResponse.model_validate(r.data[0]) if r.data else None
 
 
@@ -119,13 +113,7 @@ def count_admins() -> int:
     see audit A26).  Uses PostgREST's ``count="exact"`` to avoid fetching
     the full user list.
     """
-    r = (
-        get_sb()
-        .table(USERS)
-        .select("id", count="exact")
-        .eq("role", "admin")
-        .execute()
-    )
+    r = get_sb().table(USERS).select("id", count="exact").eq("role", "admin").execute()
     return r.count or 0
 
 

@@ -32,7 +32,7 @@ pip install -r requirements.txt
 
 ## Integrations setup
 
-See `INTEGRATIONS_README.md` for OAuth secret acquisition and integration environment setup.
+See `docs/integrations.md` for OAuth secret acquisition and integration environment setup.
 
 ## Database (Supabase CLI)
 
@@ -81,4 +81,3 @@ A new Supabase project reaches the current schema by running, from
 inside `backend/`,
 `supabase db push --include-all --db-url "$DATABASE_URL"`. Every migration
 is idempotent, so partial runs can be retried without damage.
-

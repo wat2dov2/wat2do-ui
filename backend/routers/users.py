@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_current_user, get_admin_user, get_db_user
+from core.auth import get_admin_user, get_current_user, get_db_user
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT, ROLE_ADMIN
 from core.errors import (
     CANNOT_DELETE_SELF,
@@ -11,7 +11,7 @@ from core.errors import (
     USER_PROFILE_NOT_FOUND,
 )
 from core.exceptions import AuthorizationError, ValidationError, get_or_404
-from schemas.user import UserRoleUpdate, UserUpdate, UserProfileUpdate, UserResponse
+from schemas.user import UserProfileUpdate, UserResponse, UserRoleUpdate, UserUpdate
 from services import user_service
 
 router = APIRouter(prefix="/users", tags=["users"])

@@ -35,36 +35,48 @@ def _is_insufficient_credits(error: APIError) -> bool:
 
 def get_balance(user_id: str) -> int:
     """Return the user's credit balance, creating the row if needed."""
-    r = get_sb().rpc(
-        "ensure_user_credits",
-        {"p_user_id": user_id, "p_default_balance": DEFAULT_CREDIT_BALANCE},
-    ).execute()
+    r = (
+        get_sb()
+        .rpc(
+            "ensure_user_credits",
+            {"p_user_id": user_id, "p_default_balance": DEFAULT_CREDIT_BALANCE},
+        )
+        .execute()
+    )
     return r.data
 
 
 def add_credits(user_id: str, amount: int) -> int:
     """Atomically add credits to a user's balance. Returns the new balance."""
-    r = get_sb().rpc(
-        "adjust_credits",
-        {
-            "p_user_id": user_id,
-            "p_amount": amount,
-            "p_default_balance": DEFAULT_CREDIT_BALANCE,
-        },
-    ).execute()
+    r = (
+        get_sb()
+        .rpc(
+            "adjust_credits",
+            {
+                "p_user_id": user_id,
+                "p_amount": amount,
+                "p_default_balance": DEFAULT_CREDIT_BALANCE,
+            },
+        )
+        .execute()
+    )
     return r.data
 
 
 def deduct_credits(user_id: str, amount: int) -> int:
     """Atomically deduct credits. Raises 400 if insufficient funds."""
-    r = get_sb().rpc(
-        "adjust_credits",
-        {
-            "p_user_id": user_id,
-            "p_amount": -amount,
-            "p_default_balance": DEFAULT_CREDIT_BALANCE,
-        },
-    ).execute()
+    r = (
+        get_sb()
+        .rpc(
+            "adjust_credits",
+            {
+                "p_user_id": user_id,
+                "p_amount": -amount,
+                "p_default_balance": DEFAULT_CREDIT_BALANCE,
+            },
+        )
+        .execute()
+    )
     new_balance = r.data
     if new_balance == _INSUFFICIENT_FUNDS_SENTINEL:
         raise ValidationError(INSUFFICIENT_CREDITS, code=INSUFFICIENT_CREDITS_CODE)
@@ -91,17 +103,21 @@ def create_promotion(
     credits_cost, duration_days = pkg
 
     try:
-        r = get_sb().rpc(
-            "promote_event",
-            {
-                "p_user_id": user_id,
-                "p_event_id": event_id,
-                "p_package": package,
-                "p_credits_cost": credits_cost,
-                "p_duration_days": duration_days,
-                "p_default_balance": DEFAULT_CREDIT_BALANCE,
-            },
-        ).execute()
+        r = (
+            get_sb()
+            .rpc(
+                "promote_event",
+                {
+                    "p_user_id": user_id,
+                    "p_event_id": event_id,
+                    "p_package": package,
+                    "p_credits_cost": credits_cost,
+                    "p_duration_days": duration_days,
+                    "p_default_balance": DEFAULT_CREDIT_BALANCE,
+                },
+            )
+            .execute()
+        )
     except APIError as e:
         if _is_insufficient_credits(e):
             raise ValidationError(INSUFFICIENT_CREDITS, code=INSUFFICIENT_CREDITS_CODE) from e
@@ -117,7 +133,9 @@ def create_promotion(
     if not r.data:
         log.error(
             "RPC promote_event returned no rows for user=%s event=%s package=%s",
-            user_id, event_id, package,
+            user_id,
+            event_id,
+            package,
         )
         raise ServiceError("promote_event returned no rows")
 
@@ -170,23 +188,11 @@ def get_active_promoted_event_ids() -> list[int]:
     """
     now = datetime.now(timezone.utc).isoformat()
     try:
-        r = (
-            get_sb()
-            .table(EVENT_PROMOTIONS)
-            .select("event_id")
-            .gt("end_date", now)
-            .execute()
-        )
+        r = get_sb().table(EVENT_PROMOTIONS).select("event_id").gt("end_date", now).execute()
     except APIError as exc:
         if exc.code != "42703" or "end_date" not in (exc.message or ""):
             raise
-        r = (
-            get_sb()
-            .table(EVENT_PROMOTIONS)
-            .select("event_id")
-            .gt("expires_at", now)
-            .execute()
-        )
+        r = get_sb().table(EVENT_PROMOTIONS).select("event_id").gt("expires_at", now).execute()
     return list({row["event_id"] for row in (r.data or [])})
 
 
@@ -223,7 +229,9 @@ def refund_active_promotions_for_event(event_id: int) -> int:
         except (KeyError, ValueError, AttributeError) as e:
             log.warning(
                 "Skipping refund for promotion %s on event %s — bad timestamps: %s",
-                row.get("id"), event_id, e,
+                row.get("id"),
+                event_id,
+                e,
             )
             continue
 
@@ -241,7 +249,10 @@ def refund_active_promotions_for_event(event_id: int) -> int:
             refunded += 1
             log.info(
                 "Refunded %s credits to user=%s for promotion=%s on deleted event=%s",
-                refund_amount, row["user_id"], row["id"], event_id,
+                refund_amount,
+                row["user_id"],
+                row["id"],
+                event_id,
             )
         except Exception as e:
             # Don't block event deletion on a single bad refund — log and
@@ -250,6 +261,10 @@ def refund_active_promotions_for_event(event_id: int) -> int:
             # row if operators audit later.
             log.error(
                 "Failed to refund %s credits to user=%s for promotion=%s on event=%s: %s",
-                refund_amount, row["user_id"], row["id"], event_id, e,
+                refund_amount,
+                row["user_id"],
+                row["id"],
+                event_id,
+                e,
             )
     return refunded

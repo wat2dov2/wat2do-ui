@@ -43,9 +43,7 @@ class ScrapedEventCreate(BaseModel):
         except (TypeError, ValueError) as e:
             raise ValueError(f"raw_data is not JSON-serialisable: {e}")
         if len(serialised.encode("utf-8")) > _MAX_RAW_DATA_BYTES:
-            raise ValueError(
-                f"raw_data exceeds maximum size of {_MAX_RAW_DATA_BYTES} bytes"
-            )
+            raise ValueError(f"raw_data exceeds maximum size of {_MAX_RAW_DATA_BYTES} bytes")
         return v
 
 

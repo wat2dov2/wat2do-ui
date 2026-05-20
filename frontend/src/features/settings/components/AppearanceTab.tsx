@@ -3,7 +3,6 @@
  * UI component for appearance preferences
  */
 
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { Grid3x3, Calendar, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";

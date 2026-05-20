@@ -13,7 +13,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.config import settings
-from core.constants import BUCKET_EVENT_IMAGES, BUCKET_AVATARS, BUCKET_CLUB_LOGOS, BUCKET_QR_ASSETS
+from core.constants import BUCKET_AVATARS, BUCKET_CLUB_LOGOS, BUCKET_EVENT_IMAGES, BUCKET_QR_ASSETS
 
 EVENT_IMAGE_COUNT = 30
 AVATAR_COUNT = 12
@@ -22,6 +22,7 @@ LOGO_COUNT = 12
 
 def get_storage():
     from supabase import create_client
+
     if not settings.supabase_url or not settings.supabase_secret_key:
         print("Add SUPABASE_SECRET_KEY to backend/.env (Supabase Dashboard > Settings > API Keys)")
         raise SystemExit(1)
@@ -61,7 +62,9 @@ def main() -> None:
         storage.from_(BUCKET_EVENT_IMAGES).upload(
             key, data, file_options={"content-type": "image/jpeg"}
         )
-        uploads.append((BUCKET_EVENT_IMAGES, key, _public_url(project_url, BUCKET_EVENT_IMAGES, key)))
+        uploads.append(
+            (BUCKET_EVENT_IMAGES, key, _public_url(project_url, BUCKET_EVENT_IMAGES, key))
+        )
 
     # Avatars
     for i in range(1, AVATAR_COUNT + 1):
@@ -72,9 +75,7 @@ def main() -> None:
             storage.from_(BUCKET_AVATARS).remove([key])
         except Exception:
             pass
-        storage.from_(BUCKET_AVATARS).upload(
-            key, data, file_options={"content-type": "image/jpeg"}
-        )
+        storage.from_(BUCKET_AVATARS).upload(key, data, file_options={"content-type": "image/jpeg"})
         uploads.append((BUCKET_AVATARS, key, _public_url(project_url, BUCKET_AVATARS, key)))
 
     # Club logos (simple square images)

@@ -16,10 +16,6 @@ export function useTypewriter(text: string, intervalMs = DEFAULT_CHAR_INTERVAL_M
   const indexRef = useRef(0);
 
   useEffect(() => {
-    setDisplayed("");
-    setDone(false);
-    indexRef.current = 0;
-
     function tick() {
       indexRef.current += 1;
       if (indexRef.current >= text.length) {
@@ -35,9 +31,15 @@ export function useTypewriter(text: string, intervalMs = DEFAULT_CHAR_INTERVAL_M
       timeoutRef.current = setTimeout(tick, delay);
     }
 
-    timeoutRef.current = setTimeout(tick, jitter(intervalMs));
+    const resetTimeout = setTimeout(() => {
+      setDisplayed("");
+      setDone(false);
+      indexRef.current = 0;
+      timeoutRef.current = setTimeout(tick, jitter(intervalMs));
+    }, 0);
 
     return () => {
+      if (resetTimeout) clearTimeout(resetTimeout);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [text, intervalMs]);

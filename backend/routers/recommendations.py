@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, Query
 from core.auth import get_optional_user, resolve_db_user
 from core.exceptions import NotFoundError
 from schemas.recommendation import RecommendationItem
-from services.recommendation_service import engine as recommendation_engine, DEFAULT_LIMIT, MAX_LIMIT
+from services.recommendation_service import engine as recommendation_engine
+from services.recommender.config import DEFAULT_LIMIT, MAX_LIMIT
 
 log = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ def get_recommendations(
             db_user = None
         if db_user:
             return recommendation_engine.get_personalized_recommendations(
-                user_id=str(db_user.id), limit=limit,
+                user_id=str(db_user.id),
+                limit=limit,
             )
     return recommendation_engine.get_popular_recommendations(limit=limit)

@@ -24,7 +24,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import core.logging  # noqa: F401 — triggers basicConfig for standalone execution
-
 from core.database import get_sb
 from core.tables import USERS
 from services import notification_service
@@ -33,9 +32,7 @@ log = logging.getLogger(__name__)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Hourly notifications dispatcher"
-    )
+    parser = argparse.ArgumentParser(description="Hourly notifications dispatcher")
     parser.add_argument(
         "--now",
         help="ISO-8601 UTC timestamp to run against (default: now). "
@@ -49,11 +46,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    now_utc = (
-        datetime.fromisoformat(args.now)
-        if args.now
-        else datetime.now(timezone.utc)
-    )
+    now_utc = datetime.fromisoformat(args.now) if args.now else datetime.now(timezone.utc)
     if now_utc.tzinfo is None:
         now_utc = now_utc.replace(tzinfo=timezone.utc)
 
@@ -70,23 +63,17 @@ def main() -> None:
         try:
             if args.only in ("all", "daily-new-events"):
                 if notification_service.is_daily_new_events_time(user, now_utc):
-                    if notification_service.send_daily_new_events_digest(
-                        user, now_utc
-                    ):
+                    if notification_service.send_daily_new_events_digest(user, now_utc):
                         sent_daily_new_events += 1
 
             if args.only != "all":
                 continue
 
-            local_date = notification_service.is_morning_digest_time(
-                user, now_utc
-            )
+            local_date = notification_service.is_morning_digest_time(user, now_utc)
             if local_date:
                 if notification_service.send_morning_digest(user, local_date):
                     sent_morning += 1
-            week_start = notification_service.is_weekly_digest_time(
-                user, now_utc
-            )
+            week_start = notification_service.is_weekly_digest_time(user, now_utc)
             if week_start:
                 if notification_service.send_weekly_digest(user, week_start):
                     sent_weekly += 1
@@ -115,11 +102,7 @@ def _fetch_users() -> list[dict]:
     edit, not a SQL change.
     """
     rows = (
-        get_sb()
-        .table(USERS)
-        .select("id, email, school")
-        .not_.is_("email", "null")
-        .execute()
+        get_sb().table(USERS).select("id, email, school").not_.is_("email", "null").execute()
     ).data or []
     return rows
 

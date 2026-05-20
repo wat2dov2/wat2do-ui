@@ -90,13 +90,7 @@ def get_reports(
 
 
 def _get_report_by_id(report_id: str) -> ReportResponse | None:
-    r = (
-        get_sb()
-        .table(REPORTED_EVENTS)
-        .select("*")
-        .eq("id", report_id)
-        .execute()
-    )
+    r = get_sb().table(REPORTED_EVENTS).select("*").eq("id", report_id).execute()
     return ReportResponse.model_validate(r.data[0]) if r.data else None
 
 
@@ -131,11 +125,5 @@ def update_report(report_id: str, status: str) -> ReportResponse | None:
     if existing.status == REPORT_PENDING and status != REPORT_PENDING:
         payload["resolved_at"] = datetime.now(timezone.utc).isoformat()
 
-    r = (
-        get_sb()
-        .table(REPORTED_EVENTS)
-        .update(payload)
-        .eq("id", report_id)
-        .execute()
-    )
+    r = get_sb().table(REPORTED_EVENTS).update(payload).eq("id", report_id).execute()
     return ReportResponse.model_validate(r.data[0]) if r.data else None

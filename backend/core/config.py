@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 # Default origins allowed in local development only.
 _DEV_ORIGINS = [
     "http://localhost:5173",

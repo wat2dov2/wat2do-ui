@@ -4,7 +4,7 @@
  * Single source of truth for the authenticated user's credit balance.
  * Anonymous users keep userCredits = 0 (no fetch, no listeners wake it).
  *
- * Backend is authoritative — per CLAUDE.md, credits are never persisted
+ * Backend is authoritative — per AGENTS.md, credits are never persisted
  * to localStorage.
  */
 

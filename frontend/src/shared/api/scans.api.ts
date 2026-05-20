@@ -6,25 +6,18 @@
  */
 
 import type { QRCodeScan } from "@/shared/types";
-import { api } from "@/shared/services/apiClient";
+import type { ApiQrCodeScanResponse } from "@/shared/generated";
+import { getPaginatedItems } from "@/shared/services/apiClient";
 
 /** Scan row from GET /qr/scans. */
-export interface QrCodeScanBackend {
-  id: string;
-  qr_code_id: string;
-  scanned_at: string;
-  user_id: string | null;
-  session_id: string;
-  conversion_actions: string[];
-  user_agent: string | null;
-}
+export type QrCodeScanBackend = ApiQrCodeScanResponse;
 
 /** Fetch scans from backend (so phone scans appear in dashboard). */
 export async function getScansFromBackend(
   qrCodeId?: string,
 ): Promise<QrCodeScanBackend[]> {
   const url = qrCodeId ? `/qr/scans?qr_code_id=${encodeURIComponent(qrCodeId)}` : "/qr/scans";
-  return api.get<QrCodeScanBackend[]>(url);
+  return getPaginatedItems<QrCodeScanBackend>(url);
 }
 
 /** Normalize backend scan to shared QRCodeScan shape. */
@@ -35,7 +28,7 @@ export function normalizeBackendScan(b: QrCodeScanBackend): QRCodeScan {
     scannedAt: b.scanned_at,
     userId: b.user_id ?? undefined,
     sessionId: b.session_id,
-    conversionActions: b.conversion_actions ?? [],
+    conversionActions: (b.conversion_actions ?? []) as QRCodeScan["conversionActions"],
     userAgent: b.user_agent ?? undefined,
   };
 }

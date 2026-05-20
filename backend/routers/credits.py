@@ -78,7 +78,9 @@ def create_promotion(
     _rl: None = Depends(credit_mutation_rate_limiter.dependency(key_func=_user_id_key)),
 ):
     event = get_authorized_resource(
-        lambda: event_service.get_event(data.event_id), EVENT_NOT_FOUND, user,
+        lambda: event_service.get_event(data.event_id),
+        EVENT_NOT_FOUND,
+        user,
     )
     # I6: reject promotions on events that have already ended so users
     # cannot burn credits on posters that will never surface again.

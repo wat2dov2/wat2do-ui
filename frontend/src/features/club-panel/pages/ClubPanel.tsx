@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { Building2, Megaphone, Link, Users } from "lucide-react";
 import { AdminCard } from "@/shared/ui/AdminCard";

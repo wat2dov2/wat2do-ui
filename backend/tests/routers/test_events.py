@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from core.constants import ROLE_ADMIN
 from schemas.event import EventResponse
 from services import event_service
-from tests.conftest import FAKE_USER, OTHER_USER, ADMIN_USER
+from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
 def _mock_event(**overrides) -> EventResponse:
@@ -27,21 +27,25 @@ def _mock_event(**overrides) -> EventResponse:
 
     dtstart = defaults.get("dtstart_utc")
     if dtstart is not None and "occurrences" not in defaults:
-        defaults["occurrences"] = [{
-            "id": 1,
-            "event_id": defaults["id"],
-            "dtstart_utc": dtstart,
-            "dtend_utc": defaults.get("dtend_utc"),
-            "duration": None,
-            "tz": None,
-            "created_at": datetime.now(timezone.utc),
-        }]
+        defaults["occurrences"] = [
+            {
+                "id": 1,
+                "event_id": defaults["id"],
+                "dtstart_utc": dtstart,
+                "dtend_utc": defaults.get("dtend_utc"),
+                "duration": None,
+                "tz": None,
+                "created_at": datetime.now(timezone.utc),
+            }
+        ]
 
     return EventResponse.model_validate(defaults)
 
 
 def test_create_event_requires_auth(client):
-    response = client.post("/events/", json={"title": "Test", "location": "Here", "organization": "Org"})
+    response = client.post(
+        "/events/", json={"title": "Test", "location": "Here", "organization": "Org"}
+    )
     assert response.status_code == 401
 
 
@@ -62,12 +66,14 @@ def test_create_event_sets_created_by(authenticated_client, monkeypatch):
             "title": "Test",
             "location": "Here",
             "organization": "Org",
-            "occurrences": [{
-                "dtstart_utc": "2026-12-01T18:00:00+00:00",
-                "dtend_utc": "2026-12-01T20:00:00+00:00",
-                "duration": None,
-                "tz": "America/Toronto",
-            }],
+            "occurrences": [
+                {
+                    "dtstart_utc": "2026-12-01T18:00:00+00:00",
+                    "dtend_utc": "2026-12-01T20:00:00+00:00",
+                    "duration": None,
+                    "tz": "America/Toronto",
+                }
+            ],
         },
     )
     assert resp.status_code == 201
@@ -107,6 +113,7 @@ def test_update_event_admin_allowed(admin_client, monkeypatch):
     monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
 
     from schemas.user import UserResponse
+
     admin_db_user = UserResponse(
         id="00000000-0000-0000-0000-000000000000",
         email=ADMIN_USER["email"],
@@ -115,7 +122,10 @@ def test_update_event_admin_allowed(admin_client, monkeypatch):
         updated_at=datetime.now(timezone.utc),
     )
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=admin_db_user))
+
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=admin_db_user)
+    )
 
     resp = admin_client.patch("/events/1", json={"title": "Admin Fix"})
     assert resp.status_code == 200
@@ -395,6 +405,7 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
 def test_update_past_event_rejected(authenticated_client, monkeypatch):
     """PATCH to an already-past event returns 400 / validation error."""
     from datetime import datetime, timedelta, timezone
+
     from core.exceptions import ValidationError
 
     past = datetime.now(timezone.utc) - timedelta(days=2)
@@ -405,7 +416,9 @@ def test_update_past_event_rejected(authenticated_client, monkeypatch):
 
     # Drive the service call directly so we get the ValidationError
     try:
-        event_service.update_event(1, type("D", (), {"model_dump": lambda *_, **__: {"title": "x"}})())
+        event_service.update_event(
+            1, type("D", (), {"model_dump": lambda *_, **__: {"title": "x"}})()
+        )
     except ValidationError:
         pass
     else:

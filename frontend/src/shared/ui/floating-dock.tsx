@@ -1,26 +1,19 @@
-"use client";
-/**
- * Note: Use position fixed according to your needs
- * Desktop navbar is better positioned at the bottom
- * Mobile navbar is better positioned at bottom right.
- **/
-
 import { cn } from "@/shared/lib/utils";
+import type { ReactNode } from "react";
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import type { MotionValue } from "motion/react";
 import {
   AnimatePresence,
-  MotionValue,
   motion,
   useMotionValue,
   useSpring,
   useTransform,
 } from "motion/react";
 
-import { Link } from "react-router-dom";
-import { useRef, useState } from "react";
-
 export interface FloatingDockItem {
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   href?: string;
   onClick?: () => void;
   isActive?: boolean;
@@ -64,7 +57,7 @@ function IconContainer({
   mouseX,
   item,
 }: {
-  mouseX: MotionValue;
+  mouseX: MotionValue<number>;
   item: FloatingDockItem;
 }) {
   const { title, icon, href, onClick, isActive } = item;

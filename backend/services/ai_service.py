@@ -15,8 +15,8 @@ import openai
 from openai import OpenAI
 
 from core.cache import TTLCache
-from core.constants import EVENT_CATEGORIES
 from core.config import settings
+from core.constants import EVENT_CATEGORIES
 from schemas.event import normalize_category
 
 log = logging.getLogger(__name__)
@@ -44,14 +44,32 @@ _daily_ai_lock = threading.Lock()
 # Domain lists shared across prompt templates (DRY — H9/H10)
 # ---------------------------------------------------------------------------
 LOCATIONS = (
-    "SLC", "PAC", "Library", "E7 Building", "DC Building",
-    "Arts Building", "MC Building", "PAC Studio", "Campus Loop",
+    "SLC",
+    "PAC",
+    "Library",
+    "E7 Building",
+    "DC Building",
+    "Arts Building",
+    "MC Building",
+    "PAC Studio",
+    "Campus Loop",
 )
 
 FOODS = (
-    "Pizza", "Snacks", "Drinks", "Sandwiches", "Salad", "Dessert",
-    "Vegan", "Gluten-free", "BBQ", "Candy", "Energy Bars", "Water",
-    "International Cuisine", "Catering",
+    "Pizza",
+    "Snacks",
+    "Drinks",
+    "Sandwiches",
+    "Salad",
+    "Dessert",
+    "Vegan",
+    "Gluten-free",
+    "BBQ",
+    "Candy",
+    "Energy Bars",
+    "Water",
+    "International Cuisine",
+    "Catering",
 )
 
 # Lookup sets for O(1) membership checks in validate_event_response.
@@ -301,7 +319,10 @@ def enforce_daily_ai_budget(user_id: str, limit: int = DAILY_AI_LIMIT) -> None:
         current = _daily_ai_cache.get(key) or 0
         if current >= limit:
             log.warning(
-                "User %s exceeded daily AI budget (%d/%d)", user_id, current, limit,
+                "User %s exceeded daily AI budget (%d/%d)",
+                user_id,
+                current,
+                limit,
             )
             raise AIServiceError(
                 f"Daily AI request limit ({limit}) reached. Please try again tomorrow.",

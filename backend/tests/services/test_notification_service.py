@@ -58,9 +58,7 @@ def test_is_enabled_explicit_row_returns_value(fake_sb, patch_sb):
     patch_sb("services.notification_service")
     fake_sb.set_response(data=[{"enabled": False}])
 
-    assert notification_service.is_enabled(
-        "user-uuid", NOTIFICATION_TYPE_MORNING_DIGEST
-    ) is False
+    assert notification_service.is_enabled("user-uuid", NOTIFICATION_TYPE_MORNING_DIGEST) is False
 
 
 def test_set_preferences_upserts_with_conflict_key(fake_sb, patch_sb):
@@ -87,9 +85,15 @@ def test_set_preferences_upserts_with_conflict_key(fake_sb, patch_sb):
 def test_get_preferences_merges_default_for_missing_types(fake_sb, patch_sb):
     """Types with no row in the table come back as defaults, not omitted."""
     patch_sb("services.notification_service")
-    fake_sb.set_response(data=[
-        {"notification_type": NOTIFICATION_TYPE_MORNING_DIGEST, "enabled": False, "updated_at": None},
-    ])
+    fake_sb.set_response(
+        data=[
+            {
+                "notification_type": NOTIFICATION_TYPE_MORNING_DIGEST,
+                "enabled": False,
+                "updated_at": None,
+            },
+        ]
+    )
 
     prefs = notification_service.get_preferences("user-uuid")
 
@@ -265,12 +269,14 @@ def test_enqueue_event_change_missing_event_returns_zero(fake_sb, patch_sb):
 def test_enqueue_event_change_no_saved_users_returns_zero(fake_sb, patch_sb):
     """Event exists but no one saved it → no fanout."""
     patch_sb("services.notification_service")
-    fake_sb.queue_responses([
-        # 1: fetch event
-        [{"title": "T", "location": "L", "dtstart_utc": None, "status": "CANCELLED"}],
-        # 2: user_saved_events lookup — empty
-        [],
-    ])
+    fake_sb.queue_responses(
+        [
+            # 1: fetch event
+            [{"title": "T", "location": "L", "dtstart_utc": None, "status": "CANCELLED"}],
+            # 2: user_saved_events lookup — empty
+            [],
+        ]
+    )
 
     diff = {"status": {"old": "CONFIRMED", "new": "CANCELLED"}}
     assert notification_service.enqueue_event_change(42, diff) == 0
@@ -371,9 +377,7 @@ def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
     )
 
     def fake_fetch(*, school, start_utc, end_utc):
-        captured.update(
-            {"school": school, "start_utc": start_utc, "end_utc": end_utc}
-        )
+        captured.update({"school": school, "start_utc": start_utc, "end_utc": end_utc})
         return [event]
 
     monkeypatch.setattr(notification_service, "_fetch_new_events_added_since", fake_fetch)

@@ -6,7 +6,6 @@ from core.rate_limit import (
     ai_rate_limiter,
 )
 
-
 # ---------------------------------------------------------------------------
 # Unauthenticated requests must be rejected
 # ---------------------------------------------------------------------------
@@ -263,6 +262,7 @@ def test_daily_ai_budget_exceeded_returns_502(authenticated_client, monkeypatch)
     # the real DAILY_AI_LIMIT (100).
     def _always_block(user_id: str, limit: int = ai_service.DAILY_AI_LIMIT) -> None:
         from core.exceptions import AIServiceError
+
         raise AIServiceError(
             "Daily AI request limit reached. Please try again tomorrow.",
             error_kind="api",

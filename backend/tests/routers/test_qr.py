@@ -12,7 +12,7 @@ from main import app
 from schemas.qr_code import QrCodeRedirect, QrCodeResponse
 from schemas.user import UserResponse
 from services import qr_code_service
-from tests.conftest import FAKE_USER, ADMIN_USER, OTHER_USER
+from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
 def _mock_qr(**overrides) -> QrCodeResponse:
@@ -71,7 +71,9 @@ def test_resolve_qr_404(client):
 
 def test_resolve_qr_records_scan_and_returns_config(client):
     """GET /qr/{id} records a scan and returns redirect config."""
-    mock_qr = _mock_qr(id="test-qr-1", destination_type="custom-url", destination_id="https://example.com")
+    mock_qr = _mock_qr(
+        id="test-qr-1", destination_type="custom-url", destination_id="https://example.com"
+    )
 
     def mock_get(qr_code_id):
         return mock_qr if qr_code_id == "test-qr-1" else None
@@ -94,7 +96,9 @@ def test_resolve_qr_records_scan_and_returns_config(client):
 
 def test_resolve_inactive_qr_requires_location(client):
     """First scan on an inactive poster returns 400 until lat/lon is provided."""
-    mock_qr = _mock_qr(id="inactive-1", destination_type="event", destination_id="42", is_active=False)
+    mock_qr = _mock_qr(
+        id="inactive-1", destination_type="event", destination_id="42", is_active=False
+    )
 
     def mock_get(qr_code_id):
         return mock_qr if qr_code_id == "inactive-1" else None
@@ -111,7 +115,9 @@ def test_resolve_inactive_qr_requires_location(client):
 
 def test_resolve_inactive_qr_with_location_activates_and_returns_config(client):
     """First scan with lat/lon activates poster and returns redirect config."""
-    mock_qr = _mock_qr(id="inactive-2", destination_type="event", destination_id="99", is_active=False)
+    mock_qr = _mock_qr(
+        id="inactive-2", destination_type="event", destination_id="99", is_active=False
+    )
     redirect = QrCodeRedirect(
         destination_type="event",
         destination_id=99,
@@ -274,7 +280,9 @@ def test_create_poster_refuses_to_hijack_existing_id(admin_client, monkeypatch):
     # create_qr_code performs the existence check itself by calling
     # get_qr_code_by_id — mock it to return the pre-existing row.
     monkeypatch.setattr(
-        qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing),
+        qr_code_service,
+        "get_qr_code_by_id",
+        MagicMock(return_value=existing),
     )
 
     resp = admin_client.post(
@@ -401,7 +409,9 @@ def test_create_poster_requires_auth(client):
 
 def test_update_poster_requires_auth(client):
     """PATCH /qr/{id} returns 401 without auth."""
-    resp = client.patch("/qr/test-qr", json={"id": "test-qr", "name": "X", "destination_type": "custom-url"})
+    resp = client.patch(
+        "/qr/test-qr", json={"id": "test-qr", "name": "X", "destination_type": "custom-url"}
+    )
     assert resp.status_code == 401
 
 
@@ -434,12 +444,18 @@ def test_list_qr_codes_non_admin_rejected(authenticated_client):
 
 def test_list_qr_codes_admin_sees_all(admin_client, monkeypatch):
     """Admin sees all QR codes (no created_by filter)."""
-    all_qrs = [_mock_qr(created_by=FAKE_USER["id"]), _mock_qr(id="other-qr", created_by=OTHER_USER["id"])]
+    all_qrs = [
+        _mock_qr(created_by=FAKE_USER["id"]),
+        _mock_qr(id="other-qr", created_by=OTHER_USER["id"]),
+    ]
     mock_list = MagicMock(return_value=(all_qrs, 2))
     monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user())
+    )
 
     resp = admin_client.get("/qr/")
     assert resp.status_code == 200
@@ -463,7 +479,10 @@ def test_list_scans_admin_sees_all(admin_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user())
+    )
 
     resp = admin_client.get("/qr/scans")
     assert resp.status_code == 200
@@ -505,7 +524,10 @@ def test_admin_can_update_non_owned_qr(admin_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "update_qr_code", MagicMock(return_value=updated))
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user())
+    )
 
     resp = admin_client.patch(
         "/qr/test-qr",
@@ -526,7 +548,10 @@ def test_admin_can_delete_non_owned_qr(admin_client, monkeypatch):
     monkeypatch.setattr(qr_code_service, "delete_qr_code", MagicMock())
 
     from services import user_service
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user()))
+
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=_admin_db_user())
+    )
 
     resp = admin_client.delete("/qr/test-qr")
     assert resp.status_code == 204
@@ -537,7 +562,9 @@ def test_admin_can_delete_non_owned_qr(admin_client, monkeypatch):
 
 def test_qr_scan_rate_limit_triggers_429(client):
     """Exceeding the QR scan rate limit returns 429 with Retry-After header."""
-    mock_qr = _mock_qr(id="rate-test", destination_type="custom-url", destination_id="https://example.com")
+    mock_qr = _mock_qr(
+        id="rate-test", destination_type="custom-url", destination_id="https://example.com"
+    )
     original_get = qr_code_service.get_qr_code_by_id
     original_record = qr_code_service.record_scan
     qr_code_service.get_qr_code_by_id = MagicMock(return_value=mock_qr)
@@ -564,7 +591,9 @@ def test_qr_scan_rate_limit_triggers_429(client):
 
 def test_qr_scan_rate_limit_allows_within_limit(client):
     """Requests within the rate limit proceed normally."""
-    mock_qr = _mock_qr(id="ok-test", destination_type="custom-url", destination_id="https://example.com")
+    mock_qr = _mock_qr(
+        id="ok-test", destination_type="custom-url", destination_id="https://example.com"
+    )
     original_get = qr_code_service.get_qr_code_by_id
     original_record = qr_code_service.record_scan
     qr_code_service.get_qr_code_by_id = MagicMock(return_value=mock_qr)

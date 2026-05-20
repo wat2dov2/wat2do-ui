@@ -101,9 +101,7 @@ def extract_events_from_post(
         post_local = now_local
 
     semester_end = current_semester_end(school, now=now_local)
-    semester_line = (
-        f"Current semester end date: {semester_end}\n" if semester_end else ""
-    )
+    semester_line = f"Current semester end date: {semester_end}\n" if semester_end else ""
 
     categories_str = "\n".join(f"- {cat}" for cat in EVENT_CATEGORIES)
     prompt = _build_prompt(
@@ -170,7 +168,7 @@ def _parse_model_json(raw: str):
     """
     s = raw
     if s.startswith("```json"):
-        s = s[len("```json"):]
+        s = s[len("```json") :]
     elif s.startswith("```"):
         s = s[3:]
     if s.endswith("```"):
@@ -231,7 +229,7 @@ School context: This post is from {school}. Use this to guide location and timez
 Current context: Today is {current_day}, {current_date}
 Post was created on: {post_day}, {post_date} at {post_time}
 {semester_line}
-Caption: {caption_text or ''}
+Caption: {caption_text or ""}
 
 Images (0-indexed):
 {image_list_str}
@@ -350,12 +348,14 @@ def _clean_event(event: dict) -> dict:
         for occ in occurrences:
             if not isinstance(occ, dict):
                 continue
-            cleaned_occ.append({
-                "dtstart_utc": occ.get("dtstart_utc", "") or "",
-                "dtend_utc": occ.get("dtend_utc", "") or "",
-                "duration": occ.get("duration", "") or "",
-                "tz": occ.get("tz", "") or "",
-            })
+            cleaned_occ.append(
+                {
+                    "dtstart_utc": occ.get("dtstart_utc", "") or "",
+                    "dtend_utc": occ.get("dtend_utc", "") or "",
+                    "duration": occ.get("duration", "") or "",
+                    "tz": occ.get("tz", "") or "",
+                }
+            )
     cleaned_occ.sort(key=lambda x: x.get("dtstart_utc", ""))
     event["occurrences"] = cleaned_occ
     return event

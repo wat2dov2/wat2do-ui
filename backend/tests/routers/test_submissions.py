@@ -4,8 +4,7 @@ from unittest.mock import MagicMock
 from schemas.submission import SubmissionResponse
 from schemas.user import UserResponse
 from services import submission_service, user_service
-from tests.conftest import FAKE_USER, ADMIN_USER
-
+from tests.conftest import ADMIN_USER, FAKE_USER
 
 FAKE_DB_USER = UserResponse(
     id="00000000-0000-0000-0000-000000000001",
@@ -38,12 +37,14 @@ _VALID_EVENT_DATA = {
     "title": "X",
     "location": "Loc",
     "organization": "Org",
-    "occurrences": [{
-        "dtstart_utc": "2026-12-01T18:00:00+00:00",
-        "dtend_utc": "2026-12-01T20:00:00+00:00",
-        "duration": None,
-        "tz": "America/Toronto",
-    }],
+    "occurrences": [
+        {
+            "dtstart_utc": "2026-12-01T18:00:00+00:00",
+            "dtend_utc": "2026-12-01T20:00:00+00:00",
+            "duration": None,
+            "tz": "America/Toronto",
+        }
+    ],
 }
 
 
@@ -56,7 +57,9 @@ def test_create_submission_requires_auth(client):
 def test_create_submission_authenticated(authenticated_client, monkeypatch):
     """POST /submissions/ with auth returns 201."""
     submission = _mock_submission()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER))
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
+    )
     monkeypatch.setattr(submission_service, "create_submission", MagicMock(return_value=submission))
 
     resp = authenticated_client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
@@ -67,6 +70,7 @@ def test_create_submission_authenticated(authenticated_client, monkeypatch):
 # ---------------------------------------------------------------------------
 # GET /submissions/ -- requires get_admin_user, returns paginated response
 # ---------------------------------------------------------------------------
+
 
 def test_list_submissions_requires_auth(client):
     """GET /submissions/ without auth returns 401."""
@@ -83,7 +87,8 @@ def test_list_submissions_forbidden_for_non_admin(authenticated_client):
 def test_list_submissions_admin(admin_client, monkeypatch):
     """GET /submissions/ as admin returns paginated 200."""
     monkeypatch.setattr(
-        submission_service, "get_submissions",
+        submission_service,
+        "get_submissions",
         MagicMock(return_value=([_mock_submission()], 1)),
     )
 
@@ -133,6 +138,7 @@ def test_list_submissions_default_pagination(admin_client, monkeypatch):
 # GET /submissions/{id} -- requires get_admin_user
 # ---------------------------------------------------------------------------
 
+
 def test_get_submission_requires_auth(client):
     """GET /submissions/{id} without auth returns 401."""
     resp = client.get("/submissions/sub-001")
@@ -147,7 +153,9 @@ def test_get_submission_forbidden_for_non_admin(authenticated_client):
 
 def test_get_submission_admin(admin_client, monkeypatch):
     """GET /submissions/{id} as admin returns 200."""
-    monkeypatch.setattr(submission_service, "get_submission_by_id", MagicMock(return_value=_mock_submission()))
+    monkeypatch.setattr(
+        submission_service, "get_submission_by_id", MagicMock(return_value=_mock_submission())
+    )
 
     resp = admin_client.get("/submissions/sub-001")
     assert resp.status_code == 200
@@ -157,6 +165,7 @@ def test_get_submission_admin(admin_client, monkeypatch):
 # ---------------------------------------------------------------------------
 # PATCH /submissions/{id} -- requires get_admin_user
 # ---------------------------------------------------------------------------
+
 
 def test_update_submission_requires_auth(client):
     """PATCH /submissions/{id} without auth returns 401."""
@@ -183,6 +192,7 @@ def test_update_submission_admin(admin_client, monkeypatch):
 # ---------------------------------------------------------------------------
 # DELETE /submissions/{id} -- requires get_admin_user
 # ---------------------------------------------------------------------------
+
 
 def test_delete_submission_requires_auth(client):
     """DELETE /submissions/{id} without auth returns 401."""

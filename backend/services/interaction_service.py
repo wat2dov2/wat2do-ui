@@ -33,12 +33,14 @@ log = logging.getLogger(__name__)
 # (and ``unsave``) types.  High-signal types (save/click/share/detail_view)
 # feed popularity + collaborative-filtering scoring and would otherwise let
 # a rotating-IP attacker inflate any event's ranking for free (audit I18).
-_ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset({
-    INTERACTION_SAVE,
-    INTERACTION_CLICK,
-    INTERACTION_SHARE,
-    INTERACTION_DETAIL_VIEW,
-})
+_ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
+    {
+        INTERACTION_SAVE,
+        INTERACTION_CLICK,
+        INTERACTION_SHARE,
+        INTERACTION_DETAIL_VIEW,
+    }
+)
 
 
 def record_interactions(
@@ -51,14 +53,16 @@ def record_interactions(
         return 0
     rows = []
     for item in interactions:
-        rows.append({
-            "id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "session_id": session_id,
-            "event_id": item.event_id,
-            "interaction_type": item.interaction_type,
-            "metadata": item.metadata,
-        })
+        rows.append(
+            {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "session_id": session_id,
+                "event_id": item.event_id,
+                "interaction_type": item.interaction_type,
+                "metadata": item.metadata,
+            }
+        )
     r = get_sb().table(USER_INTERACTIONS).insert(rows).execute()
     return len(r.data) if r.data else 0
 
@@ -121,7 +125,8 @@ def record_interactions_batch(
     # only defensible posture is to reject these types outright.
     if user_id is None:
         filtered = [
-            item for item in interactions
+            item
+            for item in interactions
             if item.interaction_type not in _ANON_DISALLOWED_INTERACTION_TYPES
         ]
         dropped = len(interactions) - len(filtered)
@@ -184,14 +189,17 @@ def get_user_interaction_counts(user_ids: list[str]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for row in iter_all_pages(
         lambda offset, ps: (
-            get_sb()
-            .table(USER_INTERACTIONS)
-            .select("user_id")
-            .in_("user_id", user_ids)
-            .order("created_at")
-            .range(offset, offset + ps - 1)
-            .execute()
-        ).data or [],
+            (
+                get_sb()
+                .table(USER_INTERACTIONS)
+                .select("user_id")
+                .in_("user_id", user_ids)
+                .order("created_at")
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data
+            or []
+        ),
     ):
         uid = row["user_id"]
         counts[uid] = counts.get(uid, 0) + 1
@@ -226,18 +234,23 @@ def check_duplicate_interactions(
     # default max-rows limit, which would cause the per-event and global
     # caps to stop firing.
     try:
-        existing: list[dict] = list(iter_all_pages(
-            lambda offset, ps: (
-                get_sb()
-                .table(USER_INTERACTIONS)
-                .select("event_id, interaction_type")
-                .eq("user_id", user_id)
-                .gte("created_at", cutoff)
-                .order("created_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
-        ))
+        existing: list[dict] = list(
+            iter_all_pages(
+                lambda offset, ps: (
+                    (
+                        get_sb()
+                        .table(USER_INTERACTIONS)
+                        .select("event_id, interaction_type")
+                        .eq("user_id", user_id)
+                        .gte("created_at", cutoff)
+                        .order("created_at")
+                        .range(offset, offset + ps - 1)
+                        .execute()
+                    ).data
+                    or []
+                ),
+            )
+        )
     except Exception as e:
         log.error("Dedup check failed, rejecting batch to prevent gaming: %s", e)
         return []
@@ -255,8 +268,11 @@ def check_duplicate_interactions(
         if total_in_window >= MAX_USER_INTERACTIONS_PER_WINDOW:
             log.warning(
                 "Dropping interaction user=%s event=%s type=%s — global cap reached (%d/%d)",
-                user_id, item.event_id, item.interaction_type,
-                total_in_window, MAX_USER_INTERACTIONS_PER_WINDOW,
+                user_id,
+                item.event_id,
+                item.interaction_type,
+                total_in_window,
+                MAX_USER_INTERACTIONS_PER_WINDOW,
             )
             continue
 
@@ -266,7 +282,10 @@ def check_duplicate_interactions(
         if current >= MAX_DUPLICATE_INTERACTIONS:
             log.warning(
                 "Dropping duplicate interaction user=%s event=%s type=%s (count=%d)",
-                user_id, item.event_id, item.interaction_type, current,
+                user_id,
+                item.event_id,
+                item.interaction_type,
+                current,
             )
             continue
 

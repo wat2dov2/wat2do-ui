@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Users } from "lucide-react";
 import { Button } from "@/shared/ui/button";

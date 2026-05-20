@@ -1,9 +1,7 @@
-import React, { useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DialogClose,
-  DialogHeader,
-  DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";

@@ -2,7 +2,6 @@ from pydantic import BaseModel, EmailStr, Field
 
 from core.constants import MAX_FULL_NAME_LENGTH, MAX_USERNAME_LENGTH
 
-
 # A6/A7: Password constraints protect the backend even when the frontend
 # validation is bypassed (e.g. direct API calls).  Supabase enforces its own
 # minimum (currently 6) but that setting can drift — enforce here for defence

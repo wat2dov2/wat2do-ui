@@ -1,4 +1,4 @@
-# DEPLOY.md
+# Deploy
 
 The single doc you need to ship wat2do v2. Replaces the seven journal-style
 docs the deploy-readiness PR originally produced (audit, security audit,

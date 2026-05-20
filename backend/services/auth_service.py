@@ -4,15 +4,12 @@ import uuid
 from typing import NoReturn
 
 from postgrest.exceptions import APIError
-from supabase import create_client
 from supabase_auth.errors import AuthApiError
 
 from core.allowed_emails import get_school_for_email, is_email_allowed
 from core.auth import decode_jwt_payload
 from core.config import settings
 from core.constants import PG_UNIQUE_VIOLATION
-from core.exceptions import AuthenticationError, AuthorizationError, ConflictError, ServiceError, ValidationError
-from core.database import get_sb
 from core.errors import (
     EMAIL_NOT_ALLOWED,
     EMAIL_OR_USERNAME_TAKEN,
@@ -22,15 +19,23 @@ from core.errors import (
     SESSION_REFRESH_FAILED,
     SIGNUP_FAILED,
 )
+from core.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    ConflictError,
+    ServiceError,
+    ValidationError,
+)
 from core.logging import logger
 from core.tables import USERS
 from schemas.auth import (
-    SignupRequest,
-    SignupResponse,
     LoginRequest,
     ResetPasswordRequest,
+    SignupRequest,
+    SignupResponse,
     TokenResponse,
 )
+from supabase import create_client
 
 
 def _sanitize_for_log(value: str | None) -> str:
@@ -71,6 +76,7 @@ class AuthService:
         if self._auth_eager is not None:
             return self._auth_eager
         from core.database import supabase as _sb
+
         return _sb.auth
 
     @property
@@ -78,6 +84,7 @@ class AuthService:
         if self._db_eager is not None:
             return self._db_eager
         from core.database import get_sb
+
         return get_sb()
 
     @staticmethod
@@ -110,7 +117,10 @@ class AuthService:
             res = self._auth.sign_up({"email": data.email, "password": data.password})
         except AuthApiError as e:
             self._handle_auth_error(
-                e, "Signup failed for %s" % safe_email, ValidationError, SIGNUP_FAILED,
+                e,
+                "Signup failed for %s" % safe_email,
+                ValidationError,
+                SIGNUP_FAILED,
             )
 
         if not res.user:
@@ -185,13 +195,13 @@ class AuthService:
 
     def login(self, data: LoginRequest) -> AuthResult:
         try:
-            res = self._auth.sign_in_with_password(
-                {"email": data.email, "password": data.password}
-            )
+            res = self._auth.sign_in_with_password({"email": data.email, "password": data.password})
         except AuthApiError as e:
             self._handle_auth_error(
-                e, "Login failed for %s" % _sanitize_for_log(data.email),
-                AuthenticationError, INVALID_EMAIL_OR_PASSWORD,
+                e,
+                "Login failed for %s" % _sanitize_for_log(data.email),
+                AuthenticationError,
+                INVALID_EMAIL_OR_PASSWORD,
             )
 
         if not res.session:
@@ -211,8 +221,10 @@ class AuthService:
             res = self._auth.refresh_session(refresh_token)
         except AuthApiError as e:
             self._handle_auth_error(
-                e, "Token refresh failed",
-                AuthenticationError, SESSION_REFRESH_FAILED,
+                e,
+                "Token refresh failed",
+                AuthenticationError,
+                SESSION_REFRESH_FAILED,
             )
 
         if not res.session:
@@ -232,8 +244,10 @@ class AuthService:
             self._db.auth.admin.sign_out(access_token)
         except AuthApiError as e:
             self._handle_auth_error(
-                e, "Logout error",
-                AuthenticationError, INVALID_OR_EXPIRED_TOKEN,
+                e,
+                "Logout error",
+                AuthenticationError,
+                INVALID_OR_EXPIRED_TOKEN,
             )
 
     def forgot_password(self, email: str) -> None:
@@ -247,7 +261,8 @@ class AuthService:
             # "If that email exists ..." response to prevent enumeration.
             logger.warning(
                 "Password reset request failed for %s: %s",
-                _sanitize_for_log(email), e.message,
+                _sanitize_for_log(email),
+                e.message,
             )
 
     def reset_password(self, data: ResetPasswordRequest) -> AuthResult | None:
@@ -300,13 +315,13 @@ class AuthService:
 
         # 3) Apply the password change via the admin client.
         try:
-            self._db.auth.admin.update_user_by_id(
-                user_id, {"password": data.new_password}
-            )
+            self._db.auth.admin.update_user_by_id(user_id, {"password": data.new_password})
         except AuthApiError as e:
             self._handle_auth_error(
-                e, "Password reset failed for user %s" % user_id,
-                ValidationError, PASSWORD_RESET_FAILED,
+                e,
+                "Password reset failed for user %s" % user_id,
+                ValidationError,
+                PASSWORD_RESET_FAILED,
             )
 
         # 4) Revoke ALL existing sessions for this user so any stolen refresh
@@ -322,9 +337,7 @@ class AuthService:
             )
         return None
 
-    def _reset_password_with_supabase_session(
-        self, data: ResetPasswordRequest
-    ) -> AuthResult:
+    def _reset_password_with_supabase_session(self, data: ResetPasswordRequest) -> AuthResult:
         auth_client = create_client(settings.supabase_url, settings.supabase_key).auth
 
         try:
@@ -343,8 +356,10 @@ class AuthService:
             auth_client.update_user({"password": data.new_password})
         except AuthApiError as e:
             self._handle_auth_error(
-                e, "Password reset failed via recovery session",
-                ValidationError, PASSWORD_RESET_FAILED,
+                e,
+                "Password reset failed via recovery session",
+                ValidationError,
+                PASSWORD_RESET_FAILED,
             )
 
         try:

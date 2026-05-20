@@ -22,9 +22,7 @@ class InteractionCreate(BaseModel):
     @classmethod
     def _interaction_type_allowed(cls, v: str) -> str:
         if v not in INTERACTION_TYPES:
-            raise ValueError(
-                f"interaction_type must be one of: {', '.join(INTERACTION_TYPES)}"
-            )
+            raise ValueError(f"interaction_type must be one of: {', '.join(INTERACTION_TYPES)}")
         return v
 
     @field_validator("metadata")
@@ -65,6 +63,7 @@ class InteractionBatch(BaseModel):
 
 class InteractionMatrixRow(BaseModel):
     """Aggregated (user, event) interaction score for collaborative filtering."""
+
     user_id: str
     event_id: int
     score: float
@@ -72,6 +71,7 @@ class InteractionMatrixRow(BaseModel):
 
 class EventPopularity(BaseModel):
     """Event ranked by weighted interaction count."""
+
     event_id: int
     score: float
 

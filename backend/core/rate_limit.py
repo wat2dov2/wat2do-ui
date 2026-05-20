@@ -206,9 +206,7 @@ class RateLimiter:
         self._last_prune = now
         cutoff = now - self.window_seconds
         stale_keys = [
-            k
-            for k, ts_list in self._requests.items()
-            if not ts_list or ts_list[-1] <= cutoff
+            k for k, ts_list in self._requests.items() if not ts_list or ts_list[-1] <= cutoff
         ]
         for k in stale_keys:
             del self._requests[k]
@@ -268,9 +266,11 @@ class RateLimiter:
             _rl: None = Depends(ai_limiter.dependency(key_func=_user_id_key))
         """
         if key_func is None:
+
             async def _rate_limit_dep(request: Request) -> None:
                 self.check(get_client_ip(request))
         else:
+
             async def _rate_limit_dep(key: str = Depends(key_func)) -> None:
                 self.check(key)
 

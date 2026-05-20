@@ -4,25 +4,25 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_authorized_resource, get_db_user
-from schemas.user import UserResponse
-from core.exceptions import get_or_404
 from core.constants import (
     DEFAULT_LIST_LIMIT,
-    MAX_LIST_LIMIT,
     MAX_EVENT_CATEGORY_LENGTH,
     MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_EVENT_SCHOOL_LENGTH,
+    MAX_LIST_LIMIT,
     MAX_SEARCH_QUERY_LENGTH,
 )
+from core.errors import EVENT_NOT_FOUND
+from core.exceptions import get_or_404
 from schemas.event import (
     EventCreate,
-    EventUpdate,
-    EventResponse,
     EventPublicResponse,
+    EventResponse,
     EventSummaryResponse,
+    EventUpdate,
     LatestEventResponse,
 )
-from core.errors import EVENT_NOT_FOUND
+from schemas.user import UserResponse
 from services import event_service, notification_service
 
 log = logging.getLogger(__name__)
@@ -33,7 +33,9 @@ router = APIRouter(prefix="/events", tags=["events"])
 def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventResponse:
     """Fetch an event by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
     return get_authorized_resource(
-        lambda: event_service.get_event(event_id), EVENT_NOT_FOUND, db_user,
+        lambda: event_service.get_event(event_id),
+        EVENT_NOT_FOUND,
+        db_user,
     )
 
 
@@ -112,9 +114,7 @@ def update_event(
     db_user: UserResponse = Depends(get_db_user),
 ):
     old_event = _get_event_or_404_authorized(event_id, db_user)
-    updated_event = get_or_404(
-        event_service.update_event(event_id, data), EVENT_NOT_FOUND
-    )
+    updated_event = get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
     # Event-change notifications — fires on material diff only; routes stay
     # ignorant of what "material" means (that's compute_event_diff). Wrap
     # in try/except so a notification failure never breaks the update.
@@ -123,9 +123,7 @@ def update_event(
         try:
             notification_service.enqueue_event_change(event_id, diff)
         except Exception as e:
-            log.warning(
-                "enqueue_event_change failed event=%s: %s", event_id, e
-            )
+            log.warning("enqueue_event_change failed event=%s: %s", event_id, e)
     return updated_event
 
 

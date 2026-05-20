@@ -1,7 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { QRCodeSVG } from "qrcode.react";
-import { Download } from "lucide-react";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { RadioOptionGroup } from "@/shared/ui/radio-option-group";
 import { QRCodePreview } from "@/shared/ui/qrcode-preview";
@@ -39,8 +37,7 @@ import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { useCreateQRCodeForm } from "@/features/qrcode/hooks/useCreateQRCodeForm";
 import { useCreatePoster } from "@/features/qrcode/hooks/useCreatePoster";
-import { generateQRCodeUrl, downloadQRCodeAsPNG } from "@/shared/utils/qrGenerator";
-import { QR_CANVAS_SIZE } from "@/features/qrcode/constants";
+import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
 
 interface CreateQRCodeModalProps {
   isOpen: boolean;
@@ -113,25 +110,6 @@ function CreateQRCodeModalContent({
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleDownload = () => {
-    if (!form.qrCodeId) return;
-    const qrUrl = generateQRCodeUrl(form.qrCodeId);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = QR_CANVAS_SIZE;
-      canvas.height = QR_CANVAS_SIZE;
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, QR_CANVAS_SIZE, QR_CANVAS_SIZE);
-      ctx.drawImage(img, 0, 0);
-      const dataUrl = canvas.toDataURL("image/png");
-      downloadQRCodeAsPNG(dataUrl, form.formData.name.trim() || t("qrCode.defaultFileName"));
-    };
   };
 
   const qrUrl = form.qrCodeId ? generateQRCodeUrl(form.qrCodeId) : "";

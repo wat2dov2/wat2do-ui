@@ -13,8 +13,8 @@ Usage:
 
 import argparse
 import logging
-import sys
 import os
+import sys
 import time
 
 # Add backend root to path so imports work when run from repo root
@@ -25,19 +25,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import core.logging  # noqa: F401 — triggers basicConfig for standalone execution
-
 from services.recommendation_service import batch_runner
+from services.recommender.config import DEFAULT_LAMBDA, DEFAULT_LIMIT, EVAL_K
 from services.recommender.evaluation import evaluate_all_users
-from services.recommender.config import DEFAULT_LIMIT, DEFAULT_LAMBDA, EVAL_K
 
 log = logging.getLogger(__name__)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Compute recommendations for all users")
-    parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="Max recommendations per user")
-    parser.add_argument("--lambda", type=float, default=DEFAULT_LAMBDA, dest="lambda_param",
-                        help="MMR lambda (0=diversity, 1=relevance)")
+    parser.add_argument(
+        "--limit", type=int, default=DEFAULT_LIMIT, help="Max recommendations per user"
+    )
+    parser.add_argument(
+        "--lambda",
+        type=float,
+        default=DEFAULT_LAMBDA,
+        dest="lambda_param",
+        help="MMR lambda (0=diversity, 1=relevance)",
+    )
     parser.add_argument("--skip-eval", action="store_true", help="Skip evaluation step")
     args = parser.parse_args()
 

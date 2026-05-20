@@ -23,14 +23,17 @@ def get_saved_event_ids(user_id: str) -> list[int]:
     """Return event IDs saved by this user."""
     rows = fetch_all_pages(
         lambda offset, ps: (
-            get_sb()
-            .table(USER_SAVED_EVENTS)
-            .select("event_id")
-            .eq("user_id", user_id)
-            .order("saved_at", desc=True)
-            .range(offset, offset + ps - 1)
-            .execute()
-        ).data or [],
+            (
+                get_sb()
+                .table(USER_SAVED_EVENTS)
+                .select("event_id")
+                .eq("user_id", user_id)
+                .order("saved_at", desc=True)
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data
+            or []
+        ),
     )
     return [row["event_id"] for row in rows]
 
@@ -92,12 +95,7 @@ def save_event(user_id: str, event_id: int) -> SavedEventResponse:
         "user_id": user_id,
         "event_id": event_id,
     }
-    r = (
-        get_sb()
-        .table(USER_SAVED_EVENTS)
-        .insert(payload)
-        .execute()
-    )
+    r = get_sb().table(USER_SAVED_EVENTS).insert(payload).execute()
     if r.data:
         return SavedEventResponse.model_validate(r.data[0])
     log.warning(
@@ -127,16 +125,20 @@ def get_all_user_saves() -> list[UserEventPair]:
     Cached for CACHE_TTL_SECONDS so concurrent recommendation requests
     share one DB round-trip.
     """
+
     def _fetch_all_saves() -> list[UserEventPair]:
         rows = fetch_all_pages(
             lambda offset, ps: (
-                get_sb()
-                .table(USER_SAVED_EVENTS)
-                .select("user_id, event_id")
-                .order("saved_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
+                (
+                    get_sb()
+                    .table(USER_SAVED_EVENTS)
+                    .select("user_id, event_id")
+                    .order("saved_at")
+                    .range(offset, offset + ps - 1)
+                    .execute()
+                ).data
+                or []
+            ),
         )
         return [UserEventPair.model_validate(row) for row in rows]
 

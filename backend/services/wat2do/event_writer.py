@@ -54,7 +54,9 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
     if not location or not title:
         log.warning(
             "[%s] dropping event — missing required field(s): title=%r location=%r",
-            ig_handle, title, location,
+            ig_handle,
+            title,
+            location,
         )
         return "skipped"
 
@@ -68,7 +70,9 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
     if not future_occurrences:
         log.info(
             "[%s] all %d occurrences for %r are in the past — skipping",
-            ig_handle, len(occurrences), title,
+            ig_handle,
+            len(occurrences),
+            title,
         )
         return "skipped"
 
@@ -77,9 +81,7 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
     # against an actual upcoming date — passing the unfiltered list
     # could put ``occurrences[0]`` at a past dtstart and drive the
     # day-window check against a stale day with no relevant matches.
-    future_occurrence_dicts = [
-        o.model_dump(mode="json") for o in future_occurrences
-    ]
+    future_occurrence_dicts = [o.model_dump(mode="json") for o in future_occurrences]
     match = find_match(
         title=title,
         location=location,
@@ -90,7 +92,8 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
     if match is not None and match.kind == "duplicate":
         log.info(
             "[%s] cross-club duplicate of event id=%s — skipping",
-            ig_handle, match.event.get("id"),
+            ig_handle,
+            match.event.get("id"),
         )
         return "duplicate"
 
@@ -120,7 +123,9 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         existing_id = match.event.get("id")
         log.info(
             "[%s] same-club update on event id=%s for %r",
-            ig_handle, existing_id, title,
+            ig_handle,
+            existing_id,
+            title,
         )
         get_sb().table(EVENTS).update(event_row).eq("id", existing_id).execute()
         event_date_service.replace_occurrences(existing_id, future_occurrences)
@@ -142,7 +147,10 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
 
     log.info(
         "[%s] inserted event id=%s with %d occurrence(s) for %r",
-        ig_handle, new_id, len(future_occurrences), title,
+        ig_handle,
+        new_id,
+        len(future_occurrences),
+        title,
     )
     return "inserted"
 
@@ -162,12 +170,7 @@ def _resolve_organization(event: dict, *, ig_handle: str) -> str:
         return org
 
     rows = (
-        get_sb()
-        .table(CLUBS)
-        .select("club_name")
-        .eq("ig", ig_handle)
-        .limit(1)
-        .execute()
+        get_sb().table(CLUBS).select("club_name").eq("ig", ig_handle).limit(1).execute()
     ).data or []
     if rows:
         club_name = (rows[0].get("club_name") or "").strip()
@@ -182,12 +185,7 @@ def _resolve_club_type(ig_handle: str | None) -> str | None:
     if not ig_handle:
         return None
     rows = (
-        get_sb()
-        .table(CLUBS)
-        .select("club_type")
-        .eq("ig", ig_handle)
-        .limit(1)
-        .execute()
+        get_sb().table(CLUBS).select("club_type").eq("ig", ig_handle).limit(1).execute()
     ).data or []
     if not rows:
         return None
@@ -260,12 +258,14 @@ def _coerce_future_occurrences(occurrences: list[dict]) -> list[OccurrenceCreate
             continue
         dtend = _parse_iso(occ.get("dtend_utc"))
         try:
-            out.append(OccurrenceCreate(
-                dtstart_utc=dtstart,
-                dtend_utc=dtend,
-                duration=(occ.get("duration") or None),
-                tz=(occ.get("tz") or None),
-            ))
+            out.append(
+                OccurrenceCreate(
+                    dtstart_utc=dtstart,
+                    dtend_utc=dtend,
+                    duration=(occ.get("duration") or None),
+                    tz=(occ.get("tz") or None),
+                )
+            )
         except Exception as e:
             # OccurrenceCreate's validators reject dtend <= dtstart and a
             # few other shapes; one bad occurrence shouldn't drop the

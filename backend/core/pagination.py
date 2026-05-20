@@ -125,12 +125,11 @@ def iter_all_pages(
                     "yield more rows (query may be misconfigured)",
                     max_rows,
                 )
-                raise PaginationOverflowError(
-                    f"iter_all_pages exceeded max_rows={max_rows}"
-                )
+                raise PaginationOverflowError(f"iter_all_pages exceeded max_rows={max_rows}")
         if len(page) < page_size:
             break
         offset += page_size
+
 
 T = TypeVar("T")
 
@@ -140,7 +139,9 @@ class PaginationParams:
 
     def __init__(
         self,
-        page: int = Query(default=1, ge=1, le=MAX_PAGE_NUMBER, description="Page number (1-indexed)"),
+        page: int = Query(
+            default=1, ge=1, le=MAX_PAGE_NUMBER, description="Page number (1-indexed)"
+        ),
         page_size: int = Query(
             default=DEFAULT_PAGE_SIZE,
             ge=1,

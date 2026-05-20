@@ -16,7 +16,7 @@ from core.constants import DEFAULT_INTERACTION_LIMIT
 from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.tables import USER_INTERACTIONS
-from schemas.interaction import InteractionMatrixRow, EventPopularity
+from schemas.interaction import EventPopularity, InteractionMatrixRow
 from services.recommender.config import (
     CACHE_TTL_SECONDS,
     CF_MAX_USER_EVENT_SCORE,
@@ -67,14 +67,17 @@ def _fetch_user_event_scores(user_id: str) -> dict[int, float]:
     scores: dict[int, float] = {}
     for row in iter_all_pages(
         lambda offset, ps: (
-            get_sb()
-            .table(USER_INTERACTIONS)
-            .select("event_id, interaction_type")
-            .eq("user_id", user_id)
-            .order("created_at")
-            .range(offset, offset + ps - 1)
-            .execute()
-        ).data or [],
+            (
+                get_sb()
+                .table(USER_INTERACTIONS)
+                .select("event_id, interaction_type")
+                .eq("user_id", user_id)
+                .order("created_at")
+                .range(offset, offset + ps - 1)
+                .execute()
+            ).data
+            or []
+        ),
     ):
         eid = row["event_id"]
         weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
@@ -103,6 +106,7 @@ def get_interaction_matrix() -> list[InteractionMatrixRow]:
     Time-windowed to INTERACTION_LOOKBACK_DAYS and cached for CACHE_TTL_SECONDS
     so that concurrent recommendation requests share one DB round-trip.
     """
+
     def _fetch_matrix() -> list[InteractionMatrixRow]:
         cutoff = (
             datetime.now(timezone.utc) - timedelta(days=INTERACTION_LOOKBACK_DAYS)
@@ -111,15 +115,18 @@ def get_interaction_matrix() -> list[InteractionMatrixRow]:
         agg: dict[tuple[str, int], float] = {}
         for row in iter_all_pages(
             lambda offset, ps: (
-                get_sb()
-                .table(USER_INTERACTIONS)
-                .select("user_id, event_id, interaction_type")
-                .not_.is_("user_id", "null")
-                .gte("created_at", cutoff)
-                .order("created_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
+                (
+                    get_sb()
+                    .table(USER_INTERACTIONS)
+                    .select("user_id, event_id, interaction_type")
+                    .not_.is_("user_id", "null")
+                    .gte("created_at", cutoff)
+                    .order("created_at")
+                    .range(offset, offset + ps - 1)
+                    .execute()
+                ).data
+                or []
+            ),
         ):
             key = (row["user_id"], row["event_id"])
             weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
@@ -146,6 +153,7 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
     Time-windowed to INTERACTION_LOOKBACK_DAYS and cached for CACHE_TTL_SECONDS.
     The cache stores the full ranked list; the limit is applied after.
     """
+
     def _fetch_popularity() -> list[EventPopularity]:
         cutoff = (
             datetime.now(timezone.utc) - timedelta(days=INTERACTION_LOOKBACK_DAYS)
@@ -162,14 +170,17 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
         actor_event_scores: dict[tuple[str | None, str | None, int], float] = {}
         for row in iter_all_pages(
             lambda offset, ps: (
-                get_sb()
-                .table(USER_INTERACTIONS)
-                .select("user_id, session_id, event_id, interaction_type")
-                .gte("created_at", cutoff)
-                .order("created_at")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
+                (
+                    get_sb()
+                    .table(USER_INTERACTIONS)
+                    .select("user_id, session_id, event_id, interaction_type")
+                    .gte("created_at", cutoff)
+                    .order("created_at")
+                    .range(offset, offset + ps - 1)
+                    .execute()
+                ).data
+                or []
+            ),
         ):
             uid = row.get("user_id")
             sid = row.get("session_id") if uid is None else None
@@ -186,5 +197,7 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
         ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         return [EventPopularity(event_id=eid, score=score) for eid, score in ranked]
 
-    all_popular: list[EventPopularity] = _shared_cache.get_or_compute("event_popularity", _fetch_popularity)  # type: ignore[assignment]
+    all_popular: list[EventPopularity] = _shared_cache.get_or_compute(
+        "event_popularity", _fetch_popularity
+    )  # type: ignore[assignment]
     return all_popular[:limit]

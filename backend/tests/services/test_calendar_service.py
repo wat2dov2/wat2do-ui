@@ -17,7 +17,6 @@ from uuid import uuid4
 from core.tables import EVENTS, USERS
 from services import calendar_service, saved_event_service
 
-
 # ── resolve_school_timezone ─────────────────────────────────────────
 
 
@@ -26,7 +25,9 @@ def test_resolve_timezone_known_school():
 
 
 def test_resolve_timezone_known_school_casefolded():
-    assert calendar_service.resolve_school_timezone("  UNIVERSITY of Waterloo ") == "America/Toronto"
+    assert (
+        calendar_service.resolve_school_timezone("  UNIVERSITY of Waterloo ") == "America/Toronto"
+    )
 
 
 def test_resolve_timezone_alias():
@@ -218,10 +219,12 @@ def test_build_ics_for_user_renders_vevent(monkeypatch, fake_sb, patch_sb):
     )
     # Two queries land on fake_sb in sequence: events.select.in_, then
     # event_dates.select.in_. Queue both responses.
-    fake_sb.queue_responses([
-        [_event_row()],                               # events
-        [_occurrence_row(event_id=42)],               # event_dates
-    ])
+    fake_sb.queue_responses(
+        [
+            [_event_row()],  # events
+            [_occurrence_row(event_id=42)],  # event_dates
+        ]
+    )
 
     body = calendar_service.build_ics_for_user(str(uuid4()))
     text = body.decode()
@@ -250,10 +253,12 @@ def test_build_ics_for_user_skips_events_without_occurrences(monkeypatch, fake_s
         "get_saved_event_ids",
         MagicMock(return_value=[99]),
     )
-    fake_sb.queue_responses([
-        [_event_row(id=99)],   # events row exists
-        [],                    # but no event_dates rows
-    ])
+    fake_sb.queue_responses(
+        [
+            [_event_row(id=99)],  # events row exists
+            [],  # but no event_dates rows
+        ]
+    )
 
     body = calendar_service.build_ics_for_user(str(uuid4()))
     text = body.decode()
@@ -277,29 +282,31 @@ def test_build_ics_for_user_renders_one_vevent_per_occurrence(monkeypatch, fake_
         "get_saved_event_ids",
         MagicMock(return_value=[42]),
     )
-    fake_sb.queue_responses([
-        [_event_row()],
+    fake_sb.queue_responses(
         [
-            _occurrence_row(
-                event_id=42,
-                id=111,
-                dtstart_utc="2026-05-01T23:00:00+00:00",
-                dtend_utc="2026-05-02T01:30:00+00:00",
-            ),
-            _occurrence_row(
-                event_id=42,
-                id=222,
-                dtstart_utc="2026-05-08T23:00:00+00:00",
-                dtend_utc="2026-05-09T01:30:00+00:00",
-            ),
-            _occurrence_row(
-                event_id=42,
-                id=333,
-                dtstart_utc="2026-05-15T23:00:00+00:00",
-                dtend_utc="2026-05-16T01:30:00+00:00",
-            ),
-        ],
-    ])
+            [_event_row()],
+            [
+                _occurrence_row(
+                    event_id=42,
+                    id=111,
+                    dtstart_utc="2026-05-01T23:00:00+00:00",
+                    dtend_utc="2026-05-02T01:30:00+00:00",
+                ),
+                _occurrence_row(
+                    event_id=42,
+                    id=222,
+                    dtstart_utc="2026-05-08T23:00:00+00:00",
+                    dtend_utc="2026-05-09T01:30:00+00:00",
+                ),
+                _occurrence_row(
+                    event_id=42,
+                    id=333,
+                    dtstart_utc="2026-05-15T23:00:00+00:00",
+                    dtend_utc="2026-05-16T01:30:00+00:00",
+                ),
+            ],
+        ]
+    )
 
     body = calendar_service.build_ics_for_user(str(uuid4()))
     text = body.decode()
@@ -332,10 +339,12 @@ def test_build_ics_for_user_unknown_school_renders_utc(monkeypatch, fake_sb, pat
         "get_saved_event_ids",
         MagicMock(return_value=[1]),
     )
-    fake_sb.queue_responses([
-        [_event_row(id=1, school="Hogwarts")],
-        [_occurrence_row(event_id=1)],
-    ])
+    fake_sb.queue_responses(
+        [
+            [_event_row(id=1, school="Hogwarts")],
+            [_occurrence_row(event_id=1)],
+        ]
+    )
 
     body = calendar_service.build_ics_for_user(str(uuid4()))
     text = body.decode()

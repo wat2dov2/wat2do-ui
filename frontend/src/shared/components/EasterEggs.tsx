@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { useTranslation } from "react-i18next";

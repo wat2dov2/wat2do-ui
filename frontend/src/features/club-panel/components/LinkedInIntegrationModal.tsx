@@ -1,4 +1,3 @@
-import React from "react";
 import { PlatformConnectModal, type PlatformConnectConfig } from "./PlatformConnectModal";
 import type { IntegrationServerOption } from "@/features/club-panel/api/integrations.api";
 

@@ -3,22 +3,21 @@ import asyncio
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 
 from core.auth import get_current_user, get_db_user, require_owner_or_admin
-from core.exceptions import get_or_404
 from core.constants import (
-    BUCKET_EVENT_IMAGES,
     BUCKET_AVATARS,
     BUCKET_CLUB_LOGOS,
+    BUCKET_EVENT_IMAGES,
     BUCKET_QR_ASSETS,
 )
 from core.errors import CLUB_NOT_FOUND, EVENT_NOT_FOUND
-from core.exceptions import ValidationError
+from core.exceptions import ValidationError, get_or_404
 from core.rate_limit import RateLimiter
 from schemas.club import ClubUpdate
 from schemas.event import EventUpdate
 from schemas.upload import UploadResponse
 from schemas.user import UserUpdate
+from services import club_service, event_service, user_service
 from services.storage_service import storage
-from services import user_service, event_service, club_service
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
@@ -64,7 +63,7 @@ def _enforce_content_length(bucket: str):
             return
         if content_length > limit + _MULTIPART_SLACK:
             raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                 detail=f"File too large. Max {limit // (1024 * 1024)} MB.",
             )
 
@@ -81,9 +80,15 @@ async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
     """
     data = await file.read()
     try:
-        return storage.validate_and_prepare(bucket, data, file.content_type, file.filename or "upload")
+        return storage.validate_and_prepare(
+            bucket, data, file.content_type, file.filename or "upload"
+        )
     except ValidationError as exc:
-        http_status = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE if exc.code == "file_too_large" else status.HTTP_400_BAD_REQUEST
+        http_status = (
+            status.HTTP_413_CONTENT_TOO_LARGE
+            if exc.code == "file_too_large"
+            else status.HTTP_400_BAD_REQUEST
+        )
         raise HTTPException(status_code=http_status, detail=exc.detail) from exc
 
 
@@ -108,7 +113,11 @@ async def _replace_image(
         if old_path:
             await asyncio.to_thread(storage.delete_file, bucket, old_path)
     url = await asyncio.to_thread(
-        storage.upload_file, bucket, data, file.filename or "upload", content_type,
+        storage.upload_file,
+        bucket,
+        data,
+        file.filename or "upload",
+        content_type,
     )
     await asyncio.to_thread(update_fn, url)
     return url
@@ -125,7 +134,9 @@ async def upload_event_image(
     event = get_or_404(await asyncio.to_thread(event_service.get_event, event_id), EVENT_NOT_FOUND)
     require_owner_or_admin(db_user, event.created_by)
     url = await _replace_image(
-        file, BUCKET_EVENT_IMAGES, event.source_image_url,
+        file,
+        BUCKET_EVENT_IMAGES,
+        event.source_image_url,
         lambda u: event_service.update_event(event_id, EventUpdate(source_image_url=u)),
     )
     return {"url": url}
@@ -139,7 +150,9 @@ async def upload_avatar(
     _cl: None = Depends(_enforce_content_length(BUCKET_AVATARS)),
 ):
     url = await _replace_image(
-        file, BUCKET_AVATARS, db_user.avatar_url,
+        file,
+        BUCKET_AVATARS,
+        db_user.avatar_url,
         lambda u: user_service.update_user(db_user.id, UserUpdate(avatar_url=u)),
     )
     return {"url": url}
@@ -156,7 +169,9 @@ async def upload_club_logo(
     club = get_or_404(await asyncio.to_thread(club_service.get_club, club_id), CLUB_NOT_FOUND)
     require_owner_or_admin(db_user, club.created_by)
     url = await _replace_image(
-        file, BUCKET_CLUB_LOGOS, club.logo_url,
+        file,
+        BUCKET_CLUB_LOGOS,
+        club.logo_url,
         lambda u: club_service.update_club(club_id, ClubUpdate(logo_url=u)),
     )
     return {"url": url}
@@ -175,6 +190,10 @@ async def upload_qr_asset(
     # accumulates in the public bucket.
     data, content_type = await _validated_upload(file, BUCKET_QR_ASSETS)
     url = await asyncio.to_thread(
-        storage.upload_file, BUCKET_QR_ASSETS, data, file.filename or "asset", content_type,
+        storage.upload_file,
+        BUCKET_QR_ASSETS,
+        data,
+        file.filename or "asset",
+        content_type,
     )
     return {"url": url}

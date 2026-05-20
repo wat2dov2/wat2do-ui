@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { TOAST_AUTO_DISMISS_MS, ANIMATION_FRAME_TRIGGER_MS } from "@/shared/constants/ui";
 

@@ -12,7 +12,7 @@ from core.exceptions import ConflictError, NotFoundError, ValidationError
 
 log = logging.getLogger(__name__)
 from core.errors import POSTER_NOT_FOUND, REQUIRES_LOCATION
-from core.tables import QR_CODES, QR_CODE_SCANS
+from core.tables import QR_CODE_SCANS, QR_CODES
 from schemas.qr_code import QrCodeCreate, QrCodeRedirect, QrCodeResponse, QrCodeScanResponse
 
 POSTER_ALREADY_EXISTS = "Poster with this ID already exists"
@@ -96,7 +96,8 @@ def create_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
         if e.code == PG_UNIQUE_VIOLATION:
             log.warning(
                 "QR code insert raced with concurrent create for id=%s: %s",
-                data.id, e,
+                data.id,
+                e,
             )
             raise ConflictError(POSTER_ALREADY_EXISTS) from e
         raise
@@ -148,21 +149,31 @@ def activate_poster_and_record_scan(
     sb = get_sb()
     # Conditional update: only succeeds if is_active is still False,
     # preventing the TOCTOU race when multiple first-scans arrive concurrently.
-    r = sb.table(QR_CODES).update({
-        "latitude": latitude,
-        "longitude": longitude,
-        "is_active": True,
-    }).eq("id", qr_code_id).eq("is_active", False).execute()
+    r = (
+        sb.table(QR_CODES)
+        .update(
+            {
+                "latitude": latitude,
+                "longitude": longitude,
+                "is_active": True,
+            }
+        )
+        .eq("id", qr_code_id)
+        .eq("is_active", False)
+        .execute()
+    )
     if not r.data:
         # Another request won the race — this poster was already activated.
         return None
-    sb.table(QR_CODE_SCANS).insert({
-        "id": str(uuid.uuid4()),
-        "qr_code_id": qr_code_id,
-        "session_id": session_id,
-        "user_agent": user_agent,
-        "conversion_actions": [],
-    }).execute()
+    sb.table(QR_CODE_SCANS).insert(
+        {
+            "id": str(uuid.uuid4()),
+            "qr_code_id": qr_code_id,
+            "session_id": session_id,
+            "user_agent": user_agent,
+            "conversion_actions": [],
+        }
+    ).execute()
     qr = get_qr_code_by_id(qr_code_id)
     return QrCodeRedirect(
         destination_type=qr.destination_type,
@@ -218,14 +229,21 @@ def record_scan(
     session_id: str,
     user_agent: str | None = None,
 ) -> QrCodeScanResponse:
-    r = get_sb().table(QR_CODE_SCANS).insert({
-        "id": str(uuid.uuid4()),
-        "qr_code_id": qr_code_id,
-        "user_id": user_id,
-        "session_id": session_id,
-        "user_agent": user_agent,
-        "conversion_actions": [],
-    }).execute()
+    r = (
+        get_sb()
+        .table(QR_CODE_SCANS)
+        .insert(
+            {
+                "id": str(uuid.uuid4()),
+                "qr_code_id": qr_code_id,
+                "user_id": user_id,
+                "session_id": session_id,
+                "user_agent": user_agent,
+                "conversion_actions": [],
+            }
+        )
+        .execute()
+    )
     return QrCodeScanResponse.model_validate(r.data[0])
 
 

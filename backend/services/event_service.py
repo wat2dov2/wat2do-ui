@@ -20,17 +20,17 @@ from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
 from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENTS, EVENTS_LISTING
-from services import event_date_service
-from services.recommendation_service import invalidate_candidates_cache
 from schemas.event import (
+    EVENT_SUMMARY_COLUMNS,
     EventCreate,
-    EventUpdate,
     EventResponse,
     EventSummaryResponse,
+    EventUpdate,
     LatestEventResponse,
-    EVENT_SUMMARY_COLUMNS,
 )
 from schemas.event_date import OccurrenceResponse
+from services import event_date_service
+from services.recommendation_service import invalidate_candidates_cache
 
 log = logging.getLogger(__name__)
 
@@ -77,9 +77,7 @@ def _to_utc(dt: datetime | None) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def _hydrate_response(
-    row: dict, occurrences: list[OccurrenceResponse]
-) -> EventResponse:
+def _hydrate_response(row: dict, occurrences: list[OccurrenceResponse]) -> EventResponse:
     """Build an EventResponse from a raw events row + its occurrences.
 
     The events row no longer carries ``dtstart_utc`` / ``dtend_utc``; we
@@ -90,15 +88,11 @@ def _hydrate_response(
     payload = dict(row)
     payload["occurrences"] = [o.model_dump(mode="json") for o in occurrences]
     payload["dtstart_utc"] = primary.dtstart_utc.isoformat() if primary else None
-    payload["dtend_utc"] = (
-        primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
-    )
+    payload["dtend_utc"] = primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
     return EventResponse.model_validate(payload)
 
 
-def _hydrate_summary(
-    row: dict, occurrences: list[OccurrenceResponse]
-) -> EventSummaryResponse:
+def _hydrate_summary(row: dict, occurrences: list[OccurrenceResponse]) -> EventSummaryResponse:
     """Build an EventSummaryResponse with the primary occurrence's date.
 
     Pre-fix this used the date columns the events_listing view projects
@@ -111,9 +105,7 @@ def _hydrate_summary(
     primary = _pick_primary(occurrences)
     payload = dict(row)
     payload["dtstart_utc"] = primary.dtstart_utc.isoformat() if primary else None
-    payload["dtend_utc"] = (
-        primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
-    )
+    payload["dtend_utc"] = primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
     return EventSummaryResponse.model_validate(payload)
 
 
@@ -224,14 +216,8 @@ def list_events(
     occ_by_event = event_date_service.list_for_events(event_ids)
 
     if summary:
-        return [
-            _hydrate_summary(row, occ_by_event.get(row["id"], []))
-            for row in deduped
-        ]
-    return [
-        _hydrate_response(row, occ_by_event.get(row["id"], []))
-        for row in deduped
-    ]
+        return [_hydrate_summary(row, occ_by_event.get(row["id"], [])) for row in deduped]
+    return [_hydrate_response(row, occ_by_event.get(row["id"], [])) for row in deduped]
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
@@ -266,9 +252,7 @@ def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
     if not event.occurrences:
         return False
     current = now or datetime.now(timezone.utc)
-    latest_end = max(
-        _to_utc(o.dtend_utc or o.dtstart_utc) for o in event.occurrences
-    )
+    latest_end = max(_to_utc(o.dtend_utc or o.dtstart_utc) for o in event.occurrences)
     return latest_end < current
 
 
@@ -311,12 +295,14 @@ def delete_event(event_id: int) -> bool:
     # bad promotion row cannot block the deletion. event_dates also
     # cascade-delete via FK, so we don't have to clean them up manually.
     from services import credit_service  # local import to avoid cycle
+
     try:
         credit_service.refund_active_promotions_for_event(event_id)
     except Exception as e:
         log.error(
             "refund_active_promotions_for_event failed for event=%s: %s",
-            event_id, e,
+            event_id,
+            e,
         )
 
     r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()

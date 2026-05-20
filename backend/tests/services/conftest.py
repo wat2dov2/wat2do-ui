@@ -21,18 +21,37 @@ from unittest.mock import MagicMock
 
 import pytest
 
-
 # Every supabase-py builder method that currently appears somewhere in
 # ``backend/services/``. If a new method shows up in a service, add it
 # here — the fake needs to return ``self`` from it for chaining.
 _BUILDER_METHODS = (
     # terminal actions
-    "table", "select", "insert", "update", "delete", "upsert", "rpc",
+    "table",
+    "select",
+    "insert",
+    "update",
+    "delete",
+    "upsert",
+    "rpc",
     # filters
-    "eq", "neq", "in_", "gt", "gte", "lt", "lte",
-    "like", "ilike", "is_", "contains", "not_",
+    "eq",
+    "neq",
+    "in_",
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "like",
+    "ilike",
+    "is_",
+    "contains",
+    "not_",
     # ordering / windowing
-    "order", "range", "limit", "single", "maybe_single",
+    "order",
+    "range",
+    "limit",
+    "single",
+    "maybe_single",
 )
 
 
@@ -124,6 +143,8 @@ def patch_sb(monkeypatch, fake_sb):
             patch_sb("services.saved_event_service")
             ...
     """
+
     def _patch(module_path: str) -> None:
         monkeypatch.setattr(f"{module_path}.get_sb", lambda: fake_sb)
+
     return _patch

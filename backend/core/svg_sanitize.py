@@ -50,9 +50,9 @@ _DANGEROUS_ELEMENTS: set[str] = {
     "object",
     "embed",
     "applet",
-    "math",            # MathML can embed scripts
-    "handler",         # SVG animation event handler element
-    "set",             # can trigger via event attributes
+    "math",  # MathML can embed scripts
+    "handler",  # SVG animation event handler element
+    "set",  # can trigger via event attributes
     # <use> can pull in external SVGs (including script-bearing ones) via
     # xlink:href / href, and the referenced content is rendered inline.
     # Even data:image/svg+xml URIs bypass the URI check because it
@@ -330,9 +330,7 @@ def sanitize_svg(raw: bytes) -> bytes:
 
     root = tree.getroot()
     if _local_name(root.tag) != "svg":
-        raise ValueError(
-            f"Root element is <{_local_name(root.tag)}>, expected <svg>"
-        )
+        raise ValueError(f"Root element is <{_local_name(root.tag)}>, expected <svg>")
 
     # ── Walk and clean ────────────────────────────────────────────────
     _clean_element(root)

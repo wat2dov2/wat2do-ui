@@ -11,23 +11,23 @@ from services.recommender.interaction_scores import (
 )
 
 log = logging.getLogger(__name__)
-from schemas.event import EventResponse
-from services.recommender.content_based import get_content_scores
-from services.recommender.collaborative import get_collaborative_scores
-from services.recommender.popularity import get_popularity_scores
-from services.recommender.reranker import mmr_rerank
-from services.recommender.config import (
-    EVAL_K,
-    EVAL_MAX_EVENTS,
-    HOT_THRESHOLD,
-    WARM_THRESHOLD,
-    DEFAULT_LAMBDA,
-    EVAL_MIN_INTERACTIONS,
-)
-from services.recommender.scoring import select_weights, blend_scores
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENTS
+from schemas.event import EventResponse
+from services.recommender.collaborative import get_collaborative_scores
+from services.recommender.config import (
+    DEFAULT_LAMBDA,
+    EVAL_K,
+    EVAL_MAX_EVENTS,
+    EVAL_MIN_INTERACTIONS,
+    HOT_THRESHOLD,
+    WARM_THRESHOLD,
+)
+from services.recommender.content_based import get_content_scores
+from services.recommender.popularity import get_popularity_scores
+from services.recommender.reranker import mmr_rerank
+from services.recommender.scoring import blend_scores, select_weights
 
 
 def precision_at_k(recommended_ids: list[int], relevant_ids: set[int], k: int) -> float:
@@ -87,9 +87,7 @@ def evaluate_all_users(
 
     # Only evaluate users with 5+ interactions
     eligible = {
-        uid: events
-        for uid, events in user_events.items()
-        if len(events) >= EVAL_MIN_INTERACTIONS
+        uid: events for uid, events in user_events.items() if len(events) >= EVAL_MIN_INTERACTIONS
     }
 
     if not eligible:
@@ -155,7 +153,8 @@ def evaluate_all_users(
             has_profile = bool(user and user.interests)
 
             weights = select_weights(
-                interaction_count, has_profile,
+                interaction_count,
+                has_profile,
                 hot_threshold=hot_threshold,
                 warm_threshold=warm_threshold,
             )
@@ -173,12 +172,19 @@ def evaluate_all_users(
             # Pass pre-fetched user to avoid redundant DB lookup inside
             # get_content_scores.
             content = get_content_scores(
-                uid, all_events_data, user=user, user_scores=user_scores,
+                uid,
+                all_events_data,
+                user=user,
+                user_scores=user_scores,
             )
             collab = get_collaborative_scores(uid, all_event_ids)
 
             blended = blend_scores(
-                all_event_ids, content, collab, pop, weights,
+                all_event_ids,
+                content,
+                collab,
+                pop,
+                weights,
                 exclude={held_out_eid},
             )
 
@@ -215,13 +221,7 @@ def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
     chosen so different evaluation runs cover different slices.
     """
     # Get total count first to decide whether sampling is needed.
-    count_resp = (
-        get_sb()
-        .table(EVENTS)
-        .select("id", count="exact")
-        .limit(0)
-        .execute()
-    )
+    count_resp = get_sb().table(EVENTS).select("id", count="exact").limit(0).execute()
     total = count_resp.count or 0
 
     if max_events > 0 and total > max_events:
@@ -245,13 +245,16 @@ def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
     else:
         rows = fetch_all_pages(
             lambda offset, ps: (
-                get_sb()
-                .table(EVENTS)
-                .select("*")
-                .order("id")
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data or [],
+                (
+                    get_sb()
+                    .table(EVENTS)
+                    .select("*")
+                    .order("id")
+                    .range(offset, offset + ps - 1)
+                    .execute()
+                ).data
+                or []
+            ),
         )
 
     return [EventResponse.model_validate(row) for row in rows]

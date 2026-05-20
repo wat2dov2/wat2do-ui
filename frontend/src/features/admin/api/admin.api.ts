@@ -14,7 +14,7 @@ import {
   updateClubAPI,
   deleteClubAPI,
 } from "@/features/clubs";
-import { api, ApiError } from "@/shared/services/apiClient";
+import { api, ApiError, getPaginatedItems } from "@/shared/services/apiClient";
 
 // Re-export types for convenience
 export type { EventSubmission, ReportedEvent, ScrapedEvent };
@@ -93,14 +93,14 @@ export { createClubAPI as adminCreateClub, updateClubAPI as adminUpdateClub, del
 // ── Reported Events API ─────────────────────────────────────────────
 
 export async function getReportedEvents(): Promise<ReportedEvent[]> {
-  const rows = await api.get<ReportResponse[]>("/reports/");
+  const rows = await getPaginatedItems<ReportResponse>("/reports/");
   return rows.map(toReportedEvent);
 }
 
 export async function getReportedEventsByStatus(
   status: ReportStatus,
 ): Promise<ReportedEvent[]> {
-  const rows = await api.get<ReportResponse[]>(`/reports/?report_status=${status}`);
+  const rows = await getPaginatedItems<ReportResponse>(`/reports/?report_status=${status}`);
   return rows.map(toReportedEvent);
 }
 
@@ -118,7 +118,7 @@ export async function updateReportedEventStatus(
 // ── Event Submissions API ───────────────────────────────────────────
 
 export async function getEventSubmissions(): Promise<EventSubmission[]> {
-  const rows = await api.get<SubmissionResponse[]>("/submissions/");
+  const rows = await getPaginatedItems<SubmissionResponse>("/submissions/");
   return rows.map(toEventSubmission);
 }
 
@@ -141,7 +141,7 @@ export async function getSubmissionById(id: string): Promise<EventSubmission | n
 export async function getSubmissionsByStatus(
   status: SubmissionStatus,
 ): Promise<EventSubmission[]> {
-  const rows = await api.get<SubmissionResponse[]>(`/submissions/?submission_status=${status}`);
+  const rows = await getPaginatedItems<SubmissionResponse>(`/submissions/?submission_status=${status}`);
   return rows.map(toEventSubmission);
 }
 
@@ -183,7 +183,7 @@ export async function deleteSubmission(id: string): Promise<void> {
 // ── Scraped Events API ──────────────────────────────────────────────
 
 export async function getScrapedEvents(): Promise<ScrapedEvent[]> {
-  const rows = await api.get<ScrapedEventResponse[]>("/scraped-events/");
+  const rows = await getPaginatedItems<ScrapedEventResponse>("/scraped-events/");
   return rows.map(toScrapedEvent);
 }
 

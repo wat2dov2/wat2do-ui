@@ -11,7 +11,6 @@ import pytest
 
 from services.wat2do.extractor import _clean_event, _parse_model_json
 
-
 # ── _parse_model_json ────────────────────────────────────────────────
 
 
@@ -83,11 +82,13 @@ def test_clean_event_free_event_coercion_on_description():
 def test_clean_event_does_not_overwrite_explicit_price():
     """If the model returns a real numeric price, "free" in any field
     must NOT overwrite it."""
-    cleaned = _clean_event({
-        "title": "Free time after a paid event",
-        "description": "free pizza inside",
-        "price": 15.0,
-    })
+    cleaned = _clean_event(
+        {
+            "title": "Free time after a paid event",
+            "description": "free pizza inside",
+            "price": 15.0,
+        }
+    )
     assert cleaned["price"] == 15.0
 
 
@@ -97,12 +98,14 @@ def test_clean_event_categories_coerced_to_list():
 
 
 def test_clean_event_occurrences_sorted_and_normalized():
-    cleaned = _clean_event({
-        "title": "X",
-        "occurrences": [
-            {"dtstart_utc": "2026-06-01T18:00:00Z"},
-            {"dtstart_utc": "2026-05-01T18:00:00Z"},
-        ],
-    })
+    cleaned = _clean_event(
+        {
+            "title": "X",
+            "occurrences": [
+                {"dtstart_utc": "2026-06-01T18:00:00Z"},
+                {"dtstart_utc": "2026-05-01T18:00:00Z"},
+            ],
+        }
+    )
     starts = [o["dtstart_utc"] for o in cleaned["occurrences"]]
     assert starts == ["2026-05-01T18:00:00Z", "2026-06-01T18:00:00Z"]

@@ -10,7 +10,6 @@ from core.constants import MAX_INTERACTION_BATCH_SIZE
 from main import app
 from tests.conftest import FAKE_USER, OTHER_USER
 
-
 # ── Helpers ────────────────────────────────────────────────────────────
 
 
@@ -20,6 +19,7 @@ OTHER_DB_USER_ID = "00000000-0000-0000-0000-000000000099"
 
 def _make_db_user(user_id=FAKE_DB_USER_ID, email=FAKE_USER["email"]):
     from datetime import datetime, timezone
+
     from schemas.user import UserResponse
 
     return UserResponse(
@@ -38,7 +38,8 @@ def _batch_payload(
     """Build a minimal InteractionBatch payload."""
     payload: dict = {
         "session_id": session_id,
-        "interactions": interactions or [
+        "interactions": interactions
+        or [
             {"event_id": 1, "interaction_type": "view"},
             {"event_id": 2, "interaction_type": "click"},
         ],
@@ -74,8 +75,9 @@ def other_user_client():
 @pytest.fixture(autouse=True)
 def _clear_rate_limiters():
     """Reset all interaction rate limiters between tests."""
-    from routers.interactions import _interaction_limiter
     from core.rate_limit import anon_interaction_rate_limiter
+    from routers.interactions import _interaction_limiter
+
     _interaction_limiter._requests.clear()
     anon_interaction_rate_limiter._requests.clear()
     yield
@@ -119,7 +121,9 @@ def test_batch_202_with_bearer_auth(authenticated_client, monkeypatch):
 
     db_user = _make_db_user()
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"])
+    monkeypatch.setattr(
+        interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
+    )
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
     resp = authenticated_client.post("/interactions/batch", json=_batch_payload())
@@ -135,7 +139,9 @@ def test_batch_202_with_bearer_auth(authenticated_client, monkeypatch):
 
 def test_batch_rejects_oversized_payload(client):
     """Batch exceeding MAX_INTERACTION_BATCH_SIZE is rejected at validation."""
-    oversized = [{"event_id": i, "interaction_type": "view"} for i in range(MAX_INTERACTION_BATCH_SIZE + 1)]
+    oversized = [
+        {"event_id": i, "interaction_type": "view"} for i in range(MAX_INTERACTION_BATCH_SIZE + 1)
+    ]
     resp = client.post("/interactions/batch", json=_batch_payload(interactions=oversized))
     # Pydantic's max_length on the list field rejects with 422 before the
     # router's own batch-size guard (which returns 400) is reached.
@@ -146,9 +152,15 @@ def test_batch_accepts_max_size(client, monkeypatch):
     """Batch exactly at MAX_INTERACTION_BATCH_SIZE is accepted."""
     from services import interaction_service
 
-    monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=MAX_INTERACTION_BATCH_SIZE))
+    monkeypatch.setattr(
+        interaction_service,
+        "record_interactions",
+        MagicMock(return_value=MAX_INTERACTION_BATCH_SIZE),
+    )
 
-    at_limit = [{"event_id": i, "interaction_type": "view"} for i in range(MAX_INTERACTION_BATCH_SIZE)]
+    at_limit = [
+        {"event_id": i, "interaction_type": "view"} for i in range(MAX_INTERACTION_BATCH_SIZE)
+    ]
     resp = client.post("/interactions/batch", json=_batch_payload(interactions=at_limit))
     assert resp.status_code == 202
 
@@ -187,7 +199,9 @@ def test_batch_accepts_matching_user_id(authenticated_client, monkeypatch):
 
     db_user = _make_db_user()
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"])
+    monkeypatch.setattr(
+        interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
+    )
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
     resp = authenticated_client.post(
@@ -236,7 +250,9 @@ def test_rate_limit_triggers_429(authenticated_client, monkeypatch):
 
     db_user = _make_db_user()
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"])
+    monkeypatch.setattr(
+        interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
+    )
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
     original_max = _interaction_limiter.max_requests
@@ -310,8 +326,9 @@ def test_batch_propagates_db_error(client, monkeypatch):
     PostgREST handler maps unknown error codes to 502 so clients can
     retry.
     """
-    from services import interaction_service
     from postgrest.exceptions import APIError
+
+    from services import interaction_service
 
     monkeypatch.setattr(
         interaction_service,

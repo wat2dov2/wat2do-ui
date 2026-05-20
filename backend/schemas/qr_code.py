@@ -2,10 +2,9 @@
 
 import json
 from datetime import datetime
+from typing import Literal
 from urllib.parse import urlparse
 from uuid import UUID
-
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -18,8 +17,8 @@ QrDestinationType = Literal["event", "events-list", "custom-url"]
 # ballooning a row to >100 MB (see audit U11).  Values chosen to comfortably
 # fit the UI's inputs while rejecting clearly-abusive sizes.
 # ---------------------------------------------------------------------------
-_MAX_QR_ID_LENGTH = 128        # QR id is usually a short slug / UUID
-_MAX_QR_NAME_LENGTH = 200      # poster name (shown in dashboard cards)
+_MAX_QR_ID_LENGTH = 128  # QR id is usually a short slug / UUID
+_MAX_QR_NAME_LENGTH = 200  # poster name (shown in dashboard cards)
 _MAX_QR_DESCRIPTION_LENGTH = 5_000  # free-text description
 # Reuse MAX_URL_LENGTH (2048) for image_url — it's a storage URL, not a
 # data: blob.  Data-URL images (base64 PNGs) would blow past this cap and
@@ -99,20 +98,14 @@ class QrCodeCreate(BaseModel):
         if self.destination_type == "custom-url" and self.destination_id is not None:
             url = str(self.destination_id)
             if len(url) > MAX_URL_LENGTH:
-                raise ValueError(
-                    f"custom-url destination_id exceeds {MAX_URL_LENGTH} chars"
-                )
+                raise ValueError(f"custom-url destination_id exceeds {MAX_URL_LENGTH} chars")
             if not _is_safe_url(url):
-                raise ValueError(
-                    "custom-url destination_id must be a valid http or https URL"
-                )
+                raise ValueError("custom-url destination_id must be a valid http or https URL")
         # For non-custom-url types, destination_id may be a short string or
         # int — cap its string form to MAX_URL_LENGTH as a safety net.
         elif self.destination_id is not None:
             if len(str(self.destination_id)) > MAX_URL_LENGTH:
-                raise ValueError(
-                    f"destination_id exceeds {MAX_URL_LENGTH} chars"
-                )
+                raise ValueError(f"destination_id exceeds {MAX_URL_LENGTH} chars")
         return self
 
     @model_validator(mode="after")
@@ -144,9 +137,7 @@ class QrCodeCreate(BaseModel):
         except (TypeError, ValueError) as e:
             raise ValueError(f"filters is not JSON-serialisable: {e}")
         if len(serialised.encode("utf-8")) > _MAX_QR_FILTERS_BYTES:
-            raise ValueError(
-                f"filters exceeds maximum size of {_MAX_QR_FILTERS_BYTES} bytes"
-            )
+            raise ValueError(f"filters exceeds maximum size of {_MAX_QR_FILTERS_BYTES} bytes")
         return v
 
 

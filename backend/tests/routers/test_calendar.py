@@ -13,7 +13,6 @@ import pytest
 from routers import calendar as calendar_router
 from services import calendar_service
 
-
 # ── GET /calendar/token ─────────────────────────────────────────────
 
 

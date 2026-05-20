@@ -4,7 +4,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
 from supabase_auth.errors import AuthApiError
@@ -29,7 +28,6 @@ from core.rate_limit import (
 from main import app
 from schemas.auth import SignupResponse, TokenResponse
 from services.auth_service import AuthResult, auth
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -70,7 +68,11 @@ VALID_LOGIN = {
 
 
 def _signup_result(
-    *, user_id="user-001", access_token="acc-tok", expires_in=3600, refresh_token="ref-tok",
+    *,
+    user_id="user-001",
+    access_token="acc-tok",
+    expires_in=3600,
+    refresh_token="ref-tok",
     confirmation_required=False,
 ):
     """Build an AuthResult that mimics a successful signup."""
@@ -84,7 +86,11 @@ def _signup_result(
 
 
 def _login_result(
-    *, access_token="acc-tok", expires_in=3600, user_id="uid-001", refresh_token="ref-tok",
+    *,
+    access_token="acc-tok",
+    expires_in=3600,
+    user_id="uid-001",
+    refresh_token="ref-tok",
 ):
     """Build an AuthResult that mimics a successful login."""
     body = TokenResponse(
@@ -96,7 +102,11 @@ def _login_result(
 
 
 def _refresh_result(
-    *, access_token="new-acc-tok", expires_in=3600, user_id="uid-001", refresh_token="new-ref-tok",
+    *,
+    access_token="new-acc-tok",
+    expires_in=3600,
+    user_id="uid-001",
+    refresh_token="new-ref-tok",
 ):
     """Build an AuthResult that mimics a successful token refresh."""
     body = TokenResponse(
@@ -399,7 +409,7 @@ class TestLogout:
         set_cookie_header = resp.headers.get("set-cookie", "")
         assert "refresh_token" in set_cookie_header
         # Deletion sets the value to empty/null and max-age=0
-        assert 'max-age=0' in set_cookie_header.lower() or '""' in set_cookie_header
+        assert "max-age=0" in set_cookie_header.lower() or '""' in set_cookie_header
 
         auth.logout.assert_called_once_with("valid-access-tok")
 
@@ -415,7 +425,7 @@ class TestLogout:
         assert resp.status_code == 200
         set_cookie_header = resp.headers.get("set-cookie", "")
         assert "refresh_token" in set_cookie_header
-        assert 'max-age=0' in set_cookie_header.lower() or '""' in set_cookie_header
+        assert "max-age=0" in set_cookie_header.lower() or '""' in set_cookie_header
 
     def test_logout_invalid_token(self, client, monkeypatch):
         """Logout with an invalid/expired access token returns 400 and still clears the cookie."""
@@ -565,7 +575,7 @@ class TestResetPassword:
         # Refresh cookie must be cleared after password reset
         set_cookie_header = resp.headers.get("set-cookie", "")
         assert "refresh_token" in set_cookie_header
-        assert 'max-age=0' in set_cookie_header.lower() or '""' in set_cookie_header
+        assert "max-age=0" in set_cookie_header.lower() or '""' in set_cookie_header
 
     def test_reset_password_with_session_logs_user_in(self, client, monkeypatch):
         """Recovery-session reset returns an app token and refresh cookie."""
@@ -705,9 +715,9 @@ class TestResetPasswordRecoveryGuard:
 
     def test_non_recovery_token_rejected(self, monkeypatch):
         """Plain session tokens are rejected even if their signature is valid."""
-        from services.auth_service import AuthService
-        from schemas.auth import ResetPasswordRequest
         from core.exceptions import AuthenticationError
+        from schemas.auth import ResetPasswordRequest
+        from services.auth_service import AuthService
 
         svc = AuthService(auth_client=MagicMock(), db_client=MagicMock())
         session_payload = {"sub": "uid-1", "aud": "authenticated"}
@@ -761,9 +771,7 @@ class TestResetPasswordRecoveryGuard:
         )
 
         mock_auth.set_session.assert_called_once_with("rec-access", "rec-refresh")
-        mock_auth.update_user.assert_called_once_with(
-            {"password": "N3wP@ssword!"}
-        )
+        mock_auth.update_user.assert_called_once_with({"password": "N3wP@ssword!"})
         mock_auth.sign_out.assert_called_once_with({"scope": "others"})
         assert result is not None
         assert result.body.access_token == "rec-tok"
@@ -772,8 +780,8 @@ class TestResetPasswordRecoveryGuard:
 
     def test_recovery_token_accepted(self, monkeypatch):
         """A recovery-scoped token triggers the admin update path."""
-        from services.auth_service import AuthService
         from schemas.auth import ResetPasswordRequest
+        from services.auth_service import AuthService
 
         mock_db = MagicMock()
         svc = AuthService(auth_client=MagicMock(), db_client=mock_db)
@@ -798,8 +806,8 @@ class TestResetPasswordRecoveryGuard:
 
     def test_amr_recovery_entry_accepted(self, monkeypatch):
         """amr=[{method: recovery}] is treated as recovery."""
-        from services.auth_service import AuthService
         from schemas.auth import ResetPasswordRequest
+        from services.auth_service import AuthService
 
         mock_db = MagicMock()
         svc = AuthService(auth_client=MagicMock(), db_client=mock_db)

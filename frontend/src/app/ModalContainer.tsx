@@ -18,7 +18,7 @@
  * the modals needs them.
  */
 
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Heart, LogIn } from "lucide-react";

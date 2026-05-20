@@ -1,10 +1,9 @@
+import logging
 from datetime import datetime
 from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-import logging
 
 from core.constants import (
     CATEGORY_NORMALIZE_MAP,
@@ -265,6 +264,7 @@ class EventTimeMeta(BaseModel):
     column; after the v1-style EventDates port (migration
     20260428031741) we drop it from the model too.
     """
+
     id: int
     added_at: str | None = None
 

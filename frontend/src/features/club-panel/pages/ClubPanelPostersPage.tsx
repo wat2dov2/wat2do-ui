@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { PostersPageContent } from "@/shared/components/PostersPageContent";
 import { QRCodeDetailsModal, GenerateQRAssetsWizard } from "@/features/qrcode";
 import type { Event } from "@/shared/types";

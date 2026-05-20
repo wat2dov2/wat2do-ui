@@ -1,4 +1,3 @@
-import React from "react";
 import { EventSuccessScreen } from "@/features/events/components/EventForm/EventForm/EventSuccessScreen";
 
 interface SubmitSuccessStepProps {

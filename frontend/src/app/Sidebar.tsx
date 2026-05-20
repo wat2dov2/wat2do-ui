@@ -4,7 +4,7 @@
  * Reduced Tailwind classes via reusable components
  */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
