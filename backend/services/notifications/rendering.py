@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from html import escape
 from zoneinfo import ZoneInfo
 
-from services.notifications.schedule import _ensure_aware_utc
+from services.notifications.schedule import ensure_aware_utc
 
 
 def _digest_subject(count: int, when: str) -> str:
@@ -33,8 +33,8 @@ def _format_event_date_time(event: dict, tz: ZoneInfo) -> tuple[str, str]:
 
 
 def _format_digest_window(window_start: datetime, window_end: datetime, tz: ZoneInfo) -> str:
-    start = _ensure_aware_utc(window_start).astimezone(tz)
-    end = _ensure_aware_utc(window_end).astimezone(tz)
+    start = ensure_aware_utc(window_start).astimezone(tz)
+    end = ensure_aware_utc(window_end).astimezone(tz)
     return (
         f"{start.strftime('%b')} {start.day}, "
         f"{start.hour % 12 or 12}:{start.minute:02d} "

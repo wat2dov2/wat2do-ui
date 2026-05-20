@@ -1,13 +1,8 @@
 """Notification local-time scheduling."""
 
 from datetime import date, datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 
-from services.school_context import (
-    canonical_school_key,
-    resolve_user_timezone,
-    school_for_user,
-)
+from services.school_context import resolve_user_timezone
 
 # Cron-firing constants — hour-of-day / day-of-week in the user's local
 # timezone. The hourly cron iterates users, converts UTC → local per
@@ -20,27 +15,19 @@ WEEKLY_DIGEST_HOUR = 18
 WEEKLY_DIGEST_WEEKDAY = 6  # Python weekday(): Mon=0 ... Sun=6
 
 
-def _ensure_aware_utc(value: datetime) -> datetime:
+def ensure_aware_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
 
 
-def _canonical_school_key(school: str | None) -> str:
-    return canonical_school_key(school)
-
-
-def _school_for_user(user: dict) -> str | None:
-    return school_for_user(user)
-
-
-def _user_tz(user: dict) -> ZoneInfo:
-    return resolve_user_timezone(user)
+# Backward-compatible private name for the notification_service facade.
+_ensure_aware_utc = ensure_aware_utc
 
 
 def is_daily_new_events_time(user: dict, now_utc: datetime) -> datetime | None:
     """Return the local send timestamp if ``now_utc`` is 10:30am-local."""
-    local = _ensure_aware_utc(now_utc).astimezone(_user_tz(user))
+    local = ensure_aware_utc(now_utc).astimezone(resolve_user_timezone(user))
     if local.hour == DAILY_NEW_EVENTS_HOUR and local.minute == DAILY_NEW_EVENTS_MINUTE:
         return local
     return None
@@ -52,7 +39,7 @@ def is_morning_digest_time(user: dict, now_utc: datetime) -> date | None:
     Dispatcher helper for the hourly cron: lets the cron stay school-
     agnostic and makes the decision testable (inject a fixed ``now_utc``).
     """
-    local = now_utc.astimezone(_user_tz(user))
+    local = ensure_aware_utc(now_utc).astimezone(resolve_user_timezone(user))
     if local.hour == MORNING_DIGEST_HOUR:
         return local.date()
     return None
@@ -64,7 +51,7 @@ def is_weekly_digest_time(user: dict, now_utc: datetime) -> date | None:
     Sunday evening previews the UPCOMING week (tomorrow onwards), so the
     returned date is ``local.date() + 1 day`` — always a Monday.
     """
-    local = now_utc.astimezone(_user_tz(user))
+    local = ensure_aware_utc(now_utc).astimezone(resolve_user_timezone(user))
     if local.weekday() == WEEKLY_DIGEST_WEEKDAY and local.hour == WEEKLY_DIGEST_HOUR:
         return local.date() + timedelta(days=1)
     return None

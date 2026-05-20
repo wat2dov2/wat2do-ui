@@ -42,6 +42,17 @@ Shared constants cleanup pass completed:
   `shared/types/promotion.types.ts` to `shared/constants/promotions.ts`, with a
   compatibility re-export for existing callers.
 
+Notification school/time helper cleanup pass completed:
+
+- Kept `services.school_context` as the canonical owner for school
+  canonicalization, user-school resolution, and school timezone lookup.
+- Removed notification digest/rendering dependencies on private scheduling
+  wrappers; scheduling now owns send-time decisions, while school context owns
+  school lookup.
+- Preserved the old private compatibility names on
+  `services.notification_service` for callers/tests that still import the
+  facade.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
@@ -59,6 +70,14 @@ Questions raised during cleanup:
 - Notification scheduling still lets a verified email domain override an
   explicit profile school; decide whether that should remain the policy if
   cross-school users become common.
+- Morning and weekly notification digests still filter events using the raw
+  profile `school`, while scheduling timezone resolution and daily-new-events
+  filtering use `services.school_context`. Decide whether all digest flows
+  should share one school resolution policy.
+- `services.notifications.schedule.ensure_aware_utc` is now the public helper
+  used by notification digest code. If UTC normalization grows outside
+  notifications, decide whether it belongs in a small core datetime helper
+  instead of staying notification-specific.
 - Academic calendar differences are still represented as constant tuples.
   Future school-specific date rules may need a strategy/module pattern rather
   than expanding `SCHOOL_SEMESTER_ENDS`.

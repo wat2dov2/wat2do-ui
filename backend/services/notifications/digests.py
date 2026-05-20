@@ -28,7 +28,8 @@ from services.notifications.rendering import (
     _render_digest_html,
     _render_digest_text,
 )
-from services.notifications.schedule import _ensure_aware_utc, _school_for_user, _user_tz
+from services.notifications.schedule import ensure_aware_utc
+from services.school_context import resolve_user_timezone, school_for_user
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def send_morning_digest(user: dict, local_date: date) -> bool:
     events = _fetch_events_for_day(
         school=user.get("school"),
         local_date=local_date,
-        tz=_user_tz(user),
+        tz=resolve_user_timezone(user),
     )
     if not events:
         log.info(
@@ -74,7 +75,7 @@ def send_weekly_digest(user: dict, week_start: date) -> bool:
     if not is_enabled(user_id, NOTIFICATION_TYPE_WEEKLY_DIGEST):
         return False
 
-    tz = _user_tz(user)
+    tz = resolve_user_timezone(user)
     week_end = week_start + timedelta(days=6)
     events = _fetch_events_for_range(
         school=user.get("school"),
@@ -111,11 +112,12 @@ def send_daily_new_events_digest(user: dict, now_utc: datetime) -> bool:
     if not is_enabled(user_id, NOTIFICATION_TYPE_DAILY_NEW_EVENTS):
         return False
 
-    now_utc = _ensure_aware_utc(now_utc)
-    local_now = now_utc.astimezone(_user_tz(user))
+    now_utc = ensure_aware_utc(now_utc)
+    tz = resolve_user_timezone(user)
+    local_now = now_utc.astimezone(tz)
     previous_sent_at = _last_successful_send_at(user_id, NOTIFICATION_TYPE_DAILY_NEW_EVENTS)
     start_utc = previous_sent_at or (now_utc - timedelta(days=1))
-    school = _school_for_user(user)
+    school = school_for_user(user)
     events = _fetch_new_events_added_since(
         school=school,
         start_utc=start_utc,
@@ -150,7 +152,7 @@ def send_daily_new_events_digest(user: dict, now_utc: datetime) -> bool:
                     subject=subject,
                     events=events,
                     school=school_label,
-                    tz=_user_tz(user),
+                    tz=tz,
                     window_start=start_utc,
                     window_end=now_utc,
                 ),
@@ -158,7 +160,7 @@ def send_daily_new_events_digest(user: dict, now_utc: datetime) -> bool:
                     subject=subject,
                     events=events,
                     school=school_label,
-                    tz=_user_tz(user),
+                    tz=tz,
                     window_start=start_utc,
                     window_end=now_utc,
                 ),
@@ -288,9 +290,9 @@ def _last_successful_send_at(user_id: str, notification_type: str) -> datetime |
     if not sent_at:
         return None
     if isinstance(sent_at, datetime):
-        return _ensure_aware_utc(sent_at)
+        return ensure_aware_utc(sent_at)
     try:
-        return _ensure_aware_utc(datetime.fromisoformat(str(sent_at).replace("Z", "+00:00")))
+        return ensure_aware_utc(datetime.fromisoformat(str(sent_at).replace("Z", "+00:00")))
     except ValueError:
         log.warning(
             "invalid sent_at=%r for user=%s type=%s",
@@ -315,8 +317,8 @@ def _fetch_new_events_added_since(
             "organization,display_handle,school,added_at,status"
         )
         .eq("status", EVENT_STATUS_ACTIVE)
-        .gt("added_at", _ensure_aware_utc(start_utc).isoformat())
-        .lte("added_at", _ensure_aware_utc(end_utc).isoformat())
+        .gt("added_at", ensure_aware_utc(start_utc).isoformat())
+        .lte("added_at", ensure_aware_utc(end_utc).isoformat())
         .order("added_at", desc=True)
         .order("dtstart_utc")
     )

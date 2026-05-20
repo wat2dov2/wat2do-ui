@@ -6,6 +6,7 @@ composition, and email rendering. Keep this import surface stable for routers,
 jobs, and tests while the implementation lives under ``services.notifications``.
 """
 
+from services import school_context
 from services.email_service import email_service
 from services.notifications.delivery_log import (
     _mark_log_failed,
@@ -48,14 +49,15 @@ from services.notifications.rendering import (
     _render_occurrence_diff_text,
 )
 from services.notifications.schedule import (
-    _canonical_school_key,
     _ensure_aware_utc,
-    _school_for_user,
-    _user_tz,
     is_daily_new_events_time,
     is_morning_digest_time,
     is_weekly_digest_time,
 )
+
+_canonical_school_key = school_context.canonical_school_key
+_school_for_user = school_context.school_for_user
+_user_tz = school_context.resolve_user_timezone
 
 __all__ = [
     "email_service",
