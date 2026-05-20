@@ -33,6 +33,15 @@ First cleanup pass completed:
 - Moved deployment and integration docs under `docs/`, converted `CLAUDE.md`
   into a small pointer to `AGENTS.md`, and removed generated cache docs.
 
+Shared constants cleanup pass completed:
+
+- Split the broad backend `core.constants` module into the
+  `backend/core/constants/` package, grouped by domain while preserving the
+  existing `from core.constants import ...` facade.
+- Moved frontend promotion and credit package values from
+  `shared/types/promotion.types.ts` to `shared/constants/promotions.ts`, with a
+  compatibility re-export for existing callers.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
@@ -40,6 +49,18 @@ Questions raised during cleanup:
   scheduling, digest composition, fanout, and rendering in one module.
 - Future notification types should probably land as focused strategy modules
   rather than more functions in a single service file.
+- `notification_service.py` is now a compatibility facade, but it still
+  re-exports underscored helpers for tests; decide whether those helpers are
+  intentionally supported test surface or should be imported from focused
+  notification modules.
+- School timezone resolution is split across calendar, scraping dates, and
+  notification scheduling. A shared helper may be clearer than duplicating
+  canonicalization in each service.
+- Frontend route and language constants files also export small helper
+  functions. Decide whether those helpers should move to `shared/utils` once
+  their usage grows.
+- QR feature API/helper compatibility re-exports obscure ownership, but they
+  still have live callers and should be removed only in a focused migration.
 - Local `backend/models` and `backend/scraping` directories contain only
   ignored cache artifacts; they are not repo source.
 

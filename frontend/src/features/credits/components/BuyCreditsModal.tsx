@@ -15,7 +15,7 @@ import { LoadingButton } from "@/shared/ui/loading-button";
 import { CreditPackageCard } from "@/shared/ui/credit-package-card";
 import { ModalContentWrapper, CenteredIconContainer, FlexCol, FlexRow } from "@/shared/ui/modal-components";
 import { useModalState } from "@/shared/hooks/useModalState";
-import { CREDIT_PACKAGES } from "@/shared/types";
+import { CREDIT_PACKAGES } from "@/shared/constants/promotions";
 
 interface BuyCreditsModalProps {
   isOpen: boolean;
@@ -175,4 +175,3 @@ export function BuyCreditsModal({
     </Dialog>
   );
 }
-

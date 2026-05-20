@@ -1,0 +1,6 @@
+"""PostgreSQL error codes used by services and error handlers."""
+
+PG_UNIQUE_VIOLATION = "23505"
+PG_FOREIGN_KEY_VIOLATION = "23503"
+PG_NOT_NULL_VIOLATION = "23502"
+PG_INSUFFICIENT_PRIVILEGE = "42501"

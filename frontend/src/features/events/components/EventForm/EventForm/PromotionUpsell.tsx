@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/shared/ui/dialog";
-import { PROMOTION_PACKAGES } from "@/shared/types";
+import { PROMOTION_PACKAGES } from "@/shared/constants/promotions";
 import {
   PackageCard,
   PackageBadge,
