@@ -53,6 +53,16 @@ Notification school/time helper cleanup pass completed:
   `services.notification_service` for callers/tests that still import the
   facade.
 
+QR API ownership cleanup pass completed:
+
+- Treated `frontend/src/shared/api/posters.api.ts` as the canonical home for
+  QR poster list reads and backend-to-frontend poster normalization.
+- Treated `frontend/src/shared/api/scans.api.ts` as the canonical home for QR
+  scan reads and backend-to-frontend scan normalization.
+- Migrated repo-local QR poster/scan read callers away from the
+  `features/qrcode/api/qrcode.api.ts` compatibility re-exports while preserving
+  those exports for existing public import paths.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
@@ -87,8 +97,12 @@ Questions raised during cleanup:
 - Frontend route and language constants files also export small helper
   functions. Decide whether those helpers should move to `shared/utils` once
   their usage grows.
-- QR feature API/helper compatibility re-exports obscure ownership, but they
-  still have live callers and should be removed only in a focused migration.
+- QR feature API/helper compatibility re-exports for poster and scan reads no
+  longer have repo-local callers; decide whether those exports are still needed
+  as public import-path compatibility.
+- Marketing still imports poster deletion from the QR feature API. Decide
+  whether destructive poster actions should move into a shared poster API module
+  after caller ownership is audited.
 - Local `backend/models` and `backend/scraping` directories contain only
   ignored cache artifacts; they are not repo source.
 

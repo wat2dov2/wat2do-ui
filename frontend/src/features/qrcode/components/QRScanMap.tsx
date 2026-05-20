@@ -4,7 +4,7 @@ import { Marker } from "@vis.gl/react-mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { QRCode, QRCodeScan } from "@/shared/types";
 import { MapPin, Zap } from "lucide-react";
-import { listPostersFromBackend } from "@/features/qrcode/api/qrcode.api";
+import { listPostersFromBackend } from "@/shared/api/posters.api";
 
 interface QRScanMapProps {
   scans: QRCodeScan[];
