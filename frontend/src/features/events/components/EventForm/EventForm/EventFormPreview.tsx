@@ -77,8 +77,8 @@ export function EventFormPreview() {
 
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
-            <span className="text-[10px] px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
-              <span className="truncate max-w-[100px]">
+            <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
+              <span className="truncate max-w-[128px]">
                 {formData.organization || t("events.organization")}
               </span>
             </span>
@@ -86,7 +86,7 @@ export function EventFormPreview() {
         </div>
 
         <div
-          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
           style={getEventCardWaterpaintStyle(`${formData.category}-${formData.title || "preview"}`)}
         >
           <EventCardContent

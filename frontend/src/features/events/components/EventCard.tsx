@@ -297,8 +297,8 @@ export function EventCard({
 
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
-            <span className="text-[10px] px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
-              <span className="truncate max-w-[100px]">
+            <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
+              <span className="truncate max-w-[128px]">
                 {event.organization || event.display_handle || ''}
               </span>
             </span>
@@ -307,7 +307,7 @@ export function EventCard({
 
         {/* Bottom section: bordered on left/right/bottom, wrapping content + interest button */}
         <div
-          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
           style={getEventCardWaterpaintStyle(event.id)}
         >
           {/* Event Content */}

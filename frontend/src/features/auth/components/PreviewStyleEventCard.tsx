@@ -96,8 +96,8 @@ export function PreviewStyleEventCard({
         </BadgeMask>
 
         <BadgeMask variant="bottom-left">
-          <span className="text-[10px] px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
-            <span className="truncate max-w-[80px]">{event.org}</span>
+          <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
+            <span className="truncate max-w-[112px]">{event.org}</span>
           </span>
         </BadgeMask>
       </div>
@@ -105,6 +105,7 @@ export function PreviewStyleEventCard({
       <div
         className={cn(
           "event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden",
+          "rounded-tl-xl",
           catClasses.bg,
           catClasses.text,
           catClasses.border
