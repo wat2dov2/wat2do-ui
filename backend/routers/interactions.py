@@ -8,7 +8,7 @@ from core.rate_limit import RateLimiter, anon_interaction_rate_limiter
 from schemas.interaction import InteractionBatch, RecordInteractionsResponse
 from services import interaction_service
 
-# Rate limiter for authenticated interaction submissions.
+# Rate limiter for authenticated interaction tracking requests.
 # More generous than the AI limiter: 30 batch requests per 60 seconds.
 _interaction_limiter = RateLimiter(max_requests=30, window_seconds=60)
 

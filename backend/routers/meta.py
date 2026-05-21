@@ -11,7 +11,6 @@ from core.constants import (
     EVENT_CATEGORIES,
     INTEREST_TO_CATEGORIES,
     REPORT_STATUSES,
-    SUBMISSION_STATUSES,
 )
 from schemas.meta import AppConstantsResponse
 
@@ -34,6 +33,5 @@ def get_constants(response: Response):
         event_categories=list(EVENT_CATEGORIES),
         interests=list(INTEREST_TO_CATEGORIES.keys()),
         interest_to_categories=INTEREST_TO_CATEGORIES,
-        submission_statuses=list(SUBMISSION_STATUSES),
         report_statuses=list(REPORT_STATUSES),
     )

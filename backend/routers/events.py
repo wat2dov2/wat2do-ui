@@ -12,7 +12,7 @@ from core.constants import (
     MAX_LIST_LIMIT,
     MAX_SEARCH_QUERY_LENGTH,
 )
-from core.errors import CLUB_EVENT_CREATION_REQUIRED, EVENT_NOT_FOUND
+from core.errors import CLUB_EVENT_CREATION_REQUIRED, CLUB_NOT_FOUND, EVENT_NOT_FOUND
 from core.exceptions import AuthorizationError, get_or_404
 from schemas.event import (
     EventCreate,
@@ -36,6 +36,30 @@ def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventR
         lambda: event_service.get_event(event_id),
         EVENT_NOT_FOUND,
         db_user,
+    )
+
+
+def _apply_event_club_ownership(data: EventCreate, db_user: UserResponse) -> EventCreate:
+    """Stamp explicit club ownership on create while preserving legacy payloads."""
+    if is_admin(db_user):
+        if data.club_id is None:
+            return data
+        club = get_or_404(club_service.get_club(data.club_id), CLUB_NOT_FOUND)
+    else:
+        club = club_service.resolve_event_club_for_owner(
+            str(db_user.id),
+            club_id=data.club_id,
+            organization=data.organization,
+        )
+        if club is None:
+            raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
+
+    return data.model_copy(
+        update={
+            "club_id": club.id,
+            "organization": club.club_name,
+            "club_type": club.club_type,
+        }
     )
 
 
@@ -104,12 +128,8 @@ def create_event(
     data: EventCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    if not is_admin(db_user) and not club_service.user_owns_club_named(
-        str(db_user.id),
-        data.organization,
-    ):
-        raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
-    return event_service.create_event(data, created_by=str(db_user.id))
+    owned_data = _apply_event_club_ownership(data, db_user)
+    return event_service.create_event(owned_data, created_by=str(db_user.id))
 
 
 @router.patch("/{event_id}", response_model=EventResponse)

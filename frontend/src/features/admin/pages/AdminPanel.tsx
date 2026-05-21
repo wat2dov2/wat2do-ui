@@ -7,46 +7,38 @@ import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import { useAdminPanel, mapActivityDisplay, type ActivityDisplay } from "@/features/admin/hooks/useAdminPanel";
-import type { Event } from "@/shared/types";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AdminPanelProps {
-  events: Event[];
-  onNavigate: (page: "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters") => void;
+  onNavigate: (page: "admin-events" | "admin-clubs" | "admin-posters") => void;
 }
 
 type ActivityType = ActivityDisplay["type"];
 
 const activityIconMap: Record<ActivityType, ReactNode> = {
-  submission: <FileText className="size-4 text-primary" />,
   poster: <QrCode className="size-4 text-primary" />,
-  scraped: <Calendar className="size-4 text-primary" />,
 };
 
 /** Navigation route map for activity types. */
 const activityRouteMap: Record<ActivityType, string> = {
-  submission: ROUTES.ADMIN_SUBMISSIONS,
-  scraped: ROUTES.ADMIN_EVENTS,
   poster: ROUTES.ADMIN_POSTERS,
 };
 
 const activityQueryParamMap: Record<ActivityType, string> = {
-  submission: QP.SUBMISSION_ID,
-  scraped: QP.EVENT_ID,
   poster: QP.QR_CODE_ID,
 };
 
-export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
+export function AdminPanel({ onNavigate }: AdminPanelProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { recentActivities, recentActivityLoading } = useAdminPanel();
 
   // Pre-map activity data to display objects so the JSX doesn't traverse nested structures
   const displayActivities = useMemo(
-    () => recentActivities.map((activity) => mapActivityDisplay(activity, events, t)),
-    [recentActivities, events, t]
+    () => recentActivities.map((activity) => mapActivityDisplay(activity, t)),
+    [recentActivities, t]
   );
 
   const handleActivityClick = (display: ActivityDisplay) => {
@@ -71,7 +63,7 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <AdminCard
           icon={Calendar}
           title={t("navigation.events")}
@@ -83,12 +75,6 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
           title={t("navigation.clubs")}
           description={t("admin.manageClubsDescAlt")}
           onClick={() => onNavigate("admin-clubs")}
-        />
-        <AdminCard
-          icon={FileText}
-          title={t("admin.submissions")}
-          description={t("admin.reviewSubmissionsDescAlt")}
-          onClick={() => onNavigate("admin-submissions")}
         />
         <AdminCard
           icon={Megaphone}
@@ -142,12 +128,6 @@ export function AdminPanel({ events, onNavigate }: AdminPanelProps) {
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Clock className="size-3" />
                             <span>{formatRelativeTime(display.timestamp)}</span>
-                            {display.submittedBy && (
-                              <>
-                                <span>&bull;</span>
-                                <span>{t("admin.submittedBy")}: {display.submittedBy}</span>
-                              </>
-                            )}
                           </div>
                         </div>
                         <Button

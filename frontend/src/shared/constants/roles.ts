@@ -4,9 +4,9 @@
  * ``ROLE_ADMIN`` and ``ROLE_USER`` mirror the backend ``role`` column values
  * in the ``users`` table (see backend/core/constants.py).
  *
- * ``ROLE_CLUB`` is a frontend-only route-guard value.  For now every
- * authenticated user passes the "club" check; gate it once a club-
- * membership model is added on the backend.
+ * ``ROLE_CLUB`` is a frontend-only route-guard value backed by
+ * /clubs/mine. A user passes this check only when an admin-assigned club
+ * row lists them as its owner.
  */
 
 export const ROLE_ADMIN = "admin" as const;

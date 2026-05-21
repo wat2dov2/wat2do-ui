@@ -3,8 +3,7 @@
  * Handles all admin-related data operations via the backend.
  */
 
-import type { Event, EventSubmission, ReportedEvent, ScrapedEvent, Club, SubmissionStatus, ReportStatus } from "@/shared/types";
-import { SUBMISSION_APPROVED, SUBMISSION_REJECTED } from "@/shared/constants/statuses";
+import type { Event, ReportedEvent, Club, ReportStatus } from "@/shared/types";
 import { fetchAllEvents, fetchEventById } from "@/features/events";
 import {
   getAllClubs as getAllClubsData,
@@ -17,35 +16,14 @@ import {
 import { api, ApiError, getPaginatedItems } from "@/shared/services/apiClient";
 
 // Re-export types for convenience
-export type { EventSubmission, ReportedEvent, ScrapedEvent };
+export type { ReportedEvent };
 
 // ── Backend response shapes (derived from OpenAPI spec) ─────────────
-import type {
-  ApiSubmissionResponse,
-  ApiReportResponse,
-  ApiScrapedEventResponse,
-} from "@/shared/generated";
+import type { ApiReportResponse } from "@/shared/generated";
 
-type SubmissionResponse = ApiSubmissionResponse;
 type ReportResponse = ApiReportResponse;
-type ScrapedEventResponse = ApiScrapedEventResponse;
 
 // ── Mappers ─────────────────────────────────────────────────────────
-
-function toEventSubmission(row: SubmissionResponse): EventSubmission {
-  return {
-    id: row.id,
-    // event_data is stored as opaque JSON in the DB; the FE narrows it
-    // to ``EventSubmission["eventData"]`` (which is ``EventFormData``)
-    // when handed to the review UI. Cast through unknown so the type
-    // check doesn't trip on the loose ``Record<string, unknown>`` shape.
-    eventData: row.event_data as unknown as EventSubmission["eventData"],
-    submittedBy: row.user_id,
-    submittedAt: row.submitted_at,
-    status: row.status as EventSubmission["status"],
-    rejectionReason: row.rejection_reason ?? undefined,
-  };
-}
 
 function toReportedEvent(row: ReportResponse): ReportedEvent {
   return {
@@ -55,15 +33,6 @@ function toReportedEvent(row: ReportResponse): ReportedEvent {
     reportedAt: row.reported_at,
     reason: row.reason,
     status: row.status as ReportedEvent["status"],
-  };
-}
-
-function toScrapedEvent(row: ScrapedEventResponse): ScrapedEvent {
-  return {
-    id: row.id,
-    eventId: row.event_id ?? 0,
-    scrapedAt: row.scraped_at,
-    source: row.source,
   };
 }
 
@@ -115,84 +84,6 @@ export async function updateReportedEventStatus(
   await api.patch(`/reports/${id}`, { status });
 }
 
-// ── Event Submissions API ───────────────────────────────────────────
-
-export async function getEventSubmissions(): Promise<EventSubmission[]> {
-  const rows = await getPaginatedItems<SubmissionResponse>("/submissions/");
-  return rows.map(toEventSubmission);
-}
-
-export async function getSubmissionById(id: string): Promise<EventSubmission | null> {
-  try {
-    const row = await api.get<SubmissionResponse>(`/submissions/${id}`);
-    return toEventSubmission(row);
-  } catch (err) {
-    // Only treat 404 as "not found" — propagate other errors (500, 401, etc.)
-    // so real outages surface instead of masquerading as a missing record.
-    if (err instanceof ApiError && err.status === 404) {
-      console.warn(`Submission ${id} not found:`, err);
-      return null;
-    }
-    console.error(`Failed to fetch submission ${id}:`, err);
-    throw err;
-  }
-}
-
-export async function getSubmissionsByStatus(
-  status: SubmissionStatus,
-): Promise<EventSubmission[]> {
-  const rows = await getPaginatedItems<SubmissionResponse>(`/submissions/?submission_status=${status}`);
-  return rows.map(toEventSubmission);
-}
-
-export async function saveEventSubmission(eventData: Record<string, unknown>): Promise<void> {
-  await api.post("/submissions/", { event_data: eventData });
-}
-
-export async function updateEventSubmission(
-  id: string,
-  status: SubmissionStatus,
-  rejectionReason?: string,
-): Promise<void> {
-  await api.patch(`/submissions/${id}`, {
-    status,
-    rejection_reason: rejectionReason ?? null,
-  });
-}
-
-export async function approveSubmission(id: string): Promise<void> {
-  await updateEventSubmission(id, SUBMISSION_APPROVED);
-}
-
-export async function rejectSubmission(id: string, rejectionReason: string): Promise<void> {
-  await updateEventSubmission(id, SUBMISSION_REJECTED, rejectionReason);
-}
-
-export async function updateSubmissionStatus(
-  id: string,
-  status: SubmissionStatus,
-  rejectionReason?: string,
-): Promise<void> {
-  await updateEventSubmission(id, status, rejectionReason);
-}
-
-export async function deleteSubmission(id: string): Promise<void> {
-  await api.delete(`/submissions/${id}`);
-}
-
-// ── Scraped Events API ──────────────────────────────────────────────
-
-export async function getScrapedEvents(): Promise<ScrapedEvent[]> {
-  const rows = await getPaginatedItems<ScrapedEventResponse>("/scraped-events/");
-  return rows.map(toScrapedEvent);
-}
-
-export async function saveScrapedEvent(scraped: { eventId?: number; source: string }): Promise<void> {
-  await api.post("/scraped-events/", {
-    event_id: scraped.eventId ?? null,
-    source: scraped.source,
-  });
-}
 
 // ── Admin Clubs API ─────────────────────────────────────────────────
 

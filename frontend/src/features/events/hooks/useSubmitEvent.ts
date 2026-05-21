@@ -17,7 +17,7 @@ interface UseSubmitEventOptions {
 }
 
 /**
- * Hook that encapsulates the event submission orchestration:
+ * Hook that encapsulates the event create/update orchestration:
  * API call, image upload, analytics/confetti, and edit-mode handling.
  */
 export function useSubmitEvent({

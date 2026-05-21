@@ -2,11 +2,6 @@
 
 from typing import Final
 
-SUBMISSION_PENDING: Final = "pending"
-SUBMISSION_APPROVED: Final = "approved"
-SUBMISSION_REJECTED: Final = "rejected"
-SUBMISSION_STATUSES = (SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED)
-
 REPORT_PENDING: Final = "pending"
 REPORT_RESOLVED: Final = "resolved"
 REPORT_DISMISSED: Final = "dismissed"

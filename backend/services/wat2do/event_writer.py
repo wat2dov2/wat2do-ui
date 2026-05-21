@@ -60,8 +60,9 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         )
         return "skipped"
 
-    organization = _resolve_organization(event, ig_handle=ig_handle)
-    club_type = _resolve_club_type(ig_handle)
+    club = _resolve_club_by_ig(ig_handle)
+    organization = _resolve_organization(event, ig_handle=ig_handle, club=club)
+    club_type = club.get("club_type") if club else None
     category = _pick_first_canonical_category(event.get("categories") or [])
 
     # Build the future-only occurrence list. Past-dated occurrences from
@@ -111,6 +112,7 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         "registration": bool(event.get("registration", False)),
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
+        "club_id": club.get("id") if club else None,
         "club_type": (club_type[:MAX_EVENT_CLUB_TYPE_LENGTH] if club_type else None),
         "school": (event.get("school") or "")[:MAX_EVENT_SCHOOL_LENGTH] or None,
         "category": category,
@@ -155,41 +157,39 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
     return "inserted"
 
 
-def _resolve_organization(event: dict, *, ig_handle: str) -> str:
+def _resolve_club_by_ig(ig_handle: str | None) -> dict | None:
+    """Return the registered club row for an Instagram handle, if any."""
+    if not ig_handle:
+        return None
+    rows = (
+        get_sb()
+        .table(CLUBS)
+        .select("id,club_name,club_type")
+        .eq("ig", ig_handle)
+        .limit(1)
+        .execute()
+    ).data or []
+    return rows[0] if rows else None
+
+
+def _resolve_organization(event: dict, *, ig_handle: str, club: dict | None) -> str:
     """Pick a non-empty organization string for the events row.
 
-    Order: extractor's ``organization`` → club lookup by IG handle →
-    raw IG handle. ``events.organization`` is NOT NULL in the v2 schema,
-    so we always return a non-empty string. The pipeline always passes
-    a non-empty ``ig_handle`` (it's the bucket key in
-    ``_group_by_handle``), so the IG-handle fallback always wins when
-    everything upstream returned empty.
+    Order: registered club name → extractor's ``organization`` → raw IG
+    handle. ``events.organization`` remains NOT NULL for response
+    compatibility, but ``club_id`` is the canonical ownership link when
+    the handle maps to a known club.
     """
+    if club:
+        club_name = (club.get("club_name") or "").strip()
+        if club_name:
+            return club_name
+
     org = (event.get("organization") or "").strip()
     if org:
         return org
 
-    rows = (
-        get_sb().table(CLUBS).select("club_name").eq("ig", ig_handle).limit(1).execute()
-    ).data or []
-    if rows:
-        club_name = (rows[0].get("club_name") or "").strip()
-        if club_name:
-            return club_name
-
     return ig_handle
-
-
-def _resolve_club_type(ig_handle: str | None) -> str | None:
-    """Return the registered ``club_type`` for the IG handle, or None."""
-    if not ig_handle:
-        return None
-    rows = (
-        get_sb().table(CLUBS).select("club_type").eq("ig", ig_handle).limit(1).execute()
-    ).data or []
-    if not rows:
-        return None
-    return rows[0].get("club_type")
 
 
 def _pick_first_canonical_category(categories: list) -> str | None:

@@ -32,7 +32,7 @@ interface EventViewOnlyFields {
 
 export type Event = ApiEventResponse & EventViewOnlyFields;
 
-// Event submission data (matches EventFormData from SubmitEventModal)
+// Event creation/edit form data (matches EventFormData from SubmitEventModal)
 export interface EventFormData {
   title: string;
   description: string;

@@ -28,9 +28,6 @@ const AdminEventsPage = lazy(() =>
 const AdminClubsPage = lazy(() =>
   import("@/features/admin").then((m) => ({ default: m.AdminClubsPage }))
 );
-const AdminSubmissionsPage = lazy(() =>
-  import("@/features/admin").then((m) => ({ default: m.AdminSubmissionsPage }))
-);
 const AdminPostersPage = lazy(() =>
   import("@/features/admin").then((m) => ({ default: m.AdminPostersPage }))
 );
@@ -72,10 +69,7 @@ export function AdminPanelRoute() {
 
   return (
     <AdminSuspense>
-      {/* AdminPanel renders dashboard widgets that source their own data
-          via store hooks; the legacy ``events`` prop is unused but still
-          required by the type. Pass an empty array to satisfy it. */}
-      <AdminPanel events={[]} onNavigate={handleNavigate} />
+      <AdminPanel onNavigate={handleNavigate} />
     </AdminSuspense>
   );
 }
@@ -133,20 +127,6 @@ export function AdminClubsRoute() {
         onEditClub={onEditClub}
         onDeleteClub={onDeleteClub}
       />
-    </AdminSuspense>
-  );
-}
-
-/**
- * Admin Submissions Route Component
- */
-export function AdminSubmissionsRoute() {
-  const navigate = useNavigate();
-  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
-
-  return (
-    <AdminSuspense>
-      <AdminSubmissionsPage onBack={onBack} />
     </AdminSuspense>
   );
 }

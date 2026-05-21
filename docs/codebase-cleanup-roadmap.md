@@ -114,6 +114,26 @@ RSVP feature removal completed:
   Historical migrations still mention/create the old table, then the latest
   migration removes it.
 
+Verified-club event ownership schema pass completed:
+
+- Added `events.club_id` as the explicit club ownership link while keeping
+  `events.organization` for existing API responses and UI copy.
+- Backend event creation now stamps `club_id` and derives organization/club
+  type from the approved club row for non-admin creators; admins may still
+  create operational events without a club link.
+- Removed the stale `event_submissions` backend router/service/schema/tests,
+  admin submissions frontend route/page/store/actions, and generated API
+  contracts.
+- Removed the stale `scraped_events` backend router/service/schema/tests and
+  admin scraped-event activity feed; scraper ingestion remains on
+  `events`, `event_dates`, and `scrape_runs`.
+- A/B recommendation impressions remain intact, and authenticated click/detail
+  interactions now mirror into `ab_test_events` click records so CTR is
+  meaningful.
+- Added a destructive forward migration that backfills `events.club_id` where
+  existing rows can be matched to clubs, then drops `public.event_submissions`
+  and `public.scraped_events`.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
@@ -154,24 +174,33 @@ Questions raised during cleanup:
 - Marketing still imports poster deletion from the QR feature API. Decide
   whether destructive poster actions should move into a shared poster API module
   after caller ownership is audited.
-- Event promotions currently infer club ownership by matching
-  `events.organization` to a club name owned by the requester. Add an explicit
-  `events.club_id` relationship if official-club promotion needs to be stricter
-  or support renamed clubs.
+- Event promotions still infer club ownership by matching `events.organization`
+  to a club name owned by the requester. Now that events have `club_id`, decide
+  whether promotion authorization should prefer the FK and keep name matching
+  only as a legacy fallback.
 - Club ownership currently stands in for “official club.” Decide whether clubs
   need a separate verification/status field before monetized promotion reaches
   production.
 - Admin club approval currently means creating a club row with `created_by`
   assigned to the approved owner. Decide whether future work needs a dedicated
   club membership table with roles rather than single-owner club rows.
+- Event update/delete authorization still uses `events.created_by`, not
+  `events.club_id`. Decide whether club owners should manage all events for
+  their club, including scraper-created events, or only events they personally
+  created.
+- QR posters still do not have club ownership. If club posters should become
+  self-serve beyond admins, add `club_id` ownership instead of relying only on
+  creator identity.
+- Notification settings still have frontend/local settings drift from backend
+  notification preferences. Decide whether to wire all settings to
+  `notification_preferences` or remove local-only controls.
+- `club_integrations` remains because visible UI exists, but platform options
+  are still placeholder-like. Decide whether integrations are real product
+  surface before hardening or dropping that table.
 - Direct Supabase table access is now treated as unsupported product behavior.
   If the frontend ever needs to call Supabase directly, add explicit, narrow
   policies for that feature instead of loosening the global service-role-only
   posture.
-- `event_submissions` still exists even though official club owners now create
-  events directly. Decide whether it remains useful for a moderation queue or
-  should be retired in a dedicated destructive migration after checking live
-  row counts.
 - `event_promotions.package` remains in the schema for the existing
   `promote_event` RPC and uniqueness model, even though the product now has one
   promotion type. Decide whether to collapse it in a later migration once live
@@ -243,9 +272,7 @@ Instead, maintain an endpoint matrix and use it to rank later refactors.
 | Clubs browse | `GET /clubs/` list of clubs | `skip`/`limit` | Clubs page loads list | Keep stable; later align query names or add paginated envelope if needed. |
 | Users admin | `GET /users/` admin list | `skip`/`limit` | Admin-only | Candidate for `PaginationParams` after generated types and callers are updated. |
 | Reports admin | `GET /reports/` paginated envelope | `page`/`page_size` | `getPaginatedItems` loads all pages | Acceptable for admin; monitor result size. |
-| Submissions admin | `GET /submissions/` paginated envelope | `page`/`page_size` | `getPaginatedItems` loads all pages | Acceptable for admin; monitor result size. |
 | QR admin | `GET /qr/`, `GET /qr/scans` paginated envelope | `page`/`page_size` | Poster/scans helpers load all pages | Keep admin/internal; avoid using fetch-all patterns in public user flows. |
-| Scraped events admin | `GET /scraped-events/` paginated envelope | `page`/`page_size` | Admin fetch-all | Acceptable for admin. |
 | Promotions | `GET /promotions/` list response | `offset`/`limit` | Credit/promotion stores | Candidate for later pagination normalization. |
 
 Generated OpenAPI files in `frontend/src/shared/generated` are intentional and

@@ -24,7 +24,6 @@ export const ROUTES = {
   ADMIN: "/admin",
   ADMIN_EVENTS: "/admin/events",
   ADMIN_CLUBS: "/admin/clubs",
-  ADMIN_SUBMISSIONS: "/admin/submissions",
   ADMIN_POSTERS: "/admin/posters",
 
   // Club Panel
@@ -51,7 +50,6 @@ export function settingsTabPath(tab: (typeof SETTINGS_TABS)[keyof typeof SETTING
 export const ADMIN_ROUTE_MAP: Record<string, string> = {
   "admin-events": ROUTES.ADMIN_EVENTS,
   "admin-clubs": ROUTES.ADMIN_CLUBS,
-  "admin-submissions": ROUTES.ADMIN_SUBMISSIONS,
   "admin-posters": ROUTES.ADMIN_POSTERS,
 };
 

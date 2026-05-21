@@ -35,15 +35,45 @@ def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
 def user_owns_club_named(owner_id: str, club_name: str | None) -> bool:
     """Return whether a user owns the club attached to an event organization.
 
-    Events currently store the club attachment as ``organization`` rather than
-    a club FK. Keep the matching policy here until event ownership grows an
-    explicit club_id.
+    Kept for promotion compatibility while callers migrate toward ``club_id``.
     """
     normalized = _normalize_club_name(club_name)
     if not normalized:
         return False
     return any(
         _normalize_club_name(club.club_name) == normalized for club in list_clubs_by_owner(owner_id)
+    )
+
+
+def resolve_event_club_for_owner(
+    owner_id: str,
+    *,
+    club_id: int | None = None,
+    organization: str | None = None,
+) -> ClubResponse | None:
+    """Resolve the verified club a non-admin user is creating an event for.
+
+    ``club_id`` is the canonical ownership link. ``organization`` remains a
+    compatibility fallback for older frontend payloads and multi-club owners.
+    If a user owns exactly one club, that club wins so the backend, not a form
+    text field, owns the published organization name.
+    """
+    owned_clubs = list_clubs_by_owner(owner_id)
+    if not owned_clubs:
+        return None
+
+    if club_id is not None:
+        return next((club for club in owned_clubs if club.id == club_id), None)
+
+    if len(owned_clubs) == 1:
+        return owned_clubs[0]
+
+    normalized = _normalize_club_name(organization)
+    if not normalized:
+        return None
+    return next(
+        (club for club in owned_clubs if _normalize_club_name(club.club_name) == normalized),
+        None,
     )
 
 

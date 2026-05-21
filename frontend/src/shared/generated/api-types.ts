@@ -796,61 +796,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scraped-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Scraped Events */
-        get: operations["list_scraped_events_scraped_events__get"];
-        put?: never;
-        /** Create Scraped Event */
-        post: operations["create_scraped_event_scraped_events__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Submission */
-        get: operations["get_submission_submissions__submission_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Submission */
-        delete: operations["delete_submission_submissions__submission_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Submission */
-        patch: operations["update_submission_submissions__submission_id__patch"];
-        trace?: never;
-    };
     "/uploads/event-image/{event_id}": {
         parameters: {
             query?: never;
@@ -1117,8 +1062,6 @@ export interface components {
             interest_to_categories: {
                 [key: string]: string[];
             };
-            /** Submission Statuses */
-            submission_statuses: string[];
             /** Report Statuses */
             report_statuses: string[];
         };
@@ -1315,6 +1258,8 @@ export interface components {
             source_url?: string | null;
             /** Category */
             category?: string | null;
+            /** Club Id */
+            club_id?: number | null;
             /** Organization */
             organization: string;
             /** Ig Handle */
@@ -1473,6 +1418,8 @@ export interface components {
         EventResponse: {
             /** Id */
             id: number;
+            /** Club Id */
+            club_id?: number | null;
             /** Title */
             title: string;
             /** Description */
@@ -1891,32 +1838,6 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** PaginatedResponse[ScrapedEventResponse] */
-        PaginatedResponse_ScrapedEventResponse_: {
-            /** Items */
-            items: components["schemas"]["ScrapedEventResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[SubmissionResponse] */
-        PaginatedResponse_SubmissionResponse_: {
-            /** Items */
-            items: components["schemas"]["SubmissionResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
         /**
          * PlatformIntegrationOptionsResponse
          * @description Generic options for any integration platform (audit S7).
@@ -2181,35 +2102,6 @@ export interface components {
              */
             status: "saved" | "unsaved";
         };
-        /** ScrapedEventCreate */
-        ScrapedEventCreate: {
-            /** Event Id */
-            event_id?: number | null;
-            /** Source */
-            source: string;
-            /** Raw Data */
-            raw_data?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** ScrapedEventResponse */
-        ScrapedEventResponse: {
-            /** Id */
-            id: string;
-            /** Event Id */
-            event_id?: number | null;
-            /** Source */
-            source: string;
-            /**
-             * Scraped At
-             * Format: date-time
-             */
-            scraped_at: string;
-            /** Raw Data */
-            raw_data?: {
-                [key: string]: unknown;
-            } | null;
-        };
         /** SignupRequest */
         SignupRequest: {
             /**
@@ -2242,61 +2134,6 @@ export interface components {
              * @default false
              */
             confirmation_required: boolean;
-        };
-        /**
-         * SubmissionCreate
-         * @description Incoming event submission.
-         *
-         *     ``event_data`` is typed as ``EventCreate`` (audit S1) so the exact
-         *     same validators used for real events — required ``title`` /
-         *     ``location`` / ``organization``, length caps, allow-listed
-         *     categories, safe URL schemes — apply to submissions.  This closes
-         *     the mass-assignment hole where attackers could salt the payload
-         *     with attacker-controlled ``created_by`` / ``id`` / ``added_at`` or
-         *     XSS-ready strings that later reach the admin approval UI.
-         *
-         *     The byte-size cap (``MAX_EVENT_DATA_BYTES``) is retained as a
-         *     defense-in-depth belt-and-braces check — ``EventCreate``'s field
-         *     caps already bound each string, but a maliciously large food list
-         *     or description could still approach the 32 KB JSONB column limit.
-         */
-        SubmissionCreate: {
-            event_data: components["schemas"]["EventCreate"];
-        };
-        /** SubmissionResponse */
-        SubmissionResponse: {
-            /** Id */
-            id: string;
-            /** User Id */
-            user_id: string;
-            /** Event Data */
-            event_data: {
-                [key: string]: unknown;
-            };
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-            /**
-             * Submitted At
-             * Format: date-time
-             */
-            submitted_at: string;
-            /** Reviewed At */
-            reviewed_at?: string | null;
-        };
-        /** SubmissionUpdate */
-        SubmissionUpdate: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Rejection Reason */
-            rejection_reason?: string | null;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -3955,236 +3792,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaveEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_scraped_events_scraped_events__get: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ScrapedEventResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_scraped_event_scraped_events__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScrapedEventCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScrapedEventResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_submissions_submissions__get: {
-        parameters: {
-            query?: {
-                submission_status?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_SubmissionResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_submission_submissions__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmissionCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_submission_submissions__submission_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_submission_submissions__submission_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_submission_submissions__submission_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmissionUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionResponse"];
                 };
             };
             /** @description Validation Error */

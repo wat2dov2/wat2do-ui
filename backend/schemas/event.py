@@ -145,6 +145,7 @@ class EventCreate(BaseModel):
     school: str | None = Field(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
+    club_id: int | None = Field(default=None, ge=1)
     organization: str = Field(..., min_length=1, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
     discord_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
@@ -325,6 +326,7 @@ class EventResponse(BaseModel):
     """
 
     id: int
+    club_id: int | None = None
     title: str
     description: str | None = None
     location: str

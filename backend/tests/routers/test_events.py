@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 from core.constants import ROLE_ADMIN
+from schemas.club import ClubResponse
 from schemas.event import EventResponse
 from services import club_service, event_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
@@ -17,6 +18,7 @@ def _mock_event(**overrides) -> EventResponse:
     """
     defaults = {
         "id": 1,
+        "club_id": None,
         "title": "Test Event",
         "location": "Here",
         "organization": "TestOrg",
@@ -42,6 +44,22 @@ def _mock_event(**overrides) -> EventResponse:
     return EventResponse.model_validate(defaults)
 
 
+def _mock_club(**overrides) -> ClubResponse:
+    defaults = {
+        "id": 7,
+        "club_name": "Verified Club",
+        "categories": [],
+        "club_page": None,
+        "ig": None,
+        "discord": None,
+        "club_type": "WUSA",
+        "logo_url": None,
+        "created_by": FAKE_USER["id"],
+    }
+    defaults.update(overrides)
+    return ClubResponse.model_validate(defaults)
+
+
 def test_create_event_requires_auth(client):
     response = client.post(
         "/events/", json={"title": "Test", "location": "Here", "organization": "Org"}
@@ -56,9 +74,10 @@ def test_delete_event_requires_auth(client):
 
 def test_create_event_sets_created_by_for_club_owner(authenticated_client, monkeypatch):
     """Approved club owners can create events for their club."""
-    created_event = _mock_event()
+    created_event = _mock_event(club_id=7, organization="Verified Club", club_type="WUSA")
     mock_create = MagicMock(return_value=created_event)
-    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=True))
+    mock_resolve = MagicMock(return_value=_mock_club())
+    monkeypatch.setattr(club_service, "resolve_event_club_for_owner", mock_resolve)
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
     resp = authenticated_client.post(
@@ -79,14 +98,26 @@ def test_create_event_sets_created_by_for_club_owner(authenticated_client, monke
     )
     assert resp.status_code == 201
     assert mock_create.call_count == 1
-    _, kwargs = mock_create.call_args
+    args, kwargs = mock_create.call_args
+    create_data = args[0]
+    assert create_data.club_id == 7
+    assert create_data.organization == "Verified Club"
+    assert create_data.club_type == "WUSA"
     assert kwargs["created_by"] == FAKE_USER["id"]
-    club_service.user_owns_club_named.assert_called_once_with(FAKE_USER["id"], "Org")
+    mock_resolve.assert_called_once_with(
+        FAKE_USER["id"],
+        club_id=None,
+        organization="Org",
+    )
 
 
 def test_create_event_without_matching_club_rejected(authenticated_client, monkeypatch):
     """Authenticated users cannot create events unless they own the event's club."""
-    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=False))
+    monkeypatch.setattr(
+        club_service,
+        "resolve_event_club_for_owner",
+        MagicMock(return_value=None),
+    )
     monkeypatch.setattr(event_service, "create_event", MagicMock())
 
     resp = authenticated_client.post(
@@ -114,7 +145,7 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
     """Admins can create events for operations and moderation workflows."""
     created_event = _mock_event(created_by=ADMIN_USER["id"])
     mock_create = MagicMock(return_value=created_event)
-    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock())
+    monkeypatch.setattr(club_service, "resolve_event_club_for_owner", MagicMock())
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
     resp = admin_client.post(
@@ -135,7 +166,7 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
     )
 
     assert resp.status_code == 201
-    club_service.user_owns_club_named.assert_not_called()
+    club_service.resolve_event_club_for_owner.assert_not_called()
     _, kwargs = mock_create.call_args
     assert kwargs["created_by"] == ADMIN_USER["id"]
 

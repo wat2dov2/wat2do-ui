@@ -13,5 +13,4 @@ class AppConstantsResponse(BaseModel):
     event_categories: list[str]
     interests: list[str]
     interest_to_categories: dict[str, list[str]]
-    submission_statuses: list[str]
     report_statuses: list[str]

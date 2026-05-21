@@ -42,6 +42,34 @@ _ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
     }
 )
 
+_AB_CLICK_INTERACTION_TYPES: frozenset[str] = frozenset(
+    {INTERACTION_CLICK, INTERACTION_DETAIL_VIEW}
+)
+
+
+def _record_ab_click_events(user_id: str | None, interactions: list[InteractionCreate]) -> None:
+    """Mirror authenticated click/detail interactions into A/B CTR events."""
+    if user_id is None:
+        return
+    event_ids = sorted(
+        {
+            item.event_id
+            for item in interactions
+            if item.interaction_type in _AB_CLICK_INTERACTION_TYPES
+        }
+    )
+    if not event_ids:
+        return
+
+    try:
+        from services.ab_test_service import ab_test
+
+        variant = ab_test.get_user_variant(user_id)
+        for event_id in event_ids:
+            ab_test.record_click(user_id, event_id, variant)
+    except Exception as e:
+        log.warning("A/B click tracking failed for user=%s events=%s: %s", user_id, event_ids, e)
+
 
 def record_interactions(
     user_id: str | None,
@@ -155,11 +183,14 @@ def record_interactions_batch(
     # batch) so the frontend thought tracking was healthy while interactions
     # silently dropped on the floor.  Propagating lets the global handler
     # map the error to 502 with a clear logline for observability.
-    return record_interactions(
+    recorded = record_interactions(
         user_id=user_id,
         session_id=session_id,
         interactions=interactions,
     )
+    if recorded:
+        _record_ab_click_events(user_id, interactions)
+    return recorded
 
 
 def get_user_interaction_count(user_id: str) -> int:

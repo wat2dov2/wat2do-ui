@@ -9,13 +9,12 @@
  */
 
 import { api } from "@/shared/services/apiClient";
-import { SUBMISSION_STATUSES, REPORT_STATUSES } from "@/shared/constants/statuses";
+import { REPORT_STATUSES } from "@/shared/constants/statuses";
 
 export interface AppConstants {
   event_categories: string[];
   interests: string[];
   interest_to_categories: Record<string, string[]>;
-  submission_statuses: string[];
   report_statuses: string[];
 }
 
@@ -62,7 +61,6 @@ const FALLBACK: AppConstants = {
   event_categories: [...FALLBACK_EVENT_CATEGORIES],
   interests: [...FALLBACK_INTERESTS],
   interest_to_categories: FALLBACK_INTEREST_TO_CATEGORIES,
-  submission_statuses: [...SUBMISSION_STATUSES],
   report_statuses: [...REPORT_STATUSES],
 };
 

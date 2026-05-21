@@ -45,11 +45,22 @@ export async function fetchEventById(id: number): Promise<Event> {
 
 /** Map frontend EventFormData to the backend API payload shape. */
 function buildEventPayload(eventData: EventFormData) {
+  const startsAt = eventData.date
+    ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString()
+    : null;
+
   return {
     title: eventData.title,
     description: eventData.description || null,
     location: eventData.location,
-    dtstart_utc: eventData.date ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString() : null,
+    occurrences: startsAt
+      ? [{
+          dtstart_utc: startsAt,
+          dtend_utc: null,
+          duration: null,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+        }]
+      : [],
     price: eventData.price || null,
     food: eventData.food?.length ? eventData.food : null,
     registration: eventData.requiresRegistration || false,

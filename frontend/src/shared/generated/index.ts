@@ -44,22 +44,11 @@ export type ApiAddCreditsRequest = components["schemas"]["AddCreditsRequest"];
 export type ApiPromotionCreate = components["schemas"]["PromotionCreate"];
 export type ApiPromotionResponse = components["schemas"]["PromotionResponse"];
 
-// ── Submissions ─────────────────────────────────────────────────────
-export type ApiSubmissionCreate = components["schemas"]["SubmissionCreate"];
-export type ApiSubmissionUpdate = components["schemas"]["SubmissionUpdate"];
-export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];
-export type ApiPaginatedSubmissionResponse = components["schemas"]["PaginatedResponse_SubmissionResponse_"];
-
 // ── Reports ─────────────────────────────────────────────────────────
 export type ApiReportCreate = components["schemas"]["ReportCreate"];
 export type ApiReportUpdate = components["schemas"]["ReportUpdate"];
 export type ApiReportResponse = components["schemas"]["ReportResponse"];
 export type ApiPaginatedReportResponse = components["schemas"]["PaginatedResponse_ReportResponse_"];
-
-// ── Scraped Events ──────────────────────────────────────────────────
-export type ApiScrapedEventCreate = components["schemas"]["ScrapedEventCreate"];
-export type ApiScrapedEventResponse = components["schemas"]["ScrapedEventResponse"];
-export type ApiPaginatedScrapedEventResponse = components["schemas"]["PaginatedResponse_ScrapedEventResponse_"];
 
 // ── QR Codes ────────────────────────────────────────────────────────
 export type ApiQrCodeCreate = components["schemas"]["QrCodeCreate"];

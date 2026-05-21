@@ -42,8 +42,7 @@ def create_report(user_id: str, event_id: int, reason: str) -> ReportResponse:
 
     Verifies the referenced event exists before inserting — stops the
     forged-event-id DoS vector flagged in audit I2.  The FK migration
-    20260416005_add_fks_to_reports_and_submissions.sql will enforce this
-    at the DB layer as well; this check keeps the error message clean
+    DB foreign keys enforce this at the storage layer as well; this check keeps the error message clean
     (404 instead of opaque ``Referenced resource does not exist``).
     """
     if not _event_exists(event_id):

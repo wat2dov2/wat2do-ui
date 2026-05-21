@@ -134,6 +134,39 @@ def test_batch_202_with_bearer_auth(authenticated_client, monkeypatch):
     assert kwargs["user_id"] == FAKE_DB_USER_ID
 
 
+def test_batch_authenticated_click_records_ab_clicks(authenticated_client, monkeypatch):
+    """Authenticated click/detail interactions feed A/B CTR tracking."""
+    from services import ab_test_service, interaction_service, user_service
+
+    db_user = _make_db_user()
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(
+        interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
+    )
+    monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=3))
+
+    mock_ab = MagicMock()
+    mock_ab.get_user_variant.return_value = "control"
+    monkeypatch.setattr(ab_test_service, "ab_test", mock_ab)
+
+    resp = authenticated_client.post(
+        "/interactions/batch",
+        json=_batch_payload(
+            interactions=[
+                {"event_id": 10, "interaction_type": "view"},
+                {"event_id": 11, "interaction_type": "click"},
+                {"event_id": 12, "interaction_type": "detail_view"},
+            ],
+        ),
+    )
+
+    assert resp.status_code == 202
+    mock_ab.get_user_variant.assert_called_once_with(FAKE_DB_USER_ID)
+    mock_ab.record_click.assert_any_call(FAKE_DB_USER_ID, 11, "control")
+    mock_ab.record_click.assert_any_call(FAKE_DB_USER_ID, 12, "control")
+    assert mock_ab.record_click.call_count == 2
+
+
 # ── Batch size limit ──────────────────────────────────────────────────
 
 
