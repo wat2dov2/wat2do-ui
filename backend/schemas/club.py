@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from typing import Literal
 from urllib.parse import urlparse
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -61,6 +62,7 @@ class ClubCreate(BaseModel):
     discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     club_type: str = Field(..., min_length=1, max_length=MAX_CLUB_TYPE_LENGTH)
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    owner_user_id: UUID | None = Field(default=None, description="Approved club owner user ID")
 
     @field_validator("club_name", "club_type")
     @classmethod

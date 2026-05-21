@@ -3987,6 +3987,19 @@
               }
             ],
             "title": "Logo Url"
+          },
+          "owner_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner User Id",
+            "description": "Approved club owner user ID"
           }
         },
         "additionalProperties": false,
@@ -6243,21 +6256,11 @@
           "event_id": {
             "type": "integer",
             "title": "Event Id"
-          },
-          "package": {
-            "type": "string",
-            "enum": [
-              "featured",
-              "email",
-              "combo"
-            ],
-            "title": "Package"
           }
         },
         "type": "object",
         "required": [
-          "event_id",
-          "package"
+          "event_id"
         ],
         "title": "PromotionCreate"
       },
@@ -6277,11 +6280,6 @@
           },
           "package": {
             "type": "string",
-            "enum": [
-              "featured",
-              "email",
-              "combo"
-            ],
             "title": "Package"
           },
           "credits_spent": {

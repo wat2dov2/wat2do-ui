@@ -17,6 +17,7 @@ interface SidebarEventsSectionProps {
   eventsExpanded: boolean;
   setEventsExpanded: (expanded: boolean) => void;
   profileCompleted: boolean;
+  canCreateEvents: boolean;
   setShowSubmitEvent: (show: boolean) => void;
 }
 
@@ -25,6 +26,7 @@ export function SidebarEventsSection({
   eventsExpanded,
   setEventsExpanded,
   profileCompleted,
+  canCreateEvents,
   setShowSubmitEvent,
 }: SidebarEventsSectionProps) {
   const { t } = useTranslation();
@@ -96,11 +98,13 @@ export function SidebarEventsSection({
               isActive={pageMode === "events"}
               onClick={handleExploreClick}
             />
-            <SidebarButton
-              icon={Plus}
-              label={t("navigation.create")}
-              onClick={handleCreateClick}
-            />
+            {canCreateEvents && (
+              <SidebarButton
+                icon={Plus}
+                label={t("navigation.create")}
+                onClick={handleCreateClick}
+              />
+            )}
           </div>
         </div>
       </div>

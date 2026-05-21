@@ -2,7 +2,7 @@
  * Promotion-related types
  */
 
-export type PromotionPackage = "featured" | "email" | "combo";
+export type PromotionPackage = "featured";
 
 export interface PromotionPackageInfo {
   id: PromotionPackage;
@@ -10,7 +10,6 @@ export interface PromotionPackageInfo {
   description: string;
   credits: number;
   duration: number; // days
-  originalCredits?: number; // for showing discount
 }
 
 export interface CreditPackageInfo {
@@ -20,4 +19,4 @@ export interface CreditPackageInfo {
   bonus?: number;
 }
 
-export { CREDIT_PACKAGES, PROMOTION_PACKAGES } from "@/shared/constants/promotions";
+export { CREDIT_PACKAGES, EVENT_PROMOTION, PROMOTION_PACKAGES } from "@/shared/constants/promotions";

@@ -45,10 +45,9 @@ const INSUFFICIENT_CREDITS_CODE = "insufficient_credits";
 
 export async function promoteEventAPI(
   eventId: number,
-  packageId: string,
 ): Promise<{ success: boolean; needsCredits?: boolean }> {
   try {
-    await createPromotionAPI(eventId, packageId);
+    await createPromotionAPI(eventId);
     return { success: true };
   } catch (err: unknown) {
     // Prefer the stable ``code`` attached to the error body over a

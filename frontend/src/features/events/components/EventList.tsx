@@ -6,6 +6,7 @@ import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { usePromotionsStore } from "@/features/credits";
 import { useShallow } from "zustand/react/shallow";
 import type { Event } from "@/shared/types";
+import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
 
 interface EventListProps {
   events: Event[];
@@ -20,6 +21,17 @@ interface EventListProps {
 
 const INITIAL_RENDER_COUNT = 8;
 const RENDER_CHUNK_SIZE = 24;
+const EVENT_DATE_SECTIONS: Array<{
+  category: EventDateCategory;
+  labelKey: string;
+}> = [
+  { category: "today", labelKey: "events.dateSections.today" },
+  { category: "tomorrow", labelKey: "events.dateSections.tomorrow" },
+  { category: "later this week", labelKey: "events.dateSections.laterThisWeek" },
+  { category: "later this month", labelKey: "events.dateSections.laterThisMonth" },
+  { category: "later", labelKey: "events.dateSections.later" },
+  { category: "past", labelKey: "events.dateSections.past" },
+];
 
 /**
  * Event list component.
@@ -28,7 +40,8 @@ const RENDER_CHUNK_SIZE = 24;
  * card — including cards rendered inside `EventDetailsModal`'s similar-events
  * grid — stays in sync without needing a context wrapper.
  * Ordering (promoted first, recommended score) happens upstream in
- * `useEventsPageData.orderedEvents`; this component only renders.
+ * `useEventsPageData.orderedEvents`; this component preserves that order
+ * inside date sections.
  */
 export function EventList({
   events,
@@ -62,6 +75,21 @@ export function EventList({
     () => events.slice(0, Math.min(visibleCount, events.length)),
     [events, visibleCount],
   );
+  const groupedVisibleEvents = useMemo(() => {
+    const groups = EVENT_DATE_SECTIONS.reduce(
+      (acc, { category }) => {
+        acc[category] = [];
+        return acc;
+      },
+      {} as Record<EventDateCategory, Event[]>,
+    );
+
+    visibleEvents.forEach((event) => {
+      groups[getEventDateCategory(event)].push(event);
+    });
+
+    return groups;
+  }, [visibleEvents]);
 
   useEffect(() => {
     if (visibleCount >= events.length) return;
@@ -114,32 +142,44 @@ export function EventList({
 
   // Grid view with content-visibility for performance
   return (
-    <div
-      className="grid justify-center gap-4"
-      style={{
-        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 260px))",
-      }}
-      role="list"
-      aria-label={`${events.length} events found`}
-    >
-      {visibleEvents.map((event) => (
-        <div
-          key={event.id}
-          role="listitem"
-          style={{
-            contentVisibility: "auto",
-          }}
-        >
-          <EventCard
-            event={event}
-            isSaved={savedSet.has(event.id)}
-            isPromoted={promotedSet.has(event.id)}
-            onEventClick={onEventClick}
-            disableModal={disableModal}
-            onDelete={onDelete}
-          />
-        </div>
-      ))}
+    <div className="space-y-8" role="list" aria-label={`${events.length} events found`}>
+      {EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
+        const sectionEvents = groupedVisibleEvents[category];
+        if (sectionEvents.length === 0) return null;
+
+        return (
+          <section key={category} className="space-y-3" aria-label={t(labelKey)}>
+            <h2 className="text-lg font-semibold tracking-normal text-foreground">
+              {t(labelKey)}
+            </h2>
+            <div
+              className="grid justify-center gap-4"
+              style={{
+                gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 260px))",
+              }}
+            >
+              {sectionEvents.map((event) => (
+                <div
+                  key={event.id}
+                  role="listitem"
+                  style={{
+                    contentVisibility: "auto",
+                  }}
+                >
+                  <EventCard
+                    event={event}
+                    isSaved={savedSet.has(event.id)}
+                    isPromoted={promotedSet.has(event.id)}
+                    onEventClick={onEventClick}
+                    disableModal={disableModal}
+                    onDelete={onDelete}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

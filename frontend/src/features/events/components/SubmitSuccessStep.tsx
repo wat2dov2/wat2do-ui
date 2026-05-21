@@ -3,7 +3,7 @@ import { EventSuccessScreen } from "@/features/events/components/EventForm/Event
 interface SubmitSuccessStepProps {
   isOpen: boolean;
   onClose: () => void;
-  onPromote: () => void;
+  onPromote?: () => void;
   isEditMode: boolean;
   onShowSuccessAlert: (message: string) => void;
 }

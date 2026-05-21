@@ -36,16 +36,14 @@ export async function addCreditsAPI(
 }
 
 /**
- * Create a promotion via the backend.
- * Only sends event_id and package — the server determines cost and duration.
+ * Create the single event promotion via the backend.
+ * Only sends event_id — the server determines cost and duration.
  */
 export async function createPromotionAPI(
   eventId: number,
-  packageId: string,
 ): Promise<PromotionResponse> {
   return api.post<PromotionResponse>("/promotions/", {
     event_id: eventId,
-    package: packageId,
   });
 }
 

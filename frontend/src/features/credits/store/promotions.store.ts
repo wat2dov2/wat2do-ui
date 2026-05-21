@@ -23,10 +23,7 @@ interface PromotionsState {
   fetchActivePromotedEventIds: () => Promise<void>;
   /** Reset per-user state (called on logout / user switch). */
   reset: () => void;
-  promoteEvent: (
-    eventId: number,
-    packageId: string,
-  ) => Promise<{ success: boolean; needsCredits?: boolean }>;
+  promoteEvent: (eventId: number) => Promise<{ success: boolean; needsCredits?: boolean }>;
 }
 
 export const usePromotionsStore = create<PromotionsState>((set, get) => ({
@@ -53,7 +50,7 @@ export const usePromotionsStore = create<PromotionsState>((set, get) => ({
     set({ activePromotedEventIds: [], _loadStatus: "idle" });
   },
 
-  promoteEvent: async (eventId, packageId) => {
+  promoteEvent: async (eventId) => {
     // Optimistic snapshot so the revert path is explicit even though the
     // backend reconcile is the ultimate source of truth.
     const snapshot = get().activePromotedEventIds;
@@ -63,7 +60,7 @@ export const usePromotionsStore = create<PromotionsState>((set, get) => ({
     }
 
     try {
-      const result = await promoteEventAPI(eventId, packageId);
+      const result = await promoteEventAPI(eventId);
       if (!result.success) {
         // CRD-003: insufficient_credits (and any other non-success sentinel)
         // must revert the optimistic promotion — otherwise the event stays

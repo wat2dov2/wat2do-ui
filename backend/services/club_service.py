@@ -22,10 +22,29 @@ from schemas.club import (
 SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = get_args(IntegrationPlatform)
 
 
+def _normalize_club_name(name: str | None) -> str:
+    return " ".join((name or "").casefold().split())
+
+
 def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
     """Return all clubs created by the given Supabase auth user id."""
     r = get_sb().table(CLUBS).select("*").eq("created_by", owner_id).execute()
     return [ClubResponse.model_validate(c) for c in (r.data or [])]
+
+
+def user_owns_club_named(owner_id: str, club_name: str | None) -> bool:
+    """Return whether a user owns the club attached to an event organization.
+
+    Events currently store the club attachment as ``organization`` rather than
+    a club FK. Keep the matching policy here until event ownership grows an
+    explicit club_id.
+    """
+    normalized = _normalize_club_name(club_name)
+    if not normalized:
+        return False
+    return any(
+        _normalize_club_name(club.club_name) == normalized for club in list_clubs_by_owner(owner_id)
+    )
 
 
 def get_club(club_id: int) -> ClubResponse | None:
@@ -57,7 +76,7 @@ def list_clubs(
 
 
 def create_club(data: ClubCreate, *, created_by: str) -> ClubResponse:
-    payload = data.model_dump()
+    payload = data.model_dump(exclude={"owner_user_id"})
     payload["created_by"] = created_by
     r = get_sb().table(CLUBS).insert(payload).execute()
     return ClubResponse.model_validate(r.data[0])

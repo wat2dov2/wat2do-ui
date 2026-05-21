@@ -30,7 +30,7 @@ import { useModalStore } from "@/shared/store/modal.store";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useCreditsStore, usePromotionsStore } from "@/features/credits";
-import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Event, EventFormData } from "@/shared/types";
@@ -45,7 +45,8 @@ interface ModalContainerProps {
 export function ModalContainer({ editingEvent, clearEditing }: ModalContainerProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const profileCompleted = useProfileCompleted();
+  const { profileCompleted, isAdmin, hasClub } = useAuthState();
+  const canCreateEvents = hasClub || isAdmin;
 
   // ── Modal-store subscriptions (isolated from AppContent) ─────
   const showSubmitEvent = useModalStore((s) => s.showSubmitEvent);
@@ -70,8 +71,8 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const promoteEvent = useCallback(
-    async (eventId: number, packageId: string): Promise<boolean> => {
-      const result = await storePromoteEvent(eventId, packageId);
+    async (eventId: number): Promise<boolean> => {
+      const result = await storePromoteEvent(eventId);
       if (result.needsCredits) {
         setShowBuyCredits(true);
         return false;
@@ -107,7 +108,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
         onClose={handleSubmitEventClose}
         onSubmit={async (eventData) => addEvent(eventData)}
         userCredits={userCredits}
-        onPromote={promoteEvent}
+        onPromote={profileCompleted && canCreateEvents ? promoteEvent : undefined}
         onBuyCredits={() => setShowBuyCredits(true)}
         editEventId={editingEvent?.id}
         initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
@@ -130,6 +131,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
         onOpenChange={setShowCommandPalette}
         setShowFilterDropdown={setShowFilterDropdown}
         onClearAllFilters={clearAllFilters}
+        canCreateEvents={canCreateEvents}
         personalItems={
           profileCompleted ? (
             <CommandItem

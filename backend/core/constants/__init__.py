@@ -6,7 +6,12 @@ the surrounding behavior, then be re-exported here only when existing callers
 need the shared facade.
 """
 
-from core.constants.credits import DEFAULT_CREDIT_BALANCE, MAX_CREDITS_PER_ADD, PROMOTION_PACKAGES
+from core.constants.credits import (
+    DEFAULT_CREDIT_BALANCE,
+    DEFAULT_PROMOTION_PACKAGE,
+    MAX_CREDITS_PER_ADD,
+    PROMOTION_PACKAGES,
+)
 from core.constants.events import CATEGORY_NORMALIZE_MAP, EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
 from core.constants.experiments import (
     AB_DEFAULT_VARIANTS,
@@ -180,6 +185,7 @@ __all__ = (
     "DEFAULT_INTERACTION_LIMIT",
     "DEFAULT_LIST_LIMIT",
     "DEFAULT_PAGE_SIZE",
+    "DEFAULT_PROMOTION_PACKAGE",
     "EVENT_CATEGORIES",
     "EVENT_STATUSES",
     "EVENT_STATUS_ACTIVE",

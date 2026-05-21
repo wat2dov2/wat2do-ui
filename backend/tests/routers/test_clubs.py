@@ -71,18 +71,49 @@ def test_upsert_instagram_integration_requires_auth(client):
     assert response.status_code == 401
 
 
-def test_create_club_sets_created_by(authenticated_client, monkeypatch):
-    """create_club passes the authenticated user's ID as created_by."""
-    created_club = _mock_club()
-    mock_create = MagicMock(return_value=created_club)
-    monkeypatch.setattr(club_service, "create_club", mock_create)
+def test_create_club_forbidden_for_regular_user(authenticated_client, monkeypatch):
+    """Only admins can approve/create clubs."""
+    monkeypatch.setattr(club_service, "create_club", MagicMock())
 
     resp = authenticated_client.post(
         "/clubs/",
         json={"club_name": "Test Club", "club_type": "WUSA"},
     )
+    assert resp.status_code == 403
+    club_service.create_club.assert_not_called()
+
+
+def test_create_club_sets_admin_as_owner_by_default(admin_client, monkeypatch):
+    """Admin-created clubs default to the admin as owner if no owner is provided."""
+    created_club = _mock_club()
+    mock_create = MagicMock(return_value=created_club)
+    monkeypatch.setattr(club_service, "create_club", mock_create)
+
+    resp = admin_client.post(
+        "/clubs/",
+        json={"club_name": "Test Club", "club_type": "WUSA"},
+    )
     assert resp.status_code == 201
     assert mock_create.call_count == 1
+    _, kwargs = mock_create.call_args
+    assert kwargs["created_by"] == ADMIN_USER["id"]
+
+
+def test_create_club_can_assign_approved_owner(admin_client, monkeypatch):
+    """Admins can create an approved club for a specific user."""
+    created_club = _mock_club(created_by=FAKE_USER["id"])
+    mock_create = MagicMock(return_value=created_club)
+    monkeypatch.setattr(club_service, "create_club", mock_create)
+
+    resp = admin_client.post(
+        "/clubs/",
+        json={
+            "club_name": "Test Club",
+            "club_type": "WUSA",
+            "owner_user_id": FAKE_USER["id"],
+        },
+    )
+    assert resp.status_code == 201
     _, kwargs = mock_create.call_args
     assert kwargs["created_by"] == FAKE_USER["id"]
 

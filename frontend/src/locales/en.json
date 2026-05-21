@@ -343,8 +343,7 @@
     "eventUpdatedDesc": "has been updated.",
     "promote": "Promote",
     "eventPromoted": "Event Promoted!",
-    "eventPromotedDesc": "is now featured and will appear at the top of search results.",
-    "creditsRemaining": "credits remaining",
+    "eventPromotedDesc": "is now promoted and will appear more prominently for students.",
     "noResults": "No results found.",
     "signInToView": "Sign in to view your events",
     "signInToViewDesc": "Save events you're interested in and view them all in one place.",
@@ -362,6 +361,14 @@
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",
+    "dateSections": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "laterThisWeek": "Later this week",
+      "laterThisMonth": "Later this month",
+      "later": "Later",
+      "past": "Past"
+    },
     "promoted": "PROMOTED",
     "deleteEventTitle": "Delete Event",
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
@@ -401,6 +408,9 @@
     "requiredFieldsNote": "All fields marked with * are required",
     "clubName": "Club Name",
     "clubNameRequired": "Club name is required",
+    "ownerUserId": "Owner User ID",
+    "ownerUserIdPlaceholder": "Internal user UUID",
+    "ownerUserIdDescription": "Assign this club to the approved user who should manage it.",
     "categories": "Categories",
     "categoryRequired": "At least one category is required",
     "add": "Add",
@@ -439,11 +449,14 @@
     "securePayment": "Secure payment powered by Stripe. Credits never expire."
   },
   "promotion": {
-    "boostYourEvent": "Boost Your Event",
-    "getMoreVisibility": "Get more visibility for \"{{title}}\"",
+    "promoteEvent": "Promote this event",
+    "getMoreVisibility": "Promote \"{{title}}\" with a simple featured placement for official club events.",
     "bestValue": "BEST VALUE",
     "maybeLater": "Maybe Later",
     "notEnoughCredits": "Not enough credits",
+    "durationDays": "{{count}} day",
+    "durationDays_other": "{{count}} days",
+    "creditsCost": "{{credits}} credits",
     "spendCredits": "Spend {{credits}} credits"
   },
   "categories": {

@@ -3,6 +3,20 @@
  * Consolidates date formatting and parsing functions
  */
 
+export type EventDateCategory =
+  | "today"
+  | "tomorrow"
+  | "later this week"
+  | "later this month"
+  | "later"
+  | "past";
+
+const toMidnight = (date: Date): Date =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const sameDay = (firstDate: Date, secondDate: Date): boolean =>
+  firstDate.toDateString() === secondDate.toDateString();
+
 /**
  * Format event date string (e.g., "Tue, Jan 5")
  */
@@ -128,4 +142,58 @@ export function formatCardTime(event: {
     return event.time.replace(/\s*-\s*/g, ' to ');
   }
   return '';
+}
+
+/**
+ * Categorize events for the event grid section headers.
+ */
+export function getEventDateCategory(
+  event: {
+    dtstart_utc?: string | null;
+    dtend_utc?: string | null;
+    eventDate?: Date;
+  },
+  currentDate: Date = new Date()
+): EventDateCategory {
+  const rawStart = event.dtstart_utc || event.eventDate;
+  if (!rawStart) return "later";
+
+  const parsedStart = new Date(rawStart);
+  if (Number.isNaN(parsedStart.getTime())) return "later";
+
+  const parsedEnd = event.dtend_utc ? new Date(event.dtend_utc) : parsedStart;
+  const startDate = toMidnight(parsedStart);
+  const endDate = Number.isNaN(parsedEnd.getTime())
+    ? startDate
+    : toMidnight(parsedEnd);
+  const todayDate = toMidnight(currentDate);
+  const tomorrowDate = toMidnight(
+    new Date(
+      todayDate.getFullYear(),
+      todayDate.getMonth(),
+      todayDate.getDate() + 1
+    )
+  );
+  const endOfWeek = toMidnight(
+    new Date(
+      todayDate.getFullYear(),
+      todayDate.getMonth(),
+      todayDate.getDate() + ((7 - todayDate.getDay()) % 7)
+    )
+  );
+  const endOfMonth = toMidnight(
+    new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0)
+  );
+
+  if (todayDate >= startDate && todayDate <= endDate) return "today";
+  if (
+    (tomorrowDate >= startDate && tomorrowDate <= endDate) ||
+    sameDay(startDate, tomorrowDate)
+  ) {
+    return "tomorrow";
+  }
+  if (endDate < todayDate) return "past";
+  if (startDate <= endOfWeek) return "later this week";
+  if (startDate <= endOfMonth) return "later this month";
+  return "later";
 }

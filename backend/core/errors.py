@@ -44,6 +44,7 @@ EMAIL_NOT_ALLOWED = (
     "Only student emails from allowed schools can sign up. "
     "Use a valid university email (e.g. @uwaterloo.ca)."
 )
+CLUB_EVENT_CREATION_REQUIRED = "Only approved club owners can create events for their club"
 
 # ---------------------------------------------------------------------------
 # 400 / 409 – Validation & conflict
@@ -57,6 +58,8 @@ INSUFFICIENT_CREDITS = "Insufficient credits"
 # snake_case so it stays stable across i18n / wording changes.
 INSUFFICIENT_CREDITS_CODE = "insufficient_credits"
 INVALID_PROMOTION_PACKAGE = "Invalid promotion package"
+CLUB_PROMOTION_REQUIRED = "Only club owners can promote events from their club"
+EVENT_NOT_ACTIVE = "Only published events can be promoted"
 ID_MISMATCH = "ID mismatch"
 REQUIRES_LOCATION = "requires_location"
 INVALID_CUSTOM_URL = "custom-url destination_id must be a valid http or https URL"

@@ -17,14 +17,20 @@ export async function getAllClubs(): Promise<Club[]> {
 }
 
 export async function createClubAPI(clubData: Omit<Club, "id">): Promise<Club> {
-  return api.post<Club>("/clubs/", clubData);
+  const { created_by, ...payload } = clubData;
+  return api.post<Club>("/clubs/", {
+    ...payload,
+    owner_user_id: created_by || undefined,
+  });
 }
 
 export async function updateClubAPI(
   club: Club,
   clubData: Partial<Omit<Club, "id">>,
 ): Promise<Club> {
-  return api.patch<Club>(`/clubs/${club.id}`, clubData);
+  const payload = { ...clubData };
+  delete payload.created_by;
+  return api.patch<Club>(`/clubs/${club.id}`, payload);
 }
 
 export async function deleteClubAPI(clubId: number): Promise<void> {

@@ -26,4 +26,5 @@ export interface Club {
   discord: string | null;
   club_type: string;
   logo_url?: string | null;
+  created_by?: string | null;
 }

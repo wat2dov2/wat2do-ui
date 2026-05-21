@@ -33,6 +33,7 @@ interface CommandPaletteProps {
   onOpenChange: (open: boolean) => void;
   setShowFilterDropdown: (show: boolean) => void;
   onClearAllFilters: () => void;
+  canCreateEvents: boolean;
   personalItems: React.ReactNode;
   profileLabel: string;
 }
@@ -42,6 +43,7 @@ export function CommandPalette({
   onOpenChange,
   setShowFilterDropdown,
   onClearAllFilters,
+  canCreateEvents,
   personalItems,
   profileLabel,
 }: CommandPaletteProps) {
@@ -115,16 +117,18 @@ export function CommandPalette({
 
         {/* Actions Section */}
         <CommandGroup heading={t("common.actions")}>
-          <CommandItem
-            onSelect={() => {
-              setShowSubmitEvent(true);
-              onOpenChange(false);
-            }}
-          >
-            <Plus className="mr-2 size-4" />
-            <span>{t("commands.createNewEvent")}</span>
-            <CommandShortcut>N</CommandShortcut>
-          </CommandItem>
+          {canCreateEvents && (
+            <CommandItem
+              onSelect={() => {
+                setShowSubmitEvent(true);
+                onOpenChange(false);
+              }}
+            >
+              <Plus className="mr-2 size-4" />
+              <span>{t("commands.createNewEvent")}</span>
+              <CommandShortcut>N</CommandShortcut>
+            </CommandItem>
+          )}
           <CommandItem
             onSelect={() => {
               onClearAllFilters();

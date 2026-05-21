@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from core.constants import ROLE_ADMIN
 from schemas.event import EventResponse
-from services import event_service
+from services import club_service, event_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
@@ -54,10 +54,11 @@ def test_delete_event_requires_auth(client):
     assert response.status_code == 401
 
 
-def test_create_event_sets_created_by(authenticated_client, monkeypatch):
-    """create_event passes the authenticated user's ID as created_by."""
+def test_create_event_sets_created_by_for_club_owner(authenticated_client, monkeypatch):
+    """Approved club owners can create events for their club."""
     created_event = _mock_event()
     mock_create = MagicMock(return_value=created_event)
+    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=True))
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
     resp = authenticated_client.post(
@@ -80,6 +81,63 @@ def test_create_event_sets_created_by(authenticated_client, monkeypatch):
     assert mock_create.call_count == 1
     _, kwargs = mock_create.call_args
     assert kwargs["created_by"] == FAKE_USER["id"]
+    club_service.user_owns_club_named.assert_called_once_with(FAKE_USER["id"], "Org")
+
+
+def test_create_event_without_matching_club_rejected(authenticated_client, monkeypatch):
+    """Authenticated users cannot create events unless they own the event's club."""
+    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=False))
+    monkeypatch.setattr(event_service, "create_event", MagicMock())
+
+    resp = authenticated_client.post(
+        "/events/",
+        json={
+            "title": "Test",
+            "location": "Here",
+            "organization": "Org",
+            "occurrences": [
+                {
+                    "dtstart_utc": "2026-12-01T18:00:00+00:00",
+                    "dtend_utc": "2026-12-01T20:00:00+00:00",
+                    "duration": None,
+                    "tz": "America/Toronto",
+                }
+            ],
+        },
+    )
+
+    assert resp.status_code == 403
+    event_service.create_event.assert_not_called()
+
+
+def test_create_event_admin_allowed(admin_client, monkeypatch):
+    """Admins can create events for operations and moderation workflows."""
+    created_event = _mock_event(created_by=ADMIN_USER["id"])
+    mock_create = MagicMock(return_value=created_event)
+    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock())
+    monkeypatch.setattr(event_service, "create_event", mock_create)
+
+    resp = admin_client.post(
+        "/events/",
+        json={
+            "title": "Test",
+            "location": "Here",
+            "organization": "Org",
+            "occurrences": [
+                {
+                    "dtstart_utc": "2026-12-01T18:00:00+00:00",
+                    "dtend_utc": "2026-12-01T20:00:00+00:00",
+                    "duration": None,
+                    "tz": "America/Toronto",
+                }
+            ],
+        },
+    )
+
+    assert resp.status_code == 201
+    club_service.user_owns_club_named.assert_not_called()
+    _, kwargs = mock_create.call_args
+    assert kwargs["created_by"] == ADMIN_USER["id"]
 
 
 def test_update_event_owner_allowed(authenticated_client, monkeypatch):

@@ -3,11 +3,7 @@ import { useConfetti } from "@/shared/hooks/useConfetti";
 
 interface UseEventFormPromotionOptions {
   createdEventId: number | null;
-  userCredits: number;
-  onPromote?: (
-    eventId: number,
-    packageId: string,
-  ) => Promise<boolean>;
+  onPromote?: (eventId: number) => Promise<boolean>;
 }
 
 /**
@@ -18,15 +14,14 @@ export function useEventFormPromotion({
   onPromote,
 }: UseEventFormPromotionOptions) {
   const { trigger } = useConfetti();
-  const [selectedPromotion, setSelectedPromotion] = useState<string | null>(null);
   const [promotionSuccess, setPromotionSuccess] = useState(false);
   const [showPromotion, setShowPromotion] = useState(false);
 
   const handlePromote = useCallback(async () => {
-    if (!selectedPromotion || !createdEventId || !onPromote) return;
+    if (!createdEventId || !onPromote) return;
 
     try {
-      const success = await onPromote(createdEventId, selectedPromotion);
+      const success = await onPromote(createdEventId);
 
       if (success) {
         setPromotionSuccess(true);
@@ -39,11 +34,9 @@ export function useEventFormPromotion({
     } catch (err) {
       console.error("Failed to promote event:", err);
     }
-  }, [selectedPromotion, createdEventId, onPromote, trigger]);
+  }, [createdEventId, onPromote, trigger]);
 
   return {
-    selectedPromotion,
-    setSelectedPromotion,
     promotionSuccess,
     setPromotionSuccess,
     showPromotion,

@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from postgrest.exceptions import APIError
 
-from core.constants import DEFAULT_CREDIT_BALANCE, PROMOTION_PACKAGES
+from core.constants import DEFAULT_CREDIT_BALANCE, DEFAULT_PROMOTION_PACKAGE, PROMOTION_PACKAGES
 from core.database import get_sb
 from core.errors import INSUFFICIENT_CREDITS, INSUFFICIENT_CREDITS_CODE, INVALID_PROMOTION_PACKAGE
 from core.exceptions import ServiceError, ValidationError
@@ -86,17 +86,14 @@ def deduct_credits(user_id: str, amount: int) -> int:
 def create_promotion(
     user_id: str,
     event_id: int,
-    package: str,
 ) -> PromotionResponse:
-    """Create an event promotion.
-
-    Looks up the credit cost and duration from ``PROMOTION_PACKAGES`` so the
-    client cannot control pricing.  Raises 400 for unknown packages.
+    """Create the single v1 event promotion.
 
     Credit deduction and promotion insertion happen inside a single
     PostgreSQL RPC (``promote_event``), guaranteeing atomicity — if the
     insert fails the deduction is rolled back automatically.
     """
+    package = DEFAULT_PROMOTION_PACKAGE
     pkg = PROMOTION_PACKAGES.get(package)
     if pkg is None:
         raise ValidationError(INVALID_PROMOTION_PACKAGE)

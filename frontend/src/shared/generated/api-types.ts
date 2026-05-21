@@ -1215,6 +1215,11 @@ export interface components {
             club_type: string;
             /** Logo Url */
             logo_url?: string | null;
+            /**
+             * Owner User Id
+             * @description Approved club owner user ID
+             */
+            owner_user_id?: string | null;
         };
         /** ClubIntegrationResponse */
         ClubIntegrationResponse: {
@@ -1982,11 +1987,6 @@ export interface components {
         PromotionCreate: {
             /** Event Id */
             event_id: number;
-            /**
-             * Package
-             * @enum {string}
-             */
-            package: "featured" | "email" | "combo";
         };
         /** PromotionResponse */
         PromotionResponse: {
@@ -1996,11 +1996,8 @@ export interface components {
             user_id: string;
             /** Event Id */
             event_id: number;
-            /**
-             * Package
-             * @enum {string}
-             */
-            package: "featured" | "email" | "combo";
+            /** Package */
+            package: string;
             /** Credits Spent */
             credits_spent: number;
             /**

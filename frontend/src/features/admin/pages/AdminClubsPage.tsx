@@ -146,6 +146,7 @@ export function AdminClubsPage({
             { label: t("forms.clubName") },
             { label: t("forms.categories") },
             { label: t("forms.clubType") },
+            { label: t("forms.ownerUserId") },
             { label: t("admin.instagram") },
             { label: t("admin.discord") },
             { label: t("common.actions"), align: "right" },
@@ -179,6 +180,11 @@ export function AdminClubsPage({
                 <div className="text-sm text-muted-foreground">
                   {club.club_type}
                 </div>
+              </TableCell>
+              <TableCell>
+                <span className="block max-w-[140px] truncate text-xs text-muted-foreground">
+                  {club.created_by || "-"}
+                </span>
               </TableCell>
               <TableCell>
                 {club.ig ? (

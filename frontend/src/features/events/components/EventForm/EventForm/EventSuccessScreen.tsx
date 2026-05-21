@@ -13,7 +13,7 @@ import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 interface EventSuccessScreenProps {
   isOpen: boolean;
   onClose: () => void;
-  onPromote: () => void;
+  onPromote?: () => void;
   isEditMode: boolean;
   onShowSuccessAlert: (message: string) => void;
 }
@@ -75,13 +75,15 @@ export function EventSuccessScreen({
             <Button variant="outline" onClick={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
-            <Button
-              onClick={onPromote}
-              className="flex-1 bg-primary hover:bg-primary/90"
-            >
-              <Megaphone className="size-4 mr-1.5" />
-              {t("events.promote")}
-            </Button>
+            {onPromote && (
+              <Button
+                onClick={onPromote}
+                className="flex-1 bg-primary hover:bg-primary/90"
+              >
+                <Megaphone className="size-4 mr-1.5" />
+                {t("events.promote")}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

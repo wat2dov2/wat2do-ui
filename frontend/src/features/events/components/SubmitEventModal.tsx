@@ -28,10 +28,7 @@ interface SubmitEventModalProps {
   onClose: () => void;
   onSubmit: (event: EventFormData) => number | Promise<number>;
   userCredits?: number;
-  onPromote?: (
-    eventId: number,
-    packageId: string,
-  ) => Promise<boolean>;
+  onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
   editEventId?: number;
   initialData?: EventFormData;
@@ -46,7 +43,7 @@ interface SubmitEventModalFormBodyProps {
   onClose: () => void;
   onSubmit: (event: EventFormData) => number | Promise<number>;
   userCredits: number;
-  onPromote?: (eventId: number, packageId: string) => Promise<boolean>;
+  onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
   editEventId?: number;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
@@ -89,7 +86,6 @@ function SubmitEventModalFormBody({
 
   const eventFormPromotion = useEventFormPromotion({
     createdEventId: state.createdEventId,
-    userCredits,
     onPromote,
   });
 
@@ -110,7 +106,6 @@ function SubmitEventModalFormBody({
 
   const resetState = useCallback(() => {
     dispatch({ type: "RESET" });
-    eventFormPromotion.setSelectedPromotion(null);
     eventFormPromotion.setPromotionSuccess(false);
     eventFormPromotion.setShowPromotion(false);
   }, [eventFormPromotion]);
@@ -161,7 +156,6 @@ function SubmitEventModalFormBody({
       <PromotionSuccessScreen
         isOpen={isOpen}
         onClose={handleClose}
-        userCredits={userCredits}
       />
     ),
     "promotion-upsell": () => (
@@ -171,15 +165,13 @@ function SubmitEventModalFormBody({
         onPromote={eventFormPromotion.handlePromote}
         onBuyCredits={onBuyCredits || (() => {})}
         userCredits={userCredits}
-        selectedPromotion={eventFormPromotion.selectedPromotion}
-        onSelectPromotion={eventFormPromotion.setSelectedPromotion}
       />
     ),
     "submit-success": () => (
       <SubmitSuccessStep
         isOpen={isOpen}
         onClose={handleClose}
-        onPromote={() => eventFormPromotion.setShowPromotion(true)}
+        onPromote={onPromote ? () => eventFormPromotion.setShowPromotion(true) : undefined}
         isEditMode={isEditMode}
         onShowSuccessAlert={(message) => {
           showSuccessAlert(
@@ -227,7 +219,7 @@ interface SubmitEventModalContentProps {
   onClose: () => void;
   onSubmit: (event: EventFormData) => number | Promise<number>;
   userCredits: number;
-  onPromote?: (eventId: number, packageId: string) => Promise<boolean>;
+  onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
   editEventId?: number;
   initialData?: EventFormData;

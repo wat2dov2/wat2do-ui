@@ -12,13 +12,9 @@ from core.constants import (
     AB_VARIANT_TREATMENT,
 )
 from core.database import get_sb
-from core.tables import AB_TEST_EVENTS
+from core.tables import AB_ASSIGNMENTS, AB_TEST_EVENTS
 
 log = logging.getLogger(__name__)
-
-# Table that persists sticky (user, experiment) -> variant assignments.
-# Created in migration 20260416007_create_ab_assignments.sql.
-AB_ASSIGNMENTS = "ab_assignments"
 
 # Short-TTL cache for /ab/metrics so admin dashboards polling every 2-5s
 # don't generate a full table scan per poll (M15).

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_authorized_resource, get_db_user
+from core.auth import get_authorized_resource, get_db_user, is_admin
 from core.constants import (
     DEFAULT_LIST_LIMIT,
     MAX_EVENT_CATEGORY_LENGTH,
@@ -12,8 +12,8 @@ from core.constants import (
     MAX_LIST_LIMIT,
     MAX_SEARCH_QUERY_LENGTH,
 )
-from core.errors import EVENT_NOT_FOUND
-from core.exceptions import get_or_404
+from core.errors import CLUB_EVENT_CREATION_REQUIRED, EVENT_NOT_FOUND
+from core.exceptions import AuthorizationError, get_or_404
 from schemas.event import (
     EventCreate,
     EventPublicResponse,
@@ -23,7 +23,7 @@ from schemas.event import (
     LatestEventResponse,
 )
 from schemas.user import UserResponse
-from services import event_service, notification_service
+from services import club_service, event_service, notification_service
 
 log = logging.getLogger(__name__)
 
@@ -104,6 +104,11 @@ def create_event(
     data: EventCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
+    if not is_admin(db_user) and not club_service.user_owns_club_named(
+        str(db_user.id),
+        data.organization,
+    ):
+        raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
     return event_service.create_event(data, created_by=str(db_user.id))
 
 

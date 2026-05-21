@@ -43,6 +43,7 @@ interface ClubFormData {
   ig: string;
   discord: string;
   club_type: string;
+  owner_user_id: string;
 }
 
 interface AddClubModalProps {
@@ -70,6 +71,7 @@ export function AddClubModal({
     ig: "",
     discord: "",
     club_type: "WUSA",
+    owner_user_id: "",
   }), []);
 
   // Memoize validate to prevent infinite loops
@@ -93,6 +95,7 @@ export function AddClubModal({
           ig: initialData.ig || "",
           discord: initialData.discord || "",
           club_type: initialData.club_type,
+          owner_user_id: initialData.created_by || "",
         }
       : undefined,
     isEditMode,
@@ -152,6 +155,7 @@ export function AddClubModal({
       ig: form.formData.ig.trim() || null,
       discord: form.formData.discord.trim() || null,
       club_type: form.formData.club_type,
+      created_by: form.formData.owner_user_id.trim() || initialData?.created_by || null,
     };
 
     setIsSubmitting(true);
@@ -220,6 +224,23 @@ export function AddClubModal({
                   tagColor="primary"
                   required
                 />
+                {!isEditMode && (
+                  <Field>
+                    <FieldLabel htmlFor="owner-user-id" className="text-sm font-medium text-foreground">
+                      {t("forms.ownerUserId")}
+                    </FieldLabel>
+                    <Input
+                      id="owner-user-id"
+                      type="text"
+                      value={form.formData.owner_user_id}
+                      onChange={(e) => form.updateField("owner_user_id", e.target.value)}
+                      placeholder={t("forms.ownerUserIdPlaceholder")}
+                    />
+                    <FieldDescription>
+                      {t("forms.ownerUserIdDescription")}
+                    </FieldDescription>
+                  </Field>
+                )}
               </FieldGroup>
             </FieldSet>
 

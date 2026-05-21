@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from core.constants import MAX_CREDITS_PER_ADD
 
-PromotionPackage = Literal["featured", "email", "combo"]
+PromotionPackage = str
 
 
 class CreditRow(BaseModel):
@@ -31,7 +30,6 @@ class AddCreditsRequest(BaseModel):
 
 class PromotionCreate(BaseModel):
     event_id: int
-    package: PromotionPackage
 
 
 class PromotionResponse(BaseModel):

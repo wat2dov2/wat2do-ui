@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { SidebarButton } from "@/shared/ui/sidebar-button";
 import { SidebarEventsSection } from "@/features/events";
-import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useModalStore } from "@/shared/store/modal.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { derivePageMode } from "@/shared/utils/pageMode";
@@ -28,7 +28,8 @@ export function Sidebar() {
   const { t } = useTranslation();
   const pageMode = derivePageMode(location.pathname);
   const [eventsExpanded, setEventsExpanded] = useState(true);
-  const profileCompleted = useProfileCompleted();
+  const { profileCompleted, isAdmin, hasClub } = useAuthState();
+  const canCreateEvents = hasClub || isAdmin;
   const setShowCommandPalette = useModalStore((s) => s.setShowCommandPalette);
   const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
 
@@ -65,6 +66,7 @@ export function Sidebar() {
             eventsExpanded={eventsExpanded}
             setEventsExpanded={setEventsExpanded}
             profileCompleted={profileCompleted}
+            canCreateEvents={canCreateEvents}
             setShowSubmitEvent={setShowSubmitEvent}
           />
 

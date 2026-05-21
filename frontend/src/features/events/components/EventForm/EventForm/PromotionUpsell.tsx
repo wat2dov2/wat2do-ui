@@ -10,13 +10,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/shared/ui/dialog";
-import { PROMOTION_PACKAGES } from "@/shared/constants/promotions";
-import {
-  PackageCard,
-  PackageBadge,
-  RadioButton,
-  CreditsDisplay,
-} from "@/features/events/components/EventForm/EventForm/PromotionUpsell.components";
+import { EVENT_PROMOTION } from "@/shared/constants/promotions";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 
 interface PromotionUpsellProps {
@@ -25,8 +19,6 @@ interface PromotionUpsellProps {
   onPromote: () => void;
   onBuyCredits: () => void;
   userCredits: number;
-  selectedPromotion: string | null;
-  onSelectPromotion: (packageId: string) => void;
 }
 
 export function PromotionUpsell({
@@ -35,28 +27,23 @@ export function PromotionUpsell({
   onPromote,
   onBuyCredits,
   userCredits,
-  selectedPromotion,
-  onSelectPromotion,
 }: PromotionUpsellProps) {
   const { formData } = useEventFormContext();
   const { t } = useTranslation();
-  const selectedPkg = PROMOTION_PACKAGES.find(
-    (p) => p.id === selectedPromotion
-  );
-  const canAfford = selectedPkg ? userCredits >= selectedPkg.credits : false;
+  const promotion = EVENT_PROMOTION;
+  const canAfford = userCredits >= promotion.credits;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md" showCloseButton={true}>
         <DialogHeader>
-          <DialogTitle>{t("promotion.boostYourEvent")}</DialogTitle>
+          <DialogTitle>{t("promotion.promoteEvent")}</DialogTitle>
           <DialogDescription>
             {t("promotion.getMoreVisibility", { title: formData.title })}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-2">
-          {/* Credits balance */}
+        <div className="py-2 space-y-4">
           <div className="flex items-center justify-between bg-warning/20 px-4 py-2 rounded-lg">
             <div className="flex items-center gap-2">
               <Coins className="size-5 text-warning" />
@@ -75,48 +62,23 @@ export function PromotionUpsell({
             </Button>
           </div>
 
-          <div className="space-y-3">
-            {PROMOTION_PACKAGES.map((pkg) => {
-              const isSelected = selectedPromotion === pkg.id;
-              const affordable = userCredits >= pkg.credits;
-
-              return (
-                <PackageCard
-                  key={pkg.id}
-                  isSelected={isSelected}
-                  affordable={affordable}
-                  onClick={() => onSelectPromotion(pkg.id)}
-                  badge={
-                    pkg.id === "combo" ? (
-                      <PackageBadge>{t("promotion.bestValue")}</PackageBadge>
-                    ) : undefined
-                  }
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <RadioButton isSelected={isSelected} />
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {pkg.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {pkg.description}
-                        </p>
-                      </div>
-                    </div>
-                    <CreditsDisplay
-                      credits={pkg.credits}
-                      originalCredits={pkg.originalCredits}
-                      duration={pkg.duration}
-                      icon={<Coins className="size-4 text-warning" />}
-                    />
-                  </div>
-                  {!affordable && (
-                    <p className="text-xs text-error">{t("promotion.notEnoughCredits")}</p>
-                  )}
-                </PackageCard>
-              );
-            })}
+          <div className="rounded-lg border border-border p-4 space-y-3">
+            <div>
+              <p className="font-semibold text-foreground">{promotion.name}</p>
+              <p className="text-sm text-muted-foreground">{promotion.description}</p>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {t("promotion.durationDays", { count: promotion.duration })}
+              </span>
+              <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                <Coins className="size-4 text-warning" />
+                {t("promotion.creditsCost", { credits: promotion.credits })}
+              </span>
+            </div>
+            {!canAfford && (
+              <p className="text-xs text-error">{t("promotion.notEnoughCredits")}</p>
+            )}
           </div>
 
           <DialogFooter>
@@ -127,17 +89,13 @@ export function PromotionUpsell({
             </DialogClose>
             <Button
               onClick={onPromote}
-              disabled={!selectedPromotion || !canAfford}
+              disabled={!canAfford}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
-              {selectedPkg ? (
-                <span className="flex items-center gap-1.5">
-                  <Coins className="size-4" />
-                  {t("promotion.spendCredits", { credits: selectedPkg.credits })}
-                </span>
-              ) : (
-                t("forms.selectPackage")
-              )}
+              <span className="flex items-center gap-1.5">
+                <Coins className="size-4" />
+                {t("promotion.spendCredits", { credits: promotion.credits })}
+              </span>
             </Button>
           </DialogFooter>
         </div>

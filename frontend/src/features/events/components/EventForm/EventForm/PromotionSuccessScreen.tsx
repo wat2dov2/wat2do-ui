@@ -1,4 +1,4 @@
-import { Check, Coins } from "lucide-react";
+import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import {
@@ -11,13 +11,11 @@ import { useEventFormContext } from "@/features/events/components/EventForm/Even
 interface PromotionSuccessScreenProps {
   isOpen: boolean;
   onClose: () => void;
-  userCredits: number;
 }
 
 export function PromotionSuccessScreen({
   isOpen,
   onClose,
-  userCredits,
 }: PromotionSuccessScreenProps) {
   const { t } = useTranslation();
   const { formData } = useEventFormContext();
@@ -36,13 +34,6 @@ export function PromotionSuccessScreen({
           <p className="text-muted-foreground text-sm">
             "{formData.title}" {t("events.eventPromotedDesc")}
           </p>
-
-          <div className="flex items-center gap-2 bg-warning/20 px-4 py-2 rounded-full">
-            <Coins className="size-5 text-warning" />
-            <span className="font-bold text-warning">
-              {userCredits} {t("events.creditsRemaining")}
-            </span>
-          </div>
 
           <Button onClick={onClose} className="w-full">
             {t("common.done")}

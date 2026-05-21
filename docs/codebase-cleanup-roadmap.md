@@ -63,6 +63,43 @@ QR API ownership cleanup pass completed:
   `features/qrcode/api/qrcode.api.ts` compatibility re-exports while preserving
   those exports for existing public import paths.
 
+Event promotion product simplification completed:
+
+- Reframed promotion as one official-club event visibility boost instead of a
+  menu of campaign packages.
+- Removed the frontend promotion package picker; club/admin users now see a
+  single “Promote this event” flow after event creation.
+- Backend promotion creation now ignores legacy package fields and always uses
+  the server-owned featured placement price/duration.
+- Backend authorization now requires a published, not-ended event attached to a
+  club owned by the requester; admins retain operator access.
+
+Club-gated event creation completed:
+
+- Backend event creation now requires admins or approved club owners; regular
+  authenticated users can browse and save events, but cannot create them.
+- Backend club creation is admin-only, with an optional owner user ID so an
+  admin-created club row is the approval record that unlocks club workflows.
+- Frontend create-event actions are hidden unless the user is an admin or owns
+  at least one admin-created club.
+
+Supabase schema/RLS hardening pass completed:
+
+- Static migration audit found the backend intentionally uses the Supabase
+  service-role client for table access; frontend code does not use a Supabase
+  table client directly.
+- Repo-defined app tables enable RLS and migrations do not define permissive
+  RLS policies, so anon/authenticated table access should stay blocked.
+- Added a hardening migration that re-enables RLS on known app tables, revokes
+  public/anon/authenticated table, sequence, and function privileges in
+  `public`, and grants the intended access back to `service_role`.
+- Added missing table constants for `ab_assignments` and `credit_transactions`
+  so the schema inventory is represented in `backend/core/tables.py`.
+- Live Supabase lint/dump could not complete locally because the project is not
+  linked, Docker is not running for local Supabase, and the checked-in
+  `DATABASE_URL`/`DATABASE_PASSWORD` pair does not authenticate to the remote
+  pooler.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
@@ -103,6 +140,36 @@ Questions raised during cleanup:
 - Marketing still imports poster deletion from the QR feature API. Decide
   whether destructive poster actions should move into a shared poster API module
   after caller ownership is audited.
+- Event promotions currently infer club ownership by matching
+  `events.organization` to a club name owned by the requester. Add an explicit
+  `events.club_id` relationship if official-club promotion needs to be stricter
+  or support renamed clubs.
+- Club ownership currently stands in for “official club.” Decide whether clubs
+  need a separate verification/status field before monetized promotion reaches
+  production.
+- Admin club approval currently means creating a club row with `created_by`
+  assigned to the approved owner. Decide whether future work needs a dedicated
+  club membership table with roles rather than single-owner club rows.
+- Direct Supabase table access is now treated as unsupported product behavior.
+  If the frontend ever needs to call Supabase directly, add explicit, narrow
+  policies for that feature instead of loosening the global service-role-only
+  posture.
+- `event_submissions` still exists even though official club owners now create
+  events directly. Decide whether it remains useful for a moderation queue or
+  should be retired in a dedicated destructive migration after checking live
+  row counts.
+- `event_promotions.package` remains in the schema for the existing
+  `promote_event` RPC and uniqueness model, even though the product now has one
+  promotion type. Decide whether to collapse it in a later migration once live
+  promotion history is audited.
+- A/B testing tables (`ab_assignments`, `ab_test_events`) and recommendation
+  tables still support the current recommendation code, but they are separate
+  from the simplified official-club event/promotion product. Decide whether
+  recommendation experimentation is still a product priority before removing
+  any of that schema.
+- The installed global Supabase CLI (`2.51.0`) is too old for the current
+  `backend/supabase/config.toml`; use the current CLI via
+  `npx supabase@latest ...` or update the local CLI before future DB audits.
 - Local `backend/models` and `backend/scraping` directories contain only
   ignored cache artifacts; they are not repo source.
 

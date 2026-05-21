@@ -5,6 +5,8 @@ the FastAPI runtime only reads/writes via PostgREST.
 
 - Run every CLI command from inside `backend/` so it finds both
   `./supabase/` and the `DATABASE_URL` in `.env`.
+- The checked-in config currently requires a newer CLI than the globally
+  installed `2.51.0`; use `npx supabase@latest ...` or upgrade the local CLI.
 - File name format: `YYYYMMDDHHMMSS_descriptive_name.sql`.
 - Never edit an already-applied migration. Write a new one.
 - No automatic down-migrations — rollbacks are forward
@@ -15,6 +17,9 @@ the FastAPI runtime only reads/writes via PostgREST.
 The runtime connects with the **service-role key**, which bypasses RLS.
 Every existing table enables RLS with no permissive policies so the
 anon / authenticated roles are blocked from reaching tables directly.
+The public schema grants are also locked down so backend service-role access is
+the intentional table API; add narrow RLS policies only for deliberate direct
+Supabase-client features.
 
 > Forgetting `ALTER TABLE <name> ENABLE ROW LEVEL SECURITY;` on a new
 > table ships a table that is silently readable by the anon role the

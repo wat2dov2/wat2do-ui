@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_authorized_resource, get_current_user, get_db_user
+from core.auth import get_admin_user, get_authorized_resource, get_current_user, get_db_user
 from core.constants import (
     DEFAULT_LIST_LIMIT,
     MAX_EVENT_CLUB_TYPE_LENGTH,
@@ -144,9 +144,10 @@ def disconnect_platform_integration(
 @router.post("/", response_model=ClubResponse, status_code=status.HTTP_201_CREATED)
 def create_club(
     data: ClubCreate,
-    db_user: UserResponse = Depends(get_db_user),
+    admin: UserResponse = Depends(get_admin_user),
 ):
-    return club_service.create_club(data, created_by=str(db_user.id))
+    owner_id = data.owner_user_id or admin.id
+    return club_service.create_club(data, created_by=str(owner_id))
 
 
 @router.patch("/{club_id}", response_model=ClubResponse)
