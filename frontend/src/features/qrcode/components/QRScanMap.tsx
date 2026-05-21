@@ -4,6 +4,7 @@ import { Marker } from "@vis.gl/react-mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { QRCode, QRCodeScan } from "@/shared/types";
 import { MapPin, Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { listPostersFromBackend } from "@/shared/api/posters.api";
 
 interface QRScanMapProps {
@@ -57,6 +58,7 @@ function PosterMarker({
   index: number;
   onClick?: (qrCodeId: string) => void;
 }) {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
   
   const color = getColorForScanCount(scanCount, maxScanCount);
@@ -74,7 +76,7 @@ function PosterMarker({
       className="relative cursor-pointer group"
       role="button"
       tabIndex={0}
-      aria-label={`Poster ${posterData.qrCodeId}`}
+      aria-label={t("qrCode.posterAriaLabel", { id: posterData.qrCodeId })}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleActivatePoster}
@@ -166,7 +168,7 @@ function PosterMarker({
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Zap className="size-3 shrink-0" />
               <span>
-                {scanCount} scan{scanCount !== 1 ? "s" : ""}
+                {t("qrCode.scanCount", { count: scanCount })}
               </span>
             </div>
           </div>
@@ -178,6 +180,7 @@ function PosterMarker({
 }
 
 export function QRScanMap({ scans, posters: postersProp, height = "500px", onMarkerClick }: QRScanMapProps) {
+  const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [fetchedPosters, setFetchedPosters] = useState<QRCode[]>([]);
 
@@ -232,13 +235,13 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
 
       return [{
         qrCodeId,
-        name: qrCode.name || `Poster ${qrCodeId.substring(0, 8)}`,
+        name: qrCode.name || t("qrCode.posterFallbackName", { id: qrCodeId.substring(0, 8) }),
         latitude: qrCode.latitude,
         longitude: qrCode.longitude,
         scanCount: posterScans.length,
       }];
     });
-  }, [scans, qrCodes]);
+  }, [scans, qrCodes, t]);
 
   // Find max scan count for color scaling
   const maxScanCount = useMemo(() => {
@@ -344,17 +347,17 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
             <div className="flex items-center gap-2 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border/50">
               <div className="flex items-center gap-1">
                 <div className="size-2 rounded-full bg-green-500" />
-                <span>Low</span>
+                <span>{t("qrCode.scanIntensityLow")}</span>
               </div>
               <span className="text-muted-foreground/50">→</span>
               <div className="flex items-center gap-1">
                 <div className="size-2 rounded-full bg-warning" />
-                <span>Medium</span>
+                <span>{t("qrCode.scanIntensityMedium")}</span>
               </div>
               <span className="text-muted-foreground/50">→</span>
               <div className="flex items-center gap-1">
                 <div className="size-2 rounded-full bg-error" />
-                <span>High</span>
+                <span>{t("qrCode.scanIntensityHigh")}</span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border/50">

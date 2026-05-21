@@ -26,7 +26,10 @@
     "events": "events",
     "generating": "Generating...",
     "pleaseWait": "Please wait...",
+    "submitting": "Submitting...",
+    "uploading": "Uploading…",
     "loading": "Loading...",
+    "loadingStatus": "Loading",
     "loadingPage": "Loading page...",
     "actions": "Actions",
     "view": "View",
@@ -39,6 +42,10 @@
     "report": "Report",
     "download": "Download",
     "done": "Done",
+    "close": "Close",
+    "closeDialog": "Close dialog",
+    "select": "Select…",
+    "selectPlaceholder": "Select...",
     "logo": "Logo",
     "loadingMap": "Loading map..."
   },
@@ -327,6 +334,7 @@
   },
   "events": {
     "eventTitle": "Event Title",
+    "actions": "Event actions",
     "organization": "Organization",
     "status": "Status",
     "dayOfWeek": "Day of Week",
@@ -368,6 +376,15 @@
       "laterThisMonth": "Later this month",
       "later": "Later",
       "past": "Past"
+    },
+    "reportDialog": {
+      "title": "Report event",
+      "description": "Tell us why you want to report \"{{title}}\".",
+      "placeholder": "Share the reason for this report",
+      "submit": "Submit report",
+      "submittedTitle": "Report submitted",
+      "submittedDescription": "Thanks for flagging \"{{title}}\". We'll review it soon.",
+      "submitFailed": "Couldn't submit report"
     },
     "promoted": "PROMOTED",
     "deleteEventTitle": "Delete Event",
@@ -719,10 +736,22 @@
     "imageFormat": "PNG, JPG up to 5MB",
     "noScanData": "No scan data yet",
     "noScanDataDesc": "Share your QR code to start tracking performance",
+    "posterAriaLabel": "Poster {{id}}",
+    "posterFallbackName": "Poster {{id}}",
+    "dragPlacementAriaLabel": "Drag to move QR placement",
+    "scanCount": "{{count}} scan",
+    "scanCount_other": "{{count}} scans",
+    "scanIntensityLow": "Low",
+    "scanIntensityMedium": "Medium",
+    "scanIntensityHigh": "High",
     "last7Days": "Last 7 Days",
     "last14Days": "Last 14 Days",
     "event": "Event",
     "defaultFileName": "qr-code"
+  },
+  "schools": {
+    "searchPlaceholder": "Search schools...",
+    "noSchoolFound": "No school found."
   },
   "marketing": {
     "title": "Marketing",

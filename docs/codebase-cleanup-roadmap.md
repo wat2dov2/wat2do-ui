@@ -134,6 +134,26 @@ Verified-club event ownership schema pass completed:
   existing rows can be matched to clubs, then drops `public.event_submissions`
   and `public.scraped_events`.
 
+Schema table redundancy audit completed:
+
+- Added `docs/schema-table-ownership.md` as the source-of-truth table inventory
+  for current app tables/views, retired redundant tables, and
+  duplicate-looking table pairs that intentionally serve different jobs.
+- Confirmed the obvious stale duplicates have already been retired:
+  `event_submissions`, `scraped_events`, and `user_event_rsvps`.
+- Kept remaining duplicate-looking structures because the audited callers show
+  distinct responsibilities: source table vs read view, state vs telemetry,
+  sticky assignment vs emitted experiment events, balance vs ledger, and
+  settings vs delivery log.
+
+Frontend locale hygiene pass completed:
+
+- Moved obvious live hardcoded English strings in shared UI, event report,
+  onboarding faculty select, profile upload status, and QR scan-map labels into
+  `frontend/src/locales/en.json`.
+- Preserved the current English copy while making the locale file the owner for
+  those rendered strings.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
@@ -210,6 +230,15 @@ Questions raised during cleanup:
   from the simplified official-club event/promotion product. Decide whether
   recommendation experimentation is still a product priority before removing
   any of that schema.
+- Current table redundancy now has an explicit inventory in
+  `docs/schema-table-ownership.md`. Treat any future table removal as a
+  product decision plus migration, not a visual similarity cleanup.
+- `events_listing` is a view rather than a duplicate event table. Decide
+  whether future API work should expose this read model explicitly or keep it
+  as a private DB compatibility detail.
+- Frontend English is centralized in `frontend/src/locales/en.json`, but older
+  components still have scattered hardcoded strings. Decide whether to enforce
+  this with lint rules or continue migrating copy in focused feature batches.
 - The installed global Supabase CLI (`2.51.0`) is too old for the current
   `backend/supabase/config.toml`; use the current CLI via
   `npx supabase@latest ...` or update the local CLI before future DB audits.

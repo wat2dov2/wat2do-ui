@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Placement {
   x: number;
@@ -164,6 +165,7 @@ export function QRPlacementOverlay({
   imageWidth,
   imageHeight,
 }: QRPlacementOverlayProps) {
+  const { t } = useTranslation();
   // dragMode is the only piece of state we need in render (drives cursor).
   const [dragMode, setDragMode] = useState<DragMode | null>(null);
 
@@ -272,7 +274,7 @@ export function QRPlacementOverlay({
         className="absolute pointer-events-auto select-none"
         role="button"
         tabIndex={-1}
-        aria-label="Drag to move QR placement"
+        aria-label={t("qrCode.dragPlacementAriaLabel")}
         style={{
           left: `${x}px`,
           top: `${y}px`,

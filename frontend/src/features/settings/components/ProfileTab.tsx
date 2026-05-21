@@ -86,7 +86,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
                   <Mail className="size-4 text-muted-foreground" />
                   <span className="text-sm text-foreground">{userEmail}</span>
                 </div>
-                {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading…</p>}
+                {uploading && <p className="text-xs text-muted-foreground mt-1">{t("common.uploading")}</p>}
               </div>
             </div>
           </CardContent>

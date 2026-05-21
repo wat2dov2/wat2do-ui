@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ export function EventReportDialog({
   open,
   onOpenChange,
 }: EventReportDialogProps) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -45,11 +47,11 @@ export function EventReportDialog({
     setIsSubmitting(true);
     try {
       await reportEventToBackend(eventId, trimmedReason);
-      showToast("Report submitted", "success");
+      showToast(t("events.reportDialog.submittedTitle"), "success");
       setIsSubmitted(true);
     } catch (err) {
       console.error("Failed to report event:", err);
-      showToast("Couldn't submit report", "error");
+      showToast(t("events.reportDialog.submitFailed"), "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -64,31 +66,31 @@ export function EventReportDialog({
               <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <CheckCircle2 className="size-5" />
               </div>
-              <DialogTitle>Report submitted</DialogTitle>
+              <DialogTitle>{t("events.reportDialog.submittedTitle")}</DialogTitle>
               <DialogDescription>
-                Thanks for flagging "{eventTitle}". We'll review it soon.
+                {t("events.reportDialog.submittedDescription", { title: eventTitle })}
               </DialogDescription>
             </DialogHeader>
 
             <div className="flex justify-end">
               <Button type="button" onClick={() => onOpenChange(false)}>
-                Done
+                {t("common.done")}
               </Button>
             </div>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Report event</DialogTitle>
+              <DialogTitle>{t("events.reportDialog.title")}</DialogTitle>
               <DialogDescription>
-                Tell us why you want to report "{eventTitle}".
+                {t("events.reportDialog.description", { title: eventTitle })}
               </DialogDescription>
             </DialogHeader>
 
             <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Share the reason for this report"
+              placeholder={t("events.reportDialog.placeholder")}
               maxLength={500}
               className="min-h-28"
               disabled={isSubmitting}
@@ -102,16 +104,16 @@ export function EventReportDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <LoadingButton
                 type="button"
                 onClick={handleSubmit}
                 disabled={!trimmedReason}
                 isLoading={isSubmitting}
-                loadingText="Submitting..."
+                loadingText={t("common.submitting")}
               >
-                Submit report
+                {t("events.reportDialog.submit")}
               </LoadingButton>
             </div>
           </>

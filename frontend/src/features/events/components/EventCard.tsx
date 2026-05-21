@@ -212,7 +212,7 @@ export function EventCard({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  aria-label="Event actions"
+                  aria-label={t("events.actions")}
                   className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}

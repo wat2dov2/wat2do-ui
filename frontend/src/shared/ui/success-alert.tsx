@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface SuccessAlertProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export function SuccessAlert({
   title,
   message,
 }: SuccessAlertProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md" showCloseButton={false}>
@@ -38,7 +41,7 @@ export function SuccessAlert({
           </div>
         </DialogHeader>
         <div className="flex justify-end mt-4">
-          <Button onClick={onClose}>Close dialog</Button>
+          <Button onClick={onClose}>{t("common.closeDialog")}</Button>
         </div>
       </DialogContent>
     </Dialog>

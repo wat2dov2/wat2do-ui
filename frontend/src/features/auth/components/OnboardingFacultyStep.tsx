@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { m } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import {
   Select,
@@ -52,6 +53,7 @@ export function OnboardingFacultyStep({
   faculty,
   onFacultyChange,
 }: OnboardingFacultyStepProps) {
+  const { t } = useTranslation();
   const value = faculty || SELECT_PLACEHOLDER_VALUE;
   const [splash, setSplash] = useState(false);
   const [splashPoints, setSplashPoints] = useState<ReturnType<
@@ -109,14 +111,14 @@ export function OnboardingFacultyStep({
               value === SELECT_PLACEHOLDER_VALUE && "text-muted-foreground"
             )}
           >
-            <SelectValue placeholder="Select..." />
+            <SelectValue placeholder={t("common.selectPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem
               value={SELECT_PLACEHOLDER_VALUE}
               className="text-muted-foreground"
             >
-              Select…
+              {t("common.select")}
             </SelectItem>
             {FACULTY_OPTIONS.map((item) => (
               <SelectItem key={item} value={item}>

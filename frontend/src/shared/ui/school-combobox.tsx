@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import {
   Popover,
@@ -15,6 +16,7 @@ interface SchoolComboboxProps {
 }
 
 export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -44,7 +46,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
           <Search className="size-4 text-muted-foreground shrink-0" />
           <input
             type="text"
-            placeholder="Search schools..."
+            placeholder={t("schools.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
@@ -55,7 +57,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
         <div className="max-h-[200px] overflow-y-auto p-1">
           {filteredSchools.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
-              No school found.
+              {t("schools.noSchoolFound")}
             </div>
           ) : (
             filteredSchools.map((school) => (
@@ -88,4 +90,3 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
     </Popover>
   );
 }
-
