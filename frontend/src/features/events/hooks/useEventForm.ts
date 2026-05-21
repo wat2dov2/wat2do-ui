@@ -39,8 +39,15 @@ export function useEventForm(options: UseEventFormOptions) {
   ]);
   const validate = useCallback(
     (data: EventFormData, touched: Record<string, boolean>) =>
-      validateEventForm(data, touched) as Record<string, string>,
-    []
+      validateEventForm(data, touched, {
+        titleRequired: t("forms.titleRequired"),
+        organizationRequired: t("forms.organizationRequired"),
+        dateRequired: t("forms.dateRequired"),
+        timeRequired: t("forms.timeRequired"),
+        locationRequired: t("forms.locationRequired"),
+        jsonInvalid: t("forms.invalidJsonFormat"),
+      }) as Record<string, string>,
+    [t]
   );
   const form = useForm<EventFormData>({
     initialData,

@@ -48,7 +48,7 @@ export function PromotionUpsell({
             <div className="flex items-center gap-2">
               <Coins className="size-5 text-warning" />
               <span className="font-semibold text-warning">
-                {userCredits} credits
+                {t("credits.creditCount", { count: userCredits })}
               </span>
             </div>
             <Button
@@ -64,8 +64,8 @@ export function PromotionUpsell({
 
           <div className="rounded-lg border border-border p-4 space-y-3">
             <div>
-              <p className="font-semibold text-foreground">{promotion.name}</p>
-              <p className="text-sm text-muted-foreground">{promotion.description}</p>
+              <p className="font-semibold text-foreground">{t(promotion.nameKey)}</p>
+              <p className="text-sm text-muted-foreground">{t(promotion.descriptionKey)}</p>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">

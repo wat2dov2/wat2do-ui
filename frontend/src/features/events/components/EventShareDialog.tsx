@@ -1,4 +1,5 @@
 import { useMemo, useState, type ComponentType } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Check,
   Facebook,
@@ -29,17 +30,17 @@ type ShareChannelId = "facebook" | "linkedin" | "x" | "discord" | "email";
 
 interface ShareChannel {
   id: ShareChannelId;
-  label: string;
+  labelKey: string;
   Icon: ComponentType<{ className?: string; strokeWidth?: string | number }>;
   bgClass: string;
 }
 
 const CHANNELS: ShareChannel[] = [
-  { id: "facebook", label: "Facebook", Icon: Facebook, bgClass: "bg-[#1877F2]" },
-  { id: "linkedin", label: "LinkedIn", Icon: Linkedin, bgClass: "bg-[#0A66C2]" },
-  { id: "x", label: "X", Icon: XLogo, bgClass: "bg-black" },
-  { id: "discord", label: "Discord", Icon: MessageCircle, bgClass: "bg-[#5865F2]" },
-  { id: "email", label: "Email", Icon: Mail, bgClass: "bg-zinc-600" },
+  { id: "facebook", labelKey: "events.shareDialog.channels.facebook", Icon: Facebook, bgClass: "bg-[#1877F2]" },
+  { id: "linkedin", labelKey: "events.shareDialog.channels.linkedin", Icon: Linkedin, bgClass: "bg-[#0A66C2]" },
+  { id: "x", labelKey: "events.shareDialog.channels.x", Icon: XLogo, bgClass: "bg-black" },
+  { id: "discord", labelKey: "events.shareDialog.channels.discord", Icon: MessageCircle, bgClass: "bg-[#5865F2]" },
+  { id: "email", labelKey: "events.shareDialog.channels.email", Icon: Mail, bgClass: "bg-zinc-600" },
 ];
 
 function encode(value: string) {
@@ -69,26 +70,27 @@ export function EventShareDialog({
   open,
   onOpenChange,
 }: EventShareDialogProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const shareUrl = useMemo(() => buildShareUrl(event.id), [event.id]);
   const cardDate = formatCardDate(event);
   const cardTime = formatCardTime(event);
   const shareBody = [
     event.title,
-    [cardDate, cardTime].filter(Boolean).join(" at "),
+    [cardDate, cardTime].filter(Boolean).join(` ${t("common.at")} `),
     event.location,
     shareUrl,
   ].filter(Boolean).join("\n");
 
-  async function copyLink(message = "Link copied") {
+  async function copyLink(message?: string) {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
-      showToast(message, "success");
+      showToast(message ?? t("events.shareDialog.linkCopied"), "success");
     } catch (err) {
       console.error("Failed to copy event link:", err);
-      showToast("Could not copy link", "error");
+      showToast(t("events.shareDialog.copyFailed"), "error");
     }
   }
 
@@ -113,7 +115,7 @@ export function EventShareDialog({
       return;
     }
     if (channel === "discord") {
-      void copyLink("Link copied for Discord");
+      void copyLink(t("events.shareDialog.linkCopiedForDiscord"));
       openExternalShare("https://discord.com/channels/@me");
       return;
     }
@@ -128,10 +130,10 @@ export function EventShareDialog({
         showCloseButton
       >
         <DialogTitle className="text-lg font-bold">
-          Share
+          {t("common.share")}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Share this event via social media or copy the link.
+          {t("events.shareDialog.description")}
         </DialogDescription>
 
         <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-secondary/50 p-1.5 pl-3">
@@ -145,29 +147,32 @@ export function EventShareDialog({
             className="shrink-0 gap-1.5 rounded-lg px-3 text-xs"
           >
             {copied && <Check className="size-3.5" />}
-            Copy
+            {t("events.shareDialog.copy")}
           </Button>
         </div>
 
         <div className="mt-2 grid grid-cols-5 gap-1">
-          {CHANNELS.map(({ id, label, Icon, bgClass }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => handleShare(id)}
-              className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary"
-              aria-label={`Share on ${label}`}
-            >
-              <span
-                className={`flex h-11 w-11 items-center justify-center rounded-full text-white ${bgClass}`}
+          {CHANNELS.map(({ id, labelKey, Icon, bgClass }) => {
+            const label = t(labelKey);
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleShare(id)}
+                className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary"
+                aria-label={t("events.shareDialog.shareOn", { channel: label })}
               >
-                <Icon className="h-5 w-5" strokeWidth={2} />
-              </span>
-              <span className="text-[11px] font-medium text-foreground">
-                {label}
-              </span>
-            </button>
-          ))}
+                <span
+                  className={`flex h-11 w-11 items-center justify-center rounded-full text-white ${bgClass}`}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={2} />
+                </span>
+                <span className="text-[11px] font-medium text-foreground">
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>

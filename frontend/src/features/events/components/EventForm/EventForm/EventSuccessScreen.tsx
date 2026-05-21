@@ -67,7 +67,7 @@ export function EventSuccessScreen({
               {formData.organization}
             </p>
             <p className="text-sm text-muted-foreground">
-              {formatEventDate(formData.date)} at {formatTime(formData.time)}
+              {formatEventDate(formData.date)} {t("common.at")} {formatTime(formData.time)}
             </p>
           </div>
 

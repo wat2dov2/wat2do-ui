@@ -30,7 +30,7 @@ export function GooseDialogue({
       <div className="flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
         <img
           src={GOOSE_IMAGE_PATH}
-          alt="Mr. Goose"
+          alt={t("onboarding.gooseName")}
           className="size-16 object-contain shrink-0 -mt-1"
         />
 

@@ -60,7 +60,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
               <div className="relative">
                 <div className="size-16 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-2 border-border">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={avatarUrl} alt={t("settings.profile.avatarAlt")} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xl font-semibold text-muted-foreground">
                       {(userEmail?.[0] ?? "?").toUpperCase()}

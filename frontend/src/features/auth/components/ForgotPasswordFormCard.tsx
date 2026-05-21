@@ -26,11 +26,11 @@ export function ForgotPasswordFormCard() {
       setSent(true);
     } catch (err) {
       console.error("Forgot password request failed:", err);
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setError(err instanceof ApiError ? err.message : t("auth.genericError"));
     } finally {
       setIsLoading(false);
     }
-  }, [isValid, isLoading, email]);
+  }, [isValid, isLoading, email, t]);
 
   const handleBackToLogin = useCallback(() => {
     navigate(ROUTES.LOGIN);

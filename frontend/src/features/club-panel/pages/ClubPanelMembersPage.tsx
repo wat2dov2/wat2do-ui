@@ -37,16 +37,16 @@ export function ClubPanelMembersPage() {
           <thead className="bg-secondary/50 border-b border-border">
             <tr>
               <th className="text-left text-sm font-medium text-muted-foreground px-6 py-3">
-                Name
+                {t("clubPanel.memberColumns.name")}
               </th>
               <th className="text-left text-sm font-medium text-muted-foreground px-6 py-3">
-                Email
+                {t("clubPanel.memberColumns.email")}
               </th>
               <th className="text-left text-sm font-medium text-muted-foreground px-6 py-3">
-                Role
+                {t("clubPanel.memberColumns.role")}
               </th>
               <th className="text-left text-sm font-medium text-muted-foreground px-6 py-3">
-                Joined
+                {t("clubPanel.memberColumns.joined")}
               </th>
             </tr>
           </thead>

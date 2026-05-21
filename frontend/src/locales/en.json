@@ -36,6 +36,8 @@
     "never": "Never",
     "back": "Back",
     "continue": "Continue",
+    "tryAgain": "Try again",
+    "at": "at",
     "of": "of",
     "share": "Share",
     "addToCalendar": "Add to Calendar",
@@ -46,13 +48,13 @@
     "closeDialog": "Close dialog",
     "select": "Select…",
     "selectPlaceholder": "Select...",
+    "imageLoadErrorAlt": "Error loading image",
     "logo": "Logo",
     "loadingMap": "Loading map..."
   },
   "errorBoundary": {
     "title": "Something went wrong",
     "message": "An unexpected error occurred. Please try refreshing the page.",
-    "tryAgain": "Try again",
     "refreshPage": "Refresh page"
   },
   "easterEggs": {
@@ -62,7 +64,8 @@
     "uoftSpirit": "🔵 Go Varsity Blues!",
     "mcgillPride": "🔴 Allez McGill!",
     "ubcRain": "🌧️ Vancouver vibes! Go Thunderbirds!",
-    "mcmasterMarauder": "🟤 Go Marauders!"
+    "mcmasterMarauder": "🟤 Go Marauders!",
+    "honk": "HONK!"
   },
   "navigation": {
     "events": "Events",
@@ -102,7 +105,8 @@
       "selectFaculty": "Select a faculty",
       "firstYearStudent": "First Year Student",
       "interests": "Interests",
-      "selectInterests": "Select your interests"
+      "selectInterests": "Select your interests",
+      "avatarAlt": "Avatar"
     },
     "notifications": {
       "title": "Notification Preferences",
@@ -215,6 +219,10 @@
     "resetPasswordTooShort": "Password must be at least 8 characters.",
     "resetPasswordMismatch": "Passwords do not match.",
     "resetPasswordFailed": "Unable to update your password. Please request a new reset link.",
+    "invalidEmailOrPassword": "Invalid email or password",
+    "signupConflict": "Unable to create account — please try a different email or username",
+    "confirmationRequired": "Account created! Check your email for a confirmation link, then log in.",
+    "genericError": "Something went wrong. Please try again.",
     "backToLogin": "Back to sign in",
     "termsNotice": "By continuing, you agree to the platform terms and event community guidelines.",
     "consentHeading": "Data, safety, and your campus feed",
@@ -335,6 +343,7 @@
   "events": {
     "eventTitle": "Event Title",
     "actions": "Event actions",
+    "loadFailed": "Failed to load events. Please try again.",
     "organization": "Organization",
     "status": "Status",
     "dayOfWeek": "Day of Week",
@@ -386,6 +395,29 @@
       "submittedDescription": "Thanks for flagging \"{{title}}\". We'll review it soon.",
       "submitFailed": "Couldn't submit report"
     },
+    "savedEvents": {
+      "saveFailed": "Couldn't save this event",
+      "unsaveFailed": "Couldn't unsave this event"
+    },
+    "calendar": {
+      "googleCalendar": "Google Calendar",
+      "iCal": "iCal"
+    },
+    "shareDialog": {
+      "description": "Share this event via social media or copy the link.",
+      "copy": "Copy",
+      "linkCopied": "Link copied",
+      "linkCopiedForDiscord": "Link copied for Discord",
+      "copyFailed": "Could not copy link",
+      "shareOn": "Share on {{channel}}",
+      "channels": {
+        "facebook": "Facebook",
+        "linkedin": "LinkedIn",
+        "x": "X",
+        "discord": "Discord",
+        "email": "Email"
+      }
+    },
     "promoted": "PROMOTED",
     "deleteEventTitle": "Delete Event",
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
@@ -431,6 +463,7 @@
     "categories": "Categories",
     "categoryRequired": "At least one category is required",
     "add": "Add",
+    "wusa": "WUSA",
     "clubType": "Club Type",
     "clubPageUrl": "Club Page URL",
     "clubPageUrlPlaceholder": "e.g., https://example.com or 123",
@@ -443,6 +476,7 @@
     "dateRequired": "Date is required",
     "timeRequired": "Time is required",
     "locationRequired": "Location is required",
+    "jsonEmpty": "JSON cannot be empty",
     "pickDate": "Pick a date",
     "time": "Time",
     "foodProvided": "Food Provided",
@@ -456,12 +490,20 @@
   "credits": {
     "buyCredits": "Buy Credits",
     "currentBalance": "Current balance:",
-    "credits": "credits",
+    "creditCount": "{{count}} credit",
+    "creditCount_other": "{{count}} credits",
+    "bonusCount": "+{{count}} bonus",
+    "bonusCount_other": "+{{count}} bonus",
+    "totalCreditCount": "{{count}} total credit",
+    "totalCreditCount_other": "{{count}} total credits",
+    "pricePerCredit": "${{price}}¢/credit",
     "added": "Credits Added!",
     "addedMessage": "{{count}} credits have been added to your account.",
     "processing": "Processing...",
     "buyMore": "+ Buy more",
     "notEnough": "Not enough credits",
+    "loginRequired": "You must be logged in to purchase credits.",
+    "purchaseFailed": "Purchase failed. Please try again.",
     "spendCredits": "Spend {{credits}} credits",
     "securePayment": "Secure payment powered by Stripe. Credits never expire."
   },
@@ -471,6 +513,8 @@
     "bestValue": "BEST VALUE",
     "maybeLater": "Maybe Later",
     "notEnoughCredits": "Not enough credits",
+    "promotedEventName": "Promoted Event",
+    "promotedEventDescription": "Show this event more prominently for students",
     "durationDays": "{{count}} day",
     "durationDays_other": "{{count}} days",
     "creditsCost": "{{credits}} credits",
@@ -739,11 +783,18 @@
     "posterAriaLabel": "Poster {{id}}",
     "posterFallbackName": "Poster {{id}}",
     "dragPlacementAriaLabel": "Drag to move QR placement",
+    "mapboxTokenMissingTitle": "Mapbox token not configured",
+    "mapboxTokenMissingDescription": "Please set VITE_MAPBOX_TOKEN in your environment variables",
+    "posterCount": "{{count}} poster",
+    "posterCount_other": "{{count}} posters",
     "scanCount": "{{count}} scan",
     "scanCount_other": "{{count}} scans",
+    "totalScanCount": "{{count}} total scan",
+    "totalScanCount_other": "{{count}} total scans",
     "scanIntensityLow": "Low",
     "scanIntensityMedium": "Medium",
     "scanIntensityHigh": "High",
+    "noData": "No data",
     "last7Days": "Last 7 Days",
     "last14Days": "Last 14 Days",
     "event": "Event",
@@ -771,8 +822,17 @@
     "postersDesc": "Manage QR code posters",
     "integrations": "Integrations",
     "integrationsDesc": "Connect WhatsApp and Discord",
+    "activeClubForIntegrations": "Active club for integrations",
+    "selectClub": "Select club",
+    "noClubsFound": "No clubs found",
     "members": "Members",
     "membersDesc": "Manage club members",
+    "memberColumns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "joined": "Joined"
+    },
     "recentActivity": "Recent Activity",
     "noRecentActivity": "No recent activity",
     "whatsapp": "WhatsApp",
@@ -813,6 +873,7 @@
     "autoPublishNote": "Events from this channel will be automatically imported and published to your club's feed.",
     "whatsAppModalDesc": "Add the wat2do bot to your WhatsApp group",
     "openInWhatsApp": "Open in WhatsApp",
+    "defaultWhatsAppGroupName": "UW Tech Club Group",
     "whatsAppInstructions": "After adding the bot, it will automatically detect and import events posted in your group.",
     "instagram": "Instagram",
     "instagramScrapeDesc": "Import events from your Instagram posts and stories",
@@ -865,6 +926,12 @@
     "facebookStep2Desc": "Choose whether to connect a page or group",
     "facebookConnectDescription": "Click the button below to connect your Facebook account. You'll need admin access to your page or group.",
     "connectWithFacebook": "Connect with Facebook",
+    "errors": {
+      "selectClubBeforeConnect": "Please select a club before connecting integrations.",
+      "connectFailed": "Failed to connect {{platform}} integration.",
+      "loadSettingsFailed": "Failed to load integration settings.",
+      "loadIntegrationsFailed": "Failed to load integrations."
+    },
     "step2SelectDestination": "Step 2: Select destination",
     "connectionType": "Connection Type",
     "facebookPage": "Facebook Page",
@@ -877,6 +944,8 @@
     "stayUpdated": "Stay Updated",
     "newsletterDescription": "Get a weekly digest of the best events. No spam, just the good stuff.",
     "subscribe": "Subscribe",
+    "subscribeSuccess": "Thanks for subscribing!",
+    "subscribeError": "Something went wrong. Please try again.",
     "emailPlaceholder": "your.email@uwaterloo.ca",
     "openingDate": "SOMEWHERE ON UW CAMPUS · JUNE 2025",
     "openingTitle": "Stumbling Upon the Underrated",

@@ -278,10 +278,10 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
             <MapPin className="size-8 text-primary" />
           </div>
           <p className="text-sm font-medium text-foreground mb-2">
-            Mapbox token not configured
+            {t("qrCode.mapboxTokenMissingTitle")}
           </p>
           <p className="text-xs text-muted-foreground">
-            Please set VITE_MAPBOX_TOKEN in your environment variables
+            {t("qrCode.mapboxTokenMissingDescription")}
           </p>
         </div>
       </div>
@@ -296,13 +296,13 @@ export function QRScanMap({ scans, posters: postersProp, height = "500px", onMar
           <div className="flex items-center gap-2">
             <div className="size-2 bg-primary rounded-full animate-pulse" />
             <span className="text-xs font-medium text-foreground">
-              {posterLocations.length} poster{posterLocations.length !== 1 ? "s" : ""} • {totalScans} total scan{totalScans !== 1 ? "s" : ""}
+              {t("qrCode.posterCount", { count: posterLocations.length })} • {t("qrCode.totalScanCount", { count: totalScans })}
             </span>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border/50">
             <MapPin className="size-3 text-primary" />
             <span className="text-xs text-muted-foreground font-medium">
-              {posterLocations.length > 0 ? "Active" : "No data"}
+              {posterLocations.length > 0 ? t("common.active") : t("qrCode.noData")}
             </span>
           </div>
         </div>

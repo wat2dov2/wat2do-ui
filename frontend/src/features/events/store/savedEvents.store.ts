@@ -6,6 +6,7 @@
  */
 
 import { create } from "zustand";
+import i18n from "@/shared/lib/i18n";
 import {
   toggleSaveEventAPI,
   fetchSavedEventIdsFromBackend,
@@ -173,7 +174,7 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
           // Surface the rollback to the user — silent revert made it look
           // like the save succeeded and left them with incorrect state.
           showToast(
-            wasSaved ? "Couldn't unsave this event" : "Couldn't save this event",
+            wasSaved ? i18n.t("events.savedEvents.unsaveFailed") : i18n.t("events.savedEvents.saveFailed"),
             "error",
           );
         });

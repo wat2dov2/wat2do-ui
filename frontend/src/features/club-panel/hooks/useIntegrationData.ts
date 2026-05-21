@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Club } from "@/shared/types";
@@ -90,6 +91,7 @@ export function mapResponseToIntegration(
  * per-club integration state. Separated from connection management logic.
  */
 export function useIntegrationData() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Core data
@@ -157,7 +159,7 @@ export function useIntegrationData() {
         if (cancelled) return;
         console.error("Failed to load integration settings:", err);
         if (redirectIfUnauthorized(err)) return;
-        setError("Failed to load integration settings.");
+        setError(t("integrations.errors.loadSettingsFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -166,7 +168,7 @@ export function useIntegrationData() {
     return () => {
       cancelled = true;
     };
-  }, [redirectIfUnauthorized]);
+  }, [redirectIfUnauthorized, t]);
 
   // --- Load integrations for selected club ---
   useEffect(() => {
@@ -192,7 +194,7 @@ export function useIntegrationData() {
         if (cancelled) return;
         console.error("Failed to load integrations:", err);
         if (redirectIfUnauthorized(err)) return;
-        setError("Failed to load integrations.");
+        setError(t("integrations.errors.loadIntegrationsFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -201,7 +203,7 @@ export function useIntegrationData() {
     return () => {
       cancelled = true;
     };
-  }, [selectedClubId, redirectIfUnauthorized]);
+  }, [selectedClubId, redirectIfUnauthorized, t]);
 
   const getIntegration = (platform: IntegrationPlatform) =>
     integrations.find((i) => i.platform === platform);

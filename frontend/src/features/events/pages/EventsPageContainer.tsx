@@ -153,7 +153,7 @@ export function EventsPageContainer() {
               onClick={() => fetchEvents()}
               className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Try again
+              {t("common.tryAgain")}
             </button>
           </div>
         ) : (

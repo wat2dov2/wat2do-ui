@@ -110,7 +110,7 @@ function GooseCrossing({ onComplete }: { onComplete: () => void }) {
             animation: "honkPop 600ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          HONK!
+          {t("easterEggs.honk")}
           <style>{`
             @keyframes honkPop {
               0% { transform: scale(0.85); opacity: 0; }
@@ -514,4 +514,3 @@ function Toast({ message }: { message: string }) {
     </div>
   );
 }
-

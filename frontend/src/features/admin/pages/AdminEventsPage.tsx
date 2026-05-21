@@ -207,12 +207,12 @@ export function AdminEventsPage({
                         <div className="flex items-center gap-1.5">
                           <AlertTriangle className="size-3.5 text-error" />
                           <span className="text-xs text-error font-medium">
-                            Reported
+                            {t("admin.reported")}
                           </span>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          Live
+                          {t("common.live")}
                         </span>
                       )}
                     </TableCell>

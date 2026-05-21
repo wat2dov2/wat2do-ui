@@ -74,7 +74,7 @@ export function BuyCreditsModal({
       const message =
         err instanceof Error && err.message
           ? err.message
-          : t("credits.purchaseFailed", { defaultValue: "Purchase failed. Please try again." });
+          : t("credits.purchaseFailed");
       setPurchaseError(message);
     } finally {
       form.setPurchasing(false);
@@ -97,7 +97,7 @@ export function BuyCreditsModal({
               <div className="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-full mb-6">
                 <Coins className="size-5 text-warning" />
                 <span className="font-bold text-amber-700">
-                  {currentCredits + form.purchasedCredits} credits
+                  {t("credits.creditCount", { count: currentCredits + form.purchasedCredits })}
                 </span>
               </div>
               <Button onClick={modalState.handleClose} className="w-full">
@@ -121,7 +121,7 @@ export function BuyCreditsModal({
               <DialogDescription>
                 {t("credits.currentBalance")}{" "}
                 <span className="font-semibold text-amber-600">
-                  {currentCredits} {t("credits.credits")}
+                  {t("credits.creditCount", { count: currentCredits })}
                 </span>
               </DialogDescription>
             </div>

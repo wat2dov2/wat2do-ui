@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc -b",
-    "check": "npm run lint && npm run type-check",
+    "audit:i18n": "node scripts/audit-i18n-literals.mjs",
+    "check": "npm run lint && npm run audit:i18n && npm run type-check",
     "preview": "vite preview",
     "generate-types": "cd ../backend && .venv/bin/python scripts/export_openapi.py && cd ../frontend && npx openapi-typescript src/shared/generated/openapi.json -o src/shared/generated/api-types.ts"
   },

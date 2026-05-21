@@ -154,6 +154,20 @@ Frontend locale hygiene pass completed:
 - Preserved the current English copy while making the locale file the owner for
   those rendered strings.
 
+Frontend rendered-English locale pass completed:
+
+- Migrated remaining clear frontend-owned rendered strings found by an AST
+  audit into `frontend/src/locales/en.json`, including share dialog copy,
+  credit units, promotion package labels, club-panel table headers, QR map
+  status text, auth fallback messages, validation fallbacks, and user-facing
+  toast messages.
+- Added `frontend/scripts/audit-i18n-literals.mjs` and wired it into
+  `npm run check` so future JSX text, user-facing attributes, and toast copy
+  are caught before they drift away from the locale file.
+- Left route ids, API constants, tracking labels, keyboard shortcut glyphs,
+  visual placeholders, and backend-provided dynamic error messages outside
+  locale ownership because they are not client-owned rendered English copy.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
@@ -236,9 +250,10 @@ Questions raised during cleanup:
 - `events_listing` is a view rather than a duplicate event table. Decide
   whether future API work should expose this read model explicitly or keep it
   as a private DB compatibility detail.
-- Frontend English is centralized in `frontend/src/locales/en.json`, but older
-  components still have scattered hardcoded strings. Decide whether to enforce
-  this with lint rules or continue migrating copy in focused feature batches.
+- `frontend/scripts/audit-i18n-literals.mjs` now enforces the most common
+  rendered-copy cases, but it is intentionally conservative. If new copy enters
+  through data constants or non-JSX render helpers, add that pattern to the
+  audit rather than manually policing it.
 - The installed global Supabase CLI (`2.51.0`) is too old for the current
   `backend/supabase/config.toml`; use the current CLI via
   `npx supabase@latest ...` or update the local CLI before future DB audits.

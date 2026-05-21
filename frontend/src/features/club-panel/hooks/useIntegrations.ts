@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   connectPlatformIntegration,
   disconnectPlatformIntegration,
@@ -13,6 +14,7 @@ import { usePlatformConnect } from "./usePlatformConnect";
 export type { Integration } from "./useIntegrationData";
 
 export function useIntegrations() {
+  const { t } = useTranslation();
   const data = useIntegrationData();
   const {
     integrations,
@@ -39,7 +41,7 @@ export function useIntegrations() {
       payload: { name: string; metadata?: Record<string, string> }
     ) => {
       if (!selectedClubId) {
-        setError("Please select a club before connecting integrations.");
+        setError(t("integrations.errors.selectClubBeforeConnect"));
         return;
       }
       setSaving(true);
@@ -59,11 +61,11 @@ export function useIntegrations() {
         .catch((err) => {
           console.error(`Failed to connect ${platform} integration:`, err);
           if (redirectIfUnauthorized(err)) return;
-          setError(`Failed to connect ${platform} integration.`);
+          setError(t("integrations.errors.connectFailed", { platform }));
         })
         .finally(() => setSaving(false));
     },
-    [selectedClubId, redirectIfUnauthorized, setError, setIntegrations]
+    [selectedClubId, redirectIfUnauthorized, setError, setIntegrations, t]
   );
 
   const handleDisconnect = async (platform: IntegrationPlatform) => {
@@ -212,7 +214,7 @@ export function useIntegrations() {
   // --- Simple platform handlers (WhatsApp, Instagram) ---
 
   const handleWhatsAppDone = () => {
-    applyConnectedIntegration("whatsapp", { name: "UW Tech Club Group" });
+    applyConnectedIntegration("whatsapp", { name: t("integrations.defaultWhatsAppGroupName") });
     setWhatsappModalOpen(false);
   };
 

@@ -37,13 +37,13 @@ export function NewsletterForm() {
 
       {status === "success" ? (
         <p className="text-sm text-green-600 dark:text-green-400 font-medium">
-          {t("about.subscribeSuccess") || "Thanks for subscribing!"}
+          {t("about.subscribeSuccess")}
         </p>
       ) : (
         <>
           {status === "error" && (
             <p className="text-sm text-red-600 dark:text-red-400 font-medium mb-3">
-              {t("about.subscribeError") || "Something went wrong. Please try again."}
+              {t("about.subscribeError")}
             </p>
           )}
           <form onSubmit={handleSubscribe} className="flex gap-3">

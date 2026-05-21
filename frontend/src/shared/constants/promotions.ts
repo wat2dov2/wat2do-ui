@@ -2,8 +2,8 @@ import type { CreditPackageInfo, PromotionPackageInfo } from "@/shared/types/pro
 
 export const EVENT_PROMOTION: PromotionPackageInfo = {
   id: "featured",
-  name: "Promoted Event",
-  description: "Show this event more prominently for students",
+  nameKey: "promotion.promotedEventName",
+  descriptionKey: "promotion.promotedEventDescription",
   credits: 50,
   duration: 7,
 };

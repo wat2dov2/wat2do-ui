@@ -55,7 +55,7 @@ export function ClubPanelIntegrationsPage() {
       {/* Club selector */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-2">
         <FieldLabel className="text-sm text-muted-foreground">
-          Active club for integrations
+          {t("clubPanel.activeClubForIntegrations")}
         </FieldLabel>
         <Select
           value={integrations.selectedClubId ? String(integrations.selectedClubId) : ""}
@@ -63,7 +63,7 @@ export function ClubPanelIntegrationsPage() {
           disabled={integrations.loading || integrations.clubs.length === 0}
         >
           <SelectTrigger className="w-full max-w-sm">
-            <SelectValue placeholder={integrations.clubs.length === 0 ? "No clubs found" : "Select club"} />
+            <SelectValue placeholder={integrations.clubs.length === 0 ? t("clubPanel.noClubsFound") : t("clubPanel.selectClub")} />
           </SelectTrigger>
           <SelectContent>
             {integrations.clubs.map((club) => (

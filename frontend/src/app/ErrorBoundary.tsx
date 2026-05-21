@@ -4,6 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { withTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Button } from "@/shared/ui/button";
+import i18n from "@/shared/lib/i18n";
 
 interface Props {
   children: ReactNode;
@@ -41,6 +42,7 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       const { t } = this.props;
+      const translate = t ?? i18n.t.bind(i18n);
 
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
@@ -48,17 +50,17 @@ class ErrorBoundary extends Component<Props, State> {
             <AlertCircle className="size-8 text-destructive" />
           </div>
           <h2 className="text-xl font-semibold text-foreground mb-2">
-            {t?.("errorBoundary.title") || "Something went wrong"}
+            {translate("errorBoundary.title")}
           </h2>
           <p className="text-muted-foreground mb-6 max-w-md">
-            {this.state.error?.message || (t?.("errorBoundary.message") || "An unexpected error occurred. Please try refreshing the page.")}
+            {this.state.error?.message || translate("errorBoundary.message")}
           </p>
           <div className="flex gap-3">
             <Button onClick={this.handleReset} variant="outline">
-              {t?.("errorBoundary.tryAgain") || "Try again"}
+              {translate("common.tryAgain")}
             </Button>
             <Button onClick={() => window.location.reload()} variant="default">
-              {t?.("errorBoundary.refreshPage") || "Refresh page"}
+              {translate("errorBoundary.refreshPage")}
             </Button>
           </div>
         </div>

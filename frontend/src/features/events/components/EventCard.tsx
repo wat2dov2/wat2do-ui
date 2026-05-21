@@ -252,7 +252,7 @@ export function EventCard({
                       }}
                     >
                       <CalendarPlus />
-                      Google Calendar
+                      {t("events.calendar.googleCalendar")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={() => {
@@ -261,7 +261,7 @@ export function EventCard({
                       }}
                     >
                       <Download />
-                      iCal
+                      {t("events.calendar.iCal")}
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>

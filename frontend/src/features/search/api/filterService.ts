@@ -1,5 +1,6 @@
 import type { FilterState } from "@/shared/types";
 import { QP } from "@/shared/constants/queryParams";
+import i18n from "@/shared/lib/i18n";
 
 /**
  * Filter Service
@@ -101,7 +102,7 @@ export function parseFiltersFromJSON(
     console.error("Failed to parse filters from JSON:", err);
     return {
       filters: { ...EMPTY_FILTER_STATE },
-      error: "Invalid JSON format",
+      error: i18n.t("forms.invalidJsonFormat"),
     };
   }
 }

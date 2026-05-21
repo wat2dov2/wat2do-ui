@@ -4,6 +4,7 @@
  */
 
 import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 
 interface CreditPackageCardProps {
@@ -24,6 +25,10 @@ export function CreditPackageCard({
   onClick,
   popularLabel,
 }: CreditPackageCardProps) {
+  const { t } = useTranslation();
+  const totalCredits = pkg.credits + (pkg.bonus || 0);
+  const pricePerCredit = ((pkg.price / totalCredits) * 100).toFixed(1);
+
   return (
     <button
       onClick={onClick}
@@ -54,17 +59,17 @@ export function CreditPackageCard({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-foreground">
-                {pkg.credits} credits
+                {t("credits.creditCount", { count: pkg.credits })}
               </span>
               {pkg.bonus && (
                 <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">
-                  +{pkg.bonus} bonus
+                  {t("credits.bonusCount", { count: pkg.bonus })}
                 </span>
               )}
             </div>
             {pkg.bonus && (
               <p className="text-xs text-muted-foreground">
-                {pkg.credits + pkg.bonus} total credits
+                {t("credits.totalCreditCount", { count: totalCredits })}
               </p>
             )}
           </div>
@@ -72,7 +77,7 @@ export function CreditPackageCard({
         <div className="text-right">
           <p className="font-bold text-foreground">${pkg.price}</p>
           <p className="text-xs text-muted-foreground">
-            ${((pkg.price / (pkg.credits + (pkg.bonus || 0))) * 100).toFixed(1)}¢/credit
+            {t("credits.pricePerCredit", { price: pricePerCredit })}
           </p>
         </div>
       </div>

@@ -7,6 +7,7 @@
  */
 
 import { create } from "zustand";
+import i18n from "@/shared/lib/i18n";
 import type { Event, EventFormData } from "@/shared/types";
 import {
   fetchAllEvents,
@@ -52,7 +53,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       const events = await fetchAllEvents(get().schoolFilter ?? undefined);
       set({ events, isLoading: false, error: null });
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Failed to load events. Please try again.";
+      const message = err instanceof ApiError ? err.message : i18n.t("events.loadFailed");
       console.error("Failed to fetch events:", err);
       set({ isLoading: false, error: message });
     } finally {

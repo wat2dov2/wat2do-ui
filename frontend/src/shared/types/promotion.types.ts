@@ -6,8 +6,8 @@ export type PromotionPackage = "featured";
 
 export interface PromotionPackageInfo {
   id: PromotionPackage;
-  name: string;
-  description: string;
+  nameKey: string;
+  descriptionKey: string;
   credits: number;
   duration: number; // days
 }

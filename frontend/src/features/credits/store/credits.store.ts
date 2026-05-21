@@ -9,6 +9,7 @@
  */
 
 import { create } from "zustand";
+import i18n from "@/shared/lib/i18n";
 import { loadCredits, addCreditsAPI } from "@/features/credits/api/credits.api";
 import { isAuthenticated, getUserId } from "@/features/auth";
 
@@ -57,7 +58,7 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
     // modal surfaces as an error banner.
     const userId = getUserId();
     if (!userId) {
-      const err = new Error("You must be logged in to purchase credits.");
+      const err = new Error(i18n.t("credits.loginRequired"));
       console.error("addCredits called without an authenticated user");
       throw err;
     }

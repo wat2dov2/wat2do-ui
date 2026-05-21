@@ -1,22 +1,31 @@
 import type { EventFormData, ValidationErrors } from "@/shared/types";
+import i18n from "@/shared/lib/i18n";
 
 /**
  * Validation Service
  * Handles form validation logic
  */
 
-/** Default validation error message keys — can be overridden with translated strings. */
-const VALIDATION_MESSAGES = {
-  titleRequired: "Title is required",
-  organizationRequired: "Organization is required",
-  dateRequired: "Date is required",
-  timeRequired: "Time is required",
-  locationRequired: "Location is required",
-  jsonEmpty: "JSON cannot be empty",
-  jsonInvalid: "Invalid JSON format",
+const VALIDATION_MESSAGE_KEYS = {
+  titleRequired: "forms.titleRequired",
+  organizationRequired: "forms.organizationRequired",
+  dateRequired: "forms.dateRequired",
+  timeRequired: "forms.timeRequired",
+  locationRequired: "forms.locationRequired",
+  jsonEmpty: "forms.jsonEmpty",
+  jsonInvalid: "forms.invalidJsonFormat",
 } as const;
 
-export type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGES, string>>;
+export type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGE_KEYS, string>>;
+
+function getValidationMessages(): Record<keyof typeof VALIDATION_MESSAGE_KEYS, string> {
+  return Object.fromEntries(
+    Object.entries(VALIDATION_MESSAGE_KEYS).map(([key, translationKey]) => [
+      key,
+      i18n.t(translationKey),
+    ])
+  ) as Record<keyof typeof VALIDATION_MESSAGE_KEYS, string>;
+}
 
 /**
  * Validate event form data
@@ -26,7 +35,7 @@ export function validateEventForm(
   touched: Record<string, boolean>,
   messages?: ValidationMessageOverrides,
 ): ValidationErrors {
-  const m = { ...VALIDATION_MESSAGES, ...messages };
+  const m = { ...getValidationMessages(), ...messages };
   const errors: ValidationErrors = {};
 
   if (touched.title && !formData.title.trim()) {

@@ -262,7 +262,7 @@ export function AddClubModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="WUSA">WUSA</SelectItem>
+                <SelectItem value="WUSA">{t("forms.wusa")}</SelectItem>
                 <SelectItem value="Independent">{t("forms.independent")}</SelectItem>
                 <SelectItem value="Other">{t("forms.other")}</SelectItem>
               </SelectContent>

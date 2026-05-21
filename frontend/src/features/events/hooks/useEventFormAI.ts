@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { generateEventWithAI } from "@/shared/lib/openai";
 import type { EventFormData } from "@/shared/types";
 import { mapAiResponseToFormData } from "@/features/events/hooks/useEventForm.utils";
@@ -19,6 +20,7 @@ export function useEventFormAI({
   setJsonValue,
   setJsonError,
 }: UseEventFormAIOptions) {
+  const { t } = useTranslation();
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
 
@@ -46,12 +48,12 @@ export function useEventFormAI({
     } catch (error) {
       console.error("AI event generation failed:", error);
       setJsonError(
-        error instanceof Error ? error.message : "Failed to generate event"
+        error instanceof Error ? error.message : t("forms.aiGenerationFailed")
       );
     } finally {
       setAiGenerating(false);
     }
-  }, [aiPrompt, setFormData, setJsonValue, setJsonError, formData]);
+  }, [aiPrompt, setFormData, setJsonValue, setJsonError, formData, t]);
 
   return {
     aiPrompt,

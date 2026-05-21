@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import { loginAPI, signupAPI } from "@/features/auth/api/auth.api";
 import { ApiError } from "@/shared/services/apiClient";
 import { DOMAIN_TO_SCHOOL } from "@/shared/constants/schools";
@@ -13,9 +15,9 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * Signup errors that reveal domain restrictions (403) are passed through
  * since they don't confirm whether a specific account exists.
  */
-function sanitizeAuthError(err: ApiError, mode: AuthMode): string {
+function sanitizeAuthError(err: ApiError, mode: AuthMode, t: TFunction): string {
   if (mode === "login") {
-    return "Invalid email or password";
+    return t("auth.invalidEmailOrPassword");
   }
 
   // Signup: allow domain-restriction messages (403) through — they don't
@@ -27,7 +29,7 @@ function sanitizeAuthError(err: ApiError, mode: AuthMode): string {
   // For 409 (duplicate email/username) use a generic message so attackers
   // cannot confirm that a specific email is registered.
   if (err.status === 409) {
-    return "Unable to create account — please try a different email or username";
+    return t("auth.signupConflict");
   }
 
   return err.message;
@@ -52,6 +54,7 @@ export function useAuthEntryFlow({
   onContinueToHome,
   onForgotPassword,
 }: UseAuthEntryFlowOptions) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
@@ -98,7 +101,7 @@ export function useAuthEntryFlow({
       if (authMode === "signup") {
         const result = await signupAPI(trimmed, password);
         if (result.confirmationRequired) {
-          setConfirmationMessage("Account created! Check your email for a confirmation link, then log in.");
+          setConfirmationMessage(t("auth.confirmationRequired"));
           return;
         }
         // signupAPI already cached the email; hand the school to the
@@ -112,14 +115,14 @@ export function useAuthEntryFlow({
     } catch (err) {
       console.error("Auth entry flow failed:", err);
       if (err instanceof ApiError) {
-        setError(sanitizeAuthError(err, authMode));
+        setError(sanitizeAuthError(err, authMode, t));
       } else {
-        setError("Something went wrong. Please try again.");
+        setError(t("auth.genericError"));
       }
     } finally {
       setIsLoading(false);
     }
-  }, [isFormValid, isLoading, email, authMode, password, onContinueToOnboarding, onContinueToHome]);
+  }, [isFormValid, isLoading, email, authMode, password, onContinueToOnboarding, onContinueToHome, t]);
 
   return {
     email,
