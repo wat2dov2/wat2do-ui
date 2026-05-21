@@ -15,7 +15,8 @@ interface EventSuccessScreenProps {
   onClose: () => void;
   onPromote?: () => void;
   isEditMode: boolean;
-  onShowSuccessAlert: (message: string) => void;
+  isSubmissionOnly: boolean;
+  onShowSuccessAlert: (title: string, message: string) => void;
 }
 
 export function EventSuccessScreen({
@@ -23,6 +24,7 @@ export function EventSuccessScreen({
   onClose,
   onPromote,
   isEditMode,
+  isSubmissionOnly,
   onShowSuccessAlert,
 }: EventSuccessScreenProps) {
   const { t } = useTranslation();
@@ -31,8 +33,15 @@ export function EventSuccessScreen({
     onClose();
     setTimeout(() => {
       onShowSuccessAlert(
+        isSubmissionOnly
+          ? t("events.submissionReceived")
+          : isEditMode
+            ? t("events.eventUpdated")
+            : t("events.eventCreated"),
         isEditMode
           ? t("events.eventUpdatedMessage", { title: formData.title })
+          : isSubmissionOnly
+            ? t("events.submissionReceivedMessage", { title: formData.title })
           : t("events.eventCreatedMessage", { title: formData.title })
       );
     }, SCROLL_INTO_VIEW_DELAY_MS);
@@ -42,7 +51,11 @@ export function EventSuccessScreen({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md" showCloseButton={false}>
         <DialogTitle className="sr-only">
-          {isEditMode ? t("events.eventUpdatedTitle") : t("events.eventCreatedTitle")}
+          {isSubmissionOnly
+            ? t("events.submissionReceivedTitle")
+            : isEditMode
+              ? t("events.eventUpdatedTitle")
+              : t("events.eventCreatedTitle")}
         </DialogTitle>
         <div className="flex flex-col items-center text-center py-4 gap-y-4">
           <div className="relative">
@@ -55,10 +68,19 @@ export function EventSuccessScreen({
           </div>
 
           <h2 className="text-xl font-semibold text-foreground">
-            {isEditMode ? t("events.eventUpdated") : t("events.eventCreated")}
+            {isSubmissionOnly
+              ? t("events.submissionReceived")
+              : isEditMode
+                ? t("events.eventUpdated")
+                : t("events.eventCreated")}
           </h2>
           <p className="text-muted-foreground text-sm">
-            "{formData.title}" {isEditMode ? t("events.eventUpdatedDesc") : t("events.eventCreatedDesc")}
+            "{formData.title}"{" "}
+            {isSubmissionOnly
+              ? t("events.submissionReceivedDesc")
+              : isEditMode
+                ? t("events.eventUpdatedDesc")
+                : t("events.eventCreatedDesc")}
           </p>
 
           <div className="w-full rounded-lg p-4 text-left bg-secondary space-y-1">

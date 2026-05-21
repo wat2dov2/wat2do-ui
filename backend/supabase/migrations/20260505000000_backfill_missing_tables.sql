@@ -174,35 +174,7 @@ END$$;
 
 CREATE INDEX IF NOT EXISTS ix_user_saved_events_user_id ON public.user_saved_events (user_id);
 
--- ── 5. user_event_rsvps ───────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.user_event_rsvps (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    event_id integer NOT NULL,
-    rsvped_at timestamp with time zone DEFAULT now()
-);
-
-ALTER TABLE public.user_event_rsvps ENABLE ROW LEVEL SECURITY;
-
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_event_rsvps_pkey') THEN
-        ALTER TABLE ONLY public.user_event_rsvps ADD CONSTRAINT user_event_rsvps_pkey PRIMARY KEY (id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_event_rsvps_user_id_event_id_key') THEN
-        ALTER TABLE ONLY public.user_event_rsvps ADD CONSTRAINT user_event_rsvps_user_id_event_id_key UNIQUE (user_id, event_id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_event_rsvps_event_id') THEN
-        ALTER TABLE ONLY public.user_event_rsvps ADD CONSTRAINT fk_user_event_rsvps_event_id FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_event_rsvps_user_id') THEN
-        ALTER TABLE ONLY public.user_event_rsvps ADD CONSTRAINT fk_user_event_rsvps_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-    END IF;
-END$$;
-
-CREATE INDEX IF NOT EXISTS ix_user_event_rsvps_user_id ON public.user_event_rsvps (user_id);
-
--- ── 6. user_interactions ──────────────────────────────────────────────
+-- ── 5. user_interactions ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.user_interactions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid,
@@ -329,30 +301,7 @@ END$$;
 CREATE INDEX IF NOT EXISTS idx_reported_events_event_id ON public.reported_events (event_id);
 CREATE INDEX IF NOT EXISTS idx_reported_events_status ON public.reported_events (status);
 
--- ── 10. scraped_events ────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.scraped_events (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    event_id integer,
-    source character varying(255) NOT NULL,
-    scraped_at timestamp with time zone DEFAULT now() NOT NULL,
-    raw_data jsonb
-);
-
-ALTER TABLE public.scraped_events ENABLE ROW LEVEL SECURITY;
-
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'scraped_events_pkey') THEN
-        ALTER TABLE ONLY public.scraped_events ADD CONSTRAINT scraped_events_pkey PRIMARY KEY (id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_scraped_events_event_id') THEN
-        ALTER TABLE ONLY public.scraped_events ADD CONSTRAINT fk_scraped_events_event_id FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE SET NULL;
-    END IF;
-END$$;
-
-CREATE INDEX IF NOT EXISTS idx_scraped_events_source ON public.scraped_events (source);
-
--- ── 11. ab_test_events ────────────────────────────────────────────────
+-- ── 10. ab_test_events ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.ab_test_events (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid,

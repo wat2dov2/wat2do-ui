@@ -6,14 +6,18 @@ import { showToast } from "@/shared/ui/toast";
 import { ApiError } from "@/shared/services/apiClient";
 import type { EventFormData } from "@/shared/types";
 
+export type SubmitEventResult =
+  | { type: "event"; eventId: number }
+  | { type: "submission" };
+
 interface UseSubmitEventOptions {
   isEditMode: boolean;
   editEventId?: number;
-  onSubmit: (event: EventFormData) => number | Promise<number>;
+  onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
   onClose: () => void;
   showPromotion: boolean;
-  onCreated: (eventId: number) => void;
+  onSubmitted: (eventId: number | null) => void;
 }
 
 /**
@@ -27,7 +31,7 @@ export function useSubmitEvent({
   onUpdate,
   onClose,
   showPromotion,
-  onCreated,
+  onSubmitted,
 }: UseSubmitEventOptions) {
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,8 +52,9 @@ export function useSubmitEvent({
           );
           return;
         }
-        const eventId = await onSubmit(formData);
-        onCreated(eventId);
+        const result = await onSubmit(formData);
+        const eventId = result.type === "event" ? result.eventId : null;
+        onSubmitted(eventId);
         if (imageFile && eventId) {
           import("@/shared/services/uploadService").then(({ uploadEventImage }) => {
             uploadEventImage(eventId, imageFile).catch((err) =>
@@ -69,13 +74,13 @@ export function useSubmitEvent({
             ? err.message
             : err instanceof Error
               ? err.message
-              : t("events.submitFailed") || "Failed to submit event";
+              : t("events.submitFailed");
         showToast(message, "error");
       } finally {
         setIsSubmitting(false);
       }
     },
-    [isEditMode, editEventId, onUpdate, onSubmit, showSuccessAlert, t, showPromotion, triggerConfetti, onCreated]
+    [isEditMode, editEventId, onUpdate, onSubmit, showSuccessAlert, t, showPromotion, triggerConfetti, onSubmitted]
   );
 
   return {

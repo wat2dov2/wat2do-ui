@@ -796,6 +796,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Submission */
+        get: operations["get_submission_submissions__submission_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Submission */
+        delete: operations["delete_submission_submissions__submission_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Submission */
+        patch: operations["update_submission_submissions__submission_id__patch"];
+        trace?: never;
+    };
     "/uploads/event-image/{event_id}": {
         parameters: {
             query?: never;
@@ -1838,6 +1875,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[SubmissionResponse] */
+        PaginatedResponse_SubmissionResponse_: {
+            /** Items */
+            items: components["schemas"]["SubmissionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /**
          * PlatformIntegrationOptionsResponse
          * @description Generic options for any integration platform (audit S7).
@@ -2134,6 +2184,52 @@ export interface components {
              * @default false
              */
             confirmation_required: boolean;
+        };
+        /**
+         * SubmissionCreate
+         * @description Normal-user event submission for admin review.
+         *
+         *     ``event_data`` uses the same schema as direct event creation so
+         *     moderation receives a payload that can be published without a second
+         *     shape translation step.
+         */
+        SubmissionCreate: {
+            event_data: components["schemas"]["EventCreate"];
+        };
+        /** SubmissionResponse */
+        SubmissionResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Event Data */
+            event_data: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+        };
+        /** SubmissionUpdate */
+        SubmissionUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Rejection Reason */
+            rejection_reason?: string | null;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -3792,6 +3888,169 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaveEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_submissions_submissions__get: {
+        parameters: {
+            query?: {
+                submission_status?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_SubmissionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_submission_submissions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_submission_submissions__submission_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_submission_submissions__submission_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_submission_submissions__submission_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
                 };
             };
             /** @description Validation Error */

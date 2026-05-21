@@ -1,14 +1,14 @@
--- Migration: add_scrape_runs_table
+-- Migration: add_workflow_runs_table
 -- Created: 2026-04-27
 --
--- Per-Instagram-username scrape job tracking for services/wat2do.
+-- Per-Instagram-username workflow tracking for services/wat2do.
 --
 -- One row per (username, github_run) attempt. Rows progress through the
--- status states defined in core/constants.SCRAPE_RUN_STATUSES. Dry-run
+-- status states defined in core/constants.WORKFLOW_RUN_STATUSES. Dry-run
 -- mode skips inserts entirely (matches v1 behaviour from commit bb1595b
 -- so a dry-run produces no rows in this table).
 --
--- Shape mirrors v1's apps/scraping/models.py ScrapeRun, ported to the
+-- Shape mirrors v1's apps/scraping/models.py run tracking, ported to the
 -- v2 column conventions: snake_case + timestamptz + IF NOT EXISTS guards.
 -- ``status`` is plain text rather than a CHECK constraint so adding a
 -- new status (e.g. ``aborted``) is a code change only.
@@ -16,7 +16,7 @@
 BEGIN;
 
 -- 1. Table -------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.scrape_runs (
+CREATE TABLE IF NOT EXISTS public.workflow_runs (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     ig_username text NOT NULL,
     github_run_id text,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.scrape_runs (
     started_at timestamptz NOT NULL DEFAULT now(),
     finished_at timestamptz,
 
-    CONSTRAINT chk_scrape_runs_counts_non_negative
+    CONSTRAINT chk_workflow_runs_counts_non_negative
         CHECK (posts_fetched >= 0
            AND posts_new >= 0
            AND events_extracted >= 0
@@ -42,19 +42,19 @@ CREATE TABLE IF NOT EXISTS public.scrape_runs (
 -- anon / authenticated roles in case any future code path uses the
 -- anon client. Scraping is admin-only operational data — never exposed
 -- to the public PostgREST surface.
-ALTER TABLE public.scrape_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workflow_runs ENABLE ROW LEVEL SECURITY;
 
 -- 3. Indexes -----------------------------------------------------------
 -- Recent-runs-by-user view (the most common admin query).
-CREATE INDEX IF NOT EXISTS ix_scrape_runs_username_started
-    ON public.scrape_runs (ig_username, started_at DESC);
+CREATE INDEX IF NOT EXISTS ix_workflow_runs_username_started
+    ON public.workflow_runs (ig_username, started_at DESC);
 
 -- Status-filtered queries (e.g. dashboards showing failures).
-CREATE INDEX IF NOT EXISTS ix_scrape_runs_status
-    ON public.scrape_runs (status);
+CREATE INDEX IF NOT EXISTS ix_workflow_runs_status
+    ON public.workflow_runs (status);
 
 -- Time-window queries (e.g. "all runs in the last 24h").
-CREATE INDEX IF NOT EXISTS ix_scrape_runs_started_at
-    ON public.scrape_runs (started_at DESC);
+CREATE INDEX IF NOT EXISTS ix_workflow_runs_started_at
+    ON public.workflow_runs (started_at DESC);
 
 COMMIT;

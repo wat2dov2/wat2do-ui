@@ -28,8 +28,8 @@ export function Sidebar() {
   const { t } = useTranslation();
   const pageMode = derivePageMode(location.pathname);
   const [eventsExpanded, setEventsExpanded] = useState(true);
-  const { profileCompleted, isAdmin, hasClub } = useAuthState();
-  const canCreateEvents = hasClub || isAdmin;
+  const { profileCompleted } = useAuthState();
+  const canSubmitEvents = profileCompleted;
   const setShowCommandPalette = useModalStore((s) => s.setShowCommandPalette);
   const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
 
@@ -66,7 +66,7 @@ export function Sidebar() {
             eventsExpanded={eventsExpanded}
             setEventsExpanded={setEventsExpanded}
             profileCompleted={profileCompleted}
-            canCreateEvents={canCreateEvents}
+            canSubmitEvents={canSubmitEvents}
             setShowSubmitEvent={setShowSubmitEvent}
           />
 

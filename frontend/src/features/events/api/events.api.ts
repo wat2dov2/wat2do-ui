@@ -5,6 +5,7 @@
 
 import type { Event, EventFormData } from "@/shared/types";
 import type { ApiEventResponse } from "@/shared/generated";
+import { buildEventPayload } from "@/shared/api/eventPayload";
 import { api } from "@/shared/services/apiClient";
 
 /**
@@ -41,32 +42,6 @@ export async function fetchLatestAddedEvent(): Promise<LatestAddedEvent | null> 
  */
 export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventResponse>(`/events/${id}`);
-}
-
-/** Map frontend EventFormData to the backend API payload shape. */
-function buildEventPayload(eventData: EventFormData) {
-  const startsAt = eventData.date
-    ? new Date(`${eventData.date}T${eventData.time || "00:00"}`).toISOString()
-    : null;
-
-  return {
-    title: eventData.title,
-    description: eventData.description || null,
-    location: eventData.location,
-    occurrences: startsAt
-      ? [{
-          dtstart_utc: startsAt,
-          dtend_utc: null,
-          duration: null,
-          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
-        }]
-      : [],
-    price: eventData.price || null,
-    food: eventData.food?.length ? eventData.food : null,
-    registration: eventData.requiresRegistration || false,
-    category: eventData.category || null,
-    organization: eventData.organization || null,
-  };
 }
 
 export async function createEventAPI(eventData: EventFormData): Promise<Event> {

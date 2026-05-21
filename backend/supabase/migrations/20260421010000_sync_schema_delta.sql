@@ -145,12 +145,17 @@ ALTER TABLE ab_test_events ADD COLUMN IF NOT EXISTS experiment_name VARCHAR(64);
 UPDATE ab_test_events SET experiment_name = 'recommendations_v1' WHERE experiment_name IS NULL;
 ALTER TABLE ab_test_events ALTER COLUMN experiment_name SET NOT NULL;
 
--- 1l. scraped_events.event_id — null out orphaned references
---     (cleanup only; FK added below)
-UPDATE scraped_events
-   SET event_id = NULL
- WHERE event_id IS NOT NULL
-   AND event_id NOT IN (SELECT id FROM events);
+-- 1l. scraped_events.event_id — null out orphaned references when the
+--     retired table exists in older databases.
+DO $$
+BEGIN
+    IF to_regclass('public.scraped_events') IS NOT NULL THEN
+        UPDATE scraped_events
+           SET event_id = NULL
+         WHERE event_id IS NOT NULL
+           AND event_id NOT IN (SELECT id FROM events);
+    END IF;
+END $$;
 
 -- ────────────────────────────────────────────────────────────────────
 -- 2. Null-safe orphan cleanup (users / events parents)
@@ -503,7 +508,8 @@ END $$;
 -- 6q. scraped_events.event_id → events(id) ON DELETE SET NULL
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF to_regclass('public.scraped_events') IS NOT NULL
+       AND NOT EXISTS (
         SELECT 1 FROM pg_constraint
         WHERE conname = 'fk_scraped_events_event_id'
     ) THEN
@@ -836,9 +842,13 @@ CREATE INDEX IF NOT EXISTS idx_users_admin_partial
     ON users (id)
     WHERE role = 'admin';
 
--- 10d. Scraped-events admin list default ordering
-CREATE INDEX IF NOT EXISTS ix_scraped_events_source_scraped_at
-    ON scraped_events (source, scraped_at DESC);
+-- 10d. Retired scraped-events admin list default ordering
+DO $$
+BEGIN
+    IF to_regclass('public.scraped_events') IS NOT NULL THEN
+        EXECUTE 'CREATE INDEX IF NOT EXISTS ix_scraped_events_source_scraped_at ON scraped_events (source, scraped_at DESC)';
+    END IF;
+END $$;
 
 -- 10e. get_ab_test_ctr hot path
 CREATE INDEX IF NOT EXISTS ix_ab_test_events_experiment

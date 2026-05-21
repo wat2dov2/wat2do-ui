@@ -9,7 +9,8 @@
  * compile-time safety; the backend is the source of truth.
  */
 
-import type { REPORT_STATUSES } from "@/shared/constants/statuses";
+import type { REPORT_STATUSES, SUBMISSION_STATUSES } from "@/shared/constants/statuses";
+import type { EventFormData } from "@/shared/types/event.types";
 
 /** Derived from REPORT_STATUSES constant tuple */
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
@@ -21,4 +22,15 @@ export interface ReportedEvent {
   reportedAt: string;
   reason: string;
   status: ReportStatus;
+}
+
+export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
+
+export interface EventSubmission {
+  id: string;
+  eventData: EventFormData;
+  submittedBy: string;
+  submittedAt: string;
+  status: SubmissionStatus;
+  rejectionReason?: string;
 }

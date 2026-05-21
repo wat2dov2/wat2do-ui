@@ -24,8 +24,8 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { isAdmin, hasClub } = useAuthState();
-  const canCreateEvents = hasClub || isAdmin;
+  const { profileCompleted } = useAuthState();
+  const canSubmitEvents = profileCompleted;
   const setShowCommandPalette = useModalStore((s) => s.setShowCommandPalette);
   const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
 
@@ -47,7 +47,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.HOME,
       isActive: isActive(ROUTES.HOME),
     },
-    ...(canCreateEvents
+    ...(canSubmitEvents
       ? [
           {
             title: t("navigation.create"),

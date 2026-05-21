@@ -77,7 +77,8 @@ Event promotion product simplification completed:
 Club-gated event creation completed:
 
 - Backend event creation now requires admins or approved club owners; regular
-  authenticated users can browse and save events, but cannot create them.
+  authenticated users can browse, save, and submit events for admin review, but
+  cannot publish directly.
 - Backend club creation is admin-only, with an optional owner user ID so an
   admin-created club row is the approval record that unlocks club workflows.
 - Frontend create-event actions are hidden unless the user is an admin or owns
@@ -111,8 +112,8 @@ RSVP feature removal completed:
 - Regenerated OpenAPI/types so `/event-rsvps` is no longer part of the
   generated client contract.
 - Added a destructive forward migration that drops `public.user_event_rsvps`.
-  Historical migrations still mention/create the old table, then the latest
-  migration removes it.
+  The old migration version files are now no-op placeholders so fresh schemas
+  do not recreate the retired table.
 
 Verified-club event ownership schema pass completed:
 
@@ -121,18 +122,14 @@ Verified-club event ownership schema pass completed:
 - Backend event creation now stamps `club_id` and derives organization/club
   type from the approved club row for non-admin creators; admins may still
   create operational events without a club link.
-- Removed the stale `event_submissions` backend router/service/schema/tests,
-  admin submissions frontend route/page/store/actions, and generated API
-  contracts.
 - Removed the stale `scraped_events` backend router/service/schema/tests and
   admin scraped-event activity feed; scraper ingestion remains on
-  `events`, `event_dates`, and `scrape_runs`.
+  `events`, `event_dates`, and workflow-run tracking.
 - A/B recommendation impressions remain intact, and authenticated click/detail
   interactions now mirror into `ab_test_events` click records so CTR is
   meaningful.
 - Added a destructive forward migration that backfills `events.club_id` where
-  existing rows can be matched to clubs, then drops `public.event_submissions`
-  and `public.scraped_events`.
+  existing rows can be matched to clubs and drops `public.scraped_events`.
 
 Schema table redundancy audit completed:
 
@@ -140,7 +137,8 @@ Schema table redundancy audit completed:
   for current app tables/views, retired redundant tables, and
   duplicate-looking table pairs that intentionally serve different jobs.
 - Confirmed the obvious stale duplicates have already been retired:
-  `event_submissions`, `scraped_events`, and `user_event_rsvps`.
+  `scraped_events` and `user_event_rsvps`. `event_submissions` is intentionally
+  restored as a queue, not a duplicate event table.
 - Kept remaining duplicate-looking structures because the audited callers show
   distinct responsibilities: source table vs read view, state vs telemetry,
   sticky assignment vs emitted experiment events, balance vs ledger, and
@@ -167,6 +165,23 @@ Frontend rendered-English locale pass completed:
 - Left route ids, API constants, tracking labels, keyboard shortcut glyphs,
   visual placeholders, and backend-provided dynamic error messages outside
   locale ownership because they are not client-owned rendered English copy.
+
+Event submissions and workflow-run correction completed:
+
+- Restored `event_submissions` as a normal-user moderation queue while keeping
+  direct `/events/` publishing gated to admins and approved club owners.
+- Admin approval now publishes the submitted event through the backend service
+  before marking the submission approved, so the frontend no longer owns a
+  hidden publish side effect.
+- Frontend create/submit entry points are visible to signed-in users; the modal
+  submits for review for normal users and publishes directly only for admins or
+  approved club owners.
+- Renamed scraper operational tracking from `scrape_runs` service/schema/table
+  ownership to `workflow_runs`; stale per-event `scraped_events` remains
+  retired.
+- Kept old Supabase migration versions as no-op/cleanup files where needed for
+  migration continuity, while the active schema no longer creates RSVP,
+  Alembic, or app-local schema-migration bookkeeping tables.
 
 Questions raised during cleanup:
 
@@ -250,6 +265,14 @@ Questions raised during cleanup:
 - `events_listing` is a view rather than a duplicate event table. Decide
   whether future API work should expose this read model explicitly or keep it
   as a private DB compatibility detail.
+- `event_submissions` is now a queue again, but approval currently publishes
+  with the admin reviewer as `created_by`. Decide whether the submitter should
+  ever receive edit ownership after approval, or whether admin ownership is the
+  intended moderation boundary.
+- `workflow_runs` tracks scraper/ingestion attempts, not arbitrary product
+  workflows. If more workflows need tracking later, decide whether this table
+  should grow a `workflow_type` column or whether scraper runs should keep a
+  narrower domain-specific table name.
 - `frontend/scripts/audit-i18n-literals.mjs` now enforces the most common
   rendered-copy cases, but it is intentionally conservative. If new copy enters
   through data constants or non-JSX render helpers, add that pattern to the

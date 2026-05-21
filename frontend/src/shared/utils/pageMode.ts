@@ -11,6 +11,7 @@ export function derivePageMode(pathname: string): PageMode {
   if (pathname === ROUTES.SETTINGS) return "settings";
   if (pathname.startsWith(ROUTES.ADMIN_EVENTS)) return "admin-events";
   if (pathname.startsWith(ROUTES.ADMIN_CLUBS)) return "admin-clubs";
+  if (pathname.startsWith(ROUTES.ADMIN_SUBMISSIONS)) return "admin-submissions";
   if (pathname.startsWith(ROUTES.ADMIN_POSTERS)) return "admin-posters";
   if (pathname.startsWith(ROUTES.ADMIN)) return "admin";
   if (pathname === ROUTES.MARKETING) return "marketing";

@@ -7,28 +7,56 @@
  */
 
 import { create } from "zustand";
-import { getReportedEvents } from "@/features/admin/api/admin.api";
-import { REPORT_PENDING } from "@/shared/constants/statuses";
+import {
+  getEventSubmissions,
+  getReportedEvents,
+  updateEventSubmission,
+} from "@/features/admin/api/admin.api";
+import {
+  REPORT_PENDING,
+  SUBMISSION_APPROVED,
+  SUBMISSION_REJECTED,
+} from "@/shared/constants/statuses";
+import type { EventSubmission } from "@/shared/types";
 
 const TTL_MS = 60_000;
 
 interface LoadedAt {
+  submissions?: number;
   reports?: number;
 }
 
 interface AdminState {
+  submissions: EventSubmission[];
   reportedEventIds: Set<number>;
   loadedAt: LoadedAt;
 
+  fetchSubmissions: (force?: boolean) => Promise<void>;
   fetchReportedEventIds: (force?: boolean) => Promise<void>;
+  approveSubmission: (id: string) => Promise<void>;
+  rejectSubmission: (id: string, reason: string) => Promise<void>;
 }
 
 const fresh = (ts: number | undefined): boolean =>
   ts !== undefined && Date.now() - ts < TTL_MS;
 
 export const useAdminStore = create<AdminState>((set, get) => ({
+  submissions: [],
   reportedEventIds: new Set<number>(),
   loadedAt: {},
+
+  fetchSubmissions: async (force = false) => {
+    if (!force && fresh(get().loadedAt.submissions)) return;
+    try {
+      const submissions = await getEventSubmissions();
+      set((state) => ({
+        submissions,
+        loadedAt: { ...state.loadedAt, submissions: Date.now() },
+      }));
+    } catch (err) {
+      console.error("Failed to fetch submissions:", err);
+    }
+  },
 
   fetchReportedEventIds: async (force = false) => {
     if (!force && fresh(get().loadedAt.reports)) return;
@@ -45,6 +73,36 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }));
     } catch (err) {
       console.error("Failed to fetch reported events:", err);
+    }
+  },
+
+  approveSubmission: async (id) => {
+    try {
+      await updateEventSubmission(id, SUBMISSION_APPROVED);
+      set((state) => ({
+        submissions: state.submissions.map((s) =>
+          s.id === id ? { ...s, status: SUBMISSION_APPROVED } : s,
+        ),
+      }));
+    } catch (err) {
+      console.error("Failed to approve submission:", err);
+      throw err;
+    }
+  },
+
+  rejectSubmission: async (id, reason) => {
+    try {
+      await updateEventSubmission(id, SUBMISSION_REJECTED, reason);
+      set((state) => ({
+        submissions: state.submissions.map((s) =>
+          s.id === id
+            ? { ...s, status: SUBMISSION_REJECTED, rejectionReason: reason }
+            : s,
+        ),
+      }));
+    } catch (err) {
+      console.error("Failed to reject submission:", err);
+      throw err;
     }
   },
 }));

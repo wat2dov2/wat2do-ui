@@ -18,6 +18,7 @@ import {
   AdminPanelRoute,
   AdminEventsRoute,
   AdminClubsRoute,
+  AdminSubmissionsRoute,
   AdminPostersRoute,
 } from "@/app/routes/adminRoutes";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
@@ -227,6 +228,10 @@ function AppContent() {
       <Route
         path={ROUTES.ADMIN_CLUBS}
         element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminClubsRoute /></ProtectedRoute>}
+      />
+      <Route
+        path={ROUTES.ADMIN_SUBMISSIONS}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminSubmissionsRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.ADMIN_POSTERS}

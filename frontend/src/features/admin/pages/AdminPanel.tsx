@@ -12,21 +12,24 @@ import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AdminPanelProps {
-  onNavigate: (page: "admin-events" | "admin-clubs" | "admin-posters") => void;
+  onNavigate: (page: "admin-events" | "admin-clubs" | "admin-submissions" | "admin-posters") => void;
 }
 
 type ActivityType = ActivityDisplay["type"];
 
 const activityIconMap: Record<ActivityType, ReactNode> = {
+  submission: <FileText className="size-4 text-primary" />,
   poster: <QrCode className="size-4 text-primary" />,
 };
 
 /** Navigation route map for activity types. */
 const activityRouteMap: Record<ActivityType, string> = {
+  submission: ROUTES.ADMIN_SUBMISSIONS,
   poster: ROUTES.ADMIN_POSTERS,
 };
 
 const activityQueryParamMap: Record<ActivityType, string> = {
+  submission: QP.SUBMISSION_ID,
   poster: QP.QR_CODE_ID,
 };
 
@@ -63,7 +66,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <AdminCard
           icon={Calendar}
           title={t("navigation.events")}
@@ -75,6 +78,12 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
           title={t("navigation.clubs")}
           description={t("admin.manageClubsDescAlt")}
           onClick={() => onNavigate("admin-clubs")}
+        />
+        <AdminCard
+          icon={FileText}
+          title={t("admin.submissions")}
+          description={t("admin.reviewSubmissionsDescAlt")}
+          onClick={() => onNavigate("admin-submissions")}
         />
         <AdminCard
           icon={Megaphone}
@@ -128,6 +137,12 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Clock className="size-3" />
                             <span>{formatRelativeTime(display.timestamp)}</span>
+                            {display.submittedBy && (
+                              <>
+                                <span>{t("common.separatorBullet")}</span>
+                                <span>{t("admin.submittedBy")}: {display.submittedBy}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                         <Button

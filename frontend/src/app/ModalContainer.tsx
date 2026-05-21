@@ -31,6 +31,7 @@ import { useSearchStore } from "@/features/search/store/search.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useCreditsStore, usePromotionsStore } from "@/features/credits";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { submitEventForReview } from "@/shared/api/submissions.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Event, EventFormData } from "@/shared/types";
@@ -47,6 +48,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
   const navigate = useNavigate();
   const { profileCompleted, isAdmin, hasClub } = useAuthState();
   const canCreateEvents = hasClub || isAdmin;
+  const canSubmitEvents = profileCompleted;
 
   // ── Modal-store subscriptions (isolated from AppContent) ─────
   const showSubmitEvent = useModalStore((s) => s.showSubmitEvent);
@@ -101,12 +103,25 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
     navigate(ROUTES.ONBOARDING);
   }, [navigate]);
 
+  const handleSubmitEvent = useCallback(
+    async (eventData: EventFormData) => {
+      if (canCreateEvents) {
+        const eventId = await addEvent(eventData);
+        return { type: "event" as const, eventId };
+      }
+      await submitEventForReview(eventData);
+      return { type: "submission" as const };
+    },
+    [addEvent, canCreateEvents],
+  );
+
   return (
     <>
       <SubmitEventModal
         isOpen={showSubmitEvent}
         onClose={handleSubmitEventClose}
-        onSubmit={async (eventData) => addEvent(eventData)}
+        onSubmit={handleSubmitEvent}
+        canCreateEvents={canCreateEvents}
         userCredits={userCredits}
         onPromote={profileCompleted && canCreateEvents ? promoteEvent : undefined}
         onBuyCredits={() => setShowBuyCredits(true)}
@@ -131,7 +146,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
         onOpenChange={setShowCommandPalette}
         setShowFilterDropdown={setShowFilterDropdown}
         onClearAllFilters={clearAllFilters}
-        canCreateEvents={canCreateEvents}
+        canSubmitEvents={canSubmitEvents}
         personalItems={
           profileCompleted ? (
             <CommandItem

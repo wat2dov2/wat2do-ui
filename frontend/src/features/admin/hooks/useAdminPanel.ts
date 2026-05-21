@@ -1,11 +1,15 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
+import { useAdminStore } from "@/features/admin/store/admin.store";
+import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import { getSessionEmail } from "@/features/auth";
 import { useBackendPosters } from "@/shared/hooks/useBackendPosters";
-import type { QRCode } from "@/shared/types";
+import type { EventSubmission, QRCode } from "@/shared/types";
 
-type ActivityType = "poster";
+type ActivityType = "submission" | "poster";
 
-type ActivityItem = { type: "poster"; data: QRCode; timestamp: Date };
+type ActivityItem =
+  | { type: "submission"; data: EventSubmission; timestamp: Date }
+  | { type: "poster"; data: QRCode; timestamp: Date };
 
 /** Pre-mapped display representation of an activity item. */
 interface ActivityDisplay {
@@ -13,15 +17,45 @@ interface ActivityDisplay {
   type: ActivityType;
   label: string;
   detail: string;
+  submittedBy?: string;
   timestamp: Date;
 }
 
 export function useAdminPanel() {
   const { posters: backendPosters, loading: postersLoading } = useBackendPosters();
-  const recentActivityLoading = postersLoading;
+  const submissions = useAdminStore((s) => s.submissions);
+  const submissionsLoadedAt = useAdminStore((s) => s.loadedAt.submissions);
+  const fetchSubmissions = useAdminStore((s) => s.fetchSubmissions);
+  const [adminDataLoading, setAdminDataLoading] = useState(
+    submissionsLoadedAt === undefined,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSubmissions()
+      .catch((err) => console.error("Failed to load submissions:", err))
+      .finally(() => {
+        if (!cancelled) setAdminDataLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchSubmissions]);
+
+  const recentActivityLoading = postersLoading || adminDataLoading;
 
   // Get recent activities
   const recentActivities = useMemo(() => {
+    const submissionItems: ActivityItem[] = submissions.flatMap((s) =>
+      s.status === SUBMISSION_PENDING
+        ? [{
+            type: "submission" as const,
+            data: s,
+            timestamp: new Date(s.submittedAt),
+          }]
+        : [],
+    );
+
     const userEmail = getSessionEmail() ?? "";
     const createdPosters: ActivityItem[] = backendPosters.flatMap((qr) =>
       qr.createdBy === userEmail
@@ -33,10 +67,10 @@ export function useAdminPanel() {
         : [],
     );
 
-    return createdPosters
+    return [...submissionItems, ...createdPosters]
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
       .slice(0, 10);
-  }, [backendPosters]);
+  }, [submissions, backendPosters]);
 
   return {
     recentActivities,
@@ -50,6 +84,14 @@ export function mapActivityDisplay(
   t: (key: string) => string,
 ): ActivityDisplay {
   const base = { id: activity.data.id, type: activity.type, timestamp: activity.timestamp };
+  if (activity.type === "submission") {
+    return {
+      ...base,
+      label: t("admin.newEventSubmission"),
+      detail: activity.data.eventData.title,
+      submittedBy: activity.data.submittedBy,
+    };
+  }
   return { ...base, label: t("admin.createdPoster"), detail: activity.data.name };
 }
 

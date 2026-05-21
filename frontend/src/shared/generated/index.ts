@@ -26,6 +26,12 @@ export type ApiEventUpdate = components["schemas"]["EventUpdate"];
 export type ApiEventResponse = components["schemas"]["EventResponse"];
 export type ApiLatestEventResponse = components["schemas"]["LatestEventResponse"];
 
+// ── Event Submissions ───────────────────────────────────────────────
+export type ApiSubmissionCreate = components["schemas"]["SubmissionCreate"];
+export type ApiSubmissionUpdate = components["schemas"]["SubmissionUpdate"];
+export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];
+export type ApiPaginatedSubmissionResponse = components["schemas"]["PaginatedResponse_SubmissionResponse_"];
+
 // ── Clubs ───────────────────────────────────────────────────────────
 export type ApiClubCreate = components["schemas"]["ClubCreate"];
 export type ApiClubUpdate = components["schemas"]["ClubUpdate"];

@@ -1,0 +1,55 @@
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from core.constants import (
+    MAX_EVENT_DATA_BYTES,
+    MAX_REJECTION_REASON_LENGTH,
+    SUBMISSION_APPROVED,
+    SUBMISSION_PENDING,
+    SUBMISSION_REJECTED,
+)
+from schemas.event import EventCreate
+
+SubmissionStatus = Literal[SUBMISSION_PENDING, SUBMISSION_APPROVED, SUBMISSION_REJECTED]
+
+
+class SubmissionCreate(BaseModel):
+    """Normal-user event submission for admin review.
+
+    ``event_data`` uses the same schema as direct event creation so
+    moderation receives a payload that can be published without a second
+    shape translation step.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_data: EventCreate
+
+    @field_validator("event_data")
+    @classmethod
+    def _event_data_size_limit(cls, v: EventCreate) -> EventCreate:
+        size = len(v.model_dump_json())
+        if size > MAX_EVENT_DATA_BYTES:
+            raise ValueError(
+                f"event_data exceeds maximum size ({size} bytes, limit {MAX_EVENT_DATA_BYTES})"
+            )
+        return v
+
+
+class SubmissionUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: SubmissionStatus
+    rejection_reason: str | None = Field(default=None, max_length=MAX_REJECTION_REASON_LENGTH)
+
+
+class SubmissionResponse(BaseModel):
+    id: str
+    user_id: str
+    event_data: dict
+    status: SubmissionStatus
+    rejection_reason: str | None = None
+    submitted_at: datetime
+    reviewed_at: datetime | None = None

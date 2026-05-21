@@ -12,6 +12,7 @@ export type PageMode =
   | "marketing"
   | "admin-events"
   | "admin-clubs"
+  | "admin-submissions"
   | "admin-posters"
   | "settings";
 

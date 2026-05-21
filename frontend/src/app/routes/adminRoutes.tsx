@@ -28,6 +28,9 @@ const AdminEventsPage = lazy(() =>
 const AdminClubsPage = lazy(() =>
   import("@/features/admin").then((m) => ({ default: m.AdminClubsPage }))
 );
+const AdminSubmissionsPage = lazy(() =>
+  import("@/features/admin").then((m) => ({ default: m.AdminSubmissionsPage }))
+);
 const AdminPostersPage = lazy(() =>
   import("@/features/admin").then((m) => ({ default: m.AdminPostersPage }))
 );
@@ -127,6 +130,17 @@ export function AdminClubsRoute() {
         onEditClub={onEditClub}
         onDeleteClub={onDeleteClub}
       />
+    </AdminSuspense>
+  );
+}
+
+export function AdminSubmissionsRoute() {
+  const navigate = useNavigate();
+  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
+
+  return (
+    <AdminSuspense>
+      <AdminSubmissionsPage onBack={onBack} />
     </AdminSuspense>
   );
 }

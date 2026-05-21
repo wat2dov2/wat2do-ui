@@ -22,12 +22,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
 from core.constants import (
-    SCRAPE_RUN_ERROR,
-    SCRAPE_RUN_NO_POSTS,
-    SCRAPE_RUN_SUCCESS,
+    WORKFLOW_RUN_ERROR,
+    WORKFLOW_RUN_NO_POSTS,
+    WORKFLOW_RUN_SUCCESS,
 )
-from schemas.scrape_run import ScrapeRunCreate
-from services import scrape_run_service
+from schemas.workflow_run import WorkflowRunCreate
+from services import workflow_run_service
 from services.wat2do.dedup import _extract_shortcode, existing_shortcodes
 from services.wat2do.event_writer import write_event
 from services.wat2do.extractor import extract_events_from_post
@@ -53,9 +53,9 @@ class HandleResult:
     events_updated: int = 0
     events_duplicates: int = 0
     pinned_post_warning: bool = False
-    status: str = SCRAPE_RUN_SUCCESS
+    status: str = WORKFLOW_RUN_SUCCESS
     error_message: str | None = None
-    scrape_run_id: str | None = None
+    workflow_run_id: str | None = None
 
 
 @dataclass
@@ -94,11 +94,11 @@ def run_pipeline(
         school: full canonical school name (used for prompt context).
         cutoff_days: drop posts older than this many days.
         results_limit: max posts per handle (None = Apify default).
-        dry_run: when True, skip ScrapeRun row creation, skip the
+        dry_run: when True, skip WorkflowRun row creation, skip the
             seen-shortcodes filter, skip DB inserts. Image uploads
             and OpenAI calls still run so the workflow exercises the
             same network paths.
-        github_run_id: optional GitHub Actions run id for ScrapeRun
+        github_run_id: optional GitHub Actions run id for WorkflowRun
             tracking. Has no effect in dry-run.
 
     Returns the aggregate ``PipelineResult``.
@@ -134,16 +134,16 @@ def run_pipeline(
     for handle in usernames:
         result = HandleResult(ig_handle=handle, pinned_post_warning=pinned_warning)
         if not dry_run:
-            run = scrape_run_service.create_scrape_run(
-                ScrapeRunCreate(ig_username=handle, github_run_id=github_run_id),
+            run = workflow_run_service.create_workflow_run(
+                WorkflowRunCreate(ig_username=handle, github_run_id=github_run_id),
             )
-            result.scrape_run_id = run.id
+            result.workflow_run_id = run.id
 
         try:
             handle_posts = grouped.get(handle, [])
             result.posts_fetched = len(handle_posts)
             if not handle_posts:
-                result.status = SCRAPE_RUN_NO_POSTS
+                result.status = WORKFLOW_RUN_NO_POSTS
                 handle_results.append(result)
                 _finalize(result, dry_run=dry_run)
                 continue
@@ -164,7 +164,7 @@ def run_pipeline(
             _finalize(result, dry_run=dry_run)
         except Exception as e:
             log.exception("Pipeline failed for handle=%s: %s", handle, e)
-            result.status = SCRAPE_RUN_ERROR
+            result.status = WORKFLOW_RUN_ERROR
             result.error_message = str(e)[:4000]
             handle_results.append(result)
             _finalize(result, dry_run=dry_run)
@@ -281,10 +281,10 @@ def _process_one_post(
 
 
 def _finalize(result: HandleResult, *, dry_run: bool) -> None:
-    if dry_run or not result.scrape_run_id:
+    if dry_run or not result.workflow_run_id:
         return
-    scrape_run_service.mark_finished(
-        result.scrape_run_id,
+    workflow_run_service.mark_finished(
+        result.workflow_run_id,
         status=result.status,
         posts_fetched=result.posts_fetched,
         posts_new=result.posts_new,

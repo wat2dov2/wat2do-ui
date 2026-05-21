@@ -24,6 +24,7 @@ type EventFormHookReturn = ReturnType<typeof useEventForm>;
 
 interface EventFormStepProps {
   isEditMode: boolean;
+  canCreateEvents: boolean;
   viewMode: ViewMode;
   onViewModeChange: (value: ViewMode) => void;
   isSubmitting: boolean;
@@ -62,6 +63,7 @@ interface EventFormStepProps {
 
 export function EventFormStep({
   isEditMode,
+  canCreateEvents,
   viewMode,
   onViewModeChange,
   isSubmitting,
@@ -119,7 +121,11 @@ export function EventFormStep({
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl font-semibold text-foreground">
-                  {isEditMode ? t("events.updateEvent") : t("events.createEvent")}
+                  {isEditMode
+                    ? t("events.updateEvent")
+                    : canCreateEvents
+                      ? t("events.createEvent")
+                      : t("events.submitEventForReview")}
                 </h2>
               </div>
               <div className="shrink-0">
@@ -178,11 +184,13 @@ export function EventFormStep({
                     onClick={onSubmit}
                     disabled={!eventForm.isValid}
                     isLoading={isSubmitting}
-                    loadingText={t("common.pleaseWait") || "Please wait..."}
+                    loadingText={t("common.pleaseWait")}
                   >
                     {isEditMode
                       ? t("events.updateEvent")
-                      : t("events.createEvent")}
+                      : canCreateEvents
+                        ? t("events.createEvent")
+                        : t("events.submitForReview")}
                   </LoadingButton>
                 </Field>
               </form>

@@ -17,3 +17,14 @@ export const REPORT_STATUSES = [
   REPORT_RESOLVED,
   REPORT_DISMISSED,
 ] as const;
+
+// -- Event submission statuses ---------------------------------------------
+export const SUBMISSION_PENDING = "pending" as const;
+export const SUBMISSION_APPROVED = "approved" as const;
+export const SUBMISSION_REJECTED = "rejected" as const;
+
+export const SUBMISSION_STATUSES = [
+  SUBMISSION_PENDING,
+  SUBMISSION_APPROVED,
+  SUBMISSION_REJECTED,
+] as const;

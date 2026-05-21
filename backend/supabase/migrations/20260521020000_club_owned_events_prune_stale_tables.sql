@@ -1,5 +1,5 @@
 -- Make verified clubs the explicit owners of published events and retire
--- stale manual ingestion queues.
+-- the stale per-event scraped ingestion table.
 
 ALTER TABLE public.events
     ADD COLUMN IF NOT EXISTS club_id integer;
@@ -58,5 +58,4 @@ BEGIN
     END IF;
 END $$;
 
-DROP TABLE IF EXISTS public.event_submissions CASCADE;
 DROP TABLE IF EXISTS public.scraped_events CASCADE;

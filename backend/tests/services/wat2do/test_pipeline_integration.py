@@ -12,7 +12,7 @@ Mocks installed:
     * ``extract_events_from_post``     -> returns canned events with
       multiple occurrences.
     * ``find_match``                   -> returns None (no dedup hits).
-    * ``get_sb()`` on event_writer + event_date_service + scrape_run_service
+    * ``get_sb()`` on event_writer + event_date_service + workflow_run_service
       -> patched to ``fake_sb``; the test asserts on the recorded
       builder calls afterwards.
 """
@@ -87,7 +87,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     # Patch the DB everywhere the pipeline reaches.
     patch_sb("services.wat2do.event_writer")
     patch_sb("services.event_date_service")
-    patch_sb("services.scrape_run_service")
+    patch_sb("services.workflow_run_service")
     patch_sb("services.wat2do.dedup")
 
     # Deterministic Apify response.
@@ -121,7 +121,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
             payload = fake_sb.insert.call_args_list[-1][0][0]
             inserts.append(payload)
             if isinstance(payload, dict):
-                if "ig_username" in payload:  # scrape_runs row
+                if "ig_username" in payload:  # workflow_runs row
                     return MagicMock(
                         data=[
                             {
@@ -205,7 +205,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     dict_inserts = [c for c in fake_sb.insert.call_args_list if isinstance(c[0][0], dict)]
     list_inserts = [c for c in fake_sb.insert.call_args_list if isinstance(c[0][0], list)]
     # `dict_inserts` includes both the events row insert AND the
-    # scrape_run_service.create insert; we only care that there's
+    # workflow_run_service.create insert; we only care that there's
     # exactly ONE events-shaped dict insert.
     events_inserts = [c for c in dict_inserts if c[0][0].get("title") == "Tea Tasting Series"]
     assert len(events_inserts) == 1
@@ -222,7 +222,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
 
 
 def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
-    """Dry-run path: NO scrape_runs row, NO events row, NO event_dates row.
+    """Dry-run path: NO workflow_runs row, NO events row, NO event_dates row.
 
     Mirrors v1's commit bb1595b — dry-run also skips the seen-shortcodes
     fetch so the operator can re-process posts already in the DB without
@@ -230,7 +230,7 @@ def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     """
     patch_sb("services.wat2do.event_writer")
     patch_sb("services.event_date_service")
-    patch_sb("services.scrape_run_service")
+    patch_sb("services.workflow_run_service")
     patch_sb("services.wat2do.dedup")
 
     fake_scraper = MagicMock()
@@ -258,7 +258,7 @@ def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     # Dry-run reports the would-save count but does no DB writes.
     assert handle_result.events_extracted == 1
     assert handle_result.events_saved == 1  # "would have saved"
-    assert handle_result.scrape_run_id is None  # no scrape_runs row created
+    assert handle_result.workflow_run_id is None  # no workflow_runs row created
 
     # No insert/update calls of any kind on the fake_sb.
     assert fake_sb.insert.call_count == 0

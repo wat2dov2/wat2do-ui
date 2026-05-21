@@ -238,15 +238,6 @@ CREATE TABLE public.ab_test_events (
 
 
 --
--- Name: alembic_version; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.alembic_version (
-    version_num character varying(32) NOT NULL
-);
-
-
---
 -- Name: club_integrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -446,29 +437,6 @@ CREATE TABLE public.reported_events (
 
 
 --
--- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.schema_migrations (
-    version character varying(255) NOT NULL,
-    applied_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: scraped_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scraped_events (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    event_id integer,
-    source character varying(255) NOT NULL,
-    scraped_at timestamp with time zone DEFAULT now() NOT NULL,
-    raw_data jsonb
-);
-
-
---
 -- Name: user_credits; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -566,14 +534,6 @@ ALTER TABLE ONLY public.ab_test_events
 
 
 --
--- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.alembic_version
-    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
-
-
---
 -- Name: club_integrations club_integrations_club_id_platform_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -643,22 +603,6 @@ ALTER TABLE ONLY public.qr_codes
 
 ALTER TABLE ONLY public.reported_events
     ADD CONSTRAINT reported_events_pkey PRIMARY KEY (id);
-
-
---
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
-
-
---
--- Name: scraped_events scraped_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scraped_events
-    ADD CONSTRAINT scraped_events_pkey PRIMARY KEY (id);
 
 
 --
@@ -822,13 +766,6 @@ CREATE INDEX idx_reported_events_event_id ON public.reported_events USING btree 
 --
 
 CREATE INDEX idx_reported_events_status ON public.reported_events USING btree (status);
-
-
---
--- Name: idx_scraped_events_source; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_scraped_events_source ON public.scraped_events USING btree (source);
 
 
 --
@@ -1025,13 +962,6 @@ ALTER TABLE ONLY public.qr_code_scans
 
 ALTER TABLE public.ab_test_events ENABLE ROW LEVEL SECURITY;
 
---
--- Name: alembic_version; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.alembic_version ENABLE ROW LEVEL SECURITY;
-
---
 -- Name: club_integrations; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1079,13 +1009,6 @@ ALTER TABLE public.qr_codes ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.reported_events ENABLE ROW LEVEL SECURITY;
 
---
--- Name: scraped_events; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.scraped_events ENABLE ROW LEVEL SECURITY;
-
---
 -- Name: user_credits; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1118,5 +1041,3 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 --
 -- PostgreSQL database dump complete
 --
-
-

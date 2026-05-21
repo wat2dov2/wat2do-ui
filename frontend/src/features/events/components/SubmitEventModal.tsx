@@ -9,7 +9,7 @@ import {
 import { useEventForm } from "@/features/events/hooks/useEventForm";
 import { useEventFormAI } from "@/features/events/hooks/useEventFormAI";
 import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromotion";
-import { useSubmitEvent } from "@/features/events/hooks/useSubmitEvent";
+import { useSubmitEvent, type SubmitEventResult } from "@/features/events/hooks/useSubmitEvent";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { EventFormStep } from "@/features/events/components/EventFormStep";
@@ -26,7 +26,8 @@ import type { EventFormData } from "@/shared/types";
 interface SubmitEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (event: EventFormData) => number | Promise<number>;
+  onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
+  canCreateEvents: boolean;
   userCredits?: number;
   onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
@@ -41,7 +42,8 @@ interface SubmitEventModalFormBodyProps {
   formInitialData: EventFormData | undefined;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (event: EventFormData) => number | Promise<number>;
+  onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
+  canCreateEvents: boolean;
   userCredits: number;
   onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
@@ -56,6 +58,7 @@ function SubmitEventModalFormBody({
   isOpen,
   onClose,
   onSubmit,
+  canCreateEvents,
   userCredits,
   onPromote,
   onBuyCredits,
@@ -89,7 +92,7 @@ function SubmitEventModalFormBody({
     onPromote,
   });
 
-  const handleCreated = useCallback((eventId: number) => {
+  const handleSubmitted = useCallback((eventId: number | null) => {
     dispatch({ type: "SET_CREATED_EVENT_ID", payload: eventId });
     dispatch({ type: "SET_IS_SUBMITTED", payload: true });
   }, []);
@@ -101,7 +104,7 @@ function SubmitEventModalFormBody({
     onUpdate,
     onClose,
     showPromotion: eventFormPromotion.showPromotion,
-    onCreated: handleCreated,
+    onSubmitted: handleSubmitted,
   });
 
   const resetState = useCallback(() => {
@@ -171,13 +174,15 @@ function SubmitEventModalFormBody({
       <SubmitSuccessStep
         isOpen={isOpen}
         onClose={handleClose}
-        onPromote={onPromote ? () => eventFormPromotion.setShowPromotion(true) : undefined}
+        onPromote={
+          onPromote && state.createdEventId
+            ? () => eventFormPromotion.setShowPromotion(true)
+            : undefined
+        }
         isEditMode={isEditMode}
-        onShowSuccessAlert={(message) => {
-          showSuccessAlert(
-            isEditMode ? t("events.eventUpdated") : t("events.eventCreated"),
-            message
-          );
+        isSubmissionOnly={!state.createdEventId}
+        onShowSuccessAlert={(title, message) => {
+          showSuccessAlert(title, message);
         }}
       />
     ),
@@ -191,11 +196,16 @@ function SubmitEventModalFormBody({
           >
             <DialogHeader className="sr-only">
               <DialogTitle>
-                {isEditMode ? t("events.updateEvent") : t("events.createEvent")}
+                {isEditMode
+                  ? t("events.updateEvent")
+                  : canCreateEvents
+                    ? t("events.createEvent")
+                    : t("events.submitEventForReview")}
               </DialogTitle>
             </DialogHeader>
             <EventFormStep
               isEditMode={isEditMode}
+              canCreateEvents={canCreateEvents}
               viewMode={state.viewMode}
               onViewModeChange={handleViewModeChange}
               isSubmitting={isSubmitting}
@@ -217,7 +227,8 @@ function SubmitEventModalFormBody({
 interface SubmitEventModalContentProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (event: EventFormData) => number | Promise<number>;
+  onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
+  canCreateEvents: boolean;
   userCredits: number;
   onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
@@ -232,6 +243,7 @@ function SubmitEventModalContent({
   isOpen,
   onClose,
   onSubmit,
+  canCreateEvents,
   userCredits,
   onPromote,
   onBuyCredits,
@@ -286,6 +298,7 @@ function SubmitEventModalContent({
       isOpen={isOpen}
       onClose={onClose}
       onSubmit={onSubmit}
+      canCreateEvents={canCreateEvents}
       userCredits={userCredits}
       onPromote={onPromote}
       onBuyCredits={onBuyCredits}

@@ -13,6 +13,9 @@ export const QP = {
   /** Identifies a specific event (numeric id as string) */
   EVENT_ID: "eventId",
 
+  /** Identifies a specific event submission (uuid string) */
+  SUBMISSION_ID: "submissionId",
+
   /** Identifies a specific QR-code / poster (uuid string) */
   QR_CODE_ID: "qrCodeId",
 

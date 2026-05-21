@@ -170,7 +170,7 @@ psql "$DATABASE_URL" <<SQL
 TRUNCATE
   public.event_dates, public.events, public.clubs,
   public.user_saved_events, public.user_interactions,
-  public.user_recommendations, public.scrape_runs
+  public.user_recommendations, public.workflow_runs
 RESTART IDENTITY CASCADE;
 SQL
 

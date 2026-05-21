@@ -18,6 +18,7 @@ from core.constants import (
 USER_NOT_FOUND = "User not found"
 USER_PROFILE_NOT_FOUND = "User profile not found — complete signup first"
 EVENT_NOT_FOUND = "Event not found"
+SUBMISSION_NOT_FOUND = "Submission not found"
 CLUB_NOT_FOUND = "Club not found"
 POSTER_NOT_FOUND = "Poster not found"
 REPORT_NOT_FOUND = "Report not found"

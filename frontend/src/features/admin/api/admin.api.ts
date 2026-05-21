@@ -3,7 +3,17 @@
  * Handles all admin-related data operations via the backend.
  */
 
-import type { Event, ReportedEvent, Club, ReportStatus } from "@/shared/types";
+import type {
+  Event,
+  EventFormData,
+  EventSubmission,
+  ReportedEvent,
+  Club,
+  SubmissionStatus,
+  ReportStatus,
+} from "@/shared/types";
+import { SUBMISSION_APPROVED, SUBMISSION_REJECTED } from "@/shared/constants/statuses";
+import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 import { fetchAllEvents, fetchEventById } from "@/features/events";
 import {
   getAllClubs as getAllClubsData,
@@ -19,8 +29,9 @@ import { api, ApiError, getPaginatedItems } from "@/shared/services/apiClient";
 export type { ReportedEvent };
 
 // ── Backend response shapes (derived from OpenAPI spec) ─────────────
-import type { ApiReportResponse } from "@/shared/generated";
+import type { ApiEventCreate, ApiReportResponse, ApiSubmissionResponse } from "@/shared/generated";
 
+type SubmissionResponse = ApiSubmissionResponse;
 type ReportResponse = ApiReportResponse;
 
 // ── Mappers ─────────────────────────────────────────────────────────
@@ -33,6 +44,35 @@ function toReportedEvent(row: ReportResponse): ReportedEvent {
     reportedAt: row.reported_at,
     reason: row.reason,
     status: row.status as ReportedEvent["status"],
+  };
+}
+
+function toEventFormData(eventData: ApiEventCreate): EventFormData {
+  const firstOccurrence = eventData.occurrences[0];
+  const startsAt = firstOccurrence ? new Date(firstOccurrence.dtstart_utc) : null;
+
+  return {
+    title: eventData.title,
+    description: eventData.description ?? "",
+    date: startsAt ? startsAt.toISOString().slice(0, 10) : "",
+    time: startsAt ? startsAt.toTimeString().slice(0, 5) : "",
+    location: eventData.location,
+    category: eventData.category ?? DEFAULT_EVENT_CATEGORY,
+    price: eventData.price ?? 0,
+    food: eventData.food ?? [],
+    requiresRegistration: eventData.registration,
+    organization: eventData.organization,
+  };
+}
+
+function toEventSubmission(row: SubmissionResponse): EventSubmission {
+  return {
+    id: row.id,
+    eventData: toEventFormData(row.event_data as ApiEventCreate),
+    submittedBy: row.user_id,
+    submittedAt: row.submitted_at,
+    status: row.status as EventSubmission["status"],
+    rejectionReason: row.rejection_reason ?? undefined,
   };
 }
 
@@ -82,6 +122,45 @@ export async function updateReportedEventStatus(
   status: ReportStatus,
 ): Promise<void> {
   await api.patch(`/reports/${id}`, { status });
+}
+
+// ── Event Submissions API ───────────────────────────────────────────
+
+export async function getEventSubmissions(): Promise<EventSubmission[]> {
+  const rows = await getPaginatedItems<SubmissionResponse>("/submissions/");
+  return rows.map(toEventSubmission);
+}
+
+export async function getSubmissionsByStatus(
+  status: SubmissionStatus,
+): Promise<EventSubmission[]> {
+  const rows = await getPaginatedItems<SubmissionResponse>(
+    `/submissions/?submission_status=${status}`,
+  );
+  return rows.map(toEventSubmission);
+}
+
+export async function updateEventSubmission(
+  id: string,
+  status: SubmissionStatus,
+  rejectionReason?: string,
+): Promise<void> {
+  await api.patch(`/submissions/${id}`, {
+    status,
+    rejection_reason: rejectionReason ?? null,
+  });
+}
+
+export async function approveSubmission(id: string): Promise<void> {
+  await updateEventSubmission(id, SUBMISSION_APPROVED);
+}
+
+export async function rejectSubmission(id: string, rejectionReason: string): Promise<void> {
+  await updateEventSubmission(id, SUBMISSION_REJECTED, rejectionReason);
+}
+
+export async function deleteSubmission(id: string): Promise<void> {
+  await api.delete(`/submissions/${id}`);
 }
 
 

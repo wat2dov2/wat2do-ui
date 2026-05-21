@@ -81,7 +81,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Skip DB writes (no ScrapeRun rows, no Events inserts).",
+        help="Skip DB writes (no WorkflowRun rows, no Events inserts).",
     )
     return parser.parse_args()
 
