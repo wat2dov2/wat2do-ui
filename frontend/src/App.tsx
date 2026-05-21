@@ -33,7 +33,6 @@ import {
 import { ROUTES } from "@/shared/constants/routes";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { useEventRsvpsStore } from "@/features/events/store/eventRsvps.store";
 import { useCreditsStore, usePromotionsStore } from "@/features/credits";
 import type { Event } from "@/shared/types";
 
@@ -136,7 +135,6 @@ function AppContent() {
     if (isAuthFlowRoute) return;
     useEventsStore.getState().fetchEvents();
     useSavedEventsStore.getState().fetchSavedEvents();
-    useEventRsvpsStore.getState().fetchRsvps();
     useCreditsStore.getState().fetchBalance();
     usePromotionsStore.getState().fetchActivePromotedEventIds();
   }, [isAuthFlowRoute]);

@@ -69,7 +69,6 @@ DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same even
 INVALID_STATUS_TRANSITION = "Invalid status transition"
 EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted"
 SAVED_EVENTS_CAP_REACHED = "Maximum saved events limit reached"
-RSVPS_CAP_REACHED = "Maximum RSVPs limit reached"
 INVALID_ROLE = "Role must be 'user' or 'admin'"
 CANNOT_DELETE_SELF = "Admins cannot delete their own account"
 LAST_ADMIN_REQUIRED = "Cannot remove the last remaining admin"

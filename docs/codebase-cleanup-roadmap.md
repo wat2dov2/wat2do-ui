@@ -100,6 +100,20 @@ Supabase schema/RLS hardening pass completed:
   `DATABASE_URL`/`DATABASE_PASSWORD` pair does not authenticate to the remote
   pooler.
 
+RSVP feature removal completed:
+
+- Confirmed the frontend had only unused RSVP store/API plumbing and no
+  user-facing RSVP control consuming it.
+- Removed the dead frontend RSVP fetch/store/API code so app startup no longer
+  calls `/event-rsvps`.
+- Removed the backend RSVP router, service, schema, table constant, cap
+  constant, and error string.
+- Regenerated OpenAPI/types so `/event-rsvps` is no longer part of the
+  generated client contract.
+- Added a destructive forward migration that drops `public.user_event_rsvps`.
+  Historical migrations still mention/create the old table, then the latest
+  migration removes it.
+
 Questions raised during cleanup:
 
 - Notification tests were reaching into private helpers because
