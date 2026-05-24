@@ -1,5 +1,6 @@
 import type { Event } from "@/shared/types";
 import { tracker } from "@/shared/services/trackingService";
+import { formatDisplayDate, formatDisplayTime } from "@/shared/utils/date";
 
 /**
  * Share an event using the Web Share API with fallback to clipboard
@@ -9,7 +10,7 @@ export async function shareEvent(event: Event): Promise<void> {
   tracker.track(event.id, "share");
   const shareData = {
     title: event.title,
-    text: `${event.title}\n${event.date} at ${event.time}\n${event.location}`,
+    text: `${event.title}\n${formatDisplayDate(event)} ${formatDisplayTime(event)}\n${event.location}`,
     url: `${window.location.origin}/?eventId=${event.id}`,
   };
 
@@ -36,4 +37,3 @@ export async function shareEvent(event: Event): Promise<void> {
     throw new Error("Failed to share event. Please copy the link manually.");
   }
 }
-

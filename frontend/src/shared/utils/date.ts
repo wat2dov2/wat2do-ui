@@ -47,7 +47,7 @@ export function formatTime(timeStr: string): string {
  * Uses i18n locale for proper localization
  */
 export function formatCardDate(
-  event: { dtstart_utc?: string; dayOfWeek?: string; date?: string },
+  event: { dtstart_utc?: string | null },
   locale: string = 'en-US'
 ): string {
   if (event.dtstart_utc) {
@@ -57,28 +57,16 @@ export function formatCardDate(
     const day = date.getDate();
     return `${dayOfWeek} ${month} ${day}`;
   }
-  // Fallback to old format
-  if (event.dayOfWeek && event.date) {
-    const parts = event.date.split(' ');
-    if (parts.length >= 2) {
-      return `${event.dayOfWeek} ${parts[0]} ${parts[1].replace(',', '')}`;
-    }
-    return `${event.dayOfWeek} ${event.date}`;
-  }
-  return event.date || '';
+  return '';
 }
 
 /**
  * Format event date for modal/detail display (e.g., "Mon, Jan 27, 2025").
- * Falls back to the raw `date` string, then to `dtstart_utc` / `eventDate`.
  */
 export function formatDisplayDate(event: {
-  date?: string;
-  dtstart_utc?: string;
-  eventDate?: Date;
+  dtstart_utc?: string | null;
 }): string {
-  if (event.date) return event.date;
-  const raw = event.dtstart_utc || event.eventDate;
+  const raw = event.dtstart_utc;
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
@@ -92,16 +80,12 @@ export function formatDisplayDate(event: {
 
 /**
  * Format event time for modal/detail display (e.g., "8:00 AM – 10:00 AM").
- * Falls back to the raw `time` string, then to `dtstart_utc` / `eventDate`.
  */
 export function formatDisplayTime(event: {
-  time?: string;
-  dtstart_utc?: string;
-  dtend_utc?: string;
-  eventDate?: Date;
+  dtstart_utc?: string | null;
+  dtend_utc?: string | null;
 }): string {
-  if (event.time) return event.time;
-  const raw = event.dtstart_utc || event.eventDate;
+  const raw = event.dtstart_utc;
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
@@ -117,13 +101,12 @@ export function formatDisplayTime(event: {
  * Format event time for card display (e.g., "12:30 PM to 3:00 PM")
  */
 export function formatCardTime(event: {
-  dtstart_utc?: string;
-  dtend_utc?: string;
-  time?: string;
+  dtstart_utc?: string | null;
+  dtend_utc?: string | null;
 }): string {
-  if (event.dtstart_utc && event.dtend_utc) {
+  if (event.dtstart_utc) {
     const start = new Date(event.dtstart_utc);
-    const end = new Date(event.dtend_utc);
+    const end = event.dtend_utc ? new Date(event.dtend_utc) : null;
     
     const formatTime = (date: Date): string => {
       const hours = date.getHours();
@@ -134,12 +117,7 @@ export function formatCardTime(event: {
       return `${displayHours}${minutesStr} ${ampm}`;
     };
     
-    return `${formatTime(start)} to ${formatTime(end)}`;
-  }
-  // Fallback to old format
-  if (event.time) {
-    // Convert "12:00 PM - 3:00 PM" to "12:00 PM to 3:00 PM"
-    return event.time.replace(/\s*-\s*/g, ' to ');
+    return end ? `${formatTime(start)} to ${formatTime(end)}` : formatTime(start);
   }
   return '';
 }
@@ -151,11 +129,10 @@ export function getEventDateCategory(
   event: {
     dtstart_utc?: string | null;
     dtend_utc?: string | null;
-    eventDate?: Date;
   },
   currentDate: Date = new Date()
 ): EventDateCategory {
-  const rawStart = event.dtstart_utc || event.eventDate;
+  const rawStart = event.dtstart_utc;
   if (!rawStart) return "later";
 
   const parsedStart = new Date(rawStart);

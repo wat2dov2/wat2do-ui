@@ -15,8 +15,7 @@ were artefacts of building this PR, not reference material a deployer needs.
   `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SECRET_KEY`, `DATABASE_URL`,
   `OPENAI_API_KEY`, `APIFY_API_TOKEN`.
 - Live verification: 32 events, 29 event_dates rows backfilled, 7 clubs,
-  108 users. View `events_listing` has `security_invoker=true`. CASCADE
-  FK on `event_dates.event_id → events.id` confirmed.
+  108 users. CASCADE FK on `event_dates.event_id → events.id` confirmed.
 
 ## Required env vars
 
@@ -62,10 +61,8 @@ Ordered by dependency.
 
 ### 0. Prereqs in your control
 
-- [ ] **Wire frontend submit-event flow to Phase 8's API contract.** The
-      form still serializes `dtstart_utc` / `dtend_utc` at the top level;
-      the API now requires `occurrences: [...]`. Submission path will
-      422 until that's fixed.
+- [x] **Wire frontend submit-event flow to Phase 8's API contract.** The
+      form now serializes `occurrences: [...]` directly.
 - [ ] **Confirm exact email sub-domains** for UPenn / NYU / Columbia /
       MIT in `backend/core/allowed_emails.py`. The current list uses
       defensible defaults; NYU and Columbia have many sub-domains

@@ -119,6 +119,7 @@ export async function loginAPI(
 
   saveAccessToken(res.access_token);
   saveUserEmail(email);
+  await fetchProfileAPI();
 
   // Broadcast login so per-user stores (saved events, promotions) can
   // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
@@ -206,6 +207,9 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       }),
     ]);
 
+    const cachedProfile = loadUserProfile();
+    const associatedClub =
+      clubs.find((club) => club.id === cachedProfile?.clubId) ?? clubs[0] ?? null;
     const profile: UserProfile = {
       id: data.id,
       faculty: data.faculty ?? "",
@@ -214,6 +218,12 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       isFirstYear: data.is_first_year ?? false,
       role: data.role ?? "user",
       hasClub: clubs.length > 0,
+      clubs: clubs.map((club) => ({
+        id: club.id,
+        club_name: club.club_name,
+      })),
+      clubId: associatedClub?.id ?? null,
+      clubName: associatedClub?.club_name ?? null,
     };
     saveUserProfile(profile);
     if (data.email) saveUserEmail(data.email);

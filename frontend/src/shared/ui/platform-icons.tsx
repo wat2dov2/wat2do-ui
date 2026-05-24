@@ -1,3 +1,96 @@
+import type { CSSProperties } from "react";
+
+interface BrandIconProps {
+  className?: string;
+  size?: number | string;
+  color?: string;
+  strokeWidth?: number;
+  background?: string;
+  opacity?: number;
+  rotation?: number;
+  shadow?: number;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+  padding?: number;
+}
+
+function getBrandIconSvgProps(
+  {
+    className,
+    size,
+    color = "#000000",
+    strokeWidth = 2,
+    background = "transparent",
+    opacity = 1,
+    rotation = 0,
+    shadow = 0,
+    flipHorizontal = false,
+    flipVertical = false,
+    padding = 0,
+  }: BrandIconProps,
+  baseViewBox = { width: 24, height: 24 },
+) {
+  const transforms: string[] = [];
+  if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`);
+  if (flipHorizontal) transforms.push("scaleX(-1)");
+  if (flipVertical) transforms.push("scaleY(-1)");
+
+  const style: CSSProperties = {
+    color,
+    opacity,
+    transform: transforms.join(" ") || undefined,
+    filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+    backgroundColor: background !== "transparent" ? background : undefined,
+  };
+
+  return {
+    className,
+    width: size,
+    height: size,
+    stroke: color,
+    strokeWidth,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    style,
+    viewBox: `${-padding} ${-padding} ${baseViewBox.width + padding * 2} ${baseViewBox.height + padding * 2}`,
+  };
+}
+
+export function GoogleIcon(props: BrandIconProps) {
+  const svgProps = getBrandIconSvgProps(props);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      {...svgProps}
+      fill="none"
+      stroke="none"
+      strokeWidth={0}
+    >
+      <path fill="#4285F4" d="M23.52 12.27c0-.98-.08-1.69-.25-2.43H12v4.41h6.62c-.13 1.1-.85 2.75-2.45 3.86l-.02.15 3.56 2.73.25.02c2.26-2.07 3.56-5.13 3.56-8.74Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.06 7.95-2.88l-3.78-2.91c-1.01.7-2.37 1.19-4.16 1.19-3.17 0-5.86-2.08-6.82-4.94l-.14.01-3.7 2.84-.05.13C3.28 21.33 7.32 24 12 24Z" />
+      <path fill="#FBBC05" d="M5.19 14.46A7.18 7.18 0 0 1 4.79 12c0-.82.15-1.61.39-2.35l-.01-.16-3.75-2.88-.12.06A11.84 11.84 0 0 0 0 12c0 1.91.47 3.73 1.28 5.34l3.91-2.88Z" />
+      <path fill="#EB4335" d="M12 4.6c2.25 0 3.77.96 4.63 1.77l3.38-3.28C17.93 1.18 15.23 0 12 0 7.32 0 3.28 2.67 1.3 6.67l3.88 2.99C6.15 6.79 8.83 4.6 12 4.6Z" />
+    </svg>
+  );
+}
+
+export function AppleIcon(props: BrandIconProps) {
+  const svgProps = getBrandIconSvgProps(props, { width: 256, height: 315 });
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      {...svgProps}
+      fill={props.color ?? "#000000"}
+      stroke="none"
+      strokeWidth={0}
+    >
+      <path d="M213.803 167.03c.442 47.58 41.74 63.413 42.197 63.615c-.35 1.116-6.599 22.563-21.757 44.716c-13.104 19.153-26.705 38.235-48.13 38.63c-21.05.388-27.82-12.483-51.888-12.483c-24.061 0-31.582 12.088-51.51 12.871c-20.68.783-36.428-20.71-49.64-39.793c-27-39.033-47.633-110.3-19.928-158.406c13.763-23.89 38.36-39.017 65.056-39.405c20.307-.387 39.475 13.662 51.889 13.662c12.406 0 35.699-16.895 60.186-14.414c10.25.427 39.026 4.14 57.503 31.186c-1.49.923-34.335 20.044-33.978 59.822M174.24 50.199c10.98-13.29 18.369-31.79 16.353-50.199c-15.826.636-34.962 10.546-46.314 23.828c-10.173 11.763-19.082 30.589-16.678 48.633c17.64 1.365 35.66-8.964 46.64-22.262" />
+    </svg>
+  );
+}
+
 export function DiscordIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">

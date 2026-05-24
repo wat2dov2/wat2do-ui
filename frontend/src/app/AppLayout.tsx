@@ -13,7 +13,6 @@ import {
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useModalStore } from "@/shared/store/modal.store";
 import { ROUTES } from "@/shared/constants/routes";
 
@@ -24,8 +23,6 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { profileCompleted } = useAuthState();
-  const canSubmitEvents = profileCompleted;
   const setShowCommandPalette = useModalStore((s) => s.setShowCommandPalette);
   const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
 
@@ -47,15 +44,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.HOME,
       isActive: isActive(ROUTES.HOME),
     },
-    ...(canSubmitEvents
-      ? [
-          {
-            title: t("navigation.create"),
-            icon: <Plus className="size-4" />,
-            onClick: () => setShowSubmitEvent(true),
-          },
-        ]
-      : []),
+    {
+      title: t("navigation.create"),
+      icon: <Plus className="size-4" />,
+      onClick: () => setShowSubmitEvent(true),
+    },
     {
       title: t("navigation.clubs"),
       icon: <Shield className="size-4" />,

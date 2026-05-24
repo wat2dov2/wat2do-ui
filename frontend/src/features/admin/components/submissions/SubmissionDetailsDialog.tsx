@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import type { EventSubmission } from "@/shared/types";
+import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 
 interface SubmissionDetailsDialogProps {
   submission: EventSubmission | null;
@@ -51,9 +52,24 @@ export function SubmissionDetailsDialog({
             label={t("events.description")}
             value={submission.eventData.description || t("common.noDescription")}
           />
-          <div className="grid grid-cols-2 gap-4">
-            <DetailRow label={t("filters.date")} value={submission.eventData.date} />
-            <DetailRow label={t("filters.time")} value={submission.eventData.time} />
+          <div>
+            <h3 className="font-semibold text-sm text-foreground mb-1">
+              {t("forms.occurrences")}
+            </h3>
+            <div className="space-y-1">
+              {submission.eventData.occurrences.map((occurrence) => (
+                <p
+                  key={occurrence.dtstart_local}
+                  className="text-sm text-muted-foreground"
+                >
+                  {formatCardDate({ dtstart_utc: occurrence.dtstart_local })}{" "}
+                  {formatCardTime({
+                    dtstart_utc: occurrence.dtstart_local,
+                    dtend_utc: occurrence.dtend_local,
+                  })}
+                </p>
+              ))}
+            </div>
           </div>
           <DetailRow label={t("filters.location")} value={submission.eventData.location} />
           <DetailRow

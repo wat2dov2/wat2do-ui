@@ -3,14 +3,6 @@ import { ArrowLeft, Link, MessageCircle } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
-import { FieldLabel } from "@/shared/ui/field";
 import { DiscordIcon, InstagramIcon, SlackIcon, TelegramIcon, LinkedInIcon, FacebookIcon } from "@/shared/ui/platform-icons";
 import { useIntegrations } from "@/features/club-panel/hooks/useIntegrations";
 import { IntegrationCard } from "@/features/club-panel/components/IntegrationCard";
@@ -52,29 +44,7 @@ export function ClubPanelIntegrationsPage() {
         </div>
       </div>
 
-      {/* Club selector */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-        <FieldLabel className="text-sm text-muted-foreground">
-          {t("clubPanel.activeClubForIntegrations")}
-        </FieldLabel>
-        <Select
-          value={integrations.selectedClubId ? String(integrations.selectedClubId) : ""}
-          onValueChange={(value) => integrations.setSelectedClubId(Number(value))}
-          disabled={integrations.loading || integrations.clubs.length === 0}
-        >
-          <SelectTrigger className="w-full max-w-sm">
-            <SelectValue placeholder={integrations.clubs.length === 0 ? t("clubPanel.noClubsFound") : t("clubPanel.selectClub")} />
-          </SelectTrigger>
-          <SelectContent>
-            {integrations.clubs.map((club) => (
-              <SelectItem key={club.id} value={String(club.id)}>
-                {club.club_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {integrations.error && <p className="text-xs text-error">{integrations.error}</p>}
-      </div>
+      {integrations.error && <p className="text-xs text-error">{integrations.error}</p>}
 
       {/* Integration Cards */}
       <div className="space-y-4">
@@ -87,6 +57,7 @@ export function ClubPanelIntegrationsPage() {
           descriptionKey="integrations.whatsappScrapeDesc"
           onConnect={() => integrations.handleConnect("whatsapp")}
           onDisconnect={() => integrations.handleDisconnect("whatsapp")}
+          disabled={actionDisabled}
         />
 
         <IntegrationCard
@@ -110,6 +81,7 @@ export function ClubPanelIntegrationsPage() {
           descriptionKey="integrations.instagramScrapeDesc"
           onConnect={() => integrations.handleConnect("instagram")}
           onDisconnect={() => integrations.handleDisconnect("instagram")}
+          disabled={actionDisabled}
         />
 
         <IntegrationCard
@@ -121,6 +93,7 @@ export function ClubPanelIntegrationsPage() {
           descriptionKey="integrations.slackScrapeDesc"
           onConnect={() => integrations.handleConnect("slack")}
           onDisconnect={() => integrations.handleDisconnect("slack")}
+          disabled={actionDisabled}
         />
 
         <IntegrationCard
@@ -132,6 +105,7 @@ export function ClubPanelIntegrationsPage() {
           descriptionKey="integrations.telegramScrapeDesc"
           onConnect={() => integrations.handleConnect("telegram")}
           onDisconnect={() => integrations.handleDisconnect("telegram")}
+          disabled={actionDisabled}
         />
 
         <IntegrationCard
@@ -143,6 +117,7 @@ export function ClubPanelIntegrationsPage() {
           descriptionKey="integrations.linkedinScrapeDesc"
           onConnect={() => integrations.handleConnect("linkedin")}
           onDisconnect={() => integrations.handleDisconnect("linkedin")}
+          disabled={actionDisabled}
         />
 
         <IntegrationCard
@@ -154,6 +129,7 @@ export function ClubPanelIntegrationsPage() {
           descriptionKey="integrations.facebookScrapeDesc"
           onConnect={() => integrations.handleConnect("facebook")}
           onDisconnect={() => integrations.handleDisconnect("facebook")}
+          disabled={actionDisabled}
         />
       </div>
 

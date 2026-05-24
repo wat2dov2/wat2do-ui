@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { formatEventDate, formatTime } from "@/shared/utils/date";
+import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 
@@ -29,6 +29,7 @@ export function EventSuccessScreen({
 }: EventSuccessScreenProps) {
   const { t } = useTranslation();
   const { formData } = useEventFormContext();
+  const primaryOccurrence = formData.occurrences[0];
   const handleDone = () => {
     onClose();
     setTimeout(() => {
@@ -89,7 +90,14 @@ export function EventSuccessScreen({
               {formData.organization}
             </p>
             <p className="text-sm text-muted-foreground">
-              {formatEventDate(formData.date)} {t("common.at")} {formatTime(formData.time)}
+              {formatCardDate({ dtstart_utc: primaryOccurrence?.dtstart_local })}
+              {" "}
+              {t("common.at")}
+              {" "}
+              {formatCardTime({
+                dtstart_utc: primaryOccurrence?.dtstart_local,
+                dtend_utc: primaryOccurrence?.dtend_local,
+              })}
             </p>
           </div>
 

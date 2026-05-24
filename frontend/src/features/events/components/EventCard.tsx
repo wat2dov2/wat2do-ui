@@ -11,7 +11,6 @@ import {
   Share2,
   Flag,
   Trash2,
-  CalendarPlus,
 } from "lucide-react";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import {
@@ -26,6 +25,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
+import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
@@ -251,7 +251,7 @@ export function EventCard({
                         openGoogleCalendar(event);
                       }}
                     >
-                      <CalendarPlus />
+                      <GoogleIcon className="size-3.5 shrink-0" />
                       {t("events.calendar.googleCalendar")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -260,7 +260,7 @@ export function EventCard({
                         downloadICS(event);
                       }}
                     >
-                      <Download />
+                      <AppleIcon className="size-3.5 shrink-0" />
                       {t("events.calendar.iCal")}
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>

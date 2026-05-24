@@ -21,7 +21,7 @@ import {
   QRCodeDetailsModal,
 } from "@/features/qrcode";
 import type { Event } from "@/shared/types";
-import { Spinner } from "@/shared/ui/spinner";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { useMarketingData } from "@/features/marketing/hooks/useMarketingData";
 
 interface MarketingPageProps {
@@ -64,11 +64,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <Spinner className="size-8 text-primary" />
-      </div>
-    );
+    return <LoadingPage className="min-h-[200px] py-12" />;
   }
 
   return (

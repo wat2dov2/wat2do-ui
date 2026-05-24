@@ -11,9 +11,15 @@ import {
   filterClubsByType,
 } from "@/features/clubs/api/clubService";
 
+const CLUBS_LIST_LIMIT = 500;
+
 export async function getAllClubs(): Promise<Club[]> {
-  const clubs = await api.get<Club[]>("/clubs/");
+  const clubs = await api.get<Club[]>(`/clubs/?limit=${CLUBS_LIST_LIMIT}`);
   return clubs;
+}
+
+export async function getMyClubs(): Promise<Club[]> {
+  return api.get<Club[]>("/clubs/mine");
 }
 
 export async function createClubAPI(clubData: Omit<Club, "id">): Promise<Club> {

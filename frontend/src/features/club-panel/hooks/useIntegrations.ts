@@ -41,7 +41,7 @@ export function useIntegrations() {
       payload: { name: string; metadata?: Record<string, string> }
     ) => {
       if (!selectedClubId) {
-        setError(t("integrations.errors.selectClubBeforeConnect"));
+        setError(t("integrations.errors.noAssociatedClub"));
         return;
       }
       setSaving(true);
@@ -233,9 +233,7 @@ export function useIntegrations() {
   return {
     // Core data (from useIntegrationData)
     integrations,
-    clubs: data.clubs,
     selectedClubId: data.selectedClubId,
-    setSelectedClubId: data.setSelectedClubId,
     loading: data.loading,
     saving,
     error: data.error,

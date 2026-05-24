@@ -6,7 +6,6 @@ Single source of truth — import from here instead of using string literals.
 USERS = "users"
 EVENTS = "events"
 EVENT_DATES = "event_dates"
-EVENTS_LISTING = "events_listing"
 EVENT_SUBMISSIONS = "event_submissions"
 CLUBS = "clubs"
 CLUB_INTEGRATIONS = "club_integrations"

@@ -262,9 +262,9 @@ Questions raised during cleanup:
 - Current table redundancy now has an explicit inventory in
   `docs/schema-table-ownership.md`. Treat any future table removal as a
   product decision plus migration, not a visual similarity cleanup.
-- `events_listing` is a view rather than a duplicate event table. Decide
-  whether future API work should expose this read model explicitly or keep it
-  as a private DB compatibility detail.
+- `events_listing` has been retired as a compatibility view. Future event API
+  work should keep the bugfree-style model explicit: one `events` row owns
+  identity/metadata, and `event_dates` owns occurrences.
 - `event_submissions` is now a queue again, but approval currently publishes
   with the admin reviewer as `created_by`. Decide whether the submitter should
   ever receive edit ownership after approval, or whether admin ownership is the

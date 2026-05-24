@@ -41,8 +41,7 @@ export function useEventFormAI({
       // Update form data from generated event
       setFormData(
         mapAiResponseToFormData(newEvent as Record<string, unknown>, {
-          date: formData.date,
-          time: formData.time,
+          occurrences: formData.occurrences,
         }),
       );
     } catch (error) {

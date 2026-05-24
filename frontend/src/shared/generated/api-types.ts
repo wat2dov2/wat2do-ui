@@ -1326,16 +1326,8 @@ export interface components {
              * @default
              */
             description: string;
-            /**
-             * Date
-             * @default
-             */
-            date: string;
-            /**
-             * Time
-             * @default 12:00
-             */
-            time: string;
+            /** Occurrences */
+            occurrences?: components["schemas"]["EventFormOccurrenceResponse"][];
             /**
              * Location
              * @default
@@ -1351,11 +1343,8 @@ export interface components {
              * @default 0
              */
             price: number;
-            /**
-             * Food
-             * @default []
-             */
-            food: string[];
+            /** Food */
+            food?: string[];
             /**
              * Requiresregistration
              * @default false
@@ -1366,6 +1355,19 @@ export interface components {
              * @default
              */
             organization: string;
+        };
+        /** EventFormOccurrenceResponse */
+        EventFormOccurrenceResponse: {
+            /**
+             * Dtstart Local
+             * @default
+             */
+            dtstart_local: string;
+            /**
+             * Dtend Local
+             * @default
+             */
+            dtend_local: string;
         };
         /**
          * EventPublicResponse

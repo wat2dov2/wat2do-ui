@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/shared/ui/popover";
 import { Calendar } from "@/shared/ui/calendar";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import {
   Field,
   FieldLabel,
@@ -56,6 +57,12 @@ interface FormSelectProps extends BaseFormFieldProps {
 interface FormDatePickerProps extends BaseFormFieldProps {
   value: Date | undefined;
   onChange: (date: Date | undefined) => void;
+  placeholder?: string;
+}
+
+interface FormDateTimePickerProps extends BaseFormFieldProps {
+  value: string;
+  onChange: (value: string) => void;
   placeholder?: string;
 }
 
@@ -262,6 +269,50 @@ export function FormDatePicker({
           />
         </PopoverContent>
       </Popover>
+      {hasError && (
+        <FieldError className="text-xs">{error}</FieldError>
+      )}
+    </Field>
+  );
+}
+
+/**
+ * Reusable form date-time picker field with validation.
+ */
+export function FormDateTimePicker({
+  name,
+  label,
+  required = false,
+  error,
+  touched,
+  onBlur,
+  labelIcon,
+  value,
+  onChange,
+  placeholder,
+  className,
+}: FormDateTimePickerProps) {
+  const hasError = touched && error;
+  const id = `field-${name}`;
+
+  return (
+    <Field className={className}>
+      <FieldLabel
+        htmlFor={id}
+        className="text-sm font-medium text-foreground flex items-center gap-1.5"
+      >
+        {labelIcon}
+        {label}
+        {required && <span className="text-error">*</span>}
+      </FieldLabel>
+      <DateTimePicker
+        id={id}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        placeholder={placeholder}
+        hasError={Boolean(hasError)}
+      />
       {hasError && (
         <FieldError className="text-xs">{error}</FieldError>
       )}

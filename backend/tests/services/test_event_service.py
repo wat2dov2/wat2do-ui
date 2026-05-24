@@ -234,38 +234,34 @@ def test_list_events_include_cancelled_drops_status_filter(fake_sb, patch_sb):
 
 
 def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch_sb):
-    """Summary mode must report the primary occurrence (earliest future)
-    as ``dtstart_utc``, NOT whichever date the events_listing view's
-    dedup happened to keep.
-
-    Pre-fix (detail mode used ``_pick_primary`` but summary used the
-    raw view row), an event with occurrences ``[May 1, May 8, May 15]``
-    on a list at ``desc=True`` showed ``May 15`` in the list view but
-    ``May 1`` (next-future) on the detail view — same event, different
-    "primary date" depending on endpoint. The fix makes both routes
-    fetch occurrences and call the same picker.
-    """
+    """Summary mode must report the primary occurrence (earliest future)."""
     from datetime import timedelta
 
     from services import event_date_service
 
     patch_sb("services.event_service")
 
-    # The view returns one row per (event, occurrence). Dedup keeps id=42
-    # once. The view's first row has dtstart_utc=May 15 (with desc=True).
-    fake_sb.set_response(
-        data=[
-            {
-                "id": 42,
-                "title": "Tea Tasting Series",
-                "location": "SLC",
-                "organization": "UW Tea Club",
-                "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
-                "status": EVENT_STATUS_ACTIVE,
-                # The view's joined date columns — would have been used pre-fix.
-                "dtstart_utc": datetime(2026, 5, 15, tzinfo=timezone.utc).isoformat(),
-                "dtend_utc": None,
-            }
+    # list_events first fetches matching event rows, then occurrence rows
+    # for ordering/dedup. The occurrence ordering row is intentionally not
+    # the same date as the primary picker should report.
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 42,
+                    "title": "Tea Tasting Series",
+                    "location": "SLC",
+                    "organization": "UW Tea Club",
+                    "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
+                    "status": EVENT_STATUS_ACTIVE,
+                }
+            ],
+            [
+                {
+                    "event_id": 42,
+                    "dtstart_utc": datetime(2026, 5, 15, tzinfo=timezone.utc).isoformat(),
+                }
+            ],
         ]
     )
 

@@ -9,8 +9,7 @@ import i18n from "@/shared/lib/i18n";
 const VALIDATION_MESSAGE_KEYS = {
   titleRequired: "forms.titleRequired",
   organizationRequired: "forms.organizationRequired",
-  dateRequired: "forms.dateRequired",
-  timeRequired: "forms.timeRequired",
+  occurrenceRequired: "forms.occurrenceRequired",
   locationRequired: "forms.locationRequired",
   jsonEmpty: "forms.jsonEmpty",
   jsonInvalid: "forms.invalidJsonFormat",
@@ -46,12 +45,8 @@ export function validateEventForm(
     errors.organization = m.organizationRequired;
   }
 
-  if (touched.date && !formData.date) {
-    errors.date = m.dateRequired;
-  }
-
-  if (touched.time && !formData.time) {
-    errors.time = m.timeRequired;
+  if (touched.occurrences && !formData.occurrences.some((occurrence) => occurrence.dtstart_local)) {
+    errors.occurrences = m.occurrenceRequired;
   }
 
   if (touched.location && !formData.location) {
@@ -71,8 +66,7 @@ export function isEventFormValid(
   return (
     formData.title.trim() !== "" &&
     formData.organization.trim() !== "" &&
-    formData.date !== "" &&
-    formData.time !== "" &&
+    formData.occurrences.some((occurrence) => occurrence.dtstart_local !== "") &&
     formData.location !== "" &&
     Object.keys(errors).length === 0
   );
@@ -85,8 +79,7 @@ export function markAllFieldsTouched(): Record<string, boolean> {
   return {
     title: true,
     organization: true,
-    date: true,
-    time: true,
+    occurrences: true,
     location: true,
   };
 }

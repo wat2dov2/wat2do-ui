@@ -17,14 +17,18 @@ class FilterStateResponse(BaseModel):
     requiresRegistration: bool = False
 
 
+class EventFormOccurrenceResponse(BaseModel):
+    dtstart_local: str = ""
+    dtend_local: str = ""
+
+
 class EventFormDataResponse(BaseModel):
     title: str = ""
     description: str = ""
-    date: str = ""
-    time: str = "12:00"
+    occurrences: list[EventFormOccurrenceResponse] = Field(default_factory=list)
     location: str = ""
     category: str = ""
     price: float = 0
-    food: list[str] = []
+    food: list[str] = Field(default_factory=list)
     requiresRegistration: bool = False
     organization: str = ""

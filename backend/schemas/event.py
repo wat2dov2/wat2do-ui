@@ -304,10 +304,6 @@ class EventSummaryResponse(BaseModel):
         return _normalize_food(v)
 
 
-# Columns to SELECT for summary queries — kept in sync with EventSummaryResponse.
-EVENT_SUMMARY_COLUMNS = ",".join(EventSummaryResponse.model_fields.keys())
-
-
 class EventResponse(BaseModel):
     """Full event payload returned from GET /events/{id} and used internally
     for ownership checks.

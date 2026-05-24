@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import type { EventFormData, ValidationErrors } from "@/shared/types";
+import type { EventFormData, EventFormOccurrence, ValidationErrors } from "@/shared/types";
 
 interface EventFormContextValue {
   formData: EventFormData;
@@ -10,8 +10,9 @@ interface EventFormContextValue {
   errors: ValidationErrors;
   touched: Record<string, boolean>;
   handleBlur: (field: string) => void;
-  selectedDate: Date | undefined;
-  handleDateChange: (date: Date | undefined) => void;
+  updateOccurrence: (index: number, field: keyof EventFormOccurrence, value: string) => void;
+  addOccurrence: () => void;
+  removeOccurrence: (index: number) => void;
   foodInput: string;
   setFoodInput: (value: string) => void;
   addFood: () => void;

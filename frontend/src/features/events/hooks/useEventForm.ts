@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { EventFormData } from "@/shared/types";
+import type { EventFormData, EventFormOccurrence } from "@/shared/types";
 import {
   validateEventForm,
   isEventFormValid,
@@ -42,8 +42,7 @@ export function useEventForm(options: UseEventFormOptions) {
       validateEventForm(data, touched, {
         titleRequired: t("forms.titleRequired"),
         organizationRequired: t("forms.organizationRequired"),
-        dateRequired: t("forms.dateRequired"),
-        timeRequired: t("forms.timeRequired"),
+        occurrenceRequired: t("forms.occurrenceRequired"),
         locationRequired: t("forms.locationRequired"),
         jsonInvalid: t("forms.invalidJsonFormat"),
       }) as Record<string, string>,
@@ -59,20 +58,6 @@ export function useEventForm(options: UseEventFormOptions) {
 
   // Re-typed errors for EventForm consumers
   const errors = form.errors as import("@/shared/types").ValidationErrors;
-
-  // Date picker state (tracks Date object; formData.date holds the ISO string)
-  const initialSelectedDate = useMemo(
-    () => getInitialState(initialData, isEditMode).selectedDate,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialSelectedDate);
-
-  const handleDateChange = useCallback((date: Date | undefined) => {
-    setSelectedDate(date);
-    const dateStr = date ? date.toISOString().split("T")[0] : "";
-    form.updateField("date", dateStr);
-  }, [form]);
 
   // JSON editor state
   const [jsonValue, setJsonValue] = useState("");
@@ -91,6 +76,38 @@ export function useEventForm(options: UseEventFormOptions) {
       form.formData.food.filter((_, i) => i !== index)
     );
   }, [form]);
+
+  const updateOccurrence = useCallback(
+    (index: number, field: keyof EventFormOccurrence, value: string) => {
+      form.setFormData((prev) => ({
+        ...prev,
+        occurrences: prev.occurrences.map((occurrence, currentIndex) =>
+          currentIndex === index ? { ...occurrence, [field]: value } : occurrence
+        ),
+      }));
+    },
+    [form],
+  );
+
+  const addOccurrence = useCallback(() => {
+    form.setFormData((prev) => ({
+      ...prev,
+      occurrences: [...prev.occurrences, { dtstart_local: "", dtend_local: "" }],
+    }));
+  }, [form]);
+
+  const removeOccurrence = useCallback(
+    (index: number) => {
+      form.setFormData((prev) => ({
+        ...prev,
+        occurrences:
+          prev.occurrences.length > 1
+            ? prev.occurrences.filter((_, currentIndex) => currentIndex !== index)
+            : prev.occurrences,
+      }));
+    },
+    [form],
+  );
 
   // Image upload state
   const [imagePreview, setImagePreview] = useState("");
@@ -119,8 +136,6 @@ export function useEventForm(options: UseEventFormOptions) {
 
   useEffect(() => {
     if (isOpen && !prevIsOpenRef.current) {
-      const resetState = getInitialState(initialData, isEditMode);
-      setSelectedDate(resetState.selectedDate);
       setJsonValue("");
       setJsonError("");
       foodTag.reset();
@@ -155,7 +170,6 @@ export function useEventForm(options: UseEventFormOptions) {
     if (shouldReseed && initialData) {
       const resetState = getInitialState(initialData, isEditMode);
       form.setFormData(resetState.formData);
-      setSelectedDate(resetState.selectedDate);
       prevInitialDataRef.current = initialData;
     }
     if (editDataReady === 1) prevEditDataReadyRef.current = 1;
@@ -206,9 +220,10 @@ export function useEventForm(options: UseEventFormOptions) {
     setFormData: form.setFormData,
     updateField: form.updateField,
 
-    // Date picker
-    selectedDate,
-    handleDateChange,
+    // Occurrences
+    updateOccurrence,
+    addOccurrence,
+    removeOccurrence,
 
     // Food management
     foodInput: foodTag.inputValue,

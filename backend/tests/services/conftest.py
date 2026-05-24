@@ -46,6 +46,7 @@ _BUILDER_METHODS = (
     "is_",
     "contains",
     "not_",
+    "or_",
     # ordering / windowing
     "order",
     "range",

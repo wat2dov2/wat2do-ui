@@ -45,7 +45,7 @@ def test_empty_prompt_returns_422(authenticated_client):
 
 _FAKE_FILTER_JSON = '{"searchQuery":"","categories":["Technology"],"locations":[],"foods":[],"days":[],"priceRange":{"min":"0","max":"0"},"dateRange":"","addedSince":"","requiresRegistration":false}'
 
-_FAKE_EVENT_JSON = '{"title":"Pizza Social","description":"A fun event","date":"2026-04-10","time":"18:00","location":"SLC","category":"Games","price":0,"food":["Pizza"],"requiresRegistration":false,"organization":"Fun Club"}'
+_FAKE_EVENT_JSON = '{"title":"Pizza Social","description":"A fun event","occurrences":[{"dtstart_local":"2026-04-10T18:00","dtend_local":""}],"location":"SLC","category":"Games","price":0,"food":["Pizza"],"requiresRegistration":false,"organization":"Fun Club"}'
 
 
 def _mock_openai_response(content: str) -> MagicMock:
@@ -160,14 +160,14 @@ def test_chat_completion_uses_json_response_format(authenticated_client, monkeyp
 
 
 # ---------------------------------------------------------------------------
-# M7 — event response sanitization (price / date / time / location)
+# M7 — event response sanitization (price / occurrences / location)
 # ---------------------------------------------------------------------------
 
 
 def test_generate_event_clamps_negative_price(authenticated_client, monkeypatch):
     """Negative price from the model is clamped to 0 (audit M7)."""
     ai_rate_limiter._requests.clear()
-    bad_json = '{"title":"x","description":"y","date":"2026-04-10","time":"18:00","location":"SLC","category":"Games","price":-50,"food":[],"requiresRegistration":false,"organization":"UW"}'
+    bad_json = '{"title":"x","description":"y","occurrences":[{"dtstart_local":"2026-04-10T18:00","dtend_local":""}],"location":"SLC","category":"Games","price":-50,"food":[],"requiresRegistration":false,"organization":"UW"}'
     mock_client = MagicMock()
     mock_client.chat.completions.create.return_value = _mock_openai_response(bad_json)
     monkeypatch.setattr("routers.ai._get_openai_client", lambda: mock_client)
@@ -177,10 +177,10 @@ def test_generate_event_clamps_negative_price(authenticated_client, monkeypatch)
     assert resp.json()["price"] == 0.0
 
 
-def test_generate_event_rejects_invalid_date_and_time(authenticated_client, monkeypatch):
-    """Invalid date / time fall back to the defaults (audit M7)."""
+def test_generate_event_rejects_invalid_occurrence(authenticated_client, monkeypatch):
+    """Invalid occurrence datetimes fall back to defaults (audit M7)."""
     ai_rate_limiter._requests.clear()
-    bad_json = '{"title":"x","description":"y","date":"2024-99-99","time":"99:99","location":"SLC","category":"Games","price":0,"food":[],"requiresRegistration":false,"organization":"UW"}'
+    bad_json = '{"title":"x","description":"y","occurrences":[{"dtstart_local":"2024-99-99T99:99","dtend_local":""}],"location":"SLC","category":"Games","price":0,"food":[],"requiresRegistration":false,"organization":"UW"}'
     mock_client = MagicMock()
     mock_client.chat.completions.create.return_value = _mock_openai_response(bad_json)
     monkeypatch.setattr("routers.ai._get_openai_client", lambda: mock_client)
@@ -188,14 +188,14 @@ def test_generate_event_rejects_invalid_date_and_time(authenticated_client, monk
     resp = authenticated_client.post("/ai/generate-event", json={"prompt": "bad"})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["date"] != "2024-99-99"
-    assert data["time"] == "12:00"
+    assert data["occurrences"][0]["dtstart_local"] != "2024-99-99T99:99"
+    assert data["occurrences"][0]["dtstart_local"]
 
 
 def test_generate_event_drops_unknown_location(authenticated_client, monkeypatch):
     """Locations outside the canonical set are dropped (audit M7)."""
     ai_rate_limiter._requests.clear()
-    bad_json = '{"title":"x","description":"y","date":"2026-04-10","time":"18:00","location":"<script>alert(1)</script>","category":"Games","price":0,"food":[],"requiresRegistration":false,"organization":"UW"}'
+    bad_json = '{"title":"x","description":"y","occurrences":[{"dtstart_local":"2026-04-10T18:00","dtend_local":""}],"location":"<script>alert(1)</script>","category":"Games","price":0,"food":[],"requiresRegistration":false,"organization":"UW"}'
     mock_client = MagicMock()
     mock_client.chat.completions.create.return_value = _mock_openai_response(bad_json)
     monkeypatch.setattr("routers.ai._get_openai_client", lambda: mock_client)

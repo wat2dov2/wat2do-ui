@@ -38,6 +38,7 @@ import { useModalState } from "@/shared/hooks/useModalState";
 import { useCreateQRCodeForm } from "@/features/qrcode/hooks/useCreateQRCodeForm";
 import { useCreatePoster } from "@/features/qrcode/hooks/useCreatePoster";
 import { generateQRCodeUrl } from "@/shared/utils/qrGenerator";
+import { formatCardDate } from "@/shared/utils/date";
 
 interface CreateQRCodeModalProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ function CreateQRCodeModalContent({
   events,
   userEmail,
 }: CreateQRCodeModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const form = useCreateQRCodeForm(events, userEmail);
   const { createPoster } = useCreatePoster();
   const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
@@ -250,7 +251,7 @@ function CreateQRCodeModalContent({
                           <SelectContent>
                             {form.uniqueEvents.map((event) => (
                               <SelectItem key={event.id} value={event.id.toString()}>
-                                {event.title} - {event.date}
+                                {event.title} - {formatCardDate(event, i18n.language || "en-US")}
                               </SelectItem>
                             ))}
                           </SelectContent>

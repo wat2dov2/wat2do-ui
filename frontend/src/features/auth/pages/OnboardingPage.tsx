@@ -99,6 +99,9 @@ export function OnboardingPage() {
         school: data.school,
         role: "user" as const,
         hasClub: false,
+        clubs: [],
+        clubId: null,
+        clubName: null,
       };
 
       // Sync to localStorage first so `isProfileCompleted()` returns true

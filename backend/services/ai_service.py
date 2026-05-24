@@ -7,9 +7,8 @@ importing FastAPI.
 
 import json
 import logging
-import re
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import openai
 from openai import OpenAI
@@ -82,10 +81,6 @@ _CATEGORIES_CSV = ", ".join(f'"{c}"' for c in EVENT_CATEGORIES)
 _LOCATIONS_CSV = ", ".join(f'"{loc}"' for loc in LOCATIONS)
 _FOODS_CSV = ", ".join(f'"{f}"' for f in FOODS)
 
-# Regex helpers for cheap format validation.
-_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-_TIME_RE = re.compile(r"^\d{2}:\d{2}$")
-
 # ---------------------------------------------------------------------------
 # Prompt templates
 # ---------------------------------------------------------------------------
@@ -141,8 +136,9 @@ Return ONLY valid JSON matching this structure (no markdown, no explanation):
 {{{{
   "title": "",
   "description": "",
-  "date": "",
-  "time": "",
+  "occurrences": [
+    {{{{"dtstart_local": "", "dtend_local": ""}}}}
+  ],
   "location": "",
   "category": "",
   "price": 0,
@@ -154,8 +150,7 @@ Return ONLY valid JSON matching this structure (no markdown, no explanation):
 IMPORTANT RULES:
 - title: Create a catchy, descriptive event title
 - description: Write 1-2 sentences describing the event
-- date: Use format "YYYY-MM-DD". If no date specified, use a reasonable upcoming date.
-- time: Use 24-hour format "HH:MM" (e.g., "14:00" for 2 PM, "18:30" for 6:30 PM)
+- occurrences: Array of event date/time objects. Use "YYYY-MM-DDTHH:MM" local datetime strings for dtstart_local and dtend_local. Leave dtend_local "" if no end time is specified.
 - location: Use one of the available locations above
 - category: You MUST use one of the available categories above. Do NOT invent new category names.
 - price: Number (0 for free events)
@@ -167,7 +162,7 @@ IMPORTANT RULES:
 Today's date is {{today}}.
 
 Examples:
-- "tech talk about AI next friday at 2pm" -> title: "Tech Talk: The Future of AI", date: next friday's date, time: "14:00", category: "Technology"
+- "tech talk about AI next friday at 2pm" -> title: "Tech Talk: The Future of AI", occurrences: [{{{{"dtstart_local": "YYYY-MM-DDT14:00", "dtend_local": ""}}}}], category: "Technology"
 - "free pizza social at SLC" -> title: "Pizza Social Mixer", location: "SLC", price: 0, food: ["Pizza"], category: "Games"
 - "hackathon this weekend with registration" -> title: "Weekend Hackathon", requiresRegistration: true, category: "Technology\""""
 
@@ -406,30 +401,44 @@ def generate_filters(
 # ---------------------------------------------------------------------------
 
 
-def _validate_date(raw: str, fallback: str) -> str:
-    """Return *raw* iff it's a valid YYYY-MM-DD string, else *fallback*.
+def _default_local_datetime() -> str:
+    next_hour = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    return next_hour.strftime("%Y-%m-%dT%H:%M")
 
-    Uses ``datetime.strptime`` rather than the regex alone so values like
-    ``"2024-99-99"`` (matching the shape but invalid) are rejected (M7).
-    """
-    if not raw or not _DATE_RE.match(raw):
+
+def _validate_local_datetime(raw: str, fallback: str) -> str:
+    if not raw:
         return fallback
     try:
-        datetime.strptime(raw, "%Y-%m-%d")
+        datetime.strptime(raw, "%Y-%m-%dT%H:%M")
     except ValueError:
         return fallback
     return raw
 
 
-def _validate_time(raw: str, fallback: str) -> str:
-    """Return *raw* iff it's a valid HH:MM 24-hour string, else *fallback* (M7)."""
-    if not raw or not _TIME_RE.match(raw):
+def _validate_occurrences(raw: object) -> list[dict[str, str]]:
+    fallback = [{"dtstart_local": _default_local_datetime(), "dtend_local": ""}]
+    if not isinstance(raw, list):
         return fallback
-    try:
-        datetime.strptime(raw, "%H:%M")
-    except ValueError:
-        return fallback
-    return raw
+
+    occurrences: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        dtstart = _validate_local_datetime(
+            _safe_get(item, "dtstart_local", str, ""),
+            "",
+        )
+        if not dtstart:
+            continue
+        dtend_raw = _safe_get(item, "dtend_local", str, "")
+        occurrences.append(
+            {
+                "dtstart_local": dtstart,
+                "dtend_local": _validate_local_datetime(dtend_raw, "") if dtend_raw else "",
+            }
+        )
+    return occurrences or fallback
 
 
 def validate_event_response(parsed: dict) -> dict:
@@ -439,14 +448,11 @@ def validate_event_response(parsed: dict) -> dict:
     (M7):
       * ``price`` clamped to >= 0 so a negative literal from the model
         can't propagate into the form prefill;
-      * ``date`` validated against ``YYYY-MM-DD`` via ``strptime``;
-      * ``time`` validated against ``HH:MM`` via ``strptime``;
+      * ``occurrences`` validated against ``YYYY-MM-DDTHH:MM`` via ``strptime``;
       * ``location`` reduced to the canonical ``LOCATIONS`` set — unknown
         values are dropped, mirroring the behaviour for categories;
       * ``food`` filtered against ``FOODS``.
     """
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
     price_val = parsed.get("price", 0)
     if isinstance(price_val, (int, float)):
         price = max(0.0, float(price_val))
@@ -463,17 +469,13 @@ def validate_event_response(parsed: dict) -> dict:
     raw_location = _safe_get(parsed, "location", str, "")
     location = raw_location if raw_location in _LOCATIONS_SET else ""
 
-    raw_date = _safe_get(parsed, "date", str, today)
-    raw_time = _safe_get(parsed, "time", str, "12:00")
-
     food_in = parsed.get("food", [])
     food = [f for f in food_in if isinstance(f, str) and f in _FOODS_SET]
 
     return {
         "title": _safe_get(parsed, "title", str, ""),
         "description": _safe_get(parsed, "description", str, ""),
-        "date": _validate_date(raw_date, today),
-        "time": _validate_time(raw_time, "12:00"),
+        "occurrences": _validate_occurrences(parsed.get("occurrences")),
         "location": location,
         "category": category,
         "price": price,

@@ -16,6 +16,7 @@ import {
   loadUserProfile,
   hasAccessToken,
   AUTH_STATE_REFRESH_EVENT,
+  type UserClubSummary,
 } from "@/features/auth/api/userRepository";
 import { ROLE_ADMIN } from "@/shared/constants/roles";
 
@@ -26,6 +27,9 @@ export interface AuthState {
   profileCompleted: boolean;
   isAdmin: boolean;
   hasClub: boolean;
+  clubs: UserClubSummary[];
+  clubId: number | null;
+  clubName: string | null;
   /** Mirrors `getUserRole()`. */
   role: "user" | "admin";
 }
@@ -47,12 +51,16 @@ function computeSnapshot(): AuthState {
   const authed = hasAccessToken() && email !== null;
   const profileCompleted = authed;
   const role = profile?.role ?? "user";
+  const clubs = authed ? profile?.clubs ?? [] : [];
   return Object.freeze({
     userEmail: email,
     isAuthenticated: authed,
     profileCompleted,
     isAdmin: authed && role === ROLE_ADMIN,
     hasClub: authed && (profile?.hasClub ?? false),
+    clubs,
+    clubId: authed ? profile?.clubId ?? null : null,
+    clubName: authed ? profile?.clubName ?? null : null,
     role,
   });
 }

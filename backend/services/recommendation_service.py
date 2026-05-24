@@ -16,13 +16,15 @@ from typing import Callable
 from postgrest.exceptions import APIError
 
 from core.cache import TTLCache
+from core.constants import EVENT_STATUS_ACTIVE
 from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.retry import supabase_retry
-from core.tables import EVENTS_LISTING, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
+from core.tables import EVENT_DATES, EVENTS, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from schemas.event import EventResponse
+from schemas.event_date import OccurrenceResponse
 from schemas.recommendation import RecommendationItem
-from services import interaction_service, user_service
+from services import event_date_service, interaction_service, user_service
 from services.ab_test_service import ab_test
 from services.recommender.collaborative import get_collaborative_scores
 from services.recommender.config import (
@@ -226,20 +228,18 @@ class RecommendationEngine:
     def _fetch_future_event_ids(event_ids: list[int], now: str) -> set[int]:
         """Check which of the given event IDs have at least one future occurrence.
 
-        Uses the ``events_listing`` view (events × event_dates LEFT JOIN)
-        and an IN-clause filter so the query touches only the rows we
-        care about. Multi-occurrence events show up multiple times in
-        the view rows; the ``set()`` collapses them.
+        Multi-occurrence events show up multiple times in event_dates;
+        the ``set()`` collapses them back to logical event ids.
         """
         r = (
             get_sb()
-            .table(EVENTS_LISTING)
-            .select("id")
-            .in_("id", event_ids)
+            .table(EVENT_DATES)
+            .select("event_id")
+            .in_("event_id", event_ids)
             .gte("dtstart_utc", now)
             .execute()
         )
-        return {e["id"] for e in (r.data or [])}
+        return {e["event_id"] for e in (r.data or [])}
 
     def get_popular_recommendations(self, limit: int = DEFAULT_LIMIT) -> list[RecommendationItem]:
         """Return popular upcoming events for anonymous or cold-start users."""
@@ -498,29 +498,59 @@ class RecommendationEngine:
         def _fetch_candidates() -> list[EventResponse]:
             log.debug("Candidate events cache MISS — querying DB")
             now = datetime.now(timezone.utc).isoformat()
-            # events_listing returns one row per (event, occurrence). Sort
-            # by the occurrence's dtstart and dedupe to keep each event's
-            # EARLIEST future occurrence as the candidate's primary date.
-            # Over-fetch (4× the pool size) to give the dedupe room.
             r = (
                 get_sb()
-                .table(EVENTS_LISTING)
-                .select("*")
+                .table(EVENT_DATES)
+                .select("event_id,dtstart_utc,dtend_utc")
                 .gte("dtstart_utc", now)
                 .order("dtstart_utc", desc=False)
                 .limit(CANDIDATE_POOL_SIZE * 4)
                 .execute()
             )
+            primary_by_event: dict[int, dict] = {}
+            event_ids: list[int] = []
             seen: set[int] = set()
-            candidates: list[EventResponse] = []
             for row in r.data or []:
-                eid = row.get("id")
+                eid = row.get("event_id")
+                if eid is None:
+                    continue
                 if eid in seen:
                     continue
                 seen.add(eid)
-                candidates.append(EventResponse.model_validate(row))
-                if len(candidates) >= CANDIDATE_POOL_SIZE:
+                primary_by_event[eid] = row
+                event_ids.append(eid)
+                if len(event_ids) >= CANDIDATE_POOL_SIZE:
                     break
+
+            if not event_ids:
+                return []
+
+            events = (
+                get_sb()
+                .table(EVENTS)
+                .select("*")
+                .in_("id", event_ids)
+                .eq("status", EVENT_STATUS_ACTIVE)
+                .execute()
+            )
+            event_rows = {row["id"]: row for row in (events.data or [])}
+            occ_by_event = event_date_service.list_for_events(event_ids)
+            candidates: list[EventResponse] = []
+            for eid in event_ids:
+                row = event_rows.get(eid)
+                primary = primary_by_event.get(eid)
+                if not row or not primary:
+                    continue
+                payload = dict(row)
+                occurrences = occ_by_event.get(eid, [])
+                payload["occurrences"] = [
+                    occ.model_dump(mode="json")
+                    for occ in occurrences
+                    if isinstance(occ, OccurrenceResponse)
+                ]
+                payload["dtstart_utc"] = primary.get("dtstart_utc")
+                payload["dtend_utc"] = primary.get("dtend_utc")
+                candidates.append(EventResponse.model_validate(payload))
             return candidates
 
         return _candidates_cache.get_or_compute("candidates", _fetch_candidates)

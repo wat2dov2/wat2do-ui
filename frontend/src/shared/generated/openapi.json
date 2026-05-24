@@ -4395,15 +4395,12 @@
             "title": "Description",
             "default": ""
           },
-          "date": {
-            "type": "string",
-            "title": "Date",
-            "default": ""
-          },
-          "time": {
-            "type": "string",
-            "title": "Time",
-            "default": "12:00"
+          "occurrences": {
+            "items": {
+              "$ref": "#/components/schemas/EventFormOccurrenceResponse"
+            },
+            "type": "array",
+            "title": "Occurrences"
           },
           "location": {
             "type": "string",
@@ -4425,8 +4422,7 @@
               "type": "string"
             },
             "type": "array",
-            "title": "Food",
-            "default": []
+            "title": "Food"
           },
           "requiresRegistration": {
             "type": "boolean",
@@ -4441,6 +4437,22 @@
         },
         "type": "object",
         "title": "EventFormDataResponse"
+      },
+      "EventFormOccurrenceResponse": {
+        "properties": {
+          "dtstart_local": {
+            "type": "string",
+            "title": "Dtstart Local",
+            "default": ""
+          },
+          "dtend_local": {
+            "type": "string",
+            "title": "Dtend Local",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "EventFormOccurrenceResponse"
       },
       "EventPublicResponse": {
         "properties": {

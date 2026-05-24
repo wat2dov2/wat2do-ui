@@ -174,16 +174,12 @@ export function EventDetailsModal({
 
                 <InfoRow
                   label={t("filters.requiresRegistration")}
-                  value={displayedEvent.requiresRegistration ? t("common.yes") : t("common.no")}
+                  value={displayedEvent.registration ? t("common.yes") : t("common.no")}
                 />
                 <InfoRow
                   label={t("events.status")}
                   value={displayedEvent.isLive ? t("common.live") : t("common.notLive")}
                 />
-
-                {displayedEvent.dayOfWeek && (
-                  <InfoRow label={t("events.dayOfWeek")} value={displayedEvent.dayOfWeek} />
-                )}
 
                 {!hideSimilarEvents && similarEvents.length > 0 && (
                   <InfoSection>

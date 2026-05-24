@@ -12,7 +12,7 @@ from core.constants import (
     NOTIFICATION_TYPE_WEEKLY_DIGEST,
 )
 from core.database import get_sb
-from core.tables import EVENTS_LISTING, NOTIFICATIONS_LOG
+from core.tables import EVENT_DATES, EVENTS, NOTIFICATIONS_LOG
 from services.email_service import EmailMessage, email_service
 from services.notifications.delivery_log import (
     _mark_log_failed,
@@ -248,26 +248,41 @@ def _fetch_events_in_utc_range(
     end_utc: datetime,
 ) -> list[dict]:
     """Fetch events with at least one occurrence in [start_utc, end_utc]."""
+    events_q = (
+        get_sb()
+        .table(EVENTS)
+        .select("id,title,location,status,school")
+        .eq("status", EVENT_STATUS_ACTIVE)
+    )
+    if school:
+        events_q = events_q.eq("school", school)
+
+    event_rows = events_q.execute().data or []
+    events_by_id = {row["id"]: row for row in event_rows if row.get("id") is not None}
+    if not events_by_id:
+        return []
+
     q = (
         get_sb()
-        .table(EVENTS_LISTING)
-        .select("id, title, location, dtstart_utc")
-        .eq("status", EVENT_STATUS_ACTIVE)
+        .table(EVENT_DATES)
+        .select("event_id,dtstart_utc")
+        .in_("event_id", list(events_by_id))
         .gte("dtstart_utc", start_utc.isoformat())
         .lte("dtstart_utc", end_utc.isoformat())
         .order("dtstart_utc")
     )
-    if school:
-        q = q.eq("school", school)
     rows = q.execute().data or []
     seen: set[int] = set()
     deduped: list[dict] = []
     for row in rows:
-        eid = row.get("id")
+        eid = row.get("event_id")
         if eid in seen:
             continue
+        event = events_by_id.get(eid)
+        if not event:
+            continue
         seen.add(eid)
-        deduped.append(row)
+        deduped.append({**event, "dtstart_utc": row.get("dtstart_utc")})
     return deduped
 
 
@@ -311,26 +326,37 @@ def _fetch_new_events_added_since(
 ) -> list[dict]:
     q = (
         get_sb()
-        .table(EVENTS_LISTING)
+        .table(EVENTS)
         .select(
-            "id,title,location,dtstart_utc,source_image_url,category,"
+            "id,title,location,source_image_url,category,"
             "organization,display_handle,school,added_at,status"
         )
         .eq("status", EVENT_STATUS_ACTIVE)
         .gt("added_at", ensure_aware_utc(start_utc).isoformat())
         .lte("added_at", ensure_aware_utc(end_utc).isoformat())
         .order("added_at", desc=True)
-        .order("dtstart_utc")
     )
     if school:
         q = q.eq("school", school)
-    rows = q.execute().data or []
-    seen: set[int] = set()
-    deduped: list[dict] = []
-    for row in rows:
-        eid = row.get("id")
-        if eid in seen:
-            continue
-        seen.add(eid)
-        deduped.append(row)
-    return deduped
+    event_rows = q.execute().data or []
+    event_ids = [row["id"] for row in event_rows if row.get("id") is not None]
+    if not event_ids:
+        return []
+
+    occurrence_rows = (
+        get_sb()
+        .table(EVENT_DATES)
+        .select("event_id,dtstart_utc")
+        .in_("event_id", event_ids)
+        .order("dtstart_utc")
+        .execute()
+        .data
+        or []
+    )
+    first_date_by_event: dict[int, str | None] = {}
+    for occurrence in occurrence_rows:
+        event_id = occurrence.get("event_id")
+        if event_id not in first_date_by_event:
+            first_date_by_event[event_id] = occurrence.get("dtstart_utc")
+
+    return [{**row, "dtstart_utc": first_date_by_event.get(row.get("id"))} for row in event_rows]

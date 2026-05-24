@@ -36,8 +36,9 @@ interface EventFormStepProps {
     | "errors"
     | "touched"
     | "handleBlur"
-    | "selectedDate"
-    | "handleDateChange"
+    | "updateOccurrence"
+    | "addOccurrence"
+    | "removeOccurrence"
     | "foodInput"
     | "setFoodInput"
     | "addFood"
@@ -88,8 +89,9 @@ export function EventFormStep({
       errors: eventForm.errors,
       touched: eventForm.touched,
       handleBlur: eventForm.handleBlur,
-      selectedDate: eventForm.selectedDate,
-      handleDateChange: eventForm.handleDateChange,
+      updateOccurrence: eventForm.updateOccurrence,
+      addOccurrence: eventForm.addOccurrence,
+      removeOccurrence: eventForm.removeOccurrence,
       foodInput: eventForm.foodInput,
       setFoodInput: eventForm.setFoodInput,
       addFood: eventForm.addFood,

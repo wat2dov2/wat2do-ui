@@ -27,6 +27,7 @@ import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { cn } from "@/shared/lib/utils";
 import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
 import { QP } from "@/shared/constants/queryParams";
+import { formatCardDate } from "@/shared/utils/date";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
@@ -44,7 +45,7 @@ export function AdminEventsPage({
   onBack,
 }: AdminEventsPageProps) {
   const events = useEventsStore((s) => s.events);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     searchQuery,
     selectedCategory,
@@ -183,7 +184,7 @@ export function AdminEventsPage({
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Calendar className="size-3.5" />
-                        <span>{event.date}</span>
+                        <span>{formatCardDate(event, i18n.language || "en-US")}</span>
                       </div>
                     </TableCell>
                     <TableCell>

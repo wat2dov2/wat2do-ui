@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Club } from "@/shared/types";
 import { ApiError } from "@/shared/services/apiClient";
-import { getAllClubs } from "@/features/clubs";
+import { getMyClubs } from "@/features/clubs";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import {
   getIntegrationOptions,
   getPlatformIntegration,
@@ -87,17 +88,19 @@ export function mapResponseToIntegration(
 }
 
 /**
- * Manages data loading for integrations: clubs, platform options, and
- * per-club integration state. Separated from connection management logic.
+ * Manages data loading for integrations: the user's associated club, platform
+ * options, and per-club integration state. Separated from connection logic.
  */
 export function useIntegrationData() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const activeClubId = useAuthState().clubId;
 
   // Core data
   const [integrations, setIntegrations] = useState<Integration[]>(buildInitialIntegrations);
   const [clubs, setClubs] = useState<Club[]>([]);
-  const [selectedClubId, setSelectedClubId] = useState<number | null>(null);
+  const selectedClubId =
+    clubs.find((club) => club.id === activeClubId)?.id ?? clubs[0]?.id ?? null;
 
   // Platform options (loaded once at boot)
   const [options, setOptions] = useState<PlatformOptions>(initialPlatformOptions);
@@ -132,7 +135,7 @@ export function useIntegrationData() {
           linkedinOptions,
           facebookOptions,
         ] = await Promise.all([
-          getAllClubs(),
+          getMyClubs(),
           getIntegrationOptions("discord"),
           getIntegrationOptions("slack"),
           getIntegrationOptions("telegram"),
@@ -152,9 +155,6 @@ export function useIntegrationData() {
           linkedinOauthUrl: linkedinOptions.oauth_url ?? "",
           facebookOauthUrl: facebookOptions.oauth_url ?? "",
         });
-        if (clubsData.length > 0) {
-          setSelectedClubId((prev) => prev ?? clubsData[0].id);
-        }
       } catch (err) {
         if (cancelled) return;
         console.error("Failed to load integration settings:", err);
@@ -172,7 +172,10 @@ export function useIntegrationData() {
 
   // --- Load integrations for selected club ---
   useEffect(() => {
-    if (!selectedClubId) return;
+    if (!selectedClubId) {
+      setIntegrations(buildInitialIntegrations());
+      return;
+    }
     let cancelled = false;
     const loadIntegrations = async () => {
       setLoading(true);
@@ -211,9 +214,7 @@ export function useIntegrationData() {
   return {
     integrations,
     setIntegrations,
-    clubs,
     selectedClubId,
-    setSelectedClubId,
     options,
     loading,
     error,

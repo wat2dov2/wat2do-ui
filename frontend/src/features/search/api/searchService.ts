@@ -44,8 +44,8 @@ export function filterEvents(
     const food = event.food ?? [];
     const price = event.price ?? 0;
     const category = event.category ?? "";
-    const dayOfWeek = event.dayOfWeek ?? "";
-    const needsRegistration = event.requiresRegistration ?? event.registration ?? false;
+    const dayOfWeek = getEventDayOfWeek(event);
+    const needsRegistration = event.registration ?? false;
 
     // Search query filter
     if (q && !event.title.toLowerCase().includes(q)) {
@@ -130,17 +130,6 @@ export function sortEvents(
             const d = new Date(event.dtstart_utc);
             if (!isNaN(d.getTime())) return d.getTime();
           }
-          if (event.eventDate) {
-            if (event.eventDate instanceof Date) return event.eventDate.getTime();
-            if (typeof event.eventDate === "string") {
-              const d = new Date(event.eventDate);
-              if (!isNaN(d.getTime())) return d.getTime();
-            }
-          }
-          if (event.date) {
-            const d = new Date(event.date);
-            if (!isNaN(d.getTime())) return d.getTime();
-          }
           return 0;
         };
         const dateA = getDateValue(a);
@@ -169,3 +158,9 @@ export function sortEvents(
 
 // Canonical home: shared/utils/filter.ts — re-exported for feature consumers
 export { getFilterCounts } from "@/shared/utils/filter";
+function getEventDayOfWeek(event: Event): string {
+  if (!event.dtstart_utc) return "";
+  const date = new Date(event.dtstart_utc);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { weekday: "long" });
+}

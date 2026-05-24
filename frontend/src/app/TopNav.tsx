@@ -2,10 +2,10 @@
  * TopNav Component
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Shield, LogOut, Building2 } from "lucide-react";
+import { Check, ChevronsUpDown, LogOut, Search, Shield } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -16,18 +16,31 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { Highlighter } from "@/shared/ui/highlighter";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { getUserProfile, updateUserProfile } from "@/features/auth";
+import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { logoutAPI } from "@/features/auth";
+import { cn } from "@/shared/lib/utils";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
+
+type NavClub = AuthState["clubs"][number];
 
 export function TopNav() {
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
-  const { profileCompleted, isAdmin, hasClub } = useAuthState();
+  const { profileCompleted, isAdmin, clubs, clubId } = useAuthState();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [clubMenuOpen, setClubMenuOpen] = useState(false);
+  const [clubSearch, setClubSearch] = useState("");
+  const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
+  const canOpenClubPanel = profileCompleted && Boolean(activeClub);
+  const filteredClubs = clubs.filter((club) =>
+    club.club_name.toLowerCase().includes(clubSearch.toLowerCase())
+  );
 
   const handleLogoClick = useCallback(() => {
     navigate(ROUTES.HOME);
@@ -37,7 +50,15 @@ export function TopNav() {
     navigate(ROUTES.ADMIN);
   }, [navigate]);
 
-  const handleClubPanelClick = useCallback(() => {
+  const handleClubSelect = useCallback((club: NavClub) => {
+    const profile = getUserProfile();
+    if (profile) {
+      updateUserProfile({
+        ...profile,
+        clubId: club.id,
+        clubName: club.club_name,
+      });
+    }
     navigate(ROUTES.CLUB_PANEL);
   }, [navigate]);
 
@@ -90,19 +111,74 @@ export function TopNav() {
           </Tooltip>
         )}
 
-        {/* Club Panel Button – only visible to club owners (and admins) */}
-        {profileCompleted && (hasClub || isAdmin) && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onClick={handleClubPanelClick}>
-                <Building2 className="size-4" strokeWidth={2.5} />
-                {t("navigation.clubPanel")}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t("navigation.clubPanelTooltip")}</p>
-            </TooltipContent>
-          </Tooltip>
+        {/* Club switcher – only visible when the user has associated clubs */}
+        {canOpenClubPanel && (
+          <Popover open={clubMenuOpen} onOpenChange={setClubMenuOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="flex text-white items-center gap-1 px-3 h-8 max-w-[240px] bg-transparent hover:bg-secondary rounded-xl transition-colors"
+                aria-expanded={clubMenuOpen}
+                type="button"
+              >
+                <span className="truncate">
+                  <Highlighter action="highlight" color="var(--primary)">
+                    {activeClub.club_name}
+                  </Highlighter>
+                </span>
+                <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[280px] p-0 bg-popover border-border"
+              align="end"
+              aria-label={t("navigation.clubPanelTooltip")}
+            >
+              <div className="flex items-center border-b border-border px-3">
+                <Search className="size-4 text-muted-foreground shrink-0" />
+                <input
+                  type="text"
+                  placeholder={t("clubs.searchPlaceholder")}
+                  value={clubSearch}
+                  onChange={(e) => setClubSearch(e.target.value)}
+                  className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
+                />
+              </div>
+
+              <div className="max-h-[200px] overflow-y-auto p-1">
+                {filteredClubs.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    {t("clubs.noClubsFound")}
+                  </div>
+                ) : (
+                  filteredClubs.map((club) => (
+                    <button
+                      key={club.id}
+                      onClick={() => {
+                        handleClubSelect(club);
+                        setClubMenuOpen(false);
+                        setClubSearch("");
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
+                        activeClub.id === club.id
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-secondary text-foreground"
+                      )}
+                      type="button"
+                    >
+                      <Check
+                        className={cn(
+                          "w-4 h-4 shrink-0",
+                          activeClub.id === club.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <span className="truncate">{club.club_name}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
 
         {/* Language Selector */}

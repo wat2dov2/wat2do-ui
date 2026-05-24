@@ -1,20 +1,19 @@
 # Schema Table Ownership
 
-Last audited: 2026-05-21.
+Last audited: 2026-05-22.
 
 This document separates actual duplicate/stale tables from tables that look
 similar but serve different jobs. The backend is the only supported app path
 for table access; React should call backend APIs, not Supabase tables directly.
 
-## Current Tables And Views
+## Current Tables
 
 | Name | Kind | Canonical owner | Role | Duplicate concern |
 | --- | --- | --- | --- | --- |
 | `users` | Table | `services.user_service` | App profile and role record keyed to Supabase auth users. | Keep. Not duplicated elsewhere. |
 | `clubs` | Table | `services.club_service` | Admin-approved official club record; `created_by` is the current owner/approval link. | Keep. Owns club identity. |
-| `events` | Table | `services.event_service` | Published event source of truth. `club_id` is canonical club ownership; `organization` remains response/display compatibility. | Keep. `organization` is intentionally redundant until legacy responses/history are audited. |
+| `events` | Table | `services.event_service` | Published event source of truth. `club_id` is canonical club ownership; `organization` is the display name copied from the owning club/submission. | Keep. Owns event identity and metadata. |
 | `event_dates` | Table | `services.event_service` | Event occurrence dates for one-off and recurring/multi-date events. | Keep. Not a duplicate of `events`; it stores occurrences. |
-| `events_listing` | View | DB migration + event/recommendation readers | Read-side view joining events to occurrence dates for list filtering and date ordering. | Keep. It is a compatibility/read model, not a second event table. |
 | `event_submissions` | Table | `services.submission_service` | Normal-user event suggestions awaiting admin moderation. Approval publishes to `events` server-side. | Keep. It is a queue, not a published event table. |
 | `user_saved_events` | Table | `services.saved_event_service` | Durable bookmark state. | Keep. Separate from interaction telemetry. |
 | `reported_events` | Table | `services.report_service` | Moderation reports submitted by users. | Keep. No duplicate surface. |
@@ -42,13 +41,13 @@ come back without a new product decision.
 | `scraped_events` | Scraper ingestion writes to `events`/`event_dates`; `workflow_runs` is enough for operational tracking. |
 | `user_event_rsvps` | No frontend RSVP feature exists, so the backend/table surface was removed. |
 | `alembic_version` / `schema_migrations` | Historical migration bookkeeping leftovers removed by the Supabase sync migration. |
+| `events_listing` | Retired compatibility view. Backend readers now query `events` and `event_dates` directly. |
 
 ## Duplicate-Looking Pairs
 
-- `events` + `events_listing`: table plus read-side view.
 - `events` + `event_dates`: event identity plus event occurrences.
 - `events` + `event_submissions`: published catalog plus moderation queue.
-- `clubs.club_name` + `events.organization`: canonical club identity plus legacy event response/display string.
+- `clubs.club_name` + `events.organization`: canonical club identity plus denormalized event display string.
 - `user_saved_events` + `user_interactions`: durable saved state plus behavioral event stream.
 - `user_interactions` + `ab_test_events`: recommendation/product activity plus experiment measurement.
 - `ab_assignments` + `ab_test_events`: sticky assignment plus emitted experiment events.

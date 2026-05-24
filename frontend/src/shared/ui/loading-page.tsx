@@ -1,23 +1,22 @@
 import { useTranslation } from "react-i18next";
-import { Spinner } from "@/shared/ui/spinner";
+import { GooseLoadingAnimation } from "@/shared/ui/goose-loading-animation";
 import { cn } from "@/shared/lib/utils";
 
 export interface LoadingPageProps {
   className?: string;
   /** Override the label (default: "Loading...") */
   label?: string;
-  /** Spinner size via Tailwind (default: size-8) */
+  /** @deprecated LoadingPage now uses the goose animation instead of a spinner. */
   spinnerClassName?: string;
 }
 
 /**
- * Standardized full-page or section loading UI: Spinner and "Loading..." side by side, centered.
+ * Standardized full-page or section loading UI.
  * Use wherever a page or section is loading (events, clubs, admin, Suspense fallback, etc.).
  */
 export function LoadingPage({
   className,
   label,
-  spinnerClassName = "size-4",
 }: LoadingPageProps) {
   const { t } = useTranslation();
   const text = label ?? (t("common.loading") || "Loading...");
@@ -25,14 +24,14 @@ export function LoadingPage({
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-2 py-24",
+        "flex flex-col items-center justify-center gap-3 py-24",
         className
       )}
       role="status"
       aria-live="polite"
       aria-label={text}
     >
-      <Spinner className={spinnerClassName} />
+      <GooseLoadingAnimation />
       <p className="text-sm text-muted-foreground">{text}</p>
     </div>
   );

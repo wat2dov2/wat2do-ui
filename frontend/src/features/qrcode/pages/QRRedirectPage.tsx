@@ -12,7 +12,7 @@ export function QRRedirectPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <LoadingPage label={message} spinnerClassName="size-8" className="py-24" />
+      <LoadingPage label={message} className="py-24" />
     </div>
   );
 }

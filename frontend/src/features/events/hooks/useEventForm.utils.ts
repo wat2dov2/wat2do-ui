@@ -1,4 +1,23 @@
-import type { EventFormData } from "@/shared/types";
+import type { EventFormData, EventFormOccurrence } from "@/shared/types";
+
+function toLocalDateTimeInput(date: Date): string {
+  return date.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16);
+}
+
+function normalizeOccurrences(
+  raw: unknown,
+  fallback: EventFormOccurrence[],
+): EventFormOccurrence[] {
+  if (!Array.isArray(raw)) return fallback;
+  const occurrences = raw
+    .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
+    .map((item) => ({
+      dtstart_local: typeof item.dtstart_local === "string" ? item.dtstart_local : "",
+      dtend_local: typeof item.dtend_local === "string" ? item.dtend_local : "",
+    }))
+    .filter((item) => item.dtstart_local);
+  return occurrences.length > 0 ? occurrences : fallback;
+}
 
 /**
  * Map an AI-generated (or JSON-parsed) event object to EventFormData,
@@ -6,13 +25,12 @@ import type { EventFormData } from "@/shared/types";
  */
 export function mapAiResponseToFormData(
   parsed: Record<string, unknown>,
-  fallbackDefaults: { date: string; time: string },
+  fallbackDefaults: { occurrences: EventFormOccurrence[] },
 ): EventFormData {
   return {
     title: (parsed.title as string) || "",
     description: (parsed.description as string) || "",
-    date: (parsed.date as string) || fallbackDefaults.date,
-    time: (parsed.time as string) || fallbackDefaults.time,
+    occurrences: normalizeOccurrences(parsed.occurrences, fallbackDefaults.occurrences),
     location: (parsed.location as string) || "",
     category: (parsed.category as string) || "",
     price: typeof parsed.price === "number" ? parsed.price : 0,
@@ -26,14 +44,14 @@ export function mapAiResponseToFormData(
 }
 
 /**
- * Get smart defaults for form (today's date, next hour)
+ * Get smart defaults for form (next hour)
  */
 export function getSmartDefaults() {
   const now = new Date();
-  const today = now.toISOString().split("T")[0];
   const nextHour = new Date(now.setHours(now.getHours() + 1, 0, 0, 0));
-  const time = `${nextHour.getHours().toString().padStart(2, "0")}:00`;
-  return { date: today, time };
+  return {
+    occurrences: [{ dtstart_local: toLocalDateTimeInput(nextHour), dtend_local: "" }],
+  };
 }
 
 /**
@@ -41,13 +59,13 @@ export function getSmartDefaults() {
  */
 export function getInitialState(initialData?: EventFormData, isEditMode = false) {
   const smartDefaults = getSmartDefaults();
-  const formData = isEditMode && initialData
-    ? initialData
-    : {
+  const formData =
+    isEditMode && initialData
+      ? initialData
+      : {
         title: "",
         description: "",
-        date: smartDefaults.date,
-        time: smartDefaults.time,
+        occurrences: smartDefaults.occurrences,
         location: "",
         category: "",
         price: 0,
@@ -56,16 +74,7 @@ export function getInitialState(initialData?: EventFormData, isEditMode = false)
         organization: "",
       };
 
-  const dateStr = formData.date || smartDefaults.date;
-  const selectedDate = dateStr
-    ? (() => {
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? undefined : date;
-      })()
-    : undefined;
-
   return {
     formData,
-    selectedDate,
   };
 }

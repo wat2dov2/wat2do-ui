@@ -2,13 +2,9 @@
 
 Events store metadata (title, location, image, etc.); occurrence dates
 live in event_dates and are managed via event_date_service. The
-``primary occurrence`` convenience fields ``dtstart_utc`` / ``dtend_utc``
-on response models are computed by ``_pick_primary`` — earliest future
-occurrence, or earliest occurrence if all are in the past.
-
-Read-side filtering by date uses the ``events_listing`` view, which
-LEFT JOINs events × event_dates so a single date filter clause translates
-to a join-style "events that have a matching occurrence" query.
+``primary occurrence`` fields ``dtstart_utc`` / ``dtend_utc`` on response
+models are computed by ``_pick_primary`` — earliest future occurrence, or
+earliest occurrence if all are in the past.
 """
 
 import logging
@@ -18,10 +14,10 @@ from core.constants import DEFAULT_LIST_LIMIT, EVENT_STATUS_ACTIVE
 from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
+from core.pagination import fetch_all_pages
 from core.sanitize import sanitize_postgrest_value
-from core.tables import EVENTS, EVENTS_LISTING
+from core.tables import EVENT_DATES, EVENTS
 from schemas.event import (
-    EVENT_SUMMARY_COLUMNS,
     EventCreate,
     EventResponse,
     EventSummaryResponse,
@@ -33,6 +29,12 @@ from services import event_date_service
 from services.recommendation_service import invalidate_candidates_cache
 
 log = logging.getLogger(__name__)
+
+EVENT_SUMMARY_EVENT_COLUMNS = ",".join(
+    field
+    for field in EventSummaryResponse.model_fields
+    if field not in {"dtstart_utc", "dtend_utc"}
+)
 
 # Event fields whose changes constitute a "material" update — the ones
 # worth notifying saved-by users about. Description/title/handle edits
@@ -80,9 +82,8 @@ def _to_utc(dt: datetime | None) -> datetime:
 def _hydrate_response(row: dict, occurrences: list[OccurrenceResponse]) -> EventResponse:
     """Build an EventResponse from a raw events row + its occurrences.
 
-    The events row no longer carries ``dtstart_utc`` / ``dtend_utc``; we
-    inject them from the primary occurrence so existing clients keep
-    seeing a single date pair on top of the new ``occurrences`` list.
+    The events row does not carry ``dtstart_utc`` / ``dtend_utc``; those
+    are derived from the primary occurrence for card/list rendering.
     """
     primary = _pick_primary(occurrences)
     payload = dict(row)
@@ -95,18 +96,80 @@ def _hydrate_response(row: dict, occurrences: list[OccurrenceResponse]) -> Event
 def _hydrate_summary(row: dict, occurrences: list[OccurrenceResponse]) -> EventSummaryResponse:
     """Build an EventSummaryResponse with the primary occurrence's date.
 
-    Pre-fix this used the date columns the events_listing view projects
-    from whichever event_dates row the dedup happened to keep — at
-    ``desc=True`` ordering that's the LATEST occurrence, which mismatched
-    the detail endpoint's ``_pick_primary`` (earliest future). Two
-    endpoints reporting different "primary date" for the same event was
-    a UX bug. Now both routes share the same primary computation.
+    Summary and detail responses share this primary-date computation so
+    a multi-occurrence event has one consistent card date everywhere.
     """
     primary = _pick_primary(occurrences)
     payload = dict(row)
     payload["dtstart_utc"] = primary.dtstart_utc.isoformat() if primary else None
     payload["dtend_utc"] = primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
     return EventSummaryResponse.model_validate(payload)
+
+
+def _apply_event_filters(
+    q,
+    *,
+    category: str | None,
+    club_type: str | None,
+    school: str | None,
+    search: str | None,
+    has_food: bool | None,
+    max_price: float | None,
+    registration: bool | None,
+    include_cancelled: bool,
+):
+    if not include_cancelled:
+        q = q.eq("status", EVENT_STATUS_ACTIVE)
+    if category:
+        q = q.eq("category", category)
+    if club_type:
+        q = q.eq("club_type", club_type)
+    if school:
+        q = q.eq("school", school)
+    if search:
+        term = sanitize_postgrest_value(search)
+        if term:
+            quoted = f'"%{term}%"'
+            columns = ("title", "description", "location", "organization")
+            q = q.or_(",".join(f"{col}.ilike.{quoted}" for col in columns))
+    if has_food is True:
+        q = q.not_.is_("food", "null").neq("food", "[]")
+    if max_price is not None:
+        safe_price = f"{max_price:.6f}"
+        q = q.or_(f"price.is.null,price.lte.{safe_price}")
+    if registration is not None:
+        q = q.eq("registration", registration)
+    return q
+
+
+def _list_matching_event_rows(
+    *,
+    select_cols: str,
+    category: str | None,
+    club_type: str | None,
+    school: str | None,
+    search: str | None,
+    has_food: bool | None,
+    max_price: float | None,
+    registration: bool | None,
+    include_cancelled: bool,
+) -> list[dict]:
+    def _page(offset: int, page_size: int) -> list[dict]:
+        q = get_sb().table(EVENTS).select(select_cols)
+        q = _apply_event_filters(
+            q,
+            category=category,
+            club_type=club_type,
+            school=school,
+            search=search,
+            has_food=has_food,
+            max_price=max_price,
+            registration=registration,
+            include_cancelled=include_cancelled,
+        )
+        return q.range(offset, offset + page_size - 1).execute().data or []
+
+    return fetch_all_pages(_page)
 
 
 # ── Public functions ──────────────────────────────────────────────────
@@ -152,66 +215,61 @@ def list_events(
 ) -> list[EventSummaryResponse] | list[EventResponse]:
     """List events with optional filters.
 
-    Reads from ``events_listing`` (the LEFT JOIN view) so a single date
-    filter clause behaves like "events that have a matching occurrence".
-    The same logical event can appear in multiple view rows when it has
-    multiple occurrences; we de-dup at the Python layer keyed on
-    ``id`` and pick the earliest matching occurrence as the row date.
+    Events are filtered by their parent row first, then ordered through
+    event_dates. The same logical event can have multiple occurrence
+    rows, so the final response de-dupes by event id and hydrates the
+    full occurrence list.
     """
-    select_cols = EVENT_SUMMARY_COLUMNS if summary else "*"
-    q = get_sb().table(EVENTS_LISTING).select(select_cols)
-    if not include_cancelled:
-        q = q.eq("status", EVENT_STATUS_ACTIVE)
-    if category:
-        q = q.eq("category", category)
-    if club_type:
-        q = q.eq("club_type", club_type)
-    if school:
-        q = q.eq("school", school)
-    if search:
-        term = sanitize_postgrest_value(search)
-        if term:
-            quoted = f'"%{term}%"'
-            columns = ("title", "description", "location", "organization")
-            q = q.or_(",".join(f"{col}.ilike.{quoted}" for col in columns))
+    select_cols = EVENT_SUMMARY_EVENT_COLUMNS if summary else "*"
+    event_rows = _list_matching_event_rows(
+        select_cols=select_cols,
+        category=category,
+        club_type=club_type,
+        school=school,
+        search=search,
+        has_food=has_food,
+        max_price=max_price,
+        registration=registration,
+        include_cancelled=include_cancelled,
+    )
+    events_by_id = {row["id"]: row for row in event_rows if row.get("id") is not None}
+    if not events_by_id:
+        return []
+
+    q = (
+        get_sb()
+        .table(EVENT_DATES)
+        .select("event_id,dtstart_utc")
+        .in_("event_id", list(events_by_id))
+    )
     if from_date:
         q = q.gte("dtstart_utc", from_date.isoformat())
     if to_date:
         q = q.lte("dtstart_utc", to_date.isoformat())
-    if has_food is True:
-        q = q.not_.is_("food", "null").neq("food", "[]")
-    if max_price is not None:
-        safe_price = f"{max_price:.6f}"
-        q = q.or_(f"price.is.null,price.lte.{safe_price}")
-    if registration is not None:
-        q = q.eq("registration", registration)
-    # Order by dtstart_utc desc to match the v1 listing order. The view
-    # has one row per (event, occurrence) so we over-fetch a bit before
-    # the dedup pass — chosen multiplier of 4 covers the common case
-    # (≤4 occurrences per event) without an unbounded fan-out.
+
+    # Order by occurrence date desc to preserve the current browse order.
     q = q.order("dtstart_utc", desc=True).range(skip, skip + limit * 4 - 1)
-    r = q.execute()
-    rows = r.data or []
+    rows = q.execute().data or []
 
     # De-dup: one row per event id, keep the first occurrence-row we
     # see (which is the highest dtstart_utc thanks to the desc sort).
     seen: set[int] = set()
     deduped: list[dict] = []
     for row in rows:
-        rid = row.get("id")
+        rid = row.get("event_id")
         if rid in seen:
             continue
+        event_row = events_by_id.get(rid)
+        if not event_row:
+            continue
         seen.add(rid)
-        deduped.append(row)
+        deduped.append(event_row)
         if len(deduped) >= limit:
             break
 
     # Both summary and detail paths fetch the full occurrence list for
     # each event so the primary-date computation (``_pick_primary``)
-    # agrees across endpoints. The view's joined date columns are
-    # whichever row the dedup happened to keep — using them as the
-    # primary led to summary/detail divergence for multi-occurrence
-    # events.
+    # agrees across endpoints.
     event_ids = [row["id"] for row in deduped]
     occ_by_event = event_date_service.list_for_events(event_ids)
 

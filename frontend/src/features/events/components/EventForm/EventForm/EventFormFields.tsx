@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { MapPin, DollarSign, Utensils } from "lucide-react";
+import { MapPin, DollarSign, Utensils, Plus, Trash2 } from "lucide-react";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -10,9 +9,10 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import { Switch } from "@/shared/ui/switch";
+import { Button } from "@/shared/ui/button";
 import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
 import { translateCategory } from "@/shared/utils/event";
-import { FormInput, FormSelect, FormDatePicker, FormTextarea } from "@/shared/ui/form-field";
+import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
@@ -25,8 +25,9 @@ export function EventFormFields() {
     errors,
     touched,
     handleBlur,
-    selectedDate,
-    handleDateChange,
+    updateOccurrence,
+    addOccurrence,
+    removeOccurrence,
     foodInput,
     setFoodInput,
     addFood,
@@ -40,9 +41,6 @@ export function EventFormFields() {
     <FieldGroup>
       <FieldSet>
         <FieldLegend>{t("forms.eventInformation")}</FieldLegend>
-        <FieldDescription>
-          {t("forms.requiredFieldsNote")}
-        </FieldDescription>
         <FieldGroup>
           <FormInput
             name="title"
@@ -68,32 +66,57 @@ export function EventFormFields() {
             touched={touched.organization}
           />
 
-          <FieldGroup className="grid grid-cols-2">
-            <FormDatePicker
-              name="date"
-              label={t("filters.date")}
-              required
-              value={selectedDate}
-              onChange={handleDateChange}
-              onBlur={() => handleBlur("date")}
-              placeholder={t("forms.pickDate")}
-              error={errors.date}
-              touched={touched.date}
-            />
-
-            <FormInput
-              name="time"
-              label={t("forms.time")}
-              type="time"
-              required
-              value={formData.time}
-              onChange={(value) => updateField("time", value as string)}
-              onBlur={() => handleBlur("time")}
-              error={errors.time}
-              touched={touched.time}
-              inputClassName="text-secondary-foreground appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-            />
-          </FieldGroup>
+          <Field>
+            <div className="flex items-center justify-between gap-3">
+              <FieldLabel>
+                {t("forms.occurrences")} <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addOccurrence}
+              >
+                <Plus className="size-4" />
+                {t("forms.addDate")}
+              </Button>
+            </div>
+            <FieldGroup>
+              {formData.occurrences.map((occurrence, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-end"
+                >
+                  <FormDateTimePicker
+                    name={`occurrences.${index}.dtstart_local`}
+                    label={t("forms.startDateTime")}
+                    required
+                    value={occurrence.dtstart_local}
+                    onChange={(value) => updateOccurrence(index, "dtstart_local", value)}
+                    onBlur={() => handleBlur("occurrences")}
+                    error={index === 0 ? errors.occurrences : undefined}
+                    touched={touched.occurrences}
+                  />
+                  <FormDateTimePicker
+                    name={`occurrences.${index}.dtend_local`}
+                    label={t("forms.endDateTime")}
+                    value={occurrence.dtend_local}
+                    onChange={(value) => updateOccurrence(index, "dtend_local", value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeOccurrence(index)}
+                    disabled={formData.occurrences.length === 1}
+                    aria-label={t("forms.removeDate")}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </FieldGroup>
+          </Field>
 
           <FormInput
             name="location"

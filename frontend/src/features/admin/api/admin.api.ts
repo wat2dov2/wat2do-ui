@@ -48,14 +48,19 @@ function toReportedEvent(row: ReportResponse): ReportedEvent {
 }
 
 function toEventFormData(eventData: ApiEventCreate): EventFormData {
-  const firstOccurrence = eventData.occurrences[0];
-  const startsAt = firstOccurrence ? new Date(firstOccurrence.dtstart_utc) : null;
-
   return {
     title: eventData.title,
     description: eventData.description ?? "",
-    date: startsAt ? startsAt.toISOString().slice(0, 10) : "",
-    time: startsAt ? startsAt.toTimeString().slice(0, 5) : "",
+    occurrences: eventData.occurrences.map((occurrence) => {
+      const startsAt = new Date(occurrence.dtstart_utc);
+      const endsAt = occurrence.dtend_utc ? new Date(occurrence.dtend_utc) : null;
+      return {
+        dtstart_local: startsAt.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16),
+        dtend_local: endsAt
+          ? endsAt.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16)
+          : "",
+      };
+    }),
     location: eventData.location,
     category: eventData.category ?? DEFAULT_EVENT_CATEGORY,
     price: eventData.price ?? 0,

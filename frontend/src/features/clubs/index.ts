@@ -17,6 +17,7 @@ export { AddClubModal } from "./components/AddClubModal";
 // API
 export {
   getAllClubs,
+  getMyClubs,
   createClubAPI,
   updateClubAPI,
   deleteClubAPI,

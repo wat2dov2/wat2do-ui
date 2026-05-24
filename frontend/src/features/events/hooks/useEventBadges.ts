@@ -16,7 +16,6 @@ export interface EventBadge {
 export interface BadgeInput {
   price?: number | null;
   food?: string[];
-  requiresRegistration?: boolean;
   registration?: boolean;
 }
 
@@ -67,8 +66,7 @@ export function computeEventBadges(
     });
   }
 
-  const requiresRegistration = event.requiresRegistration ?? event.registration ?? false;
-  if (requiresRegistration) {
+  if (event.registration) {
     badges.push({
       text: overrides?.registrationLabel ?? t("common.registrationRequired"),
       bgClass: overrides?.registrationBg ?? "bg-purple-500/20",

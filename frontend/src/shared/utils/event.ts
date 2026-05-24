@@ -1,4 +1,4 @@
-import type { Event, EventFormData } from "@/shared/types";
+import type { Event, EventFormData, EventFormOccurrence } from "@/shared/types";
 import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 
 /**
@@ -27,32 +27,30 @@ export function getEventCategory(event: Pick<Event, "category" | "club_type">): 
   return event.category || deriveCategoryFromClubType(event.club_type);
 }
 
+function toLocalDateTimeInput(value: string): string {
+  return new Date(value).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16);
+}
+
+function eventOccurrencesToFormOccurrences(event: Event): EventFormOccurrence[] {
+  return (event.occurrences ?? []).map((occurrence) => ({
+    dtstart_local: toLocalDateTimeInput(occurrence.dtstart_utc),
+    dtend_local: occurrence.dtend_utc ? toLocalDateTimeInput(occurrence.dtend_utc) : "",
+  }));
+}
+
 /**
  * Convert Event to EventFormData for edit mode.
- * Falls back to dtstart_utc when date/time strings are missing, and
- * handles both old (requiresRegistration) and new (registration) fields.
  */
 export function eventToFormData(event: Event): EventFormData {
-  let date = event.date || "";
-  let time = event.time || "";
-  if ((!date || !time) && event.dtstart_utc) {
-    const d = new Date(event.dtstart_utc as string);
-    if (!isNaN(d.getTime())) {
-      const pad = (n: number) => String(n).padStart(2, "0");
-      date = date || `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      time = time || `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-  }
   return {
     title: event.title,
     description: event.description || "",
-    date,
-    time,
+    occurrences: eventOccurrencesToFormOccurrences(event),
     location: event.location ?? "",
     category: getEventCategory(event),
     price: event.price ?? 0,
     food: event.food || [],
-    requiresRegistration: event.requiresRegistration ?? event.registration ?? false,
+    requiresRegistration: event.registration ?? false,
     organization: event.organization || "",
   };
 }

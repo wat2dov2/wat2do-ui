@@ -15,6 +15,7 @@ export function EventFormPreview() {
   const { t, i18n } = useTranslation();
   const { formData } = useEventFormContext();
   const categoryClasses = getCategoryClasses(formData.category);
+  const primaryOccurrence = formData.occurrences[0];
 
   // Generate badges matching EventCard structure
   const badges = useMemo(
@@ -24,13 +25,21 @@ export function EventFormPreview() {
 
   // Format date and time for preview (matching EventCard format)
   const cardDate = useMemo(
-    () => formatCardDate({ dtstart_utc: formData.date || undefined }, i18n.language || 'en-US'),
-    [formData.date, i18n.language],
+    () =>
+      formatCardDate(
+        { dtstart_utc: primaryOccurrence?.dtstart_local || undefined },
+        i18n.language || 'en-US'
+      ),
+    [primaryOccurrence?.dtstart_local, i18n.language],
   );
 
   const cardTime = useMemo(
-    () => formatCardTime({ time: formData.time || undefined }),
-    [formData.time],
+    () =>
+      formatCardTime({
+        dtstart_utc: primaryOccurrence?.dtstart_local || undefined,
+        dtend_utc: primaryOccurrence?.dtend_local || undefined,
+      }),
+    [primaryOccurrence?.dtstart_local, primaryOccurrence?.dtend_local],
   );
 
   return (

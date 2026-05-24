@@ -19,6 +19,9 @@ const DEFAULT_PROFILE: UserProfile = {
   school: availableSchools[0] || "",
   role: "user",
   hasClub: false,
+  clubs: [],
+  clubId: null,
+  clubName: null,
 };
 
 export function useProfile() {
