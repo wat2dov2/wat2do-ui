@@ -15,12 +15,6 @@ import type { ViewMode, FilterViewMode } from "@/shared/types";
 export type { UserProfile };
 
 // Types
-export interface NotificationPreferences {
-  emailNotifications: boolean;
-  eventReminders: boolean;
-  newEventAlerts: boolean;
-}
-
 export interface PrivacyPreferences {
   profileVisibility: "public" | "private";
   dataSharing: boolean;
@@ -32,32 +26,10 @@ export interface AppearancePreferences {
 }
 
 // Default values
-const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
-  emailNotifications: true,
-  eventReminders: true,
-  newEventAlerts: true,
-};
-
 const DEFAULT_PRIVACY_PREFS: PrivacyPreferences = {
   profileVisibility: "public",
   dataSharing: true,
 };
-
-/**
- * Notification Preferences API
- *
- * StorageService.setItem already JSON-stringifies; we pass the object directly.
- */
-export function loadNotificationPreferences(): NotificationPreferences {
-  return StorageService.getItem<NotificationPreferences>(
-    STORAGE_KEYS.NOTIFICATION_PREFS,
-    DEFAULT_NOTIFICATION_PREFS
-  );
-}
-
-export function saveNotificationPreferences(prefs: NotificationPreferences): void {
-  StorageService.setItem(STORAGE_KEYS.NOTIFICATION_PREFS, prefs);
-}
 
 /**
  * Privacy Preferences API
@@ -89,8 +61,7 @@ export function saveProfile(profile: UserProfile): void {
 /**
  * Appearance Preferences API
  *
- * viewMode and filterViewMode are persisted via the `useAppPrefsStore`
- * Zustand store (see `src/shared/store/appPrefs.store.ts`) — no API
+ * viewMode and filterViewMode are persisted via the `useUIStore`
+ * Zustand store (see `src/shared/store/ui.store.ts`) — no API
  * functions are needed here.
  */
-

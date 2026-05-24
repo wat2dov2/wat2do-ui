@@ -1,22 +1,27 @@
 /**
- * Credits Store (Zustand)
+ * Credits & Promotions Store (Zustand)
  *
- * Single source of truth for the authenticated user's credit balance.
- * Anonymous users keep userCredits = 0 (no fetch, no listeners wake it).
+ * Single source of truth for:
+ *   - Authenticated user's credit balance (credits.store)
+ *   - Currently-active promoted event IDs (promotions.store)
  *
- * Backend is authoritative — per AGENTS.md, credits are never persisted
- * to localStorage.
+ * Anonymous users keep userCredits = 0.
+ * Active promoted event IDs are loaded from a public endpoint for all users.
  */
 
 import { create } from "zustand";
 import i18n from "@/shared/lib/i18n";
-import { loadCredits, addCreditsAPI } from "@/features/credits/api/credits.api";
+import {
+  loadCredits,
+  addCreditsAPI,
+  loadActivePromotedEventIds,
+  promoteEventAPI,
+} from "@/features/credits/api/credits.api";
 import { isAuthenticated, getUserId } from "@/features/auth";
 
 interface CreditsState {
   userCredits: number;
-  /** Internal load-status guard: "idle" (fresh / retry-ready), "loading" (fetch in-flight), "loaded" (fetched successfully). */
-  _loadStatus: "idle" | "loading" | "loaded";
+  activePromotedEventIds: number[];
 
   /** Fetch the current balance from the backend. Idempotent — skips if already loaded. */
   fetchBalance: () => Promise<void>;
@@ -24,38 +29,42 @@ interface CreditsState {
   reset: () => void;
   /** Grant credits (admin-only on the backend). Resolves with the new balance committed to state. */
   addCredits: (amount: number) => Promise<void>;
+  /** Fetch the current active promoted event IDs from the backend. Idempotent — skips if already loaded. */
+  fetchActivePromotedEventIds: () => Promise<void>;
+  /** Promote an event using credits. */
+  promoteEvent: (eventId: number) => Promise<{ success: boolean; needsCredits?: boolean }>;
 }
+
+let balanceLoadStatus: "idle" | "loading" | "loaded" = "idle";
+let promoLoadStatus: "idle" | "loading" | "loaded" = "idle";
 
 export const useCreditsStore = create<CreditsState>((set, get) => ({
   userCredits: 0,
-  _loadStatus: "idle",
+  activePromotedEventIds: [],
 
   fetchBalance: async () => {
-    const status = get()._loadStatus;
-    if (status === "loading") return;
-    if (status === "loaded") return;
+    if (balanceLoadStatus === "loading") return;
+    if (balanceLoadStatus === "loaded") return;
     if (!isAuthenticated()) return;
 
-    set({ _loadStatus: "loading" });
+    balanceLoadStatus = "loading";
     try {
       const balance = await loadCredits();
-      set({ userCredits: balance, _loadStatus: "loaded" });
+      balanceLoadStatus = "loaded";
+      set({ userCredits: balance });
     } catch (err) {
       console.error("Failed to load credit balance:", err);
-      // Reset to "idle" so the next call retries.
-      set({ _loadStatus: "idle" });
+      balanceLoadStatus = "idle";
     }
   },
 
   reset: () => {
-    set({ userCredits: 0, _loadStatus: "idle" });
+    balanceLoadStatus = "idle";
+    promoLoadStatus = "idle";
+    set({ userCredits: 0, activePromotedEventIds: [] });
   },
 
   addCredits: async (amount) => {
-    // CRD-001: backend /credits/add is admin-only and requires both
-    // user_id and amount. Send both so the request passes Pydantic
-    // validation; non-admin callers will receive a 403 which the
-    // modal surfaces as an error banner.
     const userId = getUserId();
     if (!userId) {
       const err = new Error(i18n.t("credits.loginRequired"));
@@ -64,14 +73,14 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
     }
     try {
       const newBalance = await addCreditsAPI(userId, amount);
+      balanceLoadStatus = "loaded";
       set({ userCredits: newBalance });
     } catch (err) {
       console.error("Failed to add credits:", err);
-      // Reconcile so the UI falls back to backend truth rather than any
-      // stale optimistic value.
       if (isAuthenticated()) {
         try {
           const balance = await loadCredits();
+          balanceLoadStatus = "loaded";
           set({ userCredits: balance });
         } catch (reconcileErr) {
           console.error(
@@ -83,13 +92,60 @@ export const useCreditsStore = create<CreditsState>((set, get) => ({
       throw err;
     }
   },
+
+  fetchActivePromotedEventIds: async () => {
+    if (promoLoadStatus === "loading") return;
+    if (promoLoadStatus === "loaded") return;
+
+    promoLoadStatus = "loading";
+    try {
+      const ids = await loadActivePromotedEventIds();
+      promoLoadStatus = "loaded";
+      set({ activePromotedEventIds: ids });
+    } catch (err) {
+      console.error("Failed to load active promoted event IDs:", err);
+      promoLoadStatus = "idle";
+    }
+  },
+
+  promoteEvent: async (eventId) => {
+    const snapshot = get().activePromotedEventIds;
+
+    if (!snapshot.includes(eventId)) {
+      set({ activePromotedEventIds: [...snapshot, eventId] });
+    }
+
+    try {
+      const result = await promoteEventAPI(eventId);
+      if (!result.success) {
+        set({ activePromotedEventIds: snapshot });
+      }
+      const fresh = await loadActivePromotedEventIds();
+      promoLoadStatus = "loaded";
+      set({ activePromotedEventIds: fresh });
+      return result;
+    } catch (err) {
+      console.error(
+        "Failed to promote event, reverting optimistic update and reconciling state:",
+        err,
+      );
+      set({ activePromotedEventIds: snapshot });
+      try {
+        const fresh = await loadActivePromotedEventIds();
+        promoLoadStatus = "loaded";
+        set({ activePromotedEventIds: fresh });
+      } catch (reconcileErr) {
+        console.error(
+          "Failed to reconcile active promoted event IDs after promoteEvent error:",
+          reconcileErr,
+        );
+      }
+      throw err;
+    }
+  },
 }));
 
-// Per-user store listens to auth broadcasts from auth.api:
-//  - "auth-user-logout" -> reset so the next user starts clean.
-//  - "auth-user-login"  -> reset + refetch so a login after mount
-//     (the /login flow) hydrates the new user's balance without a
-//     hard reload. Mirrors savedEvents.store / promotions.store.
+// Listening to auth broadcasts
 if (typeof window !== "undefined") {
   window.addEventListener("auth-user-logout", () => {
     useCreditsStore.getState().reset();
@@ -98,5 +154,6 @@ if (typeof window !== "undefined") {
     const store = useCreditsStore.getState();
     store.reset();
     void store.fetchBalance();
+    void store.fetchActivePromotedEventIds();
   });
 }

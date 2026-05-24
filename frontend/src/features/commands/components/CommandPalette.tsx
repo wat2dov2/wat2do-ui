@@ -24,8 +24,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/shared/ui/command";
-import { useAppPrefsStore } from "@/shared/store/appPrefs.store";
-import { useModalStore } from "@/shared/store/modal.store";
+import { useUIStore } from "@/shared/store/ui.store";
 import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
 
 interface CommandPaletteProps {
@@ -49,8 +48,8 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const setViewMode = useAppPrefsStore((s) => s.setViewMode);
-  const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
+  const setViewMode = useUIStore((s) => s.setViewMode);
+  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onOpenChange} title={t("commands.commandPalette")} description={t("commands.commandPaletteDescription")}>

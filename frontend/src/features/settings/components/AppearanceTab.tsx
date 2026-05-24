@@ -18,17 +18,17 @@ import {
 } from "@/shared/ui/select";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
-import { useAppPrefsStore } from "@/shared/store/appPrefs.store";
+import { useUIStore } from "@/shared/store/ui.store";
 import type { ViewMode } from "@/shared/types";
 
 export function AppearanceTab() {
   const { t } = useTranslation();
   // Subscribe directly to avoid a middleman prop-drill through SettingsPage.
   // Each selector is narrow so only the consuming slot re-renders.
-  const viewMode = useAppPrefsStore((s) => s.viewMode);
-  const setViewMode = useAppPrefsStore((s) => s.setViewMode);
-  const filterViewMode = useAppPrefsStore((s) => s.filterViewMode);
-  const setFilterViewMode = useAppPrefsStore((s) => s.setFilterViewMode);
+  const viewMode = useUIStore((s) => s.viewMode);
+  const setViewMode = useUIStore((s) => s.setViewMode);
+  const filterViewMode = useUIStore((s) => s.filterViewMode);
+  const setFilterViewMode = useUIStore((s) => s.setFilterViewMode);
 
   return (
     <div className="space-y-6">

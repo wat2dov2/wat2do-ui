@@ -8,14 +8,14 @@
  */
 
 import { useEffect } from "react";
-import { useModalStore } from "@/shared/store/modal.store";
+import { useUIStore } from "@/shared/store/ui.store";
 
 export function CommandPaletteHotkeys() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        const { showCommandPalette, setShowCommandPalette } = useModalStore.getState();
+        const { showCommandPalette, setShowCommandPalette } = useUIStore.getState();
         setShowCommandPalette(!showCommandPalette);
       }
     };

@@ -22,15 +22,16 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Heart, LogIn } from "lucide-react";
-import { SubmitEventModal } from "@/features/events";
-import { CommandPalette } from "@/features/commands/components/CommandPalette";
-import { BuyCreditsModal } from "@/features/credits/components/BuyCreditsModal";
+import { SubmitEventModal, useEventsStore } from "@/features/events";
+import { CommandPalette } from "@/features/commands";
+import {
+  BuyCreditsModal,
+  useCreditsStore,
+} from "@/features/credits";
 import { CommandItem } from "@/shared/ui/command";
-import { useModalStore } from "@/shared/store/modal.store";
-import { useSearchStore } from "@/features/search/store/search.store";
-import { useEventsStore } from "@/features/events/store/events.store";
-import { useCreditsStore, usePromotionsStore } from "@/features/credits";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { useUIStore } from "@/shared/store/ui.store";
+import { useSearchStore } from "@/features/search";
+import { useAuthState } from "@/features/auth";
 import { submitEventForReview } from "@/shared/api/submissions.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { ROUTES } from "@/shared/constants/routes";
@@ -50,12 +51,12 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
   const canCreateEvents = hasClub || isAdmin;
   const canSubmitEvents = profileCompleted;
 
-  // ── Modal-store subscriptions (isolated from AppContent) ─────
-  const showSubmitEvent = useModalStore((s) => s.showSubmitEvent);
-  const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
-  const showCommandPalette = useModalStore((s) => s.showCommandPalette);
-  const setShowCommandPalette = useModalStore((s) => s.setShowCommandPalette);
-  const setShowFilterDropdown = useModalStore((s) => s.setShowFilterDropdown);
+  // ── UI-store subscriptions (isolated from AppContent) ─────
+  const showSubmitEvent = useUIStore((s) => s.showSubmitEvent);
+  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
+  const showCommandPalette = useUIStore((s) => s.showCommandPalette);
+  const setShowCommandPalette = useUIStore((s) => s.setShowCommandPalette);
+  const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
 
   // ── Events store actions ─────────────────────────────────────
   const addEvent = useEventsStore((s) => s.addEvent);
@@ -64,7 +65,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
   // ── Credits / promotions ─────────────────────────────────────
   const userCredits = useCreditsStore((s) => s.userCredits);
   const storeAddCredits = useCreditsStore((s) => s.addCredits);
-  const storePromoteEvent = usePromotionsStore((s) => s.promoteEvent);
+  const storePromoteEvent = useCreditsStore((s) => s.promoteEvent);
 
   // ── Search store setter (stable ref) ─────────────────────────
   const clearAllFilters = useSearchStore((s) => s.clearAllFilters);
@@ -91,7 +92,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
 
   const loadEventForEdit = useCallback(
     async (eventId: number): Promise<EventFormData> => {
-      const { fetchEventById } = await import("@/features/events/api/events.api");
+      const { fetchEventById } = await import("@/features/events");
       const fullEvent = await fetchEventById(eventId);
       fullEvent.category = getEventCategory(fullEvent);
       return eventToFormData(fullEvent);

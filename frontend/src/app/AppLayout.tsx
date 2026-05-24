@@ -13,7 +13,7 @@ import {
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
-import { useModalStore } from "@/shared/store/modal.store";
+import { useUIStore } from "@/shared/store/ui.store";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AppLayoutProps {
@@ -23,8 +23,8 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const setShowCommandPalette = useModalStore((s) => s.setShowCommandPalette);
-  const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
+  const setShowCommandPalette = useUIStore((s) => s.setShowCommandPalette);
+  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
   const isActive = (href?: string) => {
     if (!href) return false;

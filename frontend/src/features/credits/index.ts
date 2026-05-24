@@ -3,4 +3,4 @@
  */
 
 export { useCreditsStore } from "./store/credits.store";
-export { usePromotionsStore } from "./store/promotions.store";
+export { BuyCreditsModal } from "./components/BuyCreditsModal";

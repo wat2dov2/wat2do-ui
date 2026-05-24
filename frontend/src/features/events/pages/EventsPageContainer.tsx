@@ -4,24 +4,25 @@ import { formatDistanceToNow } from "date-fns";
 import { Utensils, Heart } from "lucide-react";
 import { EventList, EventCount } from "@/features/events";
 import { LoadingPage } from "@/shared/ui/loading-page";
+import { LightRays } from "@/registry/magicui/light-rays";
+import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
-import { useAppPrefsStore } from "@/shared/store/appPrefs.store";
-import { useModalStore } from "@/shared/store/modal.store";
-import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { useUIStore } from "@/shared/store/ui.store";
+import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode } from "@/shared/hooks";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import type { ViewMode, QuickFilterConfig } from "@/shared/types";
 
 export function EventsPageContainer() {
-  const viewMode = useAppPrefsStore((s) => s.viewMode);
-  const setViewMode = useAppPrefsStore((s) => s.setViewMode);
-  const filterViewMode = useAppPrefsStore((s) => s.filterViewMode);
-  const setFilterViewMode = useAppPrefsStore((s) => s.setFilterViewMode);
-  // Filter dropdown open/close lives in the modal store (shared with the
+  const viewMode = useUIStore((s) => s.viewMode);
+  const setViewMode = useUIStore((s) => s.setViewMode);
+  const filterViewMode = useUIStore((s) => s.filterViewMode);
+  const setFilterViewMode = useUIStore((s) => s.setFilterViewMode);
+  // Filter dropdown open/close lives in the UI store (shared with the
   // command palette) rather than the search filter-value store.
-  const showFilterDropdown = useModalStore((s) => s.showFilterDropdown);
-  const setShowFilterDropdown = useModalStore((s) => s.setShowFilterDropdown);
+  const showFilterDropdown = useUIStore((s) => s.showFilterDropdown);
+  const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
   const { isDarkMode } = useDarkMode();
   const profileCompleted = useProfileCompleted();
   const { t } = useTranslation();
@@ -32,6 +33,7 @@ export function EventsPageContainer() {
     error,
     fetchEvents,
     savedEventIds,
+    activePromotedEventIds,
     latestAddedEvent,
     filters,
     orderedEvents,
@@ -78,12 +80,18 @@ export function EventsPageContainer() {
     // Cancel the AppLayout scroll container's p-6 so the sticky toolbar can
     // sit flush against the scrollport edges. Re-add tighter padding on
     // the sticky inner content and <main> for a denser events surface.
-    <div className="-m-6 isolate">
+    <div className="-m-6 isolate relative min-h-full">
+      <div
+        className="pointer-events-none fixed left-0 right-2.5 top-0 z-0 h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]"
+        aria-hidden="true"
+      >
+        <LightRays data-page-light-rays length="110dvh" />
+      </div>
       {/* Sticky toolbar: search + filter row stay pinned as the user scrolls.
           -top-6 + top padding covers the scroll container's p-6 top padding so event
           cards scrolling up don't bleed through the gap between the fixed
           TopNav and the toolbar. */}
-      <div className="sticky -top-6 z-20 bg-background px-6 py-4 space-y-3 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-5 after:h-5 after:bg-linear-to-b after:from-black/[0.025] after:to-transparent">
+      <div className="sticky -top-6 z-20 bg-background px-6 py-4 space-y-3 backdrop-blur-sm">
         <SearchBar
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {
@@ -142,7 +150,7 @@ export function EventsPageContainer() {
       </div>
 
       {/* Main Content */}
-      <main className="w-full px-6 pt-3 pb-6" role="main" aria-label={t("search.ariaLabel")}>
+      <main className="relative z-10 w-full px-6 pt-3 pb-6" role="main" aria-label={t("search.ariaLabel")}>
         {isLoading ? (
           <LoadingPage />
         ) : error ? (
@@ -162,6 +170,8 @@ export function EventsPageContainer() {
             viewMode={viewMode}
             onDelete={handleDeleteEvent}
             onClearFilters={filters.handleClearAllFilters}
+            savedEventIds={savedEventIds}
+            activePromotedEventIds={activePromotedEventIds}
           />
         )}
       </main>
@@ -193,10 +203,16 @@ function LatestAddedButton({ title, addedAt, onClick }: LatestAddedButtonProps) 
     <button
       type="button"
       onClick={onClick}
-      className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left relative -top-px"
+      className="relative -top-px text-left text-xs text-muted-foreground transition-colors [--latest-added-text-color:var(--muted-foreground)] hover:text-foreground hover:[--latest-added-text-color:var(--foreground)]"
       aria-label={label}
     >
-      {label}
+      <DiaTextReveal
+        key={label}
+        className="text-xs"
+        text={label}
+        textColor="var(--latest-added-text-color)"
+        colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
+      />
     </button>
   );
 }

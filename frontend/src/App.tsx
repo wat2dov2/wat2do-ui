@@ -4,15 +4,19 @@ import { LazyMotion, domAnimation } from "framer-motion";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AppLayout } from "@/app/AppLayout";
-import { EventsPageContainer } from "@/features/events";
+import {
+  EventsPageContainer,
+  useEventsStore,
+  useSavedEventsStore,
+} from "@/features/events";
 import { EasterEggs } from "@/shared/components/EasterEggs";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
-import { useSearchStore } from "@/features/search/store/search.store";
+import { useSearchStore } from "@/features/search";
 import { useEasterEggs } from "@/shared/components/useEasterEggs";
-import { useModalStore } from "@/shared/store/modal.store";
+import { useUIStore } from "@/shared/store/ui.store";
 import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
 import { ModalContainer } from "@/app/ModalContainer";
-import { useUserEmail } from "@/features/auth/hooks/useAuthState";
+import { useUserEmail } from "@/features/auth";
 
 import {
   AdminPanelRoute,
@@ -21,7 +25,7 @@ import {
   AdminSubmissionsRoute,
   AdminPostersRoute,
 } from "@/app/routes/adminRoutes";
-import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
+import { QRRedirectPage } from "@/features/qrcode";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { ROLE_ADMIN, ROLE_CLUB } from "@/shared/constants/roles";
 import {
@@ -31,9 +35,7 @@ import {
   ClubPanelMembersRoute,
 } from "@/app/routes/clubPanelRoutes";
 import { ROUTES } from "@/shared/constants/routes";
-import { useEventsStore } from "@/features/events/store/events.store";
-import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { useCreditsStore, usePromotionsStore } from "@/features/credits";
+import { useCreditsStore } from "@/features/credits";
 import type { Event } from "@/shared/types";
 
 // Lazy load pages for code splitting
@@ -122,7 +124,7 @@ function AppContent() {
   // handleEditEventAndOpenModal. The modal state reads (showSubmitEvent,
   // showCommandPalette) live in `<ModalContainer />` to keep Routes from
   // re-rendering on modal toggles.
-  const setShowSubmitEvent = useModalStore((s) => s.setShowSubmitEvent);
+  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
   // ── Store data (single source of truth) ──────────────────────
   const events = useEventsStore((s) => s.events);
@@ -136,7 +138,7 @@ function AppContent() {
     useEventsStore.getState().fetchEvents();
     useSavedEventsStore.getState().fetchSavedEvents();
     useCreditsStore.getState().fetchBalance();
-    usePromotionsStore.getState().fetchActivePromotedEventIds();
+    useCreditsStore.getState().fetchActivePromotedEventIds();
   }, [isAuthFlowRoute]);
 
   // ── Edit event state (local UI) ──────────────────────────────
@@ -163,15 +165,10 @@ function AppContent() {
   // give us a no-op subscription.
   const setFilterStateFromURL = useSearchStore((s) => s.setFilterStateFromURL);
 
-  const navFilters = useMemo(
-    () => ({ setFilterStateFromURL }),
-    [setFilterStateFromURL],
-  );
-
   // Called for side effects: processes URL params (filters, eventId scroll) on initial load
   useAppNavigation({
     events,
-    filters: navFilters,
+    setFilterStateFromURL,
   });
 
   // Open submit modal in edit mode

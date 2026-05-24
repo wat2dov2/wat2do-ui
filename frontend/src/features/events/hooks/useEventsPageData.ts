@@ -4,7 +4,7 @@ import { useSearch } from "@/features/search";
 import { useLatestAddedEvent } from "@/features/events/hooks/useLatestAddedEvent";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { usePromotionsStore } from "@/features/credits";
+import { useCreditsStore } from "@/features/credits";
 import { showToast } from "@/shared/ui/toast";
 import { ApiError } from "@/shared/services/apiClient";
 import { getUniqueEvents } from "@/shared/utils/event";
@@ -31,7 +31,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   // the reference changes even when the ID set is identical. ``useShallow``
   // does element-wise reference equality on the array (zustand v5 dropped
   // the equalityFn second arg).
-  const activePromotedEventIds = usePromotionsStore(
+  const activePromotedEventIds = useCreditsStore(
     useShallow((s) => s.activePromotedEventIds),
   );
 
@@ -100,6 +100,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     error,
     fetchEvents,
     savedEventIds,
+    activePromotedEventIds,
     latestAddedEvent,
     recsLoading,
     filters,
