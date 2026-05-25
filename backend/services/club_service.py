@@ -2,10 +2,10 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import get_args
 
 log = logging.getLogger(__name__)
 
+from postgrest.exceptions import APIError
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.sanitize import sanitize_postgrest_value
@@ -15,11 +15,8 @@ from schemas.club import (
     ClubIntegrationResponse,
     ClubResponse,
     ClubUpdate,
-    DiscordIntegrationResponse,
     IntegrationPlatform,
 )
-
-SUPPORTED_INTEGRATIONS: tuple[IntegrationPlatform, ...] = get_args(IntegrationPlatform)
 
 
 def _normalize_club_name(name: str | None) -> str:
@@ -89,10 +86,13 @@ def list_clubs(
     limit: int = DEFAULT_LIST_LIMIT,
     club_type: str | None = None,
     search: str | None = None,
+    school: str | None = None,
 ) -> list[ClubResponse]:
     q = get_sb().table(CLUBS).select("*")
     if club_type:
         q = q.eq("club_type", club_type)
+    if school:
+        q = q.eq("school", school)
     if search:
         term = sanitize_postgrest_value(search)
         if term:
@@ -101,14 +101,53 @@ def list_clubs(
             quoted = f'"%{term}%"'
             q = q.or_(f"club_name.ilike.{quoted}")
     q = q.order("club_name").range(skip, skip + limit - 1)
-    r = q.execute()
-    return [ClubResponse.model_validate(c) for c in (r.data or [])]
+    try:
+        r = q.execute()
+        clubs = [ClubResponse.model_validate(c) for c in (r.data or [])]
+    except APIError as e:
+        if e.code == "42703" and school:
+            log.warning(
+                "Database column 'school' does not exist in 'clubs' table. "
+                "Filtering clubs in python fallback. Please run migrations."
+            )
+            # Re-run query without school filter
+            q = get_sb().table(CLUBS).select("*")
+            if club_type:
+                q = q.eq("club_type", club_type)
+            if search:
+                term = sanitize_postgrest_value(search)
+                if term:
+                    quoted = f'"%{term}%"'
+                    q = q.or_(f"club_name.ilike.{quoted}")
+            q = q.order("club_name").range(skip, skip + limit - 1)
+            r = q.execute()
+            
+            raw_clubs = [ClubResponse.model_validate(c) for c in (r.data or [])]
+            default_school = "University of Waterloo"
+            clubs = [
+                c for c in raw_clubs
+                if (c.school or default_school) == school
+            ]
+        else:
+            raise
+    return clubs
 
 
 def create_club(data: ClubCreate, *, created_by: str) -> ClubResponse:
     payload = data.model_dump(exclude={"owner_user_id"})
     payload["created_by"] = created_by
-    r = get_sb().table(CLUBS).insert(payload).execute()
+    try:
+        r = get_sb().table(CLUBS).insert(payload).execute()
+    except APIError as e:
+        if e.code == "42703" and "school" in payload:
+            log.warning(
+                "Database column 'school' does not exist in 'clubs' table. "
+                "Retrying club creation without school column."
+            )
+            del payload["school"]
+            r = get_sb().table(CLUBS).insert(payload).execute()
+        else:
+            raise
     return ClubResponse.model_validate(r.data[0])
 
 
@@ -119,7 +158,20 @@ def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     payload = data.model_dump(exclude_unset=True)
     if not payload:
         return existing
-    r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
+    try:
+        r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
+    except APIError as e:
+        if e.code == "42703" and "school" in payload:
+            log.warning(
+                "Database column 'school' does not exist in 'clubs' table. "
+                "Retrying club update without school column."
+            )
+            del payload["school"]
+            if not payload:
+                return existing
+            r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
+        else:
+            raise
     return ClubResponse.model_validate(r.data[0]) if r.data else None
 
 
@@ -275,20 +327,6 @@ _KNOWN_METADATA_KEYS = _METADATA_COLUMNS | frozenset(
     alias for aliases in _PLATFORM_COLUMN_ALIASES.values() for alias in aliases.values()
 )
 
-# Per-platform map from metadata key -> typed-response field name.
-# Used by platform-specific response builders (e.g. _integration_to_discord)
-# to derive field values from the generic metadata dict, keeping the mapping
-# in sync with _METADATA_COLUMNS and _PLATFORM_COLUMN_ALIASES automatically.
-_PLATFORM_RESPONSE_FIELDS: dict[str, dict[str, str]] = {
-    "discord": {
-        "server_id": "server_id",
-        "server_name": "server_name",
-        "channel_id": "channel_id",
-        "channel_name": "channel_name",
-    },
-}
-
-
 def _columns_to_metadata(platform: str, row: dict) -> dict[str, str]:
     """Extract metadata dict from a DB row, applying platform aliases.
 
@@ -440,59 +478,3 @@ def disconnect_platform_integration(
     if not r.data:
         return _empty_integration_response(club_id, platform)
     return _row_to_integration_response(r.data[0])
-
-
-def _integration_to_discord(integration: ClubIntegrationResponse) -> DiscordIntegrationResponse:
-    """Build a DiscordIntegrationResponse from a generic integration.
-
-    Derives field values from _PLATFORM_RESPONSE_FIELDS["discord"] so that
-    adding a new discord metadata field only requires a single dict entry
-    (plus the schema field).
-    """
-    metadata = integration.metadata or {}
-    field_map = _PLATFORM_RESPONSE_FIELDS.get("discord", {})
-    mapped = {field: metadata.get(meta_key) for meta_key, field in field_map.items()}
-    return DiscordIntegrationResponse(
-        club_id=integration.club_id,
-        connected=integration.connected,
-        name=integration.name,
-        last_sync=integration.last_sync,
-        **mapped,
-    )
-
-
-def get_discord_integration(club_id: int) -> DiscordIntegrationResponse | None:
-    integration = get_platform_integration(club_id, "discord")
-    if integration is None:
-        return None
-    return _integration_to_discord(integration)
-
-
-def upsert_discord_integration(
-    club_id: int,
-    server_id: str,
-    server_name: str,
-    channel_id: str,
-    channel_name: str,
-) -> DiscordIntegrationResponse | None:
-    integration = upsert_platform_integration(
-        club_id=club_id,
-        platform="discord",
-        name=f"{server_name} - {channel_name}",
-        metadata={
-            "server_id": server_id,
-            "server_name": server_name,
-            "channel_id": channel_id,
-            "channel_name": channel_name,
-        },
-    )
-    if integration is None:
-        return None
-    return get_discord_integration(club_id)
-
-
-def disconnect_discord_integration(club_id: int) -> DiscordIntegrationResponse | None:
-    integration = disconnect_platform_integration(club_id, "discord")
-    if integration is None:
-        return None
-    return get_discord_integration(club_id)

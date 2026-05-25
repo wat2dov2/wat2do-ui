@@ -19,17 +19,9 @@ export function ClubsPage() {
   } = useClubsPage();
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground mb-2">{t("navigation.clubs")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("clubs.description")}
-        </p>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="space-y-4">
+    <div className="-mt-6 space-y-4">
+      {/* Search and filters stay pinned; -top-6 cancels AppLayout top padding when stuck. */}
+      <div className="sticky -top-6 z-20 bg-background space-y-4 pt-6 pb-2 backdrop-blur-sm">
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
