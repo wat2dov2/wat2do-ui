@@ -4,7 +4,7 @@
 
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Check, ChevronsUpDown, LogOut, Search, Shield } from "lucide-react";
 import {
   Tooltip,
@@ -18,11 +18,15 @@ import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
 import { Highlighter } from "@/shared/ui/highlighter";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { getUserProfile, updateUserProfile } from "@/features/auth";
-import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
-import { useEventsStore } from "@/features/events/store/events.store";
+import {
+  getUserProfile,
+  logoutAPI,
+  updateUserProfile,
+  useAuthState,
+  type AuthState,
+} from "@/features/auth";
+import { useEventsStore } from "@/features/events";
 import { ROUTES } from "@/shared/constants/routes";
-import { logoutAPI } from "@/features/auth";
 import { cn } from "@/shared/lib/utils";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
@@ -34,13 +38,25 @@ export function TopNav() {
   const { profileCompleted, isAdmin, clubs, clubId } = useAuthState();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [clubMenuOpen, setClubMenuOpen] = useState(false);
   const [clubSearch, setClubSearch] = useState("");
   const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
   const canOpenClubPanel = profileCompleted && Boolean(activeClub);
-  const filteredClubs = clubs.filter((club) =>
-    club.club_name.toLowerCase().includes(clubSearch.toLowerCase())
-  );
+
+  const filteredClubs = clubs.filter((club) => {
+    const clubSchool = club.school || "University of Waterloo";
+    const matchesSchool = !schoolFilter || clubSchool === schoolFilter;
+    const matchesSearch = club.club_name.toLowerCase().includes(clubSearch.toLowerCase());
+    return matchesSchool && matchesSearch;
+  });
+
+  const handleSchoolChange = useCallback((newSchool: string) => {
+    setSchoolFilter(newSchool);
+    if (pathname === ROUTES.CLUB_PANEL || pathname.startsWith(`${ROUTES.CLUB_PANEL}/`)) {
+      navigate(ROUTES.HOME);
+    }
+  }, [setSchoolFilter, pathname, navigate]);
 
   const handleLogoClick = useCallback(() => {
     navigate(ROUTES.HOME);
@@ -92,7 +108,7 @@ export function TopNav() {
           />
         </button>
         <span className="text-muted-foreground text-lg font-light">/</span>
-        <SchoolCombobox value={schoolFilter ?? ""} onChange={setSchoolFilter} />
+        <SchoolCombobox value={schoolFilter ?? ""} onChange={handleSchoolChange} />
       </div>
 
       <div className="flex items-center gap-2">

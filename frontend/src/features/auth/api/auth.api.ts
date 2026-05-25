@@ -221,6 +221,7 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       clubs: clubs.map((club) => ({
         id: club.id,
         club_name: club.club_name,
+        school: club.school ?? null,
       })),
       clubId: associatedClub?.id ?? null,
       clubName: associatedClub?.club_name ?? null,
@@ -249,19 +250,6 @@ export async function updateProfileAPI(profile: UserProfile): Promise<void> {
   // invoking us. The PATCH does not return a new shape, so there is nothing
   // to reconcile here — re-saving would just fire another redundant
   // auth-state-refresh event.
-}
-
-export async function setDailyNewEventsEmailPreferenceAPI(
-  enabled: boolean,
-): Promise<void> {
-  await api.patch("/notification-preferences", {
-    preferences: [
-      {
-        notification_type: "daily_new_events",
-        enabled,
-      },
-    ],
-  });
 }
 
 export async function resetPasswordAPI(
