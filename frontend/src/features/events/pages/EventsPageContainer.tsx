@@ -77,21 +77,20 @@ export function EventsPageContainer() {
   );
 
   return (
-    // Cancel the AppLayout scroll container's p-6 so the sticky toolbar can
-    // sit flush against the scrollport edges. Re-add tighter padding on
-    // the sticky inner content and <main> for a denser events surface.
-    <div className="-m-6 isolate relative min-h-full">
+    <div className="-mt-6 space-y-3">
       <div
-        className="pointer-events-none fixed left-0 right-2.5 top-0 z-0 h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]"
+        className="pointer-events-none fixed left-0 right-2.5 top-0 z-[45] h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]"
         aria-hidden="true"
       >
-        <LightRays data-page-light-rays length="110dvh" />
+        <LightRays
+          data-page-light-rays
+          length="110dvh"
+          color={isDarkMode ? "rgba(255, 255, 255, 0.18)" : "rgba(30, 30, 30, 0.12)"}
+          blendMode={isDarkMode ? "screen" : "multiply"}
+        />
       </div>
-      {/* Sticky toolbar: search + filter row stay pinned as the user scrolls.
-          -top-6 + top padding covers the scroll container's p-6 top padding so event
-          cards scrolling up don't bleed through the gap between the fixed
-          TopNav and the toolbar. */}
-      <div className="sticky -top-6 z-20 bg-background px-6 py-4 space-y-3 backdrop-blur-sm">
+      {/* Sticky toolbar hugs TopNav when scrolling (-top-6 cancels AppLayout top padding). */}
+      <div className="sticky -top-6 z-20 bg-background space-y-3 pt-6 pb-3 backdrop-blur-sm">
         <SearchBar
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {
@@ -149,8 +148,7 @@ export function EventsPageContainer() {
         )}
       </div>
 
-      {/* Main Content */}
-      <main className="relative z-10 w-full px-6 pt-3 pb-6" role="main" aria-label={t("search.ariaLabel")}>
+      <main className="relative z-10 w-full" role="main" aria-label={t("search.ariaLabel")}>
         {isLoading ? (
           <LoadingPage />
         ) : error ? (
