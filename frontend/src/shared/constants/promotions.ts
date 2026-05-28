@@ -8,8 +8,6 @@ export const EVENT_PROMOTION: PromotionPackageInfo = {
   duration: 7,
 };
 
-export const PROMOTION_PACKAGES: PromotionPackageInfo[] = [EVENT_PROMOTION];
-
 export const CREDIT_PACKAGES: CreditPackageInfo[] = [
   { credits: 100, price: 5, popular: false },
   { credits: 250, price: 10, popular: true, bonus: 50 },

@@ -58,16 +58,6 @@
     "message": "An unexpected error occurred. Please try refreshing the page.",
     "refreshPage": "Refresh page"
   },
-  "easterEggs": {
-    "gooseCrossing": "🪿 Goose crossing!",
-    "partyMode": "🎉 Party mode activated!",
-    "freeFood": "🍕 Free food incoming!",
-    "uoftSpirit": "🔵 Go Varsity Blues!",
-    "mcgillPride": "🔴 Allez McGill!",
-    "ubcRain": "🌧️ Vancouver vibes! Go Thunderbirds!",
-    "mcmasterMarauder": "🟤 Go Marauders!",
-    "honk": "HONK!"
-  },
   "navigation": {
     "events": "Events",
     "explore": "Explore",
@@ -345,6 +335,7 @@
     "eventTitle": "Event Title",
     "actions": "Event actions",
     "loadFailed": "Failed to load events. Please try again.",
+    "deleteFailed": "Failed to delete event. Please try again.",
     "organization": "Organization",
     "status": "Status",
     "dayOfWeek": "Day of Week",
@@ -461,7 +452,6 @@
     "description": "Description",
     "saveChanges": "Save Changes",
     "requiredInformation": "Required Information",
-    "requiredFieldsNote": "All fields marked with * are required",
     "clubName": "Club Name",
     "clubNameRequired": "Club name is required",
     "ownerUserId": "Owner User ID",
@@ -477,7 +467,6 @@
     "instagramHandle": "Instagram Handle",
     "discordLink": "Discord Link",
     "aiEventGeneration": "AI Event Generation",
-    "eventInformation": "Event Information",
     "titleRequired": "Title is required",
     "organizationRequired": "Organization is required",
     "occurrenceRequired": "At least one date is required",
@@ -830,8 +819,17 @@
     "defaultFileName": "qr-code"
   },
   "schools": {
+    "school": "School",
+    "selectSchool": "Select school",
     "searchPlaceholder": "Search schools...",
-    "noSchoolFound": "No school found."
+    "noSchoolFound": "No school found.",
+    "list": {
+      "uwaterloo": "University of Waterloo",
+      "utoronto": "University of Toronto",
+      "mcgill": "McGill University",
+      "ubc": "University of British Columbia",
+      "mcmaster": "McMaster University"
+    }
   },
   "marketing": {
     "title": "Marketing",

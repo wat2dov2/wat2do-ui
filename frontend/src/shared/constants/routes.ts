@@ -8,6 +8,8 @@
  * constants so there is a single source of truth.
  */
 
+import { QP } from "@/shared/constants/queryParams";
+
 // ── Top-level routes ───────────────────────────────────────────────
 export const ROUTES = {
   HOME: "/",
@@ -15,7 +17,7 @@ export const ROUTES = {
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
   ONBOARDING: "/onboarding",
-  ABOUT: "/about",
+  CONTACT: "/contact",
   CLUBS: "/clubs",
   SETTINGS: "/settings",
   MARKETING: "/marketing",
@@ -44,20 +46,24 @@ export const SETTINGS_TABS = {
 
 /** Build a settings URL with a specific tab selected. */
 export function settingsTabPath(tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS]): string {
-  return `${ROUTES.SETTINGS}?tab=${tab}`;
+  return `${ROUTES.SETTINGS}?${QP.TAB}=${tab}`;
 }
 
-// ── Admin sub-route map (keyed by PageMode values used in navigation) ──
-export const ADMIN_ROUTE_MAP: Record<string, string> = {
+// ── Admin sub-route map ────────────────────────────────────────────
+export const ADMIN_ROUTE_MAP = {
   "admin-events": ROUTES.ADMIN_EVENTS,
   "admin-clubs": ROUTES.ADMIN_CLUBS,
   "admin-submissions": ROUTES.ADMIN_SUBMISSIONS,
   "admin-posters": ROUTES.ADMIN_POSTERS,
-};
+} as const;
+
+export type AdminRouteKey = keyof typeof ADMIN_ROUTE_MAP;
 
 // ── Club Panel sub-route map ───────────────────────────────────────
-export const CLUB_PANEL_ROUTE_MAP: Record<string, string> = {
+export const CLUB_PANEL_ROUTE_MAP = {
   "club-panel-posters": ROUTES.CLUB_PANEL_POSTERS,
   "club-panel-integrations": ROUTES.CLUB_PANEL_INTEGRATIONS,
   "club-panel-members": ROUTES.CLUB_PANEL_MEMBERS,
-};
+} as const;
+
+export type ClubPanelRouteKey = keyof typeof CLUB_PANEL_ROUTE_MAP;

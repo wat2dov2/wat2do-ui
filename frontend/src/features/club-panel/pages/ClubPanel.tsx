@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Building2, Megaphone, Link, Users } from "lucide-react";
 import { AdminCard } from "@/shared/ui/AdminCard";
-import { useBackendPosters } from "@/shared/hooks/useBackendPosters";
+import { useBackendPosters } from "@/features/posters";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
 interface ClubPanelProps {

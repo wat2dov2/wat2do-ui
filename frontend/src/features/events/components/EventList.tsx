@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
-import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { usePromotionsStore } from "@/features/credits";
-import { useShallow } from "zustand/react/shallow";
 import type { Event } from "@/shared/types";
 import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
 
@@ -17,9 +14,11 @@ interface EventListProps {
   onDelete?: (eventId: number) => void;
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
+  savedEventIds: number[];
+  activePromotedEventIds: number[];
 }
 
-const INITIAL_RENDER_COUNT = 8;
+const INITIAL_RENDER_COUNT = 24;
 const RENDER_CHUNK_SIZE = 24;
 const EVENT_DATE_SECTIONS: Array<{
   category: EventDateCategory;
@@ -36,12 +35,9 @@ const EVENT_DATE_SECTIONS: Array<{
 /**
  * Event list component.
  *
- * Reads saved/promoted IDs directly from their respective stores so that any
- * card — including cards rendered inside `EventDetailsModal`'s similar-events
- * grid — stays in sync without needing a context wrapper.
- * Ordering (promoted first, recommended score) happens upstream in
- * `useEventsPageData.orderedEvents`; this component preserves that order
- * inside date sections.
+ * Promoted/recommended ordering happens upstream in `useEventsPageData.orderedEvents`.
+ * This component groups by date section afterward, so date sections outrank
+ * the global promoted/recommended order.
  */
 export function EventList({
   events,
@@ -50,17 +46,12 @@ export function EventList({
   disableModal,
   onDelete,
   onClearFilters,
+  savedEventIds,
+  activePromotedEventIds,
 }: EventListProps) {
   const { t } = useTranslation();
-  const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT);
-  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
-  // Custom equality: the store re-sets this array on every reconcile, so the
-  // reference changes even when the ID set is identical. ``useShallow`` does
-  // element-wise reference equality on the array to avoid unnecessary re-renders.
-  // (Zustand v5 dropped the second-arg equalityFn — useShallow is the v5 idiom.)
-  const activePromotedEventIds = usePromotionsStore(
-    useShallow((s) => s.activePromotedEventIds),
-  );
+  const [requestedVisibleCount, setRequestedVisibleCount] = useState(INITIAL_RENDER_COUNT);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Wrap id arrays in Sets for O(1) membership lookups per card.
   const savedSet = useMemo(
@@ -71,9 +62,28 @@ export function EventList({
     () => new Set(activePromotedEventIds),
     [activePromotedEventIds],
   );
+  const visibleCount = Math.min(
+    Math.max(requestedVisibleCount, INITIAL_RENDER_COUNT),
+    events.length,
+  );
+  const sectionOrderedEvents = useMemo(() => {
+    const groups = EVENT_DATE_SECTIONS.reduce(
+      (acc, { category }) => {
+        acc[category] = [];
+        return acc;
+      },
+      {} as Record<EventDateCategory, Event[]>,
+    );
+
+    events.forEach((event) => {
+      groups[getEventDateCategory(event)].push(event);
+    });
+
+    return EVENT_DATE_SECTIONS.flatMap(({ category }) => groups[category]);
+  }, [events]);
   const visibleEvents = useMemo(
-    () => events.slice(0, Math.min(visibleCount, events.length)),
-    [events, visibleCount],
+    () => sectionOrderedEvents.slice(0, Math.min(visibleCount, sectionOrderedEvents.length)),
+    [sectionOrderedEvents, visibleCount],
   );
   const groupedVisibleEvents = useMemo(() => {
     const groups = EVENT_DATE_SECTIONS.reduce(
@@ -93,10 +103,23 @@ export function EventList({
 
   useEffect(() => {
     if (visibleCount >= events.length) return;
-    const id = window.setTimeout(() => {
-      setVisibleCount((count) => Math.min(count + RENDER_CHUNK_SIZE, events.length));
-    }, 140);
-    return () => window.clearTimeout(id);
+    const loadMoreNode = loadMoreRef.current;
+    if (!loadMoreNode) return;
+
+    const scrollRoot = document.querySelector(".main-content-grid");
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setRequestedVisibleCount((count) => Math.min(count + RENDER_CHUNK_SIZE, events.length));
+      },
+      {
+        root: scrollRoot,
+        rootMargin: "800px 0px",
+      },
+    );
+
+    observer.observe(loadMoreNode);
+    return () => observer.disconnect();
   }, [events.length, visibleCount]);
 
   // Early returns AFTER all hooks
@@ -153,18 +176,16 @@ export function EventList({
               {t(labelKey)}
             </h2>
             <div
-              className="grid justify-center gap-4"
+              className="grid gap-4"
               style={{
-                gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 260px))",
+                gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
               }}
             >
               {sectionEvents.map((event) => (
                 <div
                   key={event.id}
                   role="listitem"
-                  style={{
-                    contentVisibility: "auto",
-                  }}
+                  className="min-w-0"
                 >
                   <EventCard
                     event={event}
@@ -180,6 +201,9 @@ export function EventList({
           </section>
         );
       })}
+      {visibleCount < events.length && (
+        <div ref={loadMoreRef} aria-hidden="true" className="h-px" />
+      )}
     </div>
   );
 }

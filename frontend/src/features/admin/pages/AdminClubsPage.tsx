@@ -19,14 +19,15 @@ import { useAdminClubsPage } from "@/features/admin/hooks/useAdminClubsPage";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
-import { AdminPagination } from "@/features/admin/components/shared/AdminPagination";
+import { Pagination } from "@/shared/ui/Pagination";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
+import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
+const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
 
 interface AdminClubsPageProps {
   onBack: () => void;
@@ -65,6 +66,7 @@ export function AdminClubsPage({
   } = useAdminClubsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const visibleClubTypes = clubTypes.filter((type) => type.trim().length > 0);
 
   const handleDelete = async (clubId: number) => {
     setIsDeleting(true);
@@ -115,14 +117,19 @@ export function AdminClubsPage({
           placeholder={t("clubs.searchPlaceholder")}
         />
         <Select
-          value={selectedClubType || undefined}
-          onValueChange={(value) => setSelectedClubType(value || "")}
+          value={selectedClubType || ALL_CLUB_TYPES_VALUE}
+          onValueChange={(value) =>
+            setSelectedClubType(value === ALL_CLUB_TYPES_VALUE ? "" : value)
+          }
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder={t("admin.allTypes")} />
           </SelectTrigger>
           <SelectContent>
-            {clubTypes.map((type) => (
+            <SelectItem value={ALL_CLUB_TYPES_VALUE}>
+              {t("admin.allTypes")}
+            </SelectItem>
+            {visibleClubTypes.map((type) => (
               <SelectItem key={type} value={type}>
                 {type}
               </SelectItem>
@@ -239,7 +246,7 @@ export function AdminClubsPage({
       )}
 
       {filteredClubs.length > 0 && (
-        <AdminPagination
+        <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={filteredClubs.length}

@@ -6,9 +6,8 @@ import {
   FieldLabel,
   FieldSeparator,
 } from "@/shared/ui/field";
-import { AIGenerationInput } from "@/features/search";
+import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
-import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
 
 // Lazy load Monaco Editor
@@ -16,7 +15,6 @@ const Editor = lazy(() => import("@monaco-editor/react"));
 
 export function EventFormJSON() {
   const { t } = useTranslation();
-  const { isDarkMode } = useDarkMode();
   const {
     jsonValue,
     jsonError,
@@ -25,6 +23,7 @@ export function EventFormJSON() {
     aiGenerating,
     handleAiGenerate,
     handleJsonChange,
+    isDarkMode,
   } = useEventFormContext();
 
   return (
@@ -41,13 +40,14 @@ export function EventFormJSON() {
           placeholder={t("forms.aiPromptPlaceholder")}
           generatingText={t("common.generating")}
           className="space-y-2"
+          titleClassName="text-base"
         />
       </Field>
 
       <FieldSeparator />
 
       <Field>
-        <FieldLabel className="text-xs font-medium text-foreground">
+        <FieldLabel className="text-base font-medium text-foreground">
           {t("forms.jsonEditor")}
         </FieldLabel>
         <div className="border border-border rounded-xl overflow-hidden">

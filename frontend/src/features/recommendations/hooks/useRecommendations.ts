@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { DEFAULT_RECOMMENDATION_LIMIT } from "@/shared/constants/pagination";
+import { DEFAULT_RECOMMENDATION_LIMIT } from "@/features/recommendations/constants";
 import { getUserId } from "@/features/auth";
 import { fetchRecommendations } from "../api/recommendationApi";
 import type { RecommendationItem } from "../types";
@@ -11,19 +11,19 @@ interface CachedResult {
   timestamp: number;
 }
 
-// Cache keyed by user ID so different users (or logged-out -> logged-in
-// transitions) never see stale recommendations from another session.
+// Cache keyed by user ID and limit so different sessions or page sizes never
+// reuse the wrong recommendation slice.
 // "anonymous" key is used for logged-out popular recommendations.
-const cacheByUser = new Map<string, CachedResult>();
-const inFlightByUser = new Map<string, Promise<RecommendationItem[]>>();
+const cacheByRequest = new Map<string, CachedResult>();
+const inFlightByRequest = new Map<string, Promise<RecommendationItem[]>>();
 
-function getCacheKey(): string {
-  return getUserId() ?? "anonymous";
+function getCacheKey(limit: number): string {
+  return `${getUserId() ?? "anonymous"}:${limit}`;
 }
 
 export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
-  const cacheKey = getCacheKey();
-  const cached = cacheByUser.get(cacheKey);
+  const cacheKey = getCacheKey(limit);
+  const cached = cacheByRequest.get(cacheKey);
 
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>(
     () => cached?.data ?? [],
@@ -31,11 +31,13 @@ export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
   const [isLoading, setIsLoading] = useState(!cached);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
+  const activeRequestKeyRef = useRef(cacheKey);
 
   const load = useCallback(
     (force = false) => {
-      const key = getCacheKey();
-      const entry = cacheByUser.get(key);
+      const key = getCacheKey(limit);
+      activeRequestKeyRef.current = key;
+      const entry = cacheByRequest.get(key);
 
       if (!force && entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
         setRecommendations(entry.data);
@@ -44,31 +46,32 @@ export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
       }
 
       setIsLoading(true);
-      let request = inFlightByUser.get(key);
+      let request = inFlightByRequest.get(key);
       if (!request) {
         request = fetchRecommendations(limit);
-        inFlightByUser.set(key, request);
-        request.finally(() => {
-          if (inFlightByUser.get(key) === request) {
-            inFlightByUser.delete(key);
+        inFlightByRequest.set(key, request);
+        const cleanupRequest = () => {
+          if (inFlightByRequest.get(key) === request) {
+            inFlightByRequest.delete(key);
           }
-        });
+        };
+        request.then(cleanupRequest, cleanupRequest);
       }
 
       request
         .then((data) => {
-          if (!mountedRef.current) return;
-          cacheByUser.set(key, { data, timestamp: Date.now() });
+          if (!mountedRef.current || activeRequestKeyRef.current !== key) return;
+          cacheByRequest.set(key, { data, timestamp: Date.now() });
           setRecommendations(data);
           setError(null);
         })
         .catch((err) => {
           console.error("Failed to fetch recommendations:", err);
-          if (!mountedRef.current) return;
+          if (!mountedRef.current || activeRequestKeyRef.current !== key) return;
           setError(err instanceof Error ? err : new Error(String(err)));
         })
         .finally(() => {
-          if (mountedRef.current) setIsLoading(false);
+          if (mountedRef.current && activeRequestKeyRef.current === key) setIsLoading(false);
         });
     },
     [limit],

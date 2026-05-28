@@ -1,0 +1,86 @@
+/**
+ * Poster API — data-fetching functions for QR code posters.
+ */
+
+import type { QRCode } from "@/features/posters/types";
+import type {
+  ApiFilterStateResponse,
+  ApiQrCodeCreate,
+  ApiQrCodeResponse,
+} from "@/shared/generated";
+import { api, getPaginatedItems } from "@/shared/services/apiClient";
+import { API_BASE_URL } from "@/shared/config/api";
+import { stripTrailingSlash } from "@/shared/utils/string";
+import { generatedFilterStateToFilterState } from "@/features/search/api/filterService";
+
+/** Poster row from GET /qr/ or POST /qr/. */
+export type QrCodePosterBackend = ApiQrCodeResponse;
+
+export type CreatePosterPayload =
+  Omit<ApiQrCodeCreate, "is_active" | "latitude" | "longitude"> &
+  Partial<Pick<ApiQrCodeCreate, "is_active" | "latitude" | "longitude">>;
+
+function normalizePosterFilters(
+  destinationType: QRCode["destinationType"],
+  filters: QrCodePosterBackend["filters"],
+): QRCode["filters"] {
+  if (destinationType !== "events-list" || !filters || Array.isArray(filters)) {
+    return undefined;
+  }
+  return generatedFilterStateToFilterState(filters as Partial<ApiFilterStateResponse>);
+}
+
+/** Map backend poster to frontend QRCode. */
+export function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
+  const destinationType = b.destination_type;
+  return {
+    id: b.id,
+    name: b.name,
+    description: b.description ?? undefined,
+    destinationType,
+    destinationId: b.destination_id != null ? (Number.isNaN(Number(b.destination_id)) ? b.destination_id : Number(b.destination_id)) : undefined,
+    filters: normalizePosterFilters(destinationType, b.filters),
+    createdAt: b.created_at,
+    createdBy: b.created_by,
+    isActive: b.is_active,
+    imageUrl: b.image_url ?? undefined,
+    latitude: b.latitude,
+    longitude: b.longitude,
+  };
+}
+
+/** List all posters (auth). */
+export async function listPostersFromBackend(): Promise<QRCode[]> {
+  const list = await getPaginatedItems<QrCodePosterBackend>("/qr/");
+  return (list ?? []).map(normalizeBackendPoster);
+}
+
+/** Create poster (auth). New poster is inactive until first scan provides location. */
+export async function createPosterToBackend(payload: CreatePosterPayload): Promise<QRCode> {
+  const body: ApiQrCodeCreate = {
+    ...payload,
+    description: payload.description ?? null,
+    destination_id: payload.destination_id ?? null,
+    filters: payload.filters ?? null,
+    is_active: payload.is_active ?? true,
+    image_url: payload.image_url ?? null,
+    latitude: payload.latitude ?? 0,
+    longitude: payload.longitude ?? 0,
+  };
+  const poster = await api.post<QrCodePosterBackend>("/qr/", body);
+  return normalizeBackendPoster(poster);
+}
+
+/**
+ * Resolve a poster image URL to an absolute URL.
+ * If the imageUrl is already absolute (http/https) or a data URI, returns it as-is.
+ * Otherwise, prepends API_BASE_URL, normalizing slashes.
+ */
+export function getQRImageUrl(imageUrl: string): string {
+  if (imageUrl.startsWith("http") || imageUrl.startsWith("data:")) {
+    return imageUrl;
+  }
+  const base = stripTrailingSlash(API_BASE_URL);
+  const path = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  return `${base}${path}`;
+}

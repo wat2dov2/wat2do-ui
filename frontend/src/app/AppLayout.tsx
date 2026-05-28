@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 import {
   Search,
   Shield,
-  Target,
   Mail,
   Settings,
   Compass,
@@ -56,14 +55,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       isActive: isActive(ROUTES.CLUBS),
     },
     {
-      title: t("navigation.mission"),
-      icon: <Target className="size-4" />,
-      href: ROUTES.ABOUT,
-      isActive: isActive(ROUTES.ABOUT),
-    },
-    {
       title: t("navigation.contact"),
       icon: <Mail className="size-4" />,
+      href: ROUTES.CONTACT,
+      isActive: isActive(ROUTES.CONTACT),
     },
     {
       title: t("navigation.settings"),

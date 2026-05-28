@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from services.recommender.evaluation import evaluate_all_users
+from recommender.evaluation import evaluate_all_users
 
 
 def main():

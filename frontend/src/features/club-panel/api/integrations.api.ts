@@ -3,8 +3,8 @@ import type {
   ApiClubIntegrationResponse,
   ApiDiscordChannelOption,
   ApiDiscordServerOption,
-  ApiDiscordIntegrationOptionsResponse,
 } from "@/shared/generated";
+import type { components } from "@/shared/generated/api-types";
 
 export type IntegrationPlatform = ApiClubIntegrationResponse["platform"];
 
@@ -12,7 +12,7 @@ export type IntegrationChannelOption = ApiDiscordChannelOption;
 
 export type IntegrationServerOption = ApiDiscordServerOption;
 
-export type IntegrationOptionsResponse = ApiDiscordIntegrationOptionsResponse;
+export type IntegrationOptionsResponse = components["schemas"]["PlatformIntegrationOptionsResponse"];
 
 export type PlatformIntegrationResponse = ApiClubIntegrationResponse;
 

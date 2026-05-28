@@ -31,7 +31,7 @@ from pathlib import Path
 
 # Add backend root to path so service imports resolve when invoked as a
 # script from inside backend/. Mirrors the pattern in
-# jobs/compute_recommendations.py and jobs/send_notifications.py.
+# recommender/job.py and jobs/send_notifications.py.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv  # noqa: E402
@@ -44,7 +44,7 @@ from core.constants import (  # noqa: E402
     SCRAPING_HANDLES_PER_RUN,
     SCRAPING_SINGLE_USER_CUTOFF_DAYS,
 )
-from services.wat2do.pipeline import run_pipeline  # noqa: E402
+from services.scraper.pipeline import run_pipeline  # noqa: E402
 
 log = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ import { ROUTES } from "@/shared/constants/routes";
 import type { Club } from "@/shared/types";
 import { ApiError } from "@/shared/services/apiClient";
 import { getMyClubs } from "@/features/clubs";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { useAuthState } from "@/features/auth";
 import {
   getIntegrationOptions,
   getPlatformIntegration,

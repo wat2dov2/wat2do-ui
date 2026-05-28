@@ -18,31 +18,6 @@ const sameDay = (firstDate: Date, secondDate: Date): boolean =>
   firstDate.toDateString() === secondDate.toDateString();
 
 /**
- * Format event date string (e.g., "Tue, Jan 5")
- */
-export function formatEventDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-/**
- * Format time string (12-hour format)
- */
-export function formatTime(timeStr: string): string {
-  if (!timeStr) return "";
-  const [hours, minutes] = timeStr.split(":");
-  const h = parseInt(hours);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${minutes} ${ampm}`;
-}
-
-/**
  * Format event date for card display (e.g., "Tuesday Jan 27")
  * Uses i18n locale for proper localization
  */

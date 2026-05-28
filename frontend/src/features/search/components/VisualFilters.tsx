@@ -222,7 +222,11 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             <span>
               {filters.selectedDays.length > 0
                 ? filters.selectedDays
-                    .map((day) => t(`days.${day.toLowerCase()}`) || day)
+                    .map((day) => {
+                      const key = `days.${day.toLowerCase()}`;
+                      const translated = t(key);
+                      return translated !== key ? translated : day;
+                    })
                     .join(", ")
                 : t("forms.selectDays")}
             </span>

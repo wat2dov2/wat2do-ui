@@ -12,7 +12,7 @@ function toGoogleCalendarDate(isoString: string): string {
   return isoString.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
-export function generateICS(event: Event): string {
+function generateICS(event: Event): string {
   const now = toICSDate(new Date().toISOString());
   const lines = [
     "BEGIN:VCALENDAR",
@@ -46,7 +46,7 @@ export function downloadICS(event: Event): void {
   URL.revokeObjectURL(url);
 }
 
-export function buildGoogleCalendarUrl(event: Event): string {
+function buildGoogleCalendarUrl(event: Event): string {
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: event.title,

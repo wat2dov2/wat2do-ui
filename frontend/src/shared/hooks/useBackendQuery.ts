@@ -27,7 +27,7 @@ const inFlightQueries = new Map<() => Promise<unknown>, Promise<unknown>>();
 export function useBackendQuery<T>(
   fetchFn: () => Promise<T>,
   initialValue: T,
-  refreshKey?: number,
+  refreshKey?: unknown,
 ): QueryState<T> {
   const [state, dispatch] = useReducer(queryReducer<T>, {
     data: initialValue,

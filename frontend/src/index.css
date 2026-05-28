@@ -163,7 +163,15 @@
     background-position: 0% 50%;
     transform: rotate(-5deg) scale(0.9);
     }
-  }}
+  }
+  --animate-shine: shine var(--duration) infinite linear;
+  @keyframes shine {
+  0% {
+    background-position: 0% 0%;}
+  50% {
+    background-position: 100% 100%;}
+  to {
+    background-position: 0% 0%;}}}
 
 /* View Transitions for animated theme toggle */
 ::view-transition-old(root),
@@ -238,7 +246,7 @@
     -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   .no-visible-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -278,6 +286,10 @@
     filter: blur(16px);
     opacity: 0.48;
     transform: rotate(var(--waterpaint-light-rotate, 5deg));
+  }
+
+  .dark .event-card-waterpaint::after {
+    opacity: 0.15;
   }
 
   .event-card-waterpaint > * {

@@ -1,70 +1,18 @@
 /**
  * Admin Events Page Hook
- * Manages state and logic for AdminEventsPage
- * Uses useReducer for complex state management
+ * Manages state and logic for AdminEventsPage.
  */
 
-import { useReducer, useMemo, useEffect, useRef, startTransition } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   filterAdminEvents,
   getEventCategories,
-} from "@/features/admin/api/admin.api";
+} from "@/features/admin/utils/eventFilters";
 import { useAdminStore } from "@/features/admin/store/admin.store";
 import type { Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
-
-interface AdminEventsPageState {
-  searchQuery: string;
-  selectedCategory: string;
-  showReportedOnly: boolean;
-  deleteConfirmId: number | null;
-  highlightedEventId: number | null;
-  currentPage: number;
-}
-
-type AdminEventsPageAction =
-  | { type: "SET_SEARCH_QUERY"; payload: string }
-  | { type: "SET_SELECTED_CATEGORY"; payload: string }
-  | { type: "TOGGLE_REPORTED_ONLY" }
-  | { type: "SET_DELETE_CONFIRM_ID"; payload: number | null }
-  | { type: "SET_HIGHLIGHTED_EVENT_ID"; payload: number | null }
-  | { type: "SET_CURRENT_PAGE"; payload: number }
-  | { type: "RESET_PAGE" };
-
-const initialState: AdminEventsPageState = {
-  searchQuery: "",
-  selectedCategory: "",
-  showReportedOnly: false,
-  deleteConfirmId: null,
-  highlightedEventId: null,
-  currentPage: 1,
-};
-
-function reducer(
-  state: AdminEventsPageState,
-  action: AdminEventsPageAction
-): AdminEventsPageState {
-  switch (action.type) {
-    case "SET_SEARCH_QUERY":
-      return { ...state, searchQuery: action.payload };
-    case "SET_SELECTED_CATEGORY":
-      return { ...state, selectedCategory: action.payload };
-    case "TOGGLE_REPORTED_ONLY":
-      return { ...state, showReportedOnly: !state.showReportedOnly };
-    case "SET_DELETE_CONFIRM_ID":
-      return { ...state, deleteConfirmId: action.payload };
-    case "SET_HIGHLIGHTED_EVENT_ID":
-      return { ...state, highlightedEventId: action.payload };
-    case "SET_CURRENT_PAGE":
-      return { ...state, currentPage: action.payload };
-    case "RESET_PAGE":
-      return { ...state, currentPage: 1 };
-    default:
-      return state;
-  }
-}
 
 interface UseAdminEventsPageOptions {
   events: Event[];
@@ -75,15 +23,15 @@ export function useAdminEventsPage({
   events,
   itemsPerPage = 20,
 }: UseAdminEventsPageOptions) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [searchQuery, setSearchQueryState] = useState("");
+  const [selectedCategory, setSelectedCategoryState] = useState("");
+  const [showReportedOnly, setShowReportedOnly] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
   const reportedEventIds = useAdminStore((s) => s.reportedEventIds);
   const fetchReportedEventIds = useAdminStore((s) => s.fetchReportedEventIds);
-  const prevFiltersRef = useRef({
-    searchQuery: state.searchQuery,
-    selectedCategory: state.selectedCategory,
-    showReportedOnly: state.showReportedOnly,
-  });
 
   // Defer to the admin store (TTL-cached) for reported event IDs.
   useEffect(() => {
@@ -112,7 +60,7 @@ export function useAdminEventsPage({
 
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const rafId = requestAnimationFrame(() => {
-      dispatch({ type: "SET_HIGHLIGHTED_EVENT_ID", payload: eventId });
+      setHighlightedEventId(eventId);
       timeoutId = setTimeout(() => {
         const element = document.getElementById(`event-${eventId}`);
         if (element) {
@@ -134,38 +82,20 @@ export function useAdminEventsPage({
   // Filter events
   const filteredEvents = useMemo(() => {
     return filterAdminEvents(events, {
-      searchQuery: state.searchQuery,
-      selectedCategory: state.selectedCategory,
-      showReportedOnly: state.showReportedOnly,
+      searchQuery,
+      selectedCategory,
+      showReportedOnly,
       reportedEventIds,
     });
-  }, [events, state.searchQuery, state.selectedCategory, state.showReportedOnly, reportedEventIds]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    if (
-      prevFiltersRef.current.searchQuery !== state.searchQuery ||
-      prevFiltersRef.current.selectedCategory !== state.selectedCategory ||
-      prevFiltersRef.current.showReportedOnly !== state.showReportedOnly
-    ) {
-      prevFiltersRef.current = {
-        searchQuery: state.searchQuery,
-        selectedCategory: state.selectedCategory,
-        showReportedOnly: state.showReportedOnly,
-      };
-      startTransition(() => {
-        dispatch({ type: "RESET_PAGE" });
-      });
-    }
-  }, [state.searchQuery, state.selectedCategory, state.showReportedOnly]);
+  }, [events, searchQuery, selectedCategory, showReportedOnly, reportedEventIds]);
 
   // Pagination
   const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
   const paginatedEvents = useMemo(() => {
-    const startIndex = (state.currentPage - 1) * itemsPerPage;
+    const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredEvents.slice(startIndex, endIndex);
-  }, [filteredEvents, state.currentPage, itemsPerPage]);
+  }, [filteredEvents, currentPage, itemsPerPage]);
 
   const isEventReported = (eventId: number) => {
     return reportedEventIds.has(eventId);
@@ -173,7 +103,12 @@ export function useAdminEventsPage({
 
   return {
     // State
-    ...state,
+    searchQuery,
+    selectedCategory,
+    showReportedOnly,
+    deleteConfirmId,
+    highlightedEventId,
+    currentPage,
     selectedEvent,
     categories,
     filteredEvents,
@@ -182,15 +117,20 @@ export function useAdminEventsPage({
     searchParams,
     setSearchParams,
     // Actions
-    setSearchQuery: (query: string) =>
-      dispatch({ type: "SET_SEARCH_QUERY", payload: query }),
-    setSelectedCategory: (category: string) =>
-      dispatch({ type: "SET_SELECTED_CATEGORY", payload: category }),
-    toggleReportedOnly: () => dispatch({ type: "TOGGLE_REPORTED_ONLY" }),
-    setDeleteConfirmId: (id: number | null) =>
-      dispatch({ type: "SET_DELETE_CONFIRM_ID", payload: id }),
-    setCurrentPage: (page: number) =>
-      dispatch({ type: "SET_CURRENT_PAGE", payload: page }),
+    setSearchQuery: (query: string) => {
+      setSearchQueryState(query);
+      setCurrentPage(1);
+    },
+    setSelectedCategory: (category: string) => {
+      setSelectedCategoryState(category);
+      setCurrentPage(1);
+    },
+    toggleReportedOnly: () => {
+      setShowReportedOnly((value) => !value);
+      setCurrentPage(1);
+    },
+    setDeleteConfirmId,
+    setCurrentPage,
     isEventReported,
   };
 }

@@ -1,9 +1,14 @@
 import { lazy } from "react";
-import { PostersPageContent } from "@/shared/components/PostersPageContent";
-import { QRCodeDetailsModal, GenerateQRAssetsWizard } from "@/features/qrcode";
+import {
+  PostersPageContent,
+  QRCodeDetailsModal,
+  GenerateQRAssetsWizard,
+} from "@/features/posters";
 import type { Event } from "@/shared/types";
 
-const QRScanMap = lazy(() => import("@/features/qrcode/components/QRScanMap").then(module => ({ default: module.QRScanMap })));
+const QRScanMap = lazy(() =>
+  import("@/features/posters").then((module) => ({ default: module.QRScanMap })),
+);
 
 interface ClubPanelPostersPageProps {
   events: Event[];

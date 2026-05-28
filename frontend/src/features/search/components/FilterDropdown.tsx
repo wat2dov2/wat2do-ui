@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { AIGenerationInput } from "@/features/search/components/AIGenerationInput";
+import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { VisualFilters } from "@/features/search/components/VisualFilters";
 import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
 import type { FilterViewMode } from "@/shared/types";

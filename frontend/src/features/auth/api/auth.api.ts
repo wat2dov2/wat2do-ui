@@ -221,7 +221,6 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       clubs: clubs.map((club) => ({
         id: club.id,
         club_name: club.club_name,
-        school: club.school ?? null,
       })),
       clubId: associatedClub?.id ?? null,
       clubName: associatedClub?.club_name ?? null,

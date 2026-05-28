@@ -1,14 +1,14 @@
 import { api } from "@/shared/services/apiClient";
 import type { ApiFilterStateResponse, ApiEventFormDataResponse } from "@/shared/generated";
 
-export type FilterState = ApiFilterStateResponse;
+export type GeneratedFilterStateResponse = ApiFilterStateResponse;
 export type EventFormData = ApiEventFormDataResponse;
 
 export async function generateFiltersWithAI(
   prompt: string,
   onChunk: (partialJson: string) => void
-): Promise<FilterState> {
-  const result = await api.post<FilterState>("/ai/generate-filters", { prompt });
+): Promise<GeneratedFilterStateResponse> {
+  const result = await api.post<GeneratedFilterStateResponse>("/ai/generate-filters", { prompt });
   onChunk(JSON.stringify(result, null, 2));
   return result;
 }

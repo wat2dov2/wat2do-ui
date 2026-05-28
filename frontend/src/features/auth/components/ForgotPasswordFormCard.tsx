@@ -36,27 +36,23 @@ export function ForgotPasswordFormCard() {
     navigate(ROUTES.LOGIN);
   }, [navigate]);
 
-  if (sent) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
-          <p className="text-sm text-emerald-700 dark:text-emerald-300 text-center">
-            {t("auth.forgotPasswordSent")}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleBackToLogin}
-          className="w-full text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-        >
-          {t("auth.backToLogin")}
-        </button>
+  const content = sent ? (
+    <>
+      <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
+        <p className="text-sm text-emerald-700 dark:text-emerald-300 text-center">
+          {t("auth.forgotPasswordSent")}
+        </p>
       </div>
-    );
-  }
-
-  return (
-    <div className="w-full space-y-4">
+      <button
+        type="button"
+        onClick={handleBackToLogin}
+        className="w-full text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+      >
+        {t("auth.backToLogin")}
+      </button>
+    </>
+  ) : (
+    <>
       <Input
         type="email"
         value={email}
@@ -92,6 +88,12 @@ export function ForgotPasswordFormCard() {
           {t("auth.backToLogin")}
         </button>
       </p>
+    </>
+  );
+
+  return (
+    <div className="w-full space-y-4">
+      {content}
     </div>
   );
 }

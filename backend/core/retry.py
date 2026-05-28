@@ -38,5 +38,7 @@ RETRY_STOP = stop_after_attempt(3)
 RETRY_WAIT = wait_exponential_jitter(initial=0.5, max=4, jitter=1.0)
 
 #: Retry decorator for **idempotent** Supabase / PostgREST calls (see module
-#: docstring for the idempotency contract).
-supabase_retry = retry(stop=RETRY_STOP, wait=RETRY_WAIT)
+#: docstring for the idempotency contract). ``reraise=True`` preserves the
+#: original Supabase/httpx exception after retries are exhausted instead of
+#: wrapping it in Tenacity's ``RetryError``.
+supabase_retry = retry(stop=RETRY_STOP, wait=RETRY_WAIT, reraise=True)

@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useState } from "react";
 
 interface PurchaseState {
   selectedPackage: number | null;
@@ -7,13 +7,6 @@ interface PurchaseState {
   purchasedCredits: number;
 }
 
-type PurchaseAction =
-  | { type: "SET_SELECTED_PACKAGE"; payload: number | null }
-  | { type: "SET_PURCHASING"; payload: boolean }
-  | { type: "SET_PURCHASE_COMPLETE"; payload: boolean }
-  | { type: "SET_PURCHASED_CREDITS"; payload: number }
-  | { type: "RESET" };
-
 const initialState: PurchaseState = {
   selectedPackage: null,
   isPurchasing: false,
@@ -21,36 +14,19 @@ const initialState: PurchaseState = {
   purchasedCredits: 0,
 };
 
-function purchaseReducer(state: PurchaseState, action: PurchaseAction): PurchaseState {
-  switch (action.type) {
-    case "SET_SELECTED_PACKAGE":
-      return { ...state, selectedPackage: action.payload };
-    case "SET_PURCHASING":
-      return { ...state, isPurchasing: action.payload };
-    case "SET_PURCHASE_COMPLETE":
-      return { ...state, purchaseComplete: action.payload };
-    case "SET_PURCHASED_CREDITS":
-      return { ...state, purchasedCredits: action.payload };
-    case "RESET":
-      return initialState;
-    default:
-      return state;
-  }
-}
-
 export function useBuyCreditsForm() {
-  const [state, dispatch] = useReducer(purchaseReducer, initialState);
+  const [state, setState] = useState<PurchaseState>(initialState);
 
   return {
     ...state,
     setSelectedPackage: (pkg: number | null) =>
-      dispatch({ type: "SET_SELECTED_PACKAGE", payload: pkg }),
+      setState((prev) => ({ ...prev, selectedPackage: pkg })),
     setPurchasing: (purchasing: boolean) =>
-      dispatch({ type: "SET_PURCHASING", payload: purchasing }),
+      setState((prev) => ({ ...prev, isPurchasing: purchasing })),
     setPurchaseComplete: (complete: boolean) =>
-      dispatch({ type: "SET_PURCHASE_COMPLETE", payload: complete }),
+      setState((prev) => ({ ...prev, purchaseComplete: complete })),
     setPurchasedCredits: (credits: number) =>
-      dispatch({ type: "SET_PURCHASED_CREDITS", payload: credits }),
-    reset: () => dispatch({ type: "RESET" }),
+      setState((prev) => ({ ...prev, purchasedCredits: credits })),
+    reset: () => setState(initialState),
   };
 }

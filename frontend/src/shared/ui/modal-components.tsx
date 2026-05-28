@@ -400,27 +400,6 @@ export function FoodTag({
 }
 
 /**
- * QR Code Container - Standardized QR code display container
- */
-export function QRCodeContainer({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "p-4 bg-background rounded-lg border border-border",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-/**
  * Modal Stats Grid - Standardized stats grid layout
  */
 export function ModalStatsGrid({

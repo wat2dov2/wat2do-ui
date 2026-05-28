@@ -3,34 +3,57 @@
  * Manages notification preferences state and operations
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  loadNotificationPreferences,
-  saveNotificationPreferences,
+  fetchNotificationPreferences,
+  getDefaultNotificationPreferences,
+  saveNotificationPreference,
   type NotificationPreferences,
-} from "@/features/settings/api/settings.api";
+} from "@/features/settings/api/notificationPreferences.api";
 
 export function useNotifications() {
   const [preferences, setPreferences] = useState<NotificationPreferences>(() => {
-    return loadNotificationPreferences();
+    return getDefaultNotificationPreferences();
   });
-  const isInitialMount = useRef(true);
+  const preferencesRef = useRef(preferences);
 
-  // Persist notification preferences (skip initial mount)
+  const applyPreferences = useCallback((next: NotificationPreferences) => {
+    preferencesRef.current = next;
+    setPreferences(next);
+  }, []);
+
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    saveNotificationPreferences(preferences);
-  }, [preferences]);
+    let isMounted = true;
 
-  const updatePreference = (
-    key: keyof NotificationPreferences,
-    value: boolean
-  ) => {
-    setPreferences((prev) => ({ ...prev, [key]: value }));
-  };
+    fetchNotificationPreferences()
+      .then((next) => {
+        if (isMounted) {
+          applyPreferences(next);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load notification preferences:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [applyPreferences]);
+
+  const updatePreference = useCallback(
+    (key: keyof NotificationPreferences, value: boolean) => {
+      const previousValue = preferencesRef.current[key];
+      applyPreferences({ ...preferencesRef.current, [key]: value });
+
+      saveNotificationPreference(key, value).catch((err) => {
+        console.error("Failed to save notification preference:", err);
+        if (preferencesRef.current[key] === value) {
+          applyPreferences({ ...preferencesRef.current, [key]: previousValue });
+        }
+      });
+    },
+    [applyPreferences]
+  );
 
   return {
     preferences,

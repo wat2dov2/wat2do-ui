@@ -1,6 +1,10 @@
 import { cn } from "@/shared/lib/utils";
 
-export function LightRays({ className }: { className?: string }) {
+interface LightRaysProps {
+  className?: string;
+}
+
+export function LightRays({ className }: LightRaysProps) {
   return (
     <div
       className={cn(
@@ -13,4 +17,3 @@ export function LightRays({ className }: { className?: string }) {
     />
   );
 }
-

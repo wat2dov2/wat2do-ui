@@ -18,5 +18,3 @@ export interface CreditPackageInfo {
   popular: boolean;
   bonus?: number;
 }
-
-export { CREDIT_PACKAGES, EVENT_PROMOTION, PROMOTION_PACKAGES } from "@/shared/constants/promotions";

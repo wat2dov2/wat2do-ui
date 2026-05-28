@@ -2,8 +2,8 @@ import { useMemo, useEffect, useState } from "react";
 import { useAdminStore } from "@/features/admin/store/admin.store";
 import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import { getSessionEmail } from "@/features/auth";
-import { useBackendPosters } from "@/shared/hooks/useBackendPosters";
-import type { EventSubmission, QRCode } from "@/shared/types";
+import { useBackendPosters, type QRCode } from "@/features/posters";
+import type { EventSubmission } from "@/shared/types";
 
 type ActivityType = "submission" | "poster";
 

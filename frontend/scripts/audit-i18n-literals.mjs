@@ -50,35 +50,39 @@ function addFinding(sourceFile, node, kind, value) {
 
 function scanFile(filePath) {
   const source = fs.readFileSync(filePath, "utf8");
+  const isTs = filePath.endsWith(".ts") && !filePath.endsWith(".d.ts");
+  const scriptKind = isTs ? ts.ScriptKind.TS : ts.ScriptKind.TSX;
   const sourceFile = ts.createSourceFile(
     filePath,
     source,
     ts.ScriptTarget.Latest,
     true,
-    ts.ScriptKind.TSX
+    scriptKind
   );
 
   function visit(node) {
-    if (ts.isJsxText(node)) {
-      const text = normalizeJsxText(node.getFullText());
-      if (hasLetters(text) && !ALLOWED_JSX_TEXT.has(text)) {
-        addFinding(sourceFile, node, "JSX text", text);
+    if (!isTs) {
+      if (ts.isJsxText(node)) {
+        const text = normalizeJsxText(node.getFullText());
+        if (hasLetters(text) && !ALLOWED_JSX_TEXT.has(text)) {
+          addFinding(sourceFile, node, "JSX text", text);
+        }
       }
-    }
 
-    if (ts.isJsxAttribute(node) && USER_FACING_ATTRS.has(node.name.getText())) {
-      const initializer = node.initializer;
-      if (initializer && ts.isStringLiteral(initializer) && hasLetters(initializer.text)) {
-        addFinding(sourceFile, node, `attribute ${node.name.getText()}`, initializer.text);
-      }
-      if (initializer && ts.isJsxExpression(initializer)) {
-        const expression = initializer.expression;
-        if (
-          expression &&
-          (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) &&
-          hasLetters(expression.text)
-        ) {
-          addFinding(sourceFile, node, `attribute ${node.name.getText()}`, expression.text);
+      if (ts.isJsxAttribute(node) && USER_FACING_ATTRS.has(node.name.getText())) {
+        const initializer = node.initializer;
+        if (initializer && ts.isStringLiteral(initializer) && hasLetters(initializer.text)) {
+          addFinding(sourceFile, node, `attribute ${node.name.getText()}`, initializer.text);
+        }
+        if (initializer && ts.isJsxExpression(initializer)) {
+          const expression = initializer.expression;
+          if (
+            expression &&
+            (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) &&
+            hasLetters(expression.text)
+          ) {
+            addFinding(sourceFile, node, `attribute ${node.name.getText()}`, expression.text);
+          }
         }
       }
     }
@@ -113,7 +117,10 @@ function walk(dir) {
       walk(fullPath);
       continue;
     }
-    if (entry.isFile() && entry.name.endsWith(".tsx")) {
+    if (
+      entry.isFile() &&
+      (entry.name.endsWith(".tsx") || (entry.name.endsWith(".ts") && !entry.name.endsWith(".d.ts")))
+    ) {
       scanFile(fullPath);
     }
   }

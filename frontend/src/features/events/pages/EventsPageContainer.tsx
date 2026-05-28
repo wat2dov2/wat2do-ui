@@ -7,7 +7,6 @@ import { LoadingPage } from "@/shared/ui/loading-page";
 import { LightRays } from "@/registry/magicui/light-rays";
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
-import { useEasterEggs } from "@/shared/components/useEasterEggs";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode } from "@/shared/hooks";
@@ -26,7 +25,6 @@ export function EventsPageContainer() {
   const { isDarkMode } = useDarkMode();
   const profileCompleted = useProfileCompleted();
   const { t } = useTranslation();
-  const { checkSearchQuery } = useEasterEggs();
 
   const {
     isLoading,
@@ -85,7 +83,7 @@ export function EventsPageContainer() {
         <LightRays
           data-page-light-rays
           length="110dvh"
-          color={isDarkMode ? "rgba(255, 255, 255, 0.18)" : "rgba(30, 30, 30, 0.12)"}
+          color={isDarkMode ? "rgba(255, 255, 255, 0.10)" : "rgba(30, 30, 30, 0.16)"}
           blendMode={isDarkMode ? "screen" : "multiply"}
         />
       </div>
@@ -95,7 +93,6 @@ export function EventsPageContainer() {
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {
             filters.setSearchQuery(query);
-            checkSearchQuery(query);
           }}
           onSearchClear={() => filters.setSearchQuery("")}
           viewMode={viewMode}

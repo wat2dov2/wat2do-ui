@@ -27,9 +27,7 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { useEventsStore } from "@/features/events/store/events.store";
-import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
-import { getUserId } from "@/features/auth";
+import { getUserId, useProfileCompleted, useIsAdmin } from "@/features/auth";
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
 import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
@@ -71,13 +69,14 @@ interface EventCardProps {
   onDelete?: (eventId: number) => void;
 }
 
+type EventCardDialog = "delete" | "share" | "report";
+
 /**
  * Data flow:
  * 1. Explicit props (onEventClick, disableModal, onDelete) come from the
  *    page-level container (EventsPageContainer) via EventList.
  * 2. Stores supply global data:
  *    - `useSavedEventsStore` for the save/unsave action.
- *    - `useEventsStore` for `allEvents` (similar-events grid in modal).
  * 3. Narrow auth-slice hooks supply `isAdmin`, `profileCompleted`, and
  *    `getUserId()` the current user identity.
  */
@@ -91,9 +90,7 @@ export function EventCard({
 }: EventCardProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<EventCardDialog | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { t, i18n } = useTranslation();
 
@@ -103,8 +100,6 @@ export function EventCard({
 
   // Mutations go through stores directly.
   const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
-  // All events feed the similar-events grid in EventDetailsModal.
-  const allEvents = useEventsStore((s) => s.events);
 
   // Show delete only if the user is an admin or the event owner.
   const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
@@ -153,7 +148,7 @@ export function EventCard({
             handleCardActivate();
           }
         }}
-        className={`rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
+        className={`rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card [&:hover:not(:has(.event-card-actions-trigger:hover))]:shadow-lg [&:hover:not(:has(.event-card-actions-trigger:hover))]:opacity-80 ${
           isPromoted
             ? "ring-2 ring-amber-400 shadow-amber-100 dark:shadow-amber-900/20 shadow-md"
             : ""
@@ -213,7 +208,7 @@ export function EventCard({
                 <button
                   type="button"
                   aria-label={t("events.actions")}
-                  className="font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center hover:bg-secondary transition-colors"
+                  className="event-card-actions-trigger font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center opacity-70 transition-[background-color,opacity] hover:bg-secondary hover:opacity-100 data-[state=open]:opacity-100"
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
@@ -230,7 +225,7 @@ export function EventCard({
                   onSelect={(e) => {
                     e.preventDefault();
                     setIsMenuOpen(false);
-                    setShowShareDialog(true);
+                    setActiveDialog("share");
                   }}
                 >
                   <Share2 />
@@ -269,7 +264,7 @@ export function EventCard({
                   onSelect={(e) => {
                     e.preventDefault();
                     setIsMenuOpen(false);
-                    setShowReportDialog(true);
+                    setActiveDialog("report");
                   }}
                 >
                   <Flag />
@@ -283,7 +278,7 @@ export function EventCard({
                       onSelect={(e) => {
                         e.preventDefault();
                         setIsMenuOpen(false);
-                        setShowDeleteConfirm(true);
+                        setActiveDialog("delete");
                       }}
                     >
                       <Trash2 />
@@ -352,39 +347,38 @@ export function EventCard({
               newParams.delete(QP.EVENT_ID);
               navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
             }}
-            allEvents={allEvents}
           />
         </Suspense>
       )}
 
-      {showDeleteConfirm && (
+      {activeDialog === "delete" && (
         <Suspense fallback={null}>
           <DeleteEventDialog
-            open={showDeleteConfirm}
-            onOpenChange={setShowDeleteConfirm}
+            open
+            onOpenChange={(open) => setActiveDialog(open ? "delete" : null)}
             eventTitle={event.title}
             onConfirm={() => onDelete?.(event.id)}
           />
         </Suspense>
       )}
 
-      {showShareDialog && (
+      {activeDialog === "share" && (
         <Suspense fallback={null}>
           <EventShareDialog
             event={event}
-            open={showShareDialog}
-            onOpenChange={setShowShareDialog}
+            open
+            onOpenChange={(open) => setActiveDialog(open ? "share" : null)}
           />
         </Suspense>
       )}
 
-      {showReportDialog && (
+      {activeDialog === "report" && (
         <Suspense fallback={null}>
           <EventReportDialog
             eventId={event.id}
             eventTitle={event.title}
-            open={showReportDialog}
-            onOpenChange={setShowReportDialog}
+            open
+            onOpenChange={(open) => setActiveDialog(open ? "report" : null)}
           />
         </Suspense>
       )}

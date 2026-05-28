@@ -3,8 +3,8 @@ import { Navigate } from "react-router-dom";
 import {
   fetchProfileAPI,
   getLastProfileFetchAt,
+  useAuthState,
 } from "@/features/auth";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { ROLE_ADMIN, ROLE_CLUB, type Role } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";

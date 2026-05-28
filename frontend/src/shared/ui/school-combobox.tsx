@@ -9,6 +9,7 @@ import {
 } from "@/shared/ui/popover";
 import { Highlighter } from "@/shared/ui/highlighter";
 import { availableSchools, DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { translateSchool } from "@/shared/utils/schoolTranslation";
 
 interface SchoolComboboxProps {
   value: string;
@@ -21,7 +22,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
   const [search, setSearch] = useState("");
 
   const filteredSchools = availableSchools.filter((school) =>
-    school.toLowerCase().includes(search.toLowerCase())
+    translateSchool(school, t).toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -32,7 +33,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
           aria-expanded={open}
         >
           <Highlighter action="highlight" color="var(--primary)">
-            {value ? value : DEFAULT_SCHOOL}
+            {value ? translateSchool(value, t) : translateSchool(DEFAULT_SCHOOL, t)}
           </Highlighter>
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
@@ -81,7 +82,7 @@ export function SchoolCombobox({ value, onChange }: SchoolComboboxProps) {
                     value === school ? "opacity-100" : "opacity-0"
                   )}
                 />
-                <span className="truncate">{school}</span>
+                <span className="truncate">{translateSchool(school, t)}</span>
               </button>
             ))
           )}

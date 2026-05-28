@@ -158,18 +158,18 @@ export function ClubPanelIntegrationsPage() {
 
       {/* Slack Connection Modal (has secondary selection, so wired individually) */}
       <SlackIntegrationModal
-        open={integrations.slack.modalOpen}
-        onOpenChange={integrations.slack.setModalOpen}
-        step={integrations.slack.step}
-        authorized={integrations.slack.authorized}
-        selectedPrimaryId={integrations.slack.selectedPrimaryId}
-        selectedSecondaryId={integrations.slack.selectedSecondaryId}
-        servers={integrations.slack.servers}
-        secondaryOptions={integrations.slack.secondaryOptions}
-        onAuthorize={integrations.slack.handleAuthorize}
-        onSelectPrimary={integrations.slack.setSelectedPrimaryId}
-        onSelectSecondary={integrations.slack.setSelectedSecondaryId}
-        onActivate={integrations.slack.handleActivate}
+        open={integrations.platformConnects.slack.modalOpen}
+        onOpenChange={integrations.platformConnects.slack.setModalOpen}
+        step={integrations.platformConnects.slack.step}
+        authorized={integrations.platformConnects.slack.authorized}
+        selectedPrimaryId={integrations.platformConnects.slack.selectedPrimaryId}
+        selectedSecondaryId={integrations.platformConnects.slack.selectedSecondaryId}
+        servers={integrations.platformConnects.slack.servers}
+        secondaryOptions={integrations.platformConnects.slack.secondaryOptions}
+        onAuthorize={integrations.platformConnects.slack.handleAuthorize}
+        onSelectPrimary={integrations.platformConnects.slack.setSelectedPrimaryId}
+        onSelectSecondary={integrations.platformConnects.slack.setSelectedSecondaryId}
+        onActivate={integrations.platformConnects.slack.handleActivate}
       />
 
       {/* Telegram / LinkedIn / Facebook — share the same modal prop shape */}

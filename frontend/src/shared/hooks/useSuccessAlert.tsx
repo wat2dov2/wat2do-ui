@@ -19,27 +19,21 @@ export function useSuccessAlert(
   options?: UseSuccessAlertOptions
 ): UseSuccessAlertReturn {
   const { onClose: onCloseCallback } = options || {};
-  const [isOpen, setIsOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
+  const [alert, setAlert] = useState<{ title: string; message: string } | null>(null);
 
   const show = useCallback((alertTitle: string, alertMessage: string) => {
-    setTitle(alertTitle);
-    setMessage(alertMessage);
-    setIsOpen(true);
+    setAlert({ title: alertTitle, message: alertMessage });
   }, []);
 
   const hide = useCallback(() => {
-    setIsOpen(false);
-    setTitle("");
-    setMessage("");
+    setAlert(null);
   }, []);
 
   const SuccessAlertComponent = useCallback(
     ({ onClose }: { onClose?: () => void }) => {
       return (
         <SuccessAlert
-          isOpen={isOpen}
+          isOpen={alert !== null}
           onClose={() => {
             hide();
             if (onClose) {
@@ -49,12 +43,12 @@ export function useSuccessAlert(
               onCloseCallback();
             }
           }}
-          title={title}
-          message={message}
+          title={alert?.title ?? ""}
+          message={alert?.message ?? ""}
         />
       );
     },
-    [isOpen, title, message, hide, onCloseCallback]
+    [alert, hide, onCloseCallback]
   );
 
   return { show, hide, SuccessAlertComponent };

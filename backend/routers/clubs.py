@@ -6,6 +6,7 @@ from core.constants import (
     MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_LIST_LIMIT,
     MAX_SEARCH_QUERY_LENGTH,
+    MAX_SCHOOL_LENGTH,
 )
 from core.errors import CLUB_NOT_FOUND
 from core.exceptions import get_or_404
@@ -52,9 +53,10 @@ def list_clubs(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
     club_type: str | None = Query(default=None, max_length=MAX_EVENT_CLUB_TYPE_LENGTH),
+    school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
     search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
 ):
-    return club_service.list_clubs(skip=skip, limit=limit, club_type=club_type, search=search)
+    return club_service.list_clubs(skip=skip, limit=limit, club_type=club_type, school=school, search=search)
 
 
 @router.get("/mine", response_model=list[ClubResponse])

@@ -1,8 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import type { QRCode, QRCodeScan } from "@/shared/types";
-import { listPostersFromBackend } from "@/shared/api/posters.api";
-import { getScansFromBackend, normalizeBackendScan } from "@/shared/api/scans.api";
-import { deletePosterFromBackend } from "@/features/qrcode/api/qrcode.api";
+import type { QRCode, QRCodeScan } from "@/features/posters";
+import { listPostersFromBackend } from "@/features/posters/api/posters.api";
+import { getScansFromBackend, normalizeBackendScan } from "@/features/posters/api/scans.api";
 
 /**
  * Manages QR code poster and scan data. Does NOT auto-load on mount --
@@ -30,15 +29,6 @@ export function useMarketingData() {
     }
   }, []);
 
-  const deletePoster = useCallback(async (id: string) => {
-    try {
-      await deletePosterFromBackend(id);
-      await loadQRCodes();
-    } catch (err) {
-      console.error("Failed to delete poster:", err);
-    }
-  }, [loadQRCodes]);
-
   const qrCodesWithStats = useMemo(() => {
     return qrCodes.map((qr) => {
       const qrScans = scans.filter((s) => s.qrCodeId === qr.id);
@@ -55,6 +45,5 @@ export function useMarketingData() {
     qrCodesWithStats,
     loading,
     loadQRCodes,
-    deletePoster,
   };
 }

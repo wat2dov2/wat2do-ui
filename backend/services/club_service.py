@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 log = logging.getLogger(__name__)
 
 from postgrest.exceptions import APIError
+
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.sanitize import sanitize_postgrest_value
@@ -121,13 +122,10 @@ def list_clubs(
                     q = q.or_(f"club_name.ilike.{quoted}")
             q = q.order("club_name").range(skip, skip + limit - 1)
             r = q.execute()
-            
+
             raw_clubs = [ClubResponse.model_validate(c) for c in (r.data or [])]
             default_school = "University of Waterloo"
-            clubs = [
-                c for c in raw_clubs
-                if (c.school or default_school) == school
-            ]
+            clubs = [c for c in raw_clubs if (c.school or default_school) == school]
         else:
             raise
     return clubs
@@ -326,6 +324,7 @@ _PLATFORM_COLUMN_ALIASES: dict[str, dict[str, str]] = {
 _KNOWN_METADATA_KEYS = _METADATA_COLUMNS | frozenset(
     alias for aliases in _PLATFORM_COLUMN_ALIASES.values() for alias in aliases.values()
 )
+
 
 def _columns_to_metadata(platform: str, row: dict) -> dict[str, str]:
     """Extract metadata dict from a DB row, applying platform aliases.

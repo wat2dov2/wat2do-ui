@@ -1,12 +1,17 @@
 import { lazy, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEventsStore } from "@/features/events/store/events.store";
-import { useUserEmail } from "@/features/auth/hooks/useAuthState";
+import { useEventsStore } from "@/features/events";
+import { useUserEmail } from "@/features/auth";
 import { ROUTES } from "@/shared/constants/routes";
-import { PostersPageContent } from "@/shared/components/PostersPageContent";
-import { QRCodeDetailsModal, GenerateQRAssetsWizard } from "@/features/qrcode";
+import {
+  PostersPageContent,
+  QRCodeDetailsModal,
+  GenerateQRAssetsWizard,
+} from "@/features/posters";
 
-const QRScanMap = lazy(() => import("@/features/qrcode/components/QRScanMap").then(module => ({ default: module.QRScanMap })));
+const QRScanMap = lazy(() =>
+  import("@/features/posters").then((module) => ({ default: module.QRScanMap })),
+);
 
 export function AdminPostersPage() {
   const events = useEventsStore((s) => s.events);

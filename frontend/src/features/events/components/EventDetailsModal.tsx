@@ -13,6 +13,7 @@ import {
 } from "@/shared/ui/dialog";
 import { EventCard } from "@/features/events/components/EventCard";
 import { translateCategory } from "@/shared/utils/event";
+import { translateFood } from "@/shared/utils/foodTranslation";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import {
   ModalContentWrapper,
@@ -25,6 +26,7 @@ import {
   FoodTag,
 } from "@/shared/ui/modal-components";
 import { useModalState } from "@/shared/hooks/useModalState";
+import { useEventsStore } from "@/features/events/store/events.store";
 import type { Event } from "@/shared/types";
 
 
@@ -43,6 +45,7 @@ export function EventDetailsModal({
   hideSimilarEvents = false,
 }: EventDetailsModalProps) {
   const { t } = useTranslation();
+  const storeEvents = useEventsStore((s) => s.events);
   // Local override allows clicking a "similar event" without remounting the
   // modal. We reset it whenever the prop event changes by tracking the prop
   // id during render (React's pattern for prop-derived resets).
@@ -76,7 +79,7 @@ export function EventDetailsModal({
 
   const similarEvents = useMemo(() => {
     if (!displayedEvent) return [];
-    const eventsList = allEvents || [];
+    const eventsList = allEvents ?? storeEvents;
     const otherEvents = eventsList.filter((e) => e.id !== displayedEvent.id);
     const seed = displayedEvent.id;
     const shuffled = otherEvents.toSorted((a, b) => {
@@ -85,7 +88,7 @@ export function EventDetailsModal({
       return hashA - hashB;
     });
     return shuffled.slice(0, 4);
-  }, [displayedEvent, allEvents]);
+  }, [displayedEvent, allEvents, storeEvents]);
 
   const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
     setOverrideEvent(clickedEvent);
@@ -166,7 +169,7 @@ export function EventDetailsModal({
                     </h3>
                     <FoodTagsContainer>
                       {displayedEvent.food.map((food) => (
-                        <FoodTag key={food}>{food}</FoodTag>
+                        <FoodTag key={food}>{translateFood(food, t)}</FoodTag>
                       ))}
                     </FoodTagsContainer>
                   </div>

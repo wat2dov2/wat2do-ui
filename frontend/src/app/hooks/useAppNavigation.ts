@@ -1,27 +1,21 @@
 /**
  * Hook for managing navigation, routing, URL params, and QR redirects
  *
- * - pageMode is derived state (useMemo) — no useEffect needed
  * - Combined URL param handling into a single useEffect
  * - QR redirect handled by QRRedirectPage at /qr/:id
  */
 
 import { useEffect, useRef } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { FilterState, Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
-import { derivePageMode } from "@/shared/utils/pageMode";
-import { parseFilterQueryString } from "@/features/search/api/filterService";
-
-interface FilterSetters {
-  setFilterStateFromURL: (filters: FilterState) => void;
-}
+import { parseFilterQueryString } from "@/features/search";
 
 interface UseAppNavigationOptions {
   events: Event[];
-  filters: FilterSetters;
+  setFilterStateFromURL: (filters: FilterState) => void;
 }
 
 /**
@@ -29,10 +23,9 @@ interface UseAppNavigationOptions {
  */
 export function useAppNavigation({
   events,
-  filters,
+  setFilterStateFromURL,
 }: UseAppNavigationOptions) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   // Track if we've already processed initial URL params to avoid re-processing.
@@ -40,9 +33,6 @@ export function useAppNavigation({
   // wait for the events array to be non-empty (cold-load race).
   const hasProcessedInitialFilters = useRef(false);
   const hasProcessedInitialScroll = useRef(false);
-
-  // Derive pageMode directly from the current pathname (pure function).
-  const pageMode = derivePageMode(location.pathname);
 
   useEffect(() => {
     const eventId = searchParams.get(QP.EVENT_ID);
@@ -74,7 +64,7 @@ export function useAppNavigation({
       ) {
         const parsed = parseFilterQueryString(`${QP.FILTERS}=${filtersParam}`);
         if (parsed) {
-          filters.setFilterStateFromURL(parsed);
+          setFilterStateFromURL(parsed);
         }
       }
       hasProcessedInitialFilters.current = true;
@@ -111,11 +101,5 @@ export function useAppNavigation({
     } else if (!eventId) {
       hasProcessedInitialScroll.current = true;
     }
-  }, [location.pathname, searchParams, navigate, filters, events]);
-
-  return {
-    pageMode,
-    navigate,
-    location,
-  };
+  }, [searchParams, navigate, setFilterStateFromURL, events]);
 }

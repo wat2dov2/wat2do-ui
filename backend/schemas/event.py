@@ -260,7 +260,7 @@ class EventTimeMeta(BaseModel):
     """Minimal event metadata for time-decay calculations.
 
     Decay keys off ``added_at`` (catalog age), not ``dtstart_utc`` —
-    see the rationale in services/recommender/popularity.py. The field
+    see the rationale in recommender/popularity.py. The field
     used to be on this model when ``events`` carried dtstart_utc as a
     column; after the v1-style EventDates port (migration
     20260428031741) we drop it from the model too.

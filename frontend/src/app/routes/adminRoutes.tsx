@@ -15,24 +15,28 @@ import {
   adminDeleteClub,
 } from "@/features/admin/api/admin.api";
 import { useNavigate } from "react-router-dom";
-import { ROUTES, ADMIN_ROUTE_MAP } from "@/shared/constants/routes";
+import { ROUTES, ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
 // Lazy-loaded admin page components — only fetched when an admin route renders.
 const AdminPanel = lazy(() =>
-  import("@/features/admin").then((m) => ({ default: m.AdminPanel }))
+  import("@/features/admin/pages/AdminPanel").then((m) => ({ default: m.AdminPanel }))
 );
 const AdminEventsPage = lazy(() =>
-  import("@/features/admin").then((m) => ({ default: m.AdminEventsPage }))
+  import("@/features/admin/pages/AdminEventsPage").then((m) => ({ default: m.AdminEventsPage }))
 );
 const AdminClubsPage = lazy(() =>
-  import("@/features/admin").then((m) => ({ default: m.AdminClubsPage }))
+  import("@/features/admin/pages/AdminClubsPage").then((m) => ({ default: m.AdminClubsPage }))
 );
 const AdminSubmissionsPage = lazy(() =>
-  import("@/features/admin").then((m) => ({ default: m.AdminSubmissionsPage }))
+  import("@/features/admin/pages/AdminSubmissionsPage").then((m) => ({
+    default: m.AdminSubmissionsPage,
+  }))
 );
 const AdminPostersPage = lazy(() =>
-  import("@/features/admin").then((m) => ({ default: m.AdminPostersPage }))
+  import("@/features/admin/pages/AdminPostersPage").then((m) => ({
+    default: m.AdminPostersPage,
+  }))
 );
 
 interface AdminEventsRouteConfig {
@@ -48,8 +52,8 @@ function useAdminNavigation() {
   const navigate = useNavigate();
 
   return useCallback(
-    (page: string) => {
-      navigate(ADMIN_ROUTE_MAP[page] || ROUTES.ADMIN);
+    (page: AdminRouteKey) => {
+      navigate(ADMIN_ROUTE_MAP[page]);
     },
     [navigate]
   );
@@ -111,7 +115,7 @@ export function AdminClubsRoute() {
   );
   const onEditClub = useCallback(
     async (club: Club) => {
-      await adminUpdateClub(club, club);
+      await adminUpdateClub(club);
     },
     [],
   );

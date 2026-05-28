@@ -14,7 +14,7 @@ import { TableCell, TableRow } from "@/shared/ui/table";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
-import { AdminPagination } from "@/features/admin/components/shared/AdminPagination";
+import { Pagination } from "@/shared/ui/Pagination";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
@@ -29,7 +29,7 @@ import {
   SUBMISSION_APPROVED,
   SUBMISSION_REJECTED,
 } from "@/shared/constants/statuses";
-import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
+import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import { QP } from "@/shared/constants/queryParams";
@@ -54,8 +54,6 @@ export function AdminSubmissionsPage({ onBack }: AdminSubmissionsPageProps) {
   const pagination = useAdminSubmissionsPagination({
     itemsPerPage: ADMIN_ITEMS_PER_PAGE,
     filteredSubmissions: filters.filteredSubmissions,
-    searchQuery: filters.searchQuery,
-    statusFilter: filters.statusFilter,
   });
   const actions = useAdminSubmissionsActions({
     searchParams,
@@ -92,14 +90,18 @@ export function AdminSubmissionsPage({ onBack }: AdminSubmissionsPageProps) {
       <div className="flex gap-3">
         <AdminSearchBar
           value={filters.searchQuery}
-          onChange={filters.setSearchQuery}
+          onChange={(value) => {
+            filters.setSearchQuery(value);
+            pagination.setCurrentPage(1);
+          }}
           placeholder={t("admin.searchSubmissions")}
         />
         <Select
           value={filters.statusFilter}
-          onValueChange={(value) =>
-            filters.setStatusFilter(value as "all" | SubmissionStatus)
-          }
+          onValueChange={(value) => {
+            filters.setStatusFilter(value as "all" | SubmissionStatus);
+            pagination.setCurrentPage(1);
+          }}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder={t("admin.allStatus")} />
@@ -210,7 +212,7 @@ export function AdminSubmissionsPage({ onBack }: AdminSubmissionsPageProps) {
       )}
 
       {filters.filteredSubmissions.length > 0 && (
-        <AdminPagination
+        <Pagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
           totalItems={filters.filteredSubmissions.length}

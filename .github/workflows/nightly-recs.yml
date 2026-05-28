@@ -29,4 +29,4 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python jobs/compute_recommendations.py
+        run: python -m recommender.job

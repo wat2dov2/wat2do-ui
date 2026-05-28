@@ -13,7 +13,7 @@ import { ProfileTab } from "@/features/settings/components/ProfileTab";
 import { NotificationsTab } from "@/features/settings/components/NotificationsTab";
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
 import { PrivacyTab } from "@/features/settings/components/PrivacyTab";
-import { useUserEmail } from "@/features/auth/hooks/useAuthState";
+import { useUserEmail } from "@/features/auth";
 import { QP } from "@/shared/constants/queryParams";
 
 export function SettingsPage() {

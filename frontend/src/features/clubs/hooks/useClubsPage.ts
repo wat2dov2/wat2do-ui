@@ -3,21 +3,25 @@
  * Manages data loading and filtering for ClubsPage
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { Club } from "@/shared/types";
 import {
   loadClubsData,
   filterClubs,
 } from "@/features/clubs/api/clubs.api";
 import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
+import { useEventsStore } from "@/features/events/store/events.store";
 
 const EMPTY_DATA: { clubs: Club[]; categories: string[] } = { clubs: [], categories: [] };
 
 export function useClubsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
 
-  const { data, loading: isLoading } = useBackendQuery(loadClubsData, EMPTY_DATA);
+  const fetchClubs = useCallback(() => loadClubsData(schoolFilter ?? undefined), [schoolFilter]);
+
+  const { data, loading: isLoading } = useBackendQuery(fetchClubs, EMPTY_DATA, schoolFilter);
   const clubs = data.clubs;
   const allCategories = data.categories;
 

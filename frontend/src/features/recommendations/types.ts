@@ -1,5 +1,3 @@
-export interface RecommendationItem {
-  event_id: number;
-  score: number;
-  reason: string;
-}
+import type { ApiRecommendationItem } from "@/shared/generated";
+
+export type RecommendationItem = ApiRecommendationItem;

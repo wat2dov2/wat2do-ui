@@ -13,19 +13,18 @@ import {
   TableCell,
   TableRow,
 } from "@/shared/ui/table";
-import { EventDetailsModal } from "@/features/events";
+import { EventDetailsModal, useEventsStore } from "@/features/events";
 import { useAdminEventsPage } from "@/features/admin/hooks/useAdminEventsPage";
-import { useEventsStore } from "@/features/events/store/events.store";
 import type { Event } from "@/shared/types";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
-import { AdminPagination } from "@/features/admin/components/shared/AdminPagination";
+import { Pagination } from "@/shared/ui/Pagination";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { cn } from "@/shared/lib/utils";
-import { ADMIN_ITEMS_PER_PAGE } from "@/shared/constants/pagination";
+import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { QP } from "@/shared/constants/queryParams";
 import { formatCardDate } from "@/shared/utils/date";
 
@@ -269,7 +268,7 @@ export function AdminEventsPage({
       />
 
       {filteredEvents.length > 0 && (
-        <AdminPagination
+        <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={filteredEvents.length}

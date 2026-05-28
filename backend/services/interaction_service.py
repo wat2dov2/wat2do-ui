@@ -2,7 +2,7 @@
 
 This module is a thin CRUD/dedup layer.  Recommendation-specific scoring
 (get_user_event_scores, get_interaction_matrix, get_event_popularity, and
-cache infrastructure) lives in services.recommender.interaction_scores so
+cache infrastructure) lives in recommender.interaction_scores so
 that this service has no dependency on recommender config.
 """
 

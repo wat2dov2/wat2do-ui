@@ -15,6 +15,7 @@ from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
 from core.pagination import fetch_all_pages
+from core.retry import supabase_retry
 from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENT_DATES, EVENTS
 from schemas.event import (
@@ -26,7 +27,7 @@ from schemas.event import (
 )
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service
-from services.recommendation_service import invalidate_candidates_cache
+from recommender.service import invalidate_candidates_cache
 
 log = logging.getLogger(__name__)
 
@@ -154,6 +155,7 @@ def _list_matching_event_rows(
     registration: bool | None,
     include_cancelled: bool,
 ) -> list[dict]:
+    @supabase_retry
     def _page(offset: int, page_size: int) -> list[dict]:
         q = get_sb().table(EVENTS).select(select_cols)
         q = _apply_event_filters(
@@ -175,6 +177,7 @@ def _list_matching_event_rows(
 # ── Public functions ──────────────────────────────────────────────────
 
 
+@supabase_retry
 def get_latest_added_event() -> LatestEventResponse | None:
     """Return the most recently added event (by added_at desc), or None if no events."""
     r = (
@@ -190,6 +193,7 @@ def get_latest_added_event() -> LatestEventResponse | None:
     return LatestEventResponse.model_validate(r.data[0])
 
 
+@supabase_retry
 def get_event(event_id: int) -> EventResponse | None:
     r = get_sb().table(EVENTS).select("*").eq("id", event_id).execute()
     if not r.data or len(r.data) == 0:
@@ -198,6 +202,7 @@ def get_event(event_id: int) -> EventResponse | None:
     return _hydrate_response(r.data[0], occurrences)
 
 
+@supabase_retry
 def list_events(
     skip: int = 0,
     limit: int = DEFAULT_LIST_LIMIT,

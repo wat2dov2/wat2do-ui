@@ -4,6 +4,7 @@
  */
 
 import type { Club } from "@/shared/types";
+import type { ApiClubResponse } from "@/shared/generated";
 import { api } from "@/shared/services/apiClient";
 import {
   filterClubsBySearch,
@@ -13,21 +14,41 @@ import {
 
 const CLUBS_LIST_LIMIT = 500;
 
-export async function getAllClubs(): Promise<Club[]> {
-  const clubs = await api.get<Club[]>(`/clubs/?limit=${CLUBS_LIST_LIMIT}`);
-  return clubs;
+function normalizeClub(club: ApiClubResponse): Club {
+  return {
+    ...club,
+    categories: club.categories ?? [],
+    club_page: club.club_page ?? "",
+    ig: club.ig ?? null,
+    discord: club.discord ?? null,
+    logo_url: club.logo_url ?? null,
+    created_by: club.created_by ?? null,
+    school: club.school ?? "",
+  };
+}
+
+export async function getAllClubs(school?: string): Promise<Club[]> {
+  const params = new URLSearchParams();
+  params.set("limit", String(CLUBS_LIST_LIMIT));
+  if (school) {
+    params.set("school", school);
+  }
+  const clubs = await api.get<ApiClubResponse[]>(`/clubs/?${params.toString()}`);
+  return clubs.map(normalizeClub);
 }
 
 export async function getMyClubs(): Promise<Club[]> {
-  return api.get<Club[]>("/clubs/mine");
+  const clubs = await api.get<ApiClubResponse[]>("/clubs/mine");
+  return clubs.map(normalizeClub);
 }
 
 export async function createClubAPI(clubData: Omit<Club, "id">): Promise<Club> {
   const { created_by, ...payload } = clubData;
-  return api.post<Club>("/clubs/", {
+  const club = await api.post<ApiClubResponse>("/clubs/", {
     ...payload,
     owner_user_id: created_by || undefined,
   });
+  return normalizeClub(club);
 }
 
 export async function updateClubAPI(
@@ -36,7 +57,8 @@ export async function updateClubAPI(
 ): Promise<Club> {
   const payload = { ...clubData };
   delete payload.created_by;
-  return api.patch<Club>(`/clubs/${club.id}`, payload);
+  const updated = await api.patch<ApiClubResponse>(`/clubs/${club.id}`, payload);
+  return normalizeClub(updated);
 }
 
 export async function deleteClubAPI(clubId: number): Promise<void> {
@@ -64,12 +86,15 @@ async function getClubCategories(existingClubs?: Club[]): Promise<string[]> {
 export async function getClubTypes(existingClubs?: Club[]): Promise<string[]> {
   const clubs = existingClubs ?? await getAllClubs();
   const types = new Set<string>();
-  clubs.forEach((c) => types.add(c.club_type));
+  clubs.forEach((c) => {
+    const type = c.club_type?.trim() ?? "";
+    if (type) types.add(type);
+  });
   return Array.from(types).sort();
 }
 
-export async function loadClubsData(): Promise<{ clubs: Club[]; categories: string[] }> {
-  const clubs = await getAllClubs();
+export async function loadClubsData(school?: string): Promise<{ clubs: Club[]; categories: string[] }> {
+  const clubs = await getAllClubs(school);
   const categories = await getClubCategories(clubs);
   return { clubs, categories };
 }

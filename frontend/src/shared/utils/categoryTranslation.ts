@@ -16,7 +16,10 @@ export function getClubCategoryTranslation(
 ): string {
   const sharedKey = CATEGORY_TO_SHARED_KEY[category];
   if (sharedKey) {
-    return t(sharedKey) || category;
+    const translated = t(sharedKey);
+    return translated !== sharedKey ? translated : category;
   }
-  return t(`clubs.categories.${category}`) || category;
+  const clubKey = `clubs.categories.${category}`;
+  const translatedClub = t(clubKey);
+  return translatedClub !== clubKey ? translatedClub : category;
 }

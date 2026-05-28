@@ -11,6 +11,7 @@ import { LoadingButton } from "@/shared/ui/loading-button";
 import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 import type { EventSubmission } from "@/shared/types";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
+import { translateFood } from "@/shared/utils/foodTranslation";
 
 interface SubmissionDetailsDialogProps {
   submission: EventSubmission | null;
@@ -89,7 +90,7 @@ export function SubmissionDetailsDialog({
                     key={food}
                     className="text-xs px-2 py-1 bg-warning/20 text-warning rounded-full"
                   >
-                    {food}
+                    {translateFood(food, t)}
                   </span>
                 ))}
               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -31,14 +31,6 @@ export function EventReportDialog({
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setReason("");
-      setIsSubmitting(false);
-      setIsSubmitted(false);
-    }
-  }, [open]);
 
   const trimmedReason = reason.trim();
 

@@ -5,6 +5,7 @@ import {
   serializeFiltersToJSON,
   parseFiltersFromJSON,
   storeStatesToFilterState,
+  generatedFilterStateToFilterState,
 } from "@/features/search/api/filterService";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
 import { useSearchStore } from "@/features/search/store/search.store";
@@ -165,21 +166,9 @@ export function useFilterState(profileCompleted: boolean) {
       const newFilters = await generateFiltersWithAI(aiPrompt, () => {
         // Partial updates handled by the streaming callback
       });
-      // Normalise the API-shape FilterState (loose ``priceRange``,
-      // possible extra fields) to the local FilterState the
-      // serializer expects. Same pattern as ``handleJsonChange`` above.
-      const generatedJson = serializeFiltersToJSON({
-        searchQuery: newFilters.searchQuery || "",
-        categories: newFilters.categories || [],
-        locations: newFilters.locations || [],
-        foods: newFilters.foods || [],
-        days: newFilters.days || [],
-        priceRange: {
-          min: newFilters.priceRange?.min ?? "",
-          max: newFilters.priceRange?.max ?? "",
-        },
-        requiresRegistration: newFilters.requiresRegistration ?? false,
-      });
+      const generatedJson = serializeFiltersToJSON(
+        generatedFilterStateToFilterState(newFilters),
+      );
       handleJsonChange(generatedJson);
     } catch (error) {
       console.error("AI filter generation failed:", error);
@@ -220,9 +209,7 @@ export function useFilterState(profileCompleted: boolean) {
 
     // JSON editor (derived, no state needed)
     jsonValue,
-    setJsonValue: handleJsonChange,
     jsonError,
-    setJsonError,
     handleJsonChange,
 
     // AI generation
@@ -233,6 +220,5 @@ export function useFilterState(profileCompleted: boolean) {
 
     // Utilities
     clearAllFilters,
-    setFilterStateFromURL,
   };
 }

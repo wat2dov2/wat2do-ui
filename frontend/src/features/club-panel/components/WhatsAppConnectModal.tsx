@@ -12,7 +12,7 @@ import {
 } from "@/shared/ui/dialog";
 import { ModalContentWrapper, ModalHeaderWrapper } from "@/shared/ui/modal-components";
 import { Field, FieldGroup } from "@/shared/ui/field";
-import { WHATSAPP_BOT_URL } from "@/shared/constants/externalUrls";
+import { WHATSAPP_BOT_URL } from "@/features/club-panel/constants";
 
 interface WhatsAppConnectModalProps {
   open: boolean;

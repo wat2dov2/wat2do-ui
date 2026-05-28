@@ -137,11 +137,15 @@ export function useSearch({
 
   const dayPieItems = useMemo(
     () =>
-      availableDays.map((day) => ({
-        id: day,
-        label: t(`days.${day.toLowerCase()}`) || day,
-        iconName: "Calendar" as const,
-      })),
+      availableDays.map((day) => {
+        const key = `days.${day.toLowerCase()}`;
+        const translated = t(key);
+        return {
+          id: day,
+          label: translated !== key ? translated : day,
+          iconName: "Calendar" as const,
+        };
+      }),
     [t],
   );
 

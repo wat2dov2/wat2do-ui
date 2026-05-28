@@ -25,7 +25,7 @@ interface EventsState {
   error: string | null;
   schoolFilter: string | null;
 
-  /** Fetch all events from backend. Idempotent — skips if already loaded. */
+  /** Fetch all events from backend for the current school filter. */
   fetchEvents: () => Promise<void>;
   setSchoolFilter: (school: string) => void;
   addEvent: (data: EventFormData) => Promise<number>;
@@ -33,8 +33,13 @@ interface EventsState {
   deleteEvent: (eventId: number) => Promise<void>;
 }
 
-/** Module-level flag to deduplicate concurrent fetchEvents calls. */
-let _fetchInFlight = false;
+/** Deduplicate concurrent fetches for the same school while allowing school switches. */
+const _fetchesBySchool = new Map<string, Promise<Event[]>>();
+let _latestFetchId = 0;
+
+function getSchoolFetchKey(school: string | null): string {
+  return school ?? "__all__";
+}
 
 export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
@@ -43,21 +48,32 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   schoolFilter: DEFAULT_SCHOOL,
 
   fetchEvents: async () => {
-    // Dedup concurrent callers via a module-level flag. We intentionally
-    // allow retries after a failure or when the list is empty, so the
-    // app self-heals on transient failures.
-    if (_fetchInFlight) return;
-    _fetchInFlight = true;
+    const school = get().schoolFilter;
+    const schoolKey = getSchoolFetchKey(school);
+    const fetchId = ++_latestFetchId;
+
     set({ isLoading: true, error: null });
+
+    let fetchPromise = _fetchesBySchool.get(schoolKey);
+    if (!fetchPromise) {
+      fetchPromise = fetchAllEvents(school ?? undefined).finally(() => {
+        _fetchesBySchool.delete(schoolKey);
+      });
+      _fetchesBySchool.set(schoolKey, fetchPromise);
+    }
+
+    const isCurrentFetch = () =>
+      fetchId === _latestFetchId && getSchoolFetchKey(get().schoolFilter) === schoolKey;
+
     try {
-      const events = await fetchAllEvents(get().schoolFilter ?? undefined);
+      const events = await fetchPromise;
+      if (!isCurrentFetch()) return;
       set({ events, isLoading: false, error: null });
     } catch (err) {
+      if (!isCurrentFetch()) return;
       const message = err instanceof ApiError ? err.message : i18n.t("events.loadFailed");
       console.error("Failed to fetch events:", err);
       set({ isLoading: false, error: message });
-    } finally {
-      _fetchInFlight = false;
     }
   },
 
@@ -96,12 +112,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       // longer exists or the caller can no longer touch it. Refetching
       // ensures UI matches the authoritative backend state.
       if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
-        try {
-          const events = await fetchAllEvents(get().schoolFilter ?? undefined);
-          set({ events });
-        } catch (refetchErr) {
-          console.error("Failed to refetch events after delete failure:", refetchErr);
-        }
+        await get().fetchEvents();
       }
       // Re-throw so callers can surface the error (toast, etc.).
       throw err;

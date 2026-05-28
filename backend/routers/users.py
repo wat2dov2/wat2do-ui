@@ -19,7 +19,10 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/me", response_model=UserResponse)
 def get_me(auth_user: dict = Depends(get_current_user)):
-    return get_or_404(user_service.get_user_by_supabase_id(auth_user["id"]), USER_PROFILE_NOT_FOUND)
+    return get_or_404(
+        user_service.get_user_by_supabase_id(auth_user["id"], bypass_cache=True),
+        USER_PROFILE_NOT_FOUND,
+    )
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -85,7 +88,7 @@ def update_user_role(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: UUID,
-    admin=Depends(get_admin_user),
+    admin: UserResponse = Depends(get_admin_user),
 ):
     """Admin-only user deletion with A26 guardrails.
 
@@ -98,8 +101,7 @@ def delete_user(
       compromised admin could otherwise demote/delete every other admin
       and lock the system into an un-administered state.
     """
-    caller = user_service.get_user_by_supabase_id(admin["id"])
-    if caller is not None and caller.id == user_id:
+    if admin.id == user_id:
         raise AuthorizationError(CANNOT_DELETE_SELF)
 
     target = user_service.get_user(user_id)

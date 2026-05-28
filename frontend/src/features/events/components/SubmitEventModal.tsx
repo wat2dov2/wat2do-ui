@@ -1,4 +1,4 @@
-import React, { useReducer, useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -12,15 +12,10 @@ import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromo
 import { useSubmitEvent, type SubmitEventResult } from "@/features/events/hooks/useSubmitEvent";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { useModalState } from "@/shared/hooks/useModalState";
-import { EventFormStep } from "@/features/events/components/EventFormStep";
+import { EventFormStep, type ViewMode } from "@/features/events/components/EventFormStep";
 import { SubmitSuccessStep } from "@/features/events/components/SubmitSuccessStep";
 import { PromotionUpsell } from "@/features/events/components/EventForm/EventForm/PromotionUpsell";
 import { PromotionSuccessScreen } from "@/features/events/components/EventForm/EventForm/PromotionSuccessScreen";
-import {
-  submitEventModalReducer,
-  initialSubmitEventModalState,
-  type ViewMode,
-} from "@/features/events/components/SubmitEventModal.reducer";
 import type { EventFormData } from "@/shared/types";
 
 interface SubmitEventModalProps {
@@ -68,11 +63,8 @@ function SubmitEventModalFormBody({
 }: SubmitEventModalFormBodyProps) {
   const { t } = useTranslation();
   const { isDarkMode } = useDarkMode();
-
-  const [state, dispatch] = useReducer(
-    submitEventModalReducer,
-    initialSubmitEventModalState
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>("visual");
+  const [submitResult, setSubmitResult] = useState<{ createdEventId: number | null } | null>(null);
 
   const eventForm = useEventForm({
     initialData: formInitialData,
@@ -88,13 +80,12 @@ function SubmitEventModalFormBody({
   });
 
   const eventFormPromotion = useEventFormPromotion({
-    createdEventId: state.createdEventId,
+    createdEventId: submitResult?.createdEventId ?? null,
     onPromote,
   });
 
   const handleSubmitted = useCallback((eventId: number | null) => {
-    dispatch({ type: "SET_CREATED_EVENT_ID", payload: eventId });
-    dispatch({ type: "SET_IS_SUBMITTED", payload: true });
+    setSubmitResult({ createdEventId: eventId });
   }, []);
 
   const { isSubmitting, handleSubmit: submitEvent, showSuccessAlert, SuccessAlertComponent } = useSubmitEvent({
@@ -108,13 +99,14 @@ function SubmitEventModalFormBody({
   });
 
   const resetState = useCallback(() => {
-    dispatch({ type: "RESET" });
+    setViewMode("visual");
+    setSubmitResult(null);
     eventFormPromotion.setPromotionSuccess(false);
     eventFormPromotion.setShowPromotion(false);
   }, [eventFormPromotion]);
 
   const handleClose = useCallback(() => {
-    if (state.isSubmitted && !isEditMode && state.createdEventId) {
+    if (submitResult?.createdEventId != null && !isEditMode) {
       showSuccessAlert(
         t("events.eventCreated"),
         t("events.eventCreatedMessage", { title: eventForm.formData.title })
@@ -122,7 +114,7 @@ function SubmitEventModalFormBody({
     } else {
       onClose();
     }
-  }, [state.isSubmitted, state.createdEventId, isEditMode, showSuccessAlert, t, eventForm.formData.title, onClose]);
+  }, [submitResult, isEditMode, showSuccessAlert, t, eventForm.formData.title, onClose]);
 
   const modalState = useModalState({
     onClose: handleClose,
@@ -132,7 +124,7 @@ function SubmitEventModalFormBody({
 
   const handleViewModeChange = useCallback(
     (value: ViewMode) => {
-      dispatch({ type: "SET_VIEW_MODE", payload: value });
+      setViewMode(value);
       if (value === "json") {
         eventForm.syncToJSON();
       }
@@ -150,7 +142,7 @@ function SubmitEventModalFormBody({
     ? "promotion-success"
     : eventFormPromotion.showPromotion
       ? "promotion-upsell"
-      : state.isSubmitted && !isEditMode
+      : submitResult && !isEditMode
         ? "submit-success"
         : "form";
 
@@ -175,12 +167,12 @@ function SubmitEventModalFormBody({
         isOpen={isOpen}
         onClose={handleClose}
         onPromote={
-          onPromote && state.createdEventId
+          onPromote && submitResult?.createdEventId != null
             ? () => eventFormPromotion.setShowPromotion(true)
             : undefined
         }
         isEditMode={isEditMode}
-        isSubmissionOnly={!state.createdEventId}
+        isSubmissionOnly={submitResult?.createdEventId == null}
         onShowSuccessAlert={(title, message) => {
           showSuccessAlert(title, message);
         }}
@@ -206,7 +198,7 @@ function SubmitEventModalFormBody({
             <EventFormStep
               isEditMode={isEditMode}
               canCreateEvents={canCreateEvents}
-              viewMode={state.viewMode}
+              viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
               isSubmitting={isSubmitting}
               onSubmit={handleSubmit}

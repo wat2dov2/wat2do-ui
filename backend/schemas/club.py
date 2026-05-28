@@ -16,6 +16,7 @@ from core.constants import (
     MAX_INTEGRATION_METADATA_VALUE_LENGTH,
     MAX_INTEGRATION_NAME_LENGTH,
     MAX_URL_LENGTH,
+    MAX_SCHOOL_LENGTH,
 )
 
 # ---------------------------------------------------------------------------
@@ -63,8 +64,9 @@ class ClubCreate(BaseModel):
     club_type: str = Field(..., min_length=1, max_length=MAX_CLUB_TYPE_LENGTH)
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     owner_user_id: UUID | None = Field(default=None, description="Approved club owner user ID")
+    school: str = Field(default="University of Waterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH)
 
-    @field_validator("club_name", "club_type")
+    @field_validator("club_name", "club_type", "school")
     @classmethod
     def _strip_non_blank(cls, v: str) -> str:
         v = (v or "").strip()
@@ -88,8 +90,9 @@ class ClubUpdate(BaseModel):
     discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     club_type: str | None = Field(default=None, max_length=MAX_CLUB_TYPE_LENGTH)
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
+    school: str | None = Field(default=None, max_length=MAX_SCHOOL_LENGTH)
 
-    @field_validator("club_name", "club_type")
+    @field_validator("club_name", "club_type", "school")
     @classmethod
     def _not_blank(cls, v: str | None) -> str | None:
         if v is None:
@@ -115,6 +118,7 @@ class ClubResponse(BaseModel):
     club_type: str
     logo_url: str | None = None
     created_by: str | None = None
+    school: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -170,27 +174,6 @@ class PlatformIntegrationOptionsResponse(BaseModel):
 
     oauth_url: str | None = None
     servers: list[DiscordServerOption] = []
-
-
-class DiscordIntegrationUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    connected: bool = True
-    server_id: str
-    server_name: str
-    channel_id: str
-    channel_name: str
-
-
-class DiscordIntegrationResponse(BaseModel):
-    club_id: int
-    connected: bool
-    name: str | None = None
-    server_id: str | None = None
-    server_name: str | None = None
-    channel_id: str | None = None
-    channel_name: str | None = None
-    last_sync: datetime | None = None
 
 
 IntegrationPlatform = Literal[

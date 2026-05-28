@@ -18,15 +18,13 @@ interface UseEventFormOptions {
   initialData?: EventFormData;
   isEditMode?: boolean;
   isOpen: boolean;
-  /** When 1, form was opened for edit and fetched data is ready; use to force reset with initialData. */
-  editDataReady?: 0 | 1;
 }
 
 /**
  * Custom hook for managing event form state and validation
  */
 export function useEventForm(options: UseEventFormOptions) {
-  const { initialData, isEditMode = false, isOpen, editDataReady = 0 } = options;
+  const { initialData, isEditMode = false, isOpen } = options;
   const { t } = useTranslation();
 
   // Use the shared useForm hook for core form state (formData, touched, updateField,
@@ -132,7 +130,6 @@ export function useEventForm(options: UseEventFormOptions) {
   // the fields that live outside useForm.
   const prevIsOpenRef = useRef(isOpen);
   const prevInitialDataRef = useRef<EventFormData | undefined>(undefined);
-  const prevEditDataReadyRef = useRef(editDataReady);
 
   useEffect(() => {
     if (isOpen && !prevIsOpenRef.current) {
@@ -142,13 +139,11 @@ export function useEventForm(options: UseEventFormOptions) {
       setImagePreview("");
       setImageFile(null);
       prevInitialDataRef.current = initialData;
-      prevEditDataReadyRef.current = editDataReady;
     }
     prevIsOpenRef.current = isOpen;
 
     if (!isOpen) {
       prevInitialDataRef.current = undefined;
-      prevEditDataReadyRef.current = 0;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -157,24 +152,16 @@ export function useEventForm(options: UseEventFormOptions) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const fetchedDataJustReady =
-      isEditMode &&
-      editDataReady === 1 &&
-      prevEditDataReadyRef.current !== 1 &&
-      initialData;
-
     const shouldReseed =
-      fetchedDataJustReady ||
-      (isEditMode && initialData && initialData !== prevInitialDataRef.current);
+      isEditMode && initialData && initialData !== prevInitialDataRef.current;
 
     if (shouldReseed && initialData) {
       const resetState = getInitialState(initialData, isEditMode);
       form.setFormData(resetState.formData);
       prevInitialDataRef.current = initialData;
     }
-    if (editDataReady === 1) prevEditDataReadyRef.current = 1;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isEditMode, editDataReady, initialData]);
+  }, [isOpen, isEditMode, initialData]);
 
   // Handle JSON changes
   const handleJsonChange = useCallback(

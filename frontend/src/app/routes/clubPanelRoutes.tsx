@@ -10,7 +10,7 @@ import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
 import type { Event } from "@/shared/types";
 import { useNavigate } from "react-router-dom";
-import { ROUTES, CLUB_PANEL_ROUTE_MAP } from "@/shared/constants/routes";
+import { ROUTES, CLUB_PANEL_ROUTE_MAP, type ClubPanelRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
 // Lazy-loaded club-panel page components.
@@ -39,8 +39,8 @@ function useClubPanelNavigation() {
   const navigate = useNavigate();
 
   return useCallback(
-    (page: string) => {
-      navigate(CLUB_PANEL_ROUTE_MAP[page] || ROUTES.CLUB_PANEL);
+    (page: ClubPanelRouteKey) => {
+      navigate(CLUB_PANEL_ROUTE_MAP[page]);
     },
     [navigate]
   );

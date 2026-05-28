@@ -1,23 +1,15 @@
 /**
  * QR Code API
- * All poster and scan data from backend; no localStorage.
+ * Public QR redirect API.
  */
 
-import type { QRCode } from "@/shared/types";
+import type { ApiQrCodeRedirect } from "@/shared/generated";
 import { api, ApiError } from "@/shared/services/apiClient";
 import { isSafeUrl } from "@/shared/utils/url";
-import { API_BASE_URL } from "@/shared/config/api";
-import { stripTrailingSlash } from "@/shared/utils/string";
 import { ROUTES } from "@/shared/constants/routes";
-import type { QrCodePosterBackend } from "@/shared/api/posters.api";
-import { normalizeBackendPoster } from "@/shared/api/posters.api";
 
 /** Response from GET /qr/{id}: backend records the scan and returns redirect config. */
-export interface QrRedirectConfig {
-  destination_type: string;
-  destination_id: string | number | null;
-  filters: Record<string, unknown> | unknown[] | null;
-}
+export type QrRedirectConfig = ApiQrCodeRedirect;
 
 /** Result of fetchQrRedirectFromBackend: config to redirect, requires_location for first scan, or null if not found. */
 export type QrRedirectResult = QrRedirectConfig | { requires_location: true } | null;
@@ -86,60 +78,3 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
       window.location.href = ROUTES.HOME;
   }
 }
-
-// Poster types and list function are defined in shared/api/posters.api.ts
-// and re-exported here for backward compatibility.
-export { listPostersFromBackend } from "@/shared/api/posters.api";
-
-/** Create poster (auth). New poster is inactive until first scan provides location. */
-export async function createPosterToBackend(payload: {
-  id: string;
-  name: string;
-  description?: string | null;
-  destination_type: string;
-  destination_id?: string | number | null;
-  filters?: Record<string, unknown> | unknown[] | null;
-  created_by: string;
-  is_active?: boolean;
-  image_url?: string | null;
-}): Promise<QRCode> {
-  const body = {
-    id: payload.id,
-    name: payload.name,
-    description: payload.description ?? null,
-    destination_type: payload.destination_type,
-    destination_id: payload.destination_id ?? null,
-    filters: payload.filters ?? null,
-    created_by: payload.created_by,
-    is_active: payload.is_active ?? true,
-    image_url: payload.image_url ?? null,
-    latitude: 0,
-    longitude: 0,
-  };
-  const b = await api.post<QrCodePosterBackend>("/qr/", body);
-  return normalizeBackendPoster(b);
-}
-
-/** Delete poster (auth). */
-export async function deletePosterFromBackend(qrCodeId: string): Promise<void> {
-  await api.delete(`/qr/${encodeURIComponent(qrCodeId)}`);
-}
-
-// Scan types and functions are defined in shared/api/scans.api.ts
-// and re-exported here for backward compatibility.
-export { getScansFromBackend } from "@/shared/api/scans.api";
-
-/**
- * Resolve a poster image URL to an absolute URL.
- * If the imageUrl is already absolute (http/https) or a data URI, returns it as-is.
- * Otherwise, prepends API_BASE_URL, normalizing slashes.
- */
-export function getQRImageUrl(imageUrl: string): string {
-  if (imageUrl.startsWith("http") || imageUrl.startsWith("data:")) {
-    return imageUrl;
-  }
-  const base = stripTrailingSlash(API_BASE_URL);
-  const path = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
-  return `${base}${path}`;
-}
-

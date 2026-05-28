@@ -1,17 +1,18 @@
 /**
  * Fetches shared domain constants from the backend (/meta/constants).
  *
- * Called once during app init (main.tsx) so that categories, interest
- * mappings, and status enums always come from one source of truth.
+ * Called during app init (main.tsx) so categories, interest mappings,
+ * and status enums can hydrate from one backend source of truth.
  *
- * Consumers use the synchronous `getAppConstants()` getter — by the
- * time React renders, the constants are already loaded.
+ * Consumers use the synchronous `getAppConstants()` getter, which returns
+ * compiled fallbacks until the backend constants have loaded.
  */
 
 import { api } from "@/shared/services/apiClient";
 import { REPORT_STATUSES } from "@/shared/constants/statuses";
+import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
 
-export interface AppConstants {
+interface AppConstants {
   event_categories: string[];
   interests: string[];
   interest_to_categories: Record<string, string[]>;
@@ -19,21 +20,9 @@ export interface AppConstants {
 }
 
 // ---------------------------------------------------------------------------
-// Static fallbacks — the single frontend copy of backend constants.
+// Static fallbacks — the frontend safety net for backend constants.
 // Keep these as a safety net; the backend is the source of truth.
-//
-// Other modules (eventCategories.ts, interestCategoryMap.ts, interests.ts)
-// derive their static values from these — do NOT duplicate elsewhere.
 // ---------------------------------------------------------------------------
-
-/** Fallback event categories — exported so eventCategories.ts can derive its union type. */
-export const FALLBACK_EVENT_CATEGORIES = [
-  "Academics", "Studying", "Career", "Networking", "Games",
-  "Partying", "Athletics", "Art", "Dance", "Culture",
-  "Religion", "Advocacy", "Technology", "Design", "Entrepreneurship",
-  "Health", "Wellness", "Mental Health", "Music", "Sports",
-  "Food", "Volunteering",
-] as const;
 
 /** Fallback interest list used when the backend `/meta/constants` call fails. */
 const FALLBACK_INTERESTS = [
@@ -58,7 +47,7 @@ const FALLBACK_INTEREST_TO_CATEGORIES: Record<string, string[]> = {
 };
 
 const FALLBACK: AppConstants = {
-  event_categories: [...FALLBACK_EVENT_CATEGORIES],
+  event_categories: [...EVENT_CATEGORIES],
   interests: [...FALLBACK_INTERESTS],
   interest_to_categories: FALLBACK_INTEREST_TO_CATEGORIES,
   report_statuses: [...REPORT_STATUSES],

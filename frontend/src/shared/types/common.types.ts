@@ -3,18 +3,6 @@
  */
 
 export type ViewMode = "grid" | "calendar" | "map";
-export type PageMode =
-  | "events"
-  | "about"
-  | "myEvents"
-  | "clubs"
-  | "admin"
-  | "marketing"
-  | "admin-events"
-  | "admin-clubs"
-  | "admin-submissions"
-  | "admin-posters"
-  | "settings";
 
 // Club interface
 export interface Club {
@@ -27,4 +15,5 @@ export interface Club {
   club_type: string;
   logo_url?: string | null;
   created_by?: string | null;
+  school: string;
 }

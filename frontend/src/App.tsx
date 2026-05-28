@@ -9,10 +9,8 @@ import {
   useEventsStore,
   useSavedEventsStore,
 } from "@/features/events";
-import { EasterEggs } from "@/shared/components/EasterEggs";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useSearchStore } from "@/features/search";
-import { useEasterEggs } from "@/shared/components/useEasterEggs";
 import { useUIStore } from "@/shared/store/ui.store";
 import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
 import { ModalContainer } from "@/app/ModalContainer";
@@ -39,9 +37,9 @@ import { useCreditsStore } from "@/features/credits";
 import type { Event } from "@/shared/types";
 
 // Lazy load pages for code splitting
-const AboutPage = lazy(() =>
-  import("@/features/about").then((module) => ({
-    default: module.AboutPage,
+const ContactPage = lazy(() =>
+  import("@/features/contact").then((module) => ({
+    default: module.ContactPage,
   }))
 );
 const ClubsPage = lazy(() =>
@@ -65,7 +63,7 @@ const AuthEntryPage = lazy(() =>
   }))
 );
 const OnboardingPage = lazy(() =>
-  import("@/features/auth").then((module) => ({
+  import("@/features/onboarding").then((module) => ({
     default: module.OnboardingPage,
   }))
 );
@@ -154,9 +152,6 @@ function AppContent() {
     setEditingEvent(null);
   }, []);
 
-  // ── Easter eggs ──────────────────────────────────────────────
-  const easterEggs = useEasterEggs();
-  const { activeEasterEgg, clearEasterEgg } = easterEggs;
 
   // ── Search store setter (stable ref, selector-based subscription) ─
   // Avoid useSearchStore() with no selector — it would subscribe AppContent
@@ -211,7 +206,7 @@ function AppContent() {
         path={ROUTES.HOME}
         element={<EventsPageContainer />}
       />
-      <Route path={ROUTES.ABOUT} element={<AboutPage />} />
+      <Route path={ROUTES.CONTACT} element={<ContactPage />} />
       <Route path={ROUTES.CLUBS} element={<ClubsPage />} />
       <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route
@@ -283,11 +278,6 @@ function AppContent() {
           appRoutes
         ) : (
           <AppLayout>
-            {/* Easter Eggs */}
-            <EasterEggs
-              activeEasterEgg={activeEasterEgg}
-              onComplete={clearEasterEgg}
-            />
 
             {appRoutes}
           </AppLayout>

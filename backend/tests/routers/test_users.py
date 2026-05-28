@@ -30,11 +30,13 @@ def test_get_me_requires_auth(client):
 
 def test_get_me_returns_user(authenticated_client, monkeypatch):
     user = _mock_user()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=user))
+    get_user_by_supabase_id = MagicMock(return_value=user)
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", get_user_by_supabase_id)
 
     resp = authenticated_client.get("/users/me")
     assert resp.status_code == 200
     assert resp.json()["email"] == FAKE_USER["email"]
+    get_user_by_supabase_id.assert_called_once_with(FAKE_USER["id"], bypass_cache=True)
 
 
 # ── PATCH /users/me ─────────────────────────────────────────────────
@@ -114,6 +116,19 @@ def test_delete_user_forbidden_for_non_admin(authenticated_client):
     """Non-admin authenticated user gets 403 on admin-only delete endpoint."""
     resp = authenticated_client.delete("/users/00000000-0000-0000-0000-000000000000")
     assert resp.status_code == 403
+
+
+def test_delete_user_admin_deletes_other_user(admin_client, monkeypatch):
+    """Admin deletion uses the resolved DB admin shape, not the raw auth dict."""
+    target_id = "00000000-0000-0000-0000-000000000001"
+    monkeypatch.setattr(user_service, "get_user", MagicMock(return_value=_mock_user(id=target_id)))
+    delete_user = MagicMock(return_value=True)
+    monkeypatch.setattr(user_service, "delete_user", delete_user)
+
+    resp = admin_client.delete(f"/users/{target_id}")
+
+    assert resp.status_code == 204
+    delete_user.assert_called_once()
 
 
 # ── PATCH /users/{user_id}/role (admin-only, audit I16) ──────────────

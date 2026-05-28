@@ -40,5 +40,5 @@ export function filterClubsByType(clubs: Club[], clubType: string): Club[] {
   if (!clubType) {
     return clubs;
   }
-  return clubs.filter((club) => club.club_type === clubType);
+  return clubs.filter((club) => club.club_type?.trim() === clubType);
 }

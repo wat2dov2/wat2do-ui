@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useRecommendations } from "@/features/recommendations";
 import { useSearch } from "@/features/search";
 import { useLatestAddedEvent } from "@/features/events/hooks/useLatestAddedEvent";
@@ -20,6 +21,7 @@ interface UseEventsPageDataOptions {
  * and derived ordered events.
  */
 export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions) {
+  const { t } = useTranslation();
   // Read from stores (single source of truth -- no duplicate fetches)
   const events = useEventsStore((s) => s.events);
   const isLoading = useEventsStore((s) => s.isLoading);
@@ -88,11 +90,11 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
             ? err.message
             : err instanceof Error
               ? err.message
-              : "Failed to delete event";
+              : t("events.deleteFailed");
         showToast(message, "error");
       }
     },
-    [deleteEvent]
+    [deleteEvent, t]
   );
 
   return {

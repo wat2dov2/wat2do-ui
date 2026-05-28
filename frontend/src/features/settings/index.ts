@@ -8,9 +8,12 @@
 // Pages
 export { SettingsPage } from "./pages/SettingsPage";
 
+// API
+export { setDailyNewEventsEmailPreferenceAPI } from "./api/notificationPreferences.api";
+
 // Types
 export type {
-  NotificationPreferences,
   PrivacyPreferences,
   AppearancePreferences,
 } from "./api/settings.api";
+export type { NotificationPreferences } from "./api/notificationPreferences.api";

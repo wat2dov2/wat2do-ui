@@ -108,80 +108,84 @@ export function ResetPasswordPage() {
     navigate(ROUTES.LOGIN);
   }, [navigate]);
 
+  const content = isComplete ? (
+    <>
+      <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
+        <p className="text-sm text-emerald-700 dark:text-emerald-300 text-center">
+          {t("auth.resetPasswordSuccess")}
+        </p>
+      </div>
+      <LoadingButton type="button" onClick={goToLogin} className="w-full">
+        {t("auth.backToLogin")}
+      </LoadingButton>
+    </>
+  ) : (
+    <form
+      className="w-full space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        handleSubmit();
+      }}
+    >
+      <Input
+        type="password"
+        autoComplete="new-password"
+        value={password}
+        onChange={(event) => {
+          setPassword(event.target.value);
+          setError(null);
+        }}
+        placeholder={t("auth.newPasswordPlaceholder")}
+        disabled={!recoveryParams.accessToken}
+      />
+      <Input
+        type="password"
+        autoComplete="new-password"
+        value={confirmPassword}
+        onChange={(event) => {
+          setConfirmPassword(event.target.value);
+          setError(null);
+        }}
+        placeholder={t("auth.confirmPasswordPlaceholder")}
+        disabled={!recoveryParams.accessToken}
+      />
+
+      {(error || validationError) && (
+        <p className="text-sm text-destructive text-center">
+          {error || validationError}
+        </p>
+      )}
+
+      <LoadingButton
+        type="submit"
+        disabled={!canSubmit}
+        isLoading={isLoading}
+        loadingText={t("common.pleaseWait")}
+        className="w-full"
+      >
+        {t("auth.updatePassword")}
+      </LoadingButton>
+
+      <p className="text-center">
+        <button
+          type="button"
+          onClick={goToLogin}
+          className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+        >
+          {t("auth.backToLogin")}
+        </button>
+      </p>
+    </form>
+  );
+
   return (
     <AuthPageLayout
       heading={t("auth.resetPasswordHeading")}
       description={t("auth.resetPasswordDescription")}
     >
-      {isComplete ? (
-        <div className="space-y-4">
-          <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
-            <p className="text-sm text-emerald-700 dark:text-emerald-300 text-center">
-              {t("auth.resetPasswordSuccess")}
-            </p>
-          </div>
-          <LoadingButton type="button" onClick={goToLogin} className="w-full">
-            {t("auth.backToLogin")}
-          </LoadingButton>
-        </div>
-      ) : (
-        <form
-          className="w-full space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSubmit();
-          }}
-        >
-          <Input
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              setError(null);
-            }}
-            placeholder={t("auth.newPasswordPlaceholder")}
-            disabled={!recoveryParams.accessToken}
-          />
-          <Input
-            type="password"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(event) => {
-              setConfirmPassword(event.target.value);
-              setError(null);
-            }}
-            placeholder={t("auth.confirmPasswordPlaceholder")}
-            disabled={!recoveryParams.accessToken}
-          />
-
-          {(error || validationError) && (
-            <p className="text-sm text-destructive text-center">
-              {error || validationError}
-            </p>
-          )}
-
-          <LoadingButton
-            type="submit"
-            disabled={!canSubmit}
-            isLoading={isLoading}
-            loadingText={t("common.pleaseWait")}
-            className="w-full"
-          >
-            {t("auth.updatePassword")}
-          </LoadingButton>
-
-          <p className="text-center">
-            <button
-              type="button"
-              onClick={goToLogin}
-              className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
-            >
-            {t("auth.backToLogin")}
-          </button>
-        </p>
-        </form>
-      )}
+      <div className="w-full space-y-4">
+        {content}
+      </div>
     </AuthPageLayout>
   );
 }

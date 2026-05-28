@@ -1,16 +1,8 @@
 /**
- * QR Code Generation Utilities
- * Generates QR code data URLs and handles QR code creation
+ * QR Code URL utilities.
  */
 
 export function generateQRCodeUrl(qrCodeId: string): string {
   const baseUrl = window.location.origin;
   return `${baseUrl}/qr/${qrCodeId}`;
-}
-
-export function downloadQRCodeAsPNG(dataUrl: string, filename: string): void {
-  const link = document.createElement("a");
-  link.download = `${filename}.png`;
-  link.href = dataUrl;
-  link.click();
 }

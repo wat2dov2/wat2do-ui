@@ -1,6 +1,6 @@
 /**
  * Auth Feature
- * Public API for authentication and onboarding
+ * Public API for authentication
  *
  * This is the feature's public interface.
  * Other features should only import from here.
@@ -11,22 +11,15 @@ export { AuthPageLayout } from "./components/AuthPageLayout";
 export { AuthHeroPanel } from "./components/AuthHeroPanel";
 export { AuthEmailFormCard } from "./components/AuthEmailFormCard";
 export { ForgotPasswordFormCard } from "./components/ForgotPasswordFormCard";
-export { OnboardingFacultyStep } from "./components/OnboardingFacultyStep";
-export { GooseDialogue } from "./components/GooseDialogue";
+export { PreviewStyleEventCard } from "./components/PreviewStyleEventCard";
 
 // Pages
 export { AuthEntryPage } from "./pages/AuthEntryPage";
-export { OnboardingPage } from "./pages/OnboardingPage";
 export { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 export { ResetPasswordPage } from "./pages/ResetPasswordPage";
 
 // Hooks
 export { useAuthEntryFlow } from "./hooks/useAuthEntryFlow";
-export {
-  useOnboardingFlow,
-  FACULTY_OPTIONS,
-  ONBOARDING_TOTAL_STEPS,
-} from "./hooks/useOnboardingFlow";
 export {
   useAuthState,
   useUserEmail,
@@ -46,14 +39,25 @@ export {
   updateUserProfile,
   isAuthenticated,
   isProfileCompleted,
+  initializeAuth,
   loginAPI,
   signupAPI,
   logoutAPI,
   fetchProfileAPI,
   updateProfileAPI,
   resetPasswordAPI,
-  setDailyNewEventsEmailPreferenceAPI,
   getLastProfileFetchAt,
   AUTH_STATE_REFRESH_EVENT,
   type UserProfile,
 } from "./api/auth.api";
+
+// Constants (shared)
+export {
+  PREVIEW_CARD_IMAGE_HEIGHT,
+  HERO_CARD_PLACEHOLDER_HEIGHT,
+} from "./constants";
+
+// Utilities (shared)
+export { eventToPreview } from "./utils/eventPreview";
+export { shuffle } from "./utils/shuffle";
+

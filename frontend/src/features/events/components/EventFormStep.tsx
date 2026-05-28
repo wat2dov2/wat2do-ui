@@ -11,13 +11,14 @@ import {
   FieldGroup,
   FieldSeparator,
 } from "@/shared/ui/field";
-import { AIGenerationInput } from "@/features/search";
+import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { EventFormPreview } from "@/features/events/components/EventForm/EventForm/EventFormPreview";
 import { EventFormJSON } from "@/features/events/components/EventForm/EventFormJSON";
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
 import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
-import type { ViewMode } from "@/features/events/components/SubmitEventModal.reducer";
 import type { useEventForm } from "@/features/events/hooks/useEventForm";
+
+export type ViewMode = "visual" | "json";
 
 /** The subset of useEventForm's return value that EventFormStep needs. */
 type EventFormHookReturn = ReturnType<typeof useEventForm>;
@@ -170,6 +171,7 @@ export function EventFormStep({
                   placeholder={t("forms.aiPromptPlaceholder")}
                   generatingText={t("common.generating")}
                   className="space-y-2"
+                  titleClassName="text-base"
                 />
               </Field>
               <FieldSeparator />

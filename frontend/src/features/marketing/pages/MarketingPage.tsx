@@ -9,17 +9,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
-import type { QRCode } from "@/shared/types";
-import {
   CreateQRCodeModal,
   QRCodeDetailsModal,
-} from "@/features/qrcode";
+  type QRCode,
+} from "@/features/posters";
 import type { Event } from "@/shared/types";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { useMarketingData } from "@/features/marketing/hooks/useMarketingData";
@@ -31,7 +24,7 @@ interface MarketingPageProps {
 
 export function MarketingPage({ events, userEmail }: MarketingPageProps) {
   const { t } = useTranslation();
-  const { qrCodesWithStats, loading, loadQRCodes, deletePoster } = useMarketingData();
+  const { qrCodesWithStats, loading, loadQRCodes } = useMarketingData();
 
   // Explicit data load on mount (side effect is visible at the call site)
   useEffect(() => {
@@ -40,27 +33,14 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedQRCode, setSelectedQRCode] = useState<QRCode | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handleCreate = () => {
     loadQRCodes();
     setShowCreateModal(false);
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deletePoster(id);
-      setDeleteConfirmId(null);
-    } catch (err) {
-      console.error("Failed to delete poster:", err);
-      // keep dialog open on error
-    }
-  };
-
   const handleViewDetails = (qrCode: QRCode) => {
     setSelectedQRCode(qrCode);
-    setShowDetailsModal(true);
   };
 
   if (loading) {
@@ -190,44 +170,12 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
       {/* Details Modal */}
       {selectedQRCode && (
         <QRCodeDetailsModal
-          isOpen={showDetailsModal}
-          onClose={() => {
-            setShowDetailsModal(false);
-            setSelectedQRCode(null);
-          }}
+          isOpen={selectedQRCode !== null}
+          onClose={() => setSelectedQRCode(null)}
           qrCode={selectedQRCode}
           events={events}
         />
       )}
-
-      {/* Delete Confirmation */}
-      <Dialog
-        open={deleteConfirmId !== null}
-        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("marketing.deleteQRCode")}</DialogTitle>
-            <DialogDescription>
-              {t("marketing.deleteQRCodeConfirm")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteConfirmId(null)}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
-            >
-              {t("common.delete")}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -69,9 +69,9 @@ const Ray = ({
           mixBlendMode: "var(--light-rays-blend-mode, screen)" as unknown as CSSProperties["mixBlendMode"],
         } as CSSProperties
       }
-      initial={{ opacity: intensity * 0.5, rotate: rotate }}
+      initial={{ opacity: intensity * 0.3, rotate: rotate }}
       animate={{
-        opacity: [intensity * 0.5, intensity, intensity * 0.3, intensity * 0.5],
+        opacity: [intensity * 0.3, intensity, intensity * 0.12, intensity * 0.3],
         rotate: [rotate - swing, rotate + swing, rotate - swing],
       }}
       transition={{

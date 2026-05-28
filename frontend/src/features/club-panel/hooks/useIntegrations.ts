@@ -105,19 +105,22 @@ export function useIntegrations() {
   );
 
   // --- Platform-specific connection payload configs ---
+  type GenericPlatform = "slack" | "telegram" | "linkedin" | "facebook";
+
   type PayloadBuilder = (
     primary: IntegrationServerOption,
     secondary: IntegrationChannelOption | undefined
   ) => { name: string; metadata: Record<string, string> } | null;
 
-  const platformConfigs: {
-    key: "slack" | "telegram" | "linkedin" | "facebook";
-    servers: IntegrationServerOption[];
-    oauthUrl?: string;
-    buildConnectionPayload: PayloadBuilder;
-  }[] = [
+  const platformConfigs: Record<
+    GenericPlatform,
     {
-      key: "slack",
+      servers: IntegrationServerOption[];
+      oauthUrl?: string;
+      buildConnectionPayload: PayloadBuilder;
+    }
+  > = {
+    slack: {
       servers: options.slackServers,
       oauthUrl: options.slackOauthUrl,
       buildConnectionPayload: (workspace, channel) => {
@@ -133,16 +136,14 @@ export function useIntegrations() {
         };
       },
     },
-    {
-      key: "telegram",
+    telegram: {
       servers: options.telegramServers,
       buildConnectionPayload: (group) => ({
         name: group.name,
         metadata: { group_id: group.id, group_name: group.name },
       }),
     },
-    {
-      key: "linkedin",
+    linkedin: {
       servers: options.linkedinServers,
       oauthUrl: options.linkedinOauthUrl,
       buildConnectionPayload: (page) => ({
@@ -150,8 +151,7 @@ export function useIntegrations() {
         metadata: { page_id: page.id, page_name: page.name },
       }),
     },
-    {
-      key: "facebook",
+    facebook: {
       servers: options.facebookTargets,
       oauthUrl: options.facebookOauthUrl,
       buildConnectionPayload: (target) => ({
@@ -164,46 +164,45 @@ export function useIntegrations() {
         })(),
       }),
     },
-  ];
+  };
 
   // --- Generic platform hooks (driven by config, not separate code paths) ---
-  const slack = usePlatformConnect({
-    servers: platformConfigs[0].servers,
-    oauthUrl: platformConfigs[0].oauthUrl,
-    applyConnection: makeApplyConnection("slack"),
-    buildConnectionPayload: platformConfigs[0].buildConnectionPayload,
-  });
-
-  const telegram = usePlatformConnect({
-    servers: platformConfigs[1].servers,
-    oauthUrl: platformConfigs[1].oauthUrl,
-    applyConnection: makeApplyConnection("telegram"),
-    buildConnectionPayload: platformConfigs[1].buildConnectionPayload,
-  });
-
-  const linkedin = usePlatformConnect({
-    servers: platformConfigs[2].servers,
-    oauthUrl: platformConfigs[2].oauthUrl,
-    applyConnection: makeApplyConnection("linkedin"),
-    buildConnectionPayload: platformConfigs[2].buildConnectionPayload,
-  });
-
-  const facebook = usePlatformConnect({
-    servers: platformConfigs[3].servers,
-    oauthUrl: platformConfigs[3].oauthUrl,
-    applyConnection: makeApplyConnection("facebook"),
-    buildConnectionPayload: platformConfigs[3].buildConnectionPayload,
-  });
+  const platformConnects = {
+    slack: usePlatformConnect({
+      servers: platformConfigs.slack.servers,
+      oauthUrl: platformConfigs.slack.oauthUrl,
+      applyConnection: makeApplyConnection("slack"),
+      buildConnectionPayload: platformConfigs.slack.buildConnectionPayload,
+    }),
+    telegram: usePlatformConnect({
+      servers: platformConfigs.telegram.servers,
+      oauthUrl: platformConfigs.telegram.oauthUrl,
+      applyConnection: makeApplyConnection("telegram"),
+      buildConnectionPayload: platformConfigs.telegram.buildConnectionPayload,
+    }),
+    linkedin: usePlatformConnect({
+      servers: platformConfigs.linkedin.servers,
+      oauthUrl: platformConfigs.linkedin.oauthUrl,
+      applyConnection: makeApplyConnection("linkedin"),
+      buildConnectionPayload: platformConfigs.linkedin.buildConnectionPayload,
+    }),
+    facebook: usePlatformConnect({
+      servers: platformConfigs.facebook.servers,
+      oauthUrl: platformConfigs.facebook.oauthUrl,
+      applyConnection: makeApplyConnection("facebook"),
+      buildConnectionPayload: platformConfigs.facebook.buildConnectionPayload,
+    }),
+  };
 
   // --- Platform connect dispatcher ---
   const platformConnectHandlers: Record<IntegrationPlatform, () => void> = {
     discord: discord.openFlow,
     whatsapp: () => setWhatsappModalOpen(true),
     instagram: () => { setInstagramModalOpen(true); setInstagramHandle(""); },
-    slack: slack.openFlow,
-    telegram: telegram.openFlow,
-    linkedin: linkedin.openFlow,
-    facebook: facebook.openFlow,
+    slack: platformConnects.slack.openFlow,
+    telegram: platformConnects.telegram.openFlow,
+    linkedin: platformConnects.linkedin.openFlow,
+    facebook: platformConnects.facebook.openFlow,
   };
 
   const handleConnect = (platform: IntegrationPlatform) => {
@@ -226,9 +225,6 @@ export function useIntegrations() {
     });
     setInstagramModalOpen(false);
   };
-
-  // Expose generic platform hook states as a record so the page can iterate
-  const platformConnects = { slack, telegram, linkedin, facebook };
 
   return {
     // Core data (from useIntegrationData)
@@ -258,11 +254,7 @@ export function useIntegrations() {
     setInstagramHandle,
     handleInstagramConnect,
 
-    // Generic platform hooks (individual + record for iteration)
-    slack,
-    telegram,
-    linkedin,
-    facebook,
+    // Generic platform hooks
     platformConnects,
   };
 }

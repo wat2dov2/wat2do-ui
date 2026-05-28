@@ -9,7 +9,7 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import USER_SAVED_EVENTS
 from schemas.saved_event import SavedEventResponse, UserEventPair
-from services.recommender.config import CACHE_TTL_SECONDS
+from recommender.config import CACHE_TTL_SECONDS
 
 log = logging.getLogger(__name__)
 

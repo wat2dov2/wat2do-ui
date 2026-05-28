@@ -85,8 +85,10 @@ def test_resolve_event_club_single_club_ignores_organization_text(fake_sb, patch
 
 
 def test_list_clubs_school_missing_column_fallback(fake_sb, patch_sb):
-    from postgrest.exceptions import APIError
     from unittest.mock import MagicMock
+
+    from postgrest.exceptions import APIError
+
     patch_sb("services.club_service")
     missing_school = APIError(
         {
@@ -101,7 +103,12 @@ def test_list_clubs_school_missing_column_fallback(fake_sb, patch_sb):
         MagicMock(
             data=[
                 {"id": 1, "club_name": "UW Chess Club", "club_type": "WUSA", "school": None},
-                {"id": 2, "club_name": "UofT Board Games", "club_type": "Independent", "school": "University of Toronto"},
+                {
+                    "id": 2,
+                    "club_name": "UofT Board Games",
+                    "club_type": "Independent",
+                    "school": "University of Toronto",
+                },
             ]
         ),
     ]
@@ -113,9 +120,12 @@ def test_list_clubs_school_missing_column_fallback(fake_sb, patch_sb):
 
 
 def test_create_club_school_missing_column_fallback(fake_sb, patch_sb):
-    from postgrest.exceptions import APIError
     from unittest.mock import MagicMock
+
+    from postgrest.exceptions import APIError
+
     from schemas.club import ClubCreate
+
     patch_sb("services.club_service")
     missing_school = APIError(
         {
@@ -127,26 +137,21 @@ def test_create_club_school_missing_column_fallback(fake_sb, patch_sb):
     )
     fake_sb.execute.side_effect = [
         missing_school,
-        MagicMock(
-            data=[
-                {"id": 1, "club_name": "New Club", "club_type": "WUSA"}
-            ]
-        ),
+        MagicMock(data=[{"id": 1, "club_name": "New Club", "club_type": "WUSA"}]),
     ]
 
-    club_data = ClubCreate(
-        club_name="New Club",
-        club_type="WUSA",
-        school="University of Waterloo"
-    )
+    club_data = ClubCreate(club_name="New Club", club_type="WUSA", school="University of Waterloo")
     res = club_service.create_club(club_data, created_by="user-1")
     assert res.club_name == "New Club"
 
 
 def test_update_club_school_missing_column_fallback(fake_sb, patch_sb):
-    from postgrest.exceptions import APIError
     from unittest.mock import MagicMock
+
+    from postgrest.exceptions import APIError
+
     from schemas.club import ClubUpdate
+
     patch_sb("services.club_service")
     missing_school = APIError(
         {
@@ -156,7 +161,7 @@ def test_update_club_school_missing_column_fallback(fake_sb, patch_sb):
             "hint": None,
         }
     )
-    
+
     fake_sb.execute.side_effect = [
         # get_club call inside update_club
         MagicMock(data=[{"id": 1, "club_name": "Old Name", "club_type": "WUSA"}]),
@@ -166,10 +171,7 @@ def test_update_club_school_missing_column_fallback(fake_sb, patch_sb):
         MagicMock(data=[{"id": 1, "club_name": "New Name", "club_type": "WUSA"}]),
     ]
 
-    club_data = ClubUpdate(
-        club_name="New Name",
-        school="University of Waterloo"
-    )
+    club_data = ClubUpdate(club_name="New Name", school="University of Waterloo")
     res = club_service.update_club(1, club_data)
     assert res is not None
     assert res.club_name == "New Name"

@@ -1,4 +1,5 @@
 import type { FilterState } from "@/shared/types";
+import type { ApiFilterStateResponse } from "@/shared/generated";
 import { QP } from "@/shared/constants/queryParams";
 import i18n from "@/shared/lib/i18n";
 
@@ -32,6 +33,22 @@ export interface SearchStoreFilterValues {
   requiresRegistration: boolean;
 }
 
+type GeneratedFilterStateInput = Partial<ApiFilterStateResponse>;
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function priceRangeFrom(value: unknown): FilterState["priceRange"] {
+  const priceRaw = typeof value === "object" && value ? (value as Record<string, unknown>) : null;
+  return {
+    min: priceRaw && typeof priceRaw.min === "string" ? priceRaw.min : "",
+    max: priceRaw && typeof priceRaw.max === "string" ? priceRaw.max : "",
+  };
+}
+
 /**
  * Map Zustand search-store filter values to the shared `FilterState`
  * shape used by the JSON editor and URL params.
@@ -56,6 +73,24 @@ export function storeStatesToFilterState(
 }
 
 /**
+ * Normalize the generated AI FilterStateResponse to the UI/URL FilterState.
+ */
+export function generatedFilterStateToFilterState(
+  filters: GeneratedFilterStateInput,
+): FilterState {
+  return {
+    searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
+    categories: stringArray(filters.categories),
+    locations: stringArray(filters.locations),
+    foods: stringArray(filters.foods),
+    days: stringArray(filters.days),
+    priceRange: priceRangeFrom(filters.priceRange),
+    requiresRegistration:
+      typeof filters.requiresRegistration === "boolean" ? filters.requiresRegistration : false,
+  };
+}
+
+/**
  * Serialize filter state to JSON string
  */
 export function serializeFiltersToJSON(filters: FilterState): string {
@@ -70,33 +105,7 @@ export function parseFiltersFromJSON(
 ): { filters: FilterState; error: string | null } {
   try {
     const parsed = JSON.parse(jsonString);
-    const priceRaw =
-      typeof parsed.priceRange === "object" && parsed.priceRange
-        ? (parsed.priceRange as Record<string, unknown>)
-        : null;
-    const filters: FilterState = {
-      searchQuery: typeof parsed.searchQuery === "string" ? parsed.searchQuery : "",
-      categories: Array.isArray(parsed.categories)
-        ? parsed.categories.filter((c): c is string => typeof c === "string")
-        : [],
-      locations: Array.isArray(parsed.locations)
-        ? parsed.locations.filter((l): l is string => typeof l === "string")
-        : [],
-      foods: Array.isArray(parsed.foods)
-        ? parsed.foods.filter((f): f is string => typeof f === "string")
-        : [],
-      days: Array.isArray(parsed.days)
-        ? parsed.days.filter((d): d is string => typeof d === "string")
-        : [],
-      priceRange: {
-        min: priceRaw && typeof priceRaw.min === "string" ? priceRaw.min : "",
-        max: priceRaw && typeof priceRaw.max === "string" ? priceRaw.max : "",
-      },
-      requiresRegistration:
-        typeof parsed.requiresRegistration === "boolean"
-          ? parsed.requiresRegistration
-          : false,
-    };
+    const filters = generatedFilterStateToFilterState(parsed as GeneratedFilterStateInput);
     return { filters, error: null };
   } catch (err) {
     console.error("Failed to parse filters from JSON:", err);

@@ -7,6 +7,9 @@
 
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
+import { LANGUAGE_CODES, type SupportedLanguage } from "@/shared/constants/languages";
+
+export type { SupportedLanguage } from "@/shared/constants/languages";
 
 // ── Theme ───────────────────────────────────────────────────────────
 
@@ -21,12 +24,9 @@ export function saveTheme(theme: "dark" | "light"): void {
 
 // ── Language ────────────────────────────────────────────────────────
 
-const SUPPORTED_LANGUAGES = ['en'] as const;
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
-
 export function loadLanguage(): SupportedLanguage {
   const saved = StorageService.getItem<string | null>(STORAGE_KEYS.LANGUAGE, null);
-  if (saved && SUPPORTED_LANGUAGES.includes(saved as SupportedLanguage)) {
+  if (saved && LANGUAGE_CODES.includes(saved as SupportedLanguage)) {
     return saved as SupportedLanguage;
   }
   return 'en';

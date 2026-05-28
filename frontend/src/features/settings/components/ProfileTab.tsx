@@ -21,9 +21,10 @@ import {
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { useProfile } from "@/features/settings/hooks/useProfile";
 import { availableSchools } from "@/shared/constants/schools";
+import { translateSchool } from "@/shared/utils/schoolTranslation";
 import { getAvailableInterests } from "@/shared/data/interests";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
-import { FACULTY_OPTIONS } from "@/features/auth";
+import { FACULTY_OPTIONS } from "@/features/onboarding";
 
 interface ProfileTabProps {
   userEmail: string | null;
@@ -109,7 +110,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
               <SelectContent>
                 {availableSchools.map((school) => (
                   <SelectItem key={school} value={school}>
-                    {school}
+                    {translateSchool(school, t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -130,7 +131,11 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
               <SelectContent>
                 {FACULTY_OPTIONS.map((faculty) => (
                   <SelectItem key={faculty} value={faculty}>
-                    {t(toFacultyTranslationKey(faculty)) || faculty}
+                    {(() => {
+                      const key = toFacultyTranslationKey(faculty);
+                      const translated = t(key);
+                      return translated !== key ? translated : faculty;
+                    })()}
                   </SelectItem>
                 ))}
               </SelectContent>

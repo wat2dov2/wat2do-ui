@@ -4,7 +4,7 @@
 
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Check, ChevronsUpDown, LogOut, Search, Shield } from "lucide-react";
 import {
   Tooltip,
@@ -38,25 +38,13 @@ export function TopNav() {
   const { profileCompleted, isAdmin, clubs, clubId } = useAuthState();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [clubMenuOpen, setClubMenuOpen] = useState(false);
   const [clubSearch, setClubSearch] = useState("");
   const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
   const canOpenClubPanel = profileCompleted && Boolean(activeClub);
-
-  const filteredClubs = clubs.filter((club) => {
-    const clubSchool = club.school || "University of Waterloo";
-    const matchesSchool = !schoolFilter || clubSchool === schoolFilter;
-    const matchesSearch = club.club_name.toLowerCase().includes(clubSearch.toLowerCase());
-    return matchesSchool && matchesSearch;
-  });
-
-  const handleSchoolChange = useCallback((newSchool: string) => {
-    setSchoolFilter(newSchool);
-    if (pathname === ROUTES.CLUB_PANEL || pathname.startsWith(`${ROUTES.CLUB_PANEL}/`)) {
-      navigate(ROUTES.HOME);
-    }
-  }, [setSchoolFilter, pathname, navigate]);
+  const filteredClubs = clubs.filter((club) =>
+    club.club_name.toLowerCase().includes(clubSearch.toLowerCase())
+  );
 
   const handleLogoClick = useCallback(() => {
     navigate(ROUTES.HOME);
@@ -108,7 +96,7 @@ export function TopNav() {
           />
         </button>
         <span className="text-muted-foreground text-lg font-light">/</span>
-        <SchoolCombobox value={schoolFilter ?? ""} onChange={handleSchoolChange} />
+        <SchoolCombobox value={schoolFilter ?? ""} onChange={setSchoolFilter} />
       </div>
 
       <div className="flex items-center gap-2">

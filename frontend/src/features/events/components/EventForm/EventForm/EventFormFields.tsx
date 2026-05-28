@@ -40,7 +40,6 @@ export function EventFormFields() {
   return (
     <FieldGroup>
       <FieldSet>
-        <FieldLegend>{t("forms.eventInformation")}</FieldLegend>
         <FieldGroup>
           <FormInput
             name="title"

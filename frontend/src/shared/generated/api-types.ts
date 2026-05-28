@@ -1153,6 +1153,11 @@ export interface components {
              * @description Approved club owner user ID
              */
             owner_user_id?: string | null;
+            /**
+             * School
+             * @default University of Waterloo
+             */
+            school: string;
         };
         /** ClubIntegrationResponse */
         ClubIntegrationResponse: {
@@ -1220,6 +1225,8 @@ export interface components {
             logo_url?: string | null;
             /** Created By */
             created_by?: string | null;
+            /** School */
+            school?: string | null;
         };
         /** ClubUpdate */
         ClubUpdate: {
@@ -1237,6 +1244,8 @@ export interface components {
             club_type?: string | null;
             /** Logo Url */
             logo_url?: string | null;
+            /** School */
+            school?: string | null;
         };
         /** CreditBalanceResponse */
         CreditBalanceResponse: {
@@ -2716,6 +2725,7 @@ export interface operations {
                 skip?: number;
                 limit?: number;
                 club_type?: string | null;
+                school?: string | null;
                 search?: string | null;
             };
             header?: never;

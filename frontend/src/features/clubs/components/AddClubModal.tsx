@@ -35,6 +35,8 @@ import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { TagInput } from "@/shared/ui/tag-input";
+import { availableSchools } from "@/shared/constants/schools";
+import { translateSchool } from "@/shared/utils/schoolTranslation";
 
 interface ClubFormData {
   club_name: string;
@@ -44,6 +46,7 @@ interface ClubFormData {
   discord: string;
   club_type: string;
   owner_user_id: string;
+  school: string;
 }
 
 interface AddClubModalProps {
@@ -72,6 +75,7 @@ export function AddClubModal({
     discord: "",
     club_type: "WUSA",
     owner_user_id: "",
+    school: "University of Waterloo",
   }), []);
 
   // Memoize validate to prevent infinite loops
@@ -82,6 +86,9 @@ export function AddClubModal({
     }
     if (touched.categories && data.categories.length === 0) {
       newErrors.categories = t("forms.categoryRequired");
+    }
+    if (touched.school && !data.school) {
+      newErrors.school = "School is required";
     }
     return newErrors;
   }, [t]);
@@ -96,6 +103,7 @@ export function AddClubModal({
           discord: initialData.discord || "",
           club_type: initialData.club_type,
           owner_user_id: initialData.created_by || "",
+          school: initialData.school || "University of Waterloo",
         }
       : undefined,
     isEditMode,
@@ -156,6 +164,7 @@ export function AddClubModal({
       discord: form.formData.discord.trim() || null,
       club_type: form.formData.club_type,
       created_by: form.formData.owner_user_id.trim() || initialData?.created_by || null,
+      school: form.formData.school,
     };
 
     setIsSubmitting(true);
@@ -189,9 +198,6 @@ export function AddClubModal({
           <FieldGroup>
             <FieldSet>
               <FieldLegend>{t("forms.requiredInformation")}</FieldLegend>
-              <FieldDescription>
-                {t("forms.requiredFieldsNote")}
-              </FieldDescription>
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
@@ -208,6 +214,30 @@ export function AddClubModal({
                   />
                   {form.errors.club_name && (
                     <FieldError className="text-xs">{form.errors.club_name}</FieldError>
+                  )}
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="club-school" className="text-sm font-medium text-foreground">
+                    {t("schools.school")} <span className="text-error">*</span>
+                  </FieldLabel>
+                  <Select
+                    value={form.formData.school}
+                    onValueChange={(value) => form.updateField("school", value)}
+                  >
+                    <SelectTrigger id="club-school" className="w-full">
+                      <SelectValue placeholder={t("schools.selectSchool")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSchools.map((school) => (
+                        <SelectItem key={school} value={school}>
+                          {translateSchool(school, t)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.errors.school && (
+                    <FieldError className="text-xs">{form.errors.school}</FieldError>
                   )}
                 </Field>
 

@@ -1,7 +1,13 @@
 /**
- * QR Code Feature — public re-exports actually consumed outside this feature.
+ * QR Code Feature — public redirect flow.
  */
 
-export { QRCodeDetailsModal } from "./components/QRCodeDetailsModal";
-export { CreateQRCodeModal } from "./components/CreateQRCodeModal";
-export { GenerateQRAssetsWizard } from "./components/GenerateQRAssetsWizard";
+export {
+  fetchQrRedirectFromBackend,
+  fetchQrRedirectWithLocation,
+  redirectFromConfig,
+  type QrRedirectConfig,
+  type QrRedirectResult,
+} from "./api/qrcode.api";
+export { useQRRedirect } from "./hooks/useQRRedirect";
+export { QRRedirectPage } from "./pages/QRRedirectPage";

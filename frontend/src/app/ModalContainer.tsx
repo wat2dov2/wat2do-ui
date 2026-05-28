@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Heart, LogIn } from "lucide-react";
 import { SubmitEventModal, useEventsStore } from "@/features/events";
-import { CommandPalette } from "@/features/commands";
+import { CommandPalette } from "@/shared/components/CommandPalette";
 import {
   BuyCreditsModal,
   useCreditsStore,
