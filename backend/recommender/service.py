@@ -11,7 +11,7 @@ import threading
 from collections.abc import Iterator
 from concurrent.futures import Executor, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from typing import Callable
+from typing import Any, Callable
 
 from core.cache import TTLCache
 from core.constants import EVENT_STATUS_ACTIVE
@@ -421,7 +421,7 @@ class RecommendationEngine:
         # Parallelize scoring strategies: popularity always runs; content and
         # collaborative run conditionally but are independent of each other.
         with self.make_executor(max_workers=3) as pool:
-            futures: dict[str, object] = {}
+            futures: dict[str, Any] = {}
             futures["pop"] = pool.submit(self._popularity_scorer, candidate_ids)
 
             if has_profile:
