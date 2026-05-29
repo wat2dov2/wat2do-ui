@@ -519,23 +519,28 @@ class RecommendationEngine:
             r = (
                 get_sb()
                 .table(EVENT_DATES)
-                .select("event_id,dtstart_utc,dtend_utc")
+                .select("event_id,dtstart_utc,dtend_utc,events!inner(*)")
                 .gte("dtstart_utc", now)
                 .order("dtstart_utc", desc=False)
                 .limit(CANDIDATE_POOL_SIZE * 4)
                 .execute()
             )
             primary_by_event: dict[int, dict] = {}
+            event_rows: dict[int, dict] = {}
             event_ids: list[int] = []
             seen: set[int] = set()
             for row in r.data or []:
                 eid = row.get("event_id")
                 if eid is None:
                     continue
+                event_row = row.get("events")
+                if not event_row or event_row.get("status") != EVENT_STATUS_ACTIVE:
+                    continue
                 if eid in seen:
                     continue
                 seen.add(eid)
                 primary_by_event[eid] = row
+                event_rows[eid] = event_row
                 event_ids.append(eid)
                 if len(event_ids) >= CANDIDATE_POOL_SIZE:
                     break
@@ -543,15 +548,6 @@ class RecommendationEngine:
             if not event_ids:
                 return []
 
-            events = (
-                get_sb()
-                .table(EVENTS)
-                .select("*")
-                .in_("id", event_ids)
-                .eq("status", EVENT_STATUS_ACTIVE)
-                .execute()
-            )
-            event_rows = {row["id"]: row for row in (events.data or [])}
             occ_by_event = event_date_service.list_for_events(event_ids)
             candidates: list[EventResponse] = []
             for eid in event_ids:

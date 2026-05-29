@@ -18,24 +18,33 @@
  * the modals needs them.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Heart, LogIn } from "lucide-react";
-import { SubmitEventModal, useEventsStore } from "@/features/events";
+import { useEventsStore } from "@/features/events/store/events.store";
 import { CommandPalette } from "@/shared/components/CommandPalette";
-import {
-  BuyCreditsModal,
-  useCreditsStore,
-} from "@/features/credits";
+import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { CommandItem } from "@/shared/ui/command";
 import { useUIStore } from "@/shared/store/ui.store";
-import { useSearchStore } from "@/features/search";
-import { useAuthState } from "@/features/auth";
+import { useSearchStore } from "@/features/search/store/search.store";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { submitEventForReview } from "@/shared/api/submissions.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Event, EventFormData } from "@/shared/types";
+
+const SubmitEventModal = lazy(() =>
+  import("@/features/events/components/SubmitEventModal").then((m) => ({
+    default: m.SubmitEventModal,
+  }))
+);
+
+const BuyCreditsModal = lazy(() =>
+  import("@/features/credits/components/BuyCreditsModal").then((m) => ({
+    default: m.BuyCreditsModal,
+  }))
+);
 
 interface ModalContainerProps {
   /** The event currently being edited (null when creating). Owned by AppContent because admin/club configs also need handleEditEventAndOpenModal. */
@@ -92,7 +101,7 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
 
   const loadEventForEdit = useCallback(
     async (eventId: number): Promise<EventFormData> => {
-      const { fetchEventById } = await import("@/features/events");
+      const { fetchEventById } = await import("@/features/events/api/events.api");
       const fullEvent = await fetchEventById(eventId);
       fullEvent.category = getEventCategory(fullEvent);
       return eventToFormData(fullEvent);
@@ -118,29 +127,33 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
 
   return (
     <>
-      <SubmitEventModal
-        isOpen={showSubmitEvent}
-        onClose={handleSubmitEventClose}
-        onSubmit={handleSubmitEvent}
-        canCreateEvents={canCreateEvents}
-        userCredits={userCredits}
-        onPromote={profileCompleted && canCreateEvents ? promoteEvent : undefined}
-        onBuyCredits={() => setShowBuyCredits(true)}
-        editEventId={editingEvent?.id}
-        initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
-        loadEventForEdit={loadEventForEdit}
-        onUpdate={async (eventId, eventData) => {
-          await updateEvent(eventId, eventData);
-          handleSubmitEventClose();
-        }}
-      />
+      <Suspense fallback={null}>
+        <SubmitEventModal
+          isOpen={showSubmitEvent}
+          onClose={handleSubmitEventClose}
+          onSubmit={handleSubmitEvent}
+          canCreateEvents={canCreateEvents}
+          userCredits={userCredits}
+          onPromote={profileCompleted && canCreateEvents ? promoteEvent : undefined}
+          onBuyCredits={() => setShowBuyCredits(true)}
+          editEventId={editingEvent?.id}
+          initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
+          loadEventForEdit={loadEventForEdit}
+          onUpdate={async (eventId, eventData) => {
+            await updateEvent(eventId, eventData);
+            handleSubmitEventClose();
+          }}
+        />
+      </Suspense>
 
-      <BuyCreditsModal
-        isOpen={showBuyCredits}
-        onClose={() => setShowBuyCredits(false)}
-        currentCredits={userCredits}
-        onPurchase={storeAddCredits}
-      />
+      <Suspense fallback={null}>
+        <BuyCreditsModal
+          isOpen={showBuyCredits}
+          onClose={() => setShowBuyCredits(false)}
+          currentCredits={userCredits}
+          onPurchase={storeAddCredits}
+        />
+      </Suspense>
 
       <CommandPalette
         isOpen={showCommandPalette}

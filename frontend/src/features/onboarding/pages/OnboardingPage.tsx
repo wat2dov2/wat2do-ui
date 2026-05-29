@@ -12,6 +12,7 @@ import { OnboardingInterestsCombobox } from "../components/OnboardingInterestsCo
 import { OnboardingFacultyStep } from "../components/OnboardingFacultyStep";
 import { GooseDialogue } from "../components/GooseDialogue";
 import { OnboardingProgressDots } from "../components/OnboardingProgressDots";
+import { OnboardingYearStep } from "../components/OnboardingYearStep";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { Switch } from "@/shared/ui/switch";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
@@ -126,7 +127,12 @@ export function OnboardingPage() {
 
   const stepContent: Record<number, JSX.Element> = {
     0: <div className="w-full min-h-[120px]" aria-hidden />,
-    1: <div className="w-full min-h-[120px]" aria-hidden />,
+    1: (
+      <OnboardingYearStep
+        isFirstYear={flow.isFirstYear}
+        onChange={flow.setIsFirstYear}
+      />
+    ),
     2: (
       <OnboardingInterestsCombobox
         selected={flow.selectedTopics}

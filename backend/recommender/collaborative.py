@@ -28,8 +28,13 @@ log = logging.getLogger(__name__)
 _cf_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 
 
-def _build_cf_matrices() -> tuple[dict[str, dict[int, float]], dict[int, dict[str, float]]]:
-    """Build (user_vectors, item_vectors) from interaction matrix and saves."""
+def _build_cf_matrices() -> tuple[
+    dict[str, dict[int, float]],
+    dict[str, float],
+    dict[int, dict[str, float]],
+    dict[int, float]
+]:
+    """Build (user_vectors, user_magnitudes, item_vectors, item_magnitudes) from interaction matrix and saves."""
     matrix = get_interaction_matrix()
     saves = saved_event_service.get_all_user_saves()
 
@@ -57,17 +62,31 @@ def _build_cf_matrices() -> tuple[dict[str, dict[int, float]], dict[int, dict[st
                 item_vectors[eid] = {}
             item_vectors[eid][uid] = score
 
+    # Precompute vector magnitudes
+    user_magnitudes: dict[str, float] = {}
+    for uid, vec in user_vectors.items():
+        user_magnitudes[uid] = math.sqrt(sum(v**2 for v in vec.values()))
+
+    item_magnitudes: dict[int, float] = {}
+    for eid, vec in item_vectors.items():
+        item_magnitudes[eid] = math.sqrt(sum(v**2 for v in vec.values()))
+
     log.info(
         "Rebuilt CF matrices: %d users, %d items, %d entries",
         len(user_vectors),
         len(item_vectors),
         sum(len(v) for v in user_vectors.values()),
     )
-    return user_vectors, item_vectors
+    return user_vectors, user_magnitudes, item_vectors, item_magnitudes
 
 
-def _get_cf_matrices() -> tuple[dict[str, dict[int, float]], dict[int, dict[str, float]]]:
-    """Return (user_vectors, item_vectors), rebuilding if the TTL has expired."""
+def _get_cf_matrices() -> tuple[
+    dict[str, dict[int, float]],
+    dict[str, float],
+    dict[int, dict[str, float]],
+    dict[int, float]
+]:
+    """Return (user_vectors, user_magnitudes, item_vectors, item_magnitudes), rebuilding if the TTL has expired."""
     return _cf_cache.get_or_compute("cf_matrices", _build_cf_matrices)
 
 
@@ -80,7 +99,7 @@ def get_collaborative_scores(
     Returns {event_id: score} for candidate events.
     Returns empty dict if user has too few interactions (cold start).
     """
-    user_vectors, item_vectors = _get_cf_matrices()
+    user_vectors, user_magnitudes, item_vectors, item_magnitudes = _get_cf_matrices()
 
     target_vec = user_vectors.get(user_id, {})
     if len(target_vec) < CF_MIN_INTERACTIONS:
@@ -91,11 +110,21 @@ def get_collaborative_scores(
     if not unseen:
         return {}
 
+    # Target user magnitude
+    target_mag = user_magnitudes.get(user_id) or math.sqrt(sum(v**2 for v in target_vec.values()))
+
     # User-based CF
-    user_scores = _user_based_cf(user_id, target_vec, user_vectors, unseen)
+    user_scores = _user_based_cf(
+        user_id,
+        target_vec,
+        target_mag,
+        user_vectors,
+        user_magnitudes,
+        unseen,
+    )
 
     # Item-based CF
-    item_scores = _item_based_cf(target_vec, item_vectors, unseen)
+    item_scores = _item_based_cf(target_vec, item_vectors, item_magnitudes, unseen)
 
     # Blend user-based and item-based CF
     all_eids = set(user_scores.keys()) | set(item_scores.keys())
@@ -111,7 +140,9 @@ def get_collaborative_scores(
 def _user_based_cf(
     target_uid: str,
     target_vec: dict[int, float],
+    target_mag: float,
     user_vectors: dict[str, dict[int, float]],
+    user_magnitudes: dict[str, float],
     unseen_eids: set[int],
     k: int = CF_NEIGHBOR_K,
 ) -> dict[int, float]:
@@ -120,7 +151,12 @@ def _user_based_cf(
     for uid, vec in user_vectors.items():
         if uid == target_uid:
             continue
-        sim = _cosine_similarity(target_vec, vec)
+        sim = _cosine_similarity(
+            target_vec,
+            vec,
+            target_mag,
+            user_magnitudes.get(uid, 0.0),
+        )
         if sim > 0:
             similarities.append((uid, sim))
 
@@ -148,14 +184,27 @@ def _user_based_cf(
 def _item_based_cf(
     target_vec: dict[int, float],
     item_vectors: dict[int, dict[str, float]],
+    item_magnitudes: dict[int, float],
     unseen_eids: set[int],
 ) -> dict[int, float]:
     """Score unseen events by similarity to events the user has interacted with."""
     scores: dict[int, float] = {}
+
+    # Precalculate magnitudes of user's interacted events to avoid recalculations in inner loops
+    user_event_mags = {
+        user_eid: item_magnitudes.get(user_eid)
+        or math.sqrt(sum(v**2 for v in item_vectors.get(user_eid, {}).values()))
+        for user_eid in target_vec.keys()
+        if target_vec[user_eid] > 0
+    }
+
     for candidate_eid in unseen_eids:
         candidate_vec = item_vectors.get(candidate_eid, {})
         if not candidate_vec:
             continue
+        candidate_mag = item_magnitudes.get(candidate_eid) or math.sqrt(
+            sum(v**2 for v in candidate_vec.values())
+        )
 
         score = 0.0
         for user_eid, user_rating in target_vec.items():
@@ -164,7 +213,12 @@ def _item_based_cf(
             item_vec = item_vectors.get(user_eid, {})
             if not item_vec:
                 continue
-            sim = _cosine_similarity_generic(candidate_vec, item_vec)
+            sim = _cosine_similarity_generic(
+                candidate_vec,
+                item_vec,
+                candidate_mag,
+                user_event_mags.get(user_eid, 0.0),
+            )
             if sim > 0:
                 score += sim * user_rating
 
@@ -174,36 +228,40 @@ def _item_based_cf(
     return scores
 
 
-def _cosine_similarity(a: dict[int, float], b: dict[int, float]) -> float:
+def _cosine_similarity(
+    a: dict[int, float],
+    b: dict[int, float],
+    mag_a: float,
+    mag_b: float,
+) -> float:
     """
     Cosine similarity between two sparse vectors keyed by event_id.
     Dot product is computed over events both users have rated (a[i] > 0 && b[i] > 0),
-    but magnitudes use the full vectors so that a single shared positive rating
-    does not inflate similarity to 1.0.
+    but magnitudes use the precomputed values.
     """
     common = {k for k in a.keys() & b.keys() if a[k] > 0 and b[k] > 0}
     if not common:
         return 0.0
-    dot = sum(a[k] * b[k] for k in common)
-    mag_a = math.sqrt(sum(v**2 for v in a.values()))
-    mag_b = math.sqrt(sum(v**2 for v in b.values()))
-    if mag_a == 0 or mag_b == 0:
+    if mag_a == 0.0 or mag_b == 0.0:
         return 0.0
+    dot = sum(a[k] * b[k] for k in common)
     return dot / (mag_a * mag_b)
 
 
-def _cosine_similarity_generic(a: dict[str, float], b: dict[str, float]) -> float:
+def _cosine_similarity_generic(
+    a: dict[str, float],
+    b: dict[str, float],
+    mag_a: float,
+    mag_b: float,
+) -> float:
     """Cosine similarity between two sparse vectors keyed by string.
 
-    Dot product is over common keys; magnitudes are over the full vectors so
-    that a single overlap does not produce similarity 1.0.
+    Dot product is over common keys; magnitudes are precalculated values.
     """
     common = set(a.keys()) & set(b.keys())
     if not common:
         return 0.0
-    dot = sum(a[k] * b[k] for k in common)
-    mag_a = math.sqrt(sum(v**2 for v in a.values()))
-    mag_b = math.sqrt(sum(v**2 for v in b.values()))
-    if mag_a == 0 or mag_b == 0:
+    if mag_a == 0.0 or mag_b == 0.0:
         return 0.0
+    dot = sum(a[k] * b[k] for k in common)
     return dot / (mag_a * mag_b)

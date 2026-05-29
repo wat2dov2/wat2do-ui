@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react"
 import type React from "react"
 import { useInView } from "framer-motion"
-import { annotate } from "rough-notation"
-import { type RoughAnnotation } from "rough-notation/lib/model"
 
 type AnnotationAction =
   | "highlight"
@@ -37,7 +35,7 @@ export function Highlighter({
   isView = false,
 }: HighlighterProps) {
   const elementRef = useRef<HTMLSpanElement>(null)
-  const annotationRef = useRef<RoughAnnotation | null>(null)
+  const annotationRef = useRef<import("rough-notation/lib/model").RoughAnnotation | null>(null)
 
   const isInView = useInView(elementRef, {
     once: true,
@@ -63,22 +61,37 @@ export function Highlighter({
       multiline,
     }
 
-    const annotation = annotate(element, annotationConfig)
+    let isObsolete = false
+    let resizeObserver: ResizeObserver | null = null
 
-    annotationRef.current = annotation
-    annotationRef.current.show()
+    import("rough-notation").then(({ annotate }) => {
+      if (isObsolete) return
 
-    const resizeObserver = new ResizeObserver(() => {
-      annotation.hide()
-      annotation.show()
+      const annotation = annotate(element, annotationConfig)
+      annotationRef.current = annotation
+      annotationRef.current.show()
+
+      resizeObserver = new ResizeObserver(() => {
+        annotation.hide()
+        annotation.show()
+      })
+
+      resizeObserver.observe(element)
+      resizeObserver.observe(document.body)
+    }).catch(err => {
+      console.error("Failed to load rough-notation dynamically:", err)
     })
 
-    resizeObserver.observe(element)
-    resizeObserver.observe(document.body)
-
     return () => {
-      if (element) {
-        annotate(element, { type: action }).remove()
+      isObsolete = true
+      if (annotationRef.current) {
+        try {
+          annotationRef.current.remove()
+        } catch {
+          console.warn("annotation remove failed")
+        }
+      }
+      if (resizeObserver) {
         resizeObserver.disconnect()
       }
     }

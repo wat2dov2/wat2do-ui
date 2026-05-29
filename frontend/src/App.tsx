@@ -4,78 +4,102 @@ import { LazyMotion, domAnimation } from "framer-motion";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AppLayout } from "@/app/AppLayout";
-import {
-  EventsPageContainer,
-  useEventsStore,
-  useSavedEventsStore,
-} from "@/features/events";
+import { useEventsStore } from "@/features/events/store/events.store";
+import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
-import { useSearchStore } from "@/features/search";
+import { useSearchStore } from "@/features/search/store/search.store";
 import { useUIStore } from "@/shared/store/ui.store";
 import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
 import { ModalContainer } from "@/app/ModalContainer";
-import { useUserEmail } from "@/features/auth";
+import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 
-import {
-  AdminPanelRoute,
-  AdminEventsRoute,
-  AdminClubsRoute,
-  AdminSubmissionsRoute,
-  AdminPostersRoute,
-} from "@/app/routes/adminRoutes";
-import { QRRedirectPage } from "@/features/qrcode";
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { ROLE_ADMIN, ROLE_CLUB } from "@/shared/constants/roles";
-import {
-  ClubPanelRoute,
-  ClubPanelPostersRoute,
-  ClubPanelIntegrationsRoute,
-  ClubPanelMembersRoute,
-} from "@/app/routes/clubPanelRoutes";
 import { ROUTES } from "@/shared/constants/routes";
-import { useCreditsStore } from "@/features/credits";
+import { useCreditsStore } from "@/features/credits/store/credits.store";
 import type { Event } from "@/shared/types";
 
 // Lazy load pages for code splitting
+const EventsPageContainer = lazy(() =>
+  import("@/features/events/pages/EventsPageContainer").then((module) => ({
+    default: module.EventsPageContainer,
+  }))
+);
 const ContactPage = lazy(() =>
-  import("@/features/contact").then((module) => ({
+  import("@/features/contact/pages/ContactPage").then((module) => ({
     default: module.ContactPage,
   }))
 );
 const ClubsPage = lazy(() =>
-  import("@/features/clubs").then((module) => ({
+  import("@/features/clubs/pages/ClubsPage").then((module) => ({
     default: module.ClubsPage,
   }))
 );
 const MarketingPage = lazy(() =>
-  import("@/features/marketing").then((module) => ({
+  import("@/features/marketing/pages/MarketingPage").then((module) => ({
     default: module.MarketingPage,
   }))
 );
 const SettingsPage = lazy(() =>
-  import("@/features/settings").then((module) => ({
+  import("@/features/settings/pages/SettingsPage").then((module) => ({
     default: module.SettingsPage,
   }))
 );
 const AuthEntryPage = lazy(() =>
-  import("@/features/auth").then((module) => ({
+  import("@/features/auth/pages/AuthEntryPage").then((module) => ({
     default: module.AuthEntryPage,
   }))
 );
 const OnboardingPage = lazy(() =>
-  import("@/features/onboarding").then((module) => ({
+  import("@/features/onboarding/pages/OnboardingPage").then((module) => ({
     default: module.OnboardingPage,
   }))
 );
 const ForgotPasswordPage = lazy(() =>
-  import("@/features/auth").then((module) => ({
+  import("@/features/auth/pages/ForgotPasswordPage").then((module) => ({
     default: module.ForgotPasswordPage,
   }))
 );
 const ResetPasswordPage = lazy(() =>
-  import("@/features/auth").then((module) => ({
+  import("@/features/auth/pages/ResetPasswordPage").then((module) => ({
     default: module.ResetPasswordPage,
   }))
+);
+
+// Admin Routes Configuration Lazy Loaded
+const AdminPanelRoute = lazy(() =>
+  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminPanelRoute }))
+);
+const AdminEventsRoute = lazy(() =>
+  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminEventsRoute }))
+);
+const AdminClubsRoute = lazy(() =>
+  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminClubsRoute }))
+);
+const AdminSubmissionsRoute = lazy(() =>
+  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminSubmissionsRoute }))
+);
+const AdminPostersRoute = lazy(() =>
+  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminPostersRoute }))
+);
+
+// Club Panel Routes Configuration Lazy Loaded
+const ClubPanelRoute = lazy(() =>
+  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelRoute }))
+);
+const ClubPanelPostersRoute = lazy(() =>
+  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelPostersRoute }))
+);
+const ClubPanelIntegrationsRoute = lazy(() =>
+  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelIntegrationsRoute }))
+);
+const ClubPanelMembersRoute = lazy(() =>
+  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelMembersRoute }))
+);
+
+// QR Redirect Page Lazy Loaded
+const QRRedirectPage = lazy(() =>
+  import("@/features/qrcode/pages/QRRedirectPage").then((m) => ({ default: m.QRRedirectPage }))
 );
 
 export default function App() {

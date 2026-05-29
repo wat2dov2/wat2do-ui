@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { ROUTES } from "@/shared/constants/routes";
+import { EXTERNAL_LINKS } from "@/shared/constants/links";
+import { useTranslation } from "react-i18next";
 import imgSlefLogo from "@/assets/slef_logo.png";
 import imgMeetHero from "@/assets/meet_wat2do_hero.png";
 
@@ -18,6 +20,7 @@ const CornerMask = ({ className }: { className?: string }) => (
 
 export function ContactPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSearchClick = (query: string, isClub: boolean = false) => {
     // Clear all filters first, then set the query
@@ -31,7 +34,7 @@ export function ContactPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-[800px] mx-auto px-6 py-12 md:py-20 pb-32 space-y-16">
         
-        {/* HERO SECTION (First Screenshot Concept with Custom Double-Step BadgeMask cutout) */}
+        {/* HERO SECTION */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -40,7 +43,7 @@ export function ContactPage() {
         >
           <img
             src={imgMeetHero}
-            alt="Meet Wat2Do Workspace"
+            alt={t("contact.heroAlt")}
             className="w-full h-full object-cover select-none pointer-events-none"
           />
           
@@ -48,11 +51,11 @@ export function ContactPage() {
           <div className="absolute bottom-0 left-0 flex flex-col items-start z-10 select-none">
             {/* Top Step ("MEET") */}
             <div className="relative bg-background pl-4 pr-5 pt-3 pb-1 md:pl-6 md:pr-8 md:pt-4 md:pb-1 rounded-tr-[16px] md:rounded-tr-[24px] w-fit">
-              {/* Inner corner curve on the top-left (left container edge to top edge of MEET) */}
+              {/* Inner corner curve on the top-left */}
               <CornerMask className="absolute left-0 bottom-full size-4 md:size-6 text-background pointer-events-none" />
               
               <h1 className="font-sans font-bold text-3xl sm:text-5xl text-foreground leading-none tracking-tight uppercase">
-                MEET
+                {t("contact.hero.meet")}
               </h1>
               
               {/* Inner corner curve on the right, resting on the bottom step */}
@@ -62,10 +65,10 @@ export function ContactPage() {
             {/* Bottom Step ("WAT2DO") */}
             <div className="relative bg-background pl-4 pr-6 pt-2 pb-4 md:pl-6 md:pr-10 md:pt-3 md:pb-6 rounded-tr-[16px] md:rounded-tr-[24px] w-fit">
               <h1 className="font-sans font-bold text-3xl sm:text-5xl text-foreground leading-none tracking-tight uppercase">
-                WAT2DO
+                {t("contact.hero.wat2do")}
               </h1>
               
-              {/* Inner corner curve on the right, resting on the bottom of the container */}
+              {/* Inner corner curve on the right */}
               <CornerMask className="absolute left-full bottom-0 size-4 md:size-6 text-background pointer-events-none" />
             </div>
           </div>
@@ -81,95 +84,98 @@ export function ContactPage() {
           {/* About Wat2Do */}
           <div className="space-y-4">
             <h2 className="text-3xl font-extrabold text-foreground tracking-tight font-sans">
-              About Wat2Do
+              {t("contact.about.title")}
             </h2>
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
-              Welcome to Wat2Do! We created this platform after stumbling upon way too many underrated events by sheer coincidence. We found ourselves at 🕺{" "}
+              {t("contact.about.welcome")}
               <span
                 onClick={() => handleSearchClick("hip-hop")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                hip-hop dance tutorials
+                {t("contact.about.hipHop")}
               </span>
-              , a 🎮{" "}
+              {t("contact.about.remoteCarPrefix")}
               <span
                 onClick={() => handleSearchClick("remote-controlled")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                remote-controlled car hackathon
+                {t("contact.about.remoteCar")}
               </span>
               , 🍽️{" "}
               <span
                 onClick={() => handleSearchClick("cooking")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                Italian cooking lessons
-              </span>{" "}
-              at a culinary school, a free two-hour{" "}
+                {t("contact.about.cooking")}
+              </span>
+              {t("contact.about.cookingSuffix")}
               <span
                 onClick={() => handleSearchClick("curling")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                curling lesson
+                {t("contact.about.curling")}
               </span>
-              , a $20 🛳️{" "}
+              {t("contact.about.boatCruisePrefix")}
               <span
                 onClick={() => handleSearchClick("harbour boat")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                harbour boat cruise
+                {t("contact.about.boatCruise")}
               </span>
-              , a $30{" "}
+              {t("contact.about.stratfordPrefix")}
               <span
                 onClick={() => handleSearchClick("Stratford")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                trip to the Stratford Festival
-              </span>{" "}
-              to watch 🎭 <span className="italic">Annie</span>, 🎢{" "}
+                {t("contact.about.stratford")}
+              </span>
+              {t("contact.about.anniePrefix")}
+              <span className="italic">{t("contact.about.annie")}</span>, 🎢{" "}
               <span
                 onClick={() => handleSearchClick("Wonderland")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                visiting Canada's Wonderland
-              </span>{" "}
-              (then missing the bus back to Waterloo), and meeting tons of great company at 🤝{" "}
+                {t("contact.about.wonderland")}
+              </span>
+              {t("contact.about.networkingPrefix")}
               <span
                 onClick={() => handleSearchClick("networking")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                networking events
+                {t("contact.about.networking")}
               </span>
-              . We didn't want to miss other cool things happening on campus, so we built this for ourselves in{" "}
+              {t("contact.about.builtPrefix")}
               <span
                 onClick={() => handleSearchClick("August 2025")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
-                August 2025
+                {t("contact.about.builtDate")}
               </span>
-              . Two months later, and we're extraordinarily excited to be sharing it with the rest of you!
+              {t("contact.about.builtSuffix")}
             </p>
-            <p className="font-semibold text-foreground text-sm font-sans pt-2">— Tony & Erica</p>
+            <p className="font-semibold text-foreground text-sm font-sans pt-2">
+              {t("contact.about.signature")}
+            </p>
           </div>
 
           {/* Funding Support */}
           <div className="space-y-6 pt-4">
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
-              We are extremely grateful for funding support from the{" "}
+              {t("contact.funding.text")}
               <a
-                href="https://wusa.ca/services/student-life-endowment-fund-slef/"
+                href={EXTERNAL_LINKS.SLEF_INFO}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors font-semibold"
               >
-                Student Life Endowment Fund (SLEF)
-              </a>{" "}
-              of the Waterloo Undergraduate Student Association (WUSA).
+                {t("contact.funding.slef")}
+              </a>
+              {t("contact.funding.wusa")}
             </p>
             <div className="flex justify-start pt-2">
               <img
                 src={imgSlefLogo}
-                alt="Student Life Endowment Fund Logo"
+                alt={t("contact.funding.logoAlt")}
                 className="h-28 sm:h-32 object-contain select-none"
               />
             </div>
@@ -180,72 +186,72 @@ export function ContactPage() {
           {/* Tips Section */}
           <div className="space-y-8">
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans italic">
-              To make the most out of this site, here are some of our helpful tips, depending on your goals.
+              {t("contact.tips.intro")}
             </p>
 
             {/* Expanding Your Professional Network */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
-                Expanding Your Professional Network
+                {t("contact.tips.networking.title")}
               </h3>
               <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
-                A lot of company-sponsored events might fly under your radar, making it easy to miss out on crucial networking opportunities. We've met recruiters from{" "}
+                {t("contact.tips.networking.desc")}
                 <a
-                  href="https://www.atlassian.com/"
+                  href={EXTERNAL_LINKS.ATLASSIAN}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors font-semibold"
                 >
-                  Atlassian
+                  {t("contact.tips.networking.atlassian")}
                 </a>
                 ,{" "}
                 <a
-                  href="https://www.bloomberg.com/"
+                  href={EXTERNAL_LINKS.BLOOMBERG}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors font-semibold"
                 >
-                  Bloomberg
+                  {t("contact.tips.networking.bloomberg")}
                 </a>
-                , and{" "}
+                {t("contact.tips.networking.and")}
                 <a
-                  href="https://www.point72.com/"
+                  href={EXTERNAL_LINKS.POINT72}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors font-semibold"
                 >
-                  Point72
+                  {t("contact.tips.networking.point72")}
                 </a>{" "}
-                from events we just found about the day before.
+                {t("contact.tips.networking.suffix")}
               </p>
             </div>
 
             {/* Random Events You Didn't Know Existed */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
-                Random Events You Didn't Know Existed
+                {t("contact.tips.random.title")}
               </h3>
               <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
-                Honestly, the best part about building this project was discovering clubs we had no idea were on campus. There's a{" "}
+                {t("contact.tips.random.desc")}
                 <span
                   onClick={() => handleSearchClick("Repair Club", true)}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
-                  Repair Club
-                </span>{" "}
-                where you can fix your broken electronics, the Iranian Students' Association's{" "}
+                  {t("contact.tips.random.repair")}
+                </span>
+                {t("contact.tips.random.repairSuffix")}
                 <span
                   onClick={() => handleSearchClick("Zumba")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
-                  Persian Zumba
-                </span>{" "}
-                class, and Strength Club's{" "}
+                  {t("contact.tips.random.zumba")}
+                </span>
+                {t("contact.tips.random.zumbaSuffix")}
                 <span
                   onClick={() => handleSearchClick("Barbells")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
-                  Battle of the Barbells
+                  {t("contact.tips.random.barbells")}
                 </span>
                 .
               </p>
@@ -254,32 +260,32 @@ export function ContactPage() {
             {/* Search Tips */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
-                Search Tips
+                {t("contact.tips.search.title")}
               </h3>
               <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
-                Category filters can help you find events that you are interested in. "Food," "Price," and "Registration Required" tags let you know what to expect. Try searching for what you are looking for, and see what comes up!
+                {t("contact.tips.search.desc")}
               </p>
               <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans mt-4">
-                If you're with your friends, try{" "}
+                {t("contact.tips.search.friendsIntro")}
                 <span
                   onClick={() => handleSearchClick("Pho Night")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
-                  Pho Night
+                  {t("contact.tips.search.pho")}
                 </span>
                 ,{" "}
                 <span
                   onClick={() => handleSearchClick("Campfire Jam")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
-                  Campfire Jam
+                  {t("contact.tips.search.campfire")}
                 </span>
-                , or{" "}
+                {t("contact.tips.search.or")}
                 <span
                   onClick={() => handleSearchClick("Global Games Night")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
-                  Global Games Night
+                  {t("contact.tips.search.global")}
                 </span>{" "}
                 .
               </p>
@@ -288,13 +294,13 @@ export function ContactPage() {
             {/* Start Exploring */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
-                Start Exploring
+                {t("contact.tips.explore.title")}
               </h3>
               <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
-                Check Wat2Do regularly for new events as events are added (almost) live! Or, subscribe to our newsletter for daily updates. Don't be afraid to attend events alone! The best connections happen when you just show up.
+                {t("contact.tips.explore.desc")}
               </p>
               <p className="text-sm sm:text-base text-foreground/80 leading-relaxed font-sans mt-4">
-                (P.S. You can enter "random" in the search bar to generate a random upcoming event!)
+                {t("contact.tips.explore.ps")}
               </p>
             </div>
           </div>
@@ -305,13 +311,13 @@ export function ContactPage() {
               onClick={() => navigate(ROUTES.HOME)}
               className="px-5 py-2.5 bg-background border border-border text-foreground hover:bg-muted font-semibold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
             >
-              Browse Events
+              {t("contact.actions.browse")}
             </button>
             <button
               onClick={() => navigate(ROUTES.CLUBS)}
               className="px-5 py-2.5 bg-background border border-border text-foreground hover:bg-muted font-semibold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
             >
-              Explore Clubs
+              {t("contact.actions.explore")}
             </button>
           </div>
         </motion.div>
@@ -319,10 +325,10 @@ export function ContactPage() {
         {/* Footer */}
         <footer className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <p className="text-xs text-muted-foreground leading-relaxed max-w-[500px]">
-            We built Wat2Do to connect Waterloo students to underrated campus life events. For suggestions or feedback, get in touch.
+            {t("contact.footer.about")}
           </p>
           <span className="text-xs text-muted-foreground font-sans">
-            © {new Date().getFullYear()} Wat2Do
+            {t("contact.footer.copyright", { year: new Date().getFullYear() })}
           </span>
         </footer>
 

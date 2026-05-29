@@ -248,38 +248,26 @@ def _fetch_events_in_utc_range(
     end_utc: datetime,
 ) -> list[dict]:
     """Fetch events with at least one occurrence in [start_utc, end_utc]."""
-    events_q = (
-        get_sb()
-        .table(EVENTS)
-        .select("id,title,location,status,school")
-        .eq("status", EVENT_STATUS_ACTIVE)
-    )
-    if school:
-        events_q = events_q.eq("school", school)
-
-    event_rows = events_q.execute().data or []
-    events_by_id = {row["id"]: row for row in event_rows if row.get("id") is not None}
-    if not events_by_id:
-        return []
-
     q = (
         get_sb()
         .table(EVENT_DATES)
-        .select("event_id,dtstart_utc")
-        .in_("event_id", list(events_by_id))
+        .select("event_id,dtstart_utc,events!inner(id,title,location,status,school)")
         .gte("dtstart_utc", start_utc.isoformat())
         .lte("dtstart_utc", end_utc.isoformat())
-        .order("dtstart_utc")
+        .eq("events.status", EVENT_STATUS_ACTIVE)
     )
+    if school:
+        q = q.eq("events.school", school)
+    q = q.order("dtstart_utc")
     rows = q.execute().data or []
     seen: set[int] = set()
     deduped: list[dict] = []
     for row in rows:
-        eid = row.get("event_id")
-        if eid in seen:
-            continue
-        event = events_by_id.get(eid)
+        event = row.get("events")
         if not event:
+            continue
+        eid = event.get("id")
+        if eid is None or eid in seen:
             continue
         seen.add(eid)
         deduped.append({**event, "dtstart_utc": row.get("dtstart_utc")})

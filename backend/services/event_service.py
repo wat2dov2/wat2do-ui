@@ -107,73 +107,6 @@ def _hydrate_summary(row: dict, occurrences: list[OccurrenceResponse]) -> EventS
     return EventSummaryResponse.model_validate(payload)
 
 
-def _apply_event_filters(
-    q,
-    *,
-    category: str | None,
-    club_type: str | None,
-    school: str | None,
-    search: str | None,
-    has_food: bool | None,
-    max_price: float | None,
-    registration: bool | None,
-    include_cancelled: bool,
-):
-    if not include_cancelled:
-        q = q.eq("status", EVENT_STATUS_ACTIVE)
-    if category:
-        q = q.eq("category", category)
-    if club_type:
-        q = q.eq("club_type", club_type)
-    if school:
-        q = q.eq("school", school)
-    if search:
-        term = sanitize_postgrest_value(search)
-        if term:
-            quoted = f'"%{term}%"'
-            columns = ("title", "description", "location", "organization")
-            q = q.or_(",".join(f"{col}.ilike.{quoted}" for col in columns))
-    if has_food is True:
-        q = q.not_.is_("food", "null").neq("food", "[]")
-    if max_price is not None:
-        safe_price = f"{max_price:.6f}"
-        q = q.or_(f"price.is.null,price.lte.{safe_price}")
-    if registration is not None:
-        q = q.eq("registration", registration)
-    return q
-
-
-def _list_matching_event_rows(
-    *,
-    select_cols: str,
-    category: str | None,
-    club_type: str | None,
-    school: str | None,
-    search: str | None,
-    has_food: bool | None,
-    max_price: float | None,
-    registration: bool | None,
-    include_cancelled: bool,
-) -> list[dict]:
-    @supabase_retry
-    def _page(offset: int, page_size: int) -> list[dict]:
-        q = get_sb().table(EVENTS).select(select_cols)
-        q = _apply_event_filters(
-            q,
-            category=category,
-            club_type=club_type,
-            school=school,
-            search=search,
-            has_food=has_food,
-            max_price=max_price,
-            registration=registration,
-            include_cancelled=include_cancelled,
-        )
-        return q.range(offset, offset + page_size - 1).execute().data or []
-
-    return fetch_all_pages(_page)
-
-
 # ── Public functions ──────────────────────────────────────────────────
 
 
@@ -220,40 +153,49 @@ def list_events(
 ) -> list[EventSummaryResponse] | list[EventResponse]:
     """List events with optional filters.
 
-    Events are filtered by their parent row first, then ordered through
-    event_dates. The same logical event can have multiple occurrence
-    rows, so the final response de-dupes by event id and hydrates the
-    full occurrence list.
+    Events are queried through event_dates directly using resource embedding
+    inner joins. This replaces the legacy two-stage client-side filter query
+    with a single, efficient, paginated database query.
     """
     select_cols = EVENT_SUMMARY_EVENT_COLUMNS if summary else "*"
-    event_rows = _list_matching_event_rows(
-        select_cols=select_cols,
-        category=category,
-        club_type=club_type,
-        school=school,
-        search=search,
-        has_food=has_food,
-        max_price=max_price,
-        registration=registration,
-        include_cancelled=include_cancelled,
-    )
-    events_by_id = {row["id"]: row for row in event_rows if row.get("id") is not None}
-    if not events_by_id:
-        return []
-
     q = (
         get_sb()
         .table(EVENT_DATES)
-        .select("event_id,dtstart_utc")
-        .in_("event_id", list(events_by_id))
+        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({select_cols})")
     )
+
+    # Apply event filters prefixed with 'events.'
+    if not include_cancelled:
+        q = q.eq("events.status", EVENT_STATUS_ACTIVE)
+    if category:
+        q = q.eq("events.category", category)
+    if club_type:
+        q = q.eq("events.club_type", club_type)
+    if school:
+        q = q.eq("events.school", school)
+    if search:
+        term = sanitize_postgrest_value(search)
+        if term:
+            quoted = f'"%{term}%"'
+            columns = ("title", "description", "location", "organization")
+            q = q.or_(",".join(f"{col}.ilike.{quoted}" for col in columns), reference_table="events")
+    if has_food is True:
+        q = q.not_.is_("events.food", "null").neq("events.food", "[]")
+    if max_price is not None:
+        safe_price = f"{max_price:.6f}"
+        q = q.or_(f"price.is.null,price.lte.{safe_price}", reference_table="events")
+    if registration is not None:
+        q = q.eq("events.registration", registration)
+
+    # Apply date range filters on event_dates directly
     if from_date:
         q = q.gte("dtstart_utc", from_date.isoformat())
     if to_date:
         q = q.lte("dtstart_utc", to_date.isoformat())
 
-    # Order by occurrence date desc to preserve the current browse order.
-    q = q.order("dtstart_utc", desc=True).range(skip, skip + limit * 4 - 1)
+    # Order by occurrence date desc to preserve the browse order.
+    # Paginate using skip/limit over occurrences.
+    q = q.order("dtstart_utc", desc=True).range(skip, skip + limit * 5 - 1)
     rows = q.execute().data or []
 
     # De-dup: one row per event id, keep the first occurrence-row we
@@ -261,11 +203,11 @@ def list_events(
     seen: set[int] = set()
     deduped: list[dict] = []
     for row in rows:
-        rid = row.get("event_id")
-        if rid in seen:
-            continue
-        event_row = events_by_id.get(rid)
+        event_row = row.get("events")
         if not event_row:
+            continue
+        rid = event_row.get("id")
+        if rid is None or rid in seen:
             continue
         seen.add(rid)
         deduped.append(event_row)
@@ -281,6 +223,7 @@ def list_events(
     if summary:
         return [_hydrate_summary(row, occ_by_event.get(row["id"], [])) for row in deduped]
     return [_hydrate_response(row, occ_by_event.get(row["id"], [])) for row in deduped]
+
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:

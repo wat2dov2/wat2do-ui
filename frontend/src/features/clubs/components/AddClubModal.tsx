@@ -35,7 +35,7 @@ import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { TagInput } from "@/shared/ui/tag-input";
-import { availableSchools } from "@/shared/constants/schools";
+import { availableSchools, DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { translateSchool } from "@/shared/utils/schoolTranslation";
 
 interface ClubFormData {
@@ -75,7 +75,7 @@ export function AddClubModal({
     discord: "",
     club_type: "WUSA",
     owner_user_id: "",
-    school: "University of Waterloo",
+    school: DEFAULT_SCHOOL,
   }), []);
 
   // Memoize validate to prevent infinite loops
@@ -88,7 +88,7 @@ export function AddClubModal({
       newErrors.categories = t("forms.categoryRequired");
     }
     if (touched.school && !data.school) {
-      newErrors.school = "School is required";
+      newErrors.school = t("forms.schoolRequired");
     }
     return newErrors;
   }, [t]);
@@ -103,7 +103,7 @@ export function AddClubModal({
           discord: initialData.discord || "",
           club_type: initialData.club_type,
           owner_user_id: initialData.created_by || "",
-          school: initialData.school || "University of Waterloo",
+          school: initialData.school || DEFAULT_SCHOOL,
         }
       : undefined,
     isEditMode,

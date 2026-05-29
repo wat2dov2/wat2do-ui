@@ -471,6 +471,7 @@
     "organizationRequired": "Organization is required",
     "occurrenceRequired": "At least one date is required",
     "locationRequired": "Location is required",
+    "schoolRequired": "School is required",
     "jsonEmpty": "JSON cannot be empty",
     "pickDate": "Pick a date",
     "time": "Time",
@@ -1016,5 +1017,85 @@
     "guideFriendsWonderland": "<strong>Canada's Wonderland Trips:</strong> Various clubs organize discounted group trips. Way cheaper than going solo.",
     "footerPS": "<strong>P.S.</strong> We don't run ads. Everything runs out of our own pockets. No data selling. Just students helping students.",
     "footerCopyright": "© 2025 Wat2Do · Built by Tony & Erica"
+  },
+  "contact": {
+    "heroAlt": "Meet Wat2Do Workspace",
+    "hero": {
+      "meet": "MEET",
+      "wat2do": "WAT2DO"
+    },
+    "about": {
+      "title": "About Wat2Do",
+      "welcome": "Welcome to Wat2Do! We created this platform after stumbling upon way too many underrated events by sheer coincidence. We found ourselves at 🕺 ",
+      "hipHop": "hip-hop dance tutorials",
+      "remoteCarPrefix": ", a 🎮 ",
+      "remoteCar": "remote-controlled car hackathon",
+      "cooking": "Italian cooking lessons",
+      "cookingSuffix": " at a culinary school, a free two-hour ",
+      "curling": "curling lesson",
+      "boatCruisePrefix": ", a $20 🛳️ ",
+      "boatCruise": "harbour boat cruise",
+      "stratfordPrefix": ", a $30 ",
+      "stratford": "trip to the Stratford Festival",
+      "anniePrefix": " to watch 🎭 ",
+      "annie": "Annie",
+      "wonderland": "visiting Canada's Wonderland",
+      "networkingPrefix": " (then missing the bus back to Waterloo), and meeting tons of great company at 🤝 ",
+      "networking": "networking events",
+      "builtPrefix": ". We didn't want to miss other cool things happening on campus, so we built this for ourselves in ",
+      "builtDate": "August 2025",
+      "builtSuffix": ". Two months later, and we're extraordinarily excited to be sharing it with the rest of you!",
+      "signature": "— Tony & Erica"
+    },
+    "funding": {
+      "text": "We are extremely grateful for funding support from the ",
+      "slef": "Student Life Endowment Fund (SLEF)",
+      "wusa": " of the Waterloo Undergraduate Student Association (WUSA).",
+      "logoAlt": "Student Life Endowment Fund Logo"
+    },
+    "tips": {
+      "intro": "To make the most out of this site, here are some of our helpful tips, depending on your goals.",
+      "networking": {
+        "title": "Expanding Your Professional Network",
+        "desc": "A lot of company-sponsored events might fly under your radar, making it easy to miss out on crucial networking opportunities. We've met recruiters from ",
+        "atlassian": "Atlassian",
+        "bloomberg": "Bloomberg",
+        "and": ", and ",
+        "point72": "Point72",
+        "suffix": " from events we just found about the day before."
+      },
+      "random": {
+        "title": "Random Events You Didn't Know Existed",
+        "desc": "Honestly, the best part about building this project was discovering clubs we had no idea were on campus. There's a ",
+        "repair": "Repair Club",
+        "repairSuffix": " where you can fix your broken electronics, the Iranian Students' Association's ",
+        "zumba": "Persian Zumba",
+        "zumbaSuffix": " class, and Strength Club's ",
+        "barbells": "Battle of the Barbells"
+      },
+      "search": {
+        "title": "Search Tips",
+        "desc": "Category filters can help you find events that you are interested in. \"Food,\" \"Price,\" and \"Registration Required\" tags let you know what to expect. Try searching for what you are looking for, and see what comes up!",
+        "friendsIntro": "If you're with your friends, try ",
+        "pho": "Pho Night",
+        "campfire": "Campfire Jam",
+        "or": ", or ",
+        "global": "Global Games Night"
+      },
+      "explore": {
+        "title": "Start Exploring",
+        "desc": "Check Wat2Do regularly for new events as events are added (almost) live! Or, subscribe to our newsletter for daily updates. Don't be afraid to attend events alone! The best connections happen when you just show up.",
+        "ps": "(P.S. You can enter \"random\" in the search bar to generate a random upcoming event!)"
+      }
+    },
+    "actions": {
+      "browse": "Browse Events",
+      "explore": "Explore Clubs"
+    },
+    "footer": {
+      "about": "We built Wat2Do to connect Waterloo students to underrated campus life events. For suggestions or feedback, get in touch.",
+      "title": "Wat2Do",
+      "copyright": "© {{year}} Wat2Do"
+    }
   }
 }

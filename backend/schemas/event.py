@@ -148,11 +148,6 @@ class EventCreate(BaseModel):
     club_id: int | None = Field(default=None, ge=1)
     organization: str = Field(..., min_length=1, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    discord_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    x_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    tiktok_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    fb_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    other_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
     display_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
 
     @field_validator("organization")
@@ -175,11 +170,6 @@ class EventCreate(BaseModel):
 
     @field_validator(
         "ig_handle",
-        "discord_handle",
-        "x_handle",
-        "tiktok_handle",
-        "fb_handle",
-        "other_handle",
         "display_handle",
     )
     @classmethod
@@ -208,11 +198,6 @@ class EventUpdate(BaseModel):
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
     organization: str | None = Field(default=None, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    discord_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    x_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    tiktok_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    fb_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    other_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
     display_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
 
     @field_validator("organization")
@@ -237,11 +222,6 @@ class EventUpdate(BaseModel):
 
     @field_validator(
         "ig_handle",
-        "discord_handle",
-        "x_handle",
-        "tiktok_handle",
-        "fb_handle",
-        "other_handle",
         "display_handle",
     )
     @classmethod
@@ -282,7 +262,7 @@ class EventSummaryResponse(BaseModel):
 
     id: int
     title: str
-    location: str
+    location: str | None = None
     dtstart_utc: datetime | None = None
     dtend_utc: datetime | None = None
     price: float | None = None
@@ -325,7 +305,7 @@ class EventResponse(BaseModel):
     club_id: int | None = None
     title: str
     description: str | None = None
-    location: str
+    location: str | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     dtstart_utc: datetime | None = None
     dtend_utc: datetime | None = None
@@ -339,11 +319,6 @@ class EventResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     ig_handle: str | None = None
-    discord_handle: str | None = None
-    x_handle: str | None = None
-    tiktok_handle: str | None = None
-    fb_handle: str | None = None
-    other_handle: str | None = None
     display_handle: str | None = None
     added_at: datetime
     created_by: str | None = None
@@ -366,7 +341,7 @@ class EventPublicResponse(BaseModel):
     id: int
     title: str
     description: str | None = None
-    location: str
+    location: str | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     dtstart_utc: datetime | None = None
     dtend_utc: datetime | None = None
@@ -380,11 +355,6 @@ class EventPublicResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     ig_handle: str | None = None
-    discord_handle: str | None = None
-    x_handle: str | None = None
-    tiktok_handle: str | None = None
-    fb_handle: str | None = None
-    other_handle: str | None = None
     display_handle: str | None = None
     added_at: datetime
     status: EventStatus = EVENT_STATUS_ACTIVE

@@ -18,14 +18,9 @@ import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
 import { Highlighter } from "@/shared/ui/highlighter";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import {
-  getUserProfile,
-  logoutAPI,
-  updateUserProfile,
-  useAuthState,
-  type AuthState,
-} from "@/features/auth";
-import { useEventsStore } from "@/features/events";
+import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
+import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
+import { useEventsStore } from "@/features/events/store/events.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { cn } from "@/shared/lib/utils";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";

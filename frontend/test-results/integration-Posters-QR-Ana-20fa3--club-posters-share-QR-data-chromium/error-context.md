@@ -1,0 +1,104 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Command Palette" [level=2] [ref=e4]
+    - paragraph [ref=e5]: Search for commands, actions, and settings
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - paragraph [ref=e12]: Campus events
+          - heading "Discover what's happening on campus." [level=1] [ref=e13]
+          - paragraph [ref=e14]: Create your account to save events, personalize your feed, and get recommendations for your school.
+        - generic [ref=e15]:
+          - textbox "you@uwaterloo.ca" [ref=e16]
+          - textbox "Create a password (min 6 chars)" [ref=e17]
+          - button "Create account" [disabled]
+          - paragraph [ref=e18]:
+            - text: Already have an account?
+            - button "Sign in" [ref=e19] [cursor=pointer]
+          - paragraph [ref=e20]: By continuing, you agree to the platform terms and event community guidelines.
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - img "Y2K Themed 3Peas Tournament" [ref=e27]
+            - generic [ref=e28]:
+              - generic [ref=e29]:
+                - generic [ref=e31]: Events
+                - img [ref=e32]
+              - img [ref=e34]
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - img [ref=e42]
+          - generic [ref=e46]:
+            - heading "Y2K Themed 3Peas Tournament" [level=3] [ref=e47]
+            - generic [ref=e48]:
+              - generic [ref=e49]:
+                - generic [ref=e50]: Friday Jun 5
+                - generic [ref=e51]: 3 PM to 8 PM
+                - generic [ref=e52]: CIF Gyms 1 & 2
+              - generic [ref=e53]:
+                - generic [ref=e54]: Free
+                - generic [ref=e55]: Registration
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - 'img "Spring Term Minigames #2" [ref=e59]'
+            - generic [ref=e60]:
+              - generic [ref=e61]:
+                - generic [ref=e63]: Events
+                - img [ref=e64]
+              - img [ref=e66]
+            - generic [ref=e68]:
+              - img [ref=e69]
+              - img [ref=e74]
+          - generic [ref=e78]:
+            - 'heading "Spring Term Minigames #2" [level=3] [ref=e79]'
+            - generic [ref=e80]:
+              - generic [ref=e81]:
+                - generic [ref=e82]: Wednesday May 27
+                - generic [ref=e83]: 4 PM to 7 PM
+                - generic [ref=e84]: SLC Green
+              - generic [ref=e86]: Free
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - img "Weekly Session" [ref=e90]
+            - generic [ref=e91]:
+              - generic [ref=e92]:
+                - generic [ref=e94]: Events
+                - img [ref=e95]
+              - img [ref=e97]
+            - generic [ref=e99]:
+              - img [ref=e100]
+              - img [ref=e105]
+          - generic [ref=e109]:
+            - heading "Weekly Session" [level=3] [ref=e110]
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - generic [ref=e113]: Thursday May 28
+                - generic [ref=e114]: 8 PM to 10 PM
+                - generic [ref=e115]: SLC Atrium
+              - generic [ref=e117]: Free
+        - generic [ref=e118]:
+          - generic [ref=e119]:
+            - img "FARMSA Leadership Talk" [ref=e121]
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - generic [ref=e125]: Events
+                - img [ref=e126]
+              - img [ref=e128]
+            - generic [ref=e130]:
+              - img [ref=e131]
+              - img [ref=e136]
+          - generic [ref=e140]:
+            - heading "FARMSA Leadership Talk" [level=3] [ref=e141]
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - generic [ref=e144]: Thursday May 28
+                - generic [ref=e145]: 6 PM to 7:30 PM
+                - generic [ref=e146]: STC 0010
+              - generic [ref=e147]:
+                - generic [ref=e148]: Free
+                - generic [ref=e149]: Registration
+```

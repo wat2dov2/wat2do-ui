@@ -9,7 +9,9 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import USER_SAVED_EVENTS
 from schemas.saved_event import SavedEventResponse, UserEventPair
-from recommender.config import CACHE_TTL_SECONDS
+
+# 30-minute TTL for shared recommendation data (matches recommender config)
+CACHE_TTL_SECONDS = 1800
 
 log = logging.getLogger(__name__)
 

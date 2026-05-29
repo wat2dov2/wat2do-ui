@@ -208,13 +208,13 @@ def test_diff_occurrence_added_from_none():
 
 
 def test_list_events_default_filters_active(fake_sb, patch_sb):
-    """By default, the list query must include .eq("status", "CONFIRMED")."""
+    """By default, the list query must include .eq("events.status", "CONFIRMED")."""
     patch_sb("services.event_service")
     fake_sb.set_response(data=[])
 
     event_service.list_events()
 
-    fake_sb.eq.assert_any_call("status", EVENT_STATUS_ACTIVE)
+    fake_sb.eq.assert_any_call("events.status", EVENT_STATUS_ACTIVE)
 
 
 def test_list_events_include_cancelled_drops_status_filter(fake_sb, patch_sb):
@@ -225,7 +225,7 @@ def test_list_events_include_cancelled_drops_status_filter(fake_sb, patch_sb):
     event_service.list_events(include_cancelled=True)
 
     calls = fake_sb.eq.call_args_list
-    assert not any(c.args == ("status", EVENT_STATUS_ACTIVE) for c in calls)
+    assert not any(c.args == ("events.status", EVENT_STATUS_ACTIVE) for c in calls)
 
 
 # ---------------------------------------------------------------------------
@@ -241,27 +241,25 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
 
     patch_sb("services.event_service")
 
-    # list_events first fetches matching event rows, then occurrence rows
-    # for ordering/dedup. The occurrence ordering row is intentionally not
-    # the same date as the primary picker should report.
+    # list_events fetches occurrences with nested events in a single joined query.
     fake_sb.queue_responses(
         [
             [
                 {
-                    "id": 42,
-                    "title": "Tea Tasting Series",
-                    "location": "SLC",
-                    "organization": "UW Tea Club",
-                    "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
-                    "status": EVENT_STATUS_ACTIVE,
-                }
-            ],
-            [
-                {
                     "event_id": 42,
                     "dtstart_utc": datetime(2026, 5, 15, tzinfo=timezone.utc).isoformat(),
+                    "dtend_utc": None,
+                    "tz": None,
+                    "events": {
+                        "id": 42,
+                        "title": "Tea Tasting Series",
+                        "location": "SLC",
+                        "organization": "UW Tea Club",
+                        "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
+                        "status": EVENT_STATUS_ACTIVE,
+                    }
                 }
-            ],
+            ]
         ]
     )
 
@@ -303,3 +301,4 @@ def _occ_response(dtstart, dtend=None, occ_id=1):
             "created_at": datetime.now(timezone.utc),
         }
     )
+

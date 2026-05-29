@@ -1,0 +1,110 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Command Palette" [level=2] [ref=e4]
+    - paragraph [ref=e5]: Search for commands, actions, and settings
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - paragraph [ref=e12]: Campus events
+          - heading "Discover what's happening on campus." [level=1] [ref=e13]
+          - paragraph [ref=e14]: Create your account to save events, personalize your feed, and get recommendations for your school.
+        - generic [ref=e15]:
+          - textbox "you@uwaterloo.ca" [ref=e16]
+          - textbox "Create a password (min 6 chars)" [ref=e17]
+          - button "Create account" [disabled]
+          - paragraph [ref=e18]:
+            - text: Already have an account?
+            - button "Sign in" [ref=e19] [cursor=pointer]
+          - paragraph [ref=e20]: By continuing, you agree to the platform terms and event community guidelines.
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - img "Beads & Boba" [ref=e27]
+            - generic [ref=e28]:
+              - generic [ref=e29]:
+                - generic [ref=e31]: Events
+                - img [ref=e32]
+              - img [ref=e34]
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - img [ref=e42]
+          - generic [ref=e46]:
+            - heading "Beads & Boba" [level=3] [ref=e47]
+            - generic [ref=e48]:
+              - generic [ref=e49]:
+                - generic [ref=e50]: Wednesday May 27
+                - generic [ref=e51]: 5 PM to 6 PM
+                - generic [ref=e52]: DC Fishbowl
+              - generic [ref=e53]:
+                - generic [ref=e54]: Free
+                - generic [ref=e55]: Free Food
+                - generic [ref=e56]: Registration
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - img "Sheikh & Shai" [ref=e60]
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - generic [ref=e64]: Events
+                - img [ref=e65]
+              - img [ref=e67]
+            - generic [ref=e69]:
+              - img [ref=e70]
+              - img [ref=e75]
+          - generic [ref=e79]:
+            - heading "Sheikh & Shai" [level=3] [ref=e80]
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - generic [ref=e83]: Monday May 25
+                - generic [ref=e84]: 6:45 PM
+                - generic [ref=e85]: MC 2018
+              - generic [ref=e86]:
+                - generic [ref=e87]: Free
+                - generic [ref=e88]: Free Food
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - img "UW Muay Thai Free Trial Session" [ref=e92]
+            - generic [ref=e93]:
+              - generic [ref=e94]:
+                - generic [ref=e96]: Athletics
+                - img [ref=e97]
+              - img [ref=e99]
+            - generic [ref=e101]:
+              - img [ref=e102]
+              - generic [ref=e104]:
+                - generic [ref=e107]: Muay Thai Club
+                - img [ref=e108]
+          - generic [ref=e112]:
+            - heading "UW Muay Thai Free Trial Session" [level=3] [ref=e113]
+            - generic [ref=e114]:
+              - generic [ref=e115]:
+                - generic [ref=e116]: Friday May 29
+                - generic [ref=e117]: 9 PM to 11 PM
+              - generic [ref=e118]:
+                - generic [ref=e119]: Free
+                - generic [ref=e120]: Registration
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - img "Ottawa VNL Trip 2026" [ref=e124]
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - generic [ref=e128]: Events
+                - img [ref=e129]
+              - img [ref=e131]
+            - generic [ref=e133]:
+              - img [ref=e134]
+              - img [ref=e139]
+          - generic [ref=e143]:
+            - heading "Ottawa VNL Trip 2026" [level=3] [ref=e144]
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - generic [ref=e147]: Friday Jun 12
+                - generic [ref=e148]: 4 PM
+                - generic [ref=e149]: Ottawa, ON
+              - generic [ref=e150]:
+                - generic [ref=e151]: Free
+                - generic [ref=e152]: Registration
+```

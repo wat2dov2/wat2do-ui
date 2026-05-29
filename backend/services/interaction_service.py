@@ -200,6 +200,7 @@ def get_user_interaction_count(user_id: str) -> int:
         .table(USER_INTERACTIONS)
         .select("id", count="exact")
         .eq("user_id", user_id)
+        .limit(1)
         .execute()
     )
     return r.count or 0
