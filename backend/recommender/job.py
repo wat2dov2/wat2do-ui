@@ -25,9 +25,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import core.logging  # noqa: F401 — triggers basicConfig for standalone execution
-from recommender.service import batch_runner
 from recommender.config import DEFAULT_LAMBDA, DEFAULT_LIMIT, EVAL_K
 from recommender.evaluation import evaluate_all_users
+from recommender.service import batch_runner
 
 log = logging.getLogger(__name__)
 

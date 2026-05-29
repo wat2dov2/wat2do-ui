@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Query
 
 from core.auth import get_optional_user, resolve_db_user
 from core.exceptions import NotFoundError
+from recommender.config import DEFAULT_LIMIT, MAX_LIMIT
 from recommender.schemas import RecommendationItem
 from recommender.service import engine as recommendation_engine
-from recommender.config import DEFAULT_LIMIT, MAX_LIMIT
 
 log = logging.getLogger(__name__)
 

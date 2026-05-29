@@ -257,7 +257,7 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
                         "organization": "UW Tea Club",
                         "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
                         "status": EVENT_STATUS_ACTIVE,
-                    }
+                    },
                 }
             ]
         ]
@@ -301,4 +301,3 @@ def _occ_response(dtstart, dtend=None, occ_id=1):
             "created_at": datetime.now(timezone.utc),
         }
     )
-

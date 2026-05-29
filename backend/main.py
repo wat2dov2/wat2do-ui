@@ -65,6 +65,7 @@ log.info("Registered %d routers: %s", len(_registered), ", ".join(_registered))
 
 # Register recommender router explicitly (moved to recommender/ folder)
 from recommender.router import router as recommender_router
+
 app.include_router(recommender_router)
 
 

@@ -143,9 +143,9 @@ INTERACTION_WEIGHTS: dict[str, float] = {
     INTERACTION_SHARE: 3.0,
 }
 
-assert set(INTERACTION_WEIGHTS.keys()) == set(INTERACTION_TYPES), (
-    f"INTERACTION_WEIGHTS keys {set(INTERACTION_WEIGHTS.keys())} != INTERACTION_TYPES {set(INTERACTION_TYPES)}"
-)
+assert (
+    set(INTERACTION_WEIGHTS.keys()) == set(INTERACTION_TYPES)
+), f"INTERACTION_WEIGHTS keys {set(INTERACTION_WEIGHTS.keys())} != INTERACTION_TYPES {set(INTERACTION_TYPES)}"
 
 # ---------------------------------------------------------------------------
 # Evaluation

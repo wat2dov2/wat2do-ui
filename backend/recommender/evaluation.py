@@ -4,17 +4,16 @@ import logging
 import math
 import random
 
-from services import interaction_service, user_service
 from recommender.interaction_scores import (
     get_interaction_matrix,
     get_user_event_scores,
 )
+from services import interaction_service, user_service
 
 log = logging.getLogger(__name__)
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENTS
-from schemas.event import EventResponse
 from recommender.collaborative import get_collaborative_scores
 from recommender.config import (
     DEFAULT_LAMBDA,
@@ -28,6 +27,7 @@ from recommender.content_based import get_content_scores
 from recommender.popularity import get_popularity_scores
 from recommender.reranker import mmr_rerank
 from recommender.scoring import blend_scores, select_weights
+from schemas.event import EventResponse
 
 
 def precision_at_k(recommended_ids: list[int], relevant_ids: set[int], k: int) -> float:

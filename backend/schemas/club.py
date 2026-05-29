@@ -15,8 +15,8 @@ from core.constants import (
     MAX_INTEGRATION_METADATA_KEYS,
     MAX_INTEGRATION_METADATA_VALUE_LENGTH,
     MAX_INTEGRATION_NAME_LENGTH,
-    MAX_URL_LENGTH,
     MAX_SCHOOL_LENGTH,
+    MAX_URL_LENGTH,
 )
 
 # ---------------------------------------------------------------------------
@@ -64,7 +64,9 @@ class ClubCreate(BaseModel):
     club_type: str = Field(..., min_length=1, max_length=MAX_CLUB_TYPE_LENGTH)
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     owner_user_id: UUID | None = Field(default=None, description="Approved club owner user ID")
-    school: str = Field(default="University of Waterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH)
+    school: str = Field(
+        default="University of Waterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH
+    )
 
     @field_validator("club_name", "club_type", "school")
     @classmethod

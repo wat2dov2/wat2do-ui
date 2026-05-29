@@ -1,4 +1,3 @@
-import os
 import sys
 
 sys.path.append("/Users/tonyqiu/Desktop/projects/2026/wat2do-v2/backend")
@@ -25,7 +24,12 @@ except Exception as e:
     print(f"Failed to query EVENT_DATES: {e}")
 
 try:
-    q = sb.table(EVENT_DATES).select("event_id,dtstart_utc,dtend_utc,tz,events!inner(id,title)").limit(5).execute()
+    q = (
+        sb.table(EVENT_DATES)
+        .select("event_id,dtstart_utc,dtend_utc,tz,events!inner(id,title)")
+        .limit(5)
+        .execute()
+    )
     print("Joined query success:", len(q.data))
 except Exception as e:
     print(f"Failed to run joined query: {e}")
@@ -39,4 +43,3 @@ try:
         print(f" - {s}")
 except Exception as e:
     print(f"Failed to query USERS: {e}")
-

@@ -18,12 +18,7 @@ from core.constants import EVENT_STATUS_ACTIVE
 from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.retry import supabase_retry
-from core.tables import EVENT_DATES, EVENTS, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
-from schemas.event import EventResponse
-from schemas.event_date import OccurrenceResponse
-from recommender.schemas import RecommendationItem
-from services import event_date_service, interaction_service, user_service
-from services.ab_test_service import ab_test
+from core.tables import EVENT_DATES, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
 from recommender.collaborative import get_collaborative_scores
 from recommender.config import (
     CANDIDATE_EVENTS_CACHE_TTL,
@@ -37,7 +32,12 @@ from recommender.content_based import get_content_scores
 from recommender.interaction_scores import get_user_event_scores
 from recommender.popularity import get_popularity_scores
 from recommender.reranker import mmr_rerank
+from recommender.schemas import RecommendationItem
 from recommender.scoring import blend_scores, select_weights
+from schemas.event import EventResponse
+from schemas.event_date import OccurrenceResponse
+from services import event_date_service, interaction_service, user_service
+from services.ab_test_service import ab_test
 
 log = logging.getLogger(__name__)
 

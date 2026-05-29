@@ -6,10 +6,10 @@ from datetime import datetime, timezone
 
 from core.database import get_sb
 from core.tables import EVENTS
-from schemas.event import EventTimeMeta
 from recommender.config import POP_CANDIDATE_LIMIT, POP_FALLBACK_SCORE, POP_HALF_LIFE_DAYS
 from recommender.interaction_scores import get_event_popularity
 from recommender.utils import normalize_scores
+from schemas.event import EventTimeMeta
 
 log = logging.getLogger(__name__)
 

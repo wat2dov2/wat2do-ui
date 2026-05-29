@@ -57,8 +57,8 @@ def test_recommendations_200_without_auth(client, monkeypatch):
 
 def test_recommendations_returns_popular_when_no_db_user(optional_auth_client, monkeypatch):
     """Authenticated user with no DB row falls back to popular recommendations."""
-    from services import user_service
     from recommender.service import engine
+    from services import user_service
 
     recs = _mock_recs(3)
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=None))
@@ -74,10 +74,10 @@ def test_recommendations_returns_popular_when_no_db_user(optional_auth_client, m
 
 def test_recommendations_200_with_auth_personalized(optional_auth_client, monkeypatch):
     """GET /recommendations/ returns personalized recs when user is authenticated and has a DB row."""
+    from recommender.service import engine
     from schemas.user import UserResponse
     from services import user_service
     from services.ab_test_service import ab_test
-    from recommender.service import engine
 
     db_user = UserResponse(
         id="00000000-0000-0000-0000-000000000001",
@@ -120,10 +120,10 @@ def test_recommendations_respects_limit_param(client, monkeypatch):
 
 def test_recommendations_ab_impression_failure_doesnt_break(optional_auth_client, monkeypatch):
     """If AB impression recording fails, recommendations are still returned."""
+    from recommender.service import engine
     from schemas.user import UserResponse
     from services import user_service
     from services.ab_test_service import ab_test
-    from recommender.service import engine
 
     db_user = UserResponse(
         id="00000000-0000-0000-0000-000000000002",
@@ -149,9 +149,9 @@ def test_recommendations_personalized_failure_falls_back_to_popular(
     optional_auth_client, monkeypatch
 ):
     """Transient personalized failures must not break the events page."""
+    from recommender.service import engine
     from schemas.user import UserResponse
     from services import user_service
-    from recommender.service import engine
 
     db_user = UserResponse(
         id="00000000-0000-0000-0000-000000000003",

@@ -14,10 +14,10 @@ from core.constants import DEFAULT_LIST_LIMIT, EVENT_STATUS_ACTIVE
 from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
-from core.pagination import fetch_all_pages
 from core.retry import supabase_retry
 from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENT_DATES, EVENTS
+from recommender.service import invalidate_candidates_cache
 from schemas.event import (
     EventCreate,
     EventResponse,
@@ -27,7 +27,6 @@ from schemas.event import (
 )
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service
-from recommender.service import invalidate_candidates_cache
 
 log = logging.getLogger(__name__)
 
@@ -178,7 +177,9 @@ def list_events(
         if term:
             quoted = f'"%{term}%"'
             columns = ("title", "description", "location", "organization")
-            q = q.or_(",".join(f"{col}.ilike.{quoted}" for col in columns), reference_table="events")
+            q = q.or_(
+                ",".join(f"{col}.ilike.{quoted}" for col in columns), reference_table="events"
+            )
     if has_food is True:
         q = q.not_.is_("events.food", "null").neq("events.food", "[]")
     if max_price is not None:
@@ -223,7 +224,6 @@ def list_events(
     if summary:
         return [_hydrate_summary(row, occ_by_event.get(row["id"], [])) for row in deduped]
     return [_hydrate_response(row, occ_by_event.get(row["id"], [])) for row in deduped]
-
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:

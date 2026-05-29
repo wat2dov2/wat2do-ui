@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 from core.constants import INTEREST_TO_CATEGORIES
 from core.database import get_sb
 from core.tables import EVENTS
-from schemas.event import EventResponse
 from recommender.config import (
     CB_CATEGORY_MATCH,
     CB_CATEGORY_NO_PROFILE,
@@ -26,6 +25,7 @@ from recommender.config import (
     FIRST_YEAR_CATEGORIES,
 )
 from recommender.utils import normalize_scores
+from schemas.event import EventResponse
 
 log = logging.getLogger(__name__)
 

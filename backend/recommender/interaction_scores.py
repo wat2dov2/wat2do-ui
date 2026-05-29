@@ -16,7 +16,6 @@ from core.constants import DEFAULT_INTERACTION_LIMIT
 from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.tables import USER_INTERACTIONS
-from schemas.interaction import EventPopularity, InteractionMatrixRow
 from recommender.config import (
     CACHE_TTL_SECONDS,
     CF_MAX_USER_EVENT_SCORE,
@@ -26,6 +25,7 @@ from recommender.config import (
     USER_SCORES_CACHE_MAX,
     USER_SCORES_CACHE_TTL,
 )
+from schemas.interaction import EventPopularity, InteractionMatrixRow
 
 log = logging.getLogger(__name__)
 
