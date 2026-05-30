@@ -92,6 +92,7 @@ jobs:
             --username "$TARGET_USERNAME" \
             --school "$SCHOOL" \
             --cutoff-days "$CUTOFF_DAYS" \
+            --dry-run false \
             2>&1 | tee logs/scraping.log
 
       - name: Upload logs as artifact

@@ -61,10 +61,10 @@ def _parse_args() -> argparse.Namespace:
     # User subcommand
     user_parser = subparsers.add_parser("user", help="Scrape a single Instagram user")
     user_parser.add_argument("--username", required=True, help="Instagram username to scrape")
-    user_parser.add_argument("--school", default="University of Waterloo", help="Canonical school name")
+    user_parser.add_argument("--school", required=True, help="Canonical school name")
     user_parser.add_argument("--limit", type=int, default=1, help="Max posts per handle (Apify resultsLimit)")
     user_parser.add_argument("--cutoff-days", type=int, default=1, help="Drop posts older than this many days")
-    user_parser.add_argument("--dry-run", action="store_true", help="Skip DB writes")
+    user_parser.add_argument("--dry-run", choices=["true", "false"], required=True, help="Whether to perform a dry run (true/false)")
 
     # Batch subcommand
     batch_parser = subparsers.add_parser("batch", help="Scrape a batch of Instagram handles from a file")
@@ -72,7 +72,7 @@ def _parse_args() -> argparse.Namespace:
     batch_parser.add_argument("--school", required=True, help="Canonical school name")
     batch_parser.add_argument("--limit", type=int, default=None, help="Max posts per handle (Apify resultsLimit)")
     batch_parser.add_argument("--cutoff-days", type=int, default=4, help="Drop posts older than this many days")
-    batch_parser.add_argument("--dry-run", action="store_true", help="Skip DB writes")
+    batch_parser.add_argument("--dry-run", choices=["true", "false"], required=True, help="Whether to perform a dry run (true/false)")
 
     return parser.parse_args()
 
@@ -218,13 +218,16 @@ def main() -> int:
     )
     args = _parse_args()
 
+    # Convert string choice to boolean
+    dry_run_bool = (args.dry_run == "true")
+
     if args.command == "user":
         return _run_single_user_mode(
             username=args.username,
             school=args.school,
             cutoff_days=args.cutoff_days,
             limit=args.limit,
-            dry_run=args.dry_run,
+            dry_run=dry_run_bool,
         )
     elif args.command == "batch":
         return _run_big_scrape_mode(
@@ -232,7 +235,7 @@ def main() -> int:
             school=args.school,
             limit=args.limit,
             cutoff_days=args.cutoff_days,
-            dry_run=args.dry_run,
+            dry_run=dry_run_bool,
         )
 
     return 1

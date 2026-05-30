@@ -111,7 +111,7 @@ jobs:
           SCHOOL: ${{ inputs.school }}
           LIMIT: ${{ inputs.limit }}
           CUTOFF_DAYS: ${{ inputs.cutoff_days }}
-          DRY_RUN_FLAG: ${{ inputs.dry_run && '--dry-run' || '' }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           mkdir -p logs
           set -o pipefail
@@ -120,7 +120,7 @@ jobs:
             --school "$SCHOOL" \
             --limit "$LIMIT" \
             --cutoff-days "$CUTOFF_DAYS" \
-            $DRY_RUN_FLAG \
+            --dry-run "$DRY_RUN" \
             2>&1 | tee logs/scraping.log
 
       - name: Upload logs as artifact
