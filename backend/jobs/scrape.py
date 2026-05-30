@@ -39,19 +39,10 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 import core.logging  # noqa: F401, E402  — triggers basicConfig for standalone execution
-from core.constants import (  # noqa: E402
-    SCRAPING_DEFAULT_CUTOFF_DAYS,
-    SCRAPING_HANDLES_PER_RUN,
-    SCRAPING_SINGLE_USER_CUTOFF_DAYS,
-)
+from core.constants import SCRAPING_HANDLES_PER_RUN  # noqa: E402
 from services.scraper.pipeline import run_pipeline  # noqa: E402
 
 log = logging.getLogger(__name__)
-
-# Deep look-back for ad-hoc single-user runs.  Five years matches the
-# historical v1 IGNORE_CUTOFF default; in practice it's "ignore the
-# cutoff entirely" without disabling the filter code path.
-_IGNORE_CUTOFF_DAYS = 365 * 5
 
 
 def _parse_args() -> argparse.Namespace:
