@@ -82,7 +82,17 @@ jobs:
         run: |
           mkdir -p logs
           set -o pipefail
-          python -u jobs/scrape.py 2>&1 | tee logs/scraping.log
+          # Convert IGNORE_CUTOFF to a concrete cutoff-days limit (5 years / 1825 days if true, 1 day if false)
+          if [ "$IGNORE_CUTOFF" = "true" ]; then
+            CUTOFF_DAYS=1825
+          else
+            CUTOFF_DAYS=1
+          fi
+          python -u jobs/scrape.py user \
+            --username "$TARGET_USERNAME" \
+            --school "$SCHOOL" \
+            --cutoff-days "$CUTOFF_DAYS" \
+            2>&1 | tee logs/scraping.log
 
       - name: Upload logs as artifact
         if: always()

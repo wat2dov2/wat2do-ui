@@ -76,19 +76,19 @@ jobs:
         run: |
           case "${{ inputs.school }}" in
             "University of Waterloo")
-              echo "file=services/wat2do/urls/uwaterloo.txt" >> "$GITHUB_OUTPUT"
+              echo "file=services/scraper/urls/uwaterloo.txt" >> "$GITHUB_OUTPUT"
               ;;
             "University of Pennsylvania")
-              echo "file=services/wat2do/urls/upenn.txt" >> "$GITHUB_OUTPUT"
+              echo "file=services/scraper/urls/upenn.txt" >> "$GITHUB_OUTPUT"
               ;;
             "New York University")
-              echo "file=services/wat2do/urls/nyu.txt" >> "$GITHUB_OUTPUT"
+              echo "file=services/scraper/urls/nyu.txt" >> "$GITHUB_OUTPUT"
               ;;
             "Columbia University")
-              echo "file=services/wat2do/urls/columbia.txt" >> "$GITHUB_OUTPUT"
+              echo "file=services/scraper/urls/columbia.txt" >> "$GITHUB_OUTPUT"
               ;;
             "Massachusetts Institute of Technology")
-              echo "file=services/wat2do/urls/mit.txt" >> "$GITHUB_OUTPUT"
+              echo "file=services/scraper/urls/mit.txt" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "Unknown school: ${{ inputs.school }}"
@@ -115,7 +115,7 @@ jobs:
         run: |
           mkdir -p logs
           set -o pipefail
-          python -u jobs/scrape.py \
+          python -u jobs/scrape.py batch \
             --urls-file "$URLS_FILE" \
             --school "$SCHOOL" \
             --limit "$LIMIT" \

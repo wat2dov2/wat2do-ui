@@ -56,33 +56,24 @@ _IGNORE_CUTOFF_DAYS = 365 * 5
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the wat2do scraping pipeline.")
-    parser.add_argument(
-        "--urls-file",
-        type=Path,
-        help="Path to a text file with one Instagram URL per line (big-scrape mode).",
-    )
-    parser.add_argument(
-        "--school",
-        type=str,
-        help="Canonical school name. Required when --urls-file is given.",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Max posts per handle (Apify resultsLimit).",
-    )
-    parser.add_argument(
-        "--cutoff-days",
-        type=int,
-        default=SCRAPING_DEFAULT_CUTOFF_DAYS,
-        help="Drop posts older than this many days.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Skip DB writes (no WorkflowRun rows, no Events inserts).",
-    )
+    subparsers = parser.add_subparsers(dest="command", required=True, help="Scraping mode to run")
+
+    # User subcommand
+    user_parser = subparsers.add_parser("user", help="Scrape a single Instagram user")
+    user_parser.add_argument("--username", required=True, help="Instagram username to scrape")
+    user_parser.add_argument("--school", default="University of Waterloo", help="Canonical school name")
+    user_parser.add_argument("--limit", type=int, default=1, help="Max posts per handle (Apify resultsLimit)")
+    user_parser.add_argument("--cutoff-days", type=int, default=1, help="Drop posts older than this many days")
+    user_parser.add_argument("--dry-run", action="store_true", help="Skip DB writes")
+
+    # Batch subcommand
+    batch_parser = subparsers.add_parser("batch", help="Scrape a batch of Instagram handles from a file")
+    batch_parser.add_argument("--urls-file", type=Path, required=True, help="Path to a text file with one URL/handle per line")
+    batch_parser.add_argument("--school", required=True, help="Canonical school name")
+    batch_parser.add_argument("--limit", type=int, default=None, help="Max posts per handle (Apify resultsLimit)")
+    batch_parser.add_argument("--cutoff-days", type=int, default=4, help="Drop posts older than this many days")
+    batch_parser.add_argument("--dry-run", action="store_true", help="Skip DB writes")
+
     return parser.parse_args()
 
 
@@ -129,64 +120,68 @@ def _format_summary(
     )
 
 
-def _run_single_user_mode(target_username: str) -> int:
-    cutoff_days = (
-        _IGNORE_CUTOFF_DAYS
-        if os.getenv("IGNORE_CUTOFF", "").lower() == "true"
-        else SCRAPING_SINGLE_USER_CUTOFF_DAYS
-    )
-    school = os.getenv("SCHOOL", "University of Waterloo")
-
+def _run_single_user_mode(
+    username: str,
+    school: str,
+    cutoff_days: int,
+    limit: int | None,
+    dry_run: bool,
+) -> int:
     log.info(
-        "Single-user mode: username=%s, school=%s, cutoff_days=%d",
-        target_username,
+        "Single-user mode: username=%s, school=%s, cutoff_days=%d, limit=%s, dry_run=%s",
+        username,
         school,
         cutoff_days,
+        limit,
+        dry_run,
     )
 
     result = run_pipeline(
-        usernames=[target_username],
+        usernames=[username],
         school=school,
         cutoff_days=cutoff_days,
-        results_limit=1,
+        results_limit=limit,
+        dry_run=dry_run,
         github_run_id=os.getenv("GITHUB_RUN_ID"),
     )
 
     print(
         _format_summary(
             school,
-            [target_username],
+            [username],
             result.total_inserted,
             result.total_extracted,
             result.total_posts,
-            dry_run=False,
+            dry_run=dry_run,
         )
     )
     return 0 if all(h.status != "error" for h in result.handles) else 1
 
 
-def _run_big_scrape_mode(args: argparse.Namespace) -> int:
-    if args.school is None:
-        log.error("--school is required when --urls-file is given")
-        return 1
-
-    handles = _read_handles(args.urls_file)
-    if args.dry_run:
+def _run_big_scrape_mode(
+    urls_file: Path,
+    school: str,
+    limit: int | None,
+    cutoff_days: int,
+    dry_run: bool,
+) -> int:
+    handles = _read_handles(urls_file)
+    if dry_run:
         # v1 semantics: dry-run on a big-scrape only processes the first
         # handle so the operator can eyeball model behaviour without
         # waiting for a multi-hour Apify run.
         handles = handles[:1]
     if not handles:
-        log.error("No handles found in %s", args.urls_file)
+        log.error("No handles found in %s", urls_file)
         return 1
 
     log.info(
         "Big-scrape mode: school=%s, handles=%d, limit=%s, cutoff_days=%d, dry_run=%s",
-        args.school,
+        school,
         len(handles),
-        args.limit,
-        args.cutoff_days,
-        args.dry_run,
+        limit,
+        cutoff_days,
+        dry_run,
     )
 
     total_inserted = 0
@@ -197,10 +192,10 @@ def _run_big_scrape_mode(args: argparse.Namespace) -> int:
     for chunk in _chunked(handles, SCRAPING_HANDLES_PER_RUN):
         result = run_pipeline(
             usernames=chunk,
-            school=args.school,
-            cutoff_days=args.cutoff_days,
-            results_limit=args.limit,
-            dry_run=args.dry_run,
+            school=school,
+            cutoff_days=cutoff_days,
+            results_limit=limit,
+            dry_run=dry_run,
             github_run_id=os.getenv("GITHUB_RUN_ID"),
         )
         total_inserted += result.total_inserted
@@ -210,7 +205,7 @@ def _run_big_scrape_mode(args: argparse.Namespace) -> int:
 
     print(
         _format_summary(
-            args.school, handles, total_inserted, total_extracted, total_posts, dry_run=args.dry_run
+            school, handles, total_inserted, total_extracted, total_posts, dry_run=dry_run
         )
     )
     return 1 if any_error else 0
@@ -223,15 +218,24 @@ def main() -> int:
     )
     args = _parse_args()
 
-    target_username = os.getenv("TARGET_USERNAME", "").strip()
-    if target_username:
-        return _run_single_user_mode(target_username)
+    if args.command == "user":
+        return _run_single_user_mode(
+            username=args.username,
+            school=args.school,
+            cutoff_days=args.cutoff_days,
+            limit=args.limit,
+            dry_run=args.dry_run,
+        )
+    elif args.command == "batch":
+        return _run_big_scrape_mode(
+            urls_file=args.urls_file,
+            school=args.school,
+            limit=args.limit,
+            cutoff_days=args.cutoff_days,
+            dry_run=args.dry_run,
+        )
 
-    if args.urls_file is None:
-        log.error("Either set TARGET_USERNAME (single-user) or pass --urls-file (big-scrape).")
-        return 1
-
-    return _run_big_scrape_mode(args)
+    return 1
 
 
 if __name__ == "__main__":
