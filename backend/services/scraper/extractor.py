@@ -18,11 +18,11 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
+from typing import Annotated
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, Field, BeforeValidator, model_validator
-from typing import Annotated
 from openai import OpenAI
+from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
