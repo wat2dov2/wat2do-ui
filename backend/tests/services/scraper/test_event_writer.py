@@ -12,7 +12,6 @@ from services.scraper.event_writer import (
     _coerce_food,
     _coerce_future_occurrences,
     _parse_iso,
-    _pick_first_canonical_category,
     write_event,
 )
 
@@ -40,24 +39,7 @@ def test_coerce_food_yes_marker_kept():
     assert _coerce_food("Yes!") == ["Yes!"]
 
 
-# ── category picking ──────────────────────────────────────────────────
 
-
-def test_pick_first_canonical_category_skips_non_canonical():
-    """First canonical match wins; unknowns are dropped."""
-    result = _pick_first_canonical_category(["Hogwarts", "Networking", "Career"])
-    assert result == "Networking"
-
-
-def test_pick_first_canonical_category_normalizes_legacy():
-    """Legacy names like "Cultural" map to "Culture" via normalize_category."""
-    result = _pick_first_canonical_category(["Cultural"])
-    assert result == "Culture"
-
-
-def test_pick_first_canonical_category_returns_none_when_empty():
-    assert _pick_first_canonical_category([]) is None
-    assert _pick_first_canonical_category(["NotARealCategory"]) is None
 
 
 # ── ISO parsing ───────────────────────────────────────────────────────
@@ -121,7 +103,7 @@ def _event(**overrides) -> dict:
         "description": "Come try teas.",
         "location": "SLC 3223",
         "organization": "UW Tea Club",
-        "categories": ["Food"],
+        "category": "Food",
         # dtend left as empty string — OccurrenceCreate's
         # _dtend_after_dtstart validator only fires when dtend is set.
         "occurrences": [

@@ -20,6 +20,8 @@ import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from pydantic import BaseModel, Field, BeforeValidator, model_validator
+from typing import Annotated
 from openai import OpenAI
 
 from core.config import settings
@@ -154,7 +156,16 @@ def extract_events_from_post(
         # ``null`` (the model's "no event in this post" return) falls
         # through here, as do unexpected shapes.
         events = []
-    return [_clean_event(e) for e in events if isinstance(e, dict)]
+    
+    cleaned_events = []
+    for e in events:
+        if not isinstance(e, dict):
+            continue
+        try:
+            cleaned_events.append(_clean_event(e))
+        except ValueError:
+            continue
+    return cleaned_events
 
 
 def _parse_model_json(raw: str):
@@ -256,15 +267,15 @@ If you determine that there is NO event in the post, return the JSON value: null
     "registration": boolean,
     "image_index": integer,
     "occurrences": [
-        {{
+        {
             "dtstart_utc": string,  // UTC start "YYYY-MM-DDTHH:MM:SSZ"
             "dtend_utc": string,    // UTC end "YYYY-MM-DDTHH:MM:SSZ" or empty string if unknown
             "duration": string,     // "HH:MM:SS" or empty string if unknown
             "tz": string            // Timezone name like "{local_tz_key}"; use the post's timezone context
-        }}
+        }
     ],
     "school": string,
-    "categories": list  // one or more of the following, as a JSON array of strings: {categories_str}
+    "category": string or null  // one of the canonical categories, or null if none fit: {categories_str}
 }}
 
 IMAGE MAPPING RULES:
@@ -299,63 +310,59 @@ ADDITIONAL RULES:
 """
 
 
+def empty_str_to_none(v: object) -> object:
+    if isinstance(v, str) and not v.strip():
+        return None
+    return v
+
+OptionalStr = Annotated[str | None, BeforeValidator(empty_str_to_none)]
+OptionalDatetime = Annotated[datetime | None, BeforeValidator(empty_str_to_none)]
+
+class ExtractedOccurrence(BaseModel):
+    dtstart_utc: datetime
+    dtend_utc: OptionalDatetime = None
+    duration: OptionalStr = None
+    tz: OptionalStr = None
+
+class ExtractedEvent(BaseModel):
+    title: str = Field(default="")
+    description: str = Field(default="")
+    location: str = Field(default="")
+    organization: str = Field(default="")
+    price: float | None = None
+    food: str = Field(default="")
+    registration: bool = False
+    image_index: int = 0
+    occurrences: list[ExtractedOccurrence] = Field(default_factory=list)
+    school: str = Field(default="")
+    category: str | None = None
+
+    @model_validator(mode="after")
+    def coerce_free_price(self) -> ExtractedEvent:
+        if self.price is None:
+            haystack = " ".join(
+                str(v) for v in (self.title, self.description, self.food) if v
+            ).lower()
+            if "free" in haystack:
+                self.price = 0.0
+        return self
+
+    @model_validator(mode="after")
+    def sort_occurrences(self) -> ExtractedEvent:
+        self.occurrences.sort(key=lambda occ: occ.dtstart_utc)
+        return self
+
+
 def _clean_event(event: dict) -> dict:
-    """Apply the v1 normalisation rules to one extracted event dict.
+    """Apply the v1 normalisation rules to one extracted event dict using Pydantic.
 
     Idempotent — running this twice on the same input is a no-op. The
     pipeline depends on this for safety after JSON parsing of arbitrary
     model output.
     """
-    defaults: dict[str, object] = {
-        "title": "",
-        "description": "",
-        "location": "",
-        "organization": "",
-        "price": None,
-        "food": "",
-        "registration": False,
-        "image_index": 0,
-        "occurrences": [],
-        "school": "",
-        "categories": [],
-    }
-    for key, fallback in defaults.items():
-        if key not in event or event.get(key) is None and key not in ("price",):
-            # ``price`` legitimately stays None when free-event detection
-            # below decides nothing — every other field gets a typed default.
-            if key == "price" and "price" in event:
-                continue
-            event[key] = fallback
-
-    # Free-event coercion — if the price came back null but the post text
-    # mentions "free", set 0.0. Mirrors v1's behaviour. Includes the
-    # title in the haystack so a post titled "Free Pizza Friday" with
-    # an empty description / food still gets coerced to price=0.0.
-    if event.get("price") is None:
-        haystack = " ".join(
-            str(event.get(k) or "") for k in ("title", "description", "food")
-        ).lower()
-        if "free" in haystack:
-            event["price"] = 0.0
-
-    if not isinstance(event.get("categories"), list):
-        cat = event["categories"]
-        event["categories"] = [str(cat)] if cat else []
-
-    occurrences = event.get("occurrences") or []
-    cleaned_occ: list[dict] = []
-    if isinstance(occurrences, list):
-        for occ in occurrences:
-            if not isinstance(occ, dict):
-                continue
-            cleaned_occ.append(
-                {
-                    "dtstart_utc": occ.get("dtstart_utc", "") or "",
-                    "dtend_utc": occ.get("dtend_utc", "") or "",
-                    "duration": occ.get("duration", "") or "",
-                    "tz": occ.get("tz", "") or "",
-                }
-            )
-    cleaned_occ.sort(key=lambda x: x.get("dtstart_utc", ""))
-    event["occurrences"] = cleaned_occ
-    return event
+    try:
+        validated = ExtractedEvent.model_validate(event)
+        return validated.model_dump(mode="json")
+    except Exception as e:
+        log.warning("Validation failed for event payload: %s", e)
+        raise ValueError(f"Invalid event payload: {e}") from e

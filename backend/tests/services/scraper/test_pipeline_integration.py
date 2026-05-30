@@ -48,7 +48,7 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
             "description": "Tea tasting series — Mondays in December",
             "location": "SLC 3223",
             "organization": "UW Tea Club",
-            "categories": ["Food"],
+            "category": "Food",
             "image_index": 0,
             "price": 0.0,
             "food": "Yes!",

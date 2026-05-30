@@ -61,7 +61,7 @@ def test_clean_event_fills_defaults_for_missing_fields():
     assert cleaned["price"] is None
     assert cleaned["registration"] is False
     assert cleaned["food"] == ""
-    assert cleaned["categories"] == []
+    assert cleaned["category"] is None
     assert cleaned["image_index"] == 0
 
 
@@ -92,9 +92,9 @@ def test_clean_event_does_not_overwrite_explicit_price():
     assert cleaned["price"] == 15.0
 
 
-def test_clean_event_categories_coerced_to_list():
-    cleaned = _clean_event({"title": "X", "categories": "Music"})
-    assert cleaned["categories"] == ["Music"]
+def test_clean_event_category_normalized():
+    cleaned = _clean_event({"title": "X", "category": "Music"})
+    assert cleaned["category"] == "Music"
 
 
 def test_clean_event_occurrences_sorted_and_normalized():

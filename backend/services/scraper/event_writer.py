@@ -63,7 +63,7 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
     club = _resolve_club_by_ig(ig_handle)
     organization = _resolve_organization(event, ig_handle=ig_handle, club=club)
     club_type = club.get("club_type") if club else None
-    category = _pick_first_canonical_category(event.get("categories") or [])
+    category = normalize_category(event.get("category")) if event.get("category") else None
 
     # Build the future-only occurrence list. Past-dated occurrences from
     # mis-parsed captions are dropped here rather than at insert time.
@@ -192,21 +192,6 @@ def _resolve_organization(event: dict, *, ig_handle: str, club: dict | None) -> 
     return ig_handle
 
 
-def _pick_first_canonical_category(categories: list) -> str | None:
-    """v2's events.category is a single string; v1's was a list.
-
-    Walk the extractor's category list, keep the first one that matches
-    a canonical category in ``EVENT_CATEGORIES`` (after normalisation).
-    Drop any non-string or non-canonical entries silently — the warning
-    log already lives in ``schemas.event.normalize_category``.
-    """
-    for cat in categories:
-        if not isinstance(cat, str):
-            continue
-        normalized = normalize_category(cat)
-        if normalized is not None:
-            return normalized
-    return None
 
 
 def _coerce_food(value: object) -> list | None:
