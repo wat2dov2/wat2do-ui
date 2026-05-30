@@ -10,7 +10,7 @@ earliest occurrence if all are in the past.
 import logging
 from datetime import datetime, timezone
 
-from core.constants import DEFAULT_LIST_LIMIT, EVENT_STATUS_ACTIVE
+from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
@@ -46,7 +46,6 @@ EVENT_SUMMARY_EVENT_COLUMNS = ",".join(
 MATERIAL_FIELDS: tuple[str, ...] = (
     "occurrences",
     "location",
-    "status",
 )
 
 
@@ -148,7 +147,6 @@ def list_events(
     max_price: float | None = None,
     registration: bool | None = None,
     summary: bool = False,
-    include_cancelled: bool = False,
 ) -> list[EventSummaryResponse] | list[EventResponse]:
     """List events with optional filters.
 
@@ -164,8 +162,6 @@ def list_events(
     )
 
     # Apply event filters prefixed with 'events.'
-    if not include_cancelled:
-        q = q.eq("events.status", EVENT_STATUS_ACTIVE)
     if category:
         q = q.eq("events.category", category)
     if club_type:

@@ -12,7 +12,6 @@ Covers the two pieces the router tests can't reach:
 
 from datetime import datetime, timezone
 
-from core.constants import EVENT_STATUS_ACTIVE, EVENT_STATUS_CANCELLED
 from schemas.event import EventResponse
 from schemas.event_date import OccurrenceResponse
 from services import event_service
@@ -26,7 +25,6 @@ def _event(**overrides) -> EventResponse:
         "organization": "TestOrg",
         "added_at": datetime.now(timezone.utc),
         "created_by": "11111111-1111-1111-1111-111111111111",
-        "status": EVENT_STATUS_ACTIVE,
     }
     defaults.update(overrides)
     return EventResponse.model_validate(defaults)
@@ -74,15 +72,6 @@ def test_diff_description_change_ignored():
     assert event_service.compute_event_diff(old, new) == {}
 
 
-def test_diff_status_change_populates_dict():
-    old = _event(status=EVENT_STATUS_ACTIVE)
-    new = _event(status=EVENT_STATUS_CANCELLED)
-
-    diff = event_service.compute_event_diff(old, new)
-
-    assert diff == {"status": {"old": EVENT_STATUS_ACTIVE, "new": EVENT_STATUS_CANCELLED}}
-
-
 def test_diff_location_change_populates_dict():
     old = _event(location="Old Place")
     new = _event(location="New Place")
@@ -127,14 +116,33 @@ def test_diff_occurrence_change_serialises_to_iso():
 
 
 def test_diff_multiple_fields_all_present():
-    old = _event(status=EVENT_STATUS_ACTIVE, location="Here")
-    new = _event(status=EVENT_STATUS_CANCELLED, location="There")
+    old_ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
+    new_ts = datetime(2026, 5, 1, 19, 0, tzinfo=timezone.utc)
+    old = _event(location="Here", occurrences=[_occurrence(old_ts)])
+    new = _event(location="There", occurrences=[_occurrence(new_ts)])
 
     diff = event_service.compute_event_diff(old, new)
 
     assert diff == {
-        "status": {"old": EVENT_STATUS_ACTIVE, "new": EVENT_STATUS_CANCELLED},
         "location": {"old": "Here", "new": "There"},
+        "occurrences": {
+            "old": [
+                {
+                    "dtstart_utc": old_ts.isoformat(),
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                }
+            ],
+            "new": [
+                {
+                    "dtstart_utc": new_ts.isoformat(),
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                }
+            ],
+        },
     }
 
 
@@ -202,31 +210,6 @@ def test_diff_occurrence_added_from_none():
     }
 
 
-# ---------------------------------------------------------------------------
-# list_events — status filter
-# ---------------------------------------------------------------------------
-
-
-def test_list_events_default_filters_active(fake_sb, patch_sb):
-    """By default, the list query must include .eq("events.status", "CONFIRMED")."""
-    patch_sb("services.event_service")
-    fake_sb.set_response(data=[])
-
-    event_service.list_events()
-
-    fake_sb.eq.assert_any_call("events.status", EVENT_STATUS_ACTIVE)
-
-
-def test_list_events_include_cancelled_drops_status_filter(fake_sb, patch_sb):
-    """When include_cancelled=True, the status filter must NOT be applied."""
-    patch_sb("services.event_service")
-    fake_sb.set_response(data=[])
-
-    event_service.list_events(include_cancelled=True)
-
-    calls = fake_sb.eq.call_args_list
-    assert not any(c.args == ("events.status", EVENT_STATUS_ACTIVE) for c in calls)
-
 
 # ---------------------------------------------------------------------------
 # Primary-date consistency between summary and detail modes
@@ -256,7 +239,6 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
                         "location": "SLC",
                         "organization": "UW Tea Club",
                         "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
-                        "status": EVENT_STATUS_ACTIVE,
                     },
                 }
             ]

@@ -245,19 +245,6 @@ def test_create_promotion_ignores_legacy_package_credits_and_duration(
     )
 
 
-def test_create_promotion_rejects_cancelled_event(authenticated_client, monkeypatch):
-    db_user = _mock_db_user()
-    event = _mock_event(status="CANCELLED")
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-
-    resp = authenticated_client.post(
-        "/promotions/",
-        json={"event_id": 1},
-    )
-    assert resp.status_code == 400
-
-
 # ── POST /promotions/ ownership checks ──────────────────────────────
 
 

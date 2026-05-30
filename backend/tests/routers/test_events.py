@@ -254,96 +254,6 @@ def test_update_legacy_event_non_admin_rejected(authenticated_client, monkeypatc
     assert resp.status_code == 403
 
 
-# ---------------------------------------------------------------------------
-# events.status — cancel / un-cancel semantics
-# ---------------------------------------------------------------------------
-
-
-def test_update_status_cancelled_owner_allowed(authenticated_client, monkeypatch):
-    """Owner can flip status to cancelled via the PATCH endpoint."""
-    event = _mock_event(created_by=FAKE_USER["id"], status="CONFIRMED")
-    updated = _mock_event(created_by=FAKE_USER["id"], status="CANCELLED")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    mock_update = MagicMock(return_value=updated)
-    monkeypatch.setattr(event_service, "update_event", mock_update)
-
-    resp = authenticated_client.patch("/events/1", json={"status": "CANCELLED"})
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "CANCELLED"
-    # The EventUpdate payload reached the service with status set.
-    args, _ = mock_update.call_args
-    assert args[1].status == "CANCELLED"
-
-
-def test_update_status_back_to_active_owner_allowed(authenticated_client, monkeypatch):
-    """Owner can un-cancel — cancelled → active is allowed too."""
-    event = _mock_event(created_by=FAKE_USER["id"], status="CANCELLED")
-    updated = _mock_event(created_by=FAKE_USER["id"], status="CONFIRMED")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
-
-    resp = authenticated_client.patch("/events/1", json={"status": "CONFIRMED"})
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "CONFIRMED"
-
-
-def test_update_status_admin_allowed(admin_client, monkeypatch):
-    """Admin can flip status on any event regardless of ownership."""
-    event = _mock_event(created_by=FAKE_USER["id"], status="CONFIRMED")
-    updated = _mock_event(created_by=FAKE_USER["id"], status="CANCELLED")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
-
-    resp = admin_client.patch("/events/1", json={"status": "CANCELLED"})
-    assert resp.status_code == 200
-
-
-def test_update_status_non_owner_rejected(other_user_client, monkeypatch):
-    """Non-owner, non-admin gets 403 when trying to cancel."""
-    event = _mock_event(created_by=FAKE_USER["id"], status="CONFIRMED")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-
-    resp = other_user_client.patch("/events/1", json={"status": "CANCELLED"})
-    assert resp.status_code == 403
-
-
-def test_update_status_rejects_unknown_value(authenticated_client, monkeypatch):
-    """Literal-typed status rejects values outside {active, cancelled}."""
-    event = _mock_event(created_by=FAKE_USER["id"], status="CONFIRMED")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-
-    resp = authenticated_client.patch("/events/1", json={"status": "deleted"})
-    assert resp.status_code == 422
-
-
-# ---------------------------------------------------------------------------
-# List filtering on status
-# ---------------------------------------------------------------------------
-
-
-def test_list_events_default_passes_include_cancelled_false(client, monkeypatch):
-    """Default list endpoint asks the service to exclude cancelled events."""
-    mock_list = MagicMock(return_value=[])
-    monkeypatch.setattr(event_service, "list_events", mock_list)
-
-    resp = client.get("/events/")
-    assert resp.status_code == 200
-
-    _, kwargs = mock_list.call_args
-    assert kwargs["include_cancelled"] is False
-
-
-def test_list_events_include_cancelled_true_passes_through(client, monkeypatch):
-    """?include_cancelled=true reaches the service kwarg unchanged."""
-    mock_list = MagicMock(return_value=[])
-    monkeypatch.setattr(event_service, "list_events", mock_list)
-
-    resp = client.get("/events/?include_cancelled=true")
-    assert resp.status_code == 200
-
-    _, kwargs = mock_list.call_args
-    assert kwargs["include_cancelled"] is True
-
 
 # ---------------------------------------------------------------------------
 # event_change hook — router wires the notification fanout on material diff
@@ -351,23 +261,23 @@ def test_list_events_include_cancelled_true_passes_through(client, monkeypatch):
 
 
 def test_update_event_material_diff_triggers_enqueue(authenticated_client, monkeypatch):
-    """PATCH with a material change (status) should fire enqueue_event_change."""
+    """PATCH with a material change (location) should fire enqueue_event_change."""
     from services import notification_service
 
-    old = _mock_event(created_by=FAKE_USER["id"], status="CONFIRMED")
-    updated = _mock_event(created_by=FAKE_USER["id"], status="CANCELLED")
+    old = _mock_event(created_by=FAKE_USER["id"], location="Here")
+    updated = _mock_event(created_by=FAKE_USER["id"], location="There")
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
     monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
 
     mock_enqueue = MagicMock(return_value=0)
     monkeypatch.setattr(notification_service, "enqueue_event_change", mock_enqueue)
 
-    resp = authenticated_client.patch("/events/1", json={"status": "CANCELLED"})
+    resp = authenticated_client.patch("/events/1", json={"location": "There"})
     assert resp.status_code == 200
     mock_enqueue.assert_called_once()
     args, _ = mock_enqueue.call_args
     assert args[0] == 1
-    assert "status" in args[1]
+    assert "location" in args[1]
 
 
 def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monkeypatch):
@@ -391,8 +301,8 @@ def test_update_event_enqueue_failure_does_not_break_update(authenticated_client
     """A notification-layer exception must not propagate up to the user."""
     from services import notification_service
 
-    old = _mock_event(created_by=FAKE_USER["id"], status="CONFIRMED")
-    updated = _mock_event(created_by=FAKE_USER["id"], status="CANCELLED")
+    old = _mock_event(created_by=FAKE_USER["id"], location="Here")
+    updated = _mock_event(created_by=FAKE_USER["id"], location="There")
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
     monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
     monkeypatch.setattr(
@@ -401,7 +311,7 @@ def test_update_event_enqueue_failure_does_not_break_update(authenticated_client
         MagicMock(side_effect=RuntimeError("provider down")),
     )
 
-    resp = authenticated_client.patch("/events/1", json={"status": "CANCELLED"})
+    resp = authenticated_client.patch("/events/1", json={"location": "There"})
     assert resp.status_code == 200  # update still succeeded
 
 

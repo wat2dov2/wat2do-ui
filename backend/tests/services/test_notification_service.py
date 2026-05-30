@@ -269,7 +269,7 @@ def test_enqueue_event_change_missing_event_returns_zero(fake_sb, patch_sb):
     patch_sb("services.notifications.event_change")
     fake_sb.set_response(data=[])
 
-    diff = {"status": {"old": "CONFIRMED", "new": "CANCELLED"}}
+    diff = {"location": {"old": "Here", "new": "There"}}
     assert event_change.enqueue_event_change(9999, diff) == 0
 
 
@@ -279,13 +279,13 @@ def test_enqueue_event_change_no_saved_users_returns_zero(fake_sb, patch_sb):
     fake_sb.queue_responses(
         [
             # 1: fetch event
-            [{"title": "T", "location": "L", "dtstart_utc": None, "status": "CANCELLED"}],
+            [{"title": "T", "location": "L", "dtstart_utc": None}],
             # 2: user_saved_events lookup — empty
             [],
         ]
     )
 
-    diff = {"status": {"old": "CONFIRMED", "new": "CANCELLED"}}
+    diff = {"location": {"old": "Here", "new": "There"}}
     assert event_change.enqueue_event_change(42, diff) == 0
 
 

@@ -180,12 +180,19 @@ def _group_by_handle(posts: list[dict], usernames: list[str]) -> dict[str, list[
     ask for ``uwteaclub``, get back ``UWTeaClub``). A case-sensitive
     bucket would silently drop those posts and report ``posts_fetched=0``,
     making active accounts look dormant. Match casefold-on-both-sides.
+    Supports collab posts by falling back to matching against ``inputUrl``.
     """
     lookup = {h.lower(): h for h in usernames}
     by_handle: dict[str, list[dict]] = {h: [] for h in usernames}
     for post in posts:
         owner = (post.get("ownerUsername") or post.get("username") or "").lower()
         canonical = lookup.get(owner)
+        if canonical is None:
+            input_url = (post.get("inputUrl") or "").lower()
+            for handle in usernames:
+                if f"instagram.com/{handle.lower()}" in input_url:
+                    canonical = handle
+                    break
         if canonical is not None:
             by_handle[canonical].append(post)
     return by_handle

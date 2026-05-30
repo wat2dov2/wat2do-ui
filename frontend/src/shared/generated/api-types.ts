@@ -692,26 +692,6 @@ export interface paths {
         patch: operations["update_poster_qr__qr_code_id__patch"];
         trace?: never;
     };
-    "/recommendations/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Recommendations
-         * @description Get event recommendations. Personalized if logged in, popular otherwise.
-         */
-        get: operations["get_recommendations_recommendations__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/reports/": {
         parameters: {
             query?: never;
@@ -1012,6 +992,26 @@ export interface paths {
         patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
     };
+    "/recommendations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Recommendations
+         * @description Get event recommendations. Personalized if logged in, popular otherwise.
+         */
+        get: operations["get_recommendations_recommendations__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1310,16 +1310,6 @@ export interface components {
             organization: string;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Discord Handle */
-            discord_handle?: string | null;
-            /** X Handle */
-            x_handle?: string | null;
-            /** Tiktok Handle */
-            tiktok_handle?: string | null;
-            /** Fb Handle */
-            fb_handle?: string | null;
-            /** Other Handle */
-            other_handle?: string | null;
             /** Display Handle */
             display_handle?: string | null;
         };
@@ -1392,7 +1382,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Location */
-            location: string;
+            location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Dtstart Utc */
@@ -1422,16 +1412,6 @@ export interface components {
             organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Discord Handle */
-            discord_handle?: string | null;
-            /** X Handle */
-            x_handle?: string | null;
-            /** Tiktok Handle */
-            tiktok_handle?: string | null;
-            /** Fb Handle */
-            fb_handle?: string | null;
-            /** Other Handle */
-            other_handle?: string | null;
             /** Display Handle */
             display_handle?: string | null;
             /**
@@ -1439,12 +1419,6 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
-            /**
-             * Status
-             * @default CONFIRMED
-             * @enum {string}
-             */
-            status: "CONFIRMED" | "CANCELLED";
         };
         /**
          * EventResponse
@@ -1473,7 +1447,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Location */
-            location: string;
+            location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Dtstart Utc */
@@ -1503,16 +1477,6 @@ export interface components {
             organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Discord Handle */
-            discord_handle?: string | null;
-            /** X Handle */
-            x_handle?: string | null;
-            /** Tiktok Handle */
-            tiktok_handle?: string | null;
-            /** Fb Handle */
-            fb_handle?: string | null;
-            /** Other Handle */
-            other_handle?: string | null;
             /** Display Handle */
             display_handle?: string | null;
             /**
@@ -1522,12 +1486,6 @@ export interface components {
             added_at: string;
             /** Created By */
             created_by?: string | null;
-            /**
-             * Status
-             * @default CONFIRMED
-             * @enum {string}
-             */
-            status: "CONFIRMED" | "CANCELLED";
         };
         /**
          * EventSummaryResponse
@@ -1545,7 +1503,7 @@ export interface components {
             /** Title */
             title: string;
             /** Location */
-            location: string;
+            location?: string | null;
             /** Dtstart Utc */
             dtstart_utc?: string | null;
             /** Dtend Utc */
@@ -1574,12 +1532,6 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
-            /**
-             * Status
-             * @default CONFIRMED
-             * @enum {string}
-             */
-            status: "CONFIRMED" | "CANCELLED";
         };
         /** EventUpdate */
         EventUpdate: {
@@ -1589,8 +1541,6 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
-            /** Status */
-            status?: ("CONFIRMED" | "CANCELLED") | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceCreate"][] | null;
             /** Price */
@@ -1613,16 +1563,6 @@ export interface components {
             organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Discord Handle */
-            discord_handle?: string | null;
-            /** X Handle */
-            x_handle?: string | null;
-            /** Tiktok Handle */
-            tiktok_handle?: string | null;
-            /** Fb Handle */
-            fb_handle?: string | null;
-            /** Other Handle */
-            other_handle?: string | null;
             /** Display Handle */
             display_handle?: string | null;
         };
@@ -1827,7 +1767,7 @@ export interface components {
         /** OccurrenceResponse */
         OccurrenceResponse: {
             /** Id */
-            id: number;
+            id: string | number;
             /** Event Id */
             event_id: number;
             /**
@@ -3229,8 +3169,6 @@ export interface operations {
                 registration?: boolean | null;
                 /** @description Return lightweight card-view fields only */
                 summary?: boolean;
-                /** @description Include cancelled events. Default excludes them so browse/search stays clean. */
-                include_cancelled?: boolean;
             };
             header?: never;
             path?: never;
@@ -3684,37 +3622,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QrCodeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_recommendations_recommendations__get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecommendationItem"][];
                 };
             };
             /** @description Validation Error */
@@ -4412,6 +4319,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_recommendations_recommendations__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationItem"][];
                 };
             };
             /** @description Validation Error */

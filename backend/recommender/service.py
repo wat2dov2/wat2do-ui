@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 from core.cache import TTLCache
-from core.constants import EVENT_STATUS_ACTIVE
 from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.retry import supabase_retry
@@ -534,7 +533,7 @@ class RecommendationEngine:
                 if eid is None:
                     continue
                 event_row = row.get("events")
-                if not event_row or event_row.get("status") != EVENT_STATUS_ACTIVE:
+                if not event_row:
                     continue
                 if eid in seen:
                     continue

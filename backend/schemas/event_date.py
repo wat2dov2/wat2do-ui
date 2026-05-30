@@ -9,6 +9,8 @@ EventDates model.
 
 from datetime import datetime, timezone
 
+from uuid import UUID
+
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # Free-form short strings — the extractor sometimes returns "1 hour"
@@ -43,7 +45,7 @@ class OccurrenceCreate(BaseModel):
 
 
 class OccurrenceResponse(BaseModel):
-    id: int
+    id: UUID | int
     event_id: int
     dtstart_utc: datetime
     dtend_utc: datetime | None = None

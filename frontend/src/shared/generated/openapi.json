@@ -1515,18 +1515,6 @@
               "title": "Summary"
             },
             "description": "Return lightweight card-view fields only"
-          },
-          {
-            "name": "include_cancelled",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "Include cancelled events. Default excludes them so browse/search stays clean.",
-              "default": false,
-              "title": "Include Cancelled"
-            },
-            "description": "Include cancelled events. Default excludes them so browse/search stays clean."
           }
         ],
         "responses": {
@@ -2270,61 +2258,6 @@
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/recommendations/": {
-      "get": {
-        "tags": [
-          "recommendations"
-        ],
-        "summary": "Get Recommendations",
-        "description": "Get event recommendations. Personalized if logged in, popular otherwise.",
-        "operationId": "get_recommendations_recommendations__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 50,
-              "minimum": 1,
-              "default": 20,
-              "title": "Limit"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RecommendationItem"
-                  },
-                  "title": "Response Get Recommendations Recommendations  Get"
-                }
-              }
-            }
           },
           "422": {
             "description": "Validation Error",
@@ -3449,6 +3382,61 @@
         }
       }
     },
+    "/recommendations/": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Get Recommendations",
+        "description": "Get event recommendations. Personalized if logged in, popular otherwise.",
+        "operationId": "get_recommendations_recommendations__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecommendationItem"
+                  },
+                  "title": "Response Get Recommendations Recommendations  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -4347,66 +4335,6 @@
             ],
             "title": "Ig Handle"
           },
-          "discord_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord Handle"
-          },
-          "x_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "X Handle"
-          },
-          "tiktok_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tiktok Handle"
-          },
-          "fb_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fb Handle"
-          },
-          "other_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Other Handle"
-          },
           "display_handle": {
             "anyOf": [
               {
@@ -4523,7 +4451,14 @@
             "title": "Description"
           },
           "location": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Location"
           },
           "occurrences": {
@@ -4664,61 +4599,6 @@
             ],
             "title": "Ig Handle"
           },
-          "discord_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord Handle"
-          },
-          "x_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "X Handle"
-          },
-          "tiktok_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tiktok Handle"
-          },
-          "fb_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fb Handle"
-          },
-          "other_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Other Handle"
-          },
           "display_handle": {
             "anyOf": [
               {
@@ -4734,22 +4614,12 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "CONFIRMED",
-              "CANCELLED"
-            ],
-            "title": "Status",
-            "default": "CONFIRMED"
           }
         },
         "type": "object",
         "required": [
           "id",
           "title",
-          "location",
           "added_at"
         ],
         "title": "EventPublicResponse",
@@ -4788,7 +4658,14 @@
             "title": "Description"
           },
           "location": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Location"
           },
           "occurrences": {
@@ -4929,61 +4806,6 @@
             ],
             "title": "Ig Handle"
           },
-          "discord_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord Handle"
-          },
-          "x_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "X Handle"
-          },
-          "tiktok_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tiktok Handle"
-          },
-          "fb_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fb Handle"
-          },
-          "other_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Other Handle"
-          },
           "display_handle": {
             "anyOf": [
               {
@@ -5010,22 +4832,12 @@
               }
             ],
             "title": "Created By"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "CONFIRMED",
-              "CANCELLED"
-            ],
-            "title": "Status",
-            "default": "CONFIRMED"
           }
         },
         "type": "object",
         "required": [
           "id",
           "title",
-          "location",
           "added_at"
         ],
         "title": "EventResponse",
@@ -5042,7 +4854,14 @@
             "title": "Title"
           },
           "location": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Location"
           },
           "dtstart_utc": {
@@ -5158,22 +4977,12 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "CONFIRMED",
-              "CANCELLED"
-            ],
-            "title": "Status",
-            "default": "CONFIRMED"
           }
         },
         "type": "object",
         "required": [
           "id",
           "title",
-          "location",
           "added_at"
         ],
         "title": "EventSummaryResponse",
@@ -5216,21 +5025,6 @@
               }
             ],
             "title": "Location"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "CONFIRMED",
-                  "CANCELLED"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
           },
           "occurrences": {
             "anyOf": [
@@ -5371,66 +5165,6 @@
               }
             ],
             "title": "Ig Handle"
-          },
-          "discord_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord Handle"
-          },
-          "x_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "X Handle"
-          },
-          "tiktok_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tiktok Handle"
-          },
-          "fb_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fb Handle"
-          },
-          "other_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Other Handle"
           },
           "display_handle": {
             "anyOf": [
@@ -5823,7 +5557,15 @@
       "OccurrenceResponse": {
         "properties": {
           "id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "integer"
+              }
+            ],
             "title": "Id"
           },
           "event_id": {

@@ -13,7 +13,6 @@ import logging
 from datetime import datetime, timezone
 
 from core.constants import (
-    EVENT_STATUS_ACTIVE,
     MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
     MAX_EVENT_FOOD_COUNT,
@@ -118,7 +117,6 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         "category": category,
         "organization": organization[:MAX_EVENT_ORGANIZATION_LENGTH],
         "ig_handle": ig_handle[:MAX_EVENT_HANDLE_LENGTH] if ig_handle else None,
-        "status": EVENT_STATUS_ACTIVE,
     }
 
     if match is not None and match.kind == "same_club":

@@ -267,12 +267,12 @@ If you determine that there is NO event in the post, return the JSON value: null
     "registration": boolean,
     "image_index": integer,
     "occurrences": [
-        {
+        {{
             "dtstart_utc": string,  // UTC start "YYYY-MM-DDTHH:MM:SSZ"
             "dtend_utc": string,    // UTC end "YYYY-MM-DDTHH:MM:SSZ" or empty string if unknown
             "duration": string,     // "HH:MM:SS" or empty string if unknown
             "tz": string            // Timezone name like "{local_tz_key}"; use the post's timezone context
-        }
+        }}
     ],
     "school": string,
     "category": string or null  // one of the canonical categories, or null if none fit: {categories_str}

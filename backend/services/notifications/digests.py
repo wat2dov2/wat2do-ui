@@ -5,7 +5,6 @@ from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from core.constants import (
-    EVENT_STATUS_ACTIVE,
     NOTIFICATION_STATUS_SENT,
     NOTIFICATION_TYPE_DAILY_NEW_EVENTS,
     NOTIFICATION_TYPE_MORNING_DIGEST,
@@ -251,10 +250,9 @@ def _fetch_events_in_utc_range(
     q = (
         get_sb()
         .table(EVENT_DATES)
-        .select("event_id,dtstart_utc,events!inner(id,title,location,status,school)")
+        .select("event_id,dtstart_utc,events!inner(id,title,location,school)")
         .gte("dtstart_utc", start_utc.isoformat())
         .lte("dtstart_utc", end_utc.isoformat())
-        .eq("events.status", EVENT_STATUS_ACTIVE)
     )
     if school:
         q = q.eq("events.school", school)
@@ -317,9 +315,8 @@ def _fetch_new_events_added_since(
         .table(EVENTS)
         .select(
             "id,title,location,source_image_url,category,"
-            "organization,display_handle,school,added_at,status"
+            "organization,display_handle,school,added_at"
         )
-        .eq("status", EVENT_STATUS_ACTIVE)
         .gt("added_at", ensure_aware_utc(start_utc).isoformat())
         .lte("added_at", ensure_aware_utc(end_utc).isoformat())
         .order("added_at", desc=True)

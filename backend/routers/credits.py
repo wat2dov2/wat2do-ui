@@ -3,11 +3,9 @@ import logging
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user, is_admin
-from core.constants import EVENT_STATUS_ACTIVE
 from core.errors import (
     CLUB_PROMOTION_REQUIRED,
     EVENT_ALREADY_PAST,
-    EVENT_NOT_ACTIVE,
     EVENT_NOT_FOUND,
 )
 from core.exceptions import AuthorizationError, ValidationError, get_or_404
@@ -84,8 +82,6 @@ def create_promotion(
     _rl: None = Depends(credit_mutation_rate_limiter.dependency(key_func=_user_id_key)),
 ):
     event = get_or_404(event_service.get_event(data.event_id), EVENT_NOT_FOUND)
-    if event.status != EVENT_STATUS_ACTIVE:
-        raise ValidationError(EVENT_NOT_ACTIVE)
     if event_service.has_ended(event):
         raise ValidationError(EVENT_ALREADY_PAST)
     if not is_admin(user) and not club_service.user_owns_club_named(
