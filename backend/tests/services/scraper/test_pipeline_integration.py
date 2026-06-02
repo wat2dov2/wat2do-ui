@@ -2,8 +2,8 @@
 
 These complement the per-helper unit tests by exercising the full
 ``run_pipeline`` orchestrator with mocked Apify, OpenAI, storage, and DB.
-The big invariant they protect is the v1-style EventDates port: a post
-with N occurrences must produce ONE events row + N event_dates rows.
+    The big invariant they protect: a post with N occurrences must produce
+    one events row plus N event_dates rows.
 
 Mocks installed:
     * ``InstagramScraper.scrape``      -> returns canned Apify output.
@@ -51,7 +51,7 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
             "category": "Food",
             "image_index": 0,
             "price": 0.0,
-            "food": "Yes!",
+            "food": ["Yes!"],
             "registration": False,
             "school": "University of Waterloo",
             "occurrences": [
@@ -81,8 +81,8 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
 def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb, patch_sb):
     """Multi-occurrence post -> 1 events row + N event_dates rows.
 
-    This is the v1-style EventDates port's headline invariant. Pre-Phase-8
-    this would have inserted three separate events rows (one per occurrence).
+    Multi-occurrence events should not be split into separate parent event
+    rows.
     """
     # Patch the DB everywhere the pipeline reaches.
     patch_sb("services.scraper.event_writer")
@@ -224,9 +224,8 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
 def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     """Dry-run path: NO workflow_runs row, NO events row, NO event_dates row.
 
-    Mirrors v1's commit bb1595b — dry-run also skips the seen-shortcodes
-    fetch so the operator can re-process posts already in the DB without
-    deleting anything first.
+    Dry-run also skips the seen-shortcodes fetch so the operator can
+    re-process posts already in the DB without deleting anything first.
     """
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")

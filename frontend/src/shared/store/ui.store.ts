@@ -11,7 +11,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { ViewMode, FilterViewMode } from "@/shared/types";
+import type { ViewMode, FilterViewMode, Event } from "@/shared/types";
 
 interface UIState {
   // Preferences (persisted)
@@ -27,6 +27,11 @@ interface UIState {
   setShowSubmitEvent: (show: boolean) => void;
   setShowCommandPalette: (show: boolean) => void;
   setShowFilterDropdown: (show: boolean) => void;
+
+  // Event editing (ephemeral)
+  editingEvent: Event | null;
+  setEditingEvent: (event: Event | null) => void;
+  clearEditingEvent: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -45,6 +50,11 @@ export const useUIStore = create<UIState>()(
       setShowSubmitEvent: (show) => set({ showSubmitEvent: show }),
       setShowCommandPalette: (show) => set({ showCommandPalette: show }),
       setShowFilterDropdown: (show) => set({ showFilterDropdown: show }),
+
+      // Event editing default state
+      editingEvent: null,
+      setEditingEvent: (event) => set({ editingEvent: event }),
+      clearEditingEvent: () => set({ editingEvent: null }),
     }),
     {
       name: "wat2do-app-prefs",
@@ -58,3 +68,15 @@ export const useUIStore = create<UIState>()(
     }
   )
 );
+
+// Listening to auth broadcasts
+if (typeof window !== "undefined") {
+  window.addEventListener("auth-user-logout", () => {
+    useUIStore.setState({
+      showSubmitEvent: false,
+      showCommandPalette: false,
+      showFilterDropdown: false,
+      editingEvent: null,
+    });
+  });
+}

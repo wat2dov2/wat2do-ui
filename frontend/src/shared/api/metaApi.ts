@@ -9,8 +9,6 @@
  */
 
 import { api } from "@/shared/services/apiClient";
-import { REPORT_STATUSES } from "@/shared/constants/statuses";
-import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
 
 interface AppConstants {
   event_categories: string[];
@@ -20,59 +18,24 @@ interface AppConstants {
 }
 
 // ---------------------------------------------------------------------------
-// Static fallbacks — the frontend safety net for backend constants.
-// Keep these as a safety net; the backend is the source of truth.
-// ---------------------------------------------------------------------------
-
-/** Fallback interest list used when the backend `/meta/constants` call fails. */
-const FALLBACK_INTERESTS = [
-  "Academic", "Social", "Career", "Sports", "Music", "Art",
-  "Technology", "Gaming", "Food", "Networking", "Health", "Cultural",
-] as const;
-
-/** Fallback interest-to-category mapping used when the backend `/meta/constants` call fails. */
-const FALLBACK_INTEREST_TO_CATEGORIES: Record<string, string[]> = {
-  Academic: ["Academics", "Studying"],
-  Social: ["Partying", "Games", "Dance"],
-  Career: ["Career", "Networking", "Entrepreneurship"],
-  Sports: ["Athletics", "Sports"],
-  Music: ["Music"],
-  Art: ["Art", "Design"],
-  Technology: ["Technology"],
-  Gaming: ["Games"],
-  Food: ["Food"],
-  Networking: ["Networking", "Career"],
-  Health: ["Health", "Wellness", "Mental Health"],
-  Cultural: ["Culture", "Religion", "Advocacy"],
-};
-
-const FALLBACK: AppConstants = {
-  event_categories: [...EVENT_CATEGORIES],
-  interests: [...FALLBACK_INTERESTS],
-  interest_to_categories: FALLBACK_INTEREST_TO_CATEGORIES,
-  report_statuses: [...REPORT_STATUSES],
-};
-
-// ---------------------------------------------------------------------------
 // Module-level cache — written once by loadAppConstants(), read many times.
 // ---------------------------------------------------------------------------
-let cached: AppConstants = FALLBACK;
+let cached: AppConstants = {
+  event_categories: [],
+  interests: [],
+  interest_to_categories: {},
+  report_statuses: [],
+};
 
 /**
  * Fetch constants from the backend. Call once during app init.
- * On failure, falls back silently to compiled defaults and logs.
  */
 export async function loadAppConstants(): Promise<void> {
-  try {
-    cached = await api.get<AppConstants>("/meta/constants");
-  } catch (err) {
-    console.error("Failed to load app constants from backend, using fallback:", err);
-    // cached already holds FALLBACK — app keeps working.
-  }
+  cached = await api.get<AppConstants>("/meta/constants");
 }
 
 /**
- * Synchronous access to the fetched (or fallback) constants.
+ * Synchronous access to the fetched constants.
  * Safe to call anywhere after app init.
  */
 export function getAppConstants(): AppConstants {

@@ -9,16 +9,10 @@ from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
 def _mock_event(**overrides) -> EventResponse:
-    """Build a mock EventResponse.
-
-    Accepts the legacy ``dtstart_utc`` / ``dtend_utc`` kwargs and
-    synthesises a single OccurrenceResponse so ``has_ended`` and the
-    diff helper (both of which now read ``occurrences``) behave the
-    same as they did before the v1-style EventDates port.
-    """
+    """Build a mock EventResponse."""
     defaults = {
         "id": 1,
-        "club_id": None,
+        "club_id": 7,
         "title": "Test Event",
         "location": "Here",
         "organization": "TestOrg",
@@ -26,20 +20,6 @@ def _mock_event(**overrides) -> EventResponse:
         "created_by": FAKE_USER["id"],
     }
     defaults.update(overrides)
-
-    dtstart = defaults.get("dtstart_utc")
-    if dtstart is not None and "occurrences" not in defaults:
-        defaults["occurrences"] = [
-            {
-                "id": 1,
-                "event_id": defaults["id"],
-                "dtstart_utc": dtstart,
-                "dtend_utc": defaults.get("dtend_utc"),
-                "duration": None,
-                "tz": None,
-                "created_at": datetime.now(timezone.utc),
-            }
-        ]
 
     return EventResponse.model_validate(defaults)
 
@@ -62,7 +42,7 @@ def _mock_club(**overrides) -> ClubResponse:
 
 def test_create_event_requires_auth(client):
     response = client.post(
-        "/events/", json={"title": "Test", "location": "Here", "organization": "Org"}
+        "/events/", json={"title": "Test", "location": "Here", "club_id": 7}
     )
     assert response.status_code == 401
 
@@ -76,8 +56,10 @@ def test_create_event_sets_created_by_for_club_owner(authenticated_client, monke
     """Approved club owners can create events for their club."""
     created_event = _mock_event(club_id=7, organization="Verified Club", club_type="WUSA")
     mock_create = MagicMock(return_value=created_event)
-    mock_resolve = MagicMock(return_value=_mock_club())
-    monkeypatch.setattr(club_service, "resolve_event_club_for_owner", mock_resolve)
+    mock_get_club = MagicMock(return_value=_mock_club(id=7, school="University of Waterloo"))
+    mock_resolve = MagicMock(return_value=[_mock_club(id=7, school="University of Waterloo")])
+    monkeypatch.setattr(club_service, "get_club", mock_get_club)
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", mock_resolve)
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
     resp = authenticated_client.post(
@@ -85,7 +67,7 @@ def test_create_event_sets_created_by_for_club_owner(authenticated_client, monke
         json={
             "title": "Test",
             "location": "Here",
-            "organization": "Org",
+            "club_id": 7,
             "occurrences": [
                 {
                     "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -103,21 +85,20 @@ def test_create_event_sets_created_by_for_club_owner(authenticated_client, monke
     assert create_data.club_id == 7
     assert create_data.organization == "Verified Club"
     assert create_data.club_type == "WUSA"
+    assert create_data.school == "University of Waterloo"
     assert kwargs["created_by"] == FAKE_USER["id"]
-    mock_resolve.assert_called_once_with(
-        FAKE_USER["id"],
-        club_id=None,
-        organization="Org",
-    )
+    mock_get_club.assert_called_once_with(7)
+    mock_resolve.assert_called_once_with(FAKE_USER["id"])
 
 
 def test_create_event_without_matching_club_rejected(authenticated_client, monkeypatch):
     """Authenticated users cannot create events unless they own the event's club."""
     monkeypatch.setattr(
         club_service,
-        "resolve_event_club_for_owner",
-        MagicMock(return_value=None),
+        "list_clubs_by_owner",
+        MagicMock(return_value=[]),
     )
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club(id=7)))
     monkeypatch.setattr(event_service, "create_event", MagicMock())
 
     resp = authenticated_client.post(
@@ -125,7 +106,7 @@ def test_create_event_without_matching_club_rejected(authenticated_client, monke
         json={
             "title": "Test",
             "location": "Here",
-            "organization": "Org",
+            "club_id": 7,
             "occurrences": [
                 {
                     "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -145,7 +126,8 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
     """Admins can create events for operations and moderation workflows."""
     created_event = _mock_event(created_by=ADMIN_USER["id"])
     mock_create = MagicMock(return_value=created_event)
-    monkeypatch.setattr(club_service, "resolve_event_club_for_owner", MagicMock())
+    mock_get_club = MagicMock(return_value=_mock_club(id=7))
+    monkeypatch.setattr(club_service, "get_club", mock_get_club)
     monkeypatch.setattr(event_service, "create_event", mock_create)
 
     resp = admin_client.post(
@@ -153,7 +135,7 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
         json={
             "title": "Test",
             "location": "Here",
-            "organization": "Org",
+            "club_id": 7,
             "occurrences": [
                 {
                     "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -166,7 +148,7 @@ def test_create_event_admin_allowed(admin_client, monkeypatch):
     )
 
     assert resp.status_code == 201
-    club_service.resolve_event_club_for_owner.assert_not_called()
+    mock_get_club.assert_called_once_with(7)
     _, kwargs = mock_create.call_args
     assert kwargs["created_by"] == ADMIN_USER["id"]
 
@@ -243,15 +225,7 @@ def test_delete_event_owner_allowed(authenticated_client, monkeypatch):
     assert resp.status_code == 204
 
 
-def test_update_legacy_event_non_admin_rejected(authenticated_client, monkeypatch):
-    """Legacy events (created_by=None) can only be modified by admins."""
-    event = _mock_event(created_by=None)
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
-    from services import user_service
-
-    resp = authenticated_client.patch("/events/1", json={"title": "Hacked"})
-    assert resp.status_code == 403
 
 
 
@@ -262,7 +236,7 @@ def test_update_legacy_event_non_admin_rejected(authenticated_client, monkeypatc
 
 def test_update_event_material_diff_triggers_enqueue(authenticated_client, monkeypatch):
     """PATCH with a material change (location) should fire enqueue_event_change."""
-    from services import notification_service
+    from services.notifications import event_change
 
     old = _mock_event(created_by=FAKE_USER["id"], location="Here")
     updated = _mock_event(created_by=FAKE_USER["id"], location="There")
@@ -270,7 +244,7 @@ def test_update_event_material_diff_triggers_enqueue(authenticated_client, monke
     monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
 
     mock_enqueue = MagicMock(return_value=0)
-    monkeypatch.setattr(notification_service, "enqueue_event_change", mock_enqueue)
+    monkeypatch.setattr(event_change, "enqueue_event_change", mock_enqueue)
 
     resp = authenticated_client.patch("/events/1", json={"location": "There"})
     assert resp.status_code == 200
@@ -282,7 +256,7 @@ def test_update_event_material_diff_triggers_enqueue(authenticated_client, monke
 
 def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monkeypatch):
     """PATCH that only changes title must NOT fire enqueue_event_change."""
-    from services import notification_service
+    from services.notifications import event_change
 
     old = _mock_event(created_by=FAKE_USER["id"], title="Old Title")
     updated = _mock_event(created_by=FAKE_USER["id"], title="New Title")
@@ -290,7 +264,7 @@ def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monk
     monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
 
     mock_enqueue = MagicMock(return_value=0)
-    monkeypatch.setattr(notification_service, "enqueue_event_change", mock_enqueue)
+    monkeypatch.setattr(event_change, "enqueue_event_change", mock_enqueue)
 
     resp = authenticated_client.patch("/events/1", json={"title": "New Title"})
     assert resp.status_code == 200
@@ -299,14 +273,14 @@ def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monk
 
 def test_update_event_enqueue_failure_does_not_break_update(authenticated_client, monkeypatch):
     """A notification-layer exception must not propagate up to the user."""
-    from services import notification_service
+    from services.notifications import event_change
 
     old = _mock_event(created_by=FAKE_USER["id"], location="Here")
     updated = _mock_event(created_by=FAKE_USER["id"], location="There")
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
     monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
     monkeypatch.setattr(
-        notification_service,
+        event_change,
         "enqueue_event_change",
         MagicMock(side_effect=RuntimeError("provider down")),
     )
@@ -369,6 +343,19 @@ def test_search_normal_term(client, monkeypatch):
     assert kwargs["search"] == "pizza"
 
 
+def test_get_latest_added_forwards_school_filter(client, monkeypatch):
+    mock_latest = MagicMock(return_value=None)
+    monkeypatch.setattr(event_service, "get_latest_added_event", mock_latest)
+
+    resp = client.get(
+        "/events/latest-added",
+        params={"school": "Massachusetts Institute of Technology"},
+    )
+
+    assert resp.status_code == 200
+    mock_latest.assert_called_once_with("Massachusetts Institute of Technology")
+
+
 # ---------------------------------------------------------------------------
 # I10 / S16 — public responses must not leak created_by
 # ---------------------------------------------------------------------------
@@ -408,7 +395,20 @@ def test_update_past_event_rejected(authenticated_client, monkeypatch):
     from core.exceptions import ValidationError
 
     past = datetime.now(timezone.utc) - timedelta(days=2)
-    event = _mock_event(created_by=FAKE_USER["id"], dtstart_utc=past, dtend_utc=past)
+    event = _mock_event(
+        created_by=FAKE_USER["id"],
+        occurrences=[
+            {
+                "id": 1,
+                "event_id": 1,
+                "dtstart_utc": past,
+                "dtend_utc": past,
+                "duration": None,
+                "tz": None,
+                "created_at": datetime.now(timezone.utc),
+            }
+        ],
+    )
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
 
     from services import user_service

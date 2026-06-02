@@ -1,16 +1,9 @@
 """OpenAI vision-based event extraction for scraped Instagram posts.
 
-Ports v1's ``backend/services/openai_service.extract_events_from_caption``
-to v2 idioms (settings-based config, single OpenAI client, structured
-errors). The prompt is kept faithful to v1 — it has been tuned against
-real Instagram posts and divergence here regresses extraction quality.
-
-Critical behaviour preserved (commit f51be22 in v1):
-    Each ``image_url`` block in the user-message content is preceded by
-    a ``{"type": "text", "text": "Image N:"}`` marker. The vision model
-    keys off these markers when populating ``image_index`` on extracted
-    events; without them carousel-image attribution is essentially
-    random.
+Each ``image_url`` block in the user-message content is preceded by an
+``{"type": "text", "text": "Image N:"}`` marker. The vision model keys off
+these markers when populating ``image_index`` on extracted events; without
+them carousel-image attribution is essentially random.
 """
 
 from __future__ import annotations
@@ -26,7 +19,7 @@ from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
-from services.scraper.school_dates import (
+from services.school_context import (
     current_semester_end,
     resolve_school_timezone,
 )
@@ -223,9 +216,8 @@ def _build_prompt(
 ) -> str:
     """Assemble the extraction prompt.
 
-    Kept verbose / faithful to v1 — the Instagram-caption phrasing this
-    handles is irregular enough that aggressive trimming has historically
-    caused regressions in date inference and price parsing.
+    Kept verbose because Instagram-caption phrasing is irregular enough that
+    aggressive trimming causes regressions in date inference and price parsing.
     """
     image_list_str = (
         "\n".join(f"Image {i}: {url}" for i, url in enumerate(image_urls))
@@ -263,7 +255,7 @@ If you determine that there is NO event in the post, return the JSON value: null
     "location": string,
     "organization": string,
     "price": number or null,
-    "food": string,
+    "food": string[],
     "registration": boolean,
     "image_index": integer,
     "occurrences": [
@@ -302,7 +294,7 @@ ADDITIONAL RULES:
 - When no explicit date is found but there are relative terms like "tonight", "tomorrow", interpret these relative to the POST CREATION DATE ({post_date}).
 - For location: Use the exact location as stated in the caption or image. If the location is a building or room on campus, use only that (e.g., "SLC 3223", "DC Library"). Include city/province if the event is off-campus and the address is provided.
 - For price: REGISTRATION COST ONLY. Prefer non-member / general admission price if multiple are listed. Free events are 0.0. Use null if price is not mentioned.
-- For food: Only set this field if the post says food or drinks will be served, provided, or available for attendees. Specific items: comma-separated, capitalize the first only (e.g., "Pizza, bubble tea"). Generic mention of food: "Yes!". No mention: empty string.
+- For food: Return an array. Use specific items when named (e.g., ["Pizza", "Bubble tea"]). Use ["Yes!"] for a generic food mention. Use [] when no food is mentioned.
 - For registration: only true if there is a clear instruction to register, RSVP, or sign up.
 - For description: caption text word-for-word. If empty, use image text.
 - If information is not available, use empty string for strings, null for price, and false for booleans.
@@ -330,7 +322,7 @@ class ExtractedEvent(BaseModel):
     location: str = Field(default="")
     organization: str = Field(default="")
     price: float | None = None
-    food: str = Field(default="")
+    food: list[str] = Field(default_factory=list)
     registration: bool = False
     image_index: int = 0
     occurrences: list[ExtractedOccurrence] = Field(default_factory=list)
@@ -341,7 +333,7 @@ class ExtractedEvent(BaseModel):
     def coerce_free_price(self) -> ExtractedEvent:
         if self.price is None:
             haystack = " ".join(
-                str(v) for v in (self.title, self.description, self.food) if v
+                str(v) for v in (self.title, self.description, " ".join(self.food)) if v
             ).lower()
             if "free" in haystack:
                 self.price = 0.0
@@ -354,7 +346,7 @@ class ExtractedEvent(BaseModel):
 
 
 def _clean_event(event: dict) -> dict:
-    """Apply the v1 normalisation rules to one extracted event dict using Pydantic.
+    """Validate and normalize one extracted event dict using Pydantic.
 
     Idempotent — running this twice on the same input is a no-op. The
     pipeline depends on this for safety after JSON parsing of arbitrary

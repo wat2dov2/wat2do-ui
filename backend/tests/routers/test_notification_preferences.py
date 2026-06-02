@@ -1,14 +1,14 @@
 """Router tests for /notification-preferences.
 
-Checks auth + shape only; prefs resolution and upsert behaviour live in
-``tests/services/test_notification_service.py``.
+Checks auth + shape only; prefs resolution and upsert behaviour live in the
+notification service tests.
 """
 
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 from schemas.notification_preference import NotificationPreferenceResponse
-from services import notification_service
+from services.notifications import preferences
 
 
 def _resp(**overrides) -> NotificationPreferenceResponse:
@@ -44,7 +44,7 @@ def test_get_returns_full_preferences_list(authenticated_client, monkeypatch):
             _resp(notification_type="daily_new_events", enabled=False),
         ]
     )
-    monkeypatch.setattr(notification_service, "get_preferences", mock_get)
+    monkeypatch.setattr(preferences, "get_preferences", mock_get)
 
     resp = authenticated_client.get("/notification-preferences")
 
@@ -64,7 +64,7 @@ def test_get_returns_full_preferences_list(authenticated_client, monkeypatch):
 def test_patch_calls_set_preferences_with_payload(authenticated_client, monkeypatch):
     """PATCH should pass a parsed list of NotificationPreferenceUpdate objects to the service."""
     mock_set = MagicMock(return_value=None)
-    monkeypatch.setattr(notification_service, "set_preferences", mock_set)
+    monkeypatch.setattr(preferences, "set_preferences", mock_set)
 
     resp = authenticated_client.patch(
         "/notification-preferences",
@@ -89,7 +89,7 @@ def test_patch_calls_set_preferences_with_payload(authenticated_client, monkeypa
 
 def test_patch_rejects_empty_preferences(authenticated_client, monkeypatch):
     """Bulk update requires at least one entry — 422 on empty list."""
-    monkeypatch.setattr(notification_service, "set_preferences", MagicMock(return_value=None))
+    monkeypatch.setattr(preferences, "set_preferences", MagicMock(return_value=None))
 
     resp = authenticated_client.patch("/notification-preferences", json={"preferences": []})
     assert resp.status_code == 422
@@ -97,7 +97,7 @@ def test_patch_rejects_empty_preferences(authenticated_client, monkeypatch):
 
 def test_patch_rejects_unknown_notification_type(authenticated_client, monkeypatch):
     """Literal-typed notification_type rejects values outside the allowed set."""
-    monkeypatch.setattr(notification_service, "set_preferences", MagicMock(return_value=None))
+    monkeypatch.setattr(preferences, "set_preferences", MagicMock(return_value=None))
 
     resp = authenticated_client.patch(
         "/notification-preferences",

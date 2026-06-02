@@ -1,9 +1,8 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
+import { toast } from "@/shared/hooks/use-toast";
 import { useConfetti } from "@/shared/hooks/useConfetti";
-import { showToast } from "@/shared/ui/toast";
-import { ApiError } from "@/shared/services/apiClient";
+import { getApiErrorMessage } from "@/shared/services/apiClient";
 import type { EventFormData } from "@/shared/types";
 
 export type SubmitEventResult =
@@ -35,7 +34,6 @@ export function useSubmitEvent({
 }: UseSubmitEventOptions) {
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
   const { trigger: triggerConfetti } = useConfetti();
 
   const handleSubmit = useCallback(
@@ -46,10 +44,12 @@ export function useSubmitEvent({
       try {
         if (isEditMode && editEventId && onUpdate) {
           await onUpdate(editEventId, formData);
-          showSuccessAlert(
-            t("events.eventUpdated"),
-            t("events.eventUpdatedMessage", { title: formData.title })
-          );
+          toast({
+            title: t("events.eventUpdated"),
+            description: t("events.eventUpdatedMessage", { title: formData.title }),
+            variant: "success",
+          });
+          onClose();
           return;
         }
         const result = await onSubmit(formData);
@@ -69,24 +69,21 @@ export function useSubmitEvent({
         console.error("Failed to submit event:", err);
         // Surface backend error to the user as a toast, falling back to a
         // generic message when err is not an ApiError.
-        const message =
-          err instanceof ApiError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : t("events.submitFailed");
-        showToast(message, "error");
+        const message = getApiErrorMessage(err, t("events.submitFailed"));
+        toast({
+          title: "Submission Failed",
+          description: message,
+          variant: "destructive",
+        });
       } finally {
         setIsSubmitting(false);
       }
     },
-    [isEditMode, editEventId, onUpdate, onSubmit, showSuccessAlert, t, showPromotion, triggerConfetti, onSubmitted]
+    [isEditMode, editEventId, onUpdate, onSubmit, onClose, t, showPromotion, triggerConfetti, onSubmitted]
   );
 
   return {
     isSubmitting,
     handleSubmit,
-    showSuccessAlert,
-    SuccessAlertComponent,
   };
 }

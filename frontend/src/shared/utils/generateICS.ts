@@ -1,4 +1,5 @@
 import type { Event } from "@/shared/types";
+import { getPrimaryOccurrence } from "@/shared/utils/date";
 
 function toICSDate(isoString: string): string {
   return isoString.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -14,6 +15,9 @@ function toGoogleCalendarDate(isoString: string): string {
 
 function generateICS(event: Event): string {
   const now = toICSDate(new Date().toISOString());
+  const primary = getPrimaryOccurrence(event);
+  const dtstart_utc = primary?.dtstart_utc;
+  const dtend_utc = primary?.dtend_utc;
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -24,8 +28,8 @@ function generateICS(event: Event): string {
     `SUMMARY:${escapeICS(event.title)}`,
     ...(event.description ? [`DESCRIPTION:${escapeICS(event.description)}`] : []),
     `LOCATION:${escapeICS(event.location)}`,
-    ...(event.dtstart_utc ? [`DTSTART:${toICSDate(event.dtstart_utc)}`] : []),
-    ...(event.dtend_utc ? [`DTEND:${toICSDate(event.dtend_utc)}`] : []),
+    ...(dtstart_utc ? [`DTSTART:${toICSDate(dtstart_utc)}`] : []),
+    ...(dtend_utc ? [`DTEND:${toICSDate(dtend_utc)}`] : []),
     "END:VEVENT",
     "END:VCALENDAR",
   ];
@@ -58,9 +62,12 @@ function buildGoogleCalendarUrl(event: Event): string {
   if (event.location) {
     params.set("location", event.location);
   }
-  if (event.dtstart_utc) {
-    const start = toGoogleCalendarDate(event.dtstart_utc);
-    const end = event.dtend_utc ? toGoogleCalendarDate(event.dtend_utc) : start;
+  const primary = getPrimaryOccurrence(event);
+  const dtstart_utc = primary?.dtstart_utc;
+  const dtend_utc = primary?.dtend_utc;
+  if (dtstart_utc) {
+    const start = toGoogleCalendarDate(dtstart_utc);
+    const end = dtend_utc ? toGoogleCalendarDate(dtend_utc) : start;
     params.set("dates", `${start}/${end}`);
   }
 

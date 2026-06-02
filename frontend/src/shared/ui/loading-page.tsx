@@ -6,8 +6,6 @@ export interface LoadingPageProps {
   className?: string;
   /** Override the label (default: "Loading...") */
   label?: string;
-  /** @deprecated LoadingPage now uses the goose animation instead of a spinner. */
-  spinnerClassName?: string;
 }
 
 /**

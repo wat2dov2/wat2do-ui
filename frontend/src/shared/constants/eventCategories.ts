@@ -14,8 +14,5 @@ export const EVENT_CATEGORIES = [
 /** Union type of all valid event categories. */
 export type EventCategory = (typeof EVENT_CATEGORIES)[number];
 
-/**
- * Default category used as a fallback when an event has no explicit category.
- * Used across event creation, display, and data transformation.
- */
-export const DEFAULT_EVENT_CATEGORY = "Events";
+/** Default canonical category used when the UI needs a concrete selection. */
+export const DEFAULT_EVENT_CATEGORY = "Academics";

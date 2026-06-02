@@ -2,9 +2,7 @@
 
 One row represents a single occurrence of an event. An event with N
 occurrences (e.g. a recurring weekly meeting) is one events row +
-N event_dates rows. v2's previous schema collapsed dates into events
-and produced N events rows for N occurrences; this restores v1's
-EventDates model.
+N event_dates rows.
 """
 
 from datetime import datetime, timezone

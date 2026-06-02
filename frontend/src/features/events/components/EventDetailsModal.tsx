@@ -104,7 +104,7 @@ export function EventDetailsModal({
           <>
             <div className="relative w-full h-64 overflow-hidden">
               <LazyImage
-                src={displayedEvent.imageUrl || displayedEvent.source_image_url}
+                src={displayedEvent.source_image_url ?? undefined}
                 alt={displayedEvent.title}
                 className="absolute inset-0 w-full h-full object-cover"
                 fallback={
@@ -176,7 +176,7 @@ export function EventDetailsModal({
                 )}
 
                 <InfoRow
-                  label={t("filters.requiresRegistration")}
+                  label={t("filters.registration")}
                   value={displayedEvent.registration ? t("common.yes") : t("common.no")}
                 />
                 <InfoRow

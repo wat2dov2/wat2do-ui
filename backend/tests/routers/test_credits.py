@@ -30,11 +30,21 @@ def _mock_db_user(**overrides) -> UserResponse:
 def _mock_event(**overrides) -> EventResponse:
     defaults = {
         "id": 1,
+        "club_id": 1,
         "title": "Test Event",
         "location": "Here",
         "organization": "TestOrg",
         "added_at": datetime.now(timezone.utc),
         "created_by": FAKE_USER["id"],
+        "occurrences": [
+            {
+                "id": 1,
+                "event_id": 1,
+                "dtstart_utc": datetime(2026, 7, 1, 17, 0, tzinfo=timezone.utc),
+                "dtend_utc": datetime(2026, 7, 1, 18, 0, tzinfo=timezone.utc),
+                "created_at": datetime.now(timezone.utc),
+            }
+        ],
     }
     defaults.update(overrides)
     return EventResponse.model_validate(defaults)
@@ -206,7 +216,7 @@ def test_create_promotion_succeeds(authenticated_client, monkeypatch):
     event = _mock_event(created_by=OTHER_USER["id"], organization="TestOrg")
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=True))
+    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))
     monkeypatch.setattr(credit_service, "create_promotion", MagicMock(return_value=promo))
 
     resp = authenticated_client.post(
@@ -215,34 +225,21 @@ def test_create_promotion_succeeds(authenticated_client, monkeypatch):
     )
     assert resp.status_code == 201
     assert resp.json()["event_id"] == 1
-    club_service.user_owns_club_named.assert_called_once_with(str(db_user.id), "TestOrg")
+    club_service.is_club_member.assert_called_once_with(1, str(db_user.id))
     credit_service.create_promotion.assert_called_once_with(
         user_id=str(db_user.id),
         event_id=1,
     )
 
 
-def test_create_promotion_ignores_legacy_package_credits_and_duration(
-    authenticated_client, monkeypatch
-):
-    """Promotion creation is one fixed package; legacy package fields are ignored."""
-    db_user = _mock_db_user()
-    promo = _mock_promotion()
-    event = _mock_event(created_by=FAKE_USER["id"])
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=True))
-    monkeypatch.setattr(credit_service, "create_promotion", MagicMock(return_value=promo))
+def test_create_promotion_rejects_package_credits_and_duration(authenticated_client):
+    """Promotion creation accepts only the current fixed-package payload."""
 
     resp = authenticated_client.post(
         "/promotions/",
         json={"event_id": 1, "package": "combo", "credits": 1, "duration": 36500},
     )
-    assert resp.status_code == 201
-    credit_service.create_promotion.assert_called_once_with(
-        user_id=str(db_user.id),
-        event_id=1,
-    )
+    assert resp.status_code == 422
 
 
 # ── POST /promotions/ ownership checks ──────────────────────────────
@@ -267,7 +264,7 @@ def test_create_promotion_non_club_owner_rejected(other_user_client, monkeypatch
     event = _mock_event(created_by=FAKE_USER["id"], organization="TestOrg")
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=False))
+    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=False))
 
     resp = other_user_client.post(
         "/promotions/",
@@ -306,7 +303,7 @@ def test_create_promotion_event_without_matching_club_rejected(authenticated_cli
     event = _mock_event(created_by=FAKE_USER["id"], organization="Other Club")
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(club_service, "user_owns_club_named", MagicMock(return_value=False))
+    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=False))
 
     resp = authenticated_client.post(
         "/promotions/",

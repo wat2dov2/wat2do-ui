@@ -1,13 +1,20 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import NumberFlow from "@number-flow/react";
-import { Search } from "lucide-react";
+import { Search, Bookmark } from "lucide-react";
 import { ClubCard } from "@/features/clubs/components/ClubCard";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { useClubsPage } from "@/features/clubs/hooks/useClubsPage";
 import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
+import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
+import { useAuthState } from "@/features/auth";
 
 export function ClubsPage() {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<"all" | "followed">("all");
+  const { isAuthenticated: authed } = useAuthState();
+  const savedClubIds = useSavedClubsStore((s) => s.savedClubIds);
+
   const {
     searchQuery,
     setSearchQuery,
@@ -17,6 +24,11 @@ export function ClubsPage() {
     filteredClubs,
     isLoading,
   } = useClubsPage();
+
+  // Filter clubs shown in the active tab
+  const displayClubs = activeTab === "followed"
+    ? filteredClubs.filter((club) => savedClubIds.includes(club.id))
+    : filteredClubs;
 
   return (
     <div className="-mt-6 space-y-4">
@@ -72,40 +84,84 @@ export function ClubsPage() {
               </button>
             ))}
         </div>
-
-        {/* Active Filters removed per design – chips above are sufficient */}
       </div>
 
-      {/* Results Count */}
-      <div className="flex items-center justify-between">
-        <span className="font-bold text-xl text-foreground inline-flex items-baseline gap-1">
-          <NumberFlow value={filteredClubs.length} />
-          <span>{filteredClubs.length === 1 ? t("clubs.club") : t("clubs.clubs")}</span>
-        </span>
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+            activeTab === "all"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+          id="tab-all-clubs"
+        >
+          {t("clubs.allClubs") || "All Clubs"}
+        </button>
+        <button
+          onClick={() => setActiveTab("followed")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+            activeTab === "followed"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+          id="tab-followed-clubs"
+        >
+          {t("clubs.followedClubs") || "Followed Clubs"}
+        </button>
       </div>
 
-      {/* Clubs Grid */}
+      {/* Results Count / State Display */}
       {isLoading ? (
         <LoadingPage />
-      ) : filteredClubs.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-          {filteredClubs.map((club) => (
-            <ClubCard key={club.id} club={club} />
-          ))}
+      ) : activeTab === "followed" && !authed ? (
+        <div className="flex flex-col items-center justify-center py-20 px-4 border border-dashed border-border rounded-2xl bg-card">
+          <Bookmark className="size-10 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            {t("clubs.signInToViewClubs") || "Sign in to view followed clubs"}
+          </h3>
+          <p className="text-sm text-muted-foreground text-center max-w-sm mb-6">
+            {t("clubs.signInToViewClubsDesc") || "Follow clubs you're interested in and view them all in one place."}
+          </p>
+          <a
+            href="/login"
+            className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-xl text-sm hover:opacity-90 transition-opacity"
+            id="followed-clubs-sign-in"
+          >
+            {t("events.signIn") || "Sign In"}
+          </a>
+        </div>
+      ) : displayClubs.length > 0 ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-xl text-foreground inline-flex items-baseline gap-1">
+              <NumberFlow value={displayClubs.length} />
+              <span>{displayClubs.length === 1 ? t("clubs.club") : t("clubs.clubs")}</span>
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+            {displayClubs.map((club) => (
+              <ClubCard key={club.id} club={club} />
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 px-4">
-          <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-            <Search className="size-8 text-muted-foreground" />
-          </div>
+        <div className="flex flex-col items-center justify-center py-20 px-4 border border-dashed border-border rounded-2xl bg-card">
+          <Bookmark className="size-10 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {t("clubs.noClubsFound")}
+            {activeTab === "followed" && savedClubIds.length === 0
+              ? t("clubs.noFollowedClubs") || "No followed clubs"
+              : t("clubs.noClubsFound") || "No clubs found"}
           </h3>
           <p className="text-sm text-muted-foreground text-center max-w-md">
-            {t("clubs.noClubsFoundDesc")}
+            {activeTab === "followed" && savedClubIds.length === 0
+              ? t("clubs.emptyClubsDesc") || "Follow clubs you're interested in and they'll appear here."
+              : t("clubs.noClubsFoundDesc") || "We couldn't find any clubs matching your current filters."}
           </p>
         </div>
       )}
     </div>
   );
 }
+

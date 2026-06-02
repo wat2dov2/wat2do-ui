@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 EVENT_SUMMARY_EVENT_COLUMNS = ",".join(
     field
     for field in EventSummaryResponse.model_fields
-    if field not in {"dtstart_utc", "dtend_utc"}
+    if field != "occurrences"
 )
 
 # Event fields whose changes constitute a "material" update — the ones
@@ -52,23 +52,6 @@ MATERIAL_FIELDS: tuple[str, ...] = (
 # ── Internal helpers ──────────────────────────────────────────────────
 
 
-def _pick_primary(occurrences: list[OccurrenceResponse]) -> OccurrenceResponse | None:
-    """Return the occurrence the API exposes as the "primary" date.
-
-    Earliest future occurrence wins; if every occurrence is in the past,
-    fall back to the earliest one so the event still has a date label
-    (matches the v1 behaviour where the events table always carried a
-    dtstart even after the event ended).
-    """
-    if not occurrences:
-        return None
-    now = datetime.now(timezone.utc)
-    future = [o for o in occurrences if _to_utc(o.dtstart_utc) >= now]
-    pool = future or list(occurrences)
-    pool.sort(key=lambda o: _to_utc(o.dtstart_utc))
-    return pool[0]
-
-
 def _to_utc(dt: datetime | None) -> datetime:
     """Return a UTC-aware datetime, treating naive values as UTC."""
     if dt is None:
@@ -79,29 +62,16 @@ def _to_utc(dt: datetime | None) -> datetime:
 
 
 def _hydrate_response(row: dict, occurrences: list[OccurrenceResponse]) -> EventResponse:
-    """Build an EventResponse from a raw events row + its occurrences.
-
-    The events row does not carry ``dtstart_utc`` / ``dtend_utc``; those
-    are derived from the primary occurrence for card/list rendering.
-    """
-    primary = _pick_primary(occurrences)
+    """Build an EventResponse from a raw events row + its occurrences."""
     payload = dict(row)
     payload["occurrences"] = [o.model_dump(mode="json") for o in occurrences]
-    payload["dtstart_utc"] = primary.dtstart_utc.isoformat() if primary else None
-    payload["dtend_utc"] = primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
     return EventResponse.model_validate(payload)
 
 
 def _hydrate_summary(row: dict, occurrences: list[OccurrenceResponse]) -> EventSummaryResponse:
-    """Build an EventSummaryResponse with the primary occurrence's date.
-
-    Summary and detail responses share this primary-date computation so
-    a multi-occurrence event has one consistent card date everywhere.
-    """
-    primary = _pick_primary(occurrences)
+    """Build an EventSummaryResponse with the occurrences list."""
     payload = dict(row)
-    payload["dtstart_utc"] = primary.dtstart_utc.isoformat() if primary else None
-    payload["dtend_utc"] = primary.dtend_utc.isoformat() if primary and primary.dtend_utc else None
+    payload["occurrences"] = [o.model_dump(mode="json") for o in occurrences]
     return EventSummaryResponse.model_validate(payload)
 
 
@@ -109,16 +79,12 @@ def _hydrate_summary(row: dict, occurrences: list[OccurrenceResponse]) -> EventS
 
 
 @supabase_retry
-def get_latest_added_event() -> LatestEventResponse | None:
+def get_latest_added_event(school: str | None = None) -> LatestEventResponse | None:
     """Return the most recently added event (by added_at desc), or None if no events."""
-    r = (
-        get_sb()
-        .table(EVENTS)
-        .select("title,added_at")
-        .order("added_at", desc=True)
-        .limit(1)
-        .execute()
-    )
+    q = get_sb().table(EVENTS).select("title,added_at")
+    if school:
+        q = q.eq("school", school)
+    r = q.order("added_at", desc=True).limit(1).execute()
     if not r.data or len(r.data) == 0:
         return None
     return LatestEventResponse.model_validate(r.data[0])
@@ -151,8 +117,7 @@ def list_events(
     """List events with optional filters.
 
     Events are queried through event_dates directly using resource embedding
-    inner joins. This replaces the legacy two-stage client-side filter query
-    with a single, efficient, paginated database query.
+    inner joins, giving the endpoint one efficient paginated database query.
     """
     select_cols = EVENT_SUMMARY_EVENT_COLUMNS if summary else "*"
     q = (
@@ -249,10 +214,11 @@ def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
     For multi-occurrence events, we use the LATEST occurrence's end time
     as the "event still in flight" boundary — an event with one occurrence
     last week and one next week is not yet "ended". Events with no
-    occurrences are treated as always-mutable (legacy rows).
+    occurrences are treated as already ended because current events are
+    required to have at least one occurrence.
     """
     if not event.occurrences:
-        return False
+        return True
     current = now or datetime.now(timezone.utc)
     latest_end = max(_to_utc(o.dtend_utc or o.dtstart_utc) for o in event.occurrences)
     return latest_end < current

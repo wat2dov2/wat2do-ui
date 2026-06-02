@@ -1,7 +1,6 @@
 """Unit tests for services/wat2do/event_writer.
 
-After the v1-style EventDates port (migration 20260428031741) the writer
-inserts ONE events row plus N event_dates rows per logical event.
+The writer inserts one events row plus N event_dates rows per logical event.
 The tests assert on both layers via the fake_sb fixture.
 """
 
@@ -9,34 +8,36 @@ from datetime import datetime, timedelta, timezone
 
 from services.scraper import event_writer
 from services.scraper.event_writer import (
-    _coerce_food,
+    _clean_food,
     _coerce_future_occurrences,
     _parse_iso,
     write_event,
 )
 
-# ── _coerce_food ──────────────────────────────────────────────────────
+# ── _clean_food ───────────────────────────────────────────────────────
 
 
-def test_coerce_food_empty_returns_none():
-    assert _coerce_food(None) is None
-    assert _coerce_food("") is None
-    assert _coerce_food([]) is None
+def test_clean_food_empty_returns_none():
+    assert _clean_food(None) is None
+    assert _clean_food([]) is None
 
 
-def test_coerce_food_string_splits_on_comma_and_dedupes():
-    """Mirrors v1's "Pizza, Bubble tea, pizza" -> ["Pizza", "Bubble tea"]."""
-    assert _coerce_food("Pizza, Bubble tea, pizza ") == ["Pizza", "Bubble tea"]
+def test_clean_food_rejects_string_shape():
+    try:
+        _clean_food("Pizza, Bubble tea")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("_clean_food accepted a string")
 
 
-def test_coerce_food_caps_at_20_items():
-    too_many = ", ".join(f"item{i}" for i in range(50))
-    assert len(_coerce_food(too_many)) == 20
+def test_clean_food_caps_at_20_items():
+    too_many = [f"item{i}" for i in range(50)]
+    assert len(_clean_food(too_many)) == 20
 
 
-def test_coerce_food_yes_marker_kept():
-    """v1 emits the literal "Yes!" when food is mentioned but not listed."""
-    assert _coerce_food("Yes!") == ["Yes!"]
+def test_clean_food_yes_marker_kept():
+    assert _clean_food(["Yes!"]) == ["Yes!"]
 
 
 
@@ -51,11 +52,8 @@ def test_parse_iso_handles_z_suffix():
     assert parsed.tzinfo == timezone.utc
 
 
-def test_parse_iso_naive_datetime_assumed_utc():
-    """Bare datetimes are treated as UTC (defensive for legacy extractor output)."""
-    parsed = _parse_iso("2026-05-01T12:00:00")
-    assert parsed is not None
-    assert parsed.tzinfo == timezone.utc
+def test_parse_iso_rejects_naive_datetime():
+    assert _parse_iso("2026-05-01T12:00:00") is None
 
 
 def test_parse_iso_invalid_returns_none():
@@ -116,7 +114,7 @@ def _event(**overrides) -> dict:
         ],
         "image_index": 0,
         "price": 0.0,
-        "food": "Yes!",
+        "food": ["Yes!"],
         "registration": False,
         "school": "University of Waterloo",
     }
@@ -196,9 +194,8 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     result = write_event(event, ig_handle="uwteaclub", source_url="https://instagram.com/p/abc")
     assert result == "inserted"
 
-    # The events insert should have been called exactly once, with a SINGLE row payload
-    # (not a list of three) — the v1-style port collapses multi-occurrence events to
-    # one parent row.
+    # The events insert should have been called exactly once, with one parent
+    # row instead of one row per occurrence.
     insert_calls = [call for call in fake_sb.insert.call_args_list if isinstance(call[0][0], dict)]
     assert len(insert_calls) == 1
     payload = insert_calls[0][0][0]

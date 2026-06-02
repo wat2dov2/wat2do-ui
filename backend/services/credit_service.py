@@ -87,7 +87,7 @@ def create_promotion(
     user_id: str,
     event_id: int,
 ) -> PromotionResponse:
-    """Create the single v1 event promotion.
+    """Create the single event promotion.
 
     Credit deduction and promotion insertion happen inside a single
     PostgreSQL RPC (``promote_event``), guaranteeing atomicity — if the
@@ -184,12 +184,7 @@ def get_active_promoted_event_ids() -> list[int]:
     both queries.
     """
     now = datetime.now(timezone.utc).isoformat()
-    try:
-        r = get_sb().table(EVENT_PROMOTIONS).select("event_id").gt("end_date", now).execute()
-    except APIError as exc:
-        if exc.code != "42703" or "end_date" not in (exc.message or ""):
-            raise
-        r = get_sb().table(EVENT_PROMOTIONS).select("event_id").gt("expires_at", now).execute()
+    r = get_sb().table(EVENT_PROMOTIONS).select("event_id").gt("end_date", now).execute()
     return list({row["event_id"] for row in (r.data or [])})
 
 

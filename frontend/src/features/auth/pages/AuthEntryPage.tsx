@@ -1,6 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { createSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
+import { QP } from "@/shared/constants/queryParams";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import { AuthEmailFormCard } from "@/features/auth/components/AuthEmailFormCard";
 import { useAuthEntryFlow } from "@/features/auth/hooks/useAuthEntryFlow";
@@ -12,7 +13,15 @@ export function AuthEntryPage() {
   const authEntry = useAuthEntryFlow({
     onContinueToOnboarding: (initialSchool) =>
       navigate(ROUTES.ONBOARDING, { state: { school: initialSchool } }),
-    onContinueToHome: () => navigate(ROUTES.HOME),
+    onContinueToHome: (initialSchool) =>
+      navigate(
+        initialSchool
+          ? {
+              pathname: ROUTES.HOME,
+              search: `?${createSearchParams({ [QP.SCHOOL]: initialSchool })}`,
+            }
+          : ROUTES.HOME,
+      ),
     onForgotPassword: () => navigate(ROUTES.FORGOT_PASSWORD),
   });
 
@@ -36,7 +45,9 @@ export function AuthEntryPage() {
         isLoading={authEntry.isLoading}
         error={authEntry.error}
         confirmationMessage={authEntry.confirmationMessage}
+        isEmailPrefilled={authEntry.isEmailPrefilled}
       />
+
     </AuthPageLayout>
   );
 }

@@ -374,6 +374,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clubs/{club_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Club Members
+         * @description List all members of a club. Admin or club members only.
+         */
+        get: operations["list_club_members_clubs__club_id__members_get"];
+        put?: never;
+        /**
+         * Add Club Member
+         * @description Add a member to the club by email. Admin or club members only.
+         *
+         *     If the user already has an account, they are added directly.
+         *     Otherwise, a pending invitation is created and sent.
+         */
+        post: operations["add_club_member_clubs__club_id__members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Club Member
+         * @description Remove a member from the club. Admin or club members only.
+         */
+        delete: operations["remove_club_member_clubs__club_id__members__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Invitations
+         * @description List pending invitations for the club.
+         */
+        get: operations["list_invitations_clubs__club_id__invitations_get"];
+        put?: never;
+        /**
+         * Create Invitation
+         * @description Explicitly create and send an invitation.
+         */
+        post: operations["create_invitation_clubs__club_id__invitations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/invitations/{invitation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke Invitation
+         * @description Revoke/delete an invitation.
+         */
+        delete: operations["revoke_invitation_clubs__club_id__invitations__invitation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Invitation By Token
+         * @description Public route to validate an invitation token and fetch public details (club name).
+         */
+        get: operations["get_invitation_by_token_clubs_invitations__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/invitations/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Invitation
+         * @description Accept an invitation token using the logged-in user's identity.
+         */
+        post: operations["accept_invitation_clubs_invitations__token__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/credits/": {
         parameters: {
             query?: never;
@@ -622,23 +753,19 @@ export interface paths {
         };
         /**
          * List Qr Codes
-         * @description List QR codes — admin-only.
+         * @description List QR codes.
          *
-         *     QR codes are an admin-managed promotional surface; non-admins must
-         *     not be able to enumerate them, see other admins' codes, or learn the
-         *     naming scheme via this endpoint. Use the public scan endpoint
-         *     (``GET /qr/{id}``) for end-user redirects.
+         *     Admins can list all QR codes. Non-admins (club managers) can only list
+         *     QR codes created by themselves.
          */
         get: operations["list_qr_codes_qr__get"];
         put?: never;
         /**
          * Create Poster
-         * @description Create a QR code — admin-only.
+         * @description Create a QR code.
          *
          *     INSERT-only: if the id already exists, ``create_qr_code`` raises
-         *     ConflictError -> 409. Previously this was an upsert which allowed
-         *     any authenticated user to hijack an existing poster by guessing its
-         *     id and reposting with their own destination_id.
+         *     ConflictError -> 409.
          */
         post: operations["create_poster_qr__post"];
         delete?: never;
@@ -656,7 +783,10 @@ export interface paths {
         };
         /**
          * List Scans
-         * @description List QR-code scan events — admin-only (analytics surface).
+         * @description List QR-code scan events analytics.
+         *
+         *     Admins can list all scans. Non-admins (club managers) can only list scans
+         *     of QR codes created by themselves.
          */
         get: operations["list_scans_qr_scans_get"];
         put?: never;
@@ -680,14 +810,14 @@ export interface paths {
         post?: never;
         /**
          * Delete Poster
-         * @description Delete a QR code — admin-only.
+         * @description Delete a QR code.
          */
         delete: operations["delete_poster_qr__qr_code_id__delete"];
         options?: never;
         head?: never;
         /**
          * Update Poster
-         * @description Update a QR code — admin-only.
+         * @description Update a QR code.
          */
         patch: operations["update_poster_qr__qr_code_id__patch"];
         trace?: never;
@@ -725,6 +855,58 @@ export interface paths {
         head?: never;
         /** Update Report */
         patch: operations["update_report_reports__report_id__patch"];
+        trace?: never;
+    };
+    "/saved-clubs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Saved Clubs
+         * @description Return club IDs saved by the current user.
+         *
+         *     - 401 if unauthenticated.
+         */
+        get: operations["list_saved_clubs_saved_clubs__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/saved-clubs/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Club
+         * @description Save (bookmark) a club.
+         *
+         *     - 401 if unauthenticated.
+         *     - 404 if the referenced club does not exist.
+         *     - 400 if the user has already hit the ``MAX_SAVED_CLUBS_PER_USER`` cap.
+         */
+        put: operations["save_club_saved_clubs__club_id__put"];
+        post?: never;
+        /**
+         * Unsave Club
+         * @description Remove a saved club.
+         *
+         *     - 401 if unauthenticated.
+         */
+        delete: operations["unsave_club_saved_clubs__club_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/saved-events/": {
@@ -771,6 +953,23 @@ export interface paths {
          * @description Remove a saved event.
          */
         delete: operations["unsave_event_saved_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Schools */
+        get: operations["list_schools_schools_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1205,6 +1404,88 @@ export interface components {
                 [key: string]: string;
             } | null;
         };
+        /** ClubInvitationCreate */
+        ClubInvitationCreate: {
+            /**
+             * Email
+             * @description Email to invite
+             */
+            email: string;
+        };
+        /** ClubInvitationPublicResponse */
+        ClubInvitationPublicResponse: {
+            /** Club Name */
+            club_name: string;
+            /** Email */
+            email: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ClubInvitationResponse */
+        ClubInvitationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /** Email */
+            email: string;
+            /**
+             * Token
+             * Format: uuid
+             */
+            token: string;
+            /**
+             * Invited By
+             * Format: uuid
+             */
+            invited_by: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ClubMemberAdd */
+        ClubMemberAdd: {
+            /** Email */
+            email: string;
+        };
+        /** ClubMemberResponse */
+        ClubMemberResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Email */
+            email: string;
+            /** Username */
+            username?: string | null;
+            /** Full Name */
+            full_name?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Role */
+            role: string;
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+        };
         /** ClubResponse */
         ClubResponse: {
             /** Id */
@@ -1305,13 +1586,11 @@ export interface components {
             /** Category */
             category?: string | null;
             /** Club Id */
-            club_id?: number | null;
+            club_id: number;
             /** Organization */
-            organization: string;
+            organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Display Handle */
-            display_handle?: string | null;
         };
         /** EventFormDataResponse */
         EventFormDataResponse: {
@@ -1345,10 +1624,10 @@ export interface components {
             /** Food */
             food?: string[];
             /**
-             * Requiresregistration
+             * Registration
              * @default false
              */
-            requiresRegistration: boolean;
+            registration: boolean;
             /**
              * Organization
              * @default
@@ -1385,10 +1664,6 @@ export interface components {
             location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
-            /** Dtstart Utc */
-            dtstart_utc?: string | null;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
             /** Price */
             price?: number | null;
             /** Food */
@@ -1412,8 +1687,6 @@ export interface components {
             organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Display Handle */
-            display_handle?: string | null;
             /**
              * Added At
              * Format: date-time
@@ -1430,12 +1703,7 @@ export interface components {
          *     public list endpoint hides it via ``EventSummaryResponse`` which
          *     omits the field entirely.
          *
-         *     ``occurrences`` is the canonical date list. ``dtstart_utc`` /
-         *     ``dtend_utc`` are denormalized "primary date" convenience fields
-         *     populated by the service layer (earliest future occurrence, or
-         *     earliest occurrence if the event has only past dates). They are
-         *     NOT columns on the events table — see migration
-         *     20260428031741_add_event_dates_table.sql.
+         *     ``occurrences`` is the canonical date list.
          */
         EventResponse: {
             /** Id */
@@ -1450,10 +1718,6 @@ export interface components {
             location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
-            /** Dtstart Utc */
-            dtstart_utc?: string | null;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
             /** Price */
             price?: number | null;
             /** Food */
@@ -1477,8 +1741,6 @@ export interface components {
             organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Display Handle */
-            display_handle?: string | null;
             /**
              * Added At
              * Format: date-time
@@ -1504,10 +1766,8 @@ export interface components {
             title: string;
             /** Location */
             location?: string | null;
-            /** Dtstart Utc */
-            dtstart_utc?: string | null;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Price */
             price?: number | null;
             /** Food */
@@ -1523,8 +1783,8 @@ export interface components {
             category?: string | null;
             /** Organization */
             organization?: string | null;
-            /** Display Handle */
-            display_handle?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
             /** School */
             school?: string | null;
             /**
@@ -1563,8 +1823,6 @@ export interface components {
             organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
-            /** Display Handle */
-            display_handle?: string | null;
         };
         /** FilterStateResponse */
         FilterStateResponse: {
@@ -1614,10 +1872,10 @@ export interface components {
              */
             addedSince: string;
             /**
-             * Requiresregistration
+             * Registration
              * @default false
              */
-            requiresRegistration: boolean;
+            registration: boolean;
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
@@ -1893,16 +2151,11 @@ export interface components {
         };
         /**
          * QrCodeCreate
-         * @description Payload to create or upsert a QR code (after first scan or dashboard edit).
+         * @description Payload to create or update a QR code.
          *
-         *     Note on ``is_active`` and ``created_by`` (audit S4): ``is_active`` is
-         *     accepted for backward compatibility with existing frontend clients
-         *     but **ignored** — the service always starts inserts at ``is_active=False``
-         *     (see ``qr_code_service._build_qr_payload``).  ``created_by`` is not
-         *     modelled here; the service sets it from the authenticated user's ID.
-         *     ``extra="ignore"`` (the default) is left in place so client-supplied
-         *     ``created_by`` values are silently dropped rather than 422'ing clients
-         *     that still send them.
+         *     Server-owned fields such as ``created_by`` and ``is_active`` are not
+         *     accepted from clients. New posters always start inactive and are activated
+         *     by their first scan.
          */
         QrCodeCreate: {
             /** Id */
@@ -1922,11 +2175,6 @@ export interface components {
             filters?: {
                 [key: string]: unknown;
             } | unknown[] | null;
-            /**
-             * Is Active
-             * @default true
-             */
-            is_active: boolean;
             /** Image Url */
             image_url?: string | null;
             /**
@@ -2084,9 +2332,23 @@ export interface components {
             /** Access Token */
             access_token: string;
             /** Refresh Token */
-            refresh_token?: string | null;
+            refresh_token: string;
             /** New Password */
             new_password: string;
+        };
+        /**
+         * SaveClubStatusResponse
+         * @description Response for ``PUT /saved-clubs/{id}`` / ``DELETE /saved-clubs/{id}``.
+         *
+         *     Typed explicitly so the response contract is locked at the
+         *     OpenAPI boundary.
+         */
+        SaveClubStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "saved" | "unsaved";
         };
         /**
          * SaveEventStatusResponse
@@ -2116,6 +2378,11 @@ export interface components {
             username?: string | null;
             /** Full Name */
             full_name?: string | null;
+            /**
+             * Token
+             * @description Optional invitation token
+             */
+            token?: string | null;
         };
         /** SignupResponse */
         SignupResponse: {
@@ -2135,6 +2402,8 @@ export interface components {
              * @default false
              */
             confirmation_required: boolean;
+            /** School */
+            school?: string | null;
         };
         /**
          * SubmissionCreate
@@ -2195,6 +2464,8 @@ export interface components {
             expires_in: number;
             /** User Id */
             user_id: string;
+            /** School */
+            school?: string | null;
         };
         /**
          * UploadResponse
@@ -2576,7 +2847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenResponse"] | components["schemas"]["MessageResponse"];
+                    "application/json": components["schemas"]["TokenResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2993,6 +3264,258 @@ export interface operations {
             };
         };
     };
+    list_club_members_clubs__club_id__members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMemberResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_club_member_clubs__club_id__members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubMemberAdd"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMemberResponse"] | components["schemas"]["ClubInvitationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_club_member_clubs__club_id__members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_invitations_clubs__club_id__invitations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_invitation_clubs__club_id__invitations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubInvitationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_invitation_clubs__club_id__invitations__invitation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                invitation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_invitation_by_token_clubs_invitations__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationPublicResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_invitation_clubs_invitations__token__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_credits_credits__get: {
         parameters: {
             query?: never;
@@ -3135,7 +3658,9 @@ export interface operations {
     };
     get_latest_added_events_latest_added_get: {
         parameters: {
-            query?: never;
+            query?: {
+                school?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3149,6 +3674,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LatestEventResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3738,6 +4272,88 @@ export interface operations {
             };
         };
     };
+    list_saved_clubs_saved_clubs__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    save_club_saved_clubs__club_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveClubStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsave_club_saved_clubs__club_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveClubStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_saved_events_saved_events__get: {
         parameters: {
             query?: never;
@@ -3807,6 +4423,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaveEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_schools_schools_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
             /** @description Validation Error */

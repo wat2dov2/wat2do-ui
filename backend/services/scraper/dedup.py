@@ -1,8 +1,6 @@
 """Duplicate-event detection for the scraping pipeline.
 
-Ports v1's ``EventDuplicateDetector`` (utils/scraping_utils.py) to v2's
-Supabase client. Thresholds match v1 — see SCRAPING_*_THRESHOLD constants
-in ``core/constants.py`` and the rationale comment there.
+Thresholds live in the SCRAPING_* constants in ``core/constants.py``.
 
 The detector exposes one public method, ``find_match``, returning either
 None or an existing-event row. Callers (event_writer) decide whether to
@@ -52,8 +50,8 @@ def sequence_similarity(a: str, b: str) -> float:
 def title_similarity(a: str, b: str) -> float:
     """Combined title similarity — max of Jaccard and SequenceMatcher.
 
-    v1 takes the max so both word-overlap titles ("Movie Night Friday" vs
-    "Friday Movie Night") and reordered-but-similar titles match.
+    Taking the max catches both word-overlap titles ("Movie Night Friday" vs
+    "Friday Movie Night") and reordered-but-similar titles.
     """
     return max(jaccard_similarity(a, b), sequence_similarity(a, b))
 
@@ -85,7 +83,7 @@ def find_match(
 ) -> MatchResult | None:
     """Return a match for the given event, or None.
 
-    Two-stage check (matches v1):
+    Two-stage check:
         1. Same-club update — any event from the same ``ig_handle`` whose
            latest occurrence is in the future and whose title is >0.8
            similar.

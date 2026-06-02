@@ -1,15 +1,17 @@
+from typing import Union
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_admin_user, get_authorized_resource, get_current_user, get_db_user
+from core.auth import get_admin_user, get_current_user, get_db_user
 from core.constants import (
     DEFAULT_LIST_LIMIT,
     MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_LIST_LIMIT,
     MAX_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
+    ROLE_ADMIN,
 )
-from core.errors import CLUB_NOT_FOUND
-from core.exceptions import get_or_404
+from core.errors import CLUB_NOT_FOUND, NOT_AUTHORIZED
+from core.exceptions import get_or_404, NotFoundError, AuthorizationError, ValidationError
 from schemas.club import (
     ClubCreate,
     ClubIntegrationResponse,
@@ -19,9 +21,17 @@ from schemas.club import (
     DiscordIntegrationOptionsResponse,
     IntegrationPlatform,
     PlatformIntegrationOptionsResponse,
+    ClubMemberResponse,
+    ClubMemberAdd,
 )
 from schemas.user import UserResponse
+from schemas.invitation import (
+    ClubInvitationCreate,
+    ClubInvitationResponse,
+    ClubInvitationPublicResponse,
+)
 from services import club_service
+
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
 
@@ -30,12 +40,18 @@ INTEGRATION_NOT_FOUND = "Integration not found"
 
 
 def _get_club_or_403(club_id: int, db_user: UserResponse) -> ClubResponse:
-    """Fetch a club by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
-    return get_authorized_resource(
-        lambda: club_service.get_club(club_id),
-        CLUB_NOT_FOUND,
-        db_user,
-    )
+    """Fetch a club by ID (404 if missing) and verify the user is its member or an admin (403 if not)."""
+    club = club_service.get_club(club_id)
+    if club is None:
+        raise NotFoundError(CLUB_NOT_FOUND)
+
+    if db_user.role == ROLE_ADMIN:
+        return club
+
+    if club_service.is_club_member(club_id, str(db_user.id)):
+        return club
+
+    raise AuthorizationError(NOT_AUTHORIZED)
 
 
 def _authorize_and_exec(club_id: int, db_user: UserResponse, action):
@@ -172,3 +188,107 @@ def delete_club(
 ):
     _get_club_or_403(club_id, db_user)
     club_service.delete_club(club_id)
+
+
+@router.get("/{club_id}/members", response_model=list[ClubMemberResponse])
+def list_club_members(
+    club_id: int,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """List all members of a club. Admin or club members only."""
+    _get_club_or_403(club_id, db_user)
+    return club_service.list_club_members(club_id)
+
+
+@router.post("/{club_id}/members", response_model=Union[ClubMemberResponse, ClubInvitationResponse], status_code=status.HTTP_201_CREATED)
+def add_club_member(
+    club_id: int,
+    data: ClubMemberAdd,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Add a member to the club by email. Admin or club members only.
+
+    If the user already has an account, they are added directly.
+    Otherwise, a pending invitation is created and sent.
+    """
+    _get_club_or_403(club_id, db_user)
+
+    from services import user_service
+    target_user = user_service.get_user_by_email(data.email)
+    if not target_user:
+        return club_service.create_invitation(club_id, data.email, db_user.id)
+
+    return club_service.add_club_member(club_id, target_user.id)
+
+
+@router.delete("/{club_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_club_member(
+    club_id: int,
+    user_id: str,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Remove a member from the club. Admin or club members only."""
+    _get_club_or_403(club_id, db_user)
+
+    from uuid import UUID
+    try:
+        uuid_user_id = UUID(user_id)
+    except ValueError:
+        raise ValidationError("Invalid user ID format")
+
+    success = club_service.remove_club_member(club_id, uuid_user_id)
+    if not success:
+        raise NotFoundError("Member not found in this club")
+
+
+@router.post("/{club_id}/invitations", response_model=ClubInvitationResponse, status_code=status.HTTP_201_CREATED)
+def create_invitation(
+    club_id: int,
+    data: ClubInvitationCreate,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Explicitly create and send an invitation."""
+    _get_club_or_403(club_id, db_user)
+    return club_service.create_invitation(club_id, data.email, db_user.id)
+
+
+@router.get("/{club_id}/invitations", response_model=list[ClubInvitationResponse])
+def list_invitations(
+    club_id: int,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """List pending invitations for the club."""
+    _get_club_or_403(club_id, db_user)
+    return club_service.list_invitations(club_id)
+
+
+@router.delete("/{club_id}/invitations/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_invitation(
+    club_id: int,
+    invitation_id: str,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Revoke/delete an invitation."""
+    _get_club_or_403(club_id, db_user)
+    success = club_service.revoke_invitation(club_id, invitation_id)
+    if not success:
+        raise NotFoundError("Invitation not found")
+
+
+@router.get("/invitations/{token}", response_model=ClubInvitationPublicResponse)
+def get_invitation_by_token(token: str):
+    """Public route to validate an invitation token and fetch public details (club name)."""
+    return club_service.get_invitation_by_token(token)
+
+
+@router.post("/invitations/{token}/accept", status_code=status.HTTP_204_NO_CONTENT)
+def accept_invitation(
+    token: str,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Accept an invitation token using the logged-in user's identity."""
+    success = club_service.accept_invitation(token, db_user.id)
+    if not success:
+        raise NotFoundError("Invitation not found or has expired")
+
+

@@ -160,13 +160,11 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
         ).isoformat()
 
         # Aggregate per (actor, event) first so we can cap each actor's
-        # contribution before summing across users.  This prevents a small
+        # contribution before summing across users. This prevents a small
         # number of bot accounts from dominating popularity scores.
         #
-        # R16: for anonymous rows (user_id IS NULL), bucket by session_id so
-        # N distinct anonymous browsers are counted as N distinct actors, not
-        # one synthetic super-user. Rows missing *both* user_id and session_id
-        # share the key ``(None, None, event_id)`` and keep the old behaviour.
+        # For anonymous rows (user_id IS NULL), bucket by session_id so
+        # N distinct anonymous browsers are counted as N distinct actors.
         actor_event_scores: dict[tuple[str | None, str | None, int], float] = {}
         for row in iter_all_pages(
             lambda offset, ps: (
@@ -183,7 +181,7 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
             ),
         ):
             uid = row.get("user_id")
-            sid = row.get("session_id") if uid is None else None
+            sid = row["session_id"] if uid is None else None
             key = (uid, sid, row["event_id"])
             weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
             actor_event_scores[key] = actor_event_scores.get(key, 0) + weight

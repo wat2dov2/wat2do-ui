@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Scheduled notifications dispatcher.
 
-Runs on a schedule. For every user, asks the notification_service
-whether it's digest-time *in the user's timezone* and dispatches as
-appropriate. Per-user iteration is fine at v1 scale and simpler than a
-per-school batch.
+Runs on a schedule. For every user, checks whether it's digest-time in the
+user's timezone and dispatches as appropriate.
 
 Usage:
     python jobs/send_notifications.py --only daily-new-events
@@ -26,7 +24,16 @@ load_dotenv()
 import core.logging  # noqa: F401 — triggers basicConfig for standalone execution
 from core.database import get_sb
 from core.tables import USERS
-from services import notification_service
+from services.notifications.digests import (
+    send_daily_new_events_digest,
+    send_morning_digest,
+    send_weekly_digest,
+)
+from services.notifications.schedule import (
+    is_daily_new_events_time,
+    is_morning_digest_time,
+    is_weekly_digest_time,
+)
 
 log = logging.getLogger(__name__)
 
@@ -62,20 +69,20 @@ def main() -> None:
     for user in users:
         try:
             if args.only in ("all", "daily-new-events"):
-                if notification_service.is_daily_new_events_time(user, now_utc):
-                    if notification_service.send_daily_new_events_digest(user, now_utc):
+                if is_daily_new_events_time(user, now_utc):
+                    if send_daily_new_events_digest(user, now_utc):
                         sent_daily_new_events += 1
 
             if args.only != "all":
                 continue
 
-            local_date = notification_service.is_morning_digest_time(user, now_utc)
+            local_date = is_morning_digest_time(user, now_utc)
             if local_date:
-                if notification_service.send_morning_digest(user, local_date):
+                if send_morning_digest(user, local_date):
                     sent_morning += 1
-            week_start = notification_service.is_weekly_digest_time(user, now_utc)
+            week_start = is_weekly_digest_time(user, now_utc)
             if week_start:
-                if notification_service.send_weekly_digest(user, week_start):
+                if send_weekly_digest(user, week_start):
                     sent_weekly += 1
         except Exception as e:
             # One broken user shouldn't stop the cron for everyone else.

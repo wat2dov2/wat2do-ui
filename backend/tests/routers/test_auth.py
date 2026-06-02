@@ -237,6 +237,21 @@ class TestSignup:
         assert resp.status_code == 200
         assert resp.json()["user_id"] == "user-001"
 
+    def test_signup_passes_token_to_service(self, client, monkeypatch):
+        """Signup accepts an optional token parameter and forwards it to the service."""
+        result = _signup_result()
+        mock_signup = MagicMock(return_value=result)
+        monkeypatch.setattr(auth, "signup", mock_signup)
+
+        data = {**VALID_SIGNUP, "token": "11111111-1111-1111-1111-111111111111"}
+        resp = client.post("/auth/signup", json=data)
+
+        assert resp.status_code == 200
+        mock_signup.assert_called_once()
+        args, _ = mock_signup.call_args
+        assert args[0].token == "11111111-1111-1111-1111-111111111111"
+
+
 
 # ===========================================================================
 # POST /auth/login
@@ -560,22 +575,15 @@ class TestForgotPasswordService:
 class TestResetPassword:
     """Tests for the reset-password endpoint."""
 
-    def test_reset_password_success(self, client, monkeypatch):
-        """Successful reset clears the refresh cookie."""
-        monkeypatch.setattr(auth, "reset_password", MagicMock())
+    def test_reset_password_missing_refresh_token(self, client):
+        """Reset requires the Supabase recovery refresh token."""
 
         resp = client.post(
             "/auth/reset-password",
             json={"access_token": "reset-tok", "new_password": "N3wP@ss!"},
         )
 
-        assert resp.status_code == 200
-        assert "password updated" in resp.json()["message"].lower()
-
-        # Refresh cookie must be cleared after password reset
-        set_cookie_header = resp.headers.get("set-cookie", "")
-        assert "refresh_token" in set_cookie_header
-        assert "max-age=0" in set_cookie_header.lower() or '""' in set_cookie_header
+        assert resp.status_code == 422
 
     def test_reset_password_with_session_logs_user_in(self, client, monkeypatch):
         """Recovery-session reset returns an app token and refresh cookie."""
@@ -617,7 +625,11 @@ class TestResetPassword:
 
         resp = client.post(
             "/auth/reset-password",
-            json={"access_token": "bad-tok", "new_password": "N3wP@ss!"},
+            json={
+                "access_token": "bad-tok",
+                "refresh_token": "bad-refresh",
+                "new_password": "N3wP@ss!",
+            },
         )
 
         assert resp.status_code == 401
@@ -638,7 +650,11 @@ class TestResetPassword:
 
         resp = client.post(
             "/auth/reset-password",
-            json={"access_token": "valid-tok", "new_password": "N3wP@ss!"},
+            json={
+                "access_token": "valid-tok",
+                "refresh_token": "valid-refresh",
+                "new_password": "N3wP@ss!",
+            },
         )
 
         assert resp.status_code == 400
@@ -656,7 +672,7 @@ class TestResetPassword:
         """Missing new_password returns 422."""
         resp = client.post(
             "/auth/reset-password",
-            json={"access_token": "reset-tok"},
+            json={"access_token": "reset-tok", "refresh_token": "reset-refresh"},
         )
         assert resp.status_code == 422
 
@@ -664,7 +680,11 @@ class TestResetPassword:
         """A7: new_password below minimum length returns 422 (not forwarded to service)."""
         resp = client.post(
             "/auth/reset-password",
-            json={"access_token": "reset-tok", "new_password": "short"},
+            json={
+                "access_token": "reset-tok",
+                "refresh_token": "reset-refresh",
+                "new_password": "short",
+            },
         )
         assert resp.status_code == 422
 
@@ -680,6 +700,11 @@ class TestPasswordValidation:
     def test_signup_rejects_short_password(self, client):
         data = {"email": "student@uwaterloo.ca", "password": "short"}
         resp = client.post("/auth/signup", json=data)
+        assert resp.status_code == 422
+
+    def test_login_rejects_short_password(self, client):
+        data = {"email": "student@uwaterloo.ca", "password": "short"}
+        resp = client.post("/auth/login", json=data)
         assert resp.status_code == 422
 
     def test_signup_rejects_too_long_password(self, client):
@@ -711,42 +736,13 @@ class TestPasswordValidation:
 
 
 class TestResetPasswordRecoveryGuard:
-    """A9: only recovery-scoped tokens may change the password."""
-
-    def test_non_recovery_token_rejected(self, monkeypatch):
-        """Plain session tokens are rejected even if their signature is valid."""
-        from core.exceptions import AuthenticationError
-        from schemas.auth import ResetPasswordRequest
-        from services.auth_service import AuthService
-
-        svc = AuthService(auth_client=MagicMock(), db_client=MagicMock())
-        session_payload = {"sub": "uid-1", "aud": "authenticated"}
-        monkeypatch.setattr(
-            "services.auth_service.decode_jwt_payload",
-            lambda _tok: session_payload,
-        )
-        try:
-            svc.reset_password(
-                ResetPasswordRequest(
-                    access_token="sess-tok",
-                    new_password="N3wP@ssword!",
-                )
-            )
-        except AuthenticationError:
-            pass
-        else:
-            raise AssertionError("reset_password accepted a non-recovery token")
+    """Reset password only accepts Supabase recovery sessions."""
 
     def test_supabase_recovery_session_accepted_without_marker(self, monkeypatch):
-        """Supabase hosted recovery redirects can omit explicit recovery JWT claims."""
+        """Supabase hosted recovery redirects are validated with set_session."""
         from schemas.auth import ResetPasswordRequest
         from services.auth_service import AuthService
 
-        session_payload = {"sub": "uid-1", "aud": "authenticated"}
-        monkeypatch.setattr(
-            "services.auth_service.decode_jwt_payload",
-            lambda _tok: session_payload,
-        )
         mock_auth = MagicMock()
         mock_auth.set_session.return_value = SimpleNamespace(
             session=SimpleNamespace(
@@ -777,57 +773,6 @@ class TestResetPasswordRecoveryGuard:
         assert result.body.access_token == "rec-tok"
         assert result.body.user_id == "uid-1"
         assert result.refresh_token == "rec-refresh-new"
-
-    def test_recovery_token_accepted(self, monkeypatch):
-        """A recovery-scoped token triggers the admin update path."""
-        from schemas.auth import ResetPasswordRequest
-        from services.auth_service import AuthService
-
-        mock_db = MagicMock()
-        svc = AuthService(auth_client=MagicMock(), db_client=mock_db)
-        recovery_payload = {
-            "sub": "uid-1",
-            "aud": "authenticated",
-            "email_action_type": "recovery",
-        }
-        monkeypatch.setattr(
-            "services.auth_service.decode_jwt_payload",
-            lambda _tok: recovery_payload,
-        )
-        svc.reset_password(
-            ResetPasswordRequest(
-                access_token="rec-tok",
-                new_password="N3wP@ssword!",
-            )
-        )
-        mock_db.auth.admin.update_user_by_id.assert_called_once_with(
-            "uid-1", {"password": "N3wP@ssword!"}
-        )
-
-    def test_amr_recovery_entry_accepted(self, monkeypatch):
-        """amr=[{method: recovery}] is treated as recovery."""
-        from schemas.auth import ResetPasswordRequest
-        from services.auth_service import AuthService
-
-        mock_db = MagicMock()
-        svc = AuthService(auth_client=MagicMock(), db_client=mock_db)
-        payload = {
-            "sub": "uid-1",
-            "aud": "authenticated",
-            "amr": [{"method": "recovery", "timestamp": 1}],
-        }
-        monkeypatch.setattr(
-            "services.auth_service.decode_jwt_payload",
-            lambda _tok: payload,
-        )
-        svc.reset_password(
-            ResetPasswordRequest(
-                access_token="rec-tok",
-                new_password="N3wP@ssword!",
-            )
-        )
-        mock_db.auth.admin.update_user_by_id.assert_called_once()
-
 
 # ===========================================================================
 # Cookie behavior
@@ -947,15 +892,21 @@ class TestResponseShapes:
         assert "message" in body
 
     def test_reset_password_response_shape(self, client, monkeypatch):
-        """Reset-password returns MessageResponse."""
-        monkeypatch.setattr(auth, "reset_password", MagicMock())
+        """Reset-password returns TokenResponse."""
+        monkeypatch.setattr(auth, "reset_password", MagicMock(return_value=_login_result()))
 
         body = client.post(
             "/auth/reset-password",
-            json={"access_token": "tok", "new_password": "N3wP@ss!"},
+            json={
+                "access_token": "tok",
+                "refresh_token": "refresh",
+                "new_password": "N3wP@ss!",
+            },
         ).json()
 
-        assert "message" in body
+        assert "access_token" in body
+        assert "expires_in" in body
+        assert "user_id" in body
 
 
 # ===========================================================================
@@ -1032,7 +983,7 @@ class TestServiceCallArgs:
 
     def test_reset_password_passes_request_data_to_service(self, client, monkeypatch):
         """The router forwards the full ResetPasswordRequest to the service."""
-        monkeypatch.setattr(auth, "reset_password", MagicMock())
+        monkeypatch.setattr(auth, "reset_password", MagicMock(return_value=_login_result()))
 
         client.post(
             "/auth/reset-password",

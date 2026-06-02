@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { loginAPI, signupAPI } from "@/features/auth/api/auth.api";
-import { ApiError } from "@/shared/services/apiClient";
-import { DOMAIN_TO_SCHOOL } from "@/shared/constants/schools";
+
+import { ApiError, isApiError } from "@/shared/services/apiClient";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -35,17 +37,12 @@ function sanitizeAuthError(err: ApiError, mode: AuthMode, t: TFunction): string 
   return err.message;
 }
 
-function schoolFromEmail(email: string): string {
-  const domain = email.trim().split("@")[1]?.toLowerCase() ?? "";
-  return DOMAIN_TO_SCHOOL[domain] ?? "";
-}
-
 export type AuthMode = "login" | "signup";
 
 interface UseAuthEntryFlowOptions {
   /** Invoked on successful signup with the school derived from the email domain. */
   onContinueToOnboarding: (initialSchool: string) => void;
-  onContinueToHome: () => void;
+  onContinueToHome: (initialSchool: string) => void;
   onForgotPassword: () => void;
 }
 
@@ -55,9 +52,14 @@ export function useAuthEntryFlow({
   onForgotPassword,
 }: UseAuthEntryFlowOptions) {
   const { t } = useTranslation();
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const tokenParam = searchParams.get("token");
+  const emailParam = searchParams.get("email");
+  const modeParam = searchParams.get("mode") as AuthMode | null;
+
+  const [email, setEmail] = useState(emailParam || "");
   const [password, setPassword] = useState("");
-  const [authMode, setAuthMode] = useState<AuthMode>("signup");
+  const [authMode, setAuthMode] = useState<AuthMode>(modeParam || "signup");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
@@ -99,22 +101,19 @@ export function useAuthEntryFlow({
 
     try {
       if (authMode === "signup") {
-        const result = await signupAPI(trimmed, password);
+        const result = await signupAPI(trimmed, password, undefined, undefined, tokenParam || undefined);
         if (result.confirmationRequired) {
           setConfirmationMessage(t("auth.confirmationRequired"));
           return;
         }
-        // signupAPI already cached the email; hand the school to the
-        // onboarding page via navigation state so step 3's goose dialogue
-        // can greet the user by school name.
-        onContinueToOnboarding(schoolFromEmail(trimmed));
+        onContinueToOnboarding(result.school || DEFAULT_SCHOOL);
       } else {
-        await loginAPI(trimmed, password);
-        onContinueToHome();
+        const result = await loginAPI(trimmed, password);
+        onContinueToHome(result.school || DEFAULT_SCHOOL);
       }
     } catch (err) {
       console.error("Auth entry flow failed:", err);
-      if (err instanceof ApiError) {
+      if (isApiError(err)) {
         setError(sanitizeAuthError(err, authMode, t));
       } else {
         setError(t("auth.genericError"));
@@ -122,7 +121,7 @@ export function useAuthEntryFlow({
     } finally {
       setIsLoading(false);
     }
-  }, [isFormValid, isLoading, email, authMode, password, onContinueToOnboarding, onContinueToHome, t]);
+  }, [isFormValid, isLoading, email, authMode, password, onContinueToOnboarding, onContinueToHome, t, tokenParam]);
 
   return {
     email,
@@ -138,5 +137,7 @@ export function useAuthEntryFlow({
     toggleAuthMode,
     onContinue: handleContinue,
     onForgotPassword,
+    isEmailPrefilled: !!tokenParam,
   };
+
 }

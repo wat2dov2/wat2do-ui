@@ -92,13 +92,16 @@ def get_content_scores(
         if org in org_affinity:
             score += CB_ORG_AFFINITY * min(org_affinity[org], 1.0)
 
-        dtstart = event.dtstart_utc
+        dtstart = None
+        if event.occurrences:
+            future_occs = [o for o in event.occurrences if (o.dtstart_utc if o.dtstart_utc.tzinfo else o.dtstart_utc.replace(tzinfo=timezone.utc)) >= now]
+            pool = future_occs or list(event.occurrences)
+            pool.sort(key=lambda o: o.dtstart_utc)
+            dtstart = pool[0].dtstart_utc
+
         if dtstart:
             try:
-                if isinstance(dtstart, str):
-                    event_time = datetime.fromisoformat(dtstart.replace("Z", "+00:00"))
-                else:
-                    event_time = dtstart if dtstart.tzinfo else dtstart.replace(tzinfo=timezone.utc)
+                event_time = dtstart if dtstart.tzinfo else dtstart.replace(tzinfo=timezone.utc)
                 hours_away = (event_time - now).total_seconds() / 3600
                 if hours_away < 0:
                     score += 0.0

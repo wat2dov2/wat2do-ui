@@ -16,6 +16,7 @@ import { parseFilterQueryString } from "@/features/search";
 interface UseAppNavigationOptions {
   events: Event[];
   setFilterStateFromURL: (filters: FilterState) => void;
+  setSchoolFilter: (school: string) => void;
 }
 
 /**
@@ -24,6 +25,7 @@ interface UseAppNavigationOptions {
 export function useAppNavigation({
   events,
   setFilterStateFromURL,
+  setSchoolFilter,
 }: UseAppNavigationOptions) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -37,6 +39,7 @@ export function useAppNavigation({
   useEffect(() => {
     const eventId = searchParams.get(QP.EVENT_ID);
     const filtersParam = searchParams.get(QP.FILTERS);
+    const schoolParam = searchParams.get(QP.SCHOOL);
     const pageModeParam = searchParams.get(QP.PAGE_MODE);
 
     // Process filters + pageMode exactly once on initial mount.
@@ -56,6 +59,9 @@ export function useAppNavigation({
       // Handle filters from URL only when explicitly present (e.g. shared link
       // or QR redirect). Cap length to protect against oversized/attacker-
       // controlled blobs.
+      if (schoolParam?.trim()) {
+        setSchoolFilter(schoolParam.trim());
+      }
       const MAX_FILTERS_PARAM_BYTES = 4096;
       if (
         filtersParam &&
@@ -101,5 +107,5 @@ export function useAppNavigation({
     } else if (!eventId) {
       hasProcessedInitialScroll.current = true;
     }
-  }, [searchParams, navigate, setFilterStateFromURL, events]);
+  }, [searchParams, navigate, setFilterStateFromURL, setSchoolFilter, events]);
 }

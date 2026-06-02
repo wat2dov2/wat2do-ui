@@ -67,7 +67,7 @@ export function useSearch({
       selectedLocations: filterState.selectedLocations,
       selectedFoods: filterState.selectedFoods,
       selectedCategories: filterState.selectedCategories,
-      requiresRegistration: filterState.requiresRegistration,
+      registration: filterState.registration,
       profileCompleted,
       savedEventIds,
     });
@@ -81,7 +81,7 @@ export function useSearch({
     filterState.selectedLocations,
     filterState.selectedFoods,
     filterState.selectedCategories,
-    filterState.requiresRegistration,
+    filterState.registration,
     profileCompleted,
     savedFilter,
     savedEventIds,
@@ -98,7 +98,7 @@ export function useSearch({
         selectedFoods: filterState.selectedFoods,
         selectedDays: filterState.selectedDays,
         priceRange: filterState.priceRange,
-        requiresRegistration: filterState.requiresRegistration,
+        registration: filterState.registration,
       }),
     [
       filterState.selectedCategories,
@@ -106,7 +106,7 @@ export function useSearch({
       filterState.selectedFoods,
       filterState.selectedDays,
       filterState.priceRange,
-      filterState.requiresRegistration,
+      filterState.registration,
     ],
   );
 

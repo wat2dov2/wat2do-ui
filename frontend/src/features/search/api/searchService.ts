@@ -1,4 +1,5 @@
 import type { Event } from "@/shared/types";
+import { getPrimaryOccurrence } from "@/shared/utils/date";
 
 /**
  * Search Service
@@ -17,7 +18,7 @@ export interface SearchFilters {
   selectedLocations: string[];
   selectedFoods: string[];
   selectedCategories: string[];
-  requiresRegistration: boolean;
+  registration: boolean;
   profileCompleted: boolean;
   savedEventIds: number[];
 }
@@ -102,7 +103,7 @@ export function filterEvents(
     }
 
     // Registration filter
-    if (filters.requiresRegistration && !needsRegistration) {
+    if (filters.registration && !needsRegistration) {
       return false;
     }
 
@@ -126,8 +127,9 @@ export function sortEvents(
     switch (sortBy) {
       case "date": {
         const getDateValue = (event: Event): number => {
-          if (event.dtstart_utc) {
-            const d = new Date(event.dtstart_utc);
+          const primary = getPrimaryOccurrence(event);
+          if (primary && primary.dtstart_utc) {
+            const d = new Date(primary.dtstart_utc);
             if (!isNaN(d.getTime())) return d.getTime();
           }
           return 0;
@@ -159,8 +161,9 @@ export function sortEvents(
 // Canonical home: shared/utils/filter.ts — re-exported for feature consumers
 export { getFilterCounts } from "@/shared/utils/filter";
 function getEventDayOfWeek(event: Event): string {
-  if (!event.dtstart_utc) return "";
-  const date = new Date(event.dtstart_utc);
+  const primary = getPrimaryOccurrence(event);
+  if (!primary || !primary.dtstart_utc) return "";
+  const date = new Date(primary.dtstart_utc);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString("en-US", { weekday: "long" });
 }

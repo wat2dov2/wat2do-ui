@@ -13,12 +13,6 @@
       // Key 'theme' must match STORAGE_KEYS.THEME in src/shared/constants/storageKeys.ts.
       // Cannot import the constant here (pre-module inline script).
       (function() {
-        // Migrate old darkMode boolean to theme string (one-time)
-        if (localStorage.getItem('darkMode') !== null && localStorage.getItem('theme') === null) {
-          var wasDark = JSON.parse(localStorage.getItem('darkMode'));
-          localStorage.setItem('theme', JSON.stringify(wasDark ? 'dark' : 'light'));
-          localStorage.removeItem('darkMode');
-        }
         var raw = localStorage.getItem('theme');
         // StorageService wraps values in JSON.stringify, so theme is stored as '"dark"' or '"light"'
         var theme = null;

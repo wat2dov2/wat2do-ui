@@ -301,9 +301,6 @@ class RateLimiter:
 # each endpoint's budget independent.
 ai_generate_filters_rate_limiter = RateLimiter()
 ai_generate_event_rate_limiter = RateLimiter()
-# Backward-compat alias — new code should prefer the per-endpoint limiters.
-ai_rate_limiter = ai_generate_filters_rate_limiter
-
 # Auth endpoints: stricter limits to prevent credential stuffing / brute force.
 # Separate buckets per endpoint so a signup burst does not block legitimate
 # logins from the same IP (corporate NAT, mobile carrier).
@@ -315,8 +312,6 @@ signup_rate_limiter = RateLimiter(
     max_requests=AUTH_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_RATE_LIMIT_WINDOW_SECONDS,
 )
-# Backward-compat alias — prefer login_rate_limiter / signup_rate_limiter.
-auth_rate_limiter = login_rate_limiter
 # forgot-password & reset-password: very strict to prevent email-bomb abuse.
 # Separate buckets so a forgot-password spray does not block reset-password.
 forgot_password_rate_limiter = RateLimiter(
@@ -327,8 +322,6 @@ reset_password_rate_limiter = RateLimiter(
     max_requests=AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
 )
-# Backward-compat alias.
-auth_sensitive_rate_limiter = forgot_password_rate_limiter
 # refresh: more generous since legitimate clients auto-refresh frequently.
 auth_refresh_rate_limiter = RateLimiter(
     max_requests=AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,

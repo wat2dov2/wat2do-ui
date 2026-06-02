@@ -98,3 +98,18 @@ export async function loadClubsData(school?: string): Promise<{ clubs: Club[]; c
   const categories = await getClubCategories(clubs);
   return { clubs, categories };
 }
+
+// --- Backend-synced saved/followed clubs ---
+
+export async function fetchSavedClubIdsFromBackend(): Promise<number[]> {
+  return api.get<number[]>("/saved-clubs/");
+}
+
+export async function saveClubToBackend(clubId: number): Promise<void> {
+  await api.put<void>(`/saved-clubs/${clubId}`);
+}
+
+export async function unsaveClubToBackend(clubId: number): Promise<void> {
+  await api.delete(`/saved-clubs/${clubId}`);
+}
+

@@ -4,7 +4,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from core.constants import REPORT_DISMISSED, REPORT_PENDING, REPORT_RESOLVED
+from core.constants import DEFAULT_LIST_LIMIT, REPORT_DISMISSED, REPORT_PENDING, REPORT_RESOLVED
 from core.database import get_sb
 from core.errors import EVENT_NOT_FOUND, INVALID_STATUS_TRANSITION
 from core.exceptions import NotFoundError, ValidationError
@@ -70,12 +70,12 @@ def get_reports(
     status: str | None = None,
     *,
     offset: int = 0,
-    limit: int | None = None,
+    limit: int | None = DEFAULT_LIST_LIMIT,
 ) -> tuple[list[ReportResponse], int]:
     """Return reports, optionally filtered by status.
 
-    Returns (items, total_count).  When *limit* is None the query is
-    unbounded (legacy behaviour for non-paginated callers).
+    Returns (items, total_count).  Pass ``limit=None`` only for trusted
+    internal maintenance callers that intentionally need all rows.
     """
     q = get_sb().table(REPORTED_EVENTS).select("*", count="exact")
     if status:

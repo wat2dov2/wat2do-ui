@@ -8,12 +8,6 @@
 
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
-import type { Event, Club } from "@/shared/types";
-import {
-  adminCreateClub,
-  adminUpdateClub,
-  adminDeleteClub,
-} from "@/features/admin/api/admin.api";
 import { useNavigate } from "react-router-dom";
 import { ROUTES, ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -38,12 +32,6 @@ const AdminPostersPage = lazy(() =>
     default: m.AdminPostersPage,
   }))
 );
-
-interface AdminEventsRouteConfig {
-  onEditEvent: (event: Event) => void | Promise<void>;
-  onDeleteEvent: (eventId: number) => Promise<void>;
-  onCreateEvent: () => void;
-}
 
 /**
  * Admin panel navigation handler
@@ -84,16 +72,13 @@ export function AdminPanelRoute() {
 /**
  * Admin Events Route Component
  */
-export function AdminEventsRoute({ config }: { config: AdminEventsRouteConfig }) {
+export function AdminEventsRoute() {
   const navigate = useNavigate();
   const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
 
   return (
     <AdminSuspense>
       <AdminEventsPage
-        onEditEvent={config.onEditEvent}
-        onDeleteEvent={config.onDeleteEvent}
-        onCreateEvent={config.onCreateEvent}
         onBack={onBack}
       />
     </AdminSuspense>
@@ -107,32 +92,10 @@ export function AdminClubsRoute() {
   const navigate = useNavigate();
   const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
 
-  const onAddClub = useCallback(
-    async (club: Club) => {
-      await adminCreateClub(club);
-    },
-    [],
-  );
-  const onEditClub = useCallback(
-    async (club: Club) => {
-      await adminUpdateClub(club);
-    },
-    [],
-  );
-  const onDeleteClub = useCallback(
-    async (clubId: number) => {
-      await adminDeleteClub(clubId);
-    },
-    [],
-  );
-
   return (
     <AdminSuspense>
       <AdminClubsPage
         onBack={onBack}
-        onAddClub={onAddClub}
-        onEditClub={onEditClub}
-        onDeleteClub={onDeleteClub}
       />
     </AdminSuspense>
   );

@@ -81,12 +81,11 @@ def test_upload_qr_asset_success(authenticated_client, monkeypatch):
 
     recorded: dict | None = None
 
-    def fake_upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:  # type: ignore[override]
+    def fake_upload_file(bucket: str, file_bytes: bytes, content_type: str) -> str:  # type: ignore[override]
         nonlocal recorded
         recorded = {
             "bucket": bucket,
             "file_bytes": file_bytes,
-            "filename": filename,
             "content_type": content_type,
         }
         return "https://example.com/qr-assets/fake.png"
@@ -148,7 +147,7 @@ def test_upload_svg_sanitizes_script_tags(authenticated_client, monkeypatch):
 
     stored_bytes: bytes | None = None
 
-    def fake_upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+    def fake_upload_file(bucket: str, file_bytes: bytes, content_type: str) -> str:
         nonlocal stored_bytes
         stored_bytes = file_bytes
         return "https://example.com/qr-assets/clean.svg"
@@ -261,7 +260,7 @@ def test_svg_disguised_as_png_still_sanitized(authenticated_client, monkeypatch)
 
     stored_bytes: bytes | None = None
 
-    def fake_upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+    def fake_upload_file(bucket: str, file_bytes: bytes, content_type: str) -> str:
         nonlocal stored_bytes
         stored_bytes = file_bytes
         return "https://example.com/qr-assets/sneaky.png"
@@ -291,7 +290,7 @@ def test_svg_disguised_as_png_corrects_content_type(authenticated_client, monkey
 
     recorded_ct: str | None = None
 
-    def fake_upload_file(bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+    def fake_upload_file(bucket: str, file_bytes: bytes, content_type: str) -> str:
         nonlocal recorded_ct
         recorded_ct = content_type
         return "https://example.com/qr-assets/fixed.svg"
@@ -466,7 +465,7 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
     being handed to storage (audit U9)."""
     stored_bytes: bytes | None = None
 
-    def fake_upload_file(bucket, file_bytes, filename, content_type):
+    def fake_upload_file(bucket, file_bytes, content_type):
         nonlocal stored_bytes
         stored_bytes = file_bytes
         return "https://example.com/avatars/x.jpg"
@@ -511,7 +510,6 @@ def test_upload_strips_exif_from_jpeg(authenticated_client, monkeypatch):
             "avatars",
             exif_jpeg,
             "image/jpeg",
-            "photo.jpg",
         )
         assert ct == "image/jpeg"
         assert b"LEAKED" not in cleaned
@@ -540,7 +538,7 @@ def test_validate_and_prepare_strips_exif_directly():
     )
     raw = buf.getvalue()
     assert b"LEAKED" in raw  # sanity
-    cleaned, ct = storage.validate_and_prepare("avatars", raw, "image/jpeg", "x.jpg")
+    cleaned, ct = storage.validate_and_prepare("avatars", raw, "image/jpeg")
     assert ct == "image/jpeg"
     assert b"LEAKED" not in cleaned
 

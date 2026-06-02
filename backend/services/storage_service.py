@@ -84,7 +84,6 @@ class StorageService:
         bucket: str,
         data: bytes,
         content_type: str | None,
-        filename: str,
     ) -> tuple[bytes, str]:
         """Validate an upload against bucket rules and return cleaned data + final content type.
 
@@ -162,16 +161,13 @@ class StorageService:
         return results
 
     @supabase_retry
-    def upload_file(self, bucket: str, file_bytes: bytes, filename: str, content_type: str) -> str:
+    def upload_file(self, bucket: str, file_bytes: bytes, content_type: str) -> str:
         """Upload a file and return its public URL.
 
         The stored object's filename extension is derived exclusively from
-        the *validated* ``content_type`` — the caller-supplied ``filename``
-        is ignored for path construction.  This prevents the "upload as
-        evil.html with Content-Type image/png" trick where the public
-        URL ends in ``.html`` even though our MIME sniffer accepted the
-        bytes (audit U7).  ``filename`` is still accepted in the
-        signature for logging / call-site compatibility.
+        the *validated* ``content_type``.  This prevents the "upload as
+        evil.html with Content-Type image/png" trick where the public URL ends
+        in ``.html`` even though our MIME sniffer accepted the bytes (audit U7).
         """
         ext = _MIME_TO_EXT.get(content_type, ".bin")
         path = f"{uuid.uuid4().hex}{ext}"

@@ -30,14 +30,50 @@ class ApiError extends Error {
   status: number;
   body: unknown;
   constructor(status: number, body: unknown) {
-    const msg = typeof body === "object" && body !== null && "detail" in body
-      ? String((body as { detail: string }).detail)
-      : `Request failed with status ${status}`;
+    let msg = `Request failed with status ${status}`;
+    if (typeof body === "object" && body !== null && "detail" in body) {
+      const detail = (body as { detail: unknown }).detail;
+      if (typeof detail === "string") {
+        msg = detail;
+      } else if (Array.isArray(detail)) {
+        msg = detail
+          .map((d) => {
+            if (typeof d === "object" && d !== null) {
+              const item = d as { loc?: unknown; msg?: unknown };
+              const loc = Array.isArray(item.loc) ? item.loc.join(".") : "";
+              const field = loc ? `[${loc}] ` : "";
+              return `${field}${typeof item.msg === "string" ? item.msg : "Invalid value"}`;
+            }
+            return "Invalid value";
+          })
+          .join(", ");
+      }
+    }
     super(msg);
     this.name = "ApiError";
     this.status = status;
     this.body = body;
   }
+}
+
+export function isApiError(err: unknown): err is ApiError {
+  return err instanceof ApiError;
+}
+
+export function getApiErrorMessage(
+  err: unknown,
+  defaultMessage = "An unexpected error occurred"
+): string {
+  if (isApiError(err)) {
+    return err.message;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  if (typeof err === "string") {
+    return err;
+  }
+  return defaultMessage;
 }
 
 // ── 401 Retry / Token Refresh ───────────────────────────────────────
@@ -209,7 +245,16 @@ async function request<T>(
           return result;
         }
       }
-      handleAuthFailure();
+      
+      // Only call handleAuthFailure() for core/session-verifying endpoints.
+      // If a background/secondary endpoint (e.g. /credits/ or /saved-events/) fails with 401,
+      // we still throw the ApiError normally but do NOT clear the user session.
+      const isCoreSessionEndpoint =
+        path === "/users/me" ||
+        path === "/users/me/profile";
+      if (isCoreSessionEndpoint) {
+        handleAuthFailure();
+      }
     }
 
     throw new ApiError(res.status, body);

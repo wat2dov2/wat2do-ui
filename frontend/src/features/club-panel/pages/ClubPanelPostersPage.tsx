@@ -4,19 +4,21 @@ import {
   QRCodeDetailsModal,
   GenerateQRAssetsWizard,
 } from "@/features/posters";
-import type { Event } from "@/shared/types";
+import { useEventsStore } from "@/features/events/store/events.store";
+import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 
 const QRScanMap = lazy(() =>
   import("@/features/posters").then((module) => ({ default: module.QRScanMap })),
 );
 
 interface ClubPanelPostersPageProps {
-  events: Event[];
   onBack: () => void;
-  userEmail: string;
 }
 
-export function ClubPanelPostersPage({ events, onBack, userEmail }: ClubPanelPostersPageProps) {
+export function ClubPanelPostersPage({ onBack }: ClubPanelPostersPageProps) {
+  const events = useEventsStore((s) => s.events);
+  const userEmail = useUserEmail() || "";
+
   return (
     <PostersPageContent
       events={events}

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import { resetPasswordAPI } from "@/features/auth/api/auth.api";
 import { ROUTES } from "@/shared/constants/routes";
-import { ApiError } from "@/shared/services/apiClient";
+import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Input } from "@/shared/ui/input";
 import { LoadingButton } from "@/shared/ui/loading-button";
 
@@ -41,7 +41,6 @@ export function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(
     recoveryParams.errorDescription || null,
   );
-  const [isComplete, setIsComplete] = useState(false);
 
   useLayoutEffect(() => {
     if (window.location.hash) {
@@ -55,6 +54,7 @@ export function ResetPasswordPage() {
 
   const validationError = useMemo(() => {
     if (!recoveryParams.accessToken) return t("auth.resetPasswordInvalidLink");
+    if (!recoveryParams.refreshToken) return t("auth.resetPasswordInvalidLink");
     if (password.length > 0 && password.length < MIN_PASSWORD_LENGTH) {
       return t("auth.resetPasswordTooShort");
     }
@@ -62,10 +62,11 @@ export function ResetPasswordPage() {
       return t("auth.resetPasswordMismatch");
     }
     return null;
-  }, [confirmPassword, password, recoveryParams.accessToken, t]);
+  }, [confirmPassword, password, recoveryParams.accessToken, recoveryParams.refreshToken, t]);
 
   const canSubmit =
     recoveryParams.accessToken.length > 0 &&
+    recoveryParams.refreshToken.length > 0 &&
     password.length >= MIN_PASSWORD_LENGTH &&
     password === confirmPassword;
 
@@ -74,23 +75,15 @@ export function ResetPasswordPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const loggedIn = await resetPasswordAPI(
+      await resetPasswordAPI(
         recoveryParams.accessToken,
         recoveryParams.refreshToken,
         password,
       );
-      if (loggedIn) {
-        navigate(ROUTES.HOME, { replace: true });
-        return;
-      }
-      setIsComplete(true);
+      navigate(ROUTES.HOME, { replace: true });
     } catch (err) {
       console.error("Password reset failed:", err);
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : t("auth.resetPasswordFailed"),
-      );
+      setError(getApiErrorMessage(err, t("auth.resetPasswordFailed")));
     } finally {
       setIsLoading(false);
     }
@@ -108,18 +101,7 @@ export function ResetPasswordPage() {
     navigate(ROUTES.LOGIN);
   }, [navigate]);
 
-  const content = isComplete ? (
-    <>
-      <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
-        <p className="text-sm text-emerald-700 dark:text-emerald-300 text-center">
-          {t("auth.resetPasswordSuccess")}
-        </p>
-      </div>
-      <LoadingButton type="button" onClick={goToLogin} className="w-full">
-        {t("auth.backToLogin")}
-      </LoadingButton>
-    </>
-  ) : (
+  const content = (
     <form
       className="w-full space-y-4"
       onSubmit={(event) => {
@@ -136,7 +118,7 @@ export function ResetPasswordPage() {
           setError(null);
         }}
         placeholder={t("auth.newPasswordPlaceholder")}
-        disabled={!recoveryParams.accessToken}
+        disabled={!recoveryParams.accessToken || !recoveryParams.refreshToken}
       />
       <Input
         type="password"
@@ -147,7 +129,7 @@ export function ResetPasswordPage() {
           setError(null);
         }}
         placeholder={t("auth.confirmPasswordPlaceholder")}
-        disabled={!recoveryParams.accessToken}
+        disabled={!recoveryParams.accessToken || !recoveryParams.refreshToken}
       />
 
       {(error || validationError) && (

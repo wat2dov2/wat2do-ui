@@ -3,33 +3,23 @@ Allowed student email domains mapped to schools.
 Only emails from these domains can sign up.
 """
 
+import json
 import logging
 import unicodedata
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-ALLOWED_EMAIL_DOMAINS: dict[str, str] = {
+# Base dictionary for fallback / fast lookup.
+# Waterloo stays as the only hardcoded school; every other school comes from
+# the dynamic university-domain dataset loaded below.
+FALLBACK_DOMAINS: dict[str, str] = {
     "uwaterloo.ca": "University of Waterloo",
     "edu.uwaterloo.ca": "University of Waterloo",
-    "wlu.ca": "Wilfrid Laurier University",
-    "mylaurier.ca": "Wilfrid Laurier University",
-    "uoguelph.ca": "University of Guelph",
-    "conestogac.on.ca": "Conestoga College",
-    # Audit Phase 1 added these four schools to the in-scope list.  Domains
-    # are the institution's primary student domains; broaden as needed when
-    # a real user signup hits a sub-domain (e.g. ``seas.upenn.edu``) — every
-    # added domain must keep mapping to the same canonical school name so
-    # ``SCHOOL_TIMEZONES`` lookups resolve.
-    "upenn.edu": "University of Pennsylvania",
-    "seas.upenn.edu": "University of Pennsylvania",
-    "wharton.upenn.edu": "University of Pennsylvania",
-    "nyu.edu": "New York University",
-    "stern.nyu.edu": "New York University",
-    "columbia.edu": "Columbia University",
-    "cumc.columbia.edu": "Columbia University",
-    "barnard.edu": "Columbia University",
-    "mit.edu": "Massachusetts Institute of Technology",
 }
+
+# Dynamic mapping of domain -> school name loaded from the JSON dataset
+ALLOWED_EMAIL_DOMAINS: dict[str, str] = {}
 
 
 def _has_control_chars(value: str) -> bool:
@@ -55,6 +45,38 @@ def _normalize_domain(domain: str) -> str | None:
     except (UnicodeError, UnicodeDecodeError) as e:
         log.warning("Failed to normalise email domain %r: %s", domain, e)
         return None
+
+
+def load_allowed_domains() -> None:
+    """Load domains from world_universities_and_domains.json and merge with FALLBACK_DOMAINS."""
+    global ALLOWED_EMAIL_DOMAINS
+    ALLOWED_EMAIL_DOMAINS.clear()
+    ALLOWED_EMAIL_DOMAINS.update(FALLBACK_DOMAINS)
+
+    json_path = Path(__file__).parent / "world_universities_and_domains.json"
+    if not json_path.exists():
+        log.warning("world_universities_and_domains.json not found at %s. Using fallback domains.", json_path)
+        return
+
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            for item in data:
+                name = item.get("name")
+                domains = item.get("domains") or []
+                if name and domains:
+                    for domain in domains:
+                        norm = _normalize_domain(domain)
+                        if norm:
+                            # Note: do not overwrite the custom mappings in FALLBACK_DOMAINS
+                            if norm not in ALLOWED_EMAIL_DOMAINS:
+                                ALLOWED_EMAIL_DOMAINS[norm] = name
+    except Exception as e:
+        log.error("Failed to load world_universities_and_domains.json: %s", e)
+
+
+# Populate the dynamic whitelist at startup
+load_allowed_domains()
 
 
 def get_school_for_email(email: str) -> str | None:

@@ -32,7 +32,7 @@ export function useFilterState(profileCompleted: boolean) {
     selectedFoods,
     selectedDays,
     priceRange,
-    requiresRegistration,
+    registration,
     freeFoodFilter,
     setSearchQuery,
     setSelectedCategories,
@@ -40,7 +40,7 @@ export function useFilterState(profileCompleted: boolean) {
     setSelectedFoods,
     setSelectedDays,
     setPriceRange,
-    setRequiresRegistration,
+    setRegistration,
     setFreeFoodFilter,
     toggleFilter,
     clearAllFilters,
@@ -53,7 +53,7 @@ export function useFilterState(profileCompleted: boolean) {
       selectedFoods: s.selectedFoods,
       selectedDays: s.selectedDays,
       priceRange: s.priceRange,
-      requiresRegistration: s.requiresRegistration,
+      registration: s.registration,
       freeFoodFilter: s.freeFoodFilter,
       setSearchQuery: s.setSearchQuery,
       setSelectedCategories: s.setSelectedCategories,
@@ -61,7 +61,7 @@ export function useFilterState(profileCompleted: boolean) {
       setSelectedFoods: s.setSelectedFoods,
       setSelectedDays: s.setSelectedDays,
       setPriceRange: s.setPriceRange,
-      setRequiresRegistration: s.setRequiresRegistration,
+      setRegistration: s.setRegistration,
       setFreeFoodFilter: s.setFreeFoodFilter,
       toggleFilter: s.toggleFilter,
       clearAllFilters: s.clearAllFilters,
@@ -101,7 +101,7 @@ export function useFilterState(profileCompleted: boolean) {
           selectedFoods,
           selectedDays,
           priceRange,
-          requiresRegistration,
+          registration,
         }),
       ),
     [
@@ -111,7 +111,7 @@ export function useFilterState(profileCompleted: boolean) {
       selectedFoods,
       selectedDays,
       priceRange,
-      requiresRegistration,
+      registration,
     ],
   );
 
@@ -139,7 +139,7 @@ export function useFilterState(profileCompleted: boolean) {
         foods: filters.foods || [],
         days: filters.days || [],
         priceRange: filters.priceRange || { min: "", max: "" },
-        requiresRegistration: filters.requiresRegistration || false,
+        registration: filters.registration || false,
       });
     },
     [setFilterStateFromURL],
@@ -194,8 +194,8 @@ export function useFilterState(profileCompleted: boolean) {
     setSelectedDays,
     priceRange,
     setPriceRange,
-    requiresRegistration,
-    setRequiresRegistration,
+    registration,
+    setRegistration,
 
     // Quick filters (only the ones wired to UI)
     freeFoodFilter,

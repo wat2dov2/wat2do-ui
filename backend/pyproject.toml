@@ -48,7 +48,6 @@ pretty = true
 follow_imports = "skip"
 
 # The backend is being ratcheted into type checking. Start by validating typed
-# surfaces without forcing every legacy function to be fully annotated in this
-# cleanup batch.
+# surfaces before requiring every helper to be fully annotated.
 check_untyped_defs = false
 disallow_untyped_defs = false

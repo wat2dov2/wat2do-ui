@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Default origins allowed in local development only.
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_key: str
     supabase_secret_key: str = ""
+    database_url: str = ""
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     openai_timeout: int = 15
@@ -57,13 +59,58 @@ class Settings(BaseSettings):
     # that shares peers with untrusted workloads.
     trusted_proxies: list[str] = ["127.0.0.1", "::1"]
 
-    # --- Email provider (notifications v1) -------------------------------
+    # --- Email provider (notifications) ----------------------------------
     # Empty string => dry-run mode (log-only). Set to ``resend`` to send
     # via Resend, and populate ``email_provider_api_key`` + ``email_from``.
     email_provider: str = ""
     email_provider_api_key: str = ""
     email_from: str = "wat2do <notifications@wat2do.app>"
     frontend_url: str = "http://localhost:5173"
+
+    @model_validator(mode="after")
+    def validate_database_region(self) -> 'Settings':
+        if not self.database_url:
+            return self
+        
+        import urllib.parse
+        try:
+            parsed = urllib.parse.urlparse(self.database_url)
+            host = parsed.hostname
+            if not host or not host.endswith(".pooler.supabase.com"):
+                return self
+            
+            port = parsed.port or 5432
+            username = parsed.username
+            if not username:
+                return self
+        except Exception:
+            return self
+            
+        import socket
+        try:
+            # Build postgres startup packet to test regional connectivity
+            user_str = f"user\x00{username}\x00database\x00postgres\x00\x00"
+            packet_len = 8 + len(user_str)
+            packet = (
+                packet_len.to_bytes(4, byteorder="big")
+                + (196608).to_bytes(4, byteorder="big")
+                + user_str.encode("utf-8")
+            )
+            
+            with socket.create_connection((host, port), timeout=3) as s:
+                s.sendall(packet)
+                response = s.recv(1024)
+                if b"not found" in response or b"tenant/user" in response:
+                    raise ValueError(
+                        f"Database pooler region mismatch: The tenant '{username}' was not found "
+                        f"on the pooler host '{host}'. Please verify that the region in your "
+                        f"DATABASE_URL matches the remote Supabase database's region."
+                    )
+        except socket.timeout:
+            pass
+        except socket.error:
+            pass
+        return self
 
     @property
     def is_production(self) -> bool:

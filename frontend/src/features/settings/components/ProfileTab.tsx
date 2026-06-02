@@ -19,9 +19,8 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { MultiSelect } from "@/shared/ui/multi-select";
+import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { useProfile } from "@/features/settings/hooks/useProfile";
-import { availableSchools } from "@/shared/constants/schools";
-import { translateSchool } from "@/shared/utils/schoolTranslation";
 import { getAvailableInterests } from "@/shared/data/interests";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
 import { FACULTY_OPTIONS } from "@/features/onboarding";
@@ -100,21 +99,13 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
             <Label htmlFor="school" className="text-base font-medium">
               {t("settings.profile.school")}
             </Label>
-            <Select
-              value={profile.school}
-              onValueChange={(value) => updateProfile({ school: value })}
-            >
-              <SelectTrigger id="school" className="w-full">
-                <SelectValue placeholder={t("settings.profile.selectSchool")} />
-              </SelectTrigger>
-              <SelectContent>
-                {availableSchools.map((school) => (
-                  <SelectItem key={school} value={school}>
-                    {translateSchool(school, t)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SchoolCombobox
+              id="school"
+              value={profile.school || ""}
+              onChange={(value) => updateProfile({ school: value })}
+              variant="field"
+              placeholder={t("settings.profile.selectSchool")}
+            />
           </div>
           <Separator />
           <div className="space-y-2">

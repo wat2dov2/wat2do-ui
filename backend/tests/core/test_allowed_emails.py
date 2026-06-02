@@ -42,6 +42,10 @@ class TestGetSchoolForEmail:
     def test_no_at_sign_returns_none(self):
         assert get_school_for_email("alice.uwaterloo.ca") is None
 
+    def test_dynamic_json_domain_lookup(self):
+        assert get_school_for_email("student@fho.edu.br") == "Fundação Hermínio Ometto"
+        assert get_school_for_email("admin@noah.edu.gr") == "Hellenic College of Noah"
+
 
 class TestIsEmailAllowed:
     def test_allowed_school(self):
@@ -52,3 +56,6 @@ class TestIsEmailAllowed:
 
     def test_multi_at_not_allowed(self):
         assert is_email_allowed("a@b@uwaterloo.ca") is False
+
+    def test_dynamic_json_domain_allowed(self):
+        assert is_email_allowed("student@fho.edu.br") is True

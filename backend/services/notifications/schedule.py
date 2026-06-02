@@ -21,10 +21,6 @@ def ensure_aware_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
-# Backward-compatible private name for the notification_service facade.
-_ensure_aware_utc = ensure_aware_utc
-
-
 def is_daily_new_events_time(user: dict, now_utc: datetime) -> datetime | None:
     """Return the local send timestamp if ``now_utc`` is 10:30am-local."""
     local = ensure_aware_utc(now_utc).astimezone(resolve_user_timezone(user))

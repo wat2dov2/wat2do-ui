@@ -32,7 +32,7 @@ import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { submitEventForReview } from "@/shared/api/submissions.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { ROUTES } from "@/shared/constants/routes";
-import type { Event, EventFormData } from "@/shared/types";
+import type { EventFormData } from "@/shared/types";
 
 const SubmitEventModal = lazy(() =>
   import("@/features/events/components/SubmitEventModal").then((m) => ({
@@ -46,17 +46,10 @@ const BuyCreditsModal = lazy(() =>
   }))
 );
 
-interface ModalContainerProps {
-  /** The event currently being edited (null when creating). Owned by AppContent because admin/club configs also need handleEditEventAndOpenModal. */
-  editingEvent: Event | null;
-  /** Clear the editing-event state in the parent when the modal closes. */
-  clearEditing: () => void;
-}
-
-export function ModalContainer({ editingEvent, clearEditing }: ModalContainerProps) {
+export function ModalContainer() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { profileCompleted, isAdmin, hasClub } = useAuthState();
+  const { profileCompleted, isAdmin, hasClub, clubId } = useAuthState();
   const canCreateEvents = hasClub || isAdmin;
   const canSubmitEvents = profileCompleted;
 
@@ -66,6 +59,8 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
   const showCommandPalette = useUIStore((s) => s.showCommandPalette);
   const setShowCommandPalette = useUIStore((s) => s.setShowCommandPalette);
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
+  const editingEvent = useUIStore((s) => s.editingEvent);
+  const clearEditingEvent = useUIStore((s) => s.clearEditingEvent);
 
   // ── Events store actions ─────────────────────────────────────
   const addEvent = useEventsStore((s) => s.addEvent);
@@ -96,8 +91,8 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
 
   const handleSubmitEventClose = useCallback(() => {
     setShowSubmitEvent(false);
-    clearEditing();
-  }, [setShowSubmitEvent, clearEditing]);
+    clearEditingEvent();
+  }, [setShowSubmitEvent, clearEditingEvent]);
 
   const loadEventForEdit = useCallback(
     async (eventId: number): Promise<EventFormData> => {
@@ -115,14 +110,22 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
 
   const handleSubmitEvent = useCallback(
     async (eventData: EventFormData) => {
+      const resolvedClubId = eventData.club_id ?? clubId;
+      if (resolvedClubId == null) {
+        throw new Error("Missing active club ID for event submission");
+      }
+      const payload = {
+        ...eventData,
+        club_id: resolvedClubId,
+      };
       if (canCreateEvents) {
-        const eventId = await addEvent(eventData);
+        const eventId = await addEvent(payload);
         return { type: "event" as const, eventId };
       }
-      await submitEventForReview(eventData);
+      await submitEventForReview(payload);
       return { type: "submission" as const };
     },
-    [addEvent, canCreateEvents],
+    [addEvent, canCreateEvents, clubId],
   );
 
   return (
@@ -140,7 +143,12 @@ export function ModalContainer({ editingEvent, clearEditing }: ModalContainerPro
           initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
           loadEventForEdit={loadEventForEdit}
           onUpdate={async (eventId, eventData) => {
-            await updateEvent(eventId, eventData);
+            const resolvedClubId = eventData.club_id ?? clubId;
+            const payload = {
+              ...eventData,
+              club_id: resolvedClubId ?? undefined,
+            };
+            await updateEvent(eventId, payload);
             handleSubmitEventClose();
           }}
         />

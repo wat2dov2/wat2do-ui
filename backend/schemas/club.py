@@ -124,29 +124,6 @@ class ClubResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-    @field_validator("categories", mode="before")
-    @classmethod
-    def _parse_legacy_categories(cls, v):
-        if not isinstance(v, str):
-            return v
-        value = v.strip()
-        if not value:
-            return None
-        try:
-            parsed = json.loads(value)
-        except json.JSONDecodeError:
-            return [value]
-        if isinstance(parsed, list):
-            return parsed
-        return [value]
-
-    @field_validator("club_type", mode="before")
-    @classmethod
-    def _default_legacy_club_type(cls, v):
-        if v is None:
-            return "Unknown"
-        return v
-
 
 class DiscordChannelOption(BaseModel):
     id: str
@@ -234,3 +211,20 @@ class ClubIntegrationResponse(BaseModel):
     name: str | None = None
     last_sync: datetime | None = None
     metadata: dict[str, str] | None = None
+
+
+class ClubMemberResponse(BaseModel):
+    user_id: UUID
+    email: str
+    username: str | None = None
+    full_name: str | None = None
+    avatar_url: str | None = None
+    role: str
+    joined_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ClubMemberAdd(BaseModel):
+    email: str
+

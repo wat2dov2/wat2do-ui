@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useState, useEffect, useCallback } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { LazyMotion, domAnimation } from "framer-motion";
 import { TooltipProvider } from "@/shared/ui/tooltip";
@@ -8,16 +8,16 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useSearchStore } from "@/features/search/store/search.store";
-import { useUIStore } from "@/shared/store/ui.store";
 import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
 import { ModalContainer } from "@/app/ModalContainer";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
+import { Toaster } from "@/shared/ui/toaster";
 
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { ROLE_ADMIN, ROLE_CLUB } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
-import type { Event } from "@/shared/types";
+import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 
 // Lazy load pages for code splitting
 const EventsPageContainer = lazy(() =>
@@ -65,6 +65,12 @@ const ResetPasswordPage = lazy(() =>
     default: module.ResetPasswordPage,
   }))
 );
+const InviteLandingPage = lazy(() =>
+  import("@/features/clubs/pages/InviteLandingPage").then((module) => ({
+    default: module.InviteLandingPage,
+  }))
+);
+
 
 // Admin Routes Configuration Lazy Loaded
 const AdminPanelRoute = lazy(() =>
@@ -146,11 +152,9 @@ function AppContent() {
   // handleEditEventAndOpenModal. The modal state reads (showSubmitEvent,
   // showCommandPalette) live in `<ModalContainer />` to keep Routes from
   // re-rendering on modal toggles.
-  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
-
   // ── Store data (single source of truth) ──────────────────────
   const events = useEventsStore((s) => s.events);
-  const deleteEvent = useEventsStore((s) => s.deleteEvent);
+  const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
 
   // Trigger store fetches once on mount. Per-user stores (savedEvents,
   // credits, promotions) also listen to "auth-user-login" events so a
@@ -159,22 +163,10 @@ function AppContent() {
     if (isAuthFlowRoute) return;
     useEventsStore.getState().fetchEvents();
     useSavedEventsStore.getState().fetchSavedEvents();
+    useSavedClubsStore.getState().fetchSavedClubs();
     useCreditsStore.getState().fetchBalance();
     useCreditsStore.getState().fetchActivePromotedEventIds();
   }, [isAuthFlowRoute]);
-
-  // ── Edit event state (local UI) ──────────────────────────────
-  // Owned here (not in ModalContainer) because admin event routes need to
-  // populate `editingEvent` before opening SubmitEventModal.
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-
-  const handleEditEvent = useCallback((event: Event) => {
-    setEditingEvent(event);
-  }, []);
-
-  const clearEditing = useCallback(() => {
-    setEditingEvent(null);
-  }, []);
 
 
   // ── Search store setter (stable ref, selector-based subscription) ─
@@ -188,37 +180,8 @@ function AppContent() {
   useAppNavigation({
     events,
     setFilterStateFromURL,
+    setSchoolFilter,
   });
-
-  // Open submit modal in edit mode
-  const handleEditEventAndOpenModal = useCallback(
-    (event: Parameters<typeof handleEditEvent>[0]) => {
-      handleEditEvent({ id: event.id } as Parameters<typeof handleEditEvent>[0]);
-      setShowSubmitEvent(true);
-    },
-    [handleEditEvent, setShowSubmitEvent]
-  );
-
-  // Memoize admin route configuration. Admin pages read `events` from
-  // `useEventsStore` directly and `userEmail` from `useUserEmail`, so
-  // neither field belongs here.
-  const adminConfig = useMemo(
-    () => ({
-      onEditEvent: handleEditEventAndOpenModal,
-      onDeleteEvent: deleteEvent,
-      onCreateEvent: () => setShowSubmitEvent(true),
-    }),
-    [handleEditEventAndOpenModal, deleteEvent, setShowSubmitEvent]
-  );
-
-  // Club-panel poster routes only need events + userEmail.
-  const clubPanelConfig = useMemo(
-    () => ({
-      events,
-      userEmail,
-    }),
-    [events, userEmail]
-  );
 
   const appRoutes = (
     <Routes>
@@ -232,6 +195,8 @@ function AppContent() {
       />
       <Route path={ROUTES.CONTACT} element={<ContactPage />} />
       <Route path={ROUTES.CLUBS} element={<ClubsPage />} />
+      <Route path={ROUTES.INVITE} element={<InviteLandingPage />} />
+
       <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route
         path={ROUTES.ADMIN}
@@ -239,7 +204,7 @@ function AppContent() {
       />
       <Route
         path={ROUTES.ADMIN_EVENTS}
-        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminEventsRoute config={adminConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminEventsRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.ADMIN_CLUBS}
@@ -270,7 +235,7 @@ function AppContent() {
       />
       <Route
         path={ROUTES.CLUB_PANEL_POSTERS}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelPostersRoute config={clubPanelConfig} /></ProtectedRoute>}
+        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelPostersRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.CLUB_PANEL_INTEGRATIONS}
@@ -286,10 +251,8 @@ function AppContent() {
   return (
     <>
       {/* Modals - isolated in their own container so modal toggles don't re-render the Routes subtree */}
-      <ModalContainer
-        editingEvent={editingEvent}
-        clearEditing={clearEditing}
-      />
+      <ModalContainer />
+      <Toaster />
 
       <Suspense
         fallback={

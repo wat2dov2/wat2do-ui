@@ -17,6 +17,7 @@ import { EventFormJSON } from "@/features/events/components/EventForm/EventFormJ
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
 import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import type { useEventForm } from "@/features/events/hooks/useEventForm";
+import { SchoolCombobox } from "@/shared/ui/school-combobox";
 
 export type ViewMode = "visual" | "json";
 
@@ -26,6 +27,8 @@ type EventFormHookReturn = ReturnType<typeof useEventForm>;
 interface EventFormStepProps {
   isEditMode: boolean;
   canCreateEvents: boolean;
+  submissionSchool: string;
+  onSubmissionSchoolChange: (value: string) => void;
   viewMode: ViewMode;
   onViewModeChange: (value: ViewMode) => void;
   isSubmitting: boolean;
@@ -66,6 +69,8 @@ interface EventFormStepProps {
 export function EventFormStep({
   isEditMode,
   canCreateEvents,
+  submissionSchool,
+  onSubmissionSchoolChange,
   viewMode,
   onViewModeChange,
   isSubmitting,
@@ -123,12 +128,24 @@ export function EventFormStep({
           <div className="mb-7">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold text-foreground">
                   {isEditMode
                     ? t("events.updateEvent")
                     : canCreateEvents
                       ? t("events.createEvent")
-                      : t("events.submitEventForReview")}
+                      : (
+                        <>
+                          <span className="whitespace-nowrap">
+                            {t("events.submitEventFor")}
+                          </span>
+                          <SchoolCombobox
+                            value={submissionSchool}
+                            onChange={onSubmissionSchoolChange}
+                            variant="nav"
+                            triggerClassName="max-w-[18rem] text-foreground hover:bg-secondary"
+                          />
+                        </>
+                      )}
                 </h2>
               </div>
               <div className="shrink-0">

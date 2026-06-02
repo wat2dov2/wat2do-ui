@@ -80,9 +80,7 @@ async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
     """
     data = await file.read()
     try:
-        return storage.validate_and_prepare(
-            bucket, data, file.content_type, file.filename or "upload"
-        )
+        return storage.validate_and_prepare(bucket, data, file.content_type)
     except ValidationError as exc:
         http_status = (
             status.HTTP_413_CONTENT_TOO_LARGE
@@ -116,7 +114,6 @@ async def _replace_image(
         storage.upload_file,
         bucket,
         data,
-        file.filename or "upload",
         content_type,
     )
     await asyncio.to_thread(update_fn, url)
@@ -193,7 +190,6 @@ async def upload_qr_asset(
         storage.upload_file,
         BUCKET_QR_ASSETS,
         data,
-        file.filename or "asset",
         content_type,
     )
     return {"url": url}

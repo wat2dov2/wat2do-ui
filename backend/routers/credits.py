@@ -84,9 +84,8 @@ def create_promotion(
     event = get_or_404(event_service.get_event(data.event_id), EVENT_NOT_FOUND)
     if event_service.has_ended(event):
         raise ValidationError(EVENT_ALREADY_PAST)
-    if not is_admin(user) and not club_service.user_owns_club_named(
-        str(user.id),
-        event.organization,
+    if not is_admin(user) and not (
+        event.club_id is not None and club_service.is_club_member(event.club_id, str(user.id))
     ):
         raise AuthorizationError(CLUB_PROMOTION_REQUIRED)
     return credit_service.create_promotion(

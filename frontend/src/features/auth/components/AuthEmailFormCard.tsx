@@ -16,6 +16,7 @@ interface AuthEmailFormCardProps {
   isLoading: boolean;
   error: string | null;
   confirmationMessage: string | null;
+  isEmailPrefilled?: boolean;
 }
 
 export function AuthEmailFormCard({
@@ -31,6 +32,7 @@ export function AuthEmailFormCard({
   isLoading,
   error,
   confirmationMessage,
+  isEmailPrefilled = false,
 }: AuthEmailFormCardProps) {
   const { t } = useTranslation();
   const isSignup = authMode === "signup";
@@ -43,7 +45,9 @@ export function AuthEmailFormCard({
         onChange={(e) => onEmailChange(e.target.value)}
         placeholder={t("auth.emailPlaceholder")}
         onKeyDown={(e) => e.key === "Enter" && canContinue && onContinue()}
+        disabled={isEmailPrefilled}
       />
+
 
       <Input
         type="password"

@@ -317,7 +317,6 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               destination_type: "events-list",
               destination_id: null,
               filters: null,
-              is_active: true,
               image_url: null,
             })
           )

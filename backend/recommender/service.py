@@ -561,8 +561,6 @@ class RecommendationEngine:
                     for occ in occurrences
                     if isinstance(occ, OccurrenceResponse)
                 ]
-                payload["dtstart_utc"] = primary.get("dtstart_utc")
-                payload["dtend_utc"] = primary.get("dtend_utc")
                 candidates.append(EventResponse.model_validate(payload))
             return candidates
 

@@ -6,7 +6,6 @@ interface SubmitSuccessStepProps {
   onPromote?: () => void;
   isEditMode: boolean;
   isSubmissionOnly: boolean;
-  onShowSuccessAlert: (title: string, message: string) => void;
 }
 
 export function SubmitSuccessStep({
@@ -15,7 +14,6 @@ export function SubmitSuccessStep({
   onPromote,
   isEditMode,
   isSubmissionOnly,
-  onShowSuccessAlert,
 }: SubmitSuccessStepProps) {
   return (
     <EventSuccessScreen
@@ -24,7 +22,6 @@ export function SubmitSuccessStep({
       onPromote={onPromote}
       isEditMode={isEditMode}
       isSubmissionOnly={isSubmissionOnly}
-      onShowSuccessAlert={onShowSuccessAlert}
     />
   );
 }

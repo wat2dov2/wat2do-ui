@@ -7,7 +7,6 @@ from postgrest.exceptions import APIError
 from supabase_auth.errors import AuthApiError
 
 from core.allowed_emails import get_school_for_email, is_email_allowed
-from core.auth import decode_jwt_payload
 from core.config import settings
 from core.constants import PG_UNIQUE_VIOLATION
 from core.errors import (
@@ -108,7 +107,26 @@ class AuthService:
         raise domain_error_cls(error_detail)
 
     def signup(self, data: SignupRequest) -> AuthResult:
-        if not is_email_allowed(data.email):
+        has_valid_invite = False
+        if data.token:
+            from datetime import datetime, timezone
+            now_str = datetime.now(timezone.utc).isoformat()
+            try:
+                r_invite = (
+                    self._db.table("club_invitations")
+                    .select("*")
+                    .eq("token", data.token)
+                    .eq("email", data.email.strip().lower())
+                    .eq("status", "pending")
+                    .gt("expires_at", now_str)
+                    .execute()
+                )
+                if r_invite.data:
+                    has_valid_invite = True
+            except Exception as e:
+                logger.warning("Failed to check invitation token: %s", e)
+
+        if not has_valid_invite and not is_email_allowed(data.email):
             raise AuthorizationError(EMAIL_NOT_ALLOWED)
 
         safe_email = _sanitize_for_log(data.email)
@@ -126,7 +144,7 @@ class AuthService:
         if not res.user:
             raise ValidationError(SIGNUP_FAILED)
 
-        school = get_school_for_email(data.email) or ""
+        school = get_school_for_email(data.email) or None
 
         payload = {
             "id": str(uuid.uuid4()),
@@ -141,24 +159,41 @@ class AuthService:
             row = r.data[0]
             user_id = row["id"]
         except APIError as e:
-            # A28: the Supabase auth user was created on the line above, but
-            # the public.users insert failed.  If we leave the orphan in place
-            # the email is permanently squatted — subsequent signups hit
-            # "User already registered" and the user can never log in
-            # (no profile row).  Roll back by deleting the auth user.  We swallow
-            # the delete error (best effort) so the original signup failure
-            # still surfaces.
+            # A28: rollback orphan Supabase auth user
             self._try_delete_auth_user(res.user.id)
             if e.code == PG_UNIQUE_VIOLATION:
                 logger.warning("Duplicate user signup for %s: %s", safe_email, e.message)
                 raise ConflictError(EMAIL_OR_USERNAME_TAKEN) from e
             raise
         except Exception:
-            # Any other failure after the auth user was created — same cleanup.
             self._try_delete_auth_user(res.user.id)
             raise
 
         logger.info("Created DB user %s for supabase uid %s", user_id, res.user.id)
+
+        # Auto-join user to any clubs they have pending invitations for
+        try:
+            from datetime import datetime, timezone
+            now_str = datetime.now(timezone.utc).isoformat()
+            r_invites = (
+                self._db.table("club_invitations")
+                .select("*")
+                .eq("email", data.email.strip().lower())
+                .eq("status", "pending")
+                .gt("expires_at", now_str)
+                .execute()
+            )
+            for invite in (r_invites.data or []):
+                from services.club_service import add_club_member
+                try:
+                    add_club_member(invite["club_id"], uuid.UUID(user_id))
+                except Exception as e:
+                    logger.warning("Failed to auto-add user %s to club %s: %s", user_id, invite["club_id"], e)
+                
+                self._db.table("club_invitations").update({"status": "accepted"}).eq("id", invite["id"]).execute()
+        except Exception as e:
+            logger.warning("Failed to process auto-join for user %s: %s", user_id, e)
+
 
         if res.session:
             return AuthResult(
@@ -166,6 +201,7 @@ class AuthService:
                     user_id=str(user_id),
                     access_token=res.session.access_token,
                     expires_in=res.session.expires_in,
+                    school=school,
                 ),
                 refresh_token=res.session.refresh_token,
             )
@@ -174,6 +210,7 @@ class AuthService:
             body=SignupResponse(
                 user_id=str(user_id),
                 confirmation_required=True,
+                school=school,
             ),
         )
 
@@ -212,6 +249,7 @@ class AuthService:
                 access_token=res.session.access_token,
                 expires_in=res.session.expires_in,
                 user_id=res.user.id,
+                school=get_school_for_email(data.email) or None,
             ),
             refresh_token=res.session.refresh_token,
         )
@@ -265,77 +303,11 @@ class AuthService:
                 e.message,
             )
 
-    def reset_password(self, data: ResetPasswordRequest) -> AuthResult | None:
-        """Update the caller's password using a recovery-scoped JWT.
-
-        A9 fix: validate that the supplied access token was minted for
-        password recovery before trusting it to change the password.  A
-        regular session access token (captured via a transient XSS, for
-        example) must not be accepted here — otherwise an attacker who
-        briefly held a victim's access token could permanently take over
-        the account.  We inspect the JWT claims locally (same JWKS verifier
-        as ``get_current_user``) and require one of the
-        recovery markers Supabase sets on recovery tokens:
-
-        - ``amr`` contains an entry with ``method == "recovery"``
-        - ``email_action_type == "recovery"``
-        - ``aal == "aal1"`` plus ``app_metadata.provider == "recovery"``
-
-        Any token lacking all of these is rejected with 401.
-        """
-        # Supabase's hosted recovery redirect gives the browser a full
-        # temporary session. Validate that session with Supabase first so this
-        # flow works even when the project is using hosted JWT signing keys the
-        # local dev backend has not cached yet.
-        if data.refresh_token:
-            return self._reset_password_with_supabase_session(data)
-
-        # 1) Verify signature/issuer/audience and extract the raw payload.
-        try:
-            payload = decode_jwt_payload(data.access_token)
-        except AuthenticationError:
-            # Propagate the domain error (logged by decode_jwt_payload).
-            raise
-        except Exception as e:
-            logger.warning("Password reset token validation failed: %s", e)
-            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
-
-        # 2) Enforce recovery-only usage.
-        if not _is_recovery_token(payload):
-            logger.warning(
-                "Password reset rejected — token is not recovery-scoped (sub=%s, amr=%s)",
-                payload.get("sub"),
-                payload.get("amr"),
-            )
+    def reset_password(self, data: ResetPasswordRequest) -> AuthResult:
+        """Update the caller's password using Supabase's recovery session."""
+        if not data.refresh_token:
             raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-
-        user_id = payload.get("sub")
-        if not user_id:
-            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-
-        # 3) Apply the password change via the admin client.
-        try:
-            self._db.auth.admin.update_user_by_id(user_id, {"password": data.new_password})
-        except AuthApiError as e:
-            self._handle_auth_error(
-                e,
-                "Password reset failed for user %s" % user_id,
-                ValidationError,
-                PASSWORD_RESET_FAILED,
-            )
-
-        # 4) Revoke ALL existing sessions for this user so any stolen refresh
-        # tokens (the reason the user is resetting) can no longer be used.
-        try:
-            self._db.auth.admin.sign_out(data.access_token, scope="global")
-        except AuthApiError as e:
-            # Password was already changed -- log but don't fail the request.
-            logger.warning(
-                "Failed to revoke sessions after password reset for user %s: %s",
-                user_id,
-                e.message,
-            )
-        return None
+        return self._reset_password_with_supabase_session(data)
 
     def _reset_password_with_supabase_session(self, data: ResetPasswordRequest) -> AuthResult:
         auth_client = create_client(settings.supabase_url, settings.supabase_key).auth
@@ -375,32 +347,5 @@ class AuthService:
             ),
             refresh_token=res.session.refresh_token,
         )
-
-
-def _is_recovery_token(payload: dict) -> bool:
-    """Return True if *payload* looks like a Supabase recovery token.
-
-    Supabase surfaces the recovery intent through multiple fields; we accept
-    any of them.  Keep this liberal so the check works across Supabase
-    versions, but insist on at least one explicit recovery marker — a plain
-    session token must fail.
-    """
-    # Canonical: Supabase sets email_action_type on tokens from the
-    # /auth/v1/verify?type=recovery exchange.
-    if payload.get("email_action_type") == "recovery":
-        return True
-
-    # amr = [{"method": "recovery", "timestamp": ...}, ...]
-    for entry in payload.get("amr", []) or []:
-        if isinstance(entry, dict) and entry.get("method") == "recovery":
-            return True
-
-    # Some Supabase versions stamp app_metadata.provider = "recovery".
-    app_meta = payload.get("app_metadata") or {}
-    if isinstance(app_meta, dict) and app_meta.get("provider") == "recovery":
-        return True
-
-    return False
-
 
 auth = AuthService()

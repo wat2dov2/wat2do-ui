@@ -315,7 +315,7 @@ def _fetch_new_events_added_since(
         .table(EVENTS)
         .select(
             "id,title,location,source_image_url,category,"
-            "organization,display_handle,school,added_at"
+            "organization,ig_handle,school,added_at"
         )
         .gt("added_at", ensure_aware_utc(start_utc).isoformat())
         .lte("added_at", ensure_aware_utc(end_utc).isoformat())

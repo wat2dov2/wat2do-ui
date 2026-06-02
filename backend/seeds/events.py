@@ -38,8 +38,13 @@ SEED_EVENTS = [
         "title": "UWMUN Events",
         "description": "UWMUN is back for the winter term!",
         "location": "HH 138",
-        "dtstart_utc": _to_iso(datetime(2026, 1, 27, 23, 0, tzinfo=timezone.utc)),
-        "dtend_utc": _to_iso(datetime(2026, 1, 28, 1, 30, tzinfo=timezone.utc)),
+        "occurrences": [
+            {
+                "dtstart_utc": _to_iso(datetime(2026, 1, 27, 23, 0, tzinfo=timezone.utc)),
+                "dtend_utc": _to_iso(datetime(2026, 1, 28, 1, 30, tzinfo=timezone.utc)),
+                "tz": "UTC",
+            }
+        ],
         "registration": False,
         "club_type": "WUSA",
         "school": "University of Waterloo",
@@ -53,8 +58,13 @@ SEED_EVENTS = [
         "title": "Board Game Night",
         "description": "Join us for board games and snacks!",
         "location": "SLC Great Hall",
-        "dtstart_utc": _to_iso(datetime(2026, 2, 5, 0, 0, tzinfo=timezone.utc)),
-        "dtend_utc": _to_iso(datetime(2026, 2, 5, 3, 0, tzinfo=timezone.utc)),
+        "occurrences": [
+            {
+                "dtstart_utc": _to_iso(datetime(2026, 2, 5, 0, 0, tzinfo=timezone.utc)),
+                "dtend_utc": _to_iso(datetime(2026, 2, 5, 3, 0, tzinfo=timezone.utc)),
+                "tz": "UTC",
+            }
+        ],
         "food": ["pizza", "chips"],
         "price": 0,
         "registration": False,
@@ -69,8 +79,13 @@ SEED_EVENTS = [
         "title": "Tech Career Fair",
         "description": "Meet top tech employers recruiting UW students.",
         "location": "DC 1351",
-        "dtstart_utc": _to_iso(datetime(2026, 3, 12, 14, 0, tzinfo=timezone.utc)),
-        "dtend_utc": _to_iso(datetime(2026, 3, 12, 18, 0, tzinfo=timezone.utc)),
+        "occurrences": [
+            {
+                "dtstart_utc": _to_iso(datetime(2026, 3, 12, 14, 0, tzinfo=timezone.utc)),
+                "dtend_utc": _to_iso(datetime(2026, 3, 12, 18, 0, tzinfo=timezone.utc)),
+                "tz": "UTC",
+            }
+        ],
         "registration": True,
         "club_type": "University",
         "school": "University of Waterloo",
@@ -92,8 +107,13 @@ for i in range(4, 31):
             "location": ["SLC Great Hall", "DC 1351", "HH 138", "PAC Gym", "E7 Atrium"][
                 (i - 4) % 5
             ],
-            "dtstart_utc": _to_iso(start),
-            "dtend_utc": _to_iso(end),
+            "occurrences": [
+                {
+                    "dtstart_utc": _to_iso(start),
+                    "dtend_utc": _to_iso(end),
+                    "tz": "UTC",
+                }
+            ],
             "registration": (i % 3 == 0),
             "club_type": "WUSA" if "UW" in org else "University",
             "school": "University of Waterloo",
@@ -122,22 +142,20 @@ def seed():
         if r.data and len(r.data) > 0:
             continue
 
-        # Pull dates out of the events dict — after migration
-        # 20260428031741 they live in event_dates.
         payload = dict(data)
-        dtstart = payload.pop("dtstart_utc", None)
-        dtend = payload.pop("dtend_utc", None)
+        occurrences = payload.pop("occurrences", [])
 
         inserted = sb.table(EVENTS).insert(payload).execute()
         if not inserted.data:
             continue
         new_id = inserted.data[0]["id"]
-        if dtstart:
+        for occ in occurrences:
             sb.table(EVENT_DATES).insert(
                 {
                     "event_id": new_id,
-                    "dtstart_utc": dtstart,
-                    "dtend_utc": dtend,
+                    "dtstart_utc": occ["dtstart_utc"],
+                    "dtend_utc": occ["dtend_utc"],
+                    "tz": occ.get("tz", "UTC"),
                 }
             ).execute()
         created += 1

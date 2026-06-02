@@ -27,7 +27,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   // Subscribe to the same reactive auth snapshot the rest of the app reads
   // so role demotion / logout / silent-refresh updates propagate to both the
   // route gate and the TopNav button in a single render tick.
-  const { isAuthenticated: authed, role, hasClub } = useAuthState();
+  const { isAuthenticated: authed, role, hasClub, userEmail } = useAuthState();
 
   // For admin routes, ensure the cached role is fresh (<5 min old) before
   // rendering admin chunks. Demoted-admin attacks / stale role leaks are
@@ -58,6 +58,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }, [needsFreshRole]);
 
   if (!authed) {
+    if (userEmail !== null) {
+      return <LoadingPage />;
+    }
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 

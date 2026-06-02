@@ -158,7 +158,7 @@ export function EventCard({
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
           {/* Background - lazy loaded image with fallback */}
           <LazyImage
-            src={event.imageUrl || event.source_image_url}
+            src={event.source_image_url ?? undefined}
             alt={event.title}
             className="absolute inset-0 w-full h-full"
             fallback={
@@ -294,7 +294,7 @@ export function EventCard({
           <BadgeMask variant="bottom-left">
             <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
               <span className="truncate max-w-[128px]">
-                {event.organization || event.display_handle || ''}
+                {event.organization || ""}
               </span>
             </span>
           </BadgeMask>

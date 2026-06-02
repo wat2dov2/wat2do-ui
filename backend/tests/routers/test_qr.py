@@ -9,10 +9,32 @@ from fastapi.testclient import TestClient
 from core.constants import ROLE_ADMIN
 from core.rate_limit import qr_scan_rate_limiter
 from main import app
+from schemas.club import ClubResponse
 from schemas.qr_code import QrCodeRedirect, QrCodeResponse
 from schemas.user import UserResponse
-from services import qr_code_service
+from services import club_service, qr_code_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
+
+
+@pytest.fixture(autouse=True)
+def mock_list_clubs(monkeypatch):
+    """By default, users own no clubs."""
+    mock = MagicMock(return_value=[])
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", mock)
+    return mock
+
+
+@pytest.fixture
+def club_owner_client(authenticated_client, monkeypatch):
+    """Client authenticated as a standard user who owns a club."""
+    mock_club = ClubResponse(
+        id=123,
+        club_name="Test Club",
+        club_type="tech",
+        created_by=FAKE_USER["id"],
+    )
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", MagicMock(return_value=[mock_club]))
+    return authenticated_client
 
 
 def _mock_qr(**overrides) -> QrCodeResponse:
@@ -151,11 +173,7 @@ def test_resolve_inactive_qr_with_location_activates_and_returns_config(client):
 
 
 def test_create_poster_sets_created_by(admin_client, monkeypatch):
-    """create_poster overrides created_by with the authenticated admin's ID.
-
-    QR creation is admin-only (Phase 4 lockdown); the trusted ``created_by``
-    is the admin's internal id regardless of what the request body says.
-    """
+    """create_poster stamps created_by from the authenticated admin."""
     qr = _mock_qr()
     mock_create = MagicMock(return_value=qr)
     monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
@@ -166,12 +184,27 @@ def test_create_poster_sets_created_by(admin_client, monkeypatch):
             "id": "test-qr",
             "name": "Test",
             "destination_type": "custom-url",
-            "created_by": "attacker-id",  # should be overridden
         },
     )
     assert resp.status_code == 201
     _, kwargs = mock_create.call_args
     assert kwargs["created_by"] == ADMIN_USER["id"]
+
+
+@pytest.mark.parametrize("field,value", [("created_by", "attacker-id"), ("is_active", True)])
+def test_create_poster_rejects_server_owned_fields(admin_client, field, value):
+    """Server-owned fields are rejected instead of silently ignored."""
+    payload = {
+        "id": f"stale-client-qr-{field}",
+        "name": "Stale Client",
+        "destination_type": "custom-url",
+        field: value,
+    }
+    resp = admin_client.post(
+        "/qr/",
+        json=payload,
+    )
+    assert resp.status_code == 422
 
 
 # ── URL validation for custom-url destination type ─────────────────────
@@ -186,7 +219,6 @@ def test_create_poster_rejects_javascript_url(admin_client):
             "name": "XSS",
             "destination_type": "custom-url",
             "destination_id": "javascript:alert(1)",
-            "created_by": FAKE_USER["id"],
         },
     )
     assert resp.status_code == 422
@@ -201,7 +233,6 @@ def test_create_poster_rejects_data_url(admin_client):
             "name": "Data",
             "destination_type": "custom-url",
             "destination_id": "data:text/html,<script>alert(1)</script>",
-            "created_by": FAKE_USER["id"],
         },
     )
     assert resp.status_code == 422
@@ -220,7 +251,6 @@ def test_create_poster_accepts_https_url(admin_client, monkeypatch):
             "name": "Safe",
             "destination_type": "custom-url",
             "destination_id": "https://example.com",
-            "created_by": FAKE_USER["id"],
         },
     )
     assert resp.status_code == 201
@@ -238,7 +268,6 @@ def test_update_poster_rejects_javascript_url(admin_client, monkeypatch):
             "name": "Hacked",
             "destination_type": "custom-url",
             "destination_id": "javascript:alert(document.cookie)",
-            "created_by": FAKE_USER["id"],
         },
     )
     assert resp.status_code == 422
@@ -257,7 +286,6 @@ def test_create_poster_allows_custom_url_without_destination_id(admin_client, mo
             "name": "No URL",
             "destination_type": "custom-url",
             "destination_id": None,
-            "created_by": FAKE_USER["id"],
         },
     )
     assert resp.status_code == 201
@@ -375,7 +403,6 @@ def test_update_poster_non_admin_rejected(authenticated_client, monkeypatch):
             "id": "test-qr",
             "name": "Nope",
             "destination_type": "custom-url",
-            "created_by": FAKE_USER["id"],
         },
     )
     assert resp.status_code == 403
@@ -506,7 +533,6 @@ def test_update_poster_admin_allowed(admin_client, monkeypatch):
             "id": "test-qr",
             "name": "Updated Name",
             "destination_type": "custom-url",
-            "created_by": FAKE_USER["id"],
         },
     )
     assert resp.status_code == 200
@@ -535,7 +561,6 @@ def test_admin_can_update_non_owned_qr(admin_client, monkeypatch):
             "id": "test-qr",
             "name": "Admin Fix",
             "destination_type": "custom-url",
-            "created_by": OTHER_USER["id"],
         },
     )
     assert resp.status_code == 200
@@ -607,3 +632,107 @@ def test_qr_scan_rate_limit_allows_within_limit(client):
     finally:
         qr_code_service.get_qr_code_by_id = original_get
         qr_code_service.record_scan = original_record
+
+
+# ── Club Owner authorization and filter tests ──────────────────────────
+
+
+def test_club_owner_can_list_own_qr_codes(club_owner_client, monkeypatch):
+    """Club owner can list their own QR codes, which applies created_by filter."""
+    my_qr = _mock_qr(id="my-qr", created_by=FAKE_USER["id"])
+    mock_list = MagicMock(return_value=([my_qr], 1))
+    monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
+
+    resp = club_owner_client.get("/qr/")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["items"]) == 1
+    assert body["items"][0]["id"] == "my-qr"
+
+    _, kwargs = mock_list.call_args
+    assert kwargs["created_by"] == FAKE_USER["id"]
+
+
+def test_club_owner_can_list_own_scans(club_owner_client, monkeypatch):
+    """Club owner can list scans, which applies owned_by filter."""
+    mock_list = MagicMock(return_value=([], 0))
+    monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
+
+    resp = club_owner_client.get("/qr/scans")
+    assert resp.status_code == 200
+
+    _, kwargs = mock_list.call_args
+    assert kwargs["owned_by"] == FAKE_USER["id"]
+
+
+def test_club_owner_can_create_poster(club_owner_client, monkeypatch):
+    """Club owner can create a QR code, which enforces created_by as their id."""
+    qr = _mock_qr(created_by=FAKE_USER["id"])
+    mock_create = MagicMock(return_value=qr)
+    monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
+
+    resp = club_owner_client.post(
+        "/qr/",
+        json={
+            "id": "new-qr",
+            "name": "New QR",
+            "destination_type": "custom-url",
+        },
+    )
+    assert resp.status_code == 201
+    _, kwargs = mock_create.call_args
+    assert kwargs["created_by"] == FAKE_USER["id"]
+
+
+def test_club_owner_can_update_own_poster(club_owner_client, monkeypatch):
+    """Club owner can update a poster they created."""
+    existing = _mock_qr(id="my-qr", created_by=FAKE_USER["id"])
+    updated = _mock_qr(id="my-qr", name="Updated", created_by=FAKE_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+    monkeypatch.setattr(qr_code_service, "update_qr_code", MagicMock(return_value=updated))
+
+    resp = club_owner_client.patch(
+        "/qr/my-qr",
+        json={
+            "id": "my-qr",
+            "name": "Updated",
+            "destination_type": "custom-url",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Updated"
+
+
+def test_club_owner_cannot_update_other_poster(club_owner_client, monkeypatch):
+    """Club owner cannot update a poster created by another user."""
+    existing = _mock_qr(id="other-qr", created_by=OTHER_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+
+    resp = club_owner_client.patch(
+        "/qr/other-qr",
+        json={
+            "id": "other-qr",
+            "name": "Hack Attempt",
+            "destination_type": "custom-url",
+        },
+    )
+    assert resp.status_code == 403
+
+
+def test_club_owner_can_delete_own_poster(club_owner_client, monkeypatch):
+    """Club owner can delete their own poster."""
+    existing = _mock_qr(id="my-qr", created_by=FAKE_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+    monkeypatch.setattr(qr_code_service, "delete_qr_code", MagicMock())
+
+    resp = club_owner_client.delete("/qr/my-qr")
+    assert resp.status_code == 204
+
+
+def test_club_owner_cannot_delete_other_poster(club_owner_client, monkeypatch):
+    """Club owner cannot delete a poster created by another user."""
+    existing = _mock_qr(id="other-qr", created_by=OTHER_USER["id"])
+    monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
+
+    resp = club_owner_client.delete("/qr/other-qr")
+    assert resp.status_code == 403

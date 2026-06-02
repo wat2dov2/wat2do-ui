@@ -7,24 +7,11 @@ import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
  */
 
 /**
- * Derive a canonical category from club_type when category is missing.
- * This keeps list views and edit forms consistent.
- */
-function deriveCategoryFromClubType(clubType?: string): string {
-  const mapping: Record<string, string> = {
-    WUSA: "Games",
-    Athletics: "Athletics",
-    "Student Society": "Academics",
-  };
-  return clubType ? (mapping[clubType] || DEFAULT_EVENT_CATEGORY) : DEFAULT_EVENT_CATEGORY;
-}
-
-/**
  * Normalize an event's category to a value we can show in selects/badges.
- * Prefers explicit category; falls back to club_type-derived category.
+ * Prefers explicit category; falls back to default.
  */
-export function getEventCategory(event: Pick<Event, "category" | "club_type">): string {
-  return event.category || deriveCategoryFromClubType(event.club_type);
+export function getEventCategory(event: Pick<Event, "category">): string {
+  return event.category || DEFAULT_EVENT_CATEGORY;
 }
 
 function toLocalDateTimeInput(value: string): string {
@@ -43,6 +30,7 @@ function eventOccurrencesToFormOccurrences(event: Event): EventFormOccurrence[] 
  */
 export function eventToFormData(event: Event): EventFormData {
   return {
+    club_id: event.club_id,
     title: event.title,
     description: event.description || "",
     occurrences: eventOccurrencesToFormOccurrences(event),
@@ -50,8 +38,9 @@ export function eventToFormData(event: Event): EventFormData {
     category: getEventCategory(event),
     price: event.price ?? 0,
     food: event.food || [],
-    requiresRegistration: event.registration ?? false,
+    registration: event.registration ?? false,
     organization: event.organization || "",
+    school: event.school ?? "",
   };
 }
 
@@ -73,7 +62,6 @@ export function getUniqueEvents(events: Event[]): Event[] {
 /**
  * Category translation keys.
  * Matches onboarding "What kind of events are you into?" (EVENT_CATEGORIES).
- * Legacy keys support existing data that may use old category names.
  */
 const CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
   Academics: "categories.academics",
@@ -98,19 +86,6 @@ const CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
   Sports: "categories.sports",
   Food: "categories.food",
   Volunteering: "categories.volunteering",
-  Events: "categories.events",
-  // Legacy (old data)
-  Clubs: "categories.clubs",
-  Academic: "categories.academics",
-  Religious: "categories.religion",
-  Cultural: "categories.culture",
-  "Social & Games": "categories.games",
-  "Sports & Fitness": "categories.sports",
-  "Career & Networking": "categories.career",
-  "Creative Arts": "categories.art",
-  "Arts & Crafts": "categories.art",
-  "Health & Wellness": "categories.health",
-  "Music & Performance": "categories.music",
 };
 
 /**
@@ -182,17 +157,6 @@ export function getCategoryClasses(category: string): CategoryClasses {
     Food: academic,
     Volunteering: entrepreneurship,
     Events: categoryStyle("bg-category-events-bg", "text-category-events-text", "border-category-events-text/25"),
-    Clubs: categoryStyle("bg-category-clubs-bg", "text-category-clubs-text", "border-category-clubs-text/25"),
-    Academic: academic,
-    Religious: religious,
-    Cultural: cultural,
-    "Social & Games": social,
-    "Sports & Fitness": sports,
-    "Career & Networking": career,
-    "Creative Arts": arts,
-    "Arts & Crafts": arts,
-    "Health & Wellness": health,
-    "Music & Performance": music,
   };
   return mapping[category] || DEFAULT_CATEGORY_STYLE;
 }

@@ -52,17 +52,14 @@ class QrCodeRedirect(BaseModel):
 
 
 class QrCodeCreate(BaseModel):
-    """Payload to create or upsert a QR code (after first scan or dashboard edit).
+    """Payload to create or update a QR code.
 
-    Note on ``is_active`` and ``created_by`` (audit S4): ``is_active`` is
-    accepted for backward compatibility with existing frontend clients
-    but **ignored** — the service always starts inserts at ``is_active=False``
-    (see ``qr_code_service._build_qr_payload``).  ``created_by`` is not
-    modelled here; the service sets it from the authenticated user's ID.
-    ``extra="ignore"`` (the default) is left in place so client-supplied
-    ``created_by`` values are silently dropped rather than 422'ing clients
-    that still send them.
+    Server-owned fields such as ``created_by`` and ``is_active`` are not
+    accepted from clients. New posters always start inactive and are activated
+    by their first scan.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # ``id`` is an opaque slug used as both the DB primary key and the URL
     # path segment in ``GET /qr/{id}``.  Restricting to URL-safe characters
@@ -82,8 +79,6 @@ class QrCodeCreate(BaseModel):
     # URL can't carry a 10 MB payload.
     destination_id: str | int | None = Field(default=None)
     filters: dict | list | None = None
-    # is_active is client-settable but service-ignored (see class docstring).
-    is_active: bool = True
     image_url: str | None = Field(default=None, max_length=_MAX_QR_IMAGE_URL_LENGTH)
     # Latitude/longitude bounded to the valid geographic ranges.  Matches
     # the ``ge/le`` guards already applied to the scan-time query params

@@ -21,6 +21,8 @@ export const ROUTES = {
   CLUBS: "/clubs",
   SETTINGS: "/settings",
   MARKETING: "/marketing",
+  INVITE: "/invite/:token",
+
 
   // Admin
   ADMIN: "/admin",

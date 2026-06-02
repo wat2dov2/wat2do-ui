@@ -60,8 +60,9 @@ function toEventFormData(eventData: ApiEventCreate): EventFormData {
     category: eventData.category ?? DEFAULT_EVENT_CATEGORY,
     price: eventData.price ?? 0,
     food: eventData.food ?? [],
-    requiresRegistration: eventData.registration,
+    registration: eventData.registration,
     organization: eventData.organization,
+    school: eventData.school ?? "",
   };
 }
 

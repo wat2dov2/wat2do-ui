@@ -10,14 +10,17 @@ from postgrest.exceptions import APIError
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
 from core.sanitize import sanitize_postgrest_value
-from core.tables import CLUB_INTEGRATIONS, CLUBS
+from core.tables import CLUB_INTEGRATIONS, CLUBS, CLUB_MEMBERS, CLUB_INVITATIONS
 from schemas.club import (
     ClubCreate,
     ClubIntegrationResponse,
     ClubResponse,
     ClubUpdate,
     IntegrationPlatform,
+    ClubMemberResponse,
 )
+from core.exceptions import NotFoundError, ConflictError, ValidationError
+from uuid import UUID
 
 
 def _normalize_club_name(name: str | None) -> str:
@@ -25,54 +28,135 @@ def _normalize_club_name(name: str | None) -> str:
 
 
 def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
-    """Return all clubs created by the given Supabase auth user id."""
-    r = get_sb().table(CLUBS).select("*").eq("created_by", owner_id).execute()
-    return [ClubResponse.model_validate(c) for c in (r.data or [])]
+    """Return all clubs where the user is a member/manager."""
+    clubs_dict = {}
+
+    # Query via club_members junction table
+    try:
+        r_members = (
+            get_sb()
+            .table(CLUB_MEMBERS)
+            .select("clubs(*)")
+            .eq("user_id", owner_id)
+            .execute()
+        )
+        for row in (r_members.data or []):
+            if row.get("clubs"):
+                club = ClubResponse.model_validate(row["clubs"])
+                clubs_dict[club.id] = club
+    except Exception as e:
+        log.warning("Failed to query club_members for owner_id %s: %s", owner_id, e)
+
+    return list(clubs_dict.values())
 
 
-def user_owns_club_named(owner_id: str, club_name: str | None) -> bool:
-    """Return whether a user owns the club attached to an event organization.
+def is_club_member(club_id: int, user_id: str) -> bool:
+    """Return whether a user is a member of the club."""
+    try:
+        r = (
+            get_sb()
+            .table(CLUB_MEMBERS)
+            .select("id")
+            .eq("club_id", club_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        if r.data:
+            return True
+    except Exception as e:
+        log.warning("Failed to query club_members in is_club_member: %s", e)
 
-    Kept for promotion compatibility while callers migrate toward ``club_id``.
-    """
-    normalized = _normalize_club_name(club_name)
-    if not normalized:
-        return False
-    return any(
-        _normalize_club_name(club.club_name) == normalized for club in list_clubs_by_owner(owner_id)
+    return False
+
+
+def list_club_members(club_id: int) -> list[ClubMemberResponse]:
+    """Return all members/managers of the club."""
+    r = (
+        get_sb()
+        .table(CLUB_MEMBERS)
+        .select("joined_at, users(*)")
+        .eq("club_id", club_id)
+        .execute()
+    )
+    members = []
+    club = get_club(club_id)
+    if not club:
+        return []
+
+    for row in (r.data or []):
+        u_data = row.get("users")
+        if not u_data:
+            continue
+        u_id = u_data["id"]
+
+        members.append(
+            ClubMemberResponse(
+                user_id=UUID(u_id),
+                email=u_data["email"],
+                username=u_data.get("username"),
+                full_name=u_data.get("full_name"),
+                avatar_url=u_data.get("avatar_url"),
+                role="Member",
+                joined_at=datetime.fromisoformat(row["joined_at"]),
+            )
+        )
+
+    return members
+
+
+def add_club_member(club_id: int, user_id: UUID) -> ClubMemberResponse:
+    """Add a user as a member of the club."""
+    from services import user_service
+    user = user_service.get_user(user_id)
+    if not user:
+        raise NotFoundError("User not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+    payload = {
+        "club_id": club_id,
+        "user_id": str(user_id),
+        "joined_at": now,
+    }
+
+    try:
+        r = get_sb().table(CLUB_MEMBERS).insert(payload).execute()
+    except APIError as e:
+        if e.code == "23505":
+            raise ConflictError("User is already a member of this club")
+        raise
+
+    if not r.data:
+        raise APIError("Failed to add club member")
+
+    inserted = r.data[0]
+    return ClubMemberResponse(
+        user_id=user_id,
+        email=user.email,
+        username=user.username,
+        full_name=user.full_name,
+        avatar_url=user.avatar_url,
+        role="Member",
+        joined_at=datetime.fromisoformat(inserted["joined_at"]),
     )
 
 
-def resolve_event_club_for_owner(
-    owner_id: str,
-    *,
-    club_id: int | None = None,
-    organization: str | None = None,
-) -> ClubResponse | None:
-    """Resolve the verified club a non-admin user is creating an event for.
-
-    ``club_id`` is the canonical ownership link. ``organization`` remains a
-    compatibility fallback for older frontend payloads and multi-club owners.
-    If a user owns exactly one club, that club wins so the backend, not a form
-    text field, owns the published organization name.
-    """
-    owned_clubs = list_clubs_by_owner(owner_id)
-    if not owned_clubs:
-        return None
-
-    if club_id is not None:
-        return next((club for club in owned_clubs if club.id == club_id), None)
-
-    if len(owned_clubs) == 1:
-        return owned_clubs[0]
-
-    normalized = _normalize_club_name(organization)
-    if not normalized:
-        return None
-    return next(
-        (club for club in owned_clubs if _normalize_club_name(club.club_name) == normalized),
-        None,
+def remove_club_member(club_id: int, user_id: UUID) -> bool:
+    """Remove a user from the club's members."""
+    r = (
+        get_sb()
+        .table(CLUB_MEMBERS)
+        .delete()
+        .eq("club_id", club_id)
+        .eq("user_id", str(user_id))
+        .execute()
     )
+    return bool(r.data)
+
+
+
+
+
+
 
 
 def get_club(club_id: int) -> ClubResponse | None:
@@ -102,51 +186,21 @@ def list_clubs(
             quoted = f'"%{term}%"'
             q = q.or_(f"club_name.ilike.{quoted}")
     q = q.order("club_name").range(skip, skip + limit - 1)
-    try:
-        r = q.execute()
-        clubs = [ClubResponse.model_validate(c) for c in (r.data or [])]
-    except APIError as e:
-        if e.code == "42703" and school:
-            log.warning(
-                "Database column 'school' does not exist in 'clubs' table. "
-                "Filtering clubs in python fallback. Please run migrations."
-            )
-            # Re-run query without school filter
-            q = get_sb().table(CLUBS).select("*")
-            if club_type:
-                q = q.eq("club_type", club_type)
-            if search:
-                term = sanitize_postgrest_value(search)
-                if term:
-                    quoted = f'"%{term}%"'
-                    q = q.or_(f"club_name.ilike.{quoted}")
-            q = q.order("club_name").range(skip, skip + limit - 1)
-            r = q.execute()
-
-            raw_clubs = [ClubResponse.model_validate(c) for c in (r.data or [])]
-            default_school = "University of Waterloo"
-            clubs = [c for c in raw_clubs if (c.school or default_school) == school]
-        else:
-            raise
-    return clubs
+    r = q.execute()
+    return [ClubResponse.model_validate(c) for c in (r.data or [])]
 
 
 def create_club(data: ClubCreate, *, created_by: str) -> ClubResponse:
     payload = data.model_dump(exclude={"owner_user_id"})
     payload["created_by"] = created_by
+    r = get_sb().table(CLUBS).insert(payload).execute()
+    club = ClubResponse.model_validate(r.data[0])
+    # Auto-add the creator/owner as a member
     try:
-        r = get_sb().table(CLUBS).insert(payload).execute()
-    except APIError as e:
-        if e.code == "42703" and "school" in payload:
-            log.warning(
-                "Database column 'school' does not exist in 'clubs' table. "
-                "Retrying club creation without school column."
-            )
-            del payload["school"]
-            r = get_sb().table(CLUBS).insert(payload).execute()
-        else:
-            raise
-    return ClubResponse.model_validate(r.data[0])
+        add_club_member(club.id, UUID(created_by))
+    except Exception as e:
+        log.warning("Failed to auto-add creator %s to club members: %s", created_by, e)
+    return club
 
 
 def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
@@ -156,20 +210,7 @@ def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     payload = data.model_dump(exclude_unset=True)
     if not payload:
         return existing
-    try:
-        r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
-    except APIError as e:
-        if e.code == "42703" and "school" in payload:
-            log.warning(
-                "Database column 'school' does not exist in 'clubs' table. "
-                "Retrying club update without school column."
-            )
-            del payload["school"]
-            if not payload:
-                return existing
-            r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
-        else:
-            raise
+    r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
     return ClubResponse.model_validate(r.data[0]) if r.data else None
 
 
@@ -477,3 +518,172 @@ def disconnect_platform_integration(
     if not r.data:
         return _empty_integration_response(club_id, platform)
     return _row_to_integration_response(r.data[0])
+
+
+# --- Club Invitations Service Methods ---
+
+def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
+    """Create or renew an invitation for an email to join a club, and send the email."""
+    # 1. Verify club exists
+    club = get_club(club_id)
+    if not club:
+        raise NotFoundError("Club not found")
+
+    from services import user_service
+    inviter = user_service.get_user(invited_by)
+    if not inviter:
+        raise NotFoundError("Inviting user not found")
+
+    # 2. Restrict emails to match the inviter's school domain (except for admins)
+    if inviter.role != "admin":
+        from core.allowed_emails import get_school_for_email
+        invited_school = get_school_for_email(email)
+        if not invited_school or not inviter.school or invited_school.lower() != inviter.school.lower():
+            raise ValidationError(f"You can only invite emails matching your school domain ({inviter.school or 'Unknown'}).")
+
+    # 3. Check if already a member
+    existing_user = user_service.get_user_by_email(email)
+    if existing_user and is_club_member(club_id, str(existing_user.id)):
+        raise ConflictError("User is already a member of this club")
+
+
+    # 3. Generate token & expiry (7 days)
+    import uuid
+    from datetime import timedelta
+    token = uuid.uuid4()
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(days=7)
+
+    payload = {
+        "club_id": club_id,
+        "email": email.strip().lower(),
+        "token": str(token),
+        "invited_by": str(invited_by),
+        "status": "pending",
+        "expires_at": expires_at.isoformat(),
+        "created_at": now.isoformat(),
+    }
+
+    try:
+        # Upsert: if an invite for (club_id, email) already exists, overwrite it.
+        r = (
+            get_sb()
+            .table(CLUB_INVITATIONS)
+            .upsert(payload, on_conflict="club_id,email")
+            .execute()
+        )
+        if not r.data:
+            raise APIError("Failed to create invitation")
+        invitation = r.data[0]
+    except Exception as e:
+        log.error("Failed to create/upsert invitation: %s", e)
+        raise
+
+    # 4. Dispatch the invitation email
+    try:
+        from services.email_service import email_service, EmailMessage
+        from core.config import settings
+        invite_url = f"{settings.frontend_url}/invite/{token}"
+        subject = f"Invitation to manage {club.club_name} on Wat2Do"
+        body_html = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <h2 style="color: #3b82f6;">You're Invited!</h2>
+          <p>You have been invited to join the management team of <strong>{club.club_name}</strong> on Wat2Do.</p>
+          <p>Click the button below to accept the invitation and get access to the club panel:</p>
+          <div style="margin: 30px 0;">
+            <a href="{invite_url}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Accept Invitation</a>
+          </div>
+          <p style="font-size: 12px; color: #64748b;">This invitation link will expire in 7 days. If you did not expect this invitation, you can safely ignore this email.</p>
+        </div>
+        """
+        body_text = f"You have been invited to join the management team of {club.club_name} on Wat2Do. Click the link to accept: {invite_url}"
+        msg = EmailMessage(to=email, subject=subject, body_html=body_html, body_text=body_text)
+        email_service.send(msg)
+    except Exception as e:
+        log.warning("Failed to send invitation email: %s", e)
+
+    return invitation
+
+
+def list_invitations(club_id: int) -> list[dict]:
+    """List all pending, non-expired invitations for a club."""
+    now = datetime.now(timezone.utc).isoformat()
+    r = (
+        get_sb()
+        .table(CLUB_INVITATIONS)
+        .select("*")
+        .eq("club_id", club_id)
+        .eq("status", "pending")
+        .gt("expires_at", now)
+        .execute()
+    )
+    return r.data or []
+
+
+def revoke_invitation(club_id: int, invitation_id: str) -> bool:
+    """Revoke (delete) a pending invitation."""
+    r = (
+        get_sb()
+        .table(CLUB_INVITATIONS)
+        .delete()
+        .eq("club_id", club_id)
+        .eq("id", invitation_id)
+        .execute()
+    )
+    return bool(r.data)
+
+
+def get_invitation_by_token(token: str) -> dict:
+    """Retrieve public invitation details by token. Raises NotFoundError if invalid/expired."""
+    now = datetime.now(timezone.utc).isoformat()
+    r = (
+        get_sb()
+        .table(CLUB_INVITATIONS)
+        .select("*, clubs(club_name)")
+        .eq("token", token)
+        .eq("status", "pending")
+        .gt("expires_at", now)
+        .execute()
+    )
+    if not r.data:
+        raise NotFoundError("Invitation not found or has expired")
+    
+    inv = r.data[0]
+    club_name = inv.get("clubs", {}).get("club_name", "Unknown Club")
+    return {
+        "club_name": club_name,
+        "email": inv["email"],
+        "expires_at": inv["expires_at"],
+    }
+
+
+def accept_invitation(token: str, user_id: UUID) -> bool:
+    """Accept an invitation by token and add the user to the club."""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # 1. Fetch and validate invitation
+    r = (
+        get_sb()
+        .table(CLUB_INVITATIONS)
+        .select("*")
+        .eq("token", token)
+        .eq("status", "pending")
+        .gt("expires_at", now)
+        .execute()
+    )
+    if not r.data:
+        raise NotFoundError("Invitation not found or has expired")
+    
+    inv = r.data[0]
+    club_id = inv["club_id"]
+    
+    # 2. Add user to club members
+    try:
+        add_club_member(club_id, user_id)
+    except ConflictError:
+        pass
+    
+    # 3. Mark invitation as accepted
+    get_sb().table(CLUB_INVITATIONS).update({"status": "accepted"}).eq("id", inv["id"]).execute()
+    return True
+

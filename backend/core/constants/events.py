@@ -41,16 +41,3 @@ INTEREST_TO_CATEGORIES: dict[str, list[str]] = {
     "Cultural": ["Culture", "Religion", "Advocacy"],
 }
 
-CATEGORY_NORMALIZE_MAP = {
-    "Academic": "Academics",
-    "Clubs": "Academics",
-    "Religious": "Religion",
-    "Cultural": "Culture",
-    "Social & Games": "Games",
-    "Sports & Fitness": "Sports",
-    "Career & Networking": "Career",
-    "Creative Arts": "Art",
-    "Arts & Crafts": "Art",
-    "Health & Wellness": "Health",
-    "Music & Performance": "Music",
-}

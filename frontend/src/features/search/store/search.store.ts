@@ -24,7 +24,7 @@ interface FilterValues {
   selectedFoods: string[];
   selectedDays: string[];
   priceRange: { min: string; max: string };
-  requiresRegistration: boolean;
+  registration: boolean;
   freeFoodFilter: boolean;
   savedFilter: boolean;
 }
@@ -43,7 +43,7 @@ interface SearchStoreState extends FilterValues {
   setSelectedFoods: (value: string[]) => void;
   setSelectedDays: (value: string[]) => void;
   setPriceRange: (value: { min: string; max: string }) => void;
-  setRequiresRegistration: (value: boolean) => void;
+  setRegistration: (value: boolean) => void;
   setFreeFoodFilter: (value: boolean) => void;
   setSavedFilter: (value: boolean) => void;
 
@@ -62,7 +62,7 @@ const emptyFilters: FilterValues = {
   selectedFoods: [],
   selectedDays: [],
   priceRange: { min: "", max: "" },
-  requiresRegistration: false,
+  registration: false,
   freeFoodFilter: false,
   savedFilter: false,
 };
@@ -77,7 +77,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
   setSelectedFoods: (value) => set({ selectedFoods: value }),
   setSelectedDays: (value) => set({ selectedDays: value }),
   setPriceRange: (value) => set({ priceRange: value }),
-  setRequiresRegistration: (value) => set({ requiresRegistration: value }),
+  setRegistration: (value) => set({ registration: value }),
   setFreeFoodFilter: (value) => set({ freeFoodFilter: value }),
   setSavedFilter: (value) => set({ savedFilter: value }),
 
@@ -103,7 +103,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       selectedFoods: Array.isArray(filters.foods) ? filters.foods : [],
       selectedDays: Array.isArray(filters.days) ? filters.days : [],
       priceRange: filters.priceRange || { min: "", max: "" },
-      requiresRegistration: filters.requiresRegistration || false,
+      registration: filters.registration || false,
       freeFoodFilter: false,
       savedFilter: false,
     }),
@@ -111,3 +111,10 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
   // command-palette and dropdown paths share this one implementation.
   clearAllFilters: () => startTransition(() => set(emptyFilters)),
 }));
+
+// Listening to auth broadcasts
+if (typeof window !== "undefined") {
+  window.addEventListener("auth-user-logout", () => {
+    useSearchStore.getState().clearAllFilters();
+  });
+}

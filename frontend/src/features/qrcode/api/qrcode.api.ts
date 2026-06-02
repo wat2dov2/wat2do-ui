@@ -4,7 +4,7 @@
  */
 
 import type { ApiQrCodeRedirect } from "@/shared/generated";
-import { api, ApiError } from "@/shared/services/apiClient";
+import { api, isApiError } from "@/shared/services/apiClient";
 import { isSafeUrl } from "@/shared/utils/url";
 import { ROUTES } from "@/shared/constants/routes";
 
@@ -20,7 +20,7 @@ export async function fetchQrRedirectFromBackend(qrCodeId: string): Promise<QrRe
     const data = await api.get<QrRedirectConfig>(`/qr/${encodeURIComponent(qrCodeId)}`);
     return data;
   } catch (err) {
-    if (err instanceof ApiError) {
+    if (isApiError(err)) {
       // Backend returns 400 {"detail": "requires_location"} when the poster
       // is inactive and needs geolocation to activate. Match this precisely
       // so unrelated 400s still bubble up as errors.

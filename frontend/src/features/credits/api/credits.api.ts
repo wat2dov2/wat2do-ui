@@ -9,6 +9,7 @@ import {
   createPromotionAPI,
   fetchActivePromotedEventIds,
 } from "@/features/credits/api/creditsRepository";
+import { isApiError } from "@/shared/services/apiClient";
 
 // ── Credits ─────────────────────────────────────────────────────────
 
@@ -53,15 +54,20 @@ export async function promoteEventAPI(
     // Prefer the stable ``code`` attached to the error body over a
     // substring match on ``detail``.  Fall back to the old substring check
     // only if ``code`` is absent (handlers on old backend builds).
-    const body = (err as { body?: { code?: string; detail?: string } }).body;
-    const code = body?.code;
-    const detail = body?.detail ?? (err as { message?: string }).message ?? "";
-    if (code === INSUFFICIENT_CREDITS_CODE || detail.includes("Insufficient credits")) {
-      // Insufficient credits is a routing hint (open BuyCreditsModal),
-      // not an unexpected error — log at info so Sentry / console aren't
-      // spammed with false-positive errors.
-      console.info("Promotion blocked by insufficient credits; prompting purchase.");
-      return { success: false, needsCredits: true };
+    if (isApiError(err)) {
+      const body = err.body as { code?: string; detail?: string } | null;
+      const code = body?.code;
+      const detail = body?.detail ?? err.message;
+      if (code === INSUFFICIENT_CREDITS_CODE || detail.includes("Insufficient credits")) {
+        console.info("Promotion blocked by insufficient credits; prompting purchase.");
+        return { success: false, needsCredits: true };
+      }
+    } else {
+      const detail = (err as { message?: string }).message ?? "";
+      if (detail.includes("Insufficient credits")) {
+        console.info("Promotion blocked by insufficient credits; prompting purchase.");
+        return { success: false, needsCredits: true };
+      }
     }
     console.error("Failed to create promotion:", err);
     throw err;

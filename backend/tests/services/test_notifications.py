@@ -1,4 +1,4 @@
-"""Service-level tests for the split notifications service.
+"""Service-level tests for the notifications package.
 
 Covers the pieces router tests can't reach:
 - Preference resolution (default fallback, explicit rows).
@@ -50,7 +50,7 @@ def _user(**overrides) -> dict:
 
 
 def test_is_enabled_missing_row_returns_default(fake_sb, patch_sb):
-    """No row in prefs table → code default (True for all v1 types)."""
+    """No row in prefs table uses the current code defaults."""
     patch_sb("services.notifications.preferences")
     fake_sb.set_response(data=[])
 
@@ -171,10 +171,9 @@ def test_enqueue_event_change_empty_diff_noop():
 
 
 # ---------------------------------------------------------------------------
-# Occurrence-list diff rendering — the v1-style EventDates port produces a
-# single ``occurrences`` field in the diff whose old/new values are full
-# lists of occurrence dicts. Rendering must produce a human-readable bullet
-# list, not the raw Python repr.
+# Occurrence-list diff rendering: ``occurrences`` carries full old/new lists
+# of occurrence dicts. Rendering must produce a human-readable bullet list,
+# not the raw Python repr.
 # ---------------------------------------------------------------------------
 
 

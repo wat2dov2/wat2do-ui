@@ -24,8 +24,7 @@ WorkflowRunStatus = Literal[
     WORKFLOW_RUN_NO_POSTS,
 ]
 
-# Single-source-of-truth limits for the textual columns. Mirror the
-# VARCHAR widths v1 used so we keep parity if anyone backfills from v1.
+# Single-source-of-truth limits for the workflow_runs textual columns.
 _MAX_USERNAME_LENGTH = 100
 _MAX_GITHUB_RUN_ID_LENGTH = 50
 _MAX_ERROR_MESSAGE_LENGTH = 4000

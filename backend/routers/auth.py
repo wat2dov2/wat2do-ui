@@ -22,7 +22,7 @@ from schemas.auth import (
     SignupResponse,
     TokenResponse,
 )
-from services.auth_service import AuthResult, auth
+from services.auth_service import auth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -226,17 +226,13 @@ def forgot_password(
     return MessageResponse(message="If that email exists, a reset link has been sent")
 
 
-@router.post("/reset-password", response_model=TokenResponse | MessageResponse)
+@router.post("/reset-password", response_model=TokenResponse)
 def reset_password(
     data: ResetPasswordRequest,
     response: Response,
     _rl: None = Depends(reset_password_rate_limiter.ip_dependency()),
 ):
     result = auth.reset_password(data)
-    if isinstance(result, AuthResult) and result.refresh_token:
+    if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token)
-        return result.body
-
-    # Legacy recovery JWT path cannot mint an app refresh cookie.
-    _clear_refresh_cookie(response)
-    return MessageResponse(message="Password updated successfully")
+    return result.body

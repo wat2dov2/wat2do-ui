@@ -8,7 +8,6 @@
 
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
-import type { Event } from "@/shared/types";
 import { useNavigate } from "react-router-dom";
 import { ROUTES, CLUB_PANEL_ROUTE_MAP, type ClubPanelRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -26,11 +25,6 @@ const ClubPanelIntegrationsPage = lazy(() =>
 const ClubPanelMembersPage = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanelMembersPage }))
 );
-
-interface ClubPanelPostersRouteConfig {
-  events: Event[];
-  userEmail: string | null;
-}
 
 /**
  * Club panel navigation handler
@@ -71,7 +65,7 @@ export function ClubPanelRoute() {
 /**
  * Club Panel Posters Route Component
  */
-export function ClubPanelPostersRoute({ config }: { config: ClubPanelPostersRouteConfig }) {
+export function ClubPanelPostersRoute() {
   const navigate = useNavigate();
 
   const onBack = useCallback(() => navigate(ROUTES.CLUB_PANEL), [navigate]);
@@ -79,9 +73,7 @@ export function ClubPanelPostersRoute({ config }: { config: ClubPanelPostersRout
   return (
     <ClubPanelSuspense>
       <ClubPanelPostersPage
-        events={config.events}
         onBack={onBack}
-        userEmail={config.userEmail || ""}
       />
     </ClubPanelSuspense>
   );

@@ -22,6 +22,9 @@ export const QP = {
   /** JSON-encoded FilterState blob */
   FILTERS: "filters",
 
+  /** Initial school selection for auth redirects / deep links */
+  SCHOOL: "school",
+
   /** Overrides the initial page/mode on first load */
   PAGE_MODE: "pageMode",
 

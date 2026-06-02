@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Club } from "@/shared/types";
-import { ApiError } from "@/shared/services/apiClient";
+import { isApiError } from "@/shared/services/apiClient";
 import { getMyClubs } from "@/features/clubs";
 import { useAuthState } from "@/features/auth";
 import {
@@ -111,7 +111,7 @@ export function useIntegrationData() {
 
   const redirectIfUnauthorized = useCallback(
     (err: unknown): boolean => {
-      if (err instanceof ApiError && err.status === 401) {
+      if (isApiError(err) && err.status === 401) {
         navigate(ROUTES.LOGIN, { replace: true });
         return true;
       }

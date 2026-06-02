@@ -1,9 +1,7 @@
 """Cross-cutting backend constants.
 
-This package keeps the old ``core.constants`` import path while grouping
-constants by domain. New constants should live in the narrow module that owns
-the surrounding behavior, then be re-exported here only when existing callers
-need the shared facade.
+Domain modules own their narrow constants. This package is the shared import
+entrypoint for callers that intentionally need constants across domains.
 """
 
 from core.constants.credits import (
@@ -12,7 +10,7 @@ from core.constants.credits import (
     MAX_CREDITS_PER_ADD,
     PROMOTION_PACKAGES,
 )
-from core.constants.events import CATEGORY_NORMALIZE_MAP, EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
+from core.constants.events import EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
 from core.constants.experiments import (
     AB_DEFAULT_VARIANTS,
     AB_EVENT_CLICK,
@@ -71,6 +69,7 @@ from core.constants.rate_limits import (
     AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
     CALENDAR_FEED_RATE_LIMIT_MAX_REQUESTS,
     CALENDAR_FEED_RATE_LIMIT_WINDOW_SECONDS,
+    MAX_SAVED_CLUBS_PER_USER,
     MAX_SAVED_EVENTS_PER_USER,
     QR_SCAN_RATE_LIMIT_MAX_REQUESTS,
     QR_SCAN_RATE_LIMIT_WINDOW_SECONDS,
@@ -172,7 +171,7 @@ __all__ = (
     "BUCKET_QR_ASSETS",
     "CALENDAR_FEED_RATE_LIMIT_MAX_REQUESTS",
     "CALENDAR_FEED_RATE_LIMIT_WINDOW_SECONDS",
-    "CATEGORY_NORMALIZE_MAP",
+
     "DEDUP_WINDOW_MINUTES",
     "DEFAULT_CREDIT_BALANCE",
     "DEFAULT_INTERACTION_LIMIT",
@@ -224,6 +223,7 @@ __all__ = (
     "MAX_PAGE_SIZE",
     "MAX_REPORT_REASON_LENGTH",
     "MAX_REJECTION_REASON_LENGTH",
+    "MAX_SAVED_CLUBS_PER_USER",
     "MAX_SAVED_EVENTS_PER_USER",
     "MAX_SCHOOL_LENGTH",
     "MAX_SEARCH_QUERY_LENGTH",

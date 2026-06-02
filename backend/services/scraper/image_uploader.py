@@ -1,9 +1,7 @@
-"""Download Instagram images, hand them to the existing storage service.
+"""Download Instagram images and hand them to the storage service.
 
-v1 uploaded directly to S3. v2's storage layer is Supabase Storage, so
-the scraper hands the bytes to ``services.storage_service`` which already
-handles validation, EXIF stripping, and bucket selection
-(``BUCKET_EVENT_IMAGES``).
+The scraper passes bytes to ``services.storage_service``, which handles
+validation, EXIF stripping, and bucket selection (``BUCKET_EVENT_IMAGES``).
 
 Returned URLs are public (the bucket is set to public-read in the
 ``StorageService._DEFAULT_BUCKETS`` config) and cache-friendly.
@@ -33,8 +31,7 @@ from services.storage_service import storage
 
 log = logging.getLogger(__name__)
 
-# Instagram CDN occasionally rejects requests without a UA. Match what
-# v1 used so we don't introduce a new failure mode in the port.
+# Instagram CDN occasionally rejects requests without a realistic browser UA.
 _USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0 Safari/537.36"
@@ -132,7 +129,6 @@ def upload_image_from_url(url: str) -> str | None:
         return storage.upload_file(
             BUCKET_EVENT_IMAGES,
             resp.content,
-            filename="instagram",
             content_type=content_type,
         )
     except Exception as e:

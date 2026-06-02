@@ -23,7 +23,8 @@ from schemas.event import (
     LatestEventResponse,
 )
 from schemas.user import UserResponse
-from services import club_service, event_service, notification_service
+from services import club_service, event_service
+from services.notifications import event_change
 
 log = logging.getLogger(__name__)
 
@@ -40,18 +41,11 @@ def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventR
 
 
 def _apply_event_club_ownership(data: EventCreate, db_user: UserResponse) -> EventCreate:
-    """Stamp explicit club ownership on create while preserving legacy payloads."""
-    if is_admin(db_user):
-        if data.club_id is None:
-            return data
-        club = get_or_404(club_service.get_club(data.club_id), CLUB_NOT_FOUND)
-    else:
-        club = club_service.resolve_event_club_for_owner(
-            str(db_user.id),
-            club_id=data.club_id,
-            organization=data.organization,
-        )
-        if club is None:
+    """Stamp explicit club ownership on create."""
+    club = get_or_404(club_service.get_club(data.club_id), CLUB_NOT_FOUND)
+    if not is_admin(db_user):
+        owned_clubs = club_service.list_clubs_by_owner(str(db_user.id))
+        if not any(c.id == club.id for c in owned_clubs):
             raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
 
     return data.model_copy(
@@ -59,14 +53,17 @@ def _apply_event_club_ownership(data: EventCreate, db_user: UserResponse) -> Eve
             "club_id": club.id,
             "organization": club.club_name,
             "club_type": club.club_type,
+            "school": club.school,
         }
     )
 
 
 @router.get("/latest-added", response_model=LatestEventResponse | None)
-def get_latest_added():
+def get_latest_added(
+    school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
+):
     """Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'."""
-    return event_service.get_latest_added_event()
+    return event_service.get_latest_added_event(school)
 
 
 @router.get("/", response_model=list[EventSummaryResponse])
@@ -141,7 +138,7 @@ def update_event(
     diff = event_service.compute_event_diff(old_event, updated_event)
     if diff:
         try:
-            notification_service.enqueue_event_change(event_id, diff)
+            event_change.enqueue_event_change(event_id, diff)
         except Exception as e:
             log.warning("enqueue_event_change failed event=%s: %s", event_id, e)
     return updated_event

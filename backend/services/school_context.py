@@ -25,7 +25,11 @@ def canonical_school_key(school: str | None) -> str:
 
 
 def resolve_school_timezone(school: str | None) -> str:
-    """Return the IANA timezone for a school, falling back to UTC."""
+    """Return the IANA timezone for a school, falling back to UTC.
+
+    Waterloo is the only school with an explicit timezone mapping. All other
+    schools share the neutral UTC fallback.
+    """
     canonical = canonical_school_key(school)
     if not canonical:
         return _UTC_TZID
@@ -42,11 +46,7 @@ def resolve_school_timezone(school: str | None) -> str:
 
 
 def school_for_user(user: dict[str, Any]) -> str | None:
-    """Resolve a user's school, preferring verified email domain ownership."""
-    email_school = get_school_for_email(user.get("email") or "")
-    if email_school:
-        return email_school
-
+    """Resolve a user's school, reading exclusively from the stored school field."""
     explicit = (user.get("school") or "").strip()
     return explicit or None
 
@@ -69,8 +69,10 @@ def resolve_user_timezone(user: dict[str, Any]) -> ZoneInfo:
 def current_semester_end(school: str | None, *, now: datetime | None = None) -> str | None:
     """Return the UTC end timestamp of the semester containing ``now``.
 
-    Format mirrors v1: ``YYYYMMDDTHHMMSSZ``. Unknown schools return ``None``
-    so callers can omit school-specific prompt context instead of guessing.
+    Format is ``YYYYMMDDTHHMMSSZ``. Unknown schools return ``None`` so callers
+    can omit school-specific prompt context instead of guessing. Only Waterloo
+    has an explicit semester schedule; other schools use the neutral
+    ``None`` fallback.
     """
     canonical = canonical_school_key(school)
     if not canonical:

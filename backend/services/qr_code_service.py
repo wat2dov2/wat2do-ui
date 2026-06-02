@@ -6,7 +6,7 @@ from datetime import datetime
 
 from postgrest.exceptions import APIError
 
-from core.constants import PG_UNIQUE_VIOLATION
+from core.constants import DEFAULT_LIST_LIMIT, PG_UNIQUE_VIOLATION
 from core.database import get_sb
 from core.exceptions import ConflictError, NotFoundError, ValidationError
 
@@ -121,18 +121,7 @@ def update_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
     return get_qr_code_by_id(data.id)
 
 
-def upsert_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
-    """Backward-compatible upsert.
 
-    Prefer ``create_qr_code`` for POST and ``update_qr_code`` for PATCH
-    so the caller's intent is explicit.  Left in place for any internal
-    callers (e.g. tests / seeds) that rely on idempotent upsert
-    semantics.
-    """
-    existing = get_qr_code_by_id(data.id)
-    if existing is not None:
-        return update_qr_code(data, created_by=created_by)
-    return create_qr_code(data, created_by=created_by)
 
 
 def activate_poster_and_record_scan(
@@ -257,12 +246,12 @@ def list_qr_codes(
     *,
     created_by: str | None = None,
     offset: int = 0,
-    limit: int | None = None,
+    limit: int | None = DEFAULT_LIST_LIMIT,
 ) -> tuple[list[QrCodeResponse], int]:
     """Return QR codes, newest first.
 
-    Returns (items, total_count).  When *limit* is None the query is
-    unbounded (legacy behaviour for non-paginated callers).
+    Returns (items, total_count). Pass ``limit=None`` only for trusted internal
+    maintenance callers that intentionally need all rows.
     """
     q = get_sb().table(QR_CODES).select("*", count="exact").order("created_at", desc=True)
     if created_by:
@@ -281,16 +270,16 @@ def list_scans(
     *,
     owned_by: str | None = None,
     offset: int = 0,
-    limit: int | None = None,
+    limit: int | None = DEFAULT_LIST_LIMIT,
 ) -> tuple[list[QrCodeScanResponse], int]:
     """Return scans, newest first.
 
-    Returns (items, total_count).  When *limit* is None the query is
-    unbounded (legacy behaviour for non-paginated callers).
+    Returns (items, total_count). Pass ``limit=None`` only for trusted internal
+    maintenance callers that intentionally need all rows.
     """
     # When owned_by is set, restrict results to QR codes created by that user.
     if owned_by is not None:
-        owned_items, _ = list_qr_codes(created_by=owned_by)
+        owned_items, _ = list_qr_codes(created_by=owned_by, limit=None)
         owned_ids = [qr.id for qr in owned_items]
         if not owned_ids:
             return [], 0

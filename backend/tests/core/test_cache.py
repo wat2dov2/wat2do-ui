@@ -104,7 +104,7 @@ class TestTTLCacheMaxSize:
         assert cache.get("a") is None  # Evicted.
 
     def test_unbounded_when_max_size_none(self):
-        cache = TTLCache(default_ttl=60)  # default max_size=None
+        cache = TTLCache(default_ttl=60, max_size=None)
         for i in range(1000):
             cache.set(str(i), i)
         # No eviction; all 1000 keys present.

@@ -7,6 +7,7 @@ export function buildEventPayload(eventData: EventFormData): ApiEventCreate {
     title: eventData.title,
     description: eventData.description || null,
     location: eventData.location,
+    school: eventData.school?.trim() || null,
     occurrences: eventData.occurrences
       .filter((occurrence) => occurrence.dtstart_local)
       .map((occurrence) => ({
@@ -19,8 +20,9 @@ export function buildEventPayload(eventData: EventFormData): ApiEventCreate {
       })),
     price: eventData.price || null,
     food: eventData.food?.length ? eventData.food : null,
-    registration: eventData.requiresRegistration || false,
+    registration: eventData.registration || false,
     category: eventData.category || null,
-    organization: eventData.organization,
+    organization: eventData.organization || null,
+    club_id: eventData.club_id!,
   };
 }

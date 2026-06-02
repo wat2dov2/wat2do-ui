@@ -142,7 +142,7 @@ WHERE metadata IS NOT NULL
 -- 1k. ab_test_events.experiment_name — add column + backfill
 --     (source: 20260408030000_add_ab_test_ctr_rpc)
 ALTER TABLE ab_test_events ADD COLUMN IF NOT EXISTS experiment_name VARCHAR(64);
-UPDATE ab_test_events SET experiment_name = 'recommendations_v1' WHERE experiment_name IS NULL;
+UPDATE ab_test_events SET experiment_name = 'recommendations' WHERE experiment_name IS NULL;
 ALTER TABLE ab_test_events ALTER COLUMN experiment_name SET NOT NULL;
 
 -- 1l. scraped_events.event_id — null out orphaned references when the

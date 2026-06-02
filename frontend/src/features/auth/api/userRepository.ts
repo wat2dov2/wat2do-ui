@@ -31,8 +31,8 @@ function notifyAuthStateChanged(): void {
 }
 
 export interface UserProfile {
-  /** Supabase user UUID (from backend `users.id`). Null for legacy cached profiles. */
-  id?: string;
+  /** Supabase user UUID (from backend `users.id`). */
+  id: string;
   faculty: string;
   interests: string[];
   isFirstYear: boolean;
@@ -115,6 +115,7 @@ export { hasAccessToken };
 
 export function saveAccessToken(token: string): void {
   setAccessToken(token);
+  notifyAuthStateChanged();
 }
 
 // --- Full clear on logout ---

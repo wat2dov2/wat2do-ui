@@ -15,7 +15,7 @@ const EMPTY_FILTER_STATE: FilterState = {
   foods: [],
   days: [],
   priceRange: { min: "", max: "" },
-  requiresRegistration: false,
+  registration: false,
 };
 
 /**
@@ -30,7 +30,7 @@ export interface SearchStoreFilterValues {
   selectedFoods: string[];
   selectedDays: string[];
   priceRange: { min: string; max: string };
-  requiresRegistration: boolean;
+  registration: boolean;
 }
 
 type GeneratedFilterStateInput = Partial<ApiFilterStateResponse>;
@@ -68,7 +68,7 @@ export function storeStatesToFilterState(
     foods: values.selectedFoods,
     days: values.selectedDays,
     priceRange: values.priceRange,
-    requiresRegistration: values.requiresRegistration,
+    registration: values.registration,
   };
 }
 
@@ -85,8 +85,8 @@ export function generatedFilterStateToFilterState(
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
     priceRange: priceRangeFrom(filters.priceRange),
-    requiresRegistration:
-      typeof filters.requiresRegistration === "boolean" ? filters.requiresRegistration : false,
+    registration:
+      typeof filters.registration === "boolean" ? filters.registration : false,
   };
 }
 

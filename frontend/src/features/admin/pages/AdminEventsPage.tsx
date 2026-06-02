@@ -27,23 +27,33 @@ import { cn } from "@/shared/lib/utils";
 import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { QP } from "@/shared/constants/queryParams";
 import { formatCardDate } from "@/shared/utils/date";
+import { useUIStore } from "@/shared/store/ui.store";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
 interface AdminEventsPageProps {
-  onEditEvent: (event: Event) => void | Promise<void>;
-  onDeleteEvent: (eventId: number) => void | Promise<void>;
-  onCreateEvent: () => void;
   onBack: () => void;
 }
 
 export function AdminEventsPage({
-  onEditEvent,
-  onDeleteEvent,
-  onCreateEvent,
   onBack,
 }: AdminEventsPageProps) {
   const events = useEventsStore((s) => s.events);
+  const deleteEvent = useEventsStore((s) => s.deleteEvent);
+  
+  const setEditingEvent = useUIStore((s) => s.setEditingEvent);
+  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
+
+  const onCreateEvent = () => {
+    setEditingEvent(null); // Clear editing state first
+    setShowSubmitEvent(true);
+  };
+
+  const onEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setShowSubmitEvent(true);
+  };
+
   const { t, i18n } = useTranslation();
   const {
     searchQuery,
@@ -72,7 +82,7 @@ export function AdminEventsPage({
   const handleDelete = async (eventId: number) => {
     setIsDeleting(true);
     try {
-      await Promise.resolve(onDeleteEvent(eventId));
+      await Promise.resolve(deleteEvent(eventId));
       setDeleteConfirmId(null);
     } finally {
       setIsDeleting(false);

@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
-import { showToast } from "@/shared/ui/toast";
+import { toast } from "@/shared/hooks/use-toast";
 import { tracker } from "@/shared/services/trackingService";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { QP } from "@/shared/constants/queryParams";
@@ -87,10 +87,16 @@ export function EventShareDialog({
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
-      showToast(message ?? t("events.shareDialog.linkCopied"), "success");
+      toast({
+        description: message ?? t("events.shareDialog.linkCopied"),
+        variant: "success",
+      });
     } catch (err) {
       console.error("Failed to copy event link:", err);
-      showToast(t("events.shareDialog.copyFailed"), "error");
+      toast({
+        description: t("events.shareDialog.copyFailed"),
+        variant: "destructive",
+      });
     }
   }
 

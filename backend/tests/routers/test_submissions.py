@@ -18,6 +18,7 @@ _VALID_EVENT_DATA = {
     "title": "X",
     "location": "Loc",
     "organization": "Org",
+    "club_id": 7,
     "occurrences": [
         {
             "dtstart_utc": "2026-12-01T18:00:00+00:00",

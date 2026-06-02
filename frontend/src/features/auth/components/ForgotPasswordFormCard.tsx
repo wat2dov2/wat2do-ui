@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 import { Input } from "@/shared/ui/input";
 import { LoadingButton } from "@/shared/ui/loading-button";
-import { api, ApiError } from "@/shared/services/apiClient";
+import { api, getApiErrorMessage } from "@/shared/services/apiClient";
 import { EMAIL_PATTERN } from "@/features/auth/hooks/useAuthEntryFlow";
 
 export function ForgotPasswordFormCard() {
@@ -26,7 +26,7 @@ export function ForgotPasswordFormCard() {
       setSent(true);
     } catch (err) {
       console.error("Forgot password request failed:", err);
-      setError(err instanceof ApiError ? err.message : t("auth.genericError"));
+      setError(getApiErrorMessage(err, t("auth.genericError")));
     } finally {
       setIsLoading(false);
     }

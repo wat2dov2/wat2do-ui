@@ -83,8 +83,8 @@ def register_error_handlers(app: FastAPI) -> None:
     async def handle_validation_error(request: Request, exc: ValidationError) -> JSONResponse:
         # C11: expose ``code`` in the error body so clients can branch on a
         # stable machine-readable field instead of substring-matching the
-        # human-readable ``detail``.  Empty code is omitted so legacy raises
-        # keep the previous shape.
+        # human-readable ``detail``.  Empty code is omitted for exceptions
+        # that only carry a detail message.
         body: dict[str, object] = {"detail": exc.detail}
         if exc.code:
             body["code"] = exc.code

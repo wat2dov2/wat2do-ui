@@ -118,10 +118,8 @@ def test_find_match_returns_none_without_occurrences():
 def test_find_match_same_club_update(fake_sb, patch_sb):
     """Same IG handle + future event + similar title -> same_club match.
 
-    After the v1-style EventDates port, the same-club query embeds
-    event_dates rows in the events response — the dedup helper checks
-    the latest end across embedded occurrences instead of reading
-    dtstart/dtend directly off the event row.
+    The same-club query embeds event_dates rows in the events response, and
+    the dedup helper checks the latest end across embedded occurrences.
     """
     patch_sb("services.scraper.dedup")
 
@@ -191,8 +189,8 @@ def test_find_match_skips_past_same_club_events(fake_sb, patch_sb):
 def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
     """Substring title match + similar location -> cross-club duplicate.
 
-    After the v1-style EventDates port, the same-day query hits the
-    event_dates table first and embeds the parent ``events`` row.
+    The same-day query hits the event_dates table first and embeds the parent
+    ``events`` row.
     """
     patch_sb("services.scraper.dedup")
 

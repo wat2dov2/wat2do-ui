@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Check, Sparkles, Megaphone } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
@@ -9,6 +10,7 @@ import {
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
+import { toast } from "@/shared/hooks/use-toast";
 
 interface EventSuccessScreenProps {
   isOpen: boolean;
@@ -16,7 +18,6 @@ interface EventSuccessScreenProps {
   onPromote?: () => void;
   isEditMode: boolean;
   isSubmissionOnly: boolean;
-  onShowSuccessAlert: (title: string, message: string) => void;
 }
 
 export function EventSuccessScreen({
@@ -25,26 +26,35 @@ export function EventSuccessScreen({
   onPromote,
   isEditMode,
   isSubmissionOnly,
-  onShowSuccessAlert,
 }: EventSuccessScreenProps) {
   const { t } = useTranslation();
   const { formData } = useEventFormContext();
-  const primaryOccurrence = formData.occurrences[0];
+  const successEvent = useMemo(
+    () => ({
+      occurrences: formData.occurrences.map((o) => ({
+        dtstart_utc: o.dtstart_local,
+        dtend_utc: o.dtend_local || null,
+      })),
+    }),
+    [formData.occurrences],
+  );
+
   const handleDone = () => {
     onClose();
     setTimeout(() => {
-      onShowSuccessAlert(
-        isSubmissionOnly
+      toast({
+        title: isSubmissionOnly
           ? t("events.submissionReceived")
           : isEditMode
             ? t("events.eventUpdated")
             : t("events.eventCreated"),
-        isEditMode
+        description: isEditMode
           ? t("events.eventUpdatedMessage", { title: formData.title })
           : isSubmissionOnly
             ? t("events.submissionReceivedMessage", { title: formData.title })
-          : t("events.eventCreatedMessage", { title: formData.title })
-      );
+            : t("events.eventCreatedMessage", { title: formData.title }),
+        variant: "success",
+      });
     }, SCROLL_INTO_VIEW_DELAY_MS);
   };
 
@@ -90,14 +100,11 @@ export function EventSuccessScreen({
               {formData.organization}
             </p>
             <p className="text-sm text-muted-foreground">
-              {formatCardDate({ dtstart_utc: primaryOccurrence?.dtstart_local })}
+              {formatCardDate(successEvent)}
               {" "}
               {t("common.at")}
               {" "}
-              {formatCardTime({
-                dtstart_utc: primaryOccurrence?.dtstart_local,
-                dtend_utc: primaryOccurrence?.dtend_local,
-              })}
+              {formatCardTime(successEvent)}
             </p>
           </div>
 

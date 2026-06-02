@@ -6,8 +6,8 @@ import { useLatestAddedEvent } from "@/features/events/hooks/useLatestAddedEvent
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useCreditsStore } from "@/features/credits";
-import { showToast } from "@/shared/ui/toast";
-import { ApiError } from "@/shared/services/apiClient";
+import { toast } from "@/shared/hooks/use-toast";
+import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { useShallow } from "zustand/react/shallow";
 
@@ -26,6 +26,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   const events = useEventsStore((s) => s.events);
   const isLoading = useEventsStore((s) => s.isLoading);
   const error = useEventsStore((s) => s.error);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const fetchEvents = useEventsStore((s) => s.fetchEvents);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
@@ -37,7 +38,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     useShallow((s) => s.activePromotedEventIds),
   );
 
-  const { latest: latestAddedEvent } = useLatestAddedEvent();
+  const { latest: latestAddedEvent } = useLatestAddedEvent(schoolFilter ?? undefined);
 
   const { recommendations, isLoading: recsLoading } = useRecommendations();
 
@@ -85,13 +86,12 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
         await deleteEvent(eventId);
       } catch (err) {
         console.error("Failed to delete event:", err);
-        const message =
-          err instanceof ApiError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : t("events.deleteFailed");
-        showToast(message, "error");
+        const message = getApiErrorMessage(err, t("events.deleteFailed"));
+        toast({
+          title: "Delete Failed",
+          description: message,
+          variant: "destructive",
+        });
       }
     },
     [deleteEvent, t]

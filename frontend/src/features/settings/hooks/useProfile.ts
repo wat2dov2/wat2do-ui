@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { loadProfile, saveProfile, type UserProfile } from "@/features/settings/api/settings.api";
 import { fetchProfileAPI, getLastProfileFetchAt, updateProfileAPI } from "@/features/auth";
-import { availableSchools } from "@/shared/constants/schools";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 /**
  * How long a `/users/me` fetch remains fresh before Settings will re-fetch.
@@ -13,10 +13,11 @@ const PROFILE_STALE_TTL_MS = 60_000;
 export type { UserProfile };
 
 const DEFAULT_PROFILE: UserProfile = {
+  id: "",
   faculty: "",
   interests: [],
   isFirstYear: false,
-  school: availableSchools[0] || "",
+  school: DEFAULT_SCHOOL,
   role: "user",
   hasClub: false,
   clubs: [],

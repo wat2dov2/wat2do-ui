@@ -1,8 +1,7 @@
-"""Insert extracted events into the v2 ``events`` + ``event_dates`` tables.
+"""Insert extracted events into the ``events`` + ``event_dates`` tables.
 
-After the v1-style EventDates port (migration 20260428031741), every
-logical event is one ``events`` row + N ``event_dates`` rows. The writer
-inserts the parent row first, then bulk-inserts occurrences. If the
+Every logical event is one ``events`` row + N ``event_dates`` rows. The
+writer inserts the parent row first, then bulk-inserts occurrences. If the
 occurrence insert fails the parent row is rolled back so we don't leave
 orphan events with no dates.
 """
@@ -107,7 +106,7 @@ def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
         "description": (event.get("description") or "")[:MAX_EVENT_DESCRIPTION_LENGTH] or None,
         "location": location[:MAX_EVENT_LOCATION_LENGTH],
         "price": event.get("price"),
-        "food": _coerce_food(event.get("food")),
+        "food": _clean_food(event.get("food")),
         "registration": bool(event.get("registration", False)),
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
@@ -174,9 +173,8 @@ def _resolve_organization(event: dict, *, ig_handle: str, club: dict | None) -> 
     """Pick a non-empty organization string for the events row.
 
     Order: registered club name → extractor's ``organization`` → raw IG
-    handle. ``events.organization`` remains NOT NULL for response
-    compatibility, but ``club_id`` is the canonical ownership link when
-    the handle maps to a known club.
+    handle. ``club_id`` is the canonical ownership link when the handle maps
+    to a known club.
     """
     if club:
         club_name = (club.get("club_name") or "").strip()
@@ -187,28 +185,20 @@ def _resolve_organization(event: dict, *, ig_handle: str, club: dict | None) -> 
     if org:
         return org
 
-    return ig_handle
+    # If it falls back to the IG handle, format it as a handle (e.g. @username)
+    return f"@{ig_handle.lstrip('@')}"
 
 
 
 
-def _coerce_food(value: object) -> list | None:
-    """v1 stored food as a single comma-separated string; v2 stores a JSON list.
-
-    Accept both shapes:
-        - empty / None / "" → None
-        - list[str]         → [stripped, deduped, capped]
-        - str               → split on commas, trim, dedupe, cap
-
-    Per-item length and item-count caps both come from
-    ``core.constants`` so the writer agrees with the schema.
-    """
-    if value in (None, "", []):
+def _clean_food(value: object) -> list | None:
+    """Validate and normalize the current JSON-list food shape."""
+    if value in (None, []):
         return None
     if isinstance(value, list):
         items = [str(v).strip() for v in value if str(v).strip()]
     else:
-        items = [tok.strip() for tok in str(value).split(",") if tok.strip()]
+        raise ValueError("food must be a list of strings")
 
     seen: set[str] = set()
     deduped: list[str] = []
@@ -226,10 +216,9 @@ def _coerce_food(value: object) -> list | None:
 def _coerce_future_occurrences(occurrences: list[dict]) -> list[OccurrenceCreate]:
     """Filter to future occurrences and return validated OccurrenceCreate models.
 
-    Past occurrences are dropped (mirrors v1: scraped events with a
-    dtstart_utc earlier than ``now()`` are noise from misparsed captions).
-    Invalid dates are silently skipped — the warning lives at the
-    extractor layer where the JSON parsing error is more actionable.
+    Past occurrences are dropped because scraped events with a ``dtstart_utc``
+    earlier than ``now()`` are usually noise from misparsed captions. Invalid
+    dates are skipped; the extractor layer logs the JSON parsing error.
     """
     now = datetime.now(timezone.utc)
     out: list[OccurrenceCreate] = []
@@ -266,5 +255,5 @@ def _parse_iso(value: str | None) -> datetime | None:
     except ValueError:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        return None
     return dt.astimezone(timezone.utc)

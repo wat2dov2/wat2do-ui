@@ -345,15 +345,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/TokenResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/MessageResponse"
-                    }
-                  ],
-                  "title": "Response Reset Password Auth Reset Password Post"
+                  "$ref": "#/components/schemas/TokenResponse"
                 }
               }
             }
@@ -1065,6 +1057,414 @@
         }
       }
     },
+    "/clubs/{club_id}/members": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "List Club Members",
+        "description": "List all members of a club. Admin or club members only.",
+        "operationId": "list_club_members_clubs__club_id__members_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClubMemberResponse"
+                  },
+                  "title": "Response List Club Members Clubs  Club Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Add Club Member",
+        "description": "Add a member to the club by email. Admin or club members only.\n\nIf the user already has an account, they are added directly.\nOtherwise, a pending invitation is created and sent.",
+        "operationId": "add_club_member_clubs__club_id__members_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClubMemberAdd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ClubMemberResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ClubInvitationResponse"
+                    }
+                  ],
+                  "title": "Response Add Club Member Clubs  Club Id  Members Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/{club_id}/members/{user_id}": {
+      "delete": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Remove Club Member",
+        "description": "Remove a member from the club. Admin or club members only.",
+        "operationId": "remove_club_member_clubs__club_id__members__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/{club_id}/invitations": {
+      "post": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Create Invitation",
+        "description": "Explicitly create and send an invitation.",
+        "operationId": "create_invitation_clubs__club_id__invitations_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClubInvitationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubInvitationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "List Invitations",
+        "description": "List pending invitations for the club.",
+        "operationId": "list_invitations_clubs__club_id__invitations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClubInvitationResponse"
+                  },
+                  "title": "Response List Invitations Clubs  Club Id  Invitations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/{club_id}/invitations/{invitation_id}": {
+      "delete": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Revoke Invitation",
+        "description": "Revoke/delete an invitation.",
+        "operationId": "revoke_invitation_clubs__club_id__invitations__invitation_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          },
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Invitation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/invitations/{token}": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Get Invitation By Token",
+        "description": "Public route to validate an invitation token and fetch public details (club name).",
+        "operationId": "get_invitation_by_token_clubs_invitations__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubInvitationPublicResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/invitations/{token}/accept": {
+      "post": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Accept Invitation",
+        "description": "Accept an invitation token using the logged-in user's identity.",
+        "operationId": "accept_invitation_clubs_invitations__token__accept_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/credits/": {
       "get": {
         "tags": [
@@ -1299,6 +1699,25 @@
         "summary": "Get Latest Added",
         "description": "Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'.",
         "operationId": "get_latest_added_events_latest_added_get",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1314,6 +1733,16 @@
                     }
                   ],
                   "title": "Response Get Latest Added Events Latest Added Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1865,7 +2294,7 @@
           "qr"
         ],
         "summary": "List Qr Codes",
-        "description": "List QR codes \u2014 admin-only.\n\nQR codes are an admin-managed promotional surface; non-admins must\nnot be able to enumerate them, see other admins' codes, or learn the\nnaming scheme via this endpoint. Use the public scan endpoint\n(``GET /qr/{id}``) for end-user redirects.",
+        "description": "List QR codes.\n\nAdmins can list all QR codes. Non-admins (club managers) can only list\nQR codes created by themselves.",
         "operationId": "list_qr_codes_qr__get",
         "security": [
           {
@@ -1930,7 +2359,7 @@
           "qr"
         ],
         "summary": "Create Poster",
-        "description": "Create a QR code \u2014 admin-only.\n\nINSERT-only: if the id already exists, ``create_qr_code`` raises\nConflictError -> 409. Previously this was an upsert which allowed\nany authenticated user to hijack an existing poster by guessing its\nid and reposting with their own destination_id.",
+        "description": "Create a QR code.\n\nINSERT-only: if the id already exists, ``create_qr_code`` raises\nConflictError -> 409.",
         "operationId": "create_poster_qr__post",
         "security": [
           {
@@ -1977,7 +2406,7 @@
           "qr"
         ],
         "summary": "List Scans",
-        "description": "List QR-code scan events \u2014 admin-only (analytics surface).",
+        "description": "List QR-code scan events analytics.\n\nAdmins can list all scans. Non-admins (club managers) can only list scans\nof QR codes created by themselves.",
         "operationId": "list_scans_qr_scans_get",
         "security": [
           {
@@ -2181,7 +2610,7 @@
           "qr"
         ],
         "summary": "Update Poster",
-        "description": "Update a QR code \u2014 admin-only.",
+        "description": "Update a QR code.",
         "operationId": "update_poster_qr__qr_code_id__patch",
         "security": [
           {
@@ -2237,7 +2666,7 @@
           "qr"
         ],
         "summary": "Delete Poster",
-        "description": "Delete a QR code \u2014 admin-only.",
+        "description": "Delete a QR code.",
         "operationId": "delete_poster_qr__qr_code_id__delete",
         "security": [
           {
@@ -2456,6 +2885,131 @@
         }
       }
     },
+    "/saved-clubs/": {
+      "get": {
+        "tags": [
+          "saved-clubs"
+        ],
+        "summary": "List Saved Clubs",
+        "description": "Return club IDs saved by the current user.\n\n- 401 if unauthenticated.",
+        "operationId": "list_saved_clubs_saved_clubs__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array",
+                  "title": "Response List Saved Clubs Saved Clubs  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/saved-clubs/{club_id}": {
+      "put": {
+        "tags": [
+          "saved-clubs"
+        ],
+        "summary": "Save Club",
+        "description": "Save (bookmark) a club.\n\n- 401 if unauthenticated.\n- 404 if the referenced club does not exist.\n- 400 if the user has already hit the ``MAX_SAVED_CLUBS_PER_USER`` cap.",
+        "operationId": "save_club_saved_clubs__club_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveClubStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "saved-clubs"
+        ],
+        "summary": "Unsave Club",
+        "description": "Remove a saved club.\n\n- 401 if unauthenticated.",
+        "operationId": "unsave_club_saved_clubs__club_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveClubStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/saved-events/": {
       "get": {
         "tags": [
@@ -2564,6 +3118,66 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SaveEventStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schools": {
+      "get": {
+        "tags": [
+          "schools"
+        ],
+        "summary": "List Schools",
+        "operationId": "list_schools_schools_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response List Schools Schools Get"
                 }
               }
             }
@@ -3887,6 +4501,175 @@
         "title": "ClubIntegrationUpdate",
         "description": "Update request for a club's integration configuration.\n\nThe ``metadata`` dict is now bounded on three axes:\n- max key count (``MAX_INTEGRATION_METADATA_KEYS``)\n- max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)\n- max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)\n\nUnknown envelope fields are rejected via ``extra=\"forbid\"`` so future\nrefactors that accidentally echo request data back to the DB do not\nintroduce a mass-assignment surface."
       },
+      "ClubInvitationCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Email",
+            "description": "Email to invite"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ClubInvitationCreate"
+      },
+      "ClubInvitationPublicResponse": {
+        "properties": {
+          "club_name": {
+            "type": "string",
+            "title": "Club Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "club_name",
+          "email",
+          "expires_at"
+        ],
+        "title": "ClubInvitationPublicResponse"
+      },
+      "ClubInvitationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "club_id": {
+            "type": "integer",
+            "title": "Club Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "token": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Token"
+          },
+          "invited_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Invited By"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "club_id",
+          "email",
+          "token",
+          "invited_by",
+          "status",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "ClubInvitationResponse"
+      },
+      "ClubMemberAdd": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ClubMemberAdd"
+      },
+      "ClubMemberResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Joined At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "role",
+          "joined_at"
+        ],
+        "title": "ClubMemberResponse"
+      },
       "ClubResponse": {
         "properties": {
           "id": {
@@ -4306,21 +5089,20 @@
             "title": "Category"
           },
           "club_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Club Id"
+          },
+          "organization": {
             "anyOf": [
               {
-                "type": "integer",
-                "minimum": 1.0
+                "type": "string",
+                "maxLength": 255
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Club Id"
-          },
-          "organization": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
             "title": "Organization"
           },
           "ig_handle": {
@@ -4334,18 +5116,6 @@
               }
             ],
             "title": "Ig Handle"
-          },
-          "display_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Handle"
           }
         },
         "additionalProperties": false,
@@ -4354,7 +5124,7 @@
           "title",
           "location",
           "occurrences",
-          "organization"
+          "club_id"
         ],
         "title": "EventCreate"
       },
@@ -4399,9 +5169,9 @@
             "type": "array",
             "title": "Food"
           },
-          "requiresRegistration": {
+          "registration": {
             "type": "boolean",
-            "title": "Requiresregistration",
+            "title": "Registration",
             "default": false
           },
           "organization": {
@@ -4468,30 +5238,6 @@
             "type": "array",
             "title": "Occurrences"
           },
-          "dtstart_utc": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dtstart Utc"
-          },
-          "dtend_utc": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dtend Utc"
-          },
           "price": {
             "anyOf": [
               {
@@ -4598,17 +5344,6 @@
               }
             ],
             "title": "Ig Handle"
-          },
-          "display_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Handle"
           },
           "added_at": {
             "type": "string",
@@ -4675,30 +5410,6 @@
             "type": "array",
             "title": "Occurrences"
           },
-          "dtstart_utc": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dtstart Utc"
-          },
-          "dtend_utc": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dtend Utc"
-          },
           "price": {
             "anyOf": [
               {
@@ -4806,17 +5517,6 @@
             ],
             "title": "Ig Handle"
           },
-          "display_handle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Handle"
-          },
           "added_at": {
             "type": "string",
             "format": "date-time",
@@ -4841,7 +5541,7 @@
           "added_at"
         ],
         "title": "EventResponse",
-        "description": "Full event payload returned from GET /events/{id} and used internally\nfor ownership checks.\n\n``created_by`` is retained here because the field is load-bearing for\nthe authorization layer (``get_authorized_resource`` reads it); the\npublic list endpoint hides it via ``EventSummaryResponse`` which\nomits the field entirely.\n\n``occurrences`` is the canonical date list. ``dtstart_utc`` /\n``dtend_utc`` are denormalized \"primary date\" convenience fields\npopulated by the service layer (earliest future occurrence, or\nearliest occurrence if the event has only past dates). They are\nNOT columns on the events table \u2014 see migration\n20260428031741_add_event_dates_table.sql."
+        "description": "Full event payload returned from GET /events/{id} and used internally\nfor ownership checks.\n\n``created_by`` is retained here because the field is load-bearing for\nthe authorization layer (``get_authorized_resource`` reads it); the\npublic list endpoint hides it via ``EventSummaryResponse`` which\nomits the field entirely.\n\n``occurrences`` is the canonical date list."
       },
       "EventSummaryResponse": {
         "properties": {
@@ -4864,29 +5564,12 @@
             ],
             "title": "Location"
           },
-          "dtstart_utc": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dtstart Utc"
-          },
-          "dtend_utc": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dtend Utc"
+          "occurrences": {
+            "items": {
+              "$ref": "#/components/schemas/OccurrenceResponse"
+            },
+            "type": "array",
+            "title": "Occurrences"
           },
           "price": {
             "anyOf": [
@@ -4951,7 +5634,7 @@
             ],
             "title": "Organization"
           },
-          "display_handle": {
+          "ig_handle": {
             "anyOf": [
               {
                 "type": "string"
@@ -4960,7 +5643,7 @@
                 "type": "null"
               }
             ],
-            "title": "Display Handle"
+            "title": "Ig Handle"
           },
           "school": {
             "anyOf": [
@@ -5165,18 +5848,6 @@
               }
             ],
             "title": "Ig Handle"
-          },
-          "display_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Handle"
           }
         },
         "additionalProperties": false,
@@ -5243,9 +5914,9 @@
             "title": "Addedsince",
             "default": ""
           },
-          "requiresRegistration": {
+          "registration": {
             "type": "boolean",
-            "title": "Requiresregistration",
+            "title": "Registration",
             "default": false
           }
         },
@@ -5378,7 +6049,7 @@
           "password": {
             "type": "string",
             "maxLength": 128,
-            "minLength": 1,
+            "minLength": 8,
             "title": "Password"
           }
         },
@@ -5803,6 +6474,7 @@
             "title": "Event Id"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_id"
@@ -5926,11 +6598,6 @@
             ],
             "title": "Filters"
           },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active",
-            "default": true
-          },
           "image_url": {
             "anyOf": [
               {
@@ -5958,6 +6625,7 @@
             "default": 0.0
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "id",
@@ -5965,7 +6633,7 @@
           "destination_type"
         ],
         "title": "QrCodeCreate",
-        "description": "Payload to create or upsert a QR code (after first scan or dashboard edit).\n\nNote on ``is_active`` and ``created_by`` (audit S4): ``is_active`` is\naccepted for backward compatibility with existing frontend clients\nbut **ignored** \u2014 the service always starts inserts at ``is_active=False``\n(see ``qr_code_service._build_qr_payload``).  ``created_by`` is not\nmodelled here; the service sets it from the authenticated user's ID.\n``extra=\"ignore\"`` (the default) is left in place so client-supplied\n``created_by`` values are silently dropped rather than 422'ing clients\nthat still send them."
+        "description": "Payload to create or update a QR code.\n\nServer-owned fields such as ``created_by`` and ``is_active`` are not\naccepted from clients. New posters always start inactive and are activated\nby their first scan."
       },
       "QrCodeRedirect": {
         "properties": {
@@ -6327,16 +6995,9 @@
             "title": "Access Token"
           },
           "refresh_token": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 4096,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
             "title": "Refresh Token"
           },
           "new_password": {
@@ -6349,9 +7010,28 @@
         "type": "object",
         "required": [
           "access_token",
+          "refresh_token",
           "new_password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "SaveClubStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "saved",
+              "unsaved"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SaveClubStatusResponse",
+        "description": "Response for ``PUT /saved-clubs/{id}`` / ``DELETE /saved-clubs/{id}``.\n\nTyped explicitly so the response contract is locked at the\nOpenAPI boundary."
       },
       "SaveEventStatusResponse": {
         "properties": {
@@ -6407,6 +7087,18 @@
               }
             ],
             "title": "Full Name"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token",
+            "description": "Optional invitation token"
           }
         },
         "type": "object",
@@ -6453,6 +7145,18 @@
             "type": "boolean",
             "title": "Confirmation Required",
             "default": false
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
           }
         },
         "type": "object",
@@ -6587,6 +7291,18 @@
           "user_id": {
             "type": "string",
             "title": "User Id"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
           }
         },
         "type": "object",

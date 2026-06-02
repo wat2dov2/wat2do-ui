@@ -23,9 +23,9 @@ export function eventToPreview(event: Event, locale: string, t: TFunction): Prev
 
   return {
     title: event.title,
-    org: event.organization ?? event.display_handle ?? "",
+    org: event.organization || "",
     category: getEventCategory(event),
-    image: event.imageUrl ?? event.source_image_url ?? "",
+    image: event.source_image_url ?? "",
     date: formatCardDate(event, locale),
     time: formatCardTime(event),
     location: event.location ?? "",

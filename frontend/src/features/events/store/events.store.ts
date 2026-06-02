@@ -8,7 +8,7 @@
 
 import { create } from "zustand";
 import i18n from "@/shared/lib/i18n";
-import type { Event, EventFormData } from "@/shared/types";
+import type { Event as AppEvent, EventFormData } from "@/shared/types";
 import {
   fetchAllEvents,
   createEventAPI,
@@ -16,11 +16,13 @@ import {
   deleteEventAPI,
 } from "@/features/events/api/events.api";
 import { getUniqueEvents } from "@/shared/utils/event";
-import { ApiError } from "@/shared/services/apiClient";
+import { isApiError, getApiErrorMessage } from "@/shared/services/apiClient";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { QP } from "@/shared/constants/queryParams";
+import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/userRepository";
 
 interface EventsState {
-  events: Event[];
+  events: AppEvent[];
   isLoading: boolean;
   error: string | null;
   schoolFilter: string | null;
@@ -34,8 +36,17 @@ interface EventsState {
 }
 
 /** Deduplicate concurrent fetches for the same school while allowing school switches. */
-const _fetchesBySchool = new Map<string, Promise<Event[]>>();
+const _fetchesBySchool = new Map<string, Promise<AppEvent[]>>();
 let _latestFetchId = 0;
+
+function getInitialSchoolFilter(): string {
+  if (typeof window !== "undefined") {
+    const schoolParam = new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim();
+    if (schoolParam) return schoolParam;
+  }
+
+  return loadUserProfile()?.school?.trim() || DEFAULT_SCHOOL;
+}
 
 function getSchoolFetchKey(school: string | null): string {
   return school ?? "__all__";
@@ -45,7 +56,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
   isLoading: true,
   error: null,
-  schoolFilter: DEFAULT_SCHOOL,
+  schoolFilter: getInitialSchoolFilter(),
 
   fetchEvents: async () => {
     const school = get().schoolFilter;
@@ -71,13 +82,14 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       set({ events, isLoading: false, error: null });
     } catch (err) {
       if (!isCurrentFetch()) return;
-      const message = err instanceof ApiError ? err.message : i18n.t("events.loadFailed");
+      const message = getApiErrorMessage(err, i18n.t("events.loadFailed"));
       console.error("Failed to fetch events:", err);
       set({ isLoading: false, error: message });
     }
   },
 
   setSchoolFilter: (school: string) => {
+    if (get().schoolFilter === school) return;
     set({ schoolFilter: school });
     get().fetchEvents();
   },
@@ -111,7 +123,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       // Sync local state with backend when 404/403: the event either no
       // longer exists or the caller can no longer touch it. Refetching
       // ensures UI matches the authoritative backend state.
-      if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
+      if (isApiError(err) && (err.status === 404 || err.status === 403)) {
         await get().fetchEvents();
       }
       // Re-throw so callers can surface the error (toast, etc.).
@@ -119,3 +131,51 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     }
   },
 }));
+
+function getAuthLoginSchool(event: globalThis.Event): string {
+  // `Event` here is the browser event type, not the app's event data model.
+  if ("detail" in event) {
+    const detail = (event as CustomEvent<{ school?: string }>).detail;
+    const hintedSchool = detail?.school?.trim();
+    if (hintedSchool) return hintedSchool;
+  }
+
+  if (typeof window !== "undefined") {
+    const routeSchool = new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim();
+    if (routeSchool) return routeSchool;
+  }
+
+  return loadUserProfile()?.school?.trim() || DEFAULT_SCHOOL;
+}
+
+function syncSchoolFilterFromLogin(event: globalThis.Event): void {
+  const nextSchool = getAuthLoginSchool(event);
+  const currentSchool = useEventsStore.getState().schoolFilter;
+  if (currentSchool !== nextSchool) {
+    useEventsStore.getState().setSchoolFilter(nextSchool);
+  }
+}
+
+function syncSchoolFilterFromProfile(): void {
+  const routeSchool =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim()
+      : "";
+  const nextSchool = routeSchool || loadUserProfile()?.school?.trim() || DEFAULT_SCHOOL;
+  const currentSchool = useEventsStore.getState().schoolFilter;
+  if (currentSchool !== nextSchool) {
+    useEventsStore.getState().setSchoolFilter(nextSchool);
+  }
+}
+
+function resetSchoolFilterOnLogout(): void {
+  if (useEventsStore.getState().schoolFilter !== DEFAULT_SCHOOL) {
+    useEventsStore.getState().setSchoolFilter(DEFAULT_SCHOOL);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("auth-user-login", syncSchoolFilterFromLogin);
+  window.addEventListener(AUTH_STATE_REFRESH_EVENT, syncSchoolFilterFromProfile);
+  window.addEventListener("auth-user-logout", resetSchoolFilterOnLogout);
+}

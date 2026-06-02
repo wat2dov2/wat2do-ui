@@ -11,7 +11,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Textarea } from "@/shared/ui/textarea";
-import { showToast } from "@/shared/ui/toast";
+import { toast } from "@/shared/hooks/use-toast";
 import { reportEventToBackend } from "@/features/events/api/events.api";
 
 interface EventReportDialogProps {
@@ -39,11 +39,19 @@ export function EventReportDialog({
     setIsSubmitting(true);
     try {
       await reportEventToBackend(eventId, trimmedReason);
-      showToast(t("events.reportDialog.submittedTitle"), "success");
+      toast({
+        title: "Report Submitted",
+        description: t("events.reportDialog.submittedTitle"),
+        variant: "success",
+      });
       setIsSubmitted(true);
     } catch (err) {
       console.error("Failed to report event:", err);
-      showToast(t("events.reportDialog.submitFailed"), "error");
+      toast({
+        title: "Submission Failed",
+        description: t("events.reportDialog.submitFailed"),
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -11,7 +11,7 @@ export interface FilterState {
   foods: string[];
   days: string[];
   priceRange: { min: string; max: string };
-  requiresRegistration: boolean;
+  registration: boolean;
 }
 
 export type FilterViewMode = "visual" | "json";

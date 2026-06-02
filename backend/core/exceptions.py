@@ -81,13 +81,7 @@ class AIServiceError(Exception):
         message: str,
         *,
         error_kind: str = "api",
-        # Kept for backward compat during transition; new call sites
-        # should use error_kind="config" instead.
-        is_config_error: bool = False,
     ):
         super().__init__(message)
-        if is_config_error:
-            self.error_kind = "config"
-        else:
-            self.error_kind = error_kind
+        self.error_kind = error_kind
         self.is_config_error = self.error_kind == "config"

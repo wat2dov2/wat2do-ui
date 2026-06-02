@@ -24,7 +24,7 @@ _metrics_cache = TTLCache(default_ttl=60)
 class ABTestService:
     def __init__(
         self,
-        experiment_name: str = "recommendations_v1",
+        experiment_name: str = "recommendations",
         variants: tuple[str, ...] = AB_DEFAULT_VARIANTS,
         treatment_ratio: float = 0.5,
     ):

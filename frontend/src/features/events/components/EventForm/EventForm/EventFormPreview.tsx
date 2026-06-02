@@ -10,12 +10,10 @@ import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint"
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
-
 export function EventFormPreview() {
   const { t, i18n } = useTranslation();
   const { formData } = useEventFormContext();
   const categoryClasses = getCategoryClasses(formData.category);
-  const primaryOccurrence = formData.occurrences[0];
 
   // Generate badges matching EventCard structure
   const badges = useMemo(
@@ -23,23 +21,25 @@ export function EventFormPreview() {
     [formData, t],
   );
 
+  const previewEvent = useMemo(
+    () => ({
+      occurrences: formData.occurrences.map((o) => ({
+        dtstart_utc: o.dtstart_local,
+        dtend_utc: o.dtend_local || null,
+      })),
+    }),
+    [formData.occurrences],
+  );
+
   // Format date and time for preview (matching EventCard format)
   const cardDate = useMemo(
-    () =>
-      formatCardDate(
-        { dtstart_utc: primaryOccurrence?.dtstart_local || undefined },
-        i18n.language || 'en-US'
-      ),
-    [primaryOccurrence?.dtstart_local, i18n.language],
+    () => formatCardDate(previewEvent, i18n.language || 'en-US'),
+    [previewEvent, i18n.language],
   );
 
   const cardTime = useMemo(
-    () =>
-      formatCardTime({
-        dtstart_utc: primaryOccurrence?.dtstart_local || undefined,
-        dtend_utc: primaryOccurrence?.dtend_local || undefined,
-      }),
-    [primaryOccurrence?.dtstart_local, primaryOccurrence?.dtend_local],
+    () => formatCardTime(previewEvent),
+    [previewEvent],
   );
 
   return (

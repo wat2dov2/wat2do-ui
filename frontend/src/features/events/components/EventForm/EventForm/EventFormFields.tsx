@@ -184,15 +184,15 @@ export function EventFormFields() {
           />
 
           <Field>
-            <FieldLabel htmlFor="requires-registration">
-              {t("forms.requiresRegistration")}
+            <FieldLabel htmlFor="registration">
+              {t("forms.registration")}
             </FieldLabel>
             <div className="w-fit">
               <Switch
-                id="requires-registration"
-                checked={formData.requiresRegistration}
+                id="registration"
+                checked={formData.registration}
                 onCheckedChange={(checked) =>
-                  updateField("requiresRegistration", checked)
+                  updateField("registration", checked)
                 }
               />
             </div>

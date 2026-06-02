@@ -42,8 +42,8 @@ interface VisualFiltersProps {
     toggleDay: (id: string) => void;
     priceRange: { min: string; max: string };
     setPriceRange: (range: { min: string; max: string }) => void;
-    requiresRegistration: boolean;
-    setRequiresRegistration: (value: boolean) => void;
+    registration: boolean;
+    setRegistration: (value: boolean) => void;
     sortBy: string;
     setSortBy: (sortBy: string) => void;
     sortOrder: "asc" | "desc";
@@ -289,20 +289,20 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
 
       {/* Requires Registration Filter */}
       <FilterSection
-        title={t("filters.requiresRegistration")}
+        title={t("filters.registration")}
         expanded={expandedSections.registration}
         onToggle={() => toggleSection("registration")}
-        indicator={filters.requiresRegistration ? "1" : undefined}
-        onClear={() => filters.setRequiresRegistration(false)}
+        indicator={filters.registration ? "1" : undefined}
+        onClear={() => filters.setRegistration(false)}
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-foreground">
-            {t("filters.requiresRegistration")}
+            {t("filters.registration")}
           </span>
           <Switch
-            checked={filters.requiresRegistration}
+            checked={filters.registration}
             onCheckedChange={(checked) =>
-              filters.setRequiresRegistration(!!checked)
+              filters.setRegistration(!!checked)
             }
           />
         </div>

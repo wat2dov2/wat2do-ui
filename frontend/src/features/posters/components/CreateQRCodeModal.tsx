@@ -34,7 +34,7 @@ import {
 import { ModalContentWrapper, ModalHeaderWrapper } from "@/shared/ui/modal-components";
 import type { Event } from "@/shared/types";
 import type { QRCode } from "@/features/posters/types";
-import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
+import { toast } from "@/shared/hooks/use-toast";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { useCreateQRCodeForm } from "@/features/posters/hooks/useCreateQRCodeForm";
 import { useCreatePoster } from "@/features/posters/hooks/useCreatePoster";
@@ -59,7 +59,6 @@ function CreateQRCodeModalContent({
   const { t, i18n } = useTranslation();
   const form = useCreateQRCodeForm(events);
   const { createPoster } = useCreatePoster();
-  const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
 
   // Use modal state hook for standardized open/close handling
   const modalState = useModalState({
@@ -99,15 +98,15 @@ function CreateQRCodeModalContent({
         filters: form.formData.destinationType === "events-list"
           ? (form.formData.filters as unknown as Record<string, unknown>)
           : undefined,
-        is_active: true,
         image_url: imageUrl,
       });
       form.setQrCodeId(qrCode.id);
       onCreate(qrCode);
-      showSuccessAlert(
-        t("qrCode.posterCreated"),
-        t("qrCode.posterCreatedMessage", { name: qrCode.name })
-      );
+      toast({
+        title: t("qrCode.posterCreated"),
+        description: t("qrCode.posterCreatedMessage", { name: qrCode.name }),
+        variant: "success",
+      });
     } catch (err) {
       console.error("Failed to create QR code:", err);
       setCreateError(err instanceof Error ? err.message : t("common.error"));
@@ -314,7 +313,6 @@ function CreateQRCodeModalContent({
         </ModalContentWrapper>
       </DialogContent>
     </Dialog>
-    <SuccessAlertComponent />
     </>
   );
 }

@@ -35,6 +35,7 @@ interface AdminState {
   fetchReportedEventIds: (force?: boolean) => Promise<void>;
   approveSubmission: (id: string) => Promise<void>;
   rejectSubmission: (id: string, reason: string) => Promise<void>;
+  reset: () => void;
 }
 
 const fresh = (ts: number | undefined): boolean =>
@@ -105,4 +106,22 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       throw err;
     }
   },
+
+  reset: () => {
+    set({
+      submissions: [],
+      reportedEventIds: new Set<number>(),
+      loadedAt: {},
+    });
+  },
 }));
+
+// Listening to auth broadcasts
+if (typeof window !== "undefined") {
+  window.addEventListener("auth-user-logout", () => {
+    useAdminStore.getState().reset();
+  });
+  window.addEventListener("auth-user-login", () => {
+    useAdminStore.getState().reset();
+  });
+}

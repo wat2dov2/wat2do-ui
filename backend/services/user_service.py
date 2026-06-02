@@ -21,6 +21,13 @@ def get_user(user_id: UUID) -> UserResponse | None:
     return UserResponse.model_validate(r.data[0])
 
 
+def get_user_by_email(email: str) -> UserResponse | None:
+    r = get_sb().table(USERS).select("*").eq("email", email).execute()
+    if not r.data or len(r.data) == 0:
+        return None
+    return UserResponse.model_validate(r.data[0])
+
+
 def get_user_by_supabase_id(
     supabase_auth_id: str,
     *,

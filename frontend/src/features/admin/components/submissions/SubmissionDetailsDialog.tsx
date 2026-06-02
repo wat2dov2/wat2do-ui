@@ -63,11 +63,8 @@ export function SubmissionDetailsDialog({
                   key={occurrence.dtstart_local}
                   className="text-sm text-muted-foreground"
                 >
-                  {formatCardDate({ dtstart_utc: occurrence.dtstart_local })}{" "}
-                  {formatCardTime({
-                    dtstart_utc: occurrence.dtstart_local,
-                    dtend_utc: occurrence.dtend_local,
-                  })}
+                  {formatCardDate({ occurrences: [{ dtstart_utc: occurrence.dtstart_local, dtend_utc: occurrence.dtend_local }] })}{" "}
+                  {formatCardTime({ occurrences: [{ dtstart_utc: occurrence.dtstart_local, dtend_utc: occurrence.dtend_local }] })}
                 </p>
               ))}
             </div>
@@ -98,8 +95,8 @@ export function SubmissionDetailsDialog({
           )}
 
           <DetailRow
-            label={t("events.requiresRegistration")}
-            value={submission.eventData.requiresRegistration ? t("common.yes") : t("common.no")}
+            label={t("filters.registration")}
+            value={submission.eventData.registration ? t("common.yes") : t("common.no")}
           />
 
           <div className="border-t border-border pt-4">

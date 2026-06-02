@@ -1,13 +1,11 @@
 """Scrape pipeline orchestrator.
 
-Stages (matches v1 ``event_processor.py`` flow):
+Stages:
     1. Filter — drop posts already in the DB (skipped in dry-run).
     2. Upload — push each post's images to Supabase Storage.
     3. Extract — run vision-based extraction per post.
-    4. Save — insert one events row per occurrence (multi-occurrence events
-       become multiple rows; single-image multi-event posts stay as
-       multiple rows too — v2's flat schema means consolidation is a
-       no-op here).
+    4. Save — insert one events row per logical event and one event_dates
+       row per occurrence.
 
 Public entry point: ``run_pipeline``. Used by both single-user (one
 handle) and big-scrape (many handles, chunked) modes — chunking lives
@@ -256,10 +254,9 @@ def _process_one_post(
     source_url = post.get("url") or ""
 
     for event in events:
-        # Pick the source image based on the extractor's image_index, with
-        # bounds-fallback to the first uploaded image (mirrors v1). The
-        # model occasionally returns a non-int (e.g. the string ``"first"``);
-        # ``int()`` with TypeError fallback keeps the pipeline alive.
+        # Pick the source image based on the extractor's image_index. If the
+        # model returns a bad index, use the first uploaded image so the post
+        # can still be processed.
         try:
             idx = int(event.get("image_index") or 0)
         except (TypeError, ValueError):

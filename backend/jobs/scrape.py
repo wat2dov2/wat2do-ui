@@ -48,9 +48,8 @@ from services.scraper.pipeline import run_pipeline  # noqa: E402
 
 log = logging.getLogger(__name__)
 
-# Deep look-back for ad-hoc single-user runs.  Five years matches the
-# historical v1 IGNORE_CUTOFF default; in practice it's "ignore the
-# cutoff entirely" without disabling the filter code path.
+# Deep look-back for ad-hoc single-user runs; in practice this means
+# "ignore the cutoff" without disabling the filter code path.
 _IGNORE_CUTOFF_DAYS = 365 * 5
 
 
@@ -167,9 +166,8 @@ def _run_big_scrape_mode(
 ) -> int:
     handles = _read_handles(urls_file)
     if dry_run:
-        # v1 semantics: dry-run on a big-scrape only processes the first
-        # handle so the operator can eyeball model behaviour without
-        # waiting for a multi-hour Apify run.
+        # Keep dry-runs short so operators can inspect model behaviour
+        # without waiting for a multi-hour Apify run.
         handles = handles[:1]
     if not handles:
         log.error("No handles found in %s", urls_file)

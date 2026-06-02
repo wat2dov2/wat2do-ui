@@ -199,7 +199,14 @@ def _build_sparse_vector(
         nz[NUM_CATEGORIES] = min(price / PRICE_NORMALIZATION_CAP, 1.0)
 
     # Time bucket
-    dtstart = meta.dtstart_utc
+    dtstart = None
+    if meta.occurrences:
+        now_utc = datetime.now(timezone.utc)
+        future_occs = [o for o in meta.occurrences if (o.dtstart_utc if o.dtstart_utc.tzinfo else o.dtstart_utc.replace(tzinfo=timezone.utc)) >= now_utc]
+        pool = future_occs or list(meta.occurrences)
+        pool.sort(key=lambda o: o.dtstart_utc)
+        dtstart = pool[0].dtstart_utc
+
     dtstart_str = dtstart.isoformat() if dtstart else ""
     bucket = _get_time_bucket(dtstart_str, user_timezone=user_timezone)
     bucket_idx = _TIME_BUCKET_INDEX.get(bucket)
@@ -247,25 +254,4 @@ def _get_time_bucket(dtstart: str, *, user_timezone: str | None = None) -> str:
         return "afternoon"
 
 
-# ---------------------------------------------------------------------------
-# Backwards-compatible dense helpers (kept for any external callers / tests)
-# ---------------------------------------------------------------------------
 
-
-def _build_feature_vector(meta: EventResponse | None) -> list[float]:
-    """Dense feature vector -- retained for test compatibility."""
-    vec = [0.0] * _VECTOR_DIM
-    sv = _build_sparse_vector(meta)
-    for idx, val in sv.nz.items():
-        vec[idx] = val
-    return vec
-
-
-def _cosine_sim(a: list[float], b: list[float]) -> float:
-    """Cosine similarity between two dense vectors (legacy helper)."""
-    dot = sum(x * y for x, y in zip(a, b))
-    mag_a = math.sqrt(sum(x * x for x in a))
-    mag_b = math.sqrt(sum(x * x for x in b))
-    if mag_a == 0 or mag_b == 0:
-        return 0.0
-    return dot / (mag_a * mag_b)

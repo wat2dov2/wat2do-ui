@@ -42,7 +42,7 @@ def check_redeploy():
     else:
         # Get creation timestamp of the latest successful deploy
         last_deploy_str = success_deploys[0]["createdAt"]
-        # Convert to datetime (replacing Z with UTC offset for compatibility with older Python 3.11-)
+        # Convert the Railway ``Z`` suffix to an explicit UTC offset.
         last_deploy_dt = datetime.datetime.fromisoformat(last_deploy_str.replace("Z", "+00:00"))
 
         # Get latest commit datetime from git log

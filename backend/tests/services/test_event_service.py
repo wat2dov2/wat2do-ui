@@ -82,9 +82,10 @@ def test_diff_location_change_populates_dict():
 
 
 def test_diff_occurrence_change_serialises_to_iso():
-    """After the v1-style EventDates port, dtstart/dtend live in the
-    occurrences list — the diff compares the full list and emits a
-    structured change rather than two separate field diffs.
+    """dtstart/dtend live in the occurrences list.
+
+    The diff compares the full list and emits a structured change rather than
+    two separate field diffs.
     """
     old_ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
     new_ts = datetime(2026, 5, 1, 19, 0, tzinfo=timezone.utc)
@@ -217,7 +218,7 @@ def test_diff_occurrence_added_from_none():
 
 
 def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch_sb):
-    """Summary mode must report the primary occurrence (earliest future)."""
+    """Summary mode must report the occurrences."""
     from datetime import timedelta
 
     from services import event_date_service
@@ -246,7 +247,7 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
     )
 
     # Mock the post-dedup occurrence batch fetch with the FULL list,
-    # including a future May 1 — that's what _pick_primary should pick.
+    # including a future May 1.
     now = datetime.now(timezone.utc)
     future_1 = now + timedelta(days=2)
     future_2 = now + timedelta(days=9)
@@ -266,8 +267,26 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
     summary_results = event_service.list_events(summary=True)
     assert len(summary_results) == 1
     summary = summary_results[0]
-    # Primary must be the EARLIEST future occurrence, not the May 15 one.
-    assert summary.dtstart_utc == future_1
+    assert len(summary.occurrences) == 3
+    assert summary.occurrences[0].dtstart_utc == future_1
+
+
+def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):
+    patch_sb("services.event_service")
+    fake_sb.set_response(
+        data=[
+            {
+                "title": "MIT Men's Soccer",
+                "added_at": datetime(2026, 5, 15, 18, 0, tzinfo=timezone.utc).isoformat(),
+            }
+        ]
+    )
+
+    latest = event_service.get_latest_added_event("Massachusetts Institute of Technology")
+
+    assert latest is not None
+    assert latest.title == "MIT Men's Soccer"
+    fake_sb.eq.assert_any_call("school", "Massachusetts Institute of Technology")
 
 
 def _occ_response(dtstart, dtend=None, occ_id=1):

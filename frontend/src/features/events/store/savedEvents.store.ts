@@ -15,7 +15,7 @@ import {
 } from "@/features/events/api/events.api";
 import { isAuthenticated } from "@/features/auth";
 import { tracker } from "@/shared/services/trackingService";
-import { showToast } from "@/shared/ui/toast";
+import { toast } from "@/shared/hooks/use-toast";
 
 interface SavedEventsState {
   savedEventIds: number[];
@@ -127,12 +127,12 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
           _optimisticToggles.delete(eventId);
           // Rollback local change
           get()._toggleLocal(eventId);
-          showToast(
-            shouldSave
+          toast({
+            description: shouldSave
               ? i18n.t("events.savedEvents.saveFailed")
               : i18n.t("events.savedEvents.unsaveFailed"),
-            "error",
-          );
+            variant: "destructive",
+          });
         });
     }
 

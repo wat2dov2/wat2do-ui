@@ -16,6 +16,11 @@ import {
 import type { Club } from "@/shared/types";
 import { AddClubModal } from "@/features/clubs";
 import { useAdminClubsPage } from "@/features/admin/hooks/useAdminClubsPage";
+import {
+  adminCreateClub,
+  adminUpdateClub,
+  adminDeleteClub,
+} from "@/features/admin/api/admin.api";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
@@ -31,16 +36,10 @@ const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
 
 interface AdminClubsPageProps {
   onBack: () => void;
-  onAddClub: (club: Club) => void | Promise<void>;
-  onEditClub: (club: Club) => void | Promise<void>;
-  onDeleteClub: (clubId: number) => void | Promise<void>;
 }
 
 export function AdminClubsPage({
   onBack,
-  onAddClub,
-  onEditClub,
-  onDeleteClub,
 }: AdminClubsPageProps) {
   const { t } = useTranslation();
   const {
@@ -71,7 +70,7 @@ export function AdminClubsPage({
   const handleDelete = async (clubId: number) => {
     setIsDeleting(true);
     try {
-      await onDeleteClub(clubId);
+      await adminDeleteClub(clubId);
       await refreshClubs();
     } catch (error) {
       console.error("Failed to delete club:", error);
@@ -84,9 +83,9 @@ export function AdminClubsPage({
   const handleSave = async (club: Club) => {
     try {
       if (editingClub) {
-        await onEditClub(club);
+        await adminUpdateClub(club);
       } else {
-        await onAddClub(club);
+        await adminCreateClub(club);
       }
       await refreshClubs();
       closeModal();

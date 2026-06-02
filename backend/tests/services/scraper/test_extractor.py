@@ -60,7 +60,7 @@ def test_clean_event_fills_defaults_for_missing_fields():
     assert cleaned["location"] == ""
     assert cleaned["price"] is None
     assert cleaned["registration"] is False
-    assert cleaned["food"] == ""
+    assert cleaned["food"] == []
     assert cleaned["category"] is None
     assert cleaned["image_index"] == 0
 

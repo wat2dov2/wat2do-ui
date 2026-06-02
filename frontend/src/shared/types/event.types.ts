@@ -3,7 +3,7 @@
  *
  * `Event` is the generated backend `ApiEventResponse` shape intersected with
  * a handful of optional view-only fields populated on the frontend (isLive,
- * imageUrl, addedDate). Do NOT hand-write new API fields here — add them to
+ * addedDate). Do NOT hand-write new API fields here — add them to
  * the backend Pydantic model and regenerate via `npm run generate-types`.
  */
 
@@ -13,8 +13,6 @@ import type { ApiEventResponse } from "@/shared/generated";
 interface EventViewOnlyFields {
   /** Date object parsed from added_at. */
   addedDate?: Date;
-  /** Convenience alias for `source_image_url`. */
-  imageUrl?: string;
   /** Live/upcoming/past flag derived elsewhere. */
   isLive?: boolean;
 }
@@ -28,6 +26,7 @@ export interface EventFormOccurrence {
 
 // Event creation/edit form data (matches EventFormData from SubmitEventModal)
 export interface EventFormData {
+  club_id?: number | null;
   title: string;
   description: string;
   occurrences: EventFormOccurrence[];
@@ -35,8 +34,9 @@ export interface EventFormData {
   category: string;
   price: number;
   food: string[];
-  requiresRegistration: boolean;
+  registration: boolean;
   organization: string;
+  school?: string;
 }
 
 // Form validation errors

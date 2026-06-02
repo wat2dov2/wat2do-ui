@@ -5,7 +5,7 @@ the one place we deviate from function-based services. The module
 exports a singleton-friendly factory (``get_scraper``) so call sites do
 not re-instantiate the client and tests can swap it via monkeypatch.
 
-Behaviours preserved from v1:
+Current Apify policy:
     * ``skipPinnedPosts=True`` always set on the actor input.
     * 1-hour timeout per Apify run (chunking handled by the orchestrator).
     * Server-side warning when a pinned post comes back despite the flag
@@ -60,9 +60,8 @@ class InstagramScraper:
         """Run the actor for ``usernames``; return (raw_posts, pinned_warning).
 
         The pinned-warning flag is True when ``results_limit==1`` and any
-        returned item has ``isPinned=true``. v1 emits a GitHub Actions
-        ``::warning::`` annotation in this case; we surface the boolean
-        here and let the caller decide whether to log a workflow warning.
+        returned item has ``isPinned=true``. We surface the boolean here and
+        let the caller decide whether to log a workflow warning.
         """
         if isinstance(usernames, str):
             usernames = [usernames]

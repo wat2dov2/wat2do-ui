@@ -32,8 +32,11 @@ export interface LatestAddedEvent {
 /**
  * Fetch the most recently added event (for "X added 22 minutes ago" text).
  */
-export async function fetchLatestAddedEvent(): Promise<LatestAddedEvent | null> {
-  const data = await api.get<LatestAddedEvent | null>("/events/latest-added");
+export async function fetchLatestAddedEvent(school?: string): Promise<LatestAddedEvent | null> {
+  const params = new URLSearchParams();
+  if (school) params.set("school", school);
+  const qs = params.toString();
+  const data = await api.get<LatestAddedEvent | null>(`/events/latest-added${qs ? `?${qs}` : ""}`);
   return data;
 }
 

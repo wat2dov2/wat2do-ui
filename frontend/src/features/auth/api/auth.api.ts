@@ -6,7 +6,8 @@
  * Refresh token is in an httpOnly cookie (managed by the backend).
  */
 
-import { api, ApiError } from "@/shared/services/apiClient";
+import { api, isApiError } from "@/shared/services/apiClient";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import {
   loadUserEmail,
   saveUserEmail,
@@ -31,10 +32,10 @@ export type { UserProfile };
  * events, promotions, etc.) can refetch after a successful login/signup.
  * Mirrors the "auth-user-logout" broadcast in logoutAPI.
  */
-function dispatchAuthUserLogin(): void {
+function dispatchAuthUserLogin(school?: string): void {
   if (typeof window !== "undefined") {
     try {
-      window.dispatchEvent(new Event("auth-user-login"));
+      window.dispatchEvent(new CustomEvent("auth-user-login", { detail: { school } }));
     } catch (err) {
       console.error("Failed to dispatch auth-user-login event:", err);
     }
@@ -66,7 +67,7 @@ export function getUserRole(): "user" | "admin" {
 
 export function getUserId(): string | undefined {
   const profile = loadUserProfile();
-  return profile?.id ?? undefined;
+  return profile?.id;
 }
 
 export function getUserHasClub(): boolean {
@@ -85,33 +86,41 @@ export async function signupAPI(
   password: string,
   username?: string,
   fullName?: string,
-): Promise<{ userId: string; confirmationRequired: boolean }> {
+  token?: string,
+): Promise<{ userId: string; confirmationRequired: boolean; school: string }> {
   const res = await api.post<ApiSignupResponse>("/auth/signup", {
     email,
     password,
     username: username ?? undefined,
     full_name: fullName ?? undefined,
+    token: token ?? undefined,
   });
-
+  const school = (res as ApiSignupResponse & { school?: string | null }).school?.trim() || DEFAULT_SCHOOL;
   if (res.access_token) {
     saveAccessToken(res.access_token);
+    try {
+      await fetchProfileAPI();
+    } catch (err) {
+      console.error("Profile fetch during signup failed, continuing with fallback school:", err);
+    }
   }
   saveUserEmail(email);
 
   // Broadcast login so per-user stores (saved events, promotions) can
   // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
-  dispatchAuthUserLogin();
+  dispatchAuthUserLogin(school);
 
   return {
     userId: res.user_id,
     confirmationRequired: res.confirmation_required,
+    school,
   };
 }
 
 export async function loginAPI(
   email: string,
   password: string,
-): Promise<{ userId: string }> {
+): Promise<{ userId: string; school: string }> {
   const res = await api.post<ApiTokenResponse>("/auth/login", {
     email,
     password,
@@ -120,12 +129,13 @@ export async function loginAPI(
   saveAccessToken(res.access_token);
   saveUserEmail(email);
   await fetchProfileAPI();
+  const school = (res as ApiTokenResponse & { school?: string | null }).school?.trim() || DEFAULT_SCHOOL;
 
   // Broadcast login so per-user stores (saved events, promotions) can
   // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
-  dispatchAuthUserLogin();
+  dispatchAuthUserLogin(school);
 
-  return { userId: res.user_id };
+  return { userId: res.user_id, school };
 }
 
 export async function logoutAPI(): Promise<void> {
@@ -230,7 +240,7 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
     lastProfileFetchAt = Date.now();
     return profile;
   } catch (err) {
-    if (err instanceof ApiError && err.status === 404) {
+    if (isApiError(err) && err.status === 404) {
       console.warn("No profile row for current auth user:", err);
       return null;
     }
@@ -255,23 +265,16 @@ export async function resetPasswordAPI(
   accessToken: string,
   refreshToken: string,
   newPassword: string,
-): Promise<boolean> {
-  const res = await api.post<ApiTokenResponse | { message: string }>("/auth/reset-password", {
+): Promise<void> {
+  const res = await api.post<ApiTokenResponse>("/auth/reset-password", {
     access_token: accessToken,
-    refresh_token: refreshToken || undefined,
+    refresh_token: refreshToken,
     new_password: newPassword,
   });
 
-  if ("access_token" in res) {
-    saveAccessToken(res.access_token);
-    await fetchProfileAPI();
-    dispatchAuthUserLogin();
-    return true;
-  }
-
-  clearAllAuthData();
-  lastProfileFetchAt = 0;
-  return false;
+  saveAccessToken(res.access_token);
+  await fetchProfileAPI();
+  dispatchAuthUserLogin();
 }
 
 export { AUTH_STATE_REFRESH_EVENT } from "@/features/auth/api/userRepository";

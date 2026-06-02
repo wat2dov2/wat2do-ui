@@ -11,6 +11,7 @@ from core.config import settings
 from core.constants import ROLE_ADMIN
 from core.errors import (
     ADMIN_ACCESS_REQUIRED,
+    CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     CREDENTIALS_INVALID,
     INVALID_OR_EXPIRED_TOKEN,
     NOT_AUTHORIZED,
@@ -99,30 +100,6 @@ def _decode_jwt(credentials: str) -> dict:
         raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
 
 
-def decode_jwt_payload(credentials: str) -> dict:
-    """Decode a JWT and return the *raw payload* (not the auth-user dict).
-
-    Used by flows that need to inspect claims beyond ``sub/email/aud/role``
-    — e.g. password reset, which must verify the token was issued for
-    recovery (``amr=["recovery"]`` / ``email_action_type="recovery"``) and
-    not a regular session.
-    """
-    # Reuse the signature-verification path in _decode_jwt by decoding a
-    # second time without the auth-user projection.
-    try:
-        signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials)
-        return jwt.decode(
-            credentials,
-            signing_key.key,
-            algorithms=list(_ASYMMETRIC_ALGS),
-            audience="authenticated",
-            issuer=_EXPECTED_ISSUER,
-        )
-    except (jwt.PyJWKClientError, jwt.PyJWKSetError, jwt.InvalidTokenError) as e:
-        log.warning("JWKS payload decode failed: %s", e)
-        raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
-
-
 def _payload_to_user(payload: dict) -> AuthUser:
     """Extract user info from a verified JWT payload."""
     sub = payload.get("sub")
@@ -172,9 +149,8 @@ def resolve_db_user(auth_user: AuthUser, *, user_lookup=None) -> "UserResponse":
 
     Bypasses the user-service cache so that role changes (and, by
     extension, ownership-vs-admin decisions) take effect immediately on
-    the very next request. The old ``_check_admin`` path used to do this
-    with a second DB round-trip; unifying on the DB user means we pay
-    for one fresh read and everyone downstream gets the current role.
+    the very next request. Unifying on the DB user means we pay for one
+    fresh read and everyone downstream gets the current role.
 
     Raises 404 if the user has not completed signup (no row in ``users``).
     Shared by routers that need the internal user row after auth.
@@ -219,6 +195,21 @@ def get_admin_user(
     return db_user
 
 
+def get_club_owner_or_admin(
+    db_user: "UserResponse" = Depends(get_db_user),
+) -> "UserResponse":
+    """Require admin OR club owner (user who owns at least one club). Returns 403 if neither."""
+    if db_user.role == ROLE_ADMIN:
+        return db_user
+
+    from services import club_service
+
+    clubs = club_service.list_clubs_by_owner(str(db_user.id))
+    if not clubs:
+        raise AuthorizationError(CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED)
+    return db_user
+
+
 def is_admin(db_user: "UserResponse") -> bool:
     """Return True if *db_user* has the admin role.
 
@@ -236,8 +227,7 @@ def require_owner_or_admin(db_user: "UserResponse", resource_owner_id: str | Non
     resource's ``created_by`` / ``owner_id`` / ``user_id`` column stores
     this value after the ``unify_created_by_to_internal_id`` migration.
 
-    When *resource_owner_id* is ``None`` (legacy rows created before
-    ownership tracking), only admins may modify the resource.
+    When *resource_owner_id* is ``None``, only admins may modify the resource.
     """
     if resource_owner_id is not None and str(db_user.id) == str(resource_owner_id):
         return

@@ -14,7 +14,7 @@ from schemas.notification_preference import (
     NotificationPreferencesListResponse,
 )
 from schemas.user import UserResponse
-from services import notification_service
+from services.notifications import preferences
 
 router = APIRouter(
     prefix="/notification-preferences",
@@ -33,7 +33,7 @@ def get_my_preferences(
     ``updated_at=None`` so the client can distinguish "default-on" from
     "explicitly opted in".
     """
-    prefs = notification_service.get_preferences(str(db_user.id))
+    prefs = preferences.get_preferences(str(db_user.id))
     return NotificationPreferencesListResponse(preferences=prefs)
 
 
@@ -43,4 +43,4 @@ def update_my_preferences(
     db_user: UserResponse = Depends(get_db_user),
 ) -> None:
     """Bulk-upsert preferences for the authenticated user."""
-    notification_service.set_preferences(str(db_user.id), payload.preferences)
+    preferences.set_preferences(str(db_user.id), payload.preferences)

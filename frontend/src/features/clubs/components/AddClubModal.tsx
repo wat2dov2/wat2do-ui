@@ -30,13 +30,13 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import type { Club } from "@/shared/types";
-import { useSuccessAlert } from "@/shared/hooks/useSuccessAlert";
+import { toast } from "@/shared/hooks/use-toast";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { TagInput } from "@/shared/ui/tag-input";
-import { availableSchools, DEFAULT_SCHOOL } from "@/shared/constants/schools";
-import { translateSchool } from "@/shared/utils/schoolTranslation";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { SchoolCombobox } from "@/shared/ui/school-combobox";
 
 interface ClubFormData {
   club_name: string;
@@ -64,7 +64,6 @@ export function AddClubModal({
 }: AddClubModalProps) {
   const { t } = useTranslation();
   const isEditMode = !!initialData;
-  const { show: showSuccessAlert, SuccessAlertComponent } = useSuccessAlert({ onClose });
 
   // Memoize getDefaults to prevent infinite loops
   const getDefaults = useCallback(() => ({
@@ -170,12 +169,14 @@ export function AddClubModal({
     setIsSubmitting(true);
     try {
       await Promise.resolve(onSave(club));
-      showSuccessAlert(
-        isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated"),
-        isEditMode
+      toast({
+        title: isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated"),
+        description: isEditMode
           ? t("clubs.clubUpdatedMessage", { name: club.club_name })
-          : t("clubs.clubCreatedMessage", { name: club.club_name })
-      );
+          : t("clubs.clubCreatedMessage", { name: club.club_name }),
+        variant: "success",
+      });
+      onClose();
     } finally {
       setIsSubmitting(false);
     }
@@ -221,21 +222,13 @@ export function AddClubModal({
                   <FieldLabel htmlFor="club-school" className="text-sm font-medium text-foreground">
                     {t("schools.school")} <span className="text-error">*</span>
                   </FieldLabel>
-                  <Select
-                    value={form.formData.school}
-                    onValueChange={(value) => form.updateField("school", value)}
-                  >
-                    <SelectTrigger id="club-school" className="w-full">
-                      <SelectValue placeholder={t("schools.selectSchool")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSchools.map((school) => (
-                        <SelectItem key={school} value={school}>
-                          {translateSchool(school, t)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SchoolCombobox
+                    id="club-school"
+                    value={form.formData.school || ""}
+                    onChange={(value) => form.updateField("school", value)}
+                    variant="field"
+                    placeholder={t("schools.selectSchool")}
+                  />
                   {form.errors.school && (
                     <FieldError className="text-xs">{form.errors.school}</FieldError>
                   )}
@@ -380,7 +373,6 @@ export function AddClubModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    <SuccessAlertComponent />
     </>
   );
 }

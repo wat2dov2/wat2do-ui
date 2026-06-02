@@ -14,7 +14,7 @@ class FilterStateResponse(BaseModel):
     priceRange: dict[str, str] = {"min": "", "max": ""}
     dateRange: str = ""
     addedSince: str = ""
-    requiresRegistration: bool = False
+    registration: bool = False
 
 
 class EventFormOccurrenceResponse(BaseModel):
@@ -30,5 +30,5 @@ class EventFormDataResponse(BaseModel):
     category: str = ""
     price: float = 0
     food: list[str] = Field(default_factory=list)
-    requiresRegistration: bool = False
+    registration: bool = False
     organization: str = ""

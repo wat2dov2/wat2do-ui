@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from core.constants import (
-    CATEGORY_NORMALIZE_MAP,
     EVENT_CATEGORIES,
     MAX_EVENT_CATEGORY_LENGTH,
     MAX_EVENT_CLUB_TYPE_LENGTH,
@@ -28,15 +27,7 @@ _log = logging.getLogger(__name__)
 _CANONICAL_SET = frozenset(EVENT_CATEGORIES)
 
 
-def _normalize_food(v: object) -> list[str] | None:
-    """Accept both legacy string and list forms of the ``food`` field."""
-    if v is None:
-        return None
-    if isinstance(v, str):
-        return [v]
-    if isinstance(v, list):
-        return v
-    return None
+
 
 
 # Reusable constrained-string type for individual food tags.
@@ -88,18 +79,13 @@ def _validate_optional_handle(v: str | None) -> str | None:
 
 
 def normalize_category(raw: str) -> str | None:
-    """Map a raw category string to the canonical value.
+    """Check if a raw category string belongs to the canonical categories.
 
-    Returns the canonical category string, or ``None`` if the value
-    cannot be mapped (in which case it should be dropped).
+    Returns the canonical category string, or ``None`` if it is unrecognized.
     """
     raw = raw.strip()
     if raw in _CANONICAL_SET:
         return raw
-    mapped = CATEGORY_NORMALIZE_MAP.get(raw)
-    if mapped is not None:
-        _log.warning("Legacy category %r normalized to %r", raw, mapped)
-        return mapped
     _log.warning("Unrecognized category %r, dropping it", raw)
     return None
 
@@ -128,8 +114,7 @@ class EventCreate(BaseModel):
     # Occurrences live in the event_dates table — one row per occurrence,
     # one events row per logical event. Per-occurrence dtstart/dtend
     # validation lives on OccurrenceCreate; the only constraint here is
-    # that an event has at least one occurrence (matches v1's required
-    # EventDates).
+    # that an event has at least one occurrence.
     occurrences: list[OccurrenceCreate] = Field(..., min_length=1)
     price: PriceField | None = None
     food: list[FoodStr] | None = Field(default=None, max_length=MAX_EVENT_FOOD_COUNT)
@@ -139,18 +124,9 @@ class EventCreate(BaseModel):
     school: str | None = Field(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    club_id: int | None = Field(default=None, ge=1)
-    organization: str = Field(..., min_length=1, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
+    club_id: int = Field(..., ge=1)
+    organization: str | None = Field(default=None, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    display_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-
-    @field_validator("organization")
-    @classmethod
-    def _org_required(cls, v: str) -> str:
-        v = (v or "").strip()
-        if not v:
-            raise ValueError("organization is required")
-        return v
 
     @field_validator("category")
     @classmethod
@@ -164,7 +140,6 @@ class EventCreate(BaseModel):
 
     @field_validator(
         "ig_handle",
-        "display_handle",
     )
     @classmethod
     def _safe_handle(cls, v: str | None) -> str | None:
@@ -191,17 +166,6 @@ class EventUpdate(BaseModel):
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
     organization: str | None = Field(default=None, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-    display_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
-
-    @field_validator("organization")
-    @classmethod
-    def _org_not_blank(cls, v: str | None) -> str | None:
-        if v is None:
-            return None
-        v = v.strip()
-        if not v:
-            raise ValueError("organization cannot be blank")
-        return v
 
     @field_validator("category")
     @classmethod
@@ -215,7 +179,6 @@ class EventUpdate(BaseModel):
 
     @field_validator(
         "ig_handle",
-        "display_handle",
     )
     @classmethod
     def _safe_handle(cls, v: str | None) -> str | None:
@@ -235,8 +198,7 @@ class EventTimeMeta(BaseModel):
     Decay keys off ``added_at`` (catalog age), not ``dtstart_utc`` —
     see the rationale in recommender/popularity.py. The field
     used to be on this model when ``events`` carried dtstart_utc as a
-    column; after the v1-style EventDates port (migration
-    20260428031741) we drop it from the model too.
+    column; occurrence dates now live in event_dates.
     """
 
     id: int
@@ -256,24 +218,20 @@ class EventSummaryResponse(BaseModel):
     id: int
     title: str
     location: str | None = None
-    dtstart_utc: datetime | None = None
-    dtend_utc: datetime | None = None
+    occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
     category: str | None = None
     organization: str | None = None
-    display_handle: str | None = None
+    ig_handle: str | None = None
     school: str | None = None
     added_at: datetime
 
     model_config = {"from_attributes": True}
 
-    @field_validator("food", mode="before")
-    @classmethod
-    def _food_str_to_list(cls, v: object) -> list[str] | None:
-        return _normalize_food(v)
+
 
 
 class EventResponse(BaseModel):
@@ -285,12 +243,7 @@ class EventResponse(BaseModel):
     public list endpoint hides it via ``EventSummaryResponse`` which
     omits the field entirely.
 
-    ``occurrences`` is the canonical date list. ``dtstart_utc`` /
-    ``dtend_utc`` are denormalized "primary date" convenience fields
-    populated by the service layer (earliest future occurrence, or
-    earliest occurrence if the event has only past dates). They are
-    NOT columns on the events table — see migration
-    20260428031741_add_event_dates_table.sql.
+    ``occurrences`` is the canonical date list.
     """
 
     id: int
@@ -299,8 +252,6 @@ class EventResponse(BaseModel):
     description: str | None = None
     location: str | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
-    dtstart_utc: datetime | None = None
-    dtend_utc: datetime | None = None
     price: float | None = None
     food: list[str] | None = None
     registration: bool = False
@@ -311,16 +262,12 @@ class EventResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     ig_handle: str | None = None
-    display_handle: str | None = None
     added_at: datetime
     created_by: str | None = None
 
     model_config = {"from_attributes": True}
 
-    @field_validator("food", mode="before")
-    @classmethod
-    def _food_str_to_list(cls, v: object) -> list[str] | None:
-        return _normalize_food(v)
+
 
 
 class EventPublicResponse(BaseModel):
@@ -334,8 +281,6 @@ class EventPublicResponse(BaseModel):
     description: str | None = None
     location: str | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
-    dtstart_utc: datetime | None = None
-    dtend_utc: datetime | None = None
     price: float | None = None
     food: list[str] | None = None
     registration: bool = False
@@ -346,12 +291,6 @@ class EventPublicResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     ig_handle: str | None = None
-    display_handle: str | None = None
     added_at: datetime
 
     model_config = {"from_attributes": True}
-
-    @field_validator("food", mode="before")
-    @classmethod
-    def _food_str_to_list(cls, v: object) -> list[str] | None:
-        return _normalize_food(v)

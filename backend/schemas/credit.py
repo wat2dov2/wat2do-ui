@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import MAX_CREDITS_PER_ADD
 
@@ -29,6 +29,8 @@ class AddCreditsRequest(BaseModel):
 
 
 class PromotionCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     event_id: int
 
 

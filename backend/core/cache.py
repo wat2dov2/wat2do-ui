@@ -13,6 +13,7 @@ from collections import OrderedDict
 from typing import Callable, TypeVar
 
 T = TypeVar("T")
+DEFAULT_MAX_SIZE = 1024
 
 # Sentinel used internally to distinguish "no entry" from "entry whose
 # value happens to be None" (P4).  Public callers should never see this
@@ -32,12 +33,9 @@ class TTLCache:
         # Double-check locking pattern:
         result = cache.get_or_compute("key", expensive_fn)
 
-    **Size bound (P5):** If ``max_size`` is set to a positive int, the
-    cache evicts the least-recently-used entry whenever the store
-    exceeds that size.  The default ``max_size=None`` keeps the legacy
-    unbounded behaviour (suitable for small, known-bounded keysets).
-    Callers that store one entry per user / per event *must* set a cap
-    to avoid OOM under load.
+    **Size bound (P5):** By default the cache evicts the least-recently-used
+    entry when it grows beyond ``DEFAULT_MAX_SIZE``. Pass ``max_size=None``
+    only for known-bounded keysets that intentionally need no cap.
 
     **None values (P4):** ``get()`` still returns ``None`` on a miss,
     but ``get_or_compute()`` correctly caches a computed ``None`` and
@@ -49,7 +47,7 @@ class TTLCache:
         self,
         default_ttl: int = 300,
         *,
-        max_size: int | None = None,
+        max_size: int | None = DEFAULT_MAX_SIZE,
     ) -> None:
         self.default_ttl = default_ttl
         self.max_size = max_size

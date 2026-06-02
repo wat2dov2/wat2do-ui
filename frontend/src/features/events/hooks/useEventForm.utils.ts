@@ -28,6 +28,7 @@ export function mapAiResponseToFormData(
   fallbackDefaults: { occurrences: EventFormOccurrence[] },
 ): EventFormData {
   return {
+    club_id: typeof parsed.club_id === "number" ? parsed.club_id : null,
     title: (parsed.title as string) || "",
     description: (parsed.description as string) || "",
     occurrences: normalizeOccurrences(parsed.occurrences, fallbackDefaults.occurrences),
@@ -35,9 +36,9 @@ export function mapAiResponseToFormData(
     category: (parsed.category as string) || "",
     price: typeof parsed.price === "number" ? parsed.price : 0,
     food: Array.isArray(parsed.food) ? parsed.food : [],
-    requiresRegistration:
-      typeof parsed.requiresRegistration === "boolean"
-        ? parsed.requiresRegistration
+    registration:
+      typeof parsed.registration === "boolean"
+        ? parsed.registration
         : false,
     organization: (parsed.organization as string) || "",
   };
@@ -63,6 +64,7 @@ export function getInitialState(initialData?: EventFormData, isEditMode = false)
     isEditMode && initialData
       ? initialData
       : {
+        club_id: null,
         title: "",
         description: "",
         occurrences: smartDefaults.occurrences,
@@ -70,7 +72,7 @@ export function getInitialState(initialData?: EventFormData, isEditMode = false)
         category: "",
         price: 0,
         food: [],
-        requiresRegistration: false,
+        registration: false,
         organization: "",
       };
 

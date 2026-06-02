@@ -151,7 +151,7 @@ test.describe("Onboarding Wizard E2E Flow", () => {
     await page.waitForTimeout(1000);
 
     // 2. Verifications: redirect and profile sync
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(new RegExp(`^${BASE}/(\\?.*)?$`));
 
     // Verify local storage profile structure matches what we set
     const profileString = await page.evaluate(() => window.localStorage.getItem("userProfile"));

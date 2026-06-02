@@ -103,7 +103,7 @@ Return ONLY valid JSON matching this structure (no markdown, no explanation):
   "priceRange": {{{{ "min": "", "max": "" }}}},
   "dateRange": "",
   "addedSince": "",
-  "requiresRegistration": false
+  "registration": false
 }}}}
 
 IMPORTANT RULES:
@@ -112,7 +112,7 @@ IMPORTANT RULES:
 - dateRange: Use full ISO 8601 format "YYYY-MM-DDTHH:mm:ss.sssZ". Example: "2024-12-25T00:00:00.000Z". Leave empty "" if not specified.
 - addedSince: Use full ISO 8601 format "YYYY-MM-DDTHH:mm:ss.sssZ". Example: "2024-12-07T00:00:00.000Z". Leave empty "" if not specified.
 - priceRange: Free events = {{{{"min": "0", "max": "0"}}}}. Under $10 = {{{{"min": "", "max": "10"}}}}.
-- requiresRegistration: Set true only if user explicitly wants events requiring registration.
+- registration: Set true only if user explicitly wants events requiring registration.
 - Only use values from the available options above.
 - Return raw JSON only, no markdown code blocks.
 
@@ -143,7 +143,7 @@ Return ONLY valid JSON matching this structure (no markdown, no explanation):
   "category": "",
   "price": 0,
   "food": [],
-  "requiresRegistration": false,
+  "registration": false,
   "organization": ""
 }}}}
 
@@ -155,7 +155,7 @@ IMPORTANT RULES:
 - category: You MUST use one of the available categories above. Do NOT invent new category names.
 - price: Number (0 for free events)
 - food: Array of food items from the available options, empty array [] if none
-- requiresRegistration: true/false
+- registration: true/false
 - organization: Create a reasonable club/organization name if not specified
 - Return raw JSON only, no markdown code blocks.
 
@@ -164,7 +164,7 @@ Today's date is {{today}}.
 Examples:
 - "tech talk about AI next friday at 2pm" -> title: "Tech Talk: The Future of AI", occurrences: [{{{{"dtstart_local": "YYYY-MM-DDT14:00", "dtend_local": ""}}}}], category: "Technology"
 - "free pizza social at SLC" -> title: "Pizza Social Mixer", location: "SLC", price: 0, food: ["Pizza"], category: "Games"
-- "hackathon this weekend with registration" -> title: "Weekend Hackathon", requiresRegistration: true, category: "Technology\""""
+- "hackathon this weekend with registration" -> title: "Weekend Hackathon", registration: true, category: "Technology\""""
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +232,7 @@ def get_openai_client() -> OpenAI:
     if not settings.openai_api_key:
         raise AIServiceError(
             "OpenAI API key not configured on the server.",
-            is_config_error=True,
+            error_kind="config",
         )
     return OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_timeout)
 
@@ -351,7 +351,7 @@ def validate_filter_response(parsed: dict) -> dict:
         "priceRange": price_range,
         "dateRange": _safe_get(parsed, "dateRange", str, ""),
         "addedSince": _safe_get(parsed, "addedSince", str, ""),
-        "requiresRegistration": _safe_get(parsed, "requiresRegistration", bool, False),
+        "registration": _safe_get(parsed, "registration", bool, False),
     }
 
 
@@ -459,7 +459,7 @@ def validate_event_response(parsed: dict) -> dict:
     else:
         price = 0.0
 
-    # Normalize category: map legacy names, drop unrecognized ones
+    # Normalize category and drop unrecognized values.
     raw_category = _safe_get(parsed, "category", str, "")
     if raw_category.strip():
         category = normalize_category(raw_category) or ""
@@ -480,7 +480,7 @@ def validate_event_response(parsed: dict) -> dict:
         "category": category,
         "price": price,
         "food": food,
-        "requiresRegistration": _safe_get(parsed, "requiresRegistration", bool, False),
+        "registration": _safe_get(parsed, "registration", bool, False),
         "organization": _safe_get(parsed, "organization", str, ""),
     }
 

@@ -1,11 +1,13 @@
 import { useCallback, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { createSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
+import { QP } from "@/shared/constants/queryParams";
 import { AnimatePresence, m } from "framer-motion";
 import { Mail } from "lucide-react";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
 import { useUpdateProfile } from "../hooks/useUpdateProfile";
+import { getUserId } from "@/features/auth";
 import { setDailyNewEventsEmailPreferenceAPI } from "@/features/settings/api/notificationPreferences.api";
 import { OnboardingEventGrid } from "../components/OnboardingEventGrid";
 import { OnboardingInterestsCombobox } from "../components/OnboardingInterestsCombobox";
@@ -95,6 +97,7 @@ export function OnboardingPage() {
       dailyNewEventsOptIn: boolean;
     }) => {
       const profile = {
+        id: getUserId() || "",
         faculty: data.faculty,
         interests: data.selectedTopics,
         isFirstYear: data.isFirstYear,
@@ -116,7 +119,10 @@ export function OnboardingPage() {
         );
       }
 
-      navigate(ROUTES.HOME);
+      navigate({
+        pathname: ROUTES.HOME,
+        search: `?${createSearchParams({ [QP.SCHOOL]: data.school })}`,
+      });
     },
     [navigate, persistProfile]
   );
@@ -163,7 +169,7 @@ export function OnboardingPage() {
   const gooseMessage = useMemo(() => {
     if (flow.currentStep === 3) {
       return flow.school
-        ? t("onboarding.gooseStep3WithSchool", { school: translateSchool(flow.school, t) })
+        ? t("onboarding.gooseStep3WithSchool", { school: translateSchool(flow.school) })
         : t("onboarding.gooseStep3Default");
     }
     const key = GOOSE_MESSAGE_KEYS[flow.currentStep];

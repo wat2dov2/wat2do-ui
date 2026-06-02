@@ -39,6 +39,7 @@ SESSION_REFRESH_FAILED = "Could not refresh session — please log in again"
 # 403 – Authorization
 # ---------------------------------------------------------------------------
 ADMIN_ACCESS_REQUIRED = "Admin access required"
+CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED = "Club manager or admin access required"
 NOT_AUTHORIZED = "Not authorized"
 EMAIL_NOT_ALLOWED = (
     "Only student emails from allowed schools can sign up. "
@@ -69,6 +70,8 @@ DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same even
 INVALID_STATUS_TRANSITION = "Invalid status transition"
 EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted"
 SAVED_EVENTS_CAP_REACHED = "Maximum saved events limit reached"
+SAVED_CLUBS_CAP_REACHED = "Maximum saved clubs limit reached"
+
 INVALID_ROLE = "Role must be 'user' or 'admin'"
 CANNOT_DELETE_SELF = "Admins cannot delete their own account"
 LAST_ADMIN_REQUIRED = "Cannot remove the last remaining admin"

@@ -11,6 +11,11 @@ export type EventDateCategory =
   | "later"
   | "past";
 
+export interface Occurrence {
+  dtstart_utc: string;
+  dtend_utc?: string | null;
+}
+
 const toMidnight = (date: Date): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
@@ -18,15 +23,32 @@ const sameDay = (firstDate: Date, secondDate: Date): boolean =>
   firstDate.toDateString() === secondDate.toDateString();
 
 /**
+ * Resolve the primary occurrence from an event's occurrences list.
+ * Earliest future occurrence wins; falls back to earliest past occurrence if all are in the past.
+ */
+export function getPrimaryOccurrence(event: { occurrences?: Occurrence[] }): Occurrence | null {
+  const occurrences = event.occurrences;
+  if (!occurrences || occurrences.length === 0) {
+    return null;
+  }
+  const now = new Date();
+  const future = occurrences.filter(o => new Date(o.dtstart_utc) >= now);
+  const pool = future.length > 0 ? future : occurrences;
+  const sorted = [...pool].sort((a, b) => new Date(a.dtstart_utc).getTime() - new Date(b.dtstart_utc).getTime());
+  return sorted[0] || null;
+}
+
+/**
  * Format event date for card display (e.g., "Tuesday Jan 27")
  * Uses i18n locale for proper localization
  */
 export function formatCardDate(
-  event: { dtstart_utc?: string | null },
+  event: { occurrences?: Occurrence[] },
   locale: string = 'en-US'
 ): string {
-  if (event.dtstart_utc) {
-    const date = new Date(event.dtstart_utc);
+  const primary = getPrimaryOccurrence(event);
+  if (primary && primary.dtstart_utc) {
+    const date = new Date(primary.dtstart_utc);
     const dayOfWeek = date.toLocaleDateString(locale, { weekday: 'long' });
     const month = date.toLocaleDateString(locale, { month: 'short' });
     const day = date.getDate();
@@ -39,9 +61,10 @@ export function formatCardDate(
  * Format event date for modal/detail display (e.g., "Mon, Jan 27, 2025").
  */
 export function formatDisplayDate(event: {
-  dtstart_utc?: string | null;
+  occurrences?: Occurrence[];
 }): string {
-  const raw = event.dtstart_utc;
+  const primary = getPrimaryOccurrence(event);
+  const raw = primary?.dtstart_utc;
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
@@ -57,14 +80,14 @@ export function formatDisplayDate(event: {
  * Format event time for modal/detail display (e.g., "8:00 AM – 10:00 AM").
  */
 export function formatDisplayTime(event: {
-  dtstart_utc?: string | null;
-  dtend_utc?: string | null;
+  occurrences?: Occurrence[];
 }): string {
-  const raw = event.dtstart_utc;
+  const primary = getPrimaryOccurrence(event);
+  const raw = primary?.dtstart_utc;
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
-  const end = event.dtend_utc ? new Date(event.dtend_utc) : null;
+  const end = primary?.dtend_utc ? new Date(primary.dtend_utc) : null;
   const start = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   if (end && !isNaN(end.getTime())) {
     return `${start} \u2013 ${end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
@@ -76,12 +99,12 @@ export function formatDisplayTime(event: {
  * Format event time for card display (e.g., "12:30 PM to 3:00 PM")
  */
 export function formatCardTime(event: {
-  dtstart_utc?: string | null;
-  dtend_utc?: string | null;
+  occurrences?: Occurrence[];
 }): string {
-  if (event.dtstart_utc) {
-    const start = new Date(event.dtstart_utc);
-    const end = event.dtend_utc ? new Date(event.dtend_utc) : null;
+  const primary = getPrimaryOccurrence(event);
+  if (primary && primary.dtstart_utc) {
+    const start = new Date(primary.dtstart_utc);
+    const end = primary.dtend_utc ? new Date(primary.dtend_utc) : null;
     
     const formatTime = (date: Date): string => {
       const hours = date.getHours();
@@ -102,18 +125,18 @@ export function formatCardTime(event: {
  */
 export function getEventDateCategory(
   event: {
-    dtstart_utc?: string | null;
-    dtend_utc?: string | null;
+    occurrences?: Occurrence[];
   },
   currentDate: Date = new Date()
 ): EventDateCategory {
-  const rawStart = event.dtstart_utc;
+  const primary = getPrimaryOccurrence(event);
+  const rawStart = primary?.dtstart_utc;
   if (!rawStart) return "later";
 
   const parsedStart = new Date(rawStart);
   if (Number.isNaN(parsedStart.getTime())) return "later";
 
-  const parsedEnd = event.dtend_utc ? new Date(event.dtend_utc) : parsedStart;
+  const parsedEnd = primary?.dtend_utc ? new Date(primary.dtend_utc) : parsedStart;
   const startDate = toMidnight(parsedStart);
   const endDate = Number.isNaN(parsedEnd.getTime())
     ? startDate

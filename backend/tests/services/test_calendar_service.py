@@ -30,10 +30,10 @@ def test_resolve_timezone_known_school_casefolded():
     )
 
 
-def test_resolve_timezone_alias():
+def test_resolve_timezone_waterloo_alias():
     assert calendar_service.resolve_school_timezone("uw") == "America/Toronto"
     assert calendar_service.resolve_school_timezone("UW") == "America/Toronto"
-    assert calendar_service.resolve_school_timezone("laurier") == "America/Toronto"
+    assert calendar_service.resolve_school_timezone("laurier") == "UTC"
 
 
 def test_resolve_timezone_unknown_falls_back_to_utc():
@@ -153,9 +153,9 @@ def test_get_user_id_by_token_miss(fake_sb, patch_sb):
 
 
 def _event_row(**overrides) -> dict:
-    """Plain events row — no date columns since the v1-style EventDates
-    port (migration 20260428031741). Occurrences come from a separate
-    event_dates query; use ``_occurrence_row`` to build those.
+    """Plain events row with occurrences queried from event_dates.
+
+    Use ``_occurrence_row`` to build the occurrence records.
     """
     defaults = {
         "id": 42,
