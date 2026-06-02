@@ -5,22 +5,23 @@ from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
+from uuid import UUID
+
 from postgrest.exceptions import APIError
 
 from core.constants import DEFAULT_LIST_LIMIT
 from core.database import get_sb
+from core.exceptions import ConflictError, NotFoundError, ValidationError
 from core.sanitize import sanitize_postgrest_value
-from core.tables import CLUB_INTEGRATIONS, CLUBS, CLUB_MEMBERS, CLUB_INVITATIONS
+from core.tables import CLUB_INTEGRATIONS, CLUB_INVITATIONS, CLUB_MEMBERS, CLUBS
 from schemas.club import (
     ClubCreate,
     ClubIntegrationResponse,
+    ClubMemberResponse,
     ClubResponse,
     ClubUpdate,
     IntegrationPlatform,
-    ClubMemberResponse,
 )
-from core.exceptions import NotFoundError, ConflictError, ValidationError
-from uuid import UUID
 
 
 def _normalize_club_name(name: str | None) -> str:
@@ -34,13 +35,9 @@ def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
     # Query via club_members junction table
     try:
         r_members = (
-            get_sb()
-            .table(CLUB_MEMBERS)
-            .select("clubs(*)")
-            .eq("user_id", owner_id)
-            .execute()
+            get_sb().table(CLUB_MEMBERS).select("clubs(*)").eq("user_id", owner_id).execute()
         )
-        for row in (r_members.data or []):
+        for row in r_members.data or []:
             if row.get("clubs"):
                 club = ClubResponse.model_validate(row["clubs"])
                 clubs_dict[club.id] = club
@@ -71,19 +68,13 @@ def is_club_member(club_id: int, user_id: str) -> bool:
 
 def list_club_members(club_id: int) -> list[ClubMemberResponse]:
     """Return all members/managers of the club."""
-    r = (
-        get_sb()
-        .table(CLUB_MEMBERS)
-        .select("joined_at, users(*)")
-        .eq("club_id", club_id)
-        .execute()
-    )
+    r = get_sb().table(CLUB_MEMBERS).select("joined_at, users(*)").eq("club_id", club_id).execute()
     members = []
     club = get_club(club_id)
     if not club:
         return []
 
-    for row in (r.data or []):
+    for row in r.data or []:
         u_data = row.get("users")
         if not u_data:
             continue
@@ -107,6 +98,7 @@ def list_club_members(club_id: int) -> list[ClubMemberResponse]:
 def add_club_member(club_id: int, user_id: UUID) -> ClubMemberResponse:
     """Add a user as a member of the club."""
     from services import user_service
+
     user = user_service.get_user(user_id)
     if not user:
         raise NotFoundError("User not found")
@@ -151,12 +143,6 @@ def remove_club_member(club_id: int, user_id: UUID) -> bool:
         .execute()
     )
     return bool(r.data)
-
-
-
-
-
-
 
 
 def get_club(club_id: int) -> ClubResponse | None:
@@ -522,6 +508,7 @@ def disconnect_platform_integration(
 
 # --- Club Invitations Service Methods ---
 
+
 def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
     """Create or renew an invitation for an email to join a club, and send the email."""
     # 1. Verify club exists
@@ -530,6 +517,7 @@ def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
         raise NotFoundError("Club not found")
 
     from services import user_service
+
     inviter = user_service.get_user(invited_by)
     if not inviter:
         raise NotFoundError("Inviting user not found")
@@ -537,19 +525,26 @@ def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
     # 2. Restrict emails to match the inviter's school domain (except for admins)
     if inviter.role != "admin":
         from core.allowed_emails import get_school_for_email
+
         invited_school = get_school_for_email(email)
-        if not invited_school or not inviter.school or invited_school.lower() != inviter.school.lower():
-            raise ValidationError(f"You can only invite emails matching your school domain ({inviter.school or 'Unknown'}).")
+        if (
+            not invited_school
+            or not inviter.school
+            or invited_school.lower() != inviter.school.lower()
+        ):
+            raise ValidationError(
+                f"You can only invite emails matching your school domain ({inviter.school or 'Unknown'})."
+            )
 
     # 3. Check if already a member
     existing_user = user_service.get_user_by_email(email)
     if existing_user and is_club_member(club_id, str(existing_user.id)):
         raise ConflictError("User is already a member of this club")
 
-
     # 3. Generate token & expiry (7 days)
     import uuid
     from datetime import timedelta
+
     token = uuid.uuid4()
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(days=7)
@@ -566,12 +561,7 @@ def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
 
     try:
         # Upsert: if an invite for (club_id, email) already exists, overwrite it.
-        r = (
-            get_sb()
-            .table(CLUB_INVITATIONS)
-            .upsert(payload, on_conflict="club_id,email")
-            .execute()
-        )
+        r = get_sb().table(CLUB_INVITATIONS).upsert(payload, on_conflict="club_id,email").execute()
         if not r.data:
             raise APIError("Failed to create invitation")
         invitation = r.data[0]
@@ -581,8 +571,9 @@ def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
 
     # 4. Dispatch the invitation email
     try:
-        from services.email_service import email_service, EmailMessage
         from core.config import settings
+        from services.email_service import EmailMessage, email_service
+
         invite_url = f"{settings.frontend_url}/invite/{token}"
         subject = f"Invitation to manage {club.club_name} on Wat2Do"
         body_html = f"""
@@ -647,7 +638,7 @@ def get_invitation_by_token(token: str) -> dict:
     )
     if not r.data:
         raise NotFoundError("Invitation not found or has expired")
-    
+
     inv = r.data[0]
     club_name = inv.get("clubs", {}).get("club_name", "Unknown Club")
     return {
@@ -660,7 +651,7 @@ def get_invitation_by_token(token: str) -> dict:
 def accept_invitation(token: str, user_id: UUID) -> bool:
     """Accept an invitation by token and add the user to the club."""
     now = datetime.now(timezone.utc).isoformat()
-    
+
     # 1. Fetch and validate invitation
     r = (
         get_sb()
@@ -673,17 +664,16 @@ def accept_invitation(token: str, user_id: UUID) -> bool:
     )
     if not r.data:
         raise NotFoundError("Invitation not found or has expired")
-    
+
     inv = r.data[0]
     club_id = inv["club_id"]
-    
+
     # 2. Add user to club members
     try:
         add_club_member(club_id, user_id)
     except ConflictError:
         pass
-    
+
     # 3. Mark invitation as accepted
     get_sb().table(CLUB_INVITATIONS).update({"status": "accepted"}).eq("id", inv["id"]).execute()
     return True
-

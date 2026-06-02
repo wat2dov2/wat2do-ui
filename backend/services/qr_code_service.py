@@ -121,9 +121,6 @@ def update_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
     return get_qr_code_by_id(data.id)
 
 
-
-
-
 def activate_poster_and_record_scan(
     qr_code_id: str,
     latitude: float,

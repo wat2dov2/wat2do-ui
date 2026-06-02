@@ -21,7 +21,6 @@ class SignupRequest(BaseModel):
     token: str | None = Field(default=None, description="Optional invitation token")
 
 
-
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=_PASSWORD_MIN_LENGTH, max_length=_PASSWORD_MAX_LENGTH)

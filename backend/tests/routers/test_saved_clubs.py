@@ -45,9 +45,7 @@ def test_list_saved_clubs_requires_auth(client):
 def test_list_saved_clubs_succeeds(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
-    monkeypatch.setattr(
-        saved_club_service, "get_saved_club_ids", MagicMock(return_value=[1, 3, 7])
-    )
+    monkeypatch.setattr(saved_club_service, "get_saved_club_ids", MagicMock(return_value=[1, 3, 7]))
 
     resp = authenticated_client.get("/saved-clubs/")
     assert resp.status_code == 200

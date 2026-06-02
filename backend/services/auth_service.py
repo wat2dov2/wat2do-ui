@@ -110,6 +110,7 @@ class AuthService:
         has_valid_invite = False
         if data.token:
             from datetime import datetime, timezone
+
             now_str = datetime.now(timezone.utc).isoformat()
             try:
                 r_invite = (
@@ -174,6 +175,7 @@ class AuthService:
         # Auto-join user to any clubs they have pending invitations for
         try:
             from datetime import datetime, timezone
+
             now_str = datetime.now(timezone.utc).isoformat()
             r_invites = (
                 self._db.table("club_invitations")
@@ -183,17 +185,21 @@ class AuthService:
                 .gt("expires_at", now_str)
                 .execute()
             )
-            for invite in (r_invites.data or []):
+            for invite in r_invites.data or []:
                 from services.club_service import add_club_member
+
                 try:
                     add_club_member(invite["club_id"], uuid.UUID(user_id))
                 except Exception as e:
-                    logger.warning("Failed to auto-add user %s to club %s: %s", user_id, invite["club_id"], e)
-                
-                self._db.table("club_invitations").update({"status": "accepted"}).eq("id", invite["id"]).execute()
+                    logger.warning(
+                        "Failed to auto-add user %s to club %s: %s", user_id, invite["club_id"], e
+                    )
+
+                self._db.table("club_invitations").update({"status": "accepted"}).eq(
+                    "id", invite["id"]
+                ).execute()
         except Exception as e:
             logger.warning("Failed to process auto-join for user %s: %s", user_id, e)
-
 
         if res.session:
             return AuthResult(
@@ -347,5 +353,6 @@ class AuthService:
             ),
             refresh_token=res.session.refresh_token,
         )
+
 
 auth = AuthService()

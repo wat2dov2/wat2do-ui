@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import json
-import sys
-import subprocess
 import datetime
+import json
 import os
+import subprocess
+import sys
+
 
 def check_redeploy():
     project_id = os.getenv("RAILWAY_PROJECT_ID")
@@ -21,7 +22,7 @@ def check_redeploy():
             "wat2do-api",
             "--environment",
             "production",
-            "--json"
+            "--json",
         ]
         # We pass RAILWAY_PROJECT_ID in the env when invoking subprocess if it is in the parent env
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -47,7 +48,9 @@ def check_redeploy():
 
         # Get latest commit datetime from git log
         try:
-            commit_ts_str = subprocess.check_output(["git", "log", "-1", "--format=%cI"]).decode().strip()
+            commit_ts_str = (
+                subprocess.check_output(["git", "log", "-1", "--format=%cI"]).decode().strip()
+            )
             commit_dt = datetime.datetime.fromisoformat(commit_ts_str)
         except Exception as e:
             print(f"Error getting git commit timestamp: {e}")
@@ -71,6 +74,7 @@ def check_redeploy():
         print(f"Set GITHUB_OUTPUT should_deploy to {should_deploy}")
     else:
         print(f"Not running in GitHub Actions. Output: should_deploy={should_deploy}")
+
 
 if __name__ == "__main__":
     check_redeploy()

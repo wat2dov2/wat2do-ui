@@ -68,25 +68,27 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
 
     @model_validator(mode="after")
-    def validate_database_region(self) -> 'Settings':
+    def validate_database_region(self) -> "Settings":
         if not self.database_url:
             return self
-        
+
         import urllib.parse
+
         try:
             parsed = urllib.parse.urlparse(self.database_url)
             host = parsed.hostname
             if not host or not host.endswith(".pooler.supabase.com"):
                 return self
-            
+
             port = parsed.port or 5432
             username = parsed.username
             if not username:
                 return self
         except Exception:
             return self
-            
+
         import socket
+
         try:
             # Build postgres startup packet to test regional connectivity
             user_str = f"user\x00{username}\x00database\x00postgres\x00\x00"
@@ -96,7 +98,7 @@ class Settings(BaseSettings):
                 + (196608).to_bytes(4, byteorder="big")
                 + user_str.encode("utf-8")
             )
-            
+
             with socket.create_connection((host, port), timeout=3) as s:
                 s.sendall(packet)
                 response = s.recv(1024)

@@ -77,9 +77,7 @@ def _render_email_event_card(event: dict, tz: ZoneInfo) -> str:
     location = escape(str(event.get("location") or "Location TBA"))
     ig = event.get("ig_handle")
     formatted_handle = f"@{str(ig).lstrip('@')}" if ig else None
-    organization = escape(
-        str(event.get("organization") or formatted_handle or "Campus event")
-    )
+    organization = escape(str(event.get("organization") or formatted_handle or "Campus event"))
     category = str(event.get("category") or "Events")
     category_bg, category_fg = _category_email_colors(category)
     date_label, time_label = _format_event_date_time(event, tz)

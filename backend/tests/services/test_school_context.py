@@ -61,5 +61,8 @@ def test_current_semester_end_uses_waterloo_only():
         )
         == "20260430T235959Z"
     )
-    assert school_context.current_semester_end("University of Pennsylvania", now=datetime(2026, 3, 15)) is None
+    assert (
+        school_context.current_semester_end("University of Pennsylvania", now=datetime(2026, 3, 15))
+        is None
+    )
     assert school_context.current_semester_end("Unknown", now=datetime(2026, 5, 1)) is None

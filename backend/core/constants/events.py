@@ -40,4 +40,3 @@ INTEREST_TO_CATEGORIES: dict[str, list[str]] = {
     "Health": ["Health", "Wellness", "Mental Health"],
     "Cultural": ["Culture", "Religion", "Advocacy"],
 }
-

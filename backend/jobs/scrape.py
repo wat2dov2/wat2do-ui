@@ -40,9 +40,7 @@ load_dotenv()
 
 import core.logging  # noqa: F401, E402  — triggers basicConfig for standalone execution
 from core.constants import (  # noqa: E402
-    SCRAPING_DEFAULT_CUTOFF_DAYS,
     SCRAPING_HANDLES_PER_RUN,
-    SCRAPING_SINGLE_USER_CUTOFF_DAYS,
 )
 from services.scraper.pipeline import run_pipeline  # noqa: E402
 
@@ -61,17 +59,42 @@ def _parse_args() -> argparse.Namespace:
     user_parser = subparsers.add_parser("user", help="Scrape a single Instagram user")
     user_parser.add_argument("--username", required=True, help="Instagram username to scrape")
     user_parser.add_argument("--school", required=True, help="Canonical school name")
-    user_parser.add_argument("--limit", type=int, default=1, help="Max posts per handle (Apify resultsLimit)")
-    user_parser.add_argument("--cutoff-days", type=int, default=1, help="Drop posts older than this many days")
-    user_parser.add_argument("--dry-run", choices=["true", "false"], required=True, help="Whether to perform a dry run (true/false)")
+    user_parser.add_argument(
+        "--limit", type=int, default=1, help="Max posts per handle (Apify resultsLimit)"
+    )
+    user_parser.add_argument(
+        "--cutoff-days", type=int, default=1, help="Drop posts older than this many days"
+    )
+    user_parser.add_argument(
+        "--dry-run",
+        choices=["true", "false"],
+        required=True,
+        help="Whether to perform a dry run (true/false)",
+    )
 
     # Batch subcommand
-    batch_parser = subparsers.add_parser("batch", help="Scrape a batch of Instagram handles from a file")
-    batch_parser.add_argument("--urls-file", type=Path, required=True, help="Path to a text file with one URL/handle per line")
+    batch_parser = subparsers.add_parser(
+        "batch", help="Scrape a batch of Instagram handles from a file"
+    )
+    batch_parser.add_argument(
+        "--urls-file",
+        type=Path,
+        required=True,
+        help="Path to a text file with one URL/handle per line",
+    )
     batch_parser.add_argument("--school", required=True, help="Canonical school name")
-    batch_parser.add_argument("--limit", type=int, default=None, help="Max posts per handle (Apify resultsLimit)")
-    batch_parser.add_argument("--cutoff-days", type=int, default=4, help="Drop posts older than this many days")
-    batch_parser.add_argument("--dry-run", choices=["true", "false"], required=True, help="Whether to perform a dry run (true/false)")
+    batch_parser.add_argument(
+        "--limit", type=int, default=None, help="Max posts per handle (Apify resultsLimit)"
+    )
+    batch_parser.add_argument(
+        "--cutoff-days", type=int, default=4, help="Drop posts older than this many days"
+    )
+    batch_parser.add_argument(
+        "--dry-run",
+        choices=["true", "false"],
+        required=True,
+        help="Whether to perform a dry run (true/false)",
+    )
 
     return parser.parse_args()
 
@@ -217,7 +240,7 @@ def main() -> int:
     args = _parse_args()
 
     # Convert string choice to boolean
-    dry_run_bool = (args.dry_run == "true")
+    dry_run_bool = args.dry_run == "true"
 
     if args.command == "user":
         return _run_single_user_mode(

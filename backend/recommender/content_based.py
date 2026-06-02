@@ -94,7 +94,16 @@ def get_content_scores(
 
         dtstart = None
         if event.occurrences:
-            future_occs = [o for o in event.occurrences if (o.dtstart_utc if o.dtstart_utc.tzinfo else o.dtstart_utc.replace(tzinfo=timezone.utc)) >= now]
+            future_occs = [
+                o
+                for o in event.occurrences
+                if (
+                    o.dtstart_utc
+                    if o.dtstart_utc.tzinfo
+                    else o.dtstart_utc.replace(tzinfo=timezone.utc)
+                )
+                >= now
+            ]
             pool = future_occs or list(event.occurrences)
             pool.sort(key=lambda o: o.dtstart_utc)
             dtstart = pool[0].dtstart_utc

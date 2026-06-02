@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from core.allowed_emails import get_school_for_email
 from core.constants import SCHOOL_ALIASES, SCHOOL_SEMESTER_ENDS, SCHOOL_TIMEZONES
 
 log = logging.getLogger(__name__)

@@ -189,8 +189,6 @@ def _resolve_organization(event: dict, *, ig_handle: str, club: dict | None) -> 
     return f"@{ig_handle.lstrip('@')}"
 
 
-
-
 def _clean_food(value: object) -> list | None:
     """Validate and normalize the current JSON-list food shape."""
     if value in (None, []):

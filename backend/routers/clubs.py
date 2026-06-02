@@ -1,4 +1,5 @@
 from typing import Union
+
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user
@@ -11,27 +12,26 @@ from core.constants import (
     ROLE_ADMIN,
 )
 from core.errors import CLUB_NOT_FOUND, NOT_AUTHORIZED
-from core.exceptions import get_or_404, NotFoundError, AuthorizationError, ValidationError
+from core.exceptions import AuthorizationError, NotFoundError, ValidationError, get_or_404
 from schemas.club import (
     ClubCreate,
     ClubIntegrationResponse,
     ClubIntegrationUpdate,
+    ClubMemberAdd,
+    ClubMemberResponse,
     ClubResponse,
     ClubUpdate,
     DiscordIntegrationOptionsResponse,
     IntegrationPlatform,
     PlatformIntegrationOptionsResponse,
-    ClubMemberResponse,
-    ClubMemberAdd,
 )
-from schemas.user import UserResponse
 from schemas.invitation import (
     ClubInvitationCreate,
-    ClubInvitationResponse,
     ClubInvitationPublicResponse,
+    ClubInvitationResponse,
 )
+from schemas.user import UserResponse
 from services import club_service
-
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
 
@@ -200,7 +200,11 @@ def list_club_members(
     return club_service.list_club_members(club_id)
 
 
-@router.post("/{club_id}/members", response_model=Union[ClubMemberResponse, ClubInvitationResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{club_id}/members",
+    response_model=Union[ClubMemberResponse, ClubInvitationResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 def add_club_member(
     club_id: int,
     data: ClubMemberAdd,
@@ -214,6 +218,7 @@ def add_club_member(
     _get_club_or_403(club_id, db_user)
 
     from services import user_service
+
     target_user = user_service.get_user_by_email(data.email)
     if not target_user:
         return club_service.create_invitation(club_id, data.email, db_user.id)
@@ -231,6 +236,7 @@ def remove_club_member(
     _get_club_or_403(club_id, db_user)
 
     from uuid import UUID
+
     try:
         uuid_user_id = UUID(user_id)
     except ValueError:
@@ -241,7 +247,11 @@ def remove_club_member(
         raise NotFoundError("Member not found in this club")
 
 
-@router.post("/{club_id}/invitations", response_model=ClubInvitationResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{club_id}/invitations",
+    response_model=ClubInvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_invitation(
     club_id: int,
     data: ClubInvitationCreate,
@@ -290,5 +300,3 @@ def accept_invitation(
     success = club_service.accept_invitation(token, db_user.id)
     if not success:
         raise NotFoundError("Invitation not found or has expired")
-
-

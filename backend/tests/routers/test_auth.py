@@ -252,7 +252,6 @@ class TestSignup:
         assert args[0].token == "11111111-1111-1111-1111-111111111111"
 
 
-
 # ===========================================================================
 # POST /auth/login
 # ===========================================================================
@@ -773,6 +772,7 @@ class TestResetPasswordRecoveryGuard:
         assert result.body.access_token == "rec-tok"
         assert result.body.user_id == "uid-1"
         assert result.refresh_token == "rec-refresh-new"
+
 
 # ===========================================================================
 # Cookie behavior

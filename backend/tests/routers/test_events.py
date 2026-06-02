@@ -41,9 +41,7 @@ def _mock_club(**overrides) -> ClubResponse:
 
 
 def test_create_event_requires_auth(client):
-    response = client.post(
-        "/events/", json={"title": "Test", "location": "Here", "club_id": 7}
-    )
+    response = client.post("/events/", json={"title": "Test", "location": "Here", "club_id": 7})
     assert response.status_code == 401
 
 
@@ -223,10 +221,6 @@ def test_delete_event_owner_allowed(authenticated_client, monkeypatch):
 
     resp = authenticated_client.delete("/events/1")
     assert resp.status_code == 204
-
-
-
-
 
 
 # ---------------------------------------------------------------------------

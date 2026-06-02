@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -25,9 +25,6 @@ from schemas.event_date import OccurrenceCreate, OccurrenceResponse
 _log = logging.getLogger(__name__)
 
 _CANONICAL_SET = frozenset(EVENT_CATEGORIES)
-
-
-
 
 
 # Reusable constrained-string type for individual food tags.
@@ -232,8 +229,6 @@ class EventSummaryResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-
-
 class EventResponse(BaseModel):
     """Full event payload returned from GET /events/{id} and used internally
     for ownership checks.
@@ -266,8 +261,6 @@ class EventResponse(BaseModel):
     created_by: str | None = None
 
     model_config = {"from_attributes": True}
-
-
 
 
 class EventPublicResponse(BaseModel):

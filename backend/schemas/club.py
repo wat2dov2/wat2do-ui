@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from typing import Literal
 from urllib.parse import urlparse
@@ -227,4 +226,3 @@ class ClubMemberResponse(BaseModel):
 
 class ClubMemberAdd(BaseModel):
     email: str
-

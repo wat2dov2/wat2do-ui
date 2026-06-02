@@ -31,9 +31,7 @@ from services import event_date_service
 log = logging.getLogger(__name__)
 
 EVENT_SUMMARY_EVENT_COLUMNS = ",".join(
-    field
-    for field in EventSummaryResponse.model_fields
-    if field != "occurrences"
+    field for field in EventSummaryResponse.model_fields if field != "occurrences"
 )
 
 # Event fields whose changes constitute a "material" update — the ones

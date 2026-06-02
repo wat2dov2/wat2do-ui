@@ -38,8 +38,7 @@ def list_schools() -> list[str]:
 def _search_index() -> dict[str, tuple[str, ...]]:
     lookup = _canonical_school_lookup()
     index: dict[str, set[str]] = {
-        school: {_normalize(school), _compact(school)}
-        for school in lookup.values()
+        school: {_normalize(school), _compact(school)} for school in lookup.values()
     }
 
     for domain, school in ALLOWED_EMAIL_DOMAINS.items():
@@ -49,8 +48,7 @@ def _search_index() -> dict[str, tuple[str, ...]]:
             index[canonical].add(_compact(domain))
 
     return {
-        school: tuple(sorted(term for term in terms if term))
-        for school, terms in index.items()
+        school: tuple(sorted(term for term in terms if term)) for school, terms in index.items()
     }
 
 

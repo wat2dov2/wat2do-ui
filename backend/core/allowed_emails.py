@@ -55,7 +55,10 @@ def load_allowed_domains() -> None:
 
     json_path = Path(__file__).parent / "world_universities_and_domains.json"
     if not json_path.exists():
-        log.warning("world_universities_and_domains.json not found at %s. Using fallback domains.", json_path)
+        log.warning(
+            "world_universities_and_domains.json not found at %s. Using fallback domains.",
+            json_path,
+        )
         return
 
     try:

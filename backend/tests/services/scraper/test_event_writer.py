@@ -40,9 +40,6 @@ def test_clean_food_yes_marker_kept():
     assert _clean_food(["Yes!"]) == ["Yes!"]
 
 
-
-
-
 # ── ISO parsing ───────────────────────────────────────────────────────
 
 

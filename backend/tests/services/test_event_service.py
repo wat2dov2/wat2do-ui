@@ -211,7 +211,6 @@ def test_diff_occurrence_added_from_none():
     }
 
 
-
 # ---------------------------------------------------------------------------
 # Primary-date consistency between summary and detail modes
 # ---------------------------------------------------------------------------

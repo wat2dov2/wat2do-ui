@@ -9,4 +9,3 @@ def test_get_active_promoted_event_ids(fake_sb, patch_sb):
 
     assert sorted(credit_service.get_active_promoted_event_ids()) == [7, 9]
     assert [call.args[0] for call in fake_sb.gt.call_args_list] == ["end_date"]
-

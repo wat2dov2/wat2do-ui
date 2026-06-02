@@ -6,7 +6,6 @@ N event_dates rows.
 """
 
 from datetime import datetime, timezone
-
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator

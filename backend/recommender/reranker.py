@@ -202,7 +202,16 @@ def _build_sparse_vector(
     dtstart = None
     if meta.occurrences:
         now_utc = datetime.now(timezone.utc)
-        future_occs = [o for o in meta.occurrences if (o.dtstart_utc if o.dtstart_utc.tzinfo else o.dtstart_utc.replace(tzinfo=timezone.utc)) >= now_utc]
+        future_occs = [
+            o
+            for o in meta.occurrences
+            if (
+                o.dtstart_utc
+                if o.dtstart_utc.tzinfo
+                else o.dtstart_utc.replace(tzinfo=timezone.utc)
+            )
+            >= now_utc
+        ]
         pool = future_occs or list(meta.occurrences)
         pool.sort(key=lambda o: o.dtstart_utc)
         dtstart = pool[0].dtstart_utc
@@ -252,6 +261,3 @@ def _get_time_bucket(dtstart: str, *, user_timezone: str | None = None) -> str:
     except (ValueError, TypeError) as e:
         log.warning("Failed to parse time_of_day from %s: %s", dtstart, e)
         return "afternoon"
-
-
-

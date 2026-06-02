@@ -149,7 +149,7 @@ def extract_events_from_post(
         # ``null`` (the model's "no event in this post" return) falls
         # through here, as do unexpected shapes.
         events = []
-    
+
     cleaned_events = []
     for e in events:
         if not isinstance(e, dict):
@@ -307,14 +307,17 @@ def empty_str_to_none(v: object) -> object:
         return None
     return v
 
+
 OptionalStr = Annotated[str | None, BeforeValidator(empty_str_to_none)]
 OptionalDatetime = Annotated[datetime | None, BeforeValidator(empty_str_to_none)]
+
 
 class ExtractedOccurrence(BaseModel):
     dtstart_utc: datetime
     dtend_utc: OptionalDatetime = None
     duration: OptionalStr = None
     tz: OptionalStr = None
+
 
 class ExtractedEvent(BaseModel):
     title: str = Field(default="")

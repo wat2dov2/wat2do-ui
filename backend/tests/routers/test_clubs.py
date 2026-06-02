@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock
 from uuid import UUID
 
-from schemas.club import ClubResponse, ClubMemberResponse
+from schemas.club import ClubMemberResponse, ClubResponse
 from schemas.user import UserResponse
 from services import club_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
@@ -17,9 +17,6 @@ def _mock_club(**overrides) -> ClubResponse:
     }
     defaults.update(overrides)
     return ClubResponse.model_validate(defaults)
-
-
-
 
 
 def test_create_club_requires_auth(client):
@@ -202,9 +199,6 @@ def test_integration_owner_allowed(authenticated_client, monkeypatch):
     assert resp.status_code == 200
 
 
-
-
-
 def test_list_club_members_requires_auth(client):
     resp = client.get("/clubs/1/members")
     assert resp.status_code == 401
@@ -255,6 +249,7 @@ def test_add_club_member_allowed_for_member(authenticated_client, monkeypatch):
     monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))
 
     from services import user_service
+
     new_user_id = "00000000-0000-0000-0000-000000000002"
     mock_user = UserResponse(
         id=UUID(new_user_id),
@@ -300,6 +295,7 @@ def test_remove_club_member_allowed_for_member(authenticated_client, monkeypatch
 
 # --- Invitation Tests ---
 
+
 def test_add_club_member_invites_if_user_not_found(authenticated_client, monkeypatch):
     """If user not found, create a pending invitation and return 201."""
     club = _mock_club(created_by=FAKE_USER["id"])
@@ -307,6 +303,7 @@ def test_add_club_member_invites_if_user_not_found(authenticated_client, monkeyp
     monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))
 
     from services import user_service
+
     monkeypatch.setattr(user_service, "get_user_by_email", MagicMock(return_value=None))
 
     mock_invite = {
@@ -375,7 +372,9 @@ def test_get_invitation_by_token(client, monkeypatch):
         "email": "invitee@example.com",
         "expires_at": datetime.now(timezone.utc),
     }
-    monkeypatch.setattr(club_service, "get_invitation_by_token", MagicMock(return_value=mock_invite_public))
+    monkeypatch.setattr(
+        club_service, "get_invitation_by_token", MagicMock(return_value=mock_invite_public)
+    )
 
     resp = client.get("/clubs/invitations/22222222-2222-2222-2222-222222222222")
     assert resp.status_code == 200
@@ -387,7 +386,7 @@ def test_get_invitation_by_token(client, monkeypatch):
 def test_accept_invitation(authenticated_client, monkeypatch):
     monkeypatch.setattr(club_service, "accept_invitation", MagicMock(return_value=True))
 
-    resp = authenticated_client.post("/clubs/invitations/22222222-2222-2222-2222-222222222222/accept")
+    resp = authenticated_client.post(
+        "/clubs/invitations/22222222-2222-2222-2222-222222222222/accept"
+    )
     assert resp.status_code == 204
-
-
