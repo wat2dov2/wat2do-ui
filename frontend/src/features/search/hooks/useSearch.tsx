@@ -64,7 +64,6 @@ export function useSearch({
       freeFoodFilter: filterState.freeFoodFilter,
       selectedDays: filterState.selectedDays,
       priceRange: filterState.priceRange,
-      dateRange: filterState.dateRange,
       selectedLocations: filterState.selectedLocations,
       selectedFoods: filterState.selectedFoods,
       selectedCategories: filterState.selectedCategories,
@@ -79,7 +78,6 @@ export function useSearch({
     filterState.freeFoodFilter,
     filterState.selectedDays,
     filterState.priceRange,
-    filterState.dateRange,
     filterState.selectedLocations,
     filterState.selectedFoods,
     filterState.selectedCategories,
@@ -100,7 +98,6 @@ export function useSearch({
         selectedFoods: filterState.selectedFoods,
         selectedDays: filterState.selectedDays,
         priceRange: filterState.priceRange,
-        dateRange: filterState.dateRange,
         registration: filterState.registration,
       }),
     [
@@ -109,7 +106,6 @@ export function useSearch({
       filterState.selectedFoods,
       filterState.selectedDays,
       filterState.priceRange,
-      filterState.dateRange,
       filterState.registration,
     ],
   );

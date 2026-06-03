@@ -471,7 +471,7 @@ test.describe("Events Page", () => {
     expect(res.status()).toBe(200);
     const events = await res.json();
     expect(events.length).toBeGreaterThanOrEqual(1);
-    expect(events.map((e: any) => e.title)).toContain("Tech Career Fair");
+    expect(events.map((e: { title: string }) => e.title)).toContain("Tech Career Fair");
   });
 
   test("event category filter works on API", async ({ request }) => {
@@ -517,7 +517,7 @@ test.describe("Clubs Page", () => {
     expect(res.status()).toBe(200);
     const clubs = await res.json();
     expect(clubs.length).toBeGreaterThanOrEqual(1);
-    expect(clubs.map((c: any) => c.club_name)).toContain("UW Computer Science Club");
+    expect(clubs.map((c: { club_name: string }) => c.club_name)).toContain("UW Computer Science Club");
   });
 });
 

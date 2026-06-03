@@ -24,7 +24,6 @@ interface FilterValues {
   selectedFoods: string[];
   selectedDays: string[];
   priceRange: { min: string; max: string };
-  dateRange: { from: string; to: string };
   registration: boolean;
   freeFoodFilter: boolean;
   savedFilter: boolean;
@@ -44,7 +43,6 @@ interface SearchStoreState extends FilterValues {
   setSelectedFoods: (value: string[]) => void;
   setSelectedDays: (value: string[]) => void;
   setPriceRange: (value: { min: string; max: string }) => void;
-  setDateRange: (value: { from: string; to: string }) => void;
   setRegistration: (value: boolean) => void;
   setFreeFoodFilter: (value: boolean) => void;
   setSavedFilter: (value: boolean) => void;
@@ -64,7 +62,6 @@ const emptyFilters: FilterValues = {
   selectedFoods: [],
   selectedDays: [],
   priceRange: { min: "", max: "" },
-  dateRange: { from: "", to: "" },
   registration: false,
   freeFoodFilter: false,
   savedFilter: false,
@@ -80,7 +77,6 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
   setSelectedFoods: (value) => set({ selectedFoods: value }),
   setSelectedDays: (value) => set({ selectedDays: value }),
   setPriceRange: (value) => set({ priceRange: value }),
-  setDateRange: (value) => set({ dateRange: value }),
   setRegistration: (value) => set({ registration: value }),
   setFreeFoodFilter: (value) => set({ freeFoodFilter: value }),
   setSavedFilter: (value) => set({ savedFilter: value }),
@@ -107,7 +103,6 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       selectedFoods: Array.isArray(filters.foods) ? filters.foods : [],
       selectedDays: Array.isArray(filters.days) ? filters.days : [],
       priceRange: filters.priceRange || { min: "", max: "" },
-      dateRange: filters.dateRange || { from: "", to: "" },
       registration: filters.registration || false,
       freeFoodFilter: false,
       savedFilter: false,

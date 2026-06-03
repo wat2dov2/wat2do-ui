@@ -82,10 +82,7 @@ function SubmitEventModalFormBody({
     isOpen,
   });
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setSubmissionSchool(getSubmissionSchool(formInitialData?.school));
-  }, [isOpen, formInitialData?.school]);
+
 
   const eventFormAI = useEventFormAI({
     formData: eventForm.formData,
@@ -324,7 +321,7 @@ function SubmitEventModalContent({
 export function SubmitEventModal(props: SubmitEventModalProps) {
   const isEditMode = !!props.editEventId && (!!props.initialData || !!props.loadEventForEdit);
   // Remount form when switching to a different event so initialData is applied
-  const formKey = props.isOpen && props.editEventId ? `edit-${props.editEventId}` : "create";
+  const formKey = props.isOpen ? (props.editEventId ? `edit-${props.editEventId}` : "create") : "closed";
 
   return (
     <SubmitEventModalContent

@@ -11,7 +11,6 @@ export interface FilterState {
   foods: string[];
   days: string[];
   priceRange: { min: string; max: string };
-  dateRange: { from: string; to: string };
   registration: boolean;
 }
 

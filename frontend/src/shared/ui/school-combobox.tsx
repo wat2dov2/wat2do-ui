@@ -67,14 +67,10 @@ export function SchoolCombobox({
 
     const query = search.trim();
     if (!query) {
-      setResults([]);
-      setIsLoading(false);
       return;
     }
 
     let cancelled = false;
-    setResults([]);
-    setIsLoading(true);
     const timeoutId = window.setTimeout(() => {
       searchSchools(query)
         .then((schools) => {
@@ -107,6 +103,9 @@ export function SchoolCombobox({
       setSearch("");
       setResults([]);
       setIsLoading(false);
+    } else if (search.trim()) {
+      setIsLoading(true);
+      setResults([]);
     }
   };
 
@@ -160,7 +159,17 @@ export function SchoolCombobox({
             type="text"
             placeholder={t("schools.searchPlaceholder")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearch(val);
+              if (val.trim()) {
+                setIsLoading(true);
+                setResults([]);
+              } else {
+                setResults([]);
+                setIsLoading(false);
+              }
+            }}
             className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
           />
         </div>
