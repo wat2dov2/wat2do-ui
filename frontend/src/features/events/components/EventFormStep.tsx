@@ -143,6 +143,7 @@ export function EventFormStep({
                             onChange={onSubmissionSchoolChange}
                             variant="nav"
                             triggerClassName="max-w-[18rem] text-foreground hover:bg-secondary"
+                            showHighlight={false}
                           />
                         </>
                       )}

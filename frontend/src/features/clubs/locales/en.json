@@ -1,0 +1,63 @@
+{
+  "clubs": {
+    "description": "Discover student clubs and organizations at University of Waterloo",
+    "searchPlaceholder": "Search clubs...",
+    "activeFilters": "Active filters",
+    "clubs": "clubs",
+    "noClubsFound": "No clubs found",
+    "noClubsFoundDesc": "We couldn't find any clubs matching your current filters. Try adjusting your search or clearing some filters.",
+    "viewClubPage": "View Club Page",
+    "discord": "Discord",
+    "clubCreated": "Club Created!",
+    "clubUpdated": "Club Updated!",
+    "addClub": "Add Club",
+    "editClub": "Edit Club",
+    "updateClub": "Update Club",
+    "addClubDescription": "Fill in the details to add a new club",
+    "editClubDescription": "Update the club information below",
+    "clubCreatedMessage": "Club \"{{name}}\" has been created successfully!",
+    "clubUpdatedMessage": "Club \"{{name}}\" has been updated.",
+    "allClubs": "All Clubs",
+    "followedClubs": "Followed Clubs",
+    "signInToViewClubs": "Sign in to view followed clubs",
+    "signInToViewClubsDesc": "Follow clubs you're interested in and view them all in one place.",
+    "noFollowedClubs": "No followed clubs",
+    "emptyClubsDesc": "Follow clubs you're interested in and they'll appear here. Tap the bookmark icon on any club to follow it.",
+    "save": "Follow club",
+    "saved": "Followed club",
+    "savedClubs": {
+      "saveFailed": "Couldn't follow this club",
+      "unsaveFailed": "Couldn't unfollow this club"
+    },
+    "categories": {
+      "Business and Entrepreneurial": "Business and Entrepreneurial",
+      "Charitable, Community Service & International Development": "Charitable, Community Service & International Development",
+      "Creative Arts, Dance and Music": "Creative Arts, Dance and Music",
+      "Environmental and Sustainability": "Environmental and Sustainability",
+      "Games, Recreational and Social": "Games, Recreational and Social",
+      "Health Promotion": "Health Promotion",
+      "Media, Publications and Web Development": "Media, Publications and Web Development",
+      "Political and Social Awareness": "Political and Social Awareness",
+      "Religious and Spiritual": "Religious and Spiritual"
+    }
+  },
+  "inviteLanding": {
+    "validating": "Validating invitation link...",
+    "errorTitle": "Invitation Error",
+    "goHome": "Go to Homepage",
+    "successTitle": "Welcome Aboard!",
+    "successMessage": "You've successfully joined the management team of {{clubName}}.",
+    "successMessagePrefix": "You've successfully joined the management team of",
+    "redirecting": "Redirecting you to the Club Panel...",
+    "manageTitle": "Manage {{clubName}}",
+    "description": "You have been invited to join the management team of this club.",
+    "emailBadgeLabel": "Invited Email Address",
+    "mismatchTitle": "Account Email Mismatch",
+    "mismatchMessage": "This invite was sent to {{invitedEmail}}, but you are logged in as {{currentEmail}}. You can still accept, but we recommend joining with the correct email.",
+    "joining": "Joining...",
+    "acceptButton": "Accept & Continue",
+    "signUpButton": "Sign Up to Join",
+    "alreadyHaveAccount": "Already have an account?",
+    "logIn": "Log In"
+  }
+}

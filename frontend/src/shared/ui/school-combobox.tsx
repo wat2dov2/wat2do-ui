@@ -23,6 +23,7 @@ interface SchoolComboboxProps {
   align?: "start" | "center" | "end";
   contentClassName?: string;
   triggerClassName?: string;
+  showHighlight?: boolean;
 }
 
 const VARIANT_TRIGGER_STYLES: Record<SchoolComboboxVariant, string> = {
@@ -45,6 +46,7 @@ export function SchoolCombobox({
   align = "start",
   contentClassName,
   triggerClassName: triggerClassNameProp,
+  showHighlight = true,
 }: SchoolComboboxProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -134,7 +136,7 @@ export function SchoolCombobox({
           aria-expanded={open}
           aria-haspopup="listbox"
         >
-          {variant === "nav" ? (
+          {variant === "nav" && showHighlight ? (
             <Highlighter action="highlight" color="var(--primary)">
               <span className="block min-w-0 truncate">{displayValue}</span>
             </Highlighter>

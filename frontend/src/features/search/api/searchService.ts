@@ -15,6 +15,7 @@ export interface SearchFilters {
   freeFoodFilter: boolean;
   selectedDays: string[];
   priceRange: { min: string; max: string };
+  dateRange: { from: string; to: string };
   selectedLocations: string[];
   selectedFoods: string[];
   selectedCategories: string[];
@@ -66,6 +67,49 @@ export function filterEvents(
     // Day-of-week filter
     if (filters.selectedDays.length > 0 && !filters.selectedDays.includes(dayOfWeek)) {
       return false;
+    }
+
+    // Date range filter
+    if (filters.dateRange && (filters.dateRange.from || filters.dateRange.to)) {
+      const primary = getPrimaryOccurrence(event);
+      if (!primary || !primary.dtstart_utc) {
+        return false;
+      }
+      const eventDate = new Date(primary.dtstart_utc);
+      if (isNaN(eventDate.getTime())) {
+        return false;
+      }
+      const eventLocalDate = new Date(
+        eventDate.getFullYear(),
+        eventDate.getMonth(),
+        eventDate.getDate()
+      );
+      if (filters.dateRange.from) {
+        const fromParts = filters.dateRange.from.split("-");
+        if (fromParts.length === 3) {
+          const fromDate = new Date(
+            parseInt(fromParts[0], 10),
+            parseInt(fromParts[1], 10) - 1,
+            parseInt(fromParts[2], 10)
+          );
+          if (eventLocalDate < fromDate) {
+            return false;
+          }
+        }
+      }
+      if (filters.dateRange.to) {
+        const toParts = filters.dateRange.to.split("-");
+        if (toParts.length === 3) {
+          const toDate = new Date(
+            parseInt(toParts[0], 10),
+            parseInt(toParts[1], 10) - 1,
+            parseInt(toParts[2], 10)
+          );
+          if (eventLocalDate > toDate) {
+            return false;
+          }
+        }
+      }
     }
 
     // Price range — only applies when the freeFood quick filter is off.

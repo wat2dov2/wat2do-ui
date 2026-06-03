@@ -26,3 +26,4 @@ NOTIFICATION_PREFERENCES = "notification_preferences"
 NOTIFICATIONS_LOG = "notifications_log"
 USER_SAVED_CLUBS = "user_saved_clubs"
 CLUB_INVITATIONS = "club_invitations"
+

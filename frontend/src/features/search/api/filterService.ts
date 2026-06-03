@@ -15,6 +15,7 @@ const EMPTY_FILTER_STATE: FilterState = {
   foods: [],
   days: [],
   priceRange: { min: "", max: "" },
+  dateRange: { from: "", to: "" },
   registration: false,
 };
 
@@ -30,6 +31,7 @@ export interface SearchStoreFilterValues {
   selectedFoods: string[];
   selectedDays: string[];
   priceRange: { min: string; max: string };
+  dateRange: { from: string; to: string };
   registration: boolean;
 }
 
@@ -47,6 +49,24 @@ function priceRangeFrom(value: unknown): FilterState["priceRange"] {
     min: priceRaw && typeof priceRaw.min === "string" ? priceRaw.min : "",
     max: priceRaw && typeof priceRaw.max === "string" ? priceRaw.max : "",
   };
+}
+
+function dateRangeFrom(value: unknown): FilterState["dateRange"] {
+  if (value && typeof value === "object") {
+    const raw = value as Record<string, unknown>;
+    return {
+      from: typeof raw.from === "string" ? raw.from : "",
+      to: typeof raw.to === "string" ? raw.to : "",
+    };
+  }
+  if (typeof value === "string" && value) {
+    const dateStr = value.split("T")[0]; // YYYY-MM-DD
+    return {
+      from: dateStr,
+      to: dateStr,
+    };
+  }
+  return { from: "", to: "" };
 }
 
 /**
@@ -68,6 +88,7 @@ export function storeStatesToFilterState(
     foods: values.selectedFoods,
     days: values.selectedDays,
     priceRange: values.priceRange,
+    dateRange: values.dateRange,
     registration: values.registration,
   };
 }
@@ -85,6 +106,7 @@ export function generatedFilterStateToFilterState(
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
     priceRange: priceRangeFrom(filters.priceRange),
+    dateRange: dateRangeFrom(filters.dateRange),
     registration:
       typeof filters.registration === "boolean" ? filters.registration : false,
   };

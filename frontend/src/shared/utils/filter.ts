@@ -15,6 +15,7 @@ export function getFilterCounts(filters: {
   selectedFoods: string[];
   selectedDays: string[];
   priceRange: { min: string; max: string };
+  dateRange: { from: string; to: string };
   registration: boolean;
 }): number {
   return (
@@ -23,6 +24,7 @@ export function getFilterCounts(filters: {
     filters.selectedFoods.length +
     filters.selectedDays.length +
     (filters.priceRange.min || filters.priceRange.max ? 1 : 0) +
+    (filters.dateRange.from || filters.dateRange.to ? 1 : 0) +
     (filters.registration ? 1 : 0)
   );
 }

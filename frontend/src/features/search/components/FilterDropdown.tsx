@@ -42,6 +42,8 @@ interface FilterDropdownFilters {
   // Price & registration
   priceRange: { min: string; max: string };
   setPriceRange: (range: { min: string; max: string }) => void;
+  dateRange: { from: string; to: string };
+  setDateRange: (range: { from: string; to: string }) => void;
   registration: boolean;
   setRegistration: (value: boolean) => void;
   // Sort

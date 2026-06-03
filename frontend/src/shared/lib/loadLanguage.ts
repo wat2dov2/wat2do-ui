@@ -9,7 +9,42 @@ const localeLoaders: Record<
   string,
   () => Promise<{ default: Record<string, unknown> }>
 > = {
-  en: () => import('@/locales/en.json'),
+  en: async () => {
+    const [
+      shared,
+      auth,
+      events,
+      clubs,
+      clubPanel,
+      admin,
+      credits,
+      qrcode,
+      settings,
+    ] = await Promise.all([
+      import('@/shared/locales/en.json'),
+      import('@/features/auth/locales/en.json'),
+      import('@/features/events/locales/en.json'),
+      import('@/features/clubs/locales/en.json'),
+      import('@/features/club-panel/locales/en.json'),
+      import('@/features/admin/locales/en.json'),
+      import('@/features/credits/locales/en.json'),
+      import('@/features/qrcode/locales/en.json'),
+      import('@/features/settings/locales/en.json'),
+    ]);
+    return {
+      default: {
+        ...shared.default,
+        ...auth.default,
+        ...events.default,
+        ...clubs.default,
+        ...clubPanel.default,
+        ...admin.default,
+        ...credits.default,
+        ...qrcode.default,
+        ...settings.default,
+      },
+    };
+  },
 };
 
 export async function loadLanguage(lang: string): Promise<void> {

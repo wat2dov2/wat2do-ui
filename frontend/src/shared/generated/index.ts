@@ -71,3 +71,4 @@ export type ApiRecommendationItem = components["schemas"]["RecommendationItem"];
 export type ApiFilterStateResponse = components["schemas"]["FilterStateResponse"];
 export type ApiEventFormDataResponse = components["schemas"]["EventFormDataResponse"];
 export type ApiAIPromptRequest = components["schemas"]["AIPromptRequest"];
+

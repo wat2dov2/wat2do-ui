@@ -1,0 +1,35 @@
+{
+  "credits": {
+    "buyCredits": "Buy Credits",
+    "currentBalance": "Current balance:",
+    "creditCount": "{{count}} credit",
+    "creditCount_other": "{{count}} credits",
+    "bonusCount": "+{{count}} bonus",
+    "bonusCount_other": "+{{count}} bonus",
+    "totalCreditCount": "{{count}} total credit",
+    "totalCreditCount_other": "{{count}} total credits",
+    "pricePerCredit": "${{price}}¢/credit",
+    "added": "Credits Added!",
+    "addedMessage": "{{count}} credits have been added to your account.",
+    "processing": "Processing...",
+    "buyMore": "+ Buy more",
+    "notEnough": "Not enough credits",
+    "loginRequired": "You must be logged in to purchase credits.",
+    "purchaseFailed": "Purchase failed. Please try again.",
+    "spendCredits": "Spend {{credits}} credits",
+    "securePayment": "Secure payment powered by Stripe. Credits never expire."
+  },
+  "promotion": {
+    "promoteEvent": "Promote this event",
+    "getMoreVisibility": "Promote \"{{title}}\" with a simple featured placement for official club events.",
+    "bestValue": "BEST VALUE",
+    "maybeLater": "Maybe Later",
+    "notEnoughCredits": "Not enough credits",
+    "promotedEventName": "Promoted Event",
+    "promotedEventDescription": "Show this event more prominently for students",
+    "durationDays": "{{count}} day",
+    "durationDays_other": "{{count}} days",
+    "creditsCost": "{{credits}} credits",
+    "spendCredits": "Spend {{credits}} credits"
+  }
+}

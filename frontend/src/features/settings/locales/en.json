@@ -1,0 +1,68 @@
+{
+  "settings": {
+    "description": "Manage your account preferences and settings",
+    "tabs": {
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "appearance": "Appearance",
+      "privacy": "Privacy"
+    },
+    "profile": {
+      "title": "Profile Information",
+      "description": "Manage your profile details and preferences",
+      "status": "Profile Status",
+      "statusComplete": "Your profile is set up and complete",
+      "statusIncomplete": "Complete your profile to get personalized event recommendations",
+      "email": "Email",
+      "editProfile": "Edit Profile",
+      "completeProfile": "Complete Profile",
+      "school": "School",
+      "selectSchool": "Select a school",
+      "faculty": "Faculty",
+      "selectFaculty": "Select a faculty",
+      "firstYearStudent": "First Year Student",
+      "interests": "Interests",
+      "selectInterests": "Select your interests",
+      "avatarAlt": "Avatar"
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "description": "Choose how you want to be notified about events and updates",
+      "emailNotifications": "Email Notifications",
+      "emailNotificationsDesc": "Receive email updates about events and activities",
+      "eventReminders": "Event Reminders",
+      "eventRemindersDesc": "Get reminders for saved and registered events",
+      "newEventAlerts": "New Event Alerts",
+      "newEventAlertsDesc": "Be notified when new events matching your interests are added"
+    },
+    "appearance": {
+      "theme": "Theme",
+      "themeDescription": "Customize the appearance of the application",
+      "colorTheme": "Color Theme",
+      "colorThemeDesc": "Switch between light and dark mode",
+      "viewPreferences": "View Preferences",
+      "viewPreferencesDesc": "Customize how events are displayed",
+      "defaultViewMode": "Default View Mode",
+      "defaultViewModeDesc": "Choose how events are displayed by default",
+      "filterViewMode": "Filter View Mode",
+      "filterViewModeDesc": "Choose how filters are displayed",
+      "grid": "Grid",
+      "calendar": "Calendar",
+      "map": "Map",
+      "visual": "Visual",
+      "json": "JSON",
+      "language": "Language",
+      "languageDescription": "Choose your preferred language"
+    },
+    "privacy": {
+      "title": "Privacy Settings",
+      "description": "Control your privacy and data sharing preferences",
+      "profileVisibility": "Profile Visibility",
+      "profileVisibilityDesc": "Control who can see your profile information",
+      "public": "Public",
+      "private": "Private",
+      "dataSharing": "Data Sharing",
+      "dataSharingDesc": "Allow anonymous usage data to help improve the platform"
+    }
+  }
+}

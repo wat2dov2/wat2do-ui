@@ -7,6 +7,7 @@ import { translateCategory } from "@/shared/utils/event";
 import { PieMenu } from "@/shared/ui/pie-menu";
 import { Switch } from "@/shared/ui/switch";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
+import { DateRangePicker } from "@/shared/ui/date-range-picker";
 
 const PIE_ICON_MAP: Record<string, LucideIcon> = {
   Tag,
@@ -42,6 +43,8 @@ interface VisualFiltersProps {
     toggleDay: (id: string) => void;
     priceRange: { min: string; max: string };
     setPriceRange: (range: { min: string; max: string }) => void;
+    dateRange: { from: string; to: string };
+    setDateRange: (range: { from: string; to: string }) => void;
     registration: boolean;
     setRegistration: (value: boolean) => void;
     sortBy: string;
@@ -84,6 +87,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
     category: true,
     location: false,
     priceRange: false,
+    dateRange: false,
     food: false,
     dayOfWeek: false,
     registration: false,
@@ -244,6 +248,23 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
             innerRadius={20}
           />
         </div>
+      </FilterSection>
+
+      {/* Date Range Filter */}
+      <FilterSection
+        title={t("filters.dateRange")}
+        expanded={expandedSections.dateRange}
+        onToggle={() => toggleSection("dateRange")}
+        indicator={
+          filters.dateRange.from || filters.dateRange.to ? "1" : undefined
+        }
+        onClear={() => filters.setDateRange({ from: "", to: "" })}
+      >
+        <DateRangePicker
+          value={filters.dateRange}
+          onChange={filters.setDateRange}
+          placeholder={t("forms.pickDateRange", "Select date range")}
+        />
       </FilterSection>
 
       {/* Price Range Filter */}
