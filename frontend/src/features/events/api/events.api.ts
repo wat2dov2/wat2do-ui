@@ -16,7 +16,6 @@ import { api } from "@/shared/services/apiClient";
  */
 export async function fetchAllEvents(school?: string): Promise<Event[]> {
   const params = new URLSearchParams();
-  params.set("summary", "true");
   if (school) params.set("school", school);
   const qs = params.toString();
   const apiEvents = await api.get<ApiEventResponse[]>(`/events/${qs ? `?${qs}` : ""}`);

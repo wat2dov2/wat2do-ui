@@ -1,13 +1,14 @@
 """Service-level tests for ``event_service``.
 
-Covers the two pieces the router tests can't reach:
+Covers the pieces the router tests can't reach:
 1. ``compute_event_diff`` — a pure helper; assert on its return shape so
    a future refactor doesn't accidentally broaden ``MATERIAL_FIELDS`` to
    include routine edits.
-2. The list-filter default — every ``GET /events`` query must filter
-   ``status = 'CONFIRMED'`` at the builder level. Regression here would
-   leak cancelled events into browse/search without anyone noticing
-   through the router tests (which mock the service entirely).
+2. ``list_events`` — the browse list returns the upcoming (today-or-later)
+   event set for a school, hydrated with occurrences, and is cached
+   per-school until a write invalidates it. The router tests mock the
+   service entirely, so the query shape and cache behavior are only
+   exercised here.
 """
 
 from datetime import datetime, timezone
@@ -216,15 +217,16 @@ def test_diff_occurrence_added_from_none():
 # ---------------------------------------------------------------------------
 
 
-def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch_sb):
-    """Summary mode must report the occurrences."""
+def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, patch_sb):
+    """The browse list hydrates each event with its full occurrence list."""
     from datetime import timedelta
 
     from services import event_date_service
 
-    patch_sb("services.event_service")
+    patch_sb("services.event_query")  # the upcoming-events query now lives here
+    event_service.invalidate_events_cache()  # isolate from other tests' cache
 
-    # list_events fetches occurrences with nested events in a single joined query.
+    # One joined event_dates row per event; occurrences are batched separately.
     fake_sb.queue_responses(
         [
             [
@@ -245,8 +247,6 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
         ]
     )
 
-    # Mock the post-dedup occurrence batch fetch with the FULL list,
-    # including a future May 1.
     now = datetime.now(timezone.utc)
     future_1 = now + timedelta(days=2)
     future_2 = now + timedelta(days=9)
@@ -263,11 +263,39 @@ def test_list_events_summary_uses_primary_occurrence(monkeypatch, fake_sb, patch
         },
     )
 
-    summary_results = event_service.list_events(summary=True)
-    assert len(summary_results) == 1
-    summary = summary_results[0]
-    assert len(summary.occurrences) == 3
-    assert summary.occurrences[0].dtstart_utc == future_1
+    results = event_service.list_events(school="University of Waterloo")
+    assert len(results) == 1
+    assert len(results[0].occurrences) == 3
+    assert results[0].occurrences[0].dtstart_utc == future_1
+
+    # The query filters to occurrences starting today-or-later, scoped to school.
+    fake_sb.eq.assert_any_call("events.school", "University of Waterloo")
+    gte_bounds = [
+        call.args[1] for call in fake_sb.gte.call_args_list if call.args and call.args[0] == "dtstart_utc"
+    ]
+    assert gte_bounds, "expected a dtstart_utc lower-bound filter"
+    bound = datetime.fromisoformat(gte_bounds[0])
+    assert bound <= datetime.now(timezone.utc)  # the boundary is start-of-today, never future
+
+
+def test_list_events_is_cached_until_invalidated(monkeypatch):
+    """list_events serves from cache; a write-path invalidation forces a reload."""
+    event_service.invalidate_events_cache()
+    calls = {"n": 0}
+
+    def _fake_load(school):
+        calls["n"] += 1
+        return []
+
+    monkeypatch.setattr(event_service, "_load_upcoming_events", _fake_load)
+
+    event_service.list_events(school="University of Waterloo")
+    event_service.list_events(school="University of Waterloo")
+    assert calls["n"] == 1  # second call is a cache hit
+
+    event_service.invalidate_events_cache()
+    event_service.list_events(school="University of Waterloo")
+    assert calls["n"] == 2  # reloaded after invalidation
 
 
 def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):

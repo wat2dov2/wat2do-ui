@@ -284,57 +284,23 @@ def test_update_event_enqueue_failure_does_not_break_update(authenticated_client
 
 
 # ---------------------------------------------------------------------------
-# Search sanitization
+# Browse list — server returns the upcoming set for a school; the client
+# owns all filtering/sorting/search (no server-side filter params).
 # ---------------------------------------------------------------------------
 
 
-def test_search_sanitizes_injection(client, monkeypatch):
-    """PostgREST filter-injection via commas/periods in search is blocked."""
+def test_list_events_forwards_school_and_pagination(client, monkeypatch):
+    """The router passes only school + pagination through to the service."""
     mock_list = MagicMock(return_value=[])
     monkeypatch.setattr(event_service, "list_events", mock_list)
 
-    # Attempt injection: commas and periods should be stripped before reaching
-    # the PostgREST filter string.
-    attack = "test,secret_col.eq.admin"
-    client.get("/events/", params={"search": attack})
+    resp = client.get(
+        "/events/",
+        params={"school": "University of Waterloo", "skip": 0, "limit": 50},
+    )
 
-    assert mock_list.call_count == 1
-    _, kwargs = mock_list.call_args
-    # The search value passed to the service is the raw query param;
-    # sanitization happens *inside* list_events. Verify the service was called.
-    assert kwargs["search"] == attack
-
-
-def test_search_injection_neutralised_by_sanitize_then_quoting():
-    """Verify that sanitize_postgrest_value strips control chars before quoting."""
-    from core.sanitize import sanitize_postgrest_value
-
-    attack = "test,secret_col.eq.admin"
-    # Reproduce the sanitization + quoting logic from list_events
-    term = sanitize_postgrest_value(attack)
-    # Control characters (commas, dots) must be gone after sanitization
-    assert "," not in term
-    assert "." not in term
-    quoted = f'"%{term}%"'
-    columns = ("title", "description", "location", "organization")
-    filter_str = ",".join(f"{col}.ilike.{quoted}" for col in columns)
-    # The sanitized value appears inside quotes — double defence.
-    for col in columns:
-        segment = f'{col}.ilike."%{term}%"'
-        assert segment in filter_str
-
-
-def test_search_normal_term(client, monkeypatch):
-    """Normal search terms pass through to the service."""
-    events = [_mock_event(title="Pizza Night")]
-    mock_list = MagicMock(return_value=events)
-    monkeypatch.setattr(event_service, "list_events", mock_list)
-
-    resp = client.get("/events/", params={"search": "pizza"})
     assert resp.status_code == 200
-    assert mock_list.call_count == 1
-    _, kwargs = mock_list.call_args
-    assert kwargs["search"] == "pizza"
+    mock_list.assert_called_once_with(school="University of Waterloo", skip=0, limit=50)
 
 
 def test_get_latest_added_forwards_school_filter(client, monkeypatch):

@@ -29,8 +29,32 @@ const EVENT_DATE_SECTIONS: Array<{
   { category: "later this week", labelKey: "events.dateSections.laterThisWeek" },
   { category: "later this month", labelKey: "events.dateSections.laterThisMonth" },
   { category: "later", labelKey: "events.dateSections.later" },
-  { category: "past", labelKey: "events.dateSections.past" },
 ];
+
+/**
+ * Bucket events into the date sections, in section order.
+ *
+ * The server returns upcoming-only events, so there is no "past" section. A
+ * timezone-skew straggler can still map to "past" (which has no bucket); those
+ * are dropped from the grid here — the one place this list decides what's
+ * shown, so callers can bucket unconditionally.
+ */
+function groupEventsByDateSection(events: Event[]): Record<EventDateCategory, Event[]> {
+  const groups = EVENT_DATE_SECTIONS.reduce(
+    (acc, { category }) => {
+      acc[category] = [];
+      return acc;
+    },
+    {} as Record<EventDateCategory, Event[]>,
+  );
+
+  events.forEach((event) => {
+    const bucket = groups[getEventDateCategory(event)];
+    if (bucket) bucket.push(event);
+  });
+
+  return groups;
+}
 
 /**
  * Event list component.
@@ -67,39 +91,17 @@ export function EventList({
     events.length,
   );
   const sectionOrderedEvents = useMemo(() => {
-    const groups = EVENT_DATE_SECTIONS.reduce(
-      (acc, { category }) => {
-        acc[category] = [];
-        return acc;
-      },
-      {} as Record<EventDateCategory, Event[]>,
-    );
-
-    events.forEach((event) => {
-      groups[getEventDateCategory(event)].push(event);
-    });
-
+    const groups = groupEventsByDateSection(events);
     return EVENT_DATE_SECTIONS.flatMap(({ category }) => groups[category]);
   }, [events]);
   const visibleEvents = useMemo(
     () => sectionOrderedEvents.slice(0, Math.min(visibleCount, sectionOrderedEvents.length)),
     [sectionOrderedEvents, visibleCount],
   );
-  const groupedVisibleEvents = useMemo(() => {
-    const groups = EVENT_DATE_SECTIONS.reduce(
-      (acc, { category }) => {
-        acc[category] = [];
-        return acc;
-      },
-      {} as Record<EventDateCategory, Event[]>,
-    );
-
-    visibleEvents.forEach((event) => {
-      groups[getEventDateCategory(event)].push(event);
-    });
-
-    return groups;
-  }, [visibleEvents]);
+  const groupedVisibleEvents = useMemo(
+    () => groupEventsByDateSection(visibleEvents),
+    [visibleEvents],
+  );
 
   useEffect(() => {
     if (visibleCount >= events.length) return;

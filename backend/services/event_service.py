@@ -9,14 +9,15 @@ earliest occurrence if all are in the past.
 
 import logging
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
-from core.constants import DEFAULT_LIST_LIMIT
+from core.cache import TTLCache
+from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST
 from core.exceptions import ValidationError
 from core.retry import supabase_retry
-from core.sanitize import sanitize_postgrest_value
-from core.tables import EVENT_DATES, EVENTS
+from core.tables import EVENTS
 from recommender.service import invalidate_candidates_cache
 from schemas.event import (
     EventCreate,
@@ -26,13 +27,28 @@ from schemas.event import (
     LatestEventResponse,
 )
 from schemas.event_date import OccurrenceResponse
-from services import event_date_service
+from services import event_date_service, event_query
+from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
 
-EVENT_SUMMARY_EVENT_COLUMNS = ",".join(
-    field for field in EventSummaryResponse.model_fields if field != "occurrences"
-)
+# Mirrors the recommender's _candidates_cache pattern: one in-process TTLCache
+# per cached query, cleared on write. Short TTL is the real freshness guarantee
+# — an in-process write (create/update/delete) clears the cache immediately via
+# invalidate_events_cache(), but an out-of-process writer (the scraper job)
+# can't reach it, so those writes self-heal within this window. Cheap because
+# the keyspace is one entry per school.
+_EVENTS_CACHE_TTL = 60
+_events_cache = TTLCache(default_ttl=_EVENTS_CACHE_TTL)
+
+
+def invalidate_events_cache() -> None:
+    """Drop the cached upcoming-events lists.
+
+    Called from every event write path so a freshly created / edited / deleted
+    event shows up on the next browse without waiting for the TTL.
+    """
+    _events_cache.clear()
 
 # Event fields whose changes constitute a "material" update — the ones
 # worth notifying saved-by users about. Description/title/handle edits
@@ -59,20 +75,6 @@ def _to_utc(dt: datetime | None) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def _hydrate_response(row: dict, occurrences: list[OccurrenceResponse]) -> EventResponse:
-    """Build an EventResponse from a raw events row + its occurrences."""
-    payload = dict(row)
-    payload["occurrences"] = [o.model_dump(mode="json") for o in occurrences]
-    return EventResponse.model_validate(payload)
-
-
-def _hydrate_summary(row: dict, occurrences: list[OccurrenceResponse]) -> EventSummaryResponse:
-    """Build an EventSummaryResponse with the occurrences list."""
-    payload = dict(row)
-    payload["occurrences"] = [o.model_dump(mode="json") for o in occurrences]
-    return EventSummaryResponse.model_validate(payload)
-
-
 # ── Public functions ──────────────────────────────────────────────────
 
 
@@ -94,95 +96,49 @@ def get_event(event_id: int) -> EventResponse | None:
     if not r.data or len(r.data) == 0:
         return None
     occurrences = event_date_service.list_for_event(event_id)
-    return _hydrate_response(r.data[0], occurrences)
+    return event_query.hydrate_event(r.data[0], occurrences, EventResponse)
 
 
-@supabase_retry
-def list_events(
-    skip: int = 0,
-    limit: int = DEFAULT_LIST_LIMIT,
-    category: str | None = None,
-    club_type: str | None = None,
-    school: str | None = None,
-    search: str | None = None,
-    from_date: datetime | None = None,
-    to_date: datetime | None = None,
-    has_food: bool | None = None,
-    max_price: float | None = None,
-    registration: bool | None = None,
-    summary: bool = False,
-) -> list[EventSummaryResponse] | list[EventResponse]:
-    """List events with optional filters.
+def _today_start_utc(school: str | None) -> datetime:
+    """Start of the current day, in the school's timezone, as a UTC instant.
 
-    Events are queried through event_dates directly using resource embedding
-    inner joins, giving the endpoint one efficient paginated database query.
+    "Upcoming" means "starts today or later" — using the school's local day
+    boundary (not UTC midnight) so events earlier today don't drop out for
+    users a few hours off UTC.
     """
-    select_cols = EVENT_SUMMARY_EVENT_COLUMNS if summary else "*"
-    q = (
-        get_sb()
-        .table(EVENT_DATES)
-        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({select_cols})")
+    tz = ZoneInfo(resolve_school_timezone(school))
+    local_midnight = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+    return local_midnight.astimezone(timezone.utc)
+
+
+def _load_upcoming_events(school: str | None) -> list[EventSummaryResponse]:
+    """Browse-list binding of the shared upcoming-events loader.
+
+    "Upcoming" for the public list means "starts today or later" in the
+    school's local day; the rest (dedup, hydrate, cap) is the shared query in
+    ``event_query``. The client filters, sorts, and searches in memory over
+    this set, so there is no per-request filtering or pagination here.
+    """
+    return event_query.load_upcoming_events(
+        since=_today_start_utc(school),
+        school=school,
+        cap=MAX_LIST_LIMIT,
+        model=EventSummaryResponse,
     )
 
-    # Apply event filters prefixed with 'events.'
-    if category:
-        q = q.eq("events.category", category)
-    if club_type:
-        q = q.eq("events.club_type", club_type)
-    if school:
-        q = q.eq("events.school", school)
-    if search:
-        term = sanitize_postgrest_value(search)
-        if term:
-            quoted = f'"%{term}%"'
-            columns = ("title", "description", "location", "organization")
-            q = q.or_(
-                ",".join(f"{col}.ilike.{quoted}" for col in columns), reference_table="events"
-            )
-    if has_food is True:
-        q = q.not_.is_("events.food", "null").neq("events.food", "[]")
-    if max_price is not None:
-        safe_price = f"{max_price:.6f}"
-        q = q.or_(f"price.is.null,price.lte.{safe_price}", reference_table="events")
-    if registration is not None:
-        q = q.eq("events.registration", registration)
 
-    # Apply date range filters on event_dates directly
-    if from_date:
-        q = q.gte("dtstart_utc", from_date.isoformat())
-    if to_date:
-        q = q.lte("dtstart_utc", to_date.isoformat())
+def list_events(
+    school: str | None = None,
+    skip: int = 0,
+    limit: int = DEFAULT_LIST_LIMIT,
+) -> list[EventSummaryResponse]:
+    """Public browse list: the cached upcoming-events set for a school.
 
-    # Order by occurrence date desc to preserve the browse order.
-    # Paginate using skip/limit over occurrences.
-    q = q.order("dtstart_utc", desc=True).range(skip, skip + limit * 5 - 1)
-    rows = q.execute().data or []
-
-    # De-dup: one row per event id, keep the first occurrence-row we
-    # see (which is the highest dtstart_utc thanks to the desc sort).
-    seen: set[int] = set()
-    deduped: list[dict] = []
-    for row in rows:
-        event_row = row.get("events")
-        if not event_row:
-            continue
-        rid = event_row.get("id")
-        if rid is None or rid in seen:
-            continue
-        seen.add(rid)
-        deduped.append(event_row)
-        if len(deduped) >= limit:
-            break
-
-    # Both summary and detail paths fetch the full occurrence list for
-    # each event so the primary-date computation (``_pick_primary``)
-    # agrees across endpoints.
-    event_ids = [row["id"] for row in deduped]
-    occ_by_event = event_date_service.list_for_events(event_ids)
-
-    if summary:
-        return [_hydrate_summary(row, occ_by_event.get(row["id"], [])) for row in deduped]
-    return [_hydrate_response(row, occ_by_event.get(row["id"], [])) for row in deduped]
+    Read-through cache keyed by school; the client owns all filtering, sorting,
+    and search, so this endpoint's only job is to serve the current event set.
+    """
+    page = _events_cache.get_or_compute(school or "_all", lambda: _load_upcoming_events(school))
+    return page[skip : skip + limit]
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
@@ -203,7 +159,8 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
 
     occ_rows = event_date_service.list_for_event(new_id)
     invalidate_candidates_cache()
-    return _hydrate_response(new_row, occ_rows)
+    invalidate_events_cache()
+    return event_query.hydrate_event(new_row, occ_rows, EventResponse)
 
 
 def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
@@ -249,6 +206,7 @@ def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
         event_date_service.replace_occurrences(event_id, data.occurrences)
 
     invalidate_candidates_cache()
+    invalidate_events_cache()
     return get_event(event_id)
 
 
@@ -274,6 +232,7 @@ def delete_event(event_id: int) -> bool:
     r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()
     if r.data:
         invalidate_candidates_cache()
+        invalidate_events_cache()
     return bool(r.data)
 
 

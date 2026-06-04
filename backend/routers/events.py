@@ -1,16 +1,12 @@
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_authorized_resource, get_db_user, is_admin
 from core.constants import (
     DEFAULT_LIST_LIMIT,
-    MAX_EVENT_CATEGORY_LENGTH,
-    MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_EVENT_SCHOOL_LENGTH,
     MAX_LIST_LIMIT,
-    MAX_SEARCH_QUERY_LENGTH,
 )
 from core.errors import CLUB_EVENT_CREATION_REQUIRED, CLUB_NOT_FOUND, EVENT_NOT_FOUND
 from core.exceptions import AuthorizationError, get_or_404
@@ -70,40 +66,16 @@ def get_latest_added(
 def list_events(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
-    category: str | None = Query(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH),
-    club_type: str | None = Query(default=None, max_length=MAX_EVENT_CLUB_TYPE_LENGTH),
     school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
-    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
-    from_date: datetime | None = None,
-    to_date: datetime | None = None,
-    has_food: bool | None = None,
-    max_price: float | None = Query(default=None, ge=0, allow_inf_nan=False),
-    registration: bool | None = None,
-    summary: bool = Query(default=False, description="Return lightweight card-view fields only"),
 ):
-    """Public list endpoint.
+    """Public browse list: the current (upcoming) events for a school.
 
-    Response shape is fixed to ``EventSummaryResponse`` which omits
-    ``created_by`` — this is the IDOR/PII fix for audit I10/S16.  The
-    ``summary`` flag is still forwarded to the service (so the query
-    can short-circuit large column reads) but the wire shape is the
-    same either way.  FastAPI's response_model serialization will drop
-    any extra fields if the service returns the fuller ``EventResponse``.
+    The server returns the whole upcoming set; the client owns all filtering,
+    sorting, and search. The set is cached per school (see
+    ``event_service.list_events``) and the response omits ``created_by``
+    via ``EventSummaryResponse`` (audit I10 / S16).
     """
-    return event_service.list_events(
-        skip=skip,
-        limit=limit,
-        category=category,
-        club_type=club_type,
-        school=school,
-        search=search,
-        from_date=from_date,
-        to_date=to_date,
-        has_food=has_food,
-        max_price=max_price,
-        registration=registration,
-        summary=summary,
-    )
+    return event_service.list_events(school=school, skip=skip, limit=limit)
 
 
 @router.get("/{event_id}", response_model=EventPublicResponse)

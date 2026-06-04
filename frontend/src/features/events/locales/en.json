@@ -51,8 +51,7 @@
       "tomorrow": "Tomorrow",
       "laterThisWeek": "Later this week",
       "laterThisMonth": "Later this month",
-      "later": "Later",
-      "past": "Past"
+      "later": "Later"
     },
     "reportDialog": {
       "title": "Report event",

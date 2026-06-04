@@ -24,7 +24,7 @@ from core.database import get_sb
 from core.tables import EVENTS, USERS
 from schemas.event import EventResponse
 from schemas.event_date import OccurrenceResponse
-from services import event_date_service, saved_event_service
+from services import event_date_service, event_query, saved_event_service
 from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
@@ -114,12 +114,10 @@ def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
     for eid in event_ids:
         row = rows_by_id.get(eid)
         if row is not None:
-            payload = dict(row)
-            payload["occurrences"] = [o.model_dump(mode="json") for o in occ_by_event.get(eid, [])]
-            # Calendar feed only iterates ``occurrences``; the primary
-            # date convenience fields are unused, so leave them None to
-            # avoid an extra _pick_primary call here.
-            ordered.append(EventResponse.model_validate(payload))
+            # Calendar feed only iterates ``occurrences``; the primary date
+            # convenience fields are unused, so hydrate_event leaving them
+            # None (no _pick_primary) is fine here.
+            ordered.append(event_query.hydrate_event(row, occ_by_event.get(eid, []), EventResponse))
     return ordered
 
 

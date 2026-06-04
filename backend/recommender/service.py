@@ -34,8 +34,7 @@ from recommender.reranker import mmr_rerank
 from recommender.schemas import RecommendationItem
 from recommender.scoring import blend_scores, select_weights
 from schemas.event import EventResponse
-from schemas.event_date import OccurrenceResponse
-from services import event_date_service, interaction_service, user_service
+from services import event_query, interaction_service, user_service
 from services.ab_test_service import ab_test
 
 log = logging.getLogger(__name__)
@@ -505,66 +504,21 @@ class RecommendationEngine:
     def _get_candidate_events() -> list[EventResponse]:
         """Load future events as recommendation candidates.
 
-        Cached for CANDIDATE_EVENTS_CACHE_TTL seconds so concurrent
-        recommendation requests (and nightly batch runs) share one DB
-        round-trip.  The TTL is kept short (60s) to avoid serving stale
-        event data to live users.
+        The query/dedup/hydrate is the shared ``event_query.load_upcoming_events``
+        — candidates are just "every upcoming event" (from now, no school filter)
+        capped at the pool size. Cached for CANDIDATE_EVENTS_CACHE_TTL seconds so
+        concurrent recommendation requests and nightly batch runs share one DB
+        round-trip; the TTL keeps live users off stale event data.
         """
-
-        @supabase_retry
-        def _fetch_candidates() -> list[EventResponse]:
-            log.debug("Candidate events cache MISS — querying DB")
-            now = datetime.now(timezone.utc).isoformat()
-            r = (
-                get_sb()
-                .table(EVENT_DATES)
-                .select("event_id,dtstart_utc,dtend_utc,events!inner(*)")
-                .gte("dtstart_utc", now)
-                .order("dtstart_utc", desc=False)
-                .limit(CANDIDATE_POOL_SIZE * 4)
-                .execute()
-            )
-            primary_by_event: dict[int, dict] = {}
-            event_rows: dict[int, dict] = {}
-            event_ids: list[int] = []
-            seen: set[int] = set()
-            for row in r.data or []:
-                eid = row.get("event_id")
-                if eid is None:
-                    continue
-                event_row = row.get("events")
-                if not event_row:
-                    continue
-                if eid in seen:
-                    continue
-                seen.add(eid)
-                primary_by_event[eid] = row
-                event_rows[eid] = event_row
-                event_ids.append(eid)
-                if len(event_ids) >= CANDIDATE_POOL_SIZE:
-                    break
-
-            if not event_ids:
-                return []
-
-            occ_by_event = event_date_service.list_for_events(event_ids)
-            candidates: list[EventResponse] = []
-            for eid in event_ids:
-                row = event_rows.get(eid)
-                primary = primary_by_event.get(eid)
-                if not row or not primary:
-                    continue
-                payload = dict(row)
-                occurrences = occ_by_event.get(eid, [])
-                payload["occurrences"] = [
-                    occ.model_dump(mode="json")
-                    for occ in occurrences
-                    if isinstance(occ, OccurrenceResponse)
-                ]
-                candidates.append(EventResponse.model_validate(payload))
-            return candidates
-
-        return _candidates_cache.get_or_compute("candidates", _fetch_candidates)
+        return _candidates_cache.get_or_compute(
+            "candidates",
+            lambda: event_query.load_upcoming_events(
+                since=datetime.now(timezone.utc),
+                school=None,
+                cap=CANDIDATE_POOL_SIZE,
+                model=EventResponse,
+            ),
+        )
 
     @staticmethod
     def _generate_reason(
