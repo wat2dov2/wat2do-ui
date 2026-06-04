@@ -174,7 +174,7 @@ export function SchoolCombobox({
           />
         </div>
 
-        <div className="max-h-[220px] overflow-y-auto p-1">
+        <div className="max-h-[220px] overflow-y-auto p-1 empty:hidden">
           {isLoading ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
               {t("common.loading")}
