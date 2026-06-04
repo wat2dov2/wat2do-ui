@@ -83,7 +83,7 @@ export function EventsPageContainer() {
         <LightRays
           data-page-light-rays
           length="110dvh"
-          color={isDarkMode ? "rgba(255, 255, 255, 0.10)" : "rgba(30, 30, 30, 0.16)"}
+          color={isDarkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(30, 30, 30, 0.16)"}
           blendMode={isDarkMode ? "screen" : "multiply"}
         />
       </div>
