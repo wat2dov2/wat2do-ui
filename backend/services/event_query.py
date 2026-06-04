@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from core.database import get_sb
 from core.retry import supabase_retry
 from core.tables import EVENT_DATES
-from schemas.event import EventResponse, EventSummaryResponse
+from schemas.event import EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service
 

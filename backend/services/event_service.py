@@ -50,6 +50,7 @@ def invalidate_events_cache() -> None:
     """
     _events_cache.clear()
 
+
 # Event fields whose changes constitute a "material" update — the ones
 # worth notifying saved-by users about. Description/title/handle edits
 # are deliberately excluded so routine cleanup does not fire alerts.

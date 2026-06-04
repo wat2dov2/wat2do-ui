@@ -271,7 +271,9 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     # The query filters to occurrences starting today-or-later, scoped to school.
     fake_sb.eq.assert_any_call("events.school", "University of Waterloo")
     gte_bounds = [
-        call.args[1] for call in fake_sb.gte.call_args_list if call.args and call.args[0] == "dtstart_utc"
+        call.args[1]
+        for call in fake_sb.gte.call_args_list
+        if call.args and call.args[0] == "dtstart_utc"
     ]
     assert gte_bounds, "expected a dtstart_utc lower-bound filter"
     bound = datetime.fromisoformat(gte_bounds[0])
