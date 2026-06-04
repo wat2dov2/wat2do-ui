@@ -299,7 +299,7 @@
 
   /* WCAG 2.3.3: honour prefers-reduced-motion by collapsing animations and
      transitions to near-instant. Visual changes still occur so functionality
-     isn't lost, just without the motion. */
+     isn't lost, just without the motion.
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -310,5 +310,6 @@
       scroll-behavior: auto !important;
     }
   }
+  */
 
 }

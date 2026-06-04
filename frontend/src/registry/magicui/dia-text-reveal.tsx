@@ -4,7 +4,6 @@ import {
   motion,
   useInView,
   useMotionValue,
-  useReducedMotion,
   useTransform,
   type HTMLMotionProps,
 } from "motion/react"
@@ -139,7 +138,7 @@ export function DiaTextReveal({
   const texts = useMemo(() => (Array.isArray(text) ? text : [text]), [text])
   const textKey = useMemo(() => texts.join("\0"), [texts])
   const isMulti = texts.length > 1
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = false
 
   const spanRef = useRef<HTMLSpanElement>(null)
   const optsRef = useRef({

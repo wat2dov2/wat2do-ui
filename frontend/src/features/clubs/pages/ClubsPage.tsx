@@ -136,7 +136,7 @@ export function ClubsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="font-bold text-xl text-foreground inline-flex items-baseline gap-1">
-              <NumberFlow value={displayClubs.length} />
+              <NumberFlow value={displayClubs.length} respectMotionPreference={false} />
               <span>{displayClubs.length === 1 ? t("clubs.club") : t("clubs.clubs")}</span>
             </span>
           </div>
