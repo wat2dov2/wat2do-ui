@@ -35,6 +35,8 @@ def create_submission(
     user: UserResponse = Depends(get_db_user),
     _rl: None = Depends(_submission_create_limiter.dependency(key_func=_submission_rate_key)),
 ):
+    if user.school:
+        data.event_data = data.event_data.model_copy(update={"school": user.school})
     return submission_service.create_submission(str(user.id), data.event_data)
 
 

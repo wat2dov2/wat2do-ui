@@ -12,9 +12,6 @@ import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromo
 import { useSubmitEvent, type SubmitEventResult } from "@/features/events/hooks/useSubmitEvent";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { useModalState } from "@/shared/hooks/useModalState";
-import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
-import { useEventsStore } from "@/features/events/store/events.store";
-import { translateSchool } from "@/shared/utils/schoolTranslation";
 import { EventFormStep, type ViewMode } from "@/features/events/components/EventFormStep";
 import { SubmitSuccessStep } from "@/features/events/components/SubmitSuccessStep";
 import { PromotionUpsell } from "@/features/events/components/EventForm/EventForm/PromotionUpsell";
@@ -50,9 +47,7 @@ interface SubmitEventModalFormBodyProps {
   isEditMode: boolean;
 }
 
-function getSubmissionSchool(initialSchool?: string): string {
-  return initialSchool?.trim() || useEventsStore.getState().schoolFilter || DEFAULT_SCHOOL;
-}
+
 
 /** Form body: mounts with formInitialData so edit form is always populated when opened from admin. */
 function SubmitEventModalFormBody({
@@ -72,9 +67,7 @@ function SubmitEventModalFormBody({
   const { isDarkMode } = useDarkMode();
   const [viewMode, setViewMode] = useState<ViewMode>("visual");
   const [submitResult, setSubmitResult] = useState<{ createdEventId: number | null } | null>(null);
-  const [submissionSchool, setSubmissionSchool] = useState(() =>
-    getSubmissionSchool(formInitialData?.school)
-  );
+
 
   const eventForm = useEventForm({
     initialData: formInitialData,
@@ -113,10 +106,9 @@ function SubmitEventModalFormBody({
   const resetState = useCallback(() => {
     setViewMode("visual");
     setSubmitResult(null);
-    setSubmissionSchool(getSubmissionSchool(formInitialData?.school));
     eventFormPromotion.setPromotionSuccess(false);
     eventFormPromotion.setShowPromotion(false);
-  }, [eventFormPromotion, formInitialData?.school]);
+  }, [eventFormPromotion]);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -139,17 +131,12 @@ function SubmitEventModalFormBody({
   );
 
   const handleSubmit = useCallback(() => {
-    const payload = canCreateEvents
-      ? eventForm.formData
-      : { ...eventForm.formData, school: submissionSchool };
-    return submitEvent(payload, eventForm.imageFile, eventForm.markAllFieldsTouched, eventForm.isValid);
+    return submitEvent(eventForm.formData, eventForm.imageFile, eventForm.markAllFieldsTouched, eventForm.isValid);
   }, [
-    canCreateEvents,
     eventForm.formData,
     eventForm.imageFile,
     eventForm.markAllFieldsTouched,
     eventForm.isValid,
-    submissionSchool,
     submitEvent,
   ]);
 
@@ -206,16 +193,12 @@ function SubmitEventModalFormBody({
                   ? t("events.updateEvent")
                   : canCreateEvents
                     ? t("events.createEvent")
-                    : t("events.submitEventForSchool", {
-                        school: translateSchool(submissionSchool),
-                      })}
+                    : t("events.submitEventForReview")}
               </DialogTitle>
             </DialogHeader>
             <EventFormStep
               isEditMode={isEditMode}
               canCreateEvents={canCreateEvents}
-              submissionSchool={submissionSchool}
-              onSubmissionSchoolChange={setSubmissionSchool}
               viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
               isSubmitting={isSubmitting}

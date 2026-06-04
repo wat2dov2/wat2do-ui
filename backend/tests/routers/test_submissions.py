@@ -10,6 +10,7 @@ FAKE_DB_USER = UserResponse(
     id="00000000-0000-0000-0000-000000000001",
     email=FAKE_USER["email"],
     role="user",
+    school="University of Waterloo",
     created_at=datetime.now(timezone.utc),
     updated_at=datetime.now(timezone.utc),
 )
