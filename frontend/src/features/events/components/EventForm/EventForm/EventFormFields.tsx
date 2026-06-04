@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { MapPin, DollarSign, Utensils, Plus, Trash2 } from "lucide-react";
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -15,6 +16,7 @@ import { translateCategory } from "@/shared/utils/event";
 import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
+import { ClubCombobox } from "@/features/events/components/ClubCombobox";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 
 export function EventFormFields() {
@@ -25,6 +27,7 @@ export function EventFormFields() {
     errors,
     touched,
     handleBlur,
+    clubs,
     updateOccurrence,
     addOccurrence,
     removeOccurrence,
@@ -53,17 +56,26 @@ export function EventFormFields() {
             touched={touched.title}
           />
 
-          <FormInput
-            name="organization"
-            label={t("events.organization")}
-            required
-            value={formData.organization}
-            onChange={(value) => updateField("organization", value as string)}
-            onBlur={() => handleBlur("organization")}
-            placeholder={t("forms.organizationPlaceholder")}
-            error={errors.organization}
-            touched={touched.organization}
-          />
+          <Field>
+            <FieldLabel
+              htmlFor="field-club_id"
+              className="text-sm font-medium text-foreground flex items-center gap-1.5"
+            >
+              {t("events.club")}
+              <span className="text-error">*</span>
+            </FieldLabel>
+            <ClubCombobox
+              id="field-club_id"
+              value={formData.club_id}
+              clubs={clubs}
+              onChange={(clubId) => updateField("club_id", clubId)}
+              onBlur={() => handleBlur("club_id")}
+              hasError={Boolean(touched.club_id && errors.club_id)}
+            />
+            {touched.club_id && errors.club_id && (
+              <FieldError className="text-xs">{errors.club_id}</FieldError>
+            )}
+          </Field>
 
           <Field>
             <div className="flex items-center justify-between gap-3">

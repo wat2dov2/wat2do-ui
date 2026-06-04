@@ -1,5 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { Club } from "@/shared/types";
+import { getAllClubs } from "@/features/clubs";
+import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
+import { useEventsStore } from "@/features/events/store/events.store";
 import {
   DialogClose,
 } from "@/shared/ui/dialog";
@@ -19,6 +23,8 @@ import { EventFormProvider } from "@/features/events/components/EventForm/EventF
 import type { useEventForm } from "@/features/events/hooks/useEventForm";
 
 export type ViewMode = "visual" | "json";
+
+const NO_CLUBS: Club[] = [];
 
 /** The subset of useEventForm's return value that EventFormStep needs. */
 type EventFormHookReturn = ReturnType<typeof useEventForm>;
@@ -75,6 +81,18 @@ export function EventFormStep({
   isDarkMode,
 }: EventFormStepProps) {
   const { t } = useTranslation();
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+
+  const fetchClubs = useCallback(
+    () => getAllClubs(schoolFilter ?? undefined),
+    [schoolFilter],
+  );
+  const { data: clubs } = useBackendQuery(fetchClubs, NO_CLUBS, schoolFilter);
+
+  const selectedClubName = useMemo(() => {
+    const id = eventForm.formData.club_id;
+    return id != null ? clubs.find((club) => club.id === id)?.club_name ?? "" : "";
+  }, [clubs, eventForm.formData.club_id]);
 
   const handleViewModeTabChange = useCallback(
     (value: string) => onViewModeChange(value as ViewMode),
@@ -90,6 +108,8 @@ export function EventFormStep({
       errors: eventForm.errors,
       touched: eventForm.touched,
       handleBlur: eventForm.handleBlur,
+      clubs,
+      selectedClubName,
       updateOccurrence: eventForm.updateOccurrence,
       addOccurrence: eventForm.addOccurrence,
       removeOccurrence: eventForm.removeOccurrence,
@@ -111,7 +131,7 @@ export function EventFormStep({
       handleAiGenerate: eventFormAI.handleAiGenerate,
       isDarkMode,
     }),
-    [eventForm, eventFormAI, isDarkMode]
+    [eventForm, eventFormAI, isDarkMode, clubs, selectedClubName]
   );
 
   return (

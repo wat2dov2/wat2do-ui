@@ -609,14 +609,12 @@ export interface paths {
         };
         /**
          * List Events
-         * @description Public list endpoint.
+         * @description Public browse list: the current (upcoming) events for a school.
          *
-         *     Response shape is fixed to ``EventSummaryResponse`` which omits
-         *     ``created_by`` — this is the IDOR/PII fix for audit I10/S16.  The
-         *     ``summary`` flag is still forwarded to the service (so the query
-         *     can short-circuit large column reads) but the wire shape is the
-         *     same either way.  FastAPI's response_model serialization will drop
-         *     any extra fields if the service returns the fuller ``EventResponse``.
+         *     The server returns the whole upcoming set; the client owns all filtering,
+         *     sorting, and search. The set is cached per school (see
+         *     ``event_service.list_events``) and the response omits ``created_by``
+         *     via ``EventSummaryResponse`` (audit I10 / S16).
          */
         get: operations["list_events_events__get"];
         put?: never;
@@ -1472,8 +1470,6 @@ export interface components {
             user_id: string;
             /** Email */
             email: string;
-            /** Username */
-            username?: string | null;
             /** Full Name */
             full_name?: string | null;
             /** Avatar Url */
@@ -1577,18 +1573,12 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
-            /** Club Type */
-            club_type?: string | null;
-            /** School */
-            school?: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Category */
             category?: string | null;
             /** Club Id */
             club_id: number;
-            /** Organization */
-            organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
         };
@@ -1628,11 +1618,6 @@ export interface components {
              * @default false
              */
             registration: boolean;
-            /**
-             * Organization
-             * @default
-             */
-            organization: string;
         };
         /** EventFormOccurrenceResponse */
         EventFormOccurrenceResponse: {
@@ -1656,6 +1641,8 @@ export interface components {
         EventPublicResponse: {
             /** Id */
             id: number;
+            /** Club Id */
+            club_id?: number | null;
             /** Title */
             title: string;
             /** Description */
@@ -1811,16 +1798,12 @@ export interface components {
             registration?: boolean | null;
             /** Source Image Url */
             source_image_url?: string | null;
-            /** Club Type */
-            club_type?: string | null;
-            /** School */
-            school?: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Category */
             category?: string | null;
-            /** Organization */
-            organization?: string | null;
+            /** Club Id */
+            club_id?: number | null;
             /** Ig Handle */
             ig_handle?: string | null;
         };
@@ -2374,8 +2357,6 @@ export interface components {
             email: string;
             /** Password */
             password: string;
-            /** Username */
-            username?: string | null;
             /** Full Name */
             full_name?: string | null;
             /**
@@ -2490,8 +2471,6 @@ export interface components {
         UserResponse: {
             /** Email */
             email: string;
-            /** Username */
-            username?: string | null;
             /** Full Name */
             full_name?: string | null;
             /** Avatar Url */
@@ -2546,8 +2525,6 @@ export interface components {
         };
         /** UserUpdate */
         UserUpdate: {
-            /** Username */
-            username?: string | null;
             /** Full Name */
             full_name?: string | null;
             /** Avatar Url */
@@ -3692,17 +3669,7 @@ export interface operations {
             query?: {
                 skip?: number;
                 limit?: number;
-                category?: string | null;
-                club_type?: string | null;
                 school?: string | null;
-                search?: string | null;
-                from_date?: string | null;
-                to_date?: string | null;
-                has_food?: boolean | null;
-                max_price?: number | null;
-                registration?: boolean | null;
-                /** @description Return lightweight card-view fields only */
-                summary?: boolean;
             };
             header?: never;
             path?: never;

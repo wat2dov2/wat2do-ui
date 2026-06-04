@@ -31,4 +31,3 @@ class EventFormDataResponse(BaseModel):
     price: float = 0
     food: list[str] = Field(default_factory=list)
     registration: bool = False
-    organization: str = ""

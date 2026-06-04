@@ -1756,7 +1756,7 @@
           "events"
         ],
         "summary": "List Events",
-        "description": "Public list endpoint.\n\nResponse shape is fixed to ``EventSummaryResponse`` which omits\n``created_by`` \u2014 this is the IDOR/PII fix for audit I10/S16.  The\n``summary`` flag is still forwarded to the service (so the query\ncan short-circuit large column reads) but the wire shape is the\nsame either way.  FastAPI's response_model serialization will drop\nany extra fields if the service returns the fuller ``EventResponse``.",
+        "description": "Public browse list: the current (upcoming) events for a school.\n\nThe server returns the whole upcoming set; the client owns all filtering,\nsorting, and search. The set is cached per school (see\n``event_service.list_events``) and the response omits ``created_by``\nvia ``EventSummaryResponse`` (audit I10 / S16).",
         "operationId": "list_events_events__get",
         "parameters": [
           {
@@ -1783,40 +1783,6 @@
             }
           },
           {
-            "name": "category",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 100
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Category"
-            }
-          },
-          {
-            "name": "club_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 100
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Club Type"
-            }
-          },
-          {
             "name": "school",
             "in": "query",
             "required": false,
@@ -1832,118 +1798,6 @@
               ],
               "title": "School"
             }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 200
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          },
-          {
-            "name": "from_date",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "From Date"
-            }
-          },
-          {
-            "name": "to_date",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "To Date"
-            }
-          },
-          {
-            "name": "has_food",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Has Food"
-            }
-          },
-          {
-            "name": "max_price",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "number",
-                  "minimum": 0
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Max Price"
-            }
-          },
-          {
-            "name": "registration",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Registration"
-            }
-          },
-          {
-            "name": "summary",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "Return lightweight card-view fields only",
-              "default": false,
-              "title": "Summary"
-            },
-            "description": "Return lightweight card-view fields only"
           }
         ],
         "responses": {
@@ -4618,17 +4472,6 @@
             "type": "string",
             "title": "Email"
           },
-          "username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Username"
-          },
           "full_name": {
             "anyOf": [
               {
@@ -5040,30 +4883,6 @@
             ],
             "title": "Source Image Url"
           },
-          "club_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Type"
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          },
           "source_url": {
             "anyOf": [
               {
@@ -5092,18 +4911,6 @@
             "type": "integer",
             "minimum": 1.0,
             "title": "Club Id"
-          },
-          "organization": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Organization"
           },
           "ig_handle": {
             "anyOf": [
@@ -5173,11 +4980,6 @@
             "type": "boolean",
             "title": "Registration",
             "default": false
-          },
-          "organization": {
-            "type": "string",
-            "title": "Organization",
-            "default": ""
           }
         },
         "type": "object",
@@ -5204,6 +5006,17 @@
           "id": {
             "type": "integer",
             "title": "Id"
+          },
+          "club_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Id"
           },
           "title": {
             "type": "string",
@@ -5777,30 +5590,6 @@
             ],
             "title": "Source Image Url"
           },
-          "club_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Type"
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          },
           "source_url": {
             "anyOf": [
               {
@@ -5825,17 +5614,17 @@
             ],
             "title": "Category"
           },
-          "organization": {
+          "club_id": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Organization"
+            "title": "Club Id"
           },
           "ig_handle": {
             "anyOf": [
@@ -7064,18 +6853,6 @@
             "minLength": 8,
             "title": "Password"
           },
-          "username": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Username"
-          },
           "full_name": {
             "anyOf": [
               {
@@ -7392,18 +7169,6 @@
             "type": "string",
             "title": "Email"
           },
-          "username": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Username"
-          },
           "full_name": {
             "anyOf": [
               {
@@ -7524,18 +7289,6 @@
       },
       "UserUpdate": {
         "properties": {
-          "username": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Username"
-          },
           "full_name": {
             "anyOf": [
               {

@@ -30,7 +30,7 @@ function eventOccurrencesToFormOccurrences(event: Event): EventFormOccurrence[] 
  */
 export function eventToFormData(event: Event): EventFormData {
   return {
-    club_id: event.club_id,
+    club_id: event.club_id ?? null,
     title: event.title,
     description: event.description || "",
     occurrences: eventOccurrencesToFormOccurrences(event),
@@ -39,8 +39,6 @@ export function eventToFormData(event: Event): EventFormData {
     price: event.price ?? 0,
     food: event.food || [],
     registration: event.registration ?? false,
-    organization: event.organization || "",
-    school: event.school ?? "",
   };
 }
 

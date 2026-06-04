@@ -8,15 +8,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from core.constants import (
     EVENT_CATEGORIES,
     MAX_EVENT_CATEGORY_LENGTH,
-    MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
     MAX_EVENT_FOOD_COUNT,
     MAX_EVENT_FOOD_ITEM_LENGTH,
     MAX_EVENT_HANDLE_LENGTH,
     MAX_EVENT_LOCATION_LENGTH,
-    MAX_EVENT_ORGANIZATION_LENGTH,
     MAX_EVENT_PRICE,
-    MAX_EVENT_SCHOOL_LENGTH,
     MAX_EVENT_TITLE_LENGTH,
     MAX_URL_LENGTH,
 )
@@ -117,12 +114,12 @@ class EventCreate(BaseModel):
     food: list[FoodStr] | None = Field(default=None, max_length=MAX_EVENT_FOOD_COUNT)
     registration: bool = False
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    club_type: str | None = Field(default=None, max_length=MAX_EVENT_CLUB_TYPE_LENGTH)
-    school: str | None = Field(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
+    # The owning club is the single source of truth for the event's display
+    # name, type, and school; the server derives those fields from club_id
+    # (see event_service._resolve_club_fields), so they are not accepted here.
     club_id: int = Field(..., ge=1)
-    organization: str | None = Field(default=None, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
 
     @field_validator("category")
@@ -157,11 +154,10 @@ class EventUpdate(BaseModel):
     food: list[FoodStr] | None = Field(default=None, max_length=MAX_EVENT_FOOD_COUNT)
     registration: bool | None = None
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    club_type: str | None = Field(default=None, max_length=MAX_EVENT_CLUB_TYPE_LENGTH)
-    school: str | None = Field(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    organization: str | None = Field(default=None, max_length=MAX_EVENT_ORGANIZATION_LENGTH)
+    # Reassigning the club re-derives organization/club_type/school server-side.
+    club_id: int | None = Field(default=None, ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
 
     @field_validator("category")
@@ -270,6 +266,7 @@ class EventPublicResponse(BaseModel):
     """
 
     id: int
+    club_id: int | None = None
     title: str
     description: str | None = None
     location: str | None = None

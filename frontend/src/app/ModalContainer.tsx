@@ -49,7 +49,7 @@ const BuyCreditsModal = lazy(() =>
 export function ModalContainer() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { profileCompleted, isAdmin, hasClub, clubId } = useAuthState();
+  const { profileCompleted, isAdmin, hasClub } = useAuthState();
   const canCreateEvents = hasClub || isAdmin;
   const canSubmitEvents = profileCompleted;
 
@@ -110,22 +110,17 @@ export function ModalContainer() {
 
   const handleSubmitEvent = useCallback(
     async (eventData: EventFormData) => {
-      const resolvedClubId = eventData.club_id ?? clubId;
-      if (resolvedClubId == null) {
-        throw new Error("Missing active club ID for event submission");
+      if (eventData.club_id == null) {
+        throw new Error("A club must be selected for event submission");
       }
-      const payload = {
-        ...eventData,
-        club_id: resolvedClubId,
-      };
       if (canCreateEvents) {
-        const eventId = await addEvent(payload);
+        const eventId = await addEvent(eventData);
         return { type: "event" as const, eventId };
       }
-      await submitEventForReview(payload);
+      await submitEventForReview(eventData);
       return { type: "submission" as const };
     },
-    [addEvent, canCreateEvents, clubId],
+    [addEvent, canCreateEvents],
   );
 
   return (
@@ -143,12 +138,7 @@ export function ModalContainer() {
           initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
           loadEventForEdit={loadEventForEdit}
           onUpdate={async (eventId, eventData) => {
-            const resolvedClubId = eventData.club_id ?? clubId;
-            const payload = {
-              ...eventData,
-              club_id: resolvedClubId ?? undefined,
-            };
-            await updateEvent(eventId, payload);
+            await updateEvent(eventId, eventData);
             handleSubmitEventClose();
           }}
         />

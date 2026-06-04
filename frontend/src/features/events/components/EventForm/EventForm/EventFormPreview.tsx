@@ -12,7 +12,7 @@ import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 export function EventFormPreview() {
   const { t, i18n } = useTranslation();
-  const { formData } = useEventFormContext();
+  const { formData, selectedClubName } = useEventFormContext();
   const categoryClasses = getCategoryClasses(formData.category);
 
   // Generate badges matching EventCard structure
@@ -88,7 +88,7 @@ export function EventFormPreview() {
           <BadgeMask variant="bottom-left">
             <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
               <span className="truncate max-w-[128px]">
-                {formData.organization || t("events.organization")}
+                {selectedClubName || t("events.club")}
               </span>
             </span>
           </BadgeMask>

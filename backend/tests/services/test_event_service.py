@@ -12,10 +12,15 @@ Covers the pieces the router tests can't reach:
 """
 
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
+import pytest
+
+from core.exceptions import NotFoundError
+from schemas.club import ClubResponse
 from schemas.event import EventResponse
 from schemas.event_date import OccurrenceResponse
-from services import event_service
+from services import club_service, event_service
 
 
 def _event(**overrides) -> EventResponse:
@@ -44,6 +49,45 @@ def _occurrence(dtstart: datetime, dtend: datetime | None = None) -> OccurrenceR
             "created_at": datetime.now(timezone.utc),
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# _resolve_club_fields — the single source for derived event display fields
+# ---------------------------------------------------------------------------
+
+
+def _club(**overrides) -> ClubResponse:
+    defaults = {
+        "id": 7,
+        "club_name": "UW Tea Club",
+        "categories": [],
+        "club_page": None,
+        "ig": None,
+        "discord": None,
+        "club_type": "WUSA",
+        "logo_url": None,
+        "created_by": "11111111-1111-1111-1111-111111111111",
+        "school": "University of Waterloo",
+    }
+    defaults.update(overrides)
+    return ClubResponse.model_validate(defaults)
+
+
+def test_resolve_club_fields_derives_from_club(monkeypatch):
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_club()))
+
+    assert event_service._resolve_club_fields(7) == {
+        "organization": "UW Tea Club",
+        "club_type": "WUSA",
+        "school": "University of Waterloo",
+    }
+
+
+def test_resolve_club_fields_missing_club_raises(monkeypatch):
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=None))
+
+    with pytest.raises(NotFoundError):
+        event_service._resolve_club_fields(999)
 
 
 # ---------------------------------------------------------------------------

@@ -18,7 +18,6 @@ FAKE_DB_USER = UserResponse(
 _VALID_EVENT_DATA = {
     "title": "X",
     "location": "Loc",
-    "organization": "Org",
     "club_id": 7,
     "occurrences": [
         {

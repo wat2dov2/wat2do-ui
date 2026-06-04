@@ -14,8 +14,8 @@ from zoneinfo import ZoneInfo
 from core.cache import TTLCache
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
-from core.errors import EVENT_ALREADY_PAST
-from core.exceptions import ValidationError
+from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
+from core.exceptions import NotFoundError, ValidationError
 from core.retry import supabase_retry
 from core.tables import EVENTS
 from recommender.service import invalidate_candidates_cache
@@ -74,6 +74,25 @@ def _to_utc(dt: datetime | None) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
+
+
+def _resolve_club_fields(club_id: int) -> dict[str, str | None]:
+    """Derive the event's denormalized fields from its owning club.
+
+    The club is the single source of truth for an event's display name,
+    type, and school — callers never set these directly, so both the
+    direct-create path and the submission-approval path stay in agreement.
+    """
+    from services import club_service  # local import avoids an import cycle
+
+    club = club_service.get_club(club_id)
+    if club is None:
+        raise NotFoundError(CLUB_NOT_FOUND)
+    return {
+        "organization": club.club_name,
+        "club_type": club.club_type,
+        "school": club.school,
+    }
 
 
 # ── Public functions ──────────────────────────────────────────────────
@@ -145,6 +164,7 @@ def list_events(
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
     payload.pop("occurrences", None)
+    payload.update(_resolve_club_fields(data.club_id))
     payload["created_by"] = created_by
     r = get_sb().table(EVENTS).insert(payload).execute()
     new_row = r.data[0]
@@ -199,6 +219,11 @@ def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
 
     payload = data.model_dump(mode="json", exclude_unset=True)
     new_occurrences = payload.pop("occurrences", None)
+
+    # Reassigning the club re-derives the denormalized display fields so the
+    # event row never drifts from its owning club.
+    if payload.get("club_id") is not None:
+        payload.update(_resolve_club_fields(payload["club_id"]))
 
     if payload:
         get_sb().table(EVENTS).update(payload).eq("id", event_id).execute()

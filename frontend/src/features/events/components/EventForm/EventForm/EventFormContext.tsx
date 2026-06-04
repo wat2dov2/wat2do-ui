@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import type { EventFormData, EventFormOccurrence, ValidationErrors } from "@/shared/types";
+import type { Club, EventFormData, EventFormOccurrence, ValidationErrors } from "@/shared/types";
 
 interface EventFormContextValue {
   formData: EventFormData;
@@ -10,6 +10,10 @@ interface EventFormContextValue {
   errors: ValidationErrors;
   touched: Record<string, boolean>;
   handleBlur: (field: string) => void;
+  /** Clubs for the active school, loaded once and shared by the picker + preview. */
+  clubs: Club[];
+  /** Display name of the currently selected club (empty when none selected). */
+  selectedClubName: string;
   updateOccurrence: (index: number, field: keyof EventFormOccurrence, value: string) => void;
   addOccurrence: () => void;
   removeOccurrence: (index: number) => void;

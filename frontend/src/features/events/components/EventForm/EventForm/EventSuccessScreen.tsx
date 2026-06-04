@@ -28,7 +28,7 @@ export function EventSuccessScreen({
   isSubmissionOnly,
 }: EventSuccessScreenProps) {
   const { t } = useTranslation();
-  const { formData } = useEventFormContext();
+  const { formData, selectedClubName } = useEventFormContext();
   const successEvent = useMemo(
     () => ({
       occurrences: formData.occurrences.map((o) => ({
@@ -97,7 +97,7 @@ export function EventSuccessScreen({
           <div className="w-full rounded-lg p-4 text-left bg-secondary space-y-1">
             <p className="font-medium text-foreground">{formData.title}</p>
             <p className="text-sm text-muted-foreground">
-              {formData.organization}
+              {selectedClubName}
             </p>
             <p className="text-sm text-muted-foreground">
               {formatCardDate(successEvent)}

@@ -44,6 +44,7 @@ function toReportedEvent(row: ReportResponse): ReportedEvent {
 
 function toEventFormData(eventData: ApiEventCreate): EventFormData {
   return {
+    club_id: eventData.club_id ?? null,
     title: eventData.title,
     description: eventData.description ?? "",
     occurrences: eventData.occurrences.map((occurrence) => {
@@ -61,8 +62,6 @@ function toEventFormData(eventData: ApiEventCreate): EventFormData {
     price: eventData.price ?? 0,
     food: eventData.food ?? [],
     registration: eventData.registration,
-    organization: eventData.organization,
-    school: eventData.school ?? "",
   };
 }
 

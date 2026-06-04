@@ -25,3 +25,6 @@ export {
   getClubTypes,
   loadClubsData,
 } from "./api/clubs.api";
+
+// Hooks
+export { useClubNameLookup } from "./hooks/useClubNameLookup";

@@ -158,7 +158,7 @@ export function AdminEventsPage({
         <AdminTable
           headers={[
             { label: t("events.eventTitle") },
-            { label: t("events.organization") },
+            { label: t("events.club") },
             { label: t("filters.date") },
             { label: t("filters.location") },
             { label: t("filters.category") },

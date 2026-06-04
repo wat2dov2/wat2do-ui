@@ -143,8 +143,7 @@ Return ONLY valid JSON matching this structure (no markdown, no explanation):
   "category": "",
   "price": 0,
   "food": [],
-  "registration": false,
-  "organization": ""
+  "registration": false
 }}}}
 
 IMPORTANT RULES:
@@ -156,7 +155,6 @@ IMPORTANT RULES:
 - price: Number (0 for free events)
 - food: Array of food items from the available options, empty array [] if none
 - registration: true/false
-- organization: Create a reasonable club/organization name if not specified
 - Return raw JSON only, no markdown code blocks.
 
 Today's date is {{today}}.
@@ -481,7 +479,6 @@ def validate_event_response(parsed: dict) -> dict:
         "price": price,
         "food": food,
         "registration": _safe_get(parsed, "registration", bool, False),
-        "organization": _safe_get(parsed, "organization", str, ""),
     }
 
 

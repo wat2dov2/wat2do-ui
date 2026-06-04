@@ -36,22 +36,18 @@ def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventR
     )
 
 
-def _apply_event_club_ownership(data: EventCreate, db_user: UserResponse) -> EventCreate:
-    """Stamp explicit club ownership on create."""
-    club = get_or_404(club_service.get_club(data.club_id), CLUB_NOT_FOUND)
+def _authorize_event_club(club_id: int, db_user: UserResponse) -> None:
+    """Verify the user may publish events under a club (owns it, or is admin).
+
+    The event's display fields are derived from the club server-side
+    (event_service._resolve_club_fields); this helper only enforces the
+    "you can only post for clubs you own" authorization rule.
+    """
+    club = get_or_404(club_service.get_club(club_id), CLUB_NOT_FOUND)
     if not is_admin(db_user):
         owned_clubs = club_service.list_clubs_by_owner(str(db_user.id))
         if not any(c.id == club.id for c in owned_clubs):
             raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
-
-    return data.model_copy(
-        update={
-            "club_id": club.id,
-            "organization": club.club_name,
-            "club_type": club.club_type,
-            "school": club.school,
-        }
-    )
 
 
 @router.get("/latest-added", response_model=LatestEventResponse | None)
@@ -92,8 +88,8 @@ def create_event(
     data: EventCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    owned_data = _apply_event_club_ownership(data, db_user)
-    return event_service.create_event(owned_data, created_by=str(db_user.id))
+    _authorize_event_club(data.club_id, db_user)
+    return event_service.create_event(data, created_by=str(db_user.id))
 
 
 @router.patch("/{event_id}", response_model=EventResponse)
@@ -103,6 +99,10 @@ def update_event(
     db_user: UserResponse = Depends(get_db_user),
 ):
     old_event = _get_event_or_404_authorized(event_id, db_user)
+    # Reassigning to a different club requires ownership of the target club
+    # (or admin), mirroring the create-time authorization rule.
+    if data.club_id is not None:
+        _authorize_event_club(data.club_id, db_user)
     updated_event = get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
     # Event-change notifications — fires on material diff only; routes stay
     # ignorant of what "material" means (that's compute_event_diff). Wrap

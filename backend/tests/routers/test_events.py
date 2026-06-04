@@ -51,7 +51,12 @@ def test_delete_event_requires_auth(client):
 
 
 def test_create_event_sets_created_by_for_club_owner(authenticated_client, monkeypatch):
-    """Approved club owners can create events for their club."""
+    """Approved club owners can create events for their club.
+
+    The router only authorizes club ownership and forwards the raw payload;
+    organization/club_type/school are derived from club_id inside
+    event_service.create_event (see test_resolve_club_fields_*).
+    """
     created_event = _mock_event(club_id=7, organization="Verified Club", club_type="WUSA")
     mock_create = MagicMock(return_value=created_event)
     mock_get_club = MagicMock(return_value=_mock_club(id=7, school="University of Waterloo"))
@@ -81,9 +86,6 @@ def test_create_event_sets_created_by_for_club_owner(authenticated_client, monke
     args, kwargs = mock_create.call_args
     create_data = args[0]
     assert create_data.club_id == 7
-    assert create_data.organization == "Verified Club"
-    assert create_data.club_type == "WUSA"
-    assert create_data.school == "University of Waterloo"
     assert kwargs["created_by"] == FAKE_USER["id"]
     mock_get_club.assert_called_once_with(7)
     mock_resolve.assert_called_once_with(FAKE_USER["id"])

@@ -24,9 +24,11 @@ export interface EventFormOccurrence {
   dtend_local: string;
 }
 
-// Event creation/edit form data (matches EventFormData from SubmitEventModal)
+// Event creation/edit form data (matches EventFormData from SubmitEventModal).
+// The owning club (club_id) is the single source of truth for the event's
+// organization/club_type/school — those are derived server-side, never entered.
 export interface EventFormData {
-  club_id?: number | null;
+  club_id: number | null;
   title: string;
   description: string;
   occurrences: EventFormOccurrence[];
@@ -35,14 +37,12 @@ export interface EventFormData {
   price: number;
   food: string[];
   registration: boolean;
-  organization: string;
-  school?: string;
 }
 
 // Form validation errors
 export interface ValidationErrors {
   title?: string;
-  organization?: string;
+  club_id?: string;
   occurrences?: string;
   location?: string;
 }

@@ -21,6 +21,7 @@ import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatus
 import { SubmissionDetailsDialog } from "@/features/admin/components/submissions/SubmissionDetailsDialog";
 import { RejectSubmissionDialog } from "@/features/admin/components/submissions/RejectSubmissionDialog";
 import { useAdminStore } from "@/features/admin/store/admin.store";
+import { useClubNameLookup } from "@/features/clubs";
 import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmissionsFilters";
 import { useAdminSubmissionsPagination } from "@/features/admin/hooks/useAdminSubmissionsPagination";
 import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
@@ -50,7 +51,8 @@ export function AdminSubmissionsPage({ onBack }: AdminSubmissionsPageProps) {
     );
   }, [fetchSubmissions]);
 
-  const filters = useAdminSubmissionsFilters();
+  const { getClubName } = useClubNameLookup();
+  const filters = useAdminSubmissionsFilters({ getClubName });
   const pagination = useAdminSubmissionsPagination({
     itemsPerPage: ADMIN_ITEMS_PER_PAGE,
     filteredSubmissions: filters.filteredSubmissions,
@@ -125,7 +127,7 @@ export function AdminSubmissionsPage({ onBack }: AdminSubmissionsPageProps) {
         <AdminTable
           headers={[
             { label: t("events.eventTitle") },
-            { label: t("events.organization") },
+            { label: t("events.club") },
             { label: t("admin.submittedBy") },
             { label: t("admin.submittedAt") },
             { label: t("events.status") },
@@ -150,7 +152,7 @@ export function AdminSubmissionsPage({ onBack }: AdminSubmissionsPageProps) {
               </TableCell>
               <TableCell>
                 <div className="text-sm text-muted-foreground">
-                  {submission.eventData.organization}
+                  {getClubName(submission.eventData.club_id)}
                 </div>
               </TableCell>
               <TableCell>
@@ -225,6 +227,7 @@ export function AdminSubmissionsPage({ onBack }: AdminSubmissionsPageProps) {
 
       <SubmissionDetailsDialog
         submission={selectedSubmission}
+        clubName={getClubName(selectedSubmission?.eventData.club_id)}
         isOpen={selectedSubmission !== null}
         onClose={() => {
           const newParams = new URLSearchParams(searchParams);

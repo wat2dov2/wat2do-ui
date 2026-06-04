@@ -210,7 +210,7 @@ export function AddClubModal({
                     value={form.formData.club_name}
                     onChange={(e) => form.updateField("club_name", e.target.value)}
                     onBlur={() => form.handleBlur("club_name")}
-                    placeholder={t("forms.organizationPlaceholder")}
+                    placeholder={t("forms.clubNamePlaceholder")}
                     className={form.errors.club_name ? "border-error" : ""}
                   />
                   {form.errors.club_name && (
