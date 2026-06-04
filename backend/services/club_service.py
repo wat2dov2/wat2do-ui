@@ -84,7 +84,6 @@ def list_club_members(club_id: int) -> list[ClubMemberResponse]:
             ClubMemberResponse(
                 user_id=UUID(u_id),
                 email=u_data["email"],
-                username=u_data.get("username"),
                 full_name=u_data.get("full_name"),
                 avatar_url=u_data.get("avatar_url"),
                 role="Member",
@@ -124,7 +123,6 @@ def add_club_member(club_id: int, user_id: UUID) -> ClubMemberResponse:
     return ClubMemberResponse(
         user_id=user_id,
         email=user.email,
-        username=user.username,
         full_name=user.full_name,
         avatar_url=user.avatar_url,
         role="Member",

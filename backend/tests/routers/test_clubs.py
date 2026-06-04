@@ -212,7 +212,6 @@ def test_list_club_members_allowed_for_member(authenticated_client, monkeypatch)
         ClubMemberResponse(
             user_id=UUID(FAKE_USER["id"]),
             email=FAKE_USER["email"],
-            username=FAKE_USER.get("username"),
             full_name=FAKE_USER.get("full_name"),
             avatar_url=FAKE_USER.get("avatar_url"),
             role="Member",
@@ -254,7 +253,6 @@ def test_add_club_member_allowed_for_member(authenticated_client, monkeypatch):
     mock_user = UserResponse(
         id=UUID(new_user_id),
         email="new@example.com",
-        username="newuser",
         full_name="New User",
         avatar_url=None,
         role="user",
@@ -266,7 +264,6 @@ def test_add_club_member_allowed_for_member(authenticated_client, monkeypatch):
     mock_member_resp = ClubMemberResponse(
         user_id=UUID(new_user_id),
         email="new@example.com",
-        username="newuser",
         full_name="New User",
         avatar_url=None,
         role="Member",

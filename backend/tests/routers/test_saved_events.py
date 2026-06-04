@@ -24,7 +24,6 @@ def _mock_db_user(**overrides) -> UserResponse:
     defaults = {
         "id": "00000000-0000-0000-0000-000000000001",
         "email": FAKE_USER["email"],
-        "username": "testuser",
         "full_name": "Test User",
         "role": "user",
         "created_at": datetime.now(timezone.utc),

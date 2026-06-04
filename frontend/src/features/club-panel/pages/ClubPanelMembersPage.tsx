@@ -217,9 +217,6 @@ export function ClubPanelMembersPage() {
       }
       return parts[0][0].toUpperCase();
     }
-    if (member.username) {
-      return member.username[0].toUpperCase();
-    }
     return member.email[0].toUpperCase();
   }
 
@@ -247,8 +244,7 @@ export function ClubPanelMembersPage() {
     const query = searchQuery.toLowerCase();
     return (
       member.email.toLowerCase().includes(query) ||
-      (member.full_name && member.full_name.toLowerCase().includes(query)) ||
-      (member.username && member.username.toLowerCase().includes(query))
+      (member.full_name && member.full_name.toLowerCase().includes(query))
     );
   });
 
@@ -407,7 +403,7 @@ export function ClubPanelMembersPage() {
                                   {member.avatar_url ? (
                                     <img
                                       src={member.avatar_url}
-                                      alt={member.full_name || member.username || "Avatar"}
+                                      alt={member.full_name || "Avatar"}
                                       className="size-8 rounded-full object-cover border border-border"
                                     />
                                   ) : (
@@ -417,11 +413,8 @@ export function ClubPanelMembersPage() {
                                   )}
                                   <div>
                                     <div className="text-sm font-semibold text-foreground">
-                                      {member.full_name || member.username || "Manager"}
+                                      {member.full_name || "Manager"}
                                     </div>
-                                    {member.username && (
-                                      <div className="text-xs text-muted-foreground">@{member.username}</div>
-                                    )}
                                   </div>
                                 </div>
                               </td>

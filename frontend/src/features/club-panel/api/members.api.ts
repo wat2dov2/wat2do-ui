@@ -3,7 +3,6 @@ import { api } from "@/shared/services/apiClient";
 export interface ClubMember {
   user_id: string;
   email: string;
-  username: string | null;
   full_name: string | null;
   avatar_url: string | null;
   role: string;

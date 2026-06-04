@@ -52,7 +52,7 @@ CLUB_EVENT_CREATION_REQUIRED = "Only approved club owners can create events for 
 # ---------------------------------------------------------------------------
 SIGNUP_FAILED = "Unable to create account — check email/password requirements"
 PASSWORD_RESET_FAILED = "Unable to reset password — please try again"
-EMAIL_OR_USERNAME_TAKEN = "Email or username already taken"
+EMAIL_OR_USERNAME_TAKEN = "Email already taken"
 INSUFFICIENT_CREDITS = "Insufficient credits"
 # C11: machine-readable error code for frontend to branch on without
 # relying on the human-readable ``INSUFFICIENT_CREDITS`` message.  Kept

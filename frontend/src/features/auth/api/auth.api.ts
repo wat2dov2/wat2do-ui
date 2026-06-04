@@ -84,14 +84,12 @@ export function updateUserProfile(profile: UserProfile): void {
 export async function signupAPI(
   email: string,
   password: string,
-  username?: string,
   fullName?: string,
   token?: string,
 ): Promise<{ userId: string; confirmationRequired: boolean; school: string }> {
   const res = await api.post<ApiSignupResponse>("/auth/signup", {
     email,
     password,
-    username: username ?? undefined,
     full_name: fullName ?? undefined,
     token: token ?? undefined,
   });

@@ -29,7 +29,7 @@
     "resetPasswordMismatch": "Passwords do not match.",
     "resetPasswordFailed": "Unable to update your password. Please request a new reset link.",
     "invalidEmailOrPassword": "Invalid email or password",
-    "signupConflict": "Unable to create account — please try a different email or username",
+    "signupConflict": "Unable to create account — please try a different email",
     "confirmationRequired": "Account created! Check your email for a confirmation link, then log in.",
     "genericError": "Something went wrong. Please try again.",
     "backToLogin": "Back to sign in",

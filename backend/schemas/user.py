@@ -11,7 +11,6 @@ from core.constants import (
     MAX_INTEREST_LENGTH,
     MAX_INTERESTS_COUNT,
     MAX_SCHOOL_LENGTH,
-    MAX_USERNAME_LENGTH,
     ROLE_ADMIN,
     ROLE_USER,
 )
@@ -24,7 +23,6 @@ InterestStr = Annotated[str, Field(min_length=1, max_length=MAX_INTEREST_LENGTH)
 
 class UserBase(BaseModel):
     email: str
-    username: str | None = Field(default=None, max_length=MAX_USERNAME_LENGTH)
     full_name: str | None = Field(default=None, max_length=MAX_FULL_NAME_LENGTH)
     avatar_url: str | None = Field(default=None, max_length=MAX_AVATAR_URL_LENGTH)
 
@@ -32,7 +30,6 @@ class UserBase(BaseModel):
 class UserUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    username: str | None = Field(default=None, max_length=MAX_USERNAME_LENGTH)
     full_name: str | None = Field(default=None, max_length=MAX_FULL_NAME_LENGTH)
     avatar_url: str | None = Field(default=None, max_length=MAX_AVATAR_URL_LENGTH)
     faculty: str | None = Field(default=None, max_length=MAX_FACULTY_LENGTH)

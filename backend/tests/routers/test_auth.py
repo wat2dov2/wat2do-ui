@@ -57,7 +57,6 @@ def _clear_rate_limiters():
 VALID_SIGNUP = {
     "email": "student@uwaterloo.ca",
     "password": "Str0ngP@ss!",
-    "username": "newstudent",
     "full_name": "New Student",
 }
 
@@ -216,7 +215,7 @@ class TestSignup:
 
     def test_signup_missing_email(self, client):
         """Missing email field returns 422 validation error."""
-        data = {"password": "Str0ngP@ss!", "username": "x"}
+        data = {"password": "Str0ngP@ss!", "full_name": "x"}
         resp = client.post("/auth/signup", json=data)
         assert resp.status_code == 422
 
@@ -227,7 +226,7 @@ class TestSignup:
         assert resp.status_code == 422
 
     def test_signup_optional_fields_omitted(self, client, monkeypatch):
-        """Username and full_name are optional -- signup works without them."""
+        """full_name is optional -- signup works without it."""
         result = _signup_result()
         monkeypatch.setattr(auth, "signup", MagicMock(return_value=result))
 
@@ -929,7 +928,6 @@ class TestServiceCallArgs:
         arg = mock_signup.call_args[0][0]
         assert arg.email == VALID_SIGNUP["email"]
         assert arg.password == VALID_SIGNUP["password"]
-        assert arg.username == VALID_SIGNUP["username"]
         assert arg.full_name == VALID_SIGNUP["full_name"]
 
     def test_login_passes_request_data_to_service(self, client, monkeypatch):

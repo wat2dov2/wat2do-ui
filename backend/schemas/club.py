@@ -215,7 +215,6 @@ class ClubIntegrationResponse(BaseModel):
 class ClubMemberResponse(BaseModel):
     user_id: UUID
     email: str
-    username: str | None = None
     full_name: str | None = None
     avatar_url: str | None = None
     role: str

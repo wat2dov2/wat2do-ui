@@ -189,7 +189,7 @@ export function EventFormStep({
                   placeholder={t("forms.aiPromptPlaceholder")}
                   generatingText={t("common.generating")}
                   className="space-y-2"
-                  titleClassName="text-base"
+                  titleClassName="text-sm"
                 />
               </Field>
               <FieldSeparator />

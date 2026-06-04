@@ -101,7 +101,7 @@ export function useAuthEntryFlow({
 
     try {
       if (authMode === "signup") {
-        const result = await signupAPI(trimmed, password, undefined, undefined, tokenParam || undefined);
+        const result = await signupAPI(trimmed, password, undefined, tokenParam || undefined);
         if (result.confirmationRequired) {
           setConfirmationMessage(t("auth.confirmationRequired"));
           return;

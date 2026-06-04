@@ -17,7 +17,6 @@ def _mock_db_user(**overrides) -> UserResponse:
         # when the test mocks an event with ``created_by=FAKE_USER["id"]``.
         "id": FAKE_USER["id"],
         "email": FAKE_USER["email"],
-        "username": "testuser",
         "full_name": "Test User",
         "role": "user",
         "created_at": datetime.now(timezone.utc),

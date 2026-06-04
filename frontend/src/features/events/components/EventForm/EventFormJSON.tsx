@@ -40,14 +40,14 @@ export function EventFormJSON() {
           placeholder={t("forms.aiPromptPlaceholder")}
           generatingText={t("common.generating")}
           className="space-y-2"
-          titleClassName="text-base"
+          titleClassName="text-sm"
         />
       </Field>
 
       <FieldSeparator />
 
       <Field>
-        <FieldLabel className="text-base font-medium text-foreground">
+        <FieldLabel className="text-sm font-medium text-foreground">
           {t("forms.jsonEditor")}
         </FieldLabel>
         <div className="border border-border rounded-xl overflow-hidden">

@@ -187,6 +187,7 @@
     "toggleTheme": "Toggle theme"
   },
   "forms": {
+    "eventImage": "Event Image",
     "selectCategory": "Select category",
     "selectCategories": "Select Categories",
     "selectLocations": "Select Locations",

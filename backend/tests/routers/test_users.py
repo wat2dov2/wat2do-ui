@@ -10,7 +10,6 @@ def _mock_user(**overrides) -> UserResponse:
     defaults = {
         "id": "00000000-0000-0000-0000-000000000001",
         "email": FAKE_USER["email"],
-        "username": "testuser",
         "full_name": "Test User",
         "role": "user",
         "created_at": datetime.now(timezone.utc),
@@ -43,19 +42,19 @@ def test_get_me_returns_user(authenticated_client, monkeypatch):
 
 
 def test_update_me_requires_auth(client):
-    response = client.patch("/users/me", json={"username": "new"})
+    response = client.patch("/users/me", json={"full_name": "new"})
     assert response.status_code == 401
 
 
 def test_update_me_succeeds(authenticated_client, monkeypatch):
     user = _mock_user()
-    updated = _mock_user(username="newname")
+    updated = _mock_user(full_name="newname")
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=user))
     monkeypatch.setattr(user_service, "update_user", MagicMock(return_value=updated))
 
-    resp = authenticated_client.patch("/users/me", json={"username": "newname"})
+    resp = authenticated_client.patch("/users/me", json={"full_name": "newname"})
     assert resp.status_code == 200
-    assert resp.json()["username"] == "newname"
+    assert resp.json()["full_name"] == "newname"
 
 
 # ── PATCH /users/me/profile ─────────────────────────────────────────

@@ -52,7 +52,6 @@ def make_db_user(
     defaults = {
         "id": auth_user["id"],
         "email": auth_user["email"],
-        "username": None,
         "full_name": None,
         "avatar_url": None,
         "faculty": None,

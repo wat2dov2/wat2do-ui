@@ -151,7 +151,6 @@ class AuthService:
             "id": str(uuid.uuid4()),
             "supabase_auth_id": res.user.id,
             "email": data.email,
-            "username": data.username,
             "full_name": data.full_name,
             "school": school,
         }
