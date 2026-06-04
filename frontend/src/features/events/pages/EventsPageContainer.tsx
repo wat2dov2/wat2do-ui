@@ -75,7 +75,7 @@ export function EventsPageContainer() {
   );
 
   return (
-    <div className="-mt-6 space-y-3">
+    <>
       <div
         className="pointer-events-none fixed left-0 right-2.5 top-0 z-[45] h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]"
         aria-hidden="true"
@@ -87,8 +87,9 @@ export function EventsPageContainer() {
           blendMode={isDarkMode ? "screen" : "multiply"}
         />
       </div>
-      {/* Sticky toolbar hugs TopNav when scrolling (-top-6 cancels AppLayout top padding). */}
-      <div className="sticky -top-6 z-20 bg-background space-y-3 pt-6 pb-3 backdrop-blur-sm">
+      <div className="-mt-6 space-y-3">
+        {/* Sticky toolbar hugs TopNav when scrolling (-top-6 cancels AppLayout top padding). */}
+        <div className="sticky -top-6 z-20 bg-background space-y-3 pt-6 pb-3 backdrop-blur-sm">
         <SearchBar
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {
@@ -171,6 +172,7 @@ export function EventsPageContainer() {
         )}
       </main>
     </div>
+    </>
   );
 }
 
