@@ -1,6 +1,7 @@
 from typing import Union
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user
 from core.constants import (
@@ -25,13 +26,18 @@ from schemas.club import (
     IntegrationPlatform,
     PlatformIntegrationOptionsResponse,
 )
+from schemas.club_membership import (
+    ClubMembershipResponse,
+    ClubMembershipUpdate,
+    ClubMembershipWithUserResponse,
+)
 from schemas.invitation import (
     ClubInvitationCreate,
     ClubInvitationPublicResponse,
     ClubInvitationResponse,
 )
 from schemas.user import UserResponse
-from services import club_service
+from services import club_membership_service, club_service
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
 
@@ -300,3 +306,90 @@ def accept_invitation(
     success = club_service.accept_invitation(token, db_user.id)
     if not success:
         raise NotFoundError("Invitation not found or has expired")
+
+
+# --- Club Memberships & Requests Endpoints (Student Join Requests) ---
+
+
+@router.post(
+    "/{club_id}/join", response_model=ClubMembershipResponse, status_code=status.HTTP_201_CREATED
+)
+def request_to_join_club(
+    club_id: int,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Create a pending request to join the club."""
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=404, detail=CLUB_NOT_FOUND)
+    return club_membership_service.create_membership_request(club_id, db_user.id)
+
+
+@router.delete("/{club_id}/membership", status_code=status.HTTP_204_NO_CONTENT)
+def leave_club_or_cancel_request(
+    club_id: int,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Leave a club or cancel a pending join request."""
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=404, detail=CLUB_NOT_FOUND)
+    success = club_membership_service.delete_membership(club_id, db_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Membership not found")
+
+
+@router.get("/{club_id}/membership", response_model=ClubMembershipResponse | None)
+def get_my_membership_status(
+    club_id: int,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Get the current user's membership details for this club."""
+    club = club_service.get_club(club_id)
+    if not club:
+        raise HTTPException(status_code=404, detail=CLUB_NOT_FOUND)
+    return club_membership_service.get_user_membership_status(club_id, db_user.id)
+
+
+@router.get("/{club_id}/memberships", response_model=list[ClubMembershipWithUserResponse])
+def list_club_memberships(
+    club_id: int,
+    status: str | None = Query(default=None),
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Club Admin/Owner: List student memberships and pending requests for the club."""
+    _get_club_or_403(club_id, db_user)
+    return club_membership_service.list_club_memberships(club_id, status=status)
+
+
+@router.patch("/{club_id}/memberships/{user_id}", response_model=ClubMembershipResponse)
+def update_club_membership(
+    club_id: int,
+    user_id: UUID,
+    data: ClubMembershipUpdate,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Club Admin/Owner: Approve/reject a request or change role of a student member."""
+    _get_club_or_403(club_id, db_user)
+    updated = club_membership_service.update_membership_status(
+        club_id=club_id,
+        user_id=user_id,
+        status=data.status,
+        role=data.role,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Membership not found")
+    return updated
+
+
+@router.delete("/{club_id}/memberships/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_club_membership(
+    club_id: int,
+    user_id: UUID,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Club Admin/Owner: Remove a student member or request from the club roster."""
+    _get_club_or_403(club_id, db_user)
+    success = club_membership_service.delete_membership(club_id, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Membership not found")

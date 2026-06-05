@@ -12,7 +12,8 @@
       "name": "Name",
       "email": "Email",
       "role": "Role",
-      "joined": "Joined"
+      "joined": "Joined",
+      "requested": "Requested"
     },
     "recentActivity": "Recent Activity",
     "noRecentActivity": "No recent activity",
@@ -45,7 +46,11 @@
     "emailAddress": "Email Address",
     "invitedAt": "Invited At",
     "expiresAt": "Expires At",
-    "revokeInvitationTitle": "Revoke invitation"
+    "revokeInvitationTitle": "Revoke invitation",
+    "loadingRoster": "Loading roster...",
+    "loadingMembership": "Loading membership status...",
+    "linksAndSocials": "Links & Socials",
+    "joinDiscord": "Join Discord Server"
   },
   "integrations": {
     "pageDescription": "Connect your platforms to auto-import events",
