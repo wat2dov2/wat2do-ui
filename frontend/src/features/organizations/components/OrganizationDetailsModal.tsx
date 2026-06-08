@@ -72,7 +72,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
     try {
       const newMembership = await requestToJoinClub(club.id);
       setMembership(newMembership);
-      toast({ description: t("clubPanel.joinSuccess"), variant: "success" });
+      toast({ description: t("organizationPanel.joinSuccess"), variant: "success" });
       onStatusChange?.(club.id, "pending");
     } catch (err) {
       console.error("Failed to join club:", err);
@@ -92,7 +92,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
       await leaveClubOrCancelRequest(club.id);
       setMembership(null);
       toast({
-        description: isPending ? t("clubPanel.cancelSuccess") : t("clubPanel.leaveSuccess"),
+        description: isPending ? t("organizationPanel.cancelSuccess") : t("organizationPanel.leaveSuccess"),
         variant: "success",
       });
       onStatusChange?.(club.id, null);
@@ -114,7 +114,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
     if (!isAuthenticated) {
       return (
         <Button onClick={handleSignInRedirect} className="w-full font-semibold">
-          {t("clubPanel.signInToJoin")}
+          {t("organizationPanel.signInToJoin")}
         </Button>
       );
     }
@@ -123,7 +123,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
       return (
         <div className="flex items-center justify-center py-2 text-muted-foreground text-sm">
           <Loader2 className="size-4 animate-spin mr-2" />
-          <span>{t("clubPanel.loadingMembership")}</span>
+          <span>{t("organizationPanel.loadingMembership")}</span>
         </div>
       );
     }
@@ -132,7 +132,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
       return (
         <Button onClick={handleJoin} disabled={actionLoading} className="w-full font-semibold">
           {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
-          {t("clubPanel.requestToJoin")}
+          {t("organizationPanel.requestToJoin")}
         </Button>
       );
     }
@@ -142,7 +142,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 rounded-lg text-sm">
             <HelpCircle className="size-4 shrink-0" />
-            <span>{t("clubPanel.requestPending")}</span>
+            <span>{t("organizationPanel.requestPending")}</span>
           </div>
           <Button
             variant="outline"
@@ -151,7 +151,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
             className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold"
           >
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
-            {t("clubPanel.cancelRequest")}
+            {t("organizationPanel.cancelRequest")}
           </Button>
         </div>
       );
@@ -162,7 +162,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 text-green-500 rounded-lg text-sm">
             <CheckCircle2 className="size-4 shrink-0" />
-            <span>{t("clubPanel.memberBadge")}</span>
+            <span>{t("organizationPanel.memberBadge")}</span>
           </div>
           <Button
             variant="outline"
@@ -171,7 +171,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
             className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold"
           >
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
-            {t("clubPanel.leaveClub")}
+            {t("organizationPanel.leaveClub")}
           </Button>
         </div>
       );
@@ -182,11 +182,11 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg text-sm">
             <XCircle className="size-4 shrink-0" />
-            <span>{t("clubPanel.requestDeclined")}</span>
+            <span>{t("organizationPanel.requestDeclined")}</span>
           </div>
           <Button onClick={handleJoin} disabled={actionLoading} className="w-full font-semibold">
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
-            {t("clubPanel.reapply")}
+            {t("organizationPanel.reapply")}
           </Button>
         </div>
       );
@@ -252,7 +252,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
           {/* Social Links */}
           <div className="p-4 bg-secondary/30 border border-border rounded-xl space-y-3">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t("clubPanel.linksAndSocials")}
+              {t("organizationPanel.linksAndSocials")}
             </h4>
             <div className="grid grid-cols-1 gap-2">
               {club.club_page && (
@@ -285,7 +285,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
                   className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <MessageCircle className="size-4 text-muted-foreground" />
-                  <span>{t("clubPanel.joinDiscord")}</span>
+                  <span>{t("organizationPanel.joinDiscord")}</span>
                 </a>
               )}
             </div>

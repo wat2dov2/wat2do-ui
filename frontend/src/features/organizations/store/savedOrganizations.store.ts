@@ -125,8 +125,8 @@ export const useSavedOrganizationsStore = create<SavedClubsState>((set, get) => 
           get()._toggleLocal(clubId);
           toast({
             description: shouldSave
-              ? i18n.t("clubs.savedClubs.saveFailed")
-              : i18n.t("clubs.savedClubs.unsaveFailed"),
+              ? i18n.t("organizations.savedClubs.saveFailed")
+              : i18n.t("organizations.savedClubs.unsaveFailed"),
             variant: "destructive",
           });
         });

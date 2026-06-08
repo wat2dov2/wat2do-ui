@@ -1,7 +1,7 @@
 /**
  * Normalize club category keys to the shared event-category translation
  * keys where they overlap (Academic, Religious, Cultural), falling back
- * to `clubs.categories.*` for WUSA-specific categories.
+ * to `organizations.categories.*` for WUSA-specific categories.
  */
 
 const CATEGORY_TO_SHARED_KEY: Record<string, string> = {
@@ -19,7 +19,7 @@ export function getClubCategoryTranslation(
     const translated = t(sharedKey);
     return translated !== sharedKey ? translated : category;
   }
-  const clubKey = `clubs.categories.${category}`;
+  const clubKey = `organizations.categories.${category}`;
   const translatedClub = t(clubKey);
   return translatedClub !== clubKey ? translatedClub : category;
 }

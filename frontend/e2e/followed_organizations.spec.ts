@@ -135,7 +135,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   }, { key: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL });
 }
 
-test.describe("Followed Clubs Flow", () => {
+test.describe("Followed Organizations Flow", () => {
   test.beforeEach(({ page }) => {
     page.on("console", (msg) => {
       console.log(`[BROWSER CONSOLE] [${msg.type()}] ${msg.text()}`);
@@ -143,7 +143,7 @@ test.describe("Followed Clubs Flow", () => {
   });
 
   test("unauthenticated user sees Sign In CTA on followed tab", async ({ page }) => {
-    await page.goto(`${BASE}/clubs`);
+    await page.goto(`${BASE}/organizations`);
     await page.waitForTimeout(1000);
 
     // Assert that we are on the clubs page
@@ -154,13 +154,13 @@ test.describe("Followed Clubs Flow", () => {
     await page.locator("#tab-followed-clubs").click();
 
     // Assert that the Sign In CTA is displayed
-    await expect(page.getByRole("heading", { name: "Sign in to view followed clubs" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to view followed organizations" })).toBeVisible();
     await expect(page.locator("#followed-clubs-sign-in")).toBeVisible();
   });
 
   test("authenticated user toggles club follow status", async ({ page }) => {
     await seedAuthenticatedSession(page);
-    await page.goto(`${BASE}/clubs`);
+    await page.goto(`${BASE}/organizations`);
     await page.waitForTimeout(2000);
 
     // Assert that we are on All Clubs tab and cards are loaded
@@ -168,7 +168,7 @@ test.describe("Followed Clubs Flow", () => {
     
     // Switch to Followed Clubs tab, should show empty state
     await page.locator("#tab-followed-clubs").click();
-    await expect(page.getByText("No followed clubs")).toBeVisible();
+    await expect(page.getByText("No followed organizations")).toBeVisible();
 
     // Switch back to All Clubs
     await page.locator("#tab-all-clubs").click();
@@ -183,7 +183,7 @@ test.describe("Followed Clubs Flow", () => {
 
     // Switch to Followed Clubs tab, now the followed card should be there
     await page.locator("#tab-followed-clubs").click();
-    await expect(page.getByText("No followed clubs")).not.toBeVisible();
+    await expect(page.getByText("No followed organizations")).not.toBeVisible();
     
     const displayClubsCount = await page.locator("article").count();
     expect(displayClubsCount).toBe(1);
@@ -196,6 +196,6 @@ test.describe("Followed Clubs Flow", () => {
     await page.waitForTimeout(500);
 
     // Assert empty state is shown again
-    await expect(page.getByText("No followed clubs")).toBeVisible();
+    await expect(page.getByText("No followed organizations")).toBeVisible();
   });
 });

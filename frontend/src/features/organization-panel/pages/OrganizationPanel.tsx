@@ -20,9 +20,9 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
           <Users className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("clubPanel.title")}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("organizationPanel.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("clubPanel.description")}
+            {t("organizationPanel.description")}
           </p>
         </div>
       </div>
@@ -31,20 +31,20 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <AdminCard
           icon={Megaphone}
-          title={t("clubPanel.posters")}
-          description={t("clubPanel.postersDesc")}
+          title={t("organizationPanel.posters")}
+          description={t("organizationPanel.postersDesc")}
           onClick={() => onNavigate("organization-panel-posters")}
         />
         <AdminCard
           icon={Link}
-          title={t("clubPanel.integrations")}
-          description={t("clubPanel.integrationsDesc")}
+          title={t("organizationPanel.integrations")}
+          description={t("organizationPanel.integrationsDesc")}
           onClick={() => onNavigate("organization-panel-integrations")}
         />
         <AdminCard
           icon={Users}
-          title={t("clubPanel.members")}
-          description={t("clubPanel.membersDesc")}
+          title={t("organizationPanel.members")}
+          description={t("organizationPanel.membersDesc")}
           onClick={() => onNavigate("organization-panel-members")}
         />
       </div>
@@ -52,7 +52,7 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
       {/* Recent Activity Feed */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-1">{t("clubPanel.recentActivity")}</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-1">{t("organizationPanel.recentActivity")}</h2>
           <p className="text-sm text-muted-foreground">
             {t("admin.recentActivityDesc")}
           </p>
@@ -64,7 +64,7 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
           </div>
         ) : (
           <div className="bg-card border border-border rounded-xl p-8 text-center">
-            <p className="text-sm text-muted-foreground">{t("clubPanel.noRecentActivity")}</p>
+            <p className="text-sm text-muted-foreground">{t("organizationPanel.noRecentActivity")}</p>
           </div>
         )}
       </div>

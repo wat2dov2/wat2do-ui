@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { LazyMotion, domAnimation } from "framer-motion";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -192,6 +192,9 @@ function AppContent() {
       />
       <Route path={ROUTES.CONTACT} element={<ContactPage />} />
       <Route path={ROUTES.ORGANIZATIONS} element={<OrganizationsPage />} />
+      <Route path="/clubs" element={<Navigate to={ROUTES.ORGANIZATIONS} replace />} />
+      <Route path="/club-panel" element={<Navigate to={ROUTES.ORGANIZATION_PANEL} replace />} />
+      <Route path="/club-panel/*" element={<Navigate to={ROUTES.ORGANIZATION_PANEL} replace />} />
       <Route path={ROUTES.INVITE} element={<InviteLandingPage />} />
 
       <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

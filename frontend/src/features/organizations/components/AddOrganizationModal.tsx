@@ -170,10 +170,10 @@ export function AddOrganizationModal({
     try {
       await Promise.resolve(onSave(club));
       toast({
-        title: isEditMode ? t("clubs.clubUpdated") : t("clubs.clubCreated"),
+        title: isEditMode ? t("organizations.clubUpdated") : t("organizations.clubCreated"),
         description: isEditMode
-          ? t("clubs.clubUpdatedMessage", { name: club.club_name })
-          : t("clubs.clubCreatedMessage", { name: club.club_name }),
+          ? t("organizations.clubUpdatedMessage", { name: club.club_name })
+          : t("organizations.clubCreatedMessage", { name: club.club_name }),
         variant: "success",
       });
       onClose();
@@ -187,11 +187,11 @@ export function AddOrganizationModal({
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? t("clubs.editClub") : t("clubs.addClub")}</DialogTitle>
+          <DialogTitle>{isEditMode ? t("organizations.editClub") : t("organizations.addClub")}</DialogTitle>
           <DialogDescription>
             {isEditMode
-              ? t("clubs.editClubDescription")
-              : t("clubs.addClubDescription")}
+              ? t("organizations.editClubDescription")
+              : t("organizations.addClubDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -351,7 +351,7 @@ export function AddOrganizationModal({
                 isLoading={isSubmitting}
                 loadingText={t("common.pleaseWait") || "Please wait..."}
               >
-                {isEditMode ? t("clubs.updateClub") : t("clubs.addClub")}
+                {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
               </LoadingButton>
             </Field>
           </FieldGroup>
@@ -368,7 +368,7 @@ export function AddOrganizationModal({
             isLoading={isSubmitting}
             loadingText={t("common.pleaseWait") || "Please wait..."}
           >
-            {isEditMode ? t("clubs.updateClub") : t("clubs.addClub")}
+            {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
           </LoadingButton>
         </DialogFooter>
       </DialogContent>

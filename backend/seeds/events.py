@@ -21,7 +21,8 @@ def _to_iso(dt: datetime | None) -> str | None:
     return dt.isoformat() if dt else None
 
 
-BASE = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+now = datetime.now(timezone.utc)
+BASE = now + timedelta(days=10)
 ORGS = [
     "UW Board Games Club",
     "UW Computer Science Club",
@@ -40,8 +41,8 @@ SEED_EVENTS = [
         "location": "HH 138",
         "occurrences": [
             {
-                "dtstart_utc": _to_iso(datetime(2026, 1, 27, 23, 0, tzinfo=timezone.utc)),
-                "dtend_utc": _to_iso(datetime(2026, 1, 28, 1, 30, tzinfo=timezone.utc)),
+                "dtstart_utc": _to_iso(now + timedelta(days=1, hours=2)),
+                "dtend_utc": _to_iso(now + timedelta(days=1, hours=4)),
                 "tz": "UTC",
             }
         ],
@@ -60,8 +61,8 @@ SEED_EVENTS = [
         "location": "SLC Great Hall",
         "occurrences": [
             {
-                "dtstart_utc": _to_iso(datetime(2026, 2, 5, 0, 0, tzinfo=timezone.utc)),
-                "dtend_utc": _to_iso(datetime(2026, 2, 5, 3, 0, tzinfo=timezone.utc)),
+                "dtstart_utc": _to_iso(now + timedelta(days=2, hours=1)),
+                "dtend_utc": _to_iso(now + timedelta(days=2, hours=4)),
                 "tz": "UTC",
             }
         ],
@@ -81,8 +82,8 @@ SEED_EVENTS = [
         "location": "DC 1351",
         "occurrences": [
             {
-                "dtstart_utc": _to_iso(datetime(2026, 3, 12, 14, 0, tzinfo=timezone.utc)),
-                "dtend_utc": _to_iso(datetime(2026, 3, 12, 18, 0, tzinfo=timezone.utc)),
+                "dtstart_utc": _to_iso(now + timedelta(days=3, hours=3)),
+                "dtend_utc": _to_iso(now + timedelta(days=3, hours=7)),
                 "tz": "UTC",
             }
         ],

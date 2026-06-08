@@ -37,7 +37,7 @@ export function OrganizationPanelIntegrationsPage() {
           <Link className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("clubPanel.integrations")}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t("organizationPanel.integrations")}</h1>
           <p className="text-sm text-muted-foreground">
             {t("integrations.pageDescription")}
           </p>
@@ -53,7 +53,7 @@ export function OrganizationPanelIntegrationsPage() {
           platform="whatsapp"
           icon={<MessageCircle className="size-6 text-green-600" />}
           iconBgClassName="bg-green-100"
-          titleKey="clubPanel.whatsapp"
+          titleKey="organizationPanel.whatsapp"
           descriptionKey="integrations.whatsappScrapeDesc"
           onConnect={() => integrations.handleConnect("whatsapp")}
           onDisconnect={() => integrations.handleDisconnect("whatsapp")}
@@ -65,7 +65,7 @@ export function OrganizationPanelIntegrationsPage() {
           platform="discord"
           icon={<DiscordIcon className="size-6 text-primary" />}
           iconBgClassName="bg-primary/15"
-          titleKey="clubPanel.discord"
+          titleKey="organizationPanel.discord"
           descriptionKey="integrations.discordScrapeDesc"
           onConnect={() => integrations.handleConnect("discord")}
           onDisconnect={() => integrations.handleDisconnect("discord")}

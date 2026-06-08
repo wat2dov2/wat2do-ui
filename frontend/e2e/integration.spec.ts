@@ -373,8 +373,8 @@ test.describe("Posters & QR Analytics", () => {
     await page.goto(`${BASE}/admin/posters`);
     await expect(page.getByText("Test Poster 1").first()).toBeVisible();
 
-    // Club panel posters page reuses same posters view
-    await page.goto(`${BASE}/club-panel/posters`);
+    // Organization panel posters page reuses same posters view
+    await page.goto(`${BASE}/organization-panel/posters`);
     await expect(page.getByText("Test Poster 1").first()).toBeVisible();
   });
 });
@@ -384,7 +384,7 @@ test.describe("Posters & QR Analytics", () => {
 test.describe("Club Integrations", () => {
   test("can connect WhatsApp integration end to end", async ({ page }) => {
     await seedAuthenticatedSession(page);
-    await page.goto(`${BASE}/club-panel/integrations`);
+    await page.goto(`${BASE}/organization-panel/integrations`);
 
     // WhatsApp card
     const whatsappCard = page
@@ -409,7 +409,7 @@ test.describe("Club Integrations", () => {
 
   test("can connect Discord integration with channel selection", async ({ page }) => {
     await seedAuthenticatedSession(page);
-    await page.goto(`${BASE}/club-panel/integrations`);
+    await page.goto(`${BASE}/organization-panel/integrations`);
 
     const discordCard = page
       .locator("div.bg-card", { hasText: "Discord" })
@@ -484,15 +484,15 @@ test.describe("Events Page", () => {
 
 // ── Workflow 3: Clubs Page ────────────────────────────────────────────
 
-test.describe("Clubs Page", () => {
-  test("loads and displays clubs", async ({ page }) => {
-    await page.goto(`${BASE}/clubs`);
+test.describe("Organizations Page", () => {
+  test("loads and displays organizations", async ({ page }) => {
+    await page.goto(`${BASE}/organizations`);
     await page.waitForTimeout(3000);
 
     const body = await page.textContent("body");
     expect(body).toBeTruthy();
 
-    await page.screenshot({ path: "e2e/screenshots/clubs-page.png", fullPage: true });
+    await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });
   });
 
   test("backend API returns clubs", async ({ request }) => {
@@ -569,7 +569,7 @@ test.describe("Auth-protected API endpoints", () => {
 
 test.describe("Navigation", () => {
   test("main pages load without errors", async ({ page }) => {
-    const routes = ["/", "/login", "/onboarding", "/clubs", "/about", "/settings"];
+    const routes = ["/", "/login", "/onboarding", "/organizations", "/about", "/settings"];
     for (const route of routes) {
       const res = await page.goto(`${BASE}${route}`);
       expect(res?.status()).toBe(200);

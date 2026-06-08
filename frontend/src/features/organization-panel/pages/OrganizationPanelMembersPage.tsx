@@ -99,7 +99,7 @@ export function OrganizationPanelMembersPage() {
       .catch((err) => {
         console.error("Failed to load management team:", err);
         toast({
-          description: t("clubPanel.loadingClubMembers") || "Failed to load management details.",
+          description: t("organizationPanel.loadingClubMembers") || "Failed to load management details.",
           variant: "destructive",
         });
       })
@@ -122,7 +122,7 @@ export function OrganizationPanelMembersPage() {
     try {
       await updateClubMembership(clubId, userId, { status: "approved" });
       toast({
-        description: t("clubPanel.requestApproved") || "Membership request approved.",
+        description: t("organizationPanel.requestApproved") || "Membership request approved.",
         variant: "success",
       });
       fetchRoster();
@@ -143,7 +143,7 @@ export function OrganizationPanelMembersPage() {
     try {
       await updateClubMembership(clubId, userId, { status: "rejected" });
       toast({
-        description: t("clubPanel.requestRejected") || "Membership request rejected.",
+        description: t("organizationPanel.requestRejected") || "Membership request rejected.",
         variant: "success",
       });
       fetchRoster();
@@ -160,14 +160,14 @@ export function OrganizationPanelMembersPage() {
 
   const handleRemoveMembership = async (userId: string) => {
     if (!clubId) return;
-    if (!confirm(t("clubPanel.removeMemberConfirm") || "Are you sure you want to remove this member?")) {
+    if (!confirm(t("organizationPanel.removeMemberConfirm") || "Are you sure you want to remove this member?")) {
       return;
     }
     setActionLoading(userId);
     try {
       await removeRosterMembership(clubId, userId);
       toast({
-        description: t("clubPanel.memberRemoved") || "Member removed from roster.",
+        description: t("organizationPanel.memberRemoved") || "Member removed from roster.",
         variant: "success",
       });
       fetchRoster();
@@ -199,7 +199,7 @@ export function OrganizationPanelMembersPage() {
       } else {
         toast({
           title: "Success",
-          description: t("clubPanel.addSuccess") || "Member added successfully!",
+          description: t("organizationPanel.addSuccess") || "Member added successfully!",
           variant: "success",
         });
       }
@@ -269,7 +269,7 @@ export function OrganizationPanelMembersPage() {
   const handleRemoveManager = async (userId: string, email: string) => {
     if (!clubId) return;
 
-    const confirmMsg = t("clubPanel.removeMemberConfirm") || "Are you sure you want to remove this member? They will lose manager access to this club.";
+    const confirmMsg = t("organizationPanel.removeMemberConfirm") || "Are you sure you want to remove this member? They will lose manager access to this club.";
     if (!confirm(`${confirmMsg}\n\nEmail: ${email}`)) {
       return;
     }
@@ -279,7 +279,7 @@ export function OrganizationPanelMembersPage() {
       await removeClubManager(clubId, userId);
       toast({
         title: "Success",
-        description: t("clubPanel.removeSuccess") || "Member removed successfully!",
+        description: t("organizationPanel.removeSuccess") || "Member removed successfully!",
         variant: "success",
       });
       fetchManagement();
@@ -329,19 +329,19 @@ export function OrganizationPanelMembersPage() {
       case "owner":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-primary/20 text-primary">
-            {t("clubPanel.roleOwner")}
+            {t("organizationPanel.roleOwner")}
           </span>
         );
       case "officer":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-500/20 text-blue-400">
-            {t("clubPanel.roleOfficer")}
+            {t("organizationPanel.roleOfficer")}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-muted-foreground">
-            {t("clubPanel.roleMember")}
+            {t("organizationPanel.roleMember")}
           </span>
         );
     }
@@ -352,10 +352,10 @@ export function OrganizationPanelMembersPage() {
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <ShieldAlert className="size-12 text-muted-foreground/45 mb-4" />
         <h3 className="font-semibold text-foreground mb-1">
-          {t("clubPanel.noActiveClubSelected")}
+          {t("organizationPanel.noActiveClubSelected")}
         </h3>
         <p className="text-sm text-muted-foreground max-w-sm">
-          {t("clubPanel.noActiveClubSelectedDesc")}
+          {t("organizationPanel.noActiveClubSelectedDesc")}
         </p>
       </div>
     );
@@ -377,8 +377,8 @@ export function OrganizationPanelMembersPage() {
           <Users className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("clubPanel.members")}</h1>
-          <p className="text-sm text-muted-foreground">{t("clubPanel.membersDesc")}</p>
+          <h1 className="text-2xl font-semibold text-foreground">{t("organizationPanel.members")}</h1>
+          <p className="text-sm text-muted-foreground">{t("organizationPanel.membersDesc")}</p>
         </div>
       </div>
 
@@ -392,7 +392,7 @@ export function OrganizationPanelMembersPage() {
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          {t("clubPanel.rosterTab")}
+          {t("organizationPanel.rosterTab")}
         </button>
         <button
           onClick={() => setMainTab("management")}
@@ -402,7 +402,7 @@ export function OrganizationPanelMembersPage() {
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          {t("clubPanel.managementTab")}
+          {t("organizationPanel.managementTab")}
         </button>
       </div>
 
@@ -419,7 +419,7 @@ export function OrganizationPanelMembersPage() {
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t("clubPanel.activeMembers")} ({activeMembers.length})
+              {t("organizationPanel.activeMembers")} ({activeMembers.length})
             </button>
             <button
               onClick={() => setActiveTab("requests")}
@@ -429,7 +429,7 @@ export function OrganizationPanelMembersPage() {
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t("clubPanel.pendingRequests")} ({pendingRequests.length})
+              {t("organizationPanel.pendingRequests")} ({pendingRequests.length})
             </button>
           </div>
 
@@ -437,7 +437,7 @@ export function OrganizationPanelMembersPage() {
           {rosterLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Loader2 className="size-8 animate-spin text-primary mb-3" />
-              <span className="text-muted-foreground text-sm">{t("clubPanel.loadingRoster")}</span>
+              <span className="text-muted-foreground text-sm">{t("organizationPanel.loadingRoster")}</span>
             </div>
           ) : activeTab === "members" ? (
             <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
@@ -447,16 +447,16 @@ export function OrganizationPanelMembersPage() {
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.name")}
+                          {t("organizationPanel.memberColumns.name")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.email")}
+                          {t("organizationPanel.memberColumns.email")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.role")}
+                          {t("organizationPanel.memberColumns.role")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.joined")}
+                          {t("organizationPanel.memberColumns.joined")}
                         </th>
                         <th className="px-6 py-4"></th>
                       </tr>
@@ -505,7 +505,7 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <UserMinus className="size-4 mr-1" />
                                 )}
-                                {t("clubPanel.remove")}
+                                {t("organizationPanel.remove")}
                               </Button>
                             )}
                           </td>
@@ -518,10 +518,10 @@ export function OrganizationPanelMembersPage() {
                 <div className="p-12 text-center">
                   <Users className="size-12 text-muted-foreground/45 mx-auto mb-4" />
                   <h3 className="font-semibold text-foreground mb-1">
-                    {t("clubPanel.noMembersYet")}
+                    {t("organizationPanel.noMembersYet")}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    {t("clubPanel.noMembersDesc")}
+                    {t("organizationPanel.noMembersDesc")}
                   </p>
                 </div>
               )}
@@ -534,13 +534,13 @@ export function OrganizationPanelMembersPage() {
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.name")}
+                          {t("organizationPanel.memberColumns.name")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.email")}
+                          {t("organizationPanel.memberColumns.email")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.requested")}
+                          {t("organizationPanel.memberColumns.requested")}
                         </th>
                         <th className="px-6 py-4"></th>
                       </tr>
@@ -588,7 +588,7 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <Check className="size-4 mr-1" />
                                 )}
-                                {t("clubPanel.approve")}
+                                {t("organizationPanel.approve")}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -602,7 +602,7 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <X className="size-4 mr-1" />
                                 )}
-                                {t("clubPanel.reject")}
+                                {t("organizationPanel.reject")}
                               </Button>
                             </div>
                           </td>
@@ -615,10 +615,10 @@ export function OrganizationPanelMembersPage() {
                 <div className="p-12 text-center">
                   <ShieldAlert className="size-12 text-muted-foreground/45 mx-auto mb-4" />
                   <h3 className="font-semibold text-foreground mb-1">
-                    {t("clubPanel.noRequestsYet")}
+                    {t("organizationPanel.noRequestsYet")}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    {t("clubPanel.noRequestsDesc")}
+                    {t("organizationPanel.noRequestsDesc")}
                   </p>
                 </div>
               )}
@@ -632,10 +632,10 @@ export function OrganizationPanelMembersPage() {
             <CardHeader>
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <UserPlus className="size-5 text-primary" />
-                {t("clubPanel.inviteOrAddManager")}
+                {t("organizationPanel.inviteOrAddManager")}
               </CardTitle>
               <CardDescription>
-                {t("clubPanel.inviteOrAddManagerDesc")}
+                {t("organizationPanel.inviteOrAddManagerDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -644,7 +644,7 @@ export function OrganizationPanelMembersPage() {
                   type="email"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder={t("clubPanel.enterEmail") || "Enter email address"}
+                  placeholder={t("organizationPanel.enterEmail") || "Enter email address"}
                   required
                   className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground"
                 />
@@ -652,10 +652,10 @@ export function OrganizationPanelMembersPage() {
                   {submitting ? (
                     <>
                       <Loader2 className="size-4 animate-spin mr-2" />
-                      {t("clubPanel.sending")}
+                      {t("organizationPanel.sending")}
                     </>
                   ) : (
-                    t("clubPanel.inviteAddManagerButton")
+                    t("organizationPanel.inviteAddManagerButton")
                   )}
                 </Button>
               </form>
@@ -668,10 +668,10 @@ export function OrganizationPanelMembersPage() {
               <div>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Users className="size-5 text-primary" />
-                  {t("clubPanel.currentlyAuthorizedManagers")}
+                  {t("organizationPanel.currentlyAuthorizedManagers")}
                 </CardTitle>
                 <CardDescription>
-                  {t("clubPanel.membersDesc")}
+                  {t("organizationPanel.membersDesc")}
                 </CardDescription>
               </div>
               <div className="relative max-w-xs w-full">
@@ -680,7 +680,7 @@ export function OrganizationPanelMembersPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("clubPanel.searchManagersPlaceholder") || "Search managers by name or email..."}
+                  placeholder={t("organizationPanel.searchManagersPlaceholder") || "Search managers by name or email..."}
                   className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground"
                 />
               </div>
@@ -690,7 +690,7 @@ export function OrganizationPanelMembersPage() {
                 <div className="flex flex-col items-center justify-center py-16">
                   <Loader2 className="size-8 animate-spin text-primary mb-3" />
                   <span className="text-muted-foreground text-sm">
-                    {t("clubPanel.loadingClubMembers") || "Loading club members..."}
+                    {t("organizationPanel.loadingClubMembers") || "Loading club members..."}
                   </span>
                 </div>
               ) : filteredManagers.length > 0 ? (
@@ -699,16 +699,16 @@ export function OrganizationPanelMembersPage() {
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.name")}
+                          {t("organizationPanel.memberColumns.name")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.email")}
+                          {t("organizationPanel.memberColumns.email")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.role")}
+                          {t("organizationPanel.memberColumns.role")}
                         </th>
                         <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("clubPanel.memberColumns.joined")}
+                          {t("organizationPanel.memberColumns.joined")}
                         </th>
                         <th className="px-6 py-4"></th>
                       </tr>
@@ -757,7 +757,7 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <UserMinus className="size-4 mr-1" />
                                 )}
-                                {t("clubPanel.remove")}
+                                {t("organizationPanel.remove")}
                               </Button>
                             )}
                           </td>
@@ -770,10 +770,10 @@ export function OrganizationPanelMembersPage() {
                 <div className="p-12 text-center">
                   <Users className="size-12 text-muted-foreground/45 mx-auto mb-4" />
                   <h3 className="font-semibold text-foreground mb-1">
-                    {t("clubPanel.noMembersYet")}
+                    {t("organizationPanel.noMembersYet")}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    {t("clubPanel.noMembersDesc")}
+                    {t("organizationPanel.noMembersDesc")}
                   </p>
                 </div>
               )}
@@ -786,10 +786,10 @@ export function OrganizationPanelMembersPage() {
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <UserPlus className="size-5 text-primary" />
-                  {t("clubPanel.pendingJoinRequests", { count: joinRequests.length })}
+                  {t("organizationPanel.pendingJoinRequests", { count: joinRequests.length })}
                 </CardTitle>
                 <CardDescription>
-                  {t("clubPanel.pendingJoinRequestsDesc")}
+                  {t("organizationPanel.pendingJoinRequestsDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -798,13 +798,13 @@ export function OrganizationPanelMembersPage() {
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("clubPanel.studentNameEmail") || "Student Name / Email"}
+                          {t("organizationPanel.studentNameEmail") || "Student Name / Email"}
                         </th>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("clubPanel.pitch") || "Pitch"}
+                          {t("organizationPanel.pitch") || "Pitch"}
                         </th>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("clubPanel.invitedAt") || "Submitted"}
+                          {t("organizationPanel.invitedAt") || "Submitted"}
                         </th>
                         <th className="px-6 py-4"></th>
                       </tr>
@@ -840,7 +840,7 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <Check className="size-4 mr-1" />
                                 )}
-                                {t("clubPanel.approveMember") || "Approve"}
+                                {t("organizationPanel.approveMember") || "Approve"}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -854,7 +854,7 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <X className="size-4 mr-1" />
                                 )}
-                                {t("clubPanel.rejectRequest") || "Reject"}
+                                {t("organizationPanel.rejectRequest") || "Reject"}
                               </Button>
                             </div>
                           </td>
@@ -873,10 +873,10 @@ export function OrganizationPanelMembersPage() {
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <MailOpen className="size-5 text-primary" />
-                  {t("clubPanel.pendingInvitations", { count: invitations.length })}
+                  {t("organizationPanel.pendingInvitations", { count: invitations.length })}
                 </CardTitle>
                 <CardDescription>
-                  {t("clubPanel.pendingInvitationsDesc")}
+                  {t("organizationPanel.pendingInvitationsDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -885,13 +885,13 @@ export function OrganizationPanelMembersPage() {
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("clubPanel.emailAddress")}
+                          {t("organizationPanel.emailAddress")}
                         </th>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("clubPanel.invitedAt")}
+                          {t("organizationPanel.invitedAt")}
                         </th>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("clubPanel.expiresAt")}
+                          {t("organizationPanel.expiresAt")}
                         </th>
                         <th className="px-6 py-4"></th>
                       </tr>
@@ -929,7 +929,7 @@ export function OrganizationPanelMembersPage() {
                               ) : (
                                 <UserMinus className="size-4 mr-1" />
                               )}
-                              {t("clubPanel.revokeInvitationTitle") || "Revoke"}
+                              {t("organizationPanel.revokeInvitationTitle") || "Revoke"}
                             </Button>
                           </td>
                         </tr>

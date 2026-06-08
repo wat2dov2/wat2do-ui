@@ -188,7 +188,7 @@ export function AdminOrganizationsPage({
         action={
           activeTab === "clubs"
             ? {
-                label: t("clubs.addClub"),
+                label: t("organizations.addClub"),
                 onClick: openAddModal,
                 icon: Plus,
               }
@@ -234,7 +234,7 @@ export function AdminOrganizationsPage({
             <AdminSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder={t("clubs.searchPlaceholder")}
+              placeholder={t("organizations.searchPlaceholder")}
             />
             <Select
               value={selectedClubType || ALL_CLUB_TYPES_VALUE}

@@ -71,6 +71,7 @@ def list_events(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
     school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
+    category: str | None = Query(default=None),
 ):
     """Public browse list: the current (upcoming) events for a school.
 
@@ -79,7 +80,10 @@ def list_events(
     ``event_service.list_events``) and the response omits ``created_by``
     via ``EventSummaryResponse`` (audit I10 / S16).
     """
-    return event_service.list_events(school=school, skip=skip, limit=limit)
+    events = event_service.list_events(school=school, skip=skip, limit=limit)
+    if category:
+        events = [e for e in events if e.category and e.category.lower() == category.lower()]
+    return events
 
 
 @router.get("/{event_id}", response_model=EventPublicResponse)

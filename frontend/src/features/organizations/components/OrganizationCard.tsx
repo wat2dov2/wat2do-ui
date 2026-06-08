@@ -46,7 +46,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
             </h3>
             <button
               onClick={handleToggleSave}
-              aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
+              aria-label={isSaved ? t("organizations.saved") : t("organizations.save")}
               className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200"
               id={`follow-club-${club.id}`}
             >
@@ -137,7 +137,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <MessageCircle className="size-3.5" />
-                <span>{t("clubs.discord")}</span>
+                <span>{t("organizations.discord")}</span>
               </a>
             )}
           </div>

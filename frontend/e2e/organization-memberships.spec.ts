@@ -50,7 +50,7 @@ async function seedSession(page: Page, email: string, clubId: number | null = nu
   );
 }
 
-test.describe("Club Membership Join & Admin Approval Flow", () => {
+test.describe("Organization Membership Join & Admin Approval Flow", () => {
   test.beforeEach(async ({ page }) => {
     // Debug logging
     page.on("console", (msg) => {
@@ -128,7 +128,7 @@ test.describe("Club Membership Join & Admin Approval Flow", () => {
   });
 
   // --- Test 1: Student requests to join a club ---
-  test("User can request to join a club, and cancel the request", async ({ page }) => {
+  test("User can request to join an organization, and cancel the request", async ({ page }) => {
     // Mock general APIs
     await page.route(`${API}/auth/refresh`, async (route) => {
       await route.fulfill({
@@ -198,7 +198,7 @@ test.describe("Club Membership Join & Admin Approval Flow", () => {
     });
 
     await seedSession(page, STUDENT_EMAIL);
-    await page.goto(`${BASE}/clubs`);
+    await page.goto(`${BASE}/organizations`);
     await page.waitForTimeout(1000);
 
     // Click on Club Card to open details modal
@@ -227,7 +227,7 @@ test.describe("Club Membership Join & Admin Approval Flow", () => {
   });
 
   // --- Test 2: Admin can see request and approve/reject/remove members ---
-  test("Club Owner can approve pending requests and remove active members", async ({ page }) => {
+  test("Organization Owner can approve pending requests and remove active members", async ({ page }) => {
     // Mock general APIs
     await page.route(`${API}/auth/refresh`, async (route) => {
       await route.fulfill({
@@ -329,7 +329,7 @@ test.describe("Club Membership Join & Admin Approval Flow", () => {
     });
 
     await seedSession(page, OWNER_EMAIL, 1);
-    await page.goto(`${BASE}/clubs`);
+    await page.goto(`${BASE}/organizations`);
 
     // Wait for the active club button to appear in the top nav
     const activeClubBtn = page.locator("header").getByText("UW Computer Science Club");
@@ -337,20 +337,20 @@ test.describe("Club Membership Join & Admin Approval Flow", () => {
     await activeClubBtn.click();
 
     // Click on the club in the Popover list
-    const switcherOption = page.locator("[aria-label='Manage your club']").getByRole("button", { name: "UW Computer Science Club" });
+    const switcherOption = page.locator("[aria-label='Manage your organization']").getByRole("button", { name: "UW Computer Science Club" });
     await expect(switcherOption).toBeVisible();
     await switcherOption.click();
 
-    // Verify we navigated to /club-panel client-side
-    await expect(page).toHaveURL(`${BASE}/club-panel`);
+    // Verify we navigated to /organization-panel client-side
+    await expect(page).toHaveURL(`${BASE}/organization-panel`);
 
-    // Click "Members" card to navigate client-side to /club-panel/members
+    // Click "Members" card to navigate client-side to /organization-panel/members
     const membersCard = page.getByText("Members", { exact: true });
     await expect(membersCard).toBeVisible();
     await membersCard.click();
 
-    // Verify we are on /club-panel/members
-    await expect(page).toHaveURL(`${BASE}/club-panel/members`);
+    // Verify we are on /organization-panel/members
+    await expect(page).toHaveURL(`${BASE}/organization-panel/members`);
 
     // Verify we see "Active Members (1)" initially
     await expect(page.getByRole("button", { name: "Active Members (1)" })).toBeVisible();
@@ -382,6 +382,9 @@ test.describe("Club Membership Join & Admin Approval Flow", () => {
     // Remove "Test Student"
     const removeBtn = page.getByRole("button", { name: "Remove" });
     await expect(removeBtn).toBeVisible();
+    page.once("dialog", async (dialog) => {
+      await dialog.accept();
+    });
     await removeBtn.click();
     await page.waitForTimeout(500);
 

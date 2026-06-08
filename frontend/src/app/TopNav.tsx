@@ -136,7 +136,7 @@ export function TopNav() {
                 <Search className="size-4 text-muted-foreground shrink-0" />
                 <input
                   type="text"
-                  placeholder={t("clubs.searchPlaceholder")}
+                  placeholder={t("organizations.searchPlaceholder")}
                   value={orgSearch}
                   onChange={(e) => setOrgSearch(e.target.value)}
                   className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
@@ -146,7 +146,7 @@ export function TopNav() {
               <div className="max-h-[200px] overflow-y-auto p-1">
                 {filteredOrganizations.length === 0 ? (
                   <div className="py-6 text-center text-sm text-muted-foreground">
-                    {t("clubs.noClubsFound")}
+                    {t("organizations.noClubsFound")}
                   </div>
                 ) : (
                   filteredOrganizations.map((club) => (
