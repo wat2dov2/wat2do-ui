@@ -39,12 +39,14 @@ export function useFilterState(profileCompleted: boolean) {
     setSelectedLocations,
     setSelectedFoods,
     setSelectedDays,
+    setSelectedOrganizations,
     setPriceRange,
     setRegistration,
     setFreeFoodFilter,
     toggleFilter,
     clearAllFilters,
     setFilterStateFromURL,
+    selectedOrganizations,
   } = useSearchStore(
     useShallow((s) => ({
       searchQuery: s.searchQuery,
@@ -60,12 +62,14 @@ export function useFilterState(profileCompleted: boolean) {
       setSelectedLocations: s.setSelectedLocations,
       setSelectedFoods: s.setSelectedFoods,
       setSelectedDays: s.setSelectedDays,
+      setSelectedOrganizations: s.setSelectedOrganizations,
       setPriceRange: s.setPriceRange,
       setRegistration: s.setRegistration,
       setFreeFoodFilter: s.setFreeFoodFilter,
       toggleFilter: s.toggleFilter,
       clearAllFilters: s.clearAllFilters,
       setFilterStateFromURL: s.setFilterStateFromURL,
+      selectedOrganizations: s.selectedOrganizations,
     })),
   );
 
@@ -87,6 +91,10 @@ export function useFilterState(profileCompleted: boolean) {
     (day: string) => toggleFilter("selectedDays", day),
     [toggleFilter],
   );
+  const toggleOrganization = useCallback(
+    (org: string) => toggleFilter("selectedOrganizations", org),
+    [toggleFilter],
+  );
 
   // Derived JSON value - no useEffect needed.
   // The key rename (selectedCategories → categories, etc.) is documented on
@@ -102,6 +110,7 @@ export function useFilterState(profileCompleted: boolean) {
           selectedDays,
           priceRange,
           registration,
+          selectedOrganizations,
         }),
       ),
     [
@@ -112,6 +121,7 @@ export function useFilterState(profileCompleted: boolean) {
       selectedDays,
       priceRange,
       registration,
+      selectedOrganizations,
     ],
   );
 
@@ -140,6 +150,7 @@ export function useFilterState(profileCompleted: boolean) {
         days: filters.days || [],
         priceRange: filters.priceRange || { min: "", max: "" },
         registration: filters.registration || false,
+        organizations: filters.organizations || [],
       });
     },
     [setFilterStateFromURL],
@@ -196,6 +207,8 @@ export function useFilterState(profileCompleted: boolean) {
     setPriceRange,
     registration,
     setRegistration,
+    selectedOrganizations,
+    setSelectedOrganizations,
 
     // Quick filters (only the ones wired to UI)
     freeFoodFilter,
@@ -206,6 +219,7 @@ export function useFilterState(profileCompleted: boolean) {
     toggleLocation,
     toggleDay,
     toggleFood,
+    toggleOrganization,
 
     // JSON editor (derived, no state needed)
     jsonValue,

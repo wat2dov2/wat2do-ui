@@ -21,6 +21,7 @@ export interface SearchFilters {
   registration: boolean;
   profileCompleted: boolean;
   savedEventIds: number[];
+  selectedOrganizations: string[];
 }
 
 export interface SortOptions {
@@ -106,6 +107,15 @@ export function filterEvents(
 
     // Registration filter
     if (filters.registration && !needsRegistration) {
+      return false;
+    }
+
+    // Organization filter
+    if (
+      filters.selectedOrganizations &&
+      filters.selectedOrganizations.length > 0 &&
+      !filters.selectedOrganizations.includes(event.organization ?? "")
+    ) {
       return false;
     }
 

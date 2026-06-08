@@ -27,13 +27,15 @@ interface FilterValues {
   registration: boolean;
   freeFoodFilter: boolean;
   savedFilter: boolean;
+  selectedOrganizations: string[];
 }
 
 type FilterArrayKey =
   | "selectedCategories"
   | "selectedLocations"
   | "selectedFoods"
-  | "selectedDays";
+  | "selectedDays"
+  | "selectedOrganizations";
 
 interface SearchStoreState extends FilterValues {
   // Setters
@@ -42,6 +44,7 @@ interface SearchStoreState extends FilterValues {
   setSelectedLocations: (value: string[]) => void;
   setSelectedFoods: (value: string[]) => void;
   setSelectedDays: (value: string[]) => void;
+  setSelectedOrganizations: (value: string[]) => void;
   setPriceRange: (value: { min: string; max: string }) => void;
   setRegistration: (value: boolean) => void;
   setFreeFoodFilter: (value: boolean) => void;
@@ -65,6 +68,7 @@ const emptyFilters: FilterValues = {
   registration: false,
   freeFoodFilter: false,
   savedFilter: false,
+  selectedOrganizations: [],
 };
 
 export const useSearchStore = create<SearchStoreState>((set) => ({
@@ -76,6 +80,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
   setSelectedLocations: (value) => set({ selectedLocations: value }),
   setSelectedFoods: (value) => set({ selectedFoods: value }),
   setSelectedDays: (value) => set({ selectedDays: value }),
+  setSelectedOrganizations: (value) => set({ selectedOrganizations: value }),
   setPriceRange: (value) => set({ priceRange: value }),
   setRegistration: (value) => set({ registration: value }),
   setFreeFoodFilter: (value) => set({ freeFoodFilter: value }),
@@ -102,6 +107,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       selectedLocations: Array.isArray(filters.locations) ? filters.locations : [],
       selectedFoods: Array.isArray(filters.foods) ? filters.foods : [],
       selectedDays: Array.isArray(filters.days) ? filters.days : [],
+      selectedOrganizations: Array.isArray(filters.organizations) ? filters.organizations : [],
       priceRange: filters.priceRange || { min: "", max: "" },
       registration: filters.registration || false,
       freeFoodFilter: false,

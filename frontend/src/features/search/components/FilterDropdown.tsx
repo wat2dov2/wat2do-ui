@@ -50,6 +50,11 @@ interface FilterDropdownFilters {
   sortOrder: "asc" | "desc";
   setSortOrder: (order: "asc" | "desc") => void;
   sortPieItems: PieMenuItem[];
+  // Organization
+  selectedOrganizations: string[];
+  setSelectedOrganizations: (value: string[]) => void;
+  toggleOrganization: (org: string) => void;
+  availableOrganizations: string[];
 }
 
 interface FilterDropdownProps {

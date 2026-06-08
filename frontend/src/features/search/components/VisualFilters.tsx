@@ -49,6 +49,10 @@ interface VisualFiltersProps {
     sortOrder: "asc" | "desc";
     setSortOrder: (order: "asc" | "desc") => void;
     sortPieItems: Array<{ id: string; label: string; iconName: string }>;
+    selectedOrganizations: string[];
+    setSelectedOrganizations: (value: string[]) => void;
+    toggleOrganization: (org: string) => void;
+    availableOrganizations: string[];
   };
 }
 
@@ -79,6 +83,8 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
     [filters.sortPieItems],
   );
 
+  const [orgSearch, setOrgSearch] = useState("");
+
   // Manage expanded sections state locally (UI state, not business logic)
   const [expandedSections, setExpandedSections] = useState({
     category: true,
@@ -88,6 +94,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
     dayOfWeek: false,
     registration: false,
     sort: false,
+    organization: false,
   });
 
   const toggleSection = useCallback((section: keyof typeof expandedSections) => {
@@ -246,7 +253,61 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         </div>
       </FilterSection>
 
-
+      {/* Organization Filter */}
+      <FilterSection
+        title={t("filters.organization", "Organization")}
+        expanded={expandedSections.organization}
+        onToggle={() => toggleSection("organization")}
+        indicator={
+          filters.selectedOrganizations.length > 0
+            ? `${filters.selectedOrganizations.length}`
+            : undefined
+        }
+        onClear={() => filters.setSelectedOrganizations([])}
+      >
+        <div className="space-y-2">
+          {filters.availableOrganizations.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              {t("filters.noOrganizations")}
+            </p>
+          ) : (
+            <>
+              {filters.availableOrganizations.length > 5 && (
+                <input
+                  type="text"
+                  placeholder={t("filters.searchOrganization", "Search organization...")}
+                  value={orgSearch}
+                  onChange={(e) => setOrgSearch(e.target.value)}
+                  className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border placeholder:text-muted-foreground mb-2"
+                />
+              )}
+              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                {filters.availableOrganizations
+                  .filter((org) =>
+                    org.toLowerCase().includes(orgSearch.toLowerCase())
+                  )
+                  .map((org) => {
+                    const isSelected = filters.selectedOrganizations.includes(org);
+                    return (
+                      <button
+                        key={org}
+                        type="button"
+                        onClick={() => filters.toggleOrganization(org)}
+                        className={`text-[11px] font-medium px-2.5 py-1 rounded-full transition-all border ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-secondary text-foreground border-transparent hover:bg-muted/60"
+                        }`}
+                      >
+                        {org}
+                      </button>
+                    );
+                  })}
+              </div>
+            </>
+          )}
+        </div>
+      </FilterSection>
 
       {/* Price Range Filter */}
       <FilterSection

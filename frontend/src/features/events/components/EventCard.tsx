@@ -36,6 +36,7 @@ import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
+import { useSearchStore } from "@/features/search/store/search.store";
 
 const EventDetailsModal = lazy(() =>
   import("@/features/events/components/EventDetailsModal").then((module) => ({
@@ -118,6 +119,28 @@ export function EventCard({
   const cardDate = formatCardDate(event, i18n.language || 'en-US');
   const cardTime = formatCardTime(event);
 
+  const toggleFilter = useSearchStore((s) => s.toggleFilter);
+
+  const handleCategoryClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toggleFilter("selectedCategories", eventCategory);
+    if (window.location.pathname !== "/") {
+      navigate("/");
+    }
+  };
+
+  const handleOrganizationClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (event.organization) {
+      toggleFilter("selectedOrganizations", event.organization);
+      if (window.location.pathname !== "/") {
+        navigate("/");
+      }
+    }
+  };
+
   const handleCardActivate = () => {
     tracker.track(event.id, "click");
     if (onEventClick) {
@@ -169,11 +192,13 @@ export function EventCard({
           />
           {/* Category Badge - Top Left (Pastel styling) */}
           <BadgeMask variant="top-left">
-            <span
-              className={`font-bold text-[10px] px-2 py-0.5 block rounded-full ${categoryClasses.bg} ${categoryClasses.text}`}
+            <button
+              type="button"
+              onClick={handleCategoryClick}
+              className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-all hover:opacity-80 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
             >
               {translateCategory(eventCategory, t)}
-            </span>
+            </button>
           </BadgeMask>
 
           {/* Menu Badge - Top Right */}
@@ -266,13 +291,19 @@ export function EventCard({
           </BadgeMask>
 
           {/* Club/Organization Badge - Bottom Left */}
-          <BadgeMask variant="bottom-left">
-            <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
-              <span className="truncate max-w-[128px]">
-                {event.organization || ""}
-              </span>
-            </span>
-          </BadgeMask>
+          {event.organization && (
+            <BadgeMask variant="bottom-left">
+              <button
+                type="button"
+                onClick={handleOrganizationClick}
+                className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center transition-all hover:bg-muted/20 active:scale-95 cursor-pointer"
+              >
+                <span className="truncate max-w-[128px]">
+                  {event.organization}
+                </span>
+              </button>
+            </BadgeMask>
+          )}
         </div>
 
         {/* Bottom section: bordered on left/right/bottom, wrapping content + interest button */}

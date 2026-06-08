@@ -48,6 +48,17 @@ export function useSearch({
   // on an interruptible boundary.
   const deferredSearchQuery = useDeferredValue(filterState.searchQuery);
 
+  const availableOrganizations = useMemo(() => {
+    const orgs = new Set<string>();
+    events.forEach((event) => {
+      const org = event.organization?.trim();
+      if (org) {
+        orgs.add(org);
+      }
+    });
+    return Array.from(orgs).sort();
+  }, [events]);
+
   const freeFoodEventsCount = useMemo(
     () =>
       events.filter(
@@ -70,6 +81,7 @@ export function useSearch({
       registration: filterState.registration,
       profileCompleted,
       savedEventIds,
+      selectedOrganizations: filterState.selectedOrganizations,
     });
     return sortEvents(filtered, { sortBy, sortOrder });
   }, [
@@ -87,6 +99,7 @@ export function useSearch({
     savedEventIds,
     sortBy,
     sortOrder,
+    filterState.selectedOrganizations,
   ]);
 
   // Calculate filter count
@@ -99,6 +112,7 @@ export function useSearch({
         selectedDays: filterState.selectedDays,
         priceRange: filterState.priceRange,
         registration: filterState.registration,
+        selectedOrganizations: filterState.selectedOrganizations,
       }),
     [
       filterState.selectedCategories,
@@ -107,6 +121,7 @@ export function useSearch({
       filterState.selectedDays,
       filterState.priceRange,
       filterState.registration,
+      filterState.selectedOrganizations,
     ],
   );
 
@@ -190,5 +205,8 @@ export function useSearch({
 
     // Clear all filters
     handleClearAllFilters,
+
+    // Available organizations
+    availableOrganizations,
   };
 }

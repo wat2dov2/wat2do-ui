@@ -16,6 +16,7 @@ const EMPTY_FILTER_STATE: FilterState = {
   days: [],
   priceRange: { min: "", max: "" },
   registration: false,
+  organizations: [],
 };
 
 /**
@@ -31,9 +32,12 @@ export interface SearchStoreFilterValues {
   selectedDays: string[];
   priceRange: { min: string; max: string };
   registration: boolean;
+  selectedOrganizations: string[];
 }
 
-type GeneratedFilterStateInput = Partial<ApiFilterStateResponse>;
+type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
+  organizations?: unknown;
+};
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -69,6 +73,7 @@ export function storeStatesToFilterState(
     days: values.selectedDays,
     priceRange: values.priceRange,
     registration: values.registration,
+    organizations: values.selectedOrganizations,
   };
 }
 
@@ -87,6 +92,7 @@ export function generatedFilterStateToFilterState(
     priceRange: priceRangeFrom(filters.priceRange),
     registration:
       typeof filters.registration === "boolean" ? filters.registration : false,
+    organizations: stringArray(filters.organizations),
   };
 }
 

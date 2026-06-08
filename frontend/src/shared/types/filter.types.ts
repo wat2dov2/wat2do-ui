@@ -12,6 +12,7 @@ export interface FilterState {
   days: string[];
   priceRange: { min: string; max: string };
   registration: boolean;
+  organizations?: string[];
 }
 
 export type FilterViewMode = "visual" | "json";
