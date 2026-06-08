@@ -27,7 +27,7 @@ export function ContactPage() {
     const store = useSearchStore.getState();
     store.clearAllFilters();
     store.setSearchQuery(query);
-    navigate(isClub ? ROUTES.CLUBS : ROUTES.HOME);
+    navigate(isClub ? ROUTES.ORGANIZATIONS : ROUTES.HOME);
   };
 
   return (
@@ -314,7 +314,7 @@ export function ContactPage() {
               {t("contact.actions.browse")}
             </button>
             <button
-              onClick={() => navigate(ROUTES.CLUBS)}
+              onClick={() => navigate(ROUTES.ORGANIZATIONS)}
               className="px-5 py-2.5 bg-background border border-border text-foreground hover:bg-muted font-semibold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
             >
               {t("contact.actions.explore")}

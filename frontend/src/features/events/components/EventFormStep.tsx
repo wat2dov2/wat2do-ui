@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Club } from "@/shared/types";
-import { getAllClubs } from "@/features/clubs";
+import { getAllClubs } from "@/features/organizations";
 import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
 import { useEventsStore } from "@/features/events/store/events.store";
 import {

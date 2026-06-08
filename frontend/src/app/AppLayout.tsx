@@ -31,7 +31,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     return pathname.startsWith(href);
   };
 
-  const isClubPanel = pathname.startsWith(ROUTES.CLUB_PANEL);
+  const isOrganizationPanel = pathname.startsWith(ROUTES.ORGANIZATION_PANEL);
 
   const dockItems: FloatingDockItem[] = [
     {
@@ -45,7 +45,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.HOME,
       isActive: isActive(ROUTES.HOME),
     },
-    ...(!isClubPanel
+    ...(!isOrganizationPanel
       ? [
           {
             title: t("navigation.create"),
@@ -57,8 +57,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     {
       title: t("navigation.clubs"),
       icon: <Users className="size-4" />,
-      href: ROUTES.CLUBS,
-      isActive: isActive(ROUTES.CLUBS),
+      href: ROUTES.ORGANIZATIONS,
+      isActive: isActive(ROUTES.ORGANIZATIONS),
     },
     {
       title: t("navigation.contact"),

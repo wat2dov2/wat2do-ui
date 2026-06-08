@@ -62,7 +62,7 @@
     "eventsList": "Events List",
     "clubsList": "Clubs List",
     "pendingClaims": "Pending Claims",
-    "rejectClubClaim": "Reject Club Claim",
+    "rejectOrganizationClaim": "Reject Club Claim",
     "rejectClaimDescription": "Please provide a reason why this claim is being rejected. This will help the user fix their request.",
     "rejectionPlaceholder": "e.g. Invalid proof URL or role cannot be verified.",
     "rejectRequest": "Reject Request",

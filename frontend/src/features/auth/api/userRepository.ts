@@ -40,7 +40,7 @@ export interface UserProfile {
   /** Mirrors the backend ``role`` column ("user" | "admin"). Defaults to "user". */
   role: "user" | "admin";
   /** True when the user owns at least one club. */
-  hasClub: boolean;
+  hasOrganization: boolean;
   /** Clubs associated with the user. */
   clubs: UserClubSummary[];
   /** Currently selected associated club, if any. */

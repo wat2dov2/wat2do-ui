@@ -17,7 +17,7 @@ import { initClarity } from '@/shared/lib/clarity'
 initClarity(import.meta.env.VITE_CLARITY_PROJECT_ID)
 
 // After a silent 401 token refresh, re-fetch /users/me so cached
-// role/hasClub stay in sync with the backend (AUTH-010). The main.tsx
+// role/hasOrganization stay in sync with the backend (AUTH-010). The main.tsx
 // bootstrap is the single place wiring this — no cycle with auth.api.ts.
 const DevClickToComponent = import.meta.env.DEV ? ClickToComponent : null;
 

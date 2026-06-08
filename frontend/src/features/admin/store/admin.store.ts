@@ -11,9 +11,9 @@ import {
   getEventSubmissions,
   getReportedEvents,
   updateEventSubmission,
-  getPendingClaims,
+  getPendingOrganizationClaims,
   resolveClaim,
-  type ClubClaim,
+  type OrganizationClaim,
 } from "@/features/admin/api/admin.api";
 import {
   REPORT_PENDING,
@@ -32,7 +32,7 @@ interface LoadedAt {
 interface AdminState {
   submissions: EventSubmission[];
   reportedEventIds: Set<number>;
-  claims: ClubClaim[];
+  claims: OrganizationClaim[];
   loadedAt: LoadedAt;
 
   fetchSubmissions: (force?: boolean) => Promise<void>;
@@ -87,7 +87,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   fetchClaims: async () => {
     try {
-      const claims = await getPendingClaims();
+      const claims = await getPendingOrganizationClaims();
       set({ claims });
     } catch (err) {
       console.error("Failed to fetch pending claims:", err);

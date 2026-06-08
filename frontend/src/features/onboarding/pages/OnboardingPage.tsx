@@ -103,7 +103,7 @@ export function OnboardingPage() {
         isFirstYear: data.isFirstYear,
         school: data.school,
         role: "user" as const,
-        hasClub: false,
+        hasOrganization: false,
         clubs: [],
         clubId: null,
         clubName: null,

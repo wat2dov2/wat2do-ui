@@ -1541,15 +1541,15 @@ export interface components {
             /** Feed Url */
             feed_url: string;
         };
-        /** ClubClaimCreate */
-        ClubClaimCreate: {
+        /** OrganizationClaimCreate */
+        OrganizationClaimCreate: {
             /** Executive Role */
             executive_role: string;
             /** Proof Url */
             proof_url?: string | null;
         };
-        /** ClubClaimResponse */
-        ClubClaimResponse: {
+        /** OrganizationClaimResponse */
+        OrganizationClaimResponse: {
             /**
              * Id
              * Format: uuid
@@ -1581,8 +1581,8 @@ export interface components {
             clubs?: components["schemas"]["ClubResponse"] | null;
             users?: components["schemas"]["UserResponse"] | null;
         };
-        /** ClubClaimUpdate */
-        ClubClaimUpdate: {
+        /** OrganizationClaimUpdate */
+        OrganizationClaimUpdate: {
             /** Status */
             status: string;
             /** Rejection Reason */
@@ -4094,7 +4094,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ClubClaimCreate"];
+                "application/json": components["schemas"]["OrganizationClaimCreate"];
             };
         };
         responses: {
@@ -4104,7 +4104,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClubClaimResponse"];
+                    "application/json": components["schemas"]["OrganizationClaimResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4133,7 +4133,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClubClaimResponse"][];
+                    "application/json": components["schemas"]["OrganizationClaimResponse"][];
                 };
             };
         };
@@ -4149,7 +4149,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ClubClaimUpdate"];
+                "application/json": components["schemas"]["OrganizationClaimUpdate"];
             };
         };
         responses: {
@@ -4159,7 +4159,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClubClaimResponse"];
+                    "application/json": components["schemas"]["OrganizationClaimResponse"];
                 };
             };
             /** @description Validation Error */

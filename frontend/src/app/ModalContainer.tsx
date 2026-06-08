@@ -49,8 +49,8 @@ const BuyCreditsModal = lazy(() =>
 export function ModalContainer() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { profileCompleted, isAdmin, hasClub } = useAuthState();
-  const canCreateEvents = hasClub || isAdmin;
+  const { profileCompleted, isAdmin, hasOrganization } = useAuthState();
+  const canCreateEvents = hasOrganization || isAdmin;
   const canSubmitEvents = profileCompleted;
 
   // ── UI-store subscriptions (isolated from AppContent) ─────

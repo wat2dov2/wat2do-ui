@@ -72,7 +72,7 @@ export function getUserId(): string | undefined {
 
 export function getUserHasClub(): boolean {
   const profile = loadUserProfile();
-  return profile?.hasClub ?? false;
+  return profile?.hasOrganization ?? false;
 }
 
 export function updateUserProfile(profile: UserProfile): void {
@@ -206,11 +206,11 @@ export function getLastProfileFetchAt(): number {
 export async function fetchProfileAPI(): Promise<UserProfile | null> {
   try {
     // Fetch profile and club ownership in parallel.
-    // Club fetch failures degrade gracefully to hasClub=false.
+    // Club fetch failures degrade gracefully to hasOrganization=false.
     const [data, clubs] = await Promise.all([
       api.get<ApiUserResponse>("/users/me"),
       api.get<ApiClubResponse[]>("/clubs/mine").catch((err) => {
-        console.error("Failed to fetch user clubs, defaulting hasClub to false:", err);
+        console.error("Failed to fetch user clubs, defaulting hasOrganization to false:", err);
         return [] as ApiClubResponse[];
       }),
     ]);
@@ -225,7 +225,7 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       interests: data.interests ?? [],
       isFirstYear: data.is_first_year ?? false,
       role: data.role ?? "user",
-      hasClub: clubs.length > 0,
+      hasOrganization: clubs.length > 0,
       clubs: clubs.map((club) => ({
         id: club.id,
         club_name: club.club_name,

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Club } from "@/shared/types";
-import { filterClubs } from "@/features/clubs";
+import { filterOrganizations } from "@/features/organizations";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 
 interface ClubComboboxProps {
@@ -22,7 +22,7 @@ export function ClubCombobox({ value, clubs, onChange, onBlur, id, hasError }: C
   const { t } = useTranslation();
 
   const fetcher = useCallback(
-    (query: string) => filterClubs(clubs, { searchQuery: query }),
+    (query: string) => filterOrganizations(clubs, { searchQuery: query }),
     [clubs],
   );
 

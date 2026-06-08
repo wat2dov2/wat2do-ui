@@ -5,7 +5,7 @@ import {
   getLastProfileFetchAt,
   useAuthState,
 } from "@/features/auth";
-import { ROLE_ADMIN, ROLE_CLUB, type Role } from "@/shared/constants/roles";
+import { ROLE_ADMIN, ROLE_ORGANIZATION, type Role } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
@@ -27,7 +27,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   // Subscribe to the same reactive auth snapshot the rest of the app reads
   // so role demotion / logout / silent-refresh updates propagate to both the
   // route gate and the TopNav button in a single render tick.
-  const { isAuthenticated: authed, role, hasClub, userEmail } = useAuthState();
+  const { isAuthenticated: authed, role, hasOrganization, userEmail } = useAuthState();
 
   // For admin routes, ensure the cached role is fresh (<5 min old) before
   // rendering admin chunks. Demoted-admin attacks / stale role leaks are
@@ -73,7 +73,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to={ROUTES.HOME} replace />;
   }
 
-  if (requiredRole === ROLE_CLUB && !hasClub && role !== "admin") {
+  if (requiredRole === ROLE_ORGANIZATION && !hasOrganization && role !== "admin") {
     return <Navigate to={ROUTES.HOME} replace />;
   }
 

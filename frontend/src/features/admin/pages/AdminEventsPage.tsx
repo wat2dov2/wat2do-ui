@@ -35,7 +35,7 @@ import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatus
 import { SubmissionDetailsDialog } from "@/features/admin/components/submissions/SubmissionDetailsDialog";
 import { RejectSubmissionDialog } from "@/features/admin/components/submissions/RejectSubmissionDialog";
 import { useAdminStore } from "@/features/admin/store/admin.store";
-import { useClubNameLookup } from "@/features/clubs";
+import { useOrganizationNameLookup } from "@/features/organizations";
 import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmissionsFilters";
 import { useAdminSubmissionsPagination } from "@/features/admin/hooks/useAdminSubmissionsPagination";
 import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
@@ -121,7 +121,7 @@ export function AdminEventsPage({
     return allSubmissions.filter((s) => s.status === SUBMISSION_PENDING).length;
   }, [allSubmissions]);
 
-  const { getClubName } = useClubNameLookup();
+  const { getClubName } = useOrganizationNameLookup();
   const submissionFilters = useAdminSubmissionsFilters({ getClubName });
   const submissionPagination = useAdminSubmissionsPagination({
     itemsPerPage: ITEMS_PER_PAGE,

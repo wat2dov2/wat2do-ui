@@ -25,7 +25,7 @@ import { ROUTES } from "@/shared/constants/routes";
 import { cn } from "@/shared/lib/utils";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
-type NavClub = AuthState["clubs"][number];
+type NavOrganization = AuthState["clubs"][number];
 
 export function TopNav() {
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
@@ -33,12 +33,12 @@ export function TopNav() {
   const { profileCompleted, isAdmin, clubs, clubId } = useAuthState();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [clubMenuOpen, setClubMenuOpen] = useState(false);
-  const [clubSearch, setClubSearch] = useState("");
-  const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
-  const canOpenClubPanel = profileCompleted && Boolean(activeClub);
-  const filteredClubs = clubs.filter((club) =>
-    club.club_name.toLowerCase().includes(clubSearch.toLowerCase())
+  const [orgMenuOpen, setOrgMenuOpen] = useState(false);
+  const [orgSearch, setOrgSearch] = useState("");
+  const activeOrganization = clubs.find((club) => club.id === clubId) ?? clubs[0];
+  const canOpenOrganizationPanel = profileCompleted && Boolean(activeOrganization);
+  const filteredOrganizations = clubs.filter((club) =>
+    club.club_name.toLowerCase().includes(orgSearch.toLowerCase())
   );
 
   const handleLogoClick = useCallback(() => {
@@ -49,7 +49,7 @@ export function TopNav() {
     navigate(ROUTES.ADMIN);
   }, [navigate]);
 
-  const handleClubSelect = useCallback((club: NavClub) => {
+  const handleClubSelect = useCallback((club: NavOrganization) => {
     const profile = getUserProfile();
     if (profile) {
       updateUserProfile({
@@ -58,7 +58,7 @@ export function TopNav() {
         clubName: club.club_name,
       });
     }
-    navigate(ROUTES.CLUB_PANEL);
+    navigate(ROUTES.ORGANIZATION_PANEL);
   }, [navigate]);
 
   const handleSignOut = useCallback(async () => {
@@ -111,17 +111,17 @@ export function TopNav() {
         )}
 
         {/* Club switcher – only visible when the user has associated clubs */}
-        {canOpenClubPanel && (
-          <Popover open={clubMenuOpen} onOpenChange={setClubMenuOpen}>
+        {canOpenOrganizationPanel && (
+          <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
             <PopoverTrigger asChild>
               <button
                 className="flex text-white items-center gap-1 px-3 h-8 max-w-[240px] bg-transparent hover:bg-secondary rounded-xl transition-colors"
-                aria-expanded={clubMenuOpen}
+                aria-expanded={orgMenuOpen}
                 type="button"
               >
                 <span className="truncate">
                   <Highlighter action="highlight" color="var(--primary)">
-                    {activeClub.club_name}
+                    {activeOrganization.club_name}
                   </Highlighter>
                 </span>
                 <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
@@ -137,29 +137,29 @@ export function TopNav() {
                 <input
                   type="text"
                   placeholder={t("clubs.searchPlaceholder")}
-                  value={clubSearch}
-                  onChange={(e) => setClubSearch(e.target.value)}
+                  value={orgSearch}
+                  onChange={(e) => setOrgSearch(e.target.value)}
                   className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
               <div className="max-h-[200px] overflow-y-auto p-1">
-                {filteredClubs.length === 0 ? (
+                {filteredOrganizations.length === 0 ? (
                   <div className="py-6 text-center text-sm text-muted-foreground">
                     {t("clubs.noClubsFound")}
                   </div>
                 ) : (
-                  filteredClubs.map((club) => (
+                  filteredOrganizations.map((club) => (
                     <button
                       key={club.id}
                       onClick={() => {
                         handleClubSelect(club);
-                        setClubMenuOpen(false);
-                        setClubSearch("");
+                        setOrgMenuOpen(false);
+                        setOrgSearch("");
                       }}
                       className={cn(
                         "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
-                        activeClub.id === club.id
+                        activeOrganization.id === club.id
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-secondary text-foreground"
                       )}
@@ -168,7 +168,7 @@ export function TopNav() {
                       <Check
                         className={cn(
                           "w-4 h-4 shrink-0",
-                          activeClub.id === club.id ? "opacity-100" : "opacity-0"
+                          activeOrganization.id === club.id ? "opacity-100" : "opacity-0"
                         )}
                       />
                       <span className="truncate">{club.club_name}</span>

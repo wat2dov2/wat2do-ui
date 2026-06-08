@@ -62,13 +62,13 @@
     "events": "Events",
     "explore": "Explore",
     "create": "Submit Event",
-    "clubs": "Clubs",
+    "organizations": "Clubs",
     "myEvents": "My Events",
     "settings": "Settings",
     "admin": "Admin",
     "adminPanel": "Admin Panel",
-    "clubPanel": "Club Panel",
-    "clubPanelTooltip": "Manage your club",
+    "organizationPanel": "Organization Panel",
+    "clubPanelTooltip": "Manage your organization",
     "mission": "Mission",
     "contact": "Contact",
     "goToEvents": "Go to events"
@@ -76,7 +76,7 @@
   "modals": {
     "welcome": {
       "title": "Welcome to wat2do",
-      "description": "Discover campus events, connect with clubs, and never miss out on what's happening."
+      "description": "Discover campus events, connect with organizations, and never miss out on what's happening."
     },
     "signIn": {
       "title": "Sign in",
@@ -202,9 +202,9 @@
     "selectPackage": "Select a package",
     "eventTitlePlaceholder": "e.g., Tech Talk: AI in 2024",
     "clubNamePlaceholder": "e.g., Computer Science Club",
-    "selectClub": "Select a club",
-    "searchClubPlaceholder": "Search clubs...",
-    "noClubFound": "No club found",
+    "selectOrganization": "Select an organization",
+    "searchOrganizationPlaceholder": "Search organizations...",
+    "noOrganizationFound": "No organization found",
     "descriptionPlaceholder": "Tell people what your event is about...",
     "aiPromptPlaceholder": "Describe your event (e.g. 'tech talk about AI next Friday')...",
     "pricePlaceholder": "0",
@@ -224,8 +224,8 @@
     "description": "Description",
     "saveChanges": "Save Changes",
     "requiredInformation": "Required Information",
-    "clubName": "Club Name",
-    "clubNameRequired": "Club name is required",
+    "organizationName": "Organization Name",
+    "organizationNameRequired": "Organization name is required",
     "ownerUserId": "Owner User ID",
     "ownerEmail": "Owner Email",
     "ownerUserIdPlaceholder": "Internal user UUID",
@@ -234,14 +234,14 @@
     "categoryRequired": "At least one category is required",
     "add": "Add",
     "wusa": "WUSA",
-    "clubType": "Club Type",
-    "clubPageUrl": "Club Page URL",
-    "clubPageUrlPlaceholder": "e.g., https://example.com or 123",
+    "organizationType": "Club Type",
+    "organizationPageUrl": "Organization Page URL",
+    "organizationPageUrlPlaceholder": "e.g., https://example.com or 123",
     "instagramHandle": "Instagram Handle",
     "discordLink": "Discord Link",
     "aiEventGeneration": "AI Event Generation",
     "titleRequired": "Title is required",
-    "clubRequired": "Club is required",
+    "organizationRequired": "Organization is required",
     "occurrenceRequired": "At least one date is required",
     "locationRequired": "Location is required",
     "schoolRequired": "School is required",
@@ -285,7 +285,7 @@
     "food": "Food",
     "volunteering": "Volunteering",
     "events": "Events",
-    "clubs": "Clubs",
+    "organizations": "Clubs",
     "academic": "Academic",
     "religious": "Religious",
     "cultural": "Cultural",
@@ -336,7 +336,7 @@
     }
   },
   "search": {
-    "placeholder": "Search events, clubs, activities...",
+    "placeholder": "Search events, organizations, activities...",
     "ariaLabel": "Events list"
   },
   "schools": {
@@ -470,7 +470,7 @@
     },
     "actions": {
       "browse": "Browse Events",
-      "explore": "Explore Clubs"
+      "explore": "Explore Organizations"
     },
     "footer": {
       "about": "We built Wat2Do to connect Waterloo students to underrated campus life events. For suggestions or feedback, get in touch.",

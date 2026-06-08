@@ -4,8 +4,8 @@
 
 export type ViewMode = "grid" | "calendar" | "map";
 
-// Club interface
-export interface Club {
+// Organization interface
+export interface Organization {
   id: number;
   club_name: string;
   categories: string[];
@@ -18,3 +18,5 @@ export interface Club {
   owner_email?: string | null;
   school: string;
 }
+
+export type Club = Organization;

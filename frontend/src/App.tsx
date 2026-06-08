@@ -14,10 +14,10 @@ import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { Toaster } from "@/shared/ui/toaster";
 
 import { ProtectedRoute } from "@/app/ProtectedRoute";
-import { ROLE_ADMIN, ROLE_CLUB } from "@/shared/constants/roles";
+import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
 import { ROUTES } from "@/shared/constants/routes";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
-import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
+import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 
 // Lazy load pages for code splitting
 const EventsPageContainer = lazy(() =>
@@ -30,9 +30,9 @@ const ContactPage = lazy(() =>
     default: module.ContactPage,
   }))
 );
-const ClubsPage = lazy(() =>
-  import("@/features/clubs/pages/ClubsPage").then((module) => ({
-    default: module.ClubsPage,
+const OrganizationsPage = lazy(() =>
+  import("@/features/organizations/pages/OrganizationsPage").then((module) => ({
+    default: module.OrganizationsPage,
   }))
 );
 const MarketingPage = lazy(() =>
@@ -66,7 +66,7 @@ const ResetPasswordPage = lazy(() =>
   }))
 );
 const InviteLandingPage = lazy(() =>
-  import("@/features/clubs/pages/InviteLandingPage").then((module) => ({
+  import("@/features/organizations/pages/InviteLandingPage").then((module) => ({
     default: module.InviteLandingPage,
   }))
 );
@@ -79,25 +79,25 @@ const AdminPanelRoute = lazy(() =>
 const AdminEventsRoute = lazy(() =>
   import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminEventsRoute }))
 );
-const AdminClubsRoute = lazy(() =>
-  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminClubsRoute }))
+const AdminOrganizationsRoute = lazy(() =>
+  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminOrganizationsRoute }))
 );
 const AdminPostersRoute = lazy(() =>
   import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminPostersRoute }))
 );
 
-// Club Panel Routes Configuration Lazy Loaded
-const ClubPanelRoute = lazy(() =>
-  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelRoute }))
+// Organization Panel Routes Configuration Lazy Loaded
+const OrganizationPanelRoute = lazy(() =>
+  import("@/app/routes/organizationPanelRoutes").then((m) => ({ default: m.OrganizationPanelRoute }))
 );
-const ClubPanelPostersRoute = lazy(() =>
-  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelPostersRoute }))
+const OrganizationPanelPostersRoute = lazy(() =>
+  import("@/app/routes/organizationPanelRoutes").then((m) => ({ default: m.OrganizationPanelPostersRoute }))
 );
-const ClubPanelIntegrationsRoute = lazy(() =>
-  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelIntegrationsRoute }))
+const OrganizationPanelIntegrationsRoute = lazy(() =>
+  import("@/app/routes/organizationPanelRoutes").then((m) => ({ default: m.OrganizationPanelIntegrationsRoute }))
 );
-const ClubPanelMembersRoute = lazy(() =>
-  import("@/app/routes/clubPanelRoutes").then((m) => ({ default: m.ClubPanelMembersRoute }))
+const OrganizationPanelMembersRoute = lazy(() =>
+  import("@/app/routes/organizationPanelRoutes").then((m) => ({ default: m.OrganizationPanelMembersRoute }))
 );
 
 // QR Redirect Page Lazy Loaded
@@ -160,7 +160,7 @@ function AppContent() {
     if (isAuthFlowRoute) return;
     useEventsStore.getState().fetchEvents();
     useSavedEventsStore.getState().fetchSavedEvents();
-    useSavedClubsStore.getState().fetchSavedClubs();
+    useSavedOrganizationsStore.getState().fetchSavedClubs();
     useCreditsStore.getState().fetchBalance();
     useCreditsStore.getState().fetchActivePromotedEventIds();
   }, [isAuthFlowRoute]);
@@ -191,7 +191,7 @@ function AppContent() {
         element={<EventsPageContainer />}
       />
       <Route path={ROUTES.CONTACT} element={<ContactPage />} />
-      <Route path={ROUTES.CLUBS} element={<ClubsPage />} />
+      <Route path={ROUTES.ORGANIZATIONS} element={<OrganizationsPage />} />
       <Route path={ROUTES.INVITE} element={<InviteLandingPage />} />
 
       <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
@@ -204,8 +204,8 @@ function AppContent() {
         element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminEventsRoute /></ProtectedRoute>}
       />
       <Route
-        path={ROUTES.ADMIN_CLUBS}
-        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminClubsRoute /></ProtectedRoute>}
+        path={ROUTES.ADMIN_ORGANIZATIONS}
+        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminOrganizationsRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.ADMIN_POSTERS}
@@ -223,20 +223,20 @@ function AppContent() {
         }
       />
       <Route
-        path={ROUTES.CLUB_PANEL}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelRoute /></ProtectedRoute>}
+        path={ROUTES.ORGANIZATION_PANEL}
+        element={<ProtectedRoute requiredRole={ROLE_ORGANIZATION}><OrganizationPanelRoute /></ProtectedRoute>}
       />
       <Route
-        path={ROUTES.CLUB_PANEL_POSTERS}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelPostersRoute /></ProtectedRoute>}
+        path={ROUTES.ORGANIZATION_PANEL_POSTERS}
+        element={<ProtectedRoute requiredRole={ROLE_ORGANIZATION}><OrganizationPanelPostersRoute /></ProtectedRoute>}
       />
       <Route
-        path={ROUTES.CLUB_PANEL_INTEGRATIONS}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelIntegrationsRoute /></ProtectedRoute>}
+        path={ROUTES.ORGANIZATION_PANEL_INTEGRATIONS}
+        element={<ProtectedRoute requiredRole={ROLE_ORGANIZATION}><OrganizationPanelIntegrationsRoute /></ProtectedRoute>}
       />
       <Route
-        path={ROUTES.CLUB_PANEL_MEMBERS}
-        element={<ProtectedRoute requiredRole={ROLE_CLUB}><ClubPanelMembersRoute /></ProtectedRoute>}
+        path={ROUTES.ORGANIZATION_PANEL_MEMBERS}
+        element={<ProtectedRoute requiredRole={ROLE_ORGANIZATION}><OrganizationPanelMembersRoute /></ProtectedRoute>}
       />
     </Routes>
   );

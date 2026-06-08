@@ -7,6 +7,7 @@ import { translateCategory } from "@/shared/utils/event";
 import { PieMenu } from "@/shared/ui/pie-menu";
 import { Switch } from "@/shared/ui/switch";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
+import { SearchCombobox } from "@/shared/ui/search-combobox";
 
 const PIE_ICON_MAP: Record<string, LucideIcon> = {
   Tag,
@@ -83,7 +84,25 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
     [filters.sortPieItems],
   );
 
-  const [orgSearch, setOrgSearch] = useState("");
+  const handleSelectOrganization = useCallback(
+    (org: string) => {
+      if (filters.selectedOrganizations.includes(org)) {
+        filters.setSelectedOrganizations([]);
+      } else {
+        filters.setSelectedOrganizations([org]);
+      }
+    },
+    [filters],
+  );
+
+  const orgFetcher = useCallback(
+    (query: string) => {
+      return filters.availableOrganizations.filter((org) =>
+        org.toLowerCase().includes(query.toLowerCase()),
+      );
+    },
+    [filters.availableOrganizations],
+  );
 
   // Manage expanded sections state locally (UI state, not business logic)
   const [expandedSections, setExpandedSections] = useState({
@@ -271,40 +290,20 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
               {t("filters.noOrganizations")}
             </p>
           ) : (
-            <>
-              {filters.availableOrganizations.length > 5 && (
-                <input
-                  type="text"
-                  placeholder={t("filters.searchOrganization", "Search organization...")}
-                  value={orgSearch}
-                  onChange={(e) => setOrgSearch(e.target.value)}
-                  className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border placeholder:text-muted-foreground mb-2"
-                />
-              )}
-              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-                {filters.availableOrganizations
-                  .filter((org) =>
-                    org.toLowerCase().includes(orgSearch.toLowerCase())
-                  )
-                  .map((org) => {
-                    const isSelected = filters.selectedOrganizations.includes(org);
-                    return (
-                      <button
-                        key={org}
-                        type="button"
-                        onClick={() => filters.toggleOrganization(org)}
-                        className={`text-[11px] font-medium px-2.5 py-1 rounded-full transition-all border ${
-                          isSelected
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-secondary text-foreground border-transparent hover:bg-muted/60"
-                        }`}
-                      >
-                        {org}
-                      </button>
-                    );
-                  })}
-              </div>
-            </>
+            <SearchCombobox<string>
+              selectedKey={filters.selectedOrganizations[0] ?? ""}
+              onSelect={handleSelectOrganization}
+              fetcher={orgFetcher}
+              getKey={(org) => org}
+              getLabel={(org) => org}
+              displayValue={filters.selectedOrganizations[0] ?? t("forms.selectOrganization", "Select organization...")}
+              isPlaceholder={filters.selectedOrganizations.length === 0}
+              searchOnEmpty
+              variant="field"
+              searchPlaceholder={t("forms.searchOrganizationPlaceholder", "Search organizations...")}
+              emptyLabel={t("forms.noOrganizationFound", "No organization found")}
+              loadingLabel={t("common.loading")}
+            />
           )}
         </div>
       </FilterSection>

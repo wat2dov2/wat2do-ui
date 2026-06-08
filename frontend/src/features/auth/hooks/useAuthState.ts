@@ -26,7 +26,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   profileCompleted: boolean;
   isAdmin: boolean;
-  hasClub: boolean;
+  hasOrganization: boolean;
   clubs: UserClubSummary[];
   clubId: number | null;
   clubName: string | null;
@@ -57,7 +57,7 @@ function computeSnapshot(): AuthState {
     isAuthenticated: authed,
     profileCompleted,
     isAdmin: authed && role === ROLE_ADMIN,
-    hasClub: authed && (profile?.hasClub ?? false),
+    hasOrganization: authed && (profile?.hasOrganization ?? false),
     clubs,
     clubId: authed ? profile?.clubId ?? null : null,
     clubName: authed ? profile?.clubName ?? null : null,
@@ -144,7 +144,7 @@ export function useIsAdmin(): boolean {
 export function useHasClub(): boolean {
   return useSyncExternalStore(
     subscribe,
-    () => getSnapshot().hasClub,
-    () => getSnapshot().hasClub,
+    () => getSnapshot().hasOrganization,
+    () => getSnapshot().hasOrganization,
   );
 }

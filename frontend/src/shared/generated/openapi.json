@@ -1822,7 +1822,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClubClaimCreate"
+                "$ref": "#/components/schemas/OrganizationClaimCreate"
               }
             }
           }
@@ -1833,7 +1833,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClubClaimResponse"
+                  "$ref": "#/components/schemas/OrganizationClaimResponse"
                 }
               }
             }
@@ -1866,7 +1866,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ClubClaimResponse"
+                    "$ref": "#/components/schemas/OrganizationClaimResponse"
                   },
                   "type": "array",
                   "title": "Response List Pending Claims Clubs Claims Pending Get"
@@ -1912,7 +1912,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClubClaimUpdate"
+                "$ref": "#/components/schemas/OrganizationClaimUpdate"
               }
             }
           }
@@ -1923,7 +1923,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClubClaimResponse"
+                  "$ref": "#/components/schemas/OrganizationClaimResponse"
                 }
               }
             }
@@ -4846,7 +4846,7 @@
         "title": "CalendarTokenResponse",
         "description": "Returned by GET /calendar/token and POST /calendar/token/regenerate."
       },
-      "ClubClaimCreate": {
+      "OrganizationClaimCreate": {
         "properties": {
           "executive_role": {
             "type": "string",
@@ -4871,9 +4871,9 @@
         "required": [
           "executive_role"
         ],
-        "title": "ClubClaimCreate"
+        "title": "OrganizationClaimCreate"
       },
-      "ClubClaimResponse": {
+      "OrganizationClaimResponse": {
         "properties": {
           "id": {
             "type": "string",
@@ -4950,9 +4950,9 @@
           "created_at",
           "updated_at"
         ],
-        "title": "ClubClaimResponse"
+        "title": "OrganizationClaimResponse"
       },
-      "ClubClaimUpdate": {
+      "OrganizationClaimUpdate": {
         "properties": {
           "status": {
             "type": "string",
@@ -4976,7 +4976,7 @@
         "required": [
           "status"
         ],
-        "title": "ClubClaimUpdate"
+        "title": "OrganizationClaimUpdate"
       },
       "ClubCreate": {
         "properties": {

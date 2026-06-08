@@ -19,7 +19,7 @@ const DEFAULT_PROFILE: UserProfile = {
   isFirstYear: false,
   school: DEFAULT_SCHOOL,
   role: "user",
-  hasClub: false,
+  hasOrganization: false,
   clubs: [],
   clubId: null,
   clubName: null,

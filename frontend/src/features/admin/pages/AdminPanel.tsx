@@ -12,7 +12,7 @@ import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AdminPanelProps {
-  onNavigate: (page: "admin-events" | "admin-clubs" | "admin-posters") => void;
+  onNavigate: (page: "admin-events" | "admin-organizations" | "admin-posters") => void;
 }
 
 type ActivityType = ActivityDisplay["type"];
@@ -78,7 +78,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
           icon={Users}
           title={t("navigation.clubs")}
           description={t("admin.manageClubsDescAlt")}
-          onClick={() => onNavigate("admin-clubs")}
+          onClick={() => onNavigate("admin-organizations")}
         />
         <AdminCard
           icon={Megaphone}

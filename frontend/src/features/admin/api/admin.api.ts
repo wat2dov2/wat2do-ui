@@ -13,11 +13,11 @@ import type {
 import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 import {
   getAllClubs as getAllClubsData,
-  getClubTypes as getClubTypesData,
-  createClubAPI,
-  updateClubAPI,
-  deleteClubAPI,
-} from "@/features/clubs";
+  getOrganizationTypes as getOrganizationTypesData,
+  createOrganizationAPI,
+  updateOrganizationAPI,
+  deleteOrganizationAPI,
+} from "@/features/organizations";
 import { api, getPaginatedItems } from "@/shared/services/apiClient";
 
 // Re-export types for convenience
@@ -78,8 +78,8 @@ function toEventSubmission(row: SubmissionResponse): EventSubmission {
 
 // ── Club mutations ─────────────────────────────────────────────────
 
-export async function adminCreateClub(club: Club): Promise<Club> {
-  return createClubAPI({
+export async function adminCreateOrganization(club: Club): Promise<Club> {
+  return createOrganizationAPI({
     club_name: club.club_name,
     categories: club.categories,
     club_page: club.club_page,
@@ -92,8 +92,8 @@ export async function adminCreateClub(club: Club): Promise<Club> {
   });
 }
 
-export async function adminUpdateClub(club: Club): Promise<Club> {
-  return updateClubAPI(club, {
+export async function adminUpdateOrganization(club: Club): Promise<Club> {
+  return updateOrganizationAPI(club, {
     club_name: club.club_name,
     categories: club.categories,
     club_page: club.club_page,
@@ -105,8 +105,8 @@ export async function adminUpdateClub(club: Club): Promise<Club> {
   });
 }
 
-export async function adminDeleteClub(clubId: number): Promise<void> {
-  await deleteClubAPI(clubId);
+export async function adminDeleteOrganization(clubId: number): Promise<void> {
+  await deleteOrganizationAPI(clubId);
 }
 
 // ── Reported Events API ─────────────────────────────────────────────
@@ -146,7 +146,7 @@ export async function updateEventSubmission(
 
 // ── Admin Clubs API ─────────────────────────────────────────────────
 
-export interface ClubClaim {
+export interface OrganizationClaim {
   id: string;
   club_id: number;
   user_id: string;
@@ -164,27 +164,27 @@ export interface ClubClaim {
   };
 }
 
-export async function loadAdminClubsData(): Promise<{
+export async function loadAdminOrganizationsData(): Promise<{
   clubs: Club[];
   clubTypes: string[];
 }> {
   const [clubs, clubTypes] = await Promise.all([
     getAllClubsData(),
-    getClubTypesData(),
+    getOrganizationTypesData(),
   ]);
   return { clubs, clubTypes };
 }
 
-export async function getPendingClaims(): Promise<ClubClaim[]> {
-  return api.get<ClubClaim[]>("/clubs/claims/pending");
+export async function getPendingOrganizationClaims(): Promise<OrganizationClaim[]> {
+  return api.get<OrganizationClaim[]>("/clubs/claims/pending");
 }
 
 export async function resolveClaim(
   claimId: string,
   status: "approved" | "rejected",
   rejectionReason?: string
-): Promise<ClubClaim> {
-  return api.patch<ClubClaim>(`/clubs/claims/${claimId}`, {
+): Promise<OrganizationClaim> {
+  return api.patch<OrganizationClaim>(`/clubs/claims/${claimId}`, {
     status,
     rejection_reason: rejectionReason || null,
   });
