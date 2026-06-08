@@ -82,9 +82,6 @@ const AdminEventsRoute = lazy(() =>
 const AdminClubsRoute = lazy(() =>
   import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminClubsRoute }))
 );
-const AdminSubmissionsRoute = lazy(() =>
-  import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminSubmissionsRoute }))
-);
 const AdminPostersRoute = lazy(() =>
   import("@/app/routes/adminRoutes").then((m) => ({ default: m.AdminPostersRoute }))
 );
@@ -209,10 +206,6 @@ function AppContent() {
       <Route
         path={ROUTES.ADMIN_CLUBS}
         element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminClubsRoute /></ProtectedRoute>}
-      />
-      <Route
-        path={ROUTES.ADMIN_SUBMISSIONS}
-        element={<ProtectedRoute requiredRole={ROLE_ADMIN}><AdminSubmissionsRoute /></ProtectedRoute>}
       />
       <Route
         path={ROUTES.ADMIN_POSTERS}

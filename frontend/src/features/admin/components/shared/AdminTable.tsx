@@ -15,7 +15,7 @@ import {
 interface AdminTableProps {
   children: React.ReactNode;
   headers: Array<{
-    label: string;
+    label: React.ReactNode;
     className?: string;
     align?: "left" | "right" | "center";
   }>;
@@ -28,9 +28,9 @@ export function AdminTable({ children, headers, className }: AdminTableProps) {
       <Table>
         <TableHeader>
           <TableRow className="bg-secondary">
-            {headers.map((header) => (
+            {headers.map((header, index) => (
               <TableHead
-                key={header.label}
+                key={index}
                 className={`text-xs font-semibold text-foreground ${header.align === "right" ? "text-right" : ""} ${header.className || ""}`}
               >
                 {header.label}

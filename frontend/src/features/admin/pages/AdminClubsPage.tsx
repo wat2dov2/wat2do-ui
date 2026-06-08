@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, Edit, Trash2, Plus, Instagram, MessageCircle, Check, X, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
+import { Users, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -274,8 +274,8 @@ export function AdminClubsPage({
                 { label: t("forms.categories") },
                 { label: t("forms.clubType") },
                 { label: t("forms.ownerEmail") || "Owner Email" },
-                { label: t("admin.instagram") },
-                { label: t("admin.discord") },
+                { label: <span className="flex items-center gap-1.5"><Instagram className="size-3.5" />{t("admin.instagram")}</span> },
+                { label: <span className="flex items-center gap-1.5"><MessageCircle className="size-3.5" />{t("admin.discord")}</span> },
                 { label: t("common.actions"), align: "right" },
               ]}
             >
@@ -315,20 +315,14 @@ export function AdminClubsPage({
                   </TableCell>
                   <TableCell>
                     {club.ig ? (
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Instagram className="size-3.5" />
-                        <span>@{club.ig}</span>
-                      </div>
+                      <span className="text-sm text-muted-foreground">@{club.ig}</span>
                     ) : (
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
                     {club.discord ? (
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MessageCircle className="size-3.5" />
-                        <span className="max-w-[100px] truncate">{club.discord}</span>
-                      </div>
+                      <span className="max-w-[100px] truncate text-sm text-muted-foreground">{club.discord}</span>
                     ) : (
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
@@ -337,20 +331,18 @@ export function AdminClubsPage({
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="secondary"
-                        size="icon-sm"
+                        size="sm"
                         onClick={() => openEditModal(club)}
-                        title={t("admin.editClub")}
                       >
-                        <Edit className="size-4" />
+                        {t("common.edit") || "Edit"}
                       </Button>
                       <Button
                         variant="secondary"
-                        size="icon-sm"
+                        size="sm"
                         onClick={() => setDeleteConfirmId(club.id)}
-                        title={t("admin.deleteClub")}
                         className="hover:bg-error/10 hover:text-error"
                       >
-                        <Trash2 className="size-4" />
+                        {t("common.delete") || "Delete"}
                       </Button>
                     </div>
                   </TableCell>
@@ -394,7 +386,7 @@ export function AdminClubsPage({
                 { label: t("forms.clubName") || "Club Name" },
                 { label: t("admin.requestedBy") || "Requested By" },
                 { label: t("admin.executiveRole") || "Executive Role" },
-                { label: t("admin.proofUrl") || "Proof URL" },
+                { label: <span className="flex items-center gap-1"><ExternalLink className="size-3" />{t("admin.proofUrl") || "Proof URL"}</span> },
                 { label: t("admin.submittedAt") || "Submitted" },
                 { label: t("common.actions"), align: "right" },
               ]}
@@ -425,10 +417,9 @@ export function AdminClubsPage({
                         href={claim.proof_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                        className="text-xs text-primary hover:underline"
                       >
                         <span>{t("admin.viewProof") || "View Proof"}</span>
-                        <ExternalLink className="size-3" />
                       </a>
                     ) : (
                       <span className="text-xs text-muted-foreground">{t("admin.noProofProvided") || "No proof provided"}</span>
@@ -443,21 +434,19 @@ export function AdminClubsPage({
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="secondary"
-                        size="icon-sm"
+                        size="sm"
                         onClick={() => handleApproveClaim(claim.id)}
-                        title={t("admin.approve") || "Approve"}
-                        className="hover:bg-primary/20 hover:text-primary border border-transparent"
+                        className="text-primary hover:bg-primary/10 border border-transparent"
                       >
-                        <Check className="size-4 text-primary" />
+                        {t("admin.approve") || "Approve"}
                       </Button>
                       <Button
                         variant="secondary"
-                        size="icon-sm"
+                        size="sm"
                         onClick={() => setRejectClaimId(claim.id)}
-                        title={t("admin.reject") || "Reject"}
-                        className="hover:bg-error/10 hover:text-error border border-transparent"
+                        className="text-error hover:bg-error/10 border border-transparent"
                       >
-                        <X className="size-4 text-error" />
+                        {t("admin.reject") || "Reject"}
                       </Button>
                     </div>
                   </TableCell>

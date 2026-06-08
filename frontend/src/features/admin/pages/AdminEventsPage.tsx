@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar, MapPin, Tag, AlertTriangle, Edit, Trash2 } from "@/shared/ui/doodle-icons";
+import { useSearchParams } from "react-router-dom";
+import { Calendar, MapPin, Tag, AlertTriangle, Clock, User, FileText } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -15,7 +16,7 @@ import {
 } from "@/shared/ui/table";
 import { EventDetailsModal, useEventsStore } from "@/features/events";
 import { useAdminEventsPage } from "@/features/admin/hooks/useAdminEventsPage";
-import type { Event } from "@/shared/types";
+import type { Event, SubmissionStatus } from "@/shared/types";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
@@ -29,6 +30,23 @@ import { QP } from "@/shared/constants/queryParams";
 import { formatCardDate } from "@/shared/utils/date";
 import { useUIStore } from "@/shared/store/ui.store";
 
+// Submissions sub-view imports
+import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
+import { SubmissionDetailsDialog } from "@/features/admin/components/submissions/SubmissionDetailsDialog";
+import { RejectSubmissionDialog } from "@/features/admin/components/submissions/RejectSubmissionDialog";
+import { useAdminStore } from "@/features/admin/store/admin.store";
+import { useClubNameLookup } from "@/features/clubs";
+import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmissionsFilters";
+import { useAdminSubmissionsPagination } from "@/features/admin/hooks/useAdminSubmissionsPagination";
+import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
+import {
+  SUBMISSION_PENDING,
+  SUBMISSION_APPROVED,
+  SUBMISSION_REJECTED,
+} from "@/shared/constants/statuses";
+import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
+import { formatRelativeTime } from "@/shared/utils/relativeTime";
+
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
 interface AdminEventsPageProps {
@@ -38,9 +56,17 @@ interface AdminEventsPageProps {
 export function AdminEventsPage({
   onBack,
 }: AdminEventsPageProps) {
+  const { t, i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Tab Setup
+  const submissionIdParam = searchParams.get(QP.SUBMISSION_ID);
+  const initialTab = (searchParams.get("tab") === "submissions" || submissionIdParam) ? "submissions" : "events";
+  const [activeTab, setActiveTab] = useState<"events" | "submissions">(initialTab);
+
+  // Events setup
   const events = useEventsStore((s) => s.events);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
-  
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
   const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
@@ -49,7 +75,6 @@ export function AdminEventsPage({
     setShowSubmitEvent(true);
   };
 
-  const { t, i18n } = useTranslation();
   const {
     searchQuery,
     selectedCategory,
@@ -62,8 +87,6 @@ export function AdminEventsPage({
     filteredEvents,
     paginatedEvents,
     totalPages,
-    searchParams,
-    setSearchParams,
     setSearchQuery,
     setSelectedCategory,
     toggleReportedOnly,
@@ -84,6 +107,48 @@ export function AdminEventsPage({
     }
   };
 
+  // Submissions setup
+  const fetchSubmissions = useAdminStore((s) => s.fetchSubmissions);
+  const allSubmissions = useAdminStore((s) => s.submissions);
+
+  useEffect(() => {
+    fetchSubmissions().catch((err) =>
+      console.error("Failed to fetch submissions:", err),
+    );
+  }, [fetchSubmissions]);
+
+  const pendingSubmissionsCount = useMemo(() => {
+    return allSubmissions.filter((s) => s.status === SUBMISSION_PENDING).length;
+  }, [allSubmissions]);
+
+  const { getClubName } = useClubNameLookup();
+  const submissionFilters = useAdminSubmissionsFilters({ getClubName });
+  const submissionPagination = useAdminSubmissionsPagination({
+    itemsPerPage: ITEMS_PER_PAGE,
+    filteredSubmissions: submissionFilters.filteredSubmissions,
+  });
+  const submissionActions = useAdminSubmissionsActions({
+    searchParams,
+    setSearchParams,
+  });
+
+  const selectedSubmission = useMemo(() => {
+    if (!submissionIdParam) return null;
+    return submissionFilters.allSubmissions.find((s) => s.id === submissionIdParam) || null;
+  }, [submissionIdParam, submissionFilters.allSubmissions]);
+
+  useEffect(() => {
+    if (!submissionIdParam) return;
+    const id = setTimeout(() => {
+      document
+        .getElementById(`submission-${submissionIdParam}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, SCROLL_INTO_VIEW_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [submissionIdParam]);
+
+  const fmtTime = (dateStr: string) => formatRelativeTime(dateStr, t);
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
@@ -93,65 +158,98 @@ export function AdminEventsPage({
         onBack={onBack}
       />
 
-      {/* Search and Filters */}
-      <div className="flex gap-3">
-        <AdminSearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder={t("admin.searchEvents")}
-        />
-        <Select
-          value={selectedCategory || undefined}
-          onValueChange={(value) => setSelectedCategory(value || "")}
+      {/* Tabs toggle */}
+      <div className="flex gap-2 border-b border-border pb-3">
+        <button
+          onClick={() => setActiveTab("events")}
+          data-elevation="control"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+            activeTab === "events"
+              ? "bg-primary/80 text-primary-foreground font-semibold"
+              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+          }`}
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t("admin.allCategories")} />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={toggleReportedOnly}
-          aria-pressed={showReportedOnly}
-          className={cn(
-            "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
-            showReportedOnly
-              ? "bg-primary/80! text-primary-foreground! hover:bg-primary/80! hover:text-primary-foreground! [&_svg]:text-primary-foreground!"
-              : "bg-secondary text-muted-foreground hover:bg-secondary"
+          {t("admin.eventsList") || "Events List"}
+        </button>
+        <button
+          onClick={() => setActiveTab("submissions")}
+          data-elevation="control"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
+            activeTab === "submissions"
+              ? "bg-primary/80 text-primary-foreground font-semibold"
+              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+          }`}
+        >
+          {t("admin.eventSubmissions") || "Event Submissions"}
+          {pendingSubmissionsCount > 0 && (
+            <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
+              {pendingSubmissionsCount}
+            </span>
           )}
-        >
-          <AlertTriangle className="size-4" />
-          {t("admin.reportedOnly")}
-        </Button>
+        </button>
       </div>
 
-      <AdminResultsCount
-        count={filteredEvents.length}
-        singularLabel={t("common.event")}
-        pluralLabel={t("common.events")}
-      />
+      {activeTab === "events" ? (
+        <>
+          {/* Search and Filters */}
+          <div className="flex gap-3">
+            <AdminSearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder={t("admin.searchEvents")}
+            />
+            <Select
+              value={selectedCategory || undefined}
+              onValueChange={(value) => setSelectedCategory(value || "")}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("admin.allCategories")} />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={toggleReportedOnly}
+              aria-pressed={showReportedOnly}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
+                showReportedOnly
+                  ? "bg-primary/80! text-primary-foreground! hover:bg-primary/80! hover:text-primary-foreground! [&_svg]:text-primary-foreground!"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary"
+              )}
+            >
+              <AlertTriangle className="size-4" />
+              {t("admin.reportedOnly")}
+            </Button>
+          </div>
 
-      {/* Events Table */}
-      {filteredEvents.length > 0 ? (
-        <AdminTable
-          headers={[
-            { label: t("events.eventTitle") },
-            { label: t("events.club") },
-            { label: t("filters.date") },
-            { label: t("filters.location") },
-            { label: t("filters.category") },
-            { label: t("events.status") },
-            { label: t("common.actions"), align: "right" },
-          ]}
-        >
+          <AdminResultsCount
+            count={filteredEvents.length}
+            singularLabel={t("common.event")}
+            pluralLabel={t("common.events")}
+          />
+
+          {/* Events Table */}
+          {filteredEvents.length > 0 ? (
+            <AdminTable
+              headers={[
+                { label: t("events.eventTitle") },
+                { label: t("events.club") },
+                { label: <span className="flex items-center gap-1.5"><Calendar className="size-3.5" />{t("filters.date")}</span> },
+                { label: <span className="flex items-center gap-1.5"><MapPin className="size-3.5" />{t("filters.location")}</span> },
+                { label: <span className="flex items-center gap-1.5"><Tag className="size-3.5" />{t("filters.category")}</span> },
+                { label: <span className="flex items-center gap-1.5"><AlertTriangle className="size-3.5" />{t("events.status")}</span> },
+                { label: t("common.actions"), align: "right" },
+              ]}
+            >
               {paginatedEvents.map((event) => {
                 const isReported = isEventReported(event.id);
                 const isHighlighted = highlightedEventId === event.id;
@@ -177,35 +275,25 @@ export function AdminEventsPage({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Calendar className="size-3.5" />
-                        <span>{formatCardDate(event, i18n.language || "en-US")}</span>
-                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {formatCardDate(event, i18n.language || "en-US")}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MapPin className="size-3.5" />
-                        <span className="max-w-[150px] truncate">
-                          {event.location}
-                        </span>
-                      </div>
+                      <span className="block max-w-[150px] truncate text-sm text-muted-foreground">
+                        {event.location}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Tag className="size-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          {event.category}
-                        </span>
-                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {event.category}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {isReported ? (
-                        <div className="flex items-center gap-1.5">
-                          <AlertTriangle className="size-3.5 text-error" />
-                          <span className="text-xs text-error font-medium">
-                            {t("admin.reported")}
-                          </span>
-                        </div>
+                        <span className="text-xs text-error font-medium">
+                          {t("admin.reported")}
+                        </span>
                       ) : (
                         <span className="text-xs text-muted-foreground">
                           {t("common.live")}
@@ -216,77 +304,239 @@ export function AdminEventsPage({
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="secondary"
-                          size="icon-sm"
+                          size="sm"
                           onClick={async (e) => {
                             e.stopPropagation();
                             await onEditEvent?.(event);
                           }}
-                          title={t("admin.editEvent")}
                         >
-                          <Edit className="size-4" />
+                          {t("common.edit") || "Edit"}
                         </Button>
                         <Button
                           variant="secondary"
-                          size="icon-sm"
+                          size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteConfirmId(event.id);
                           }}
-                          title={t("admin.deleteEvent")}
                           className="hover:bg-error/10 hover:text-error"
                         >
-                          <Trash2 className="size-4" />
+                          {t("common.delete") || "Delete"}
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 );
               })}
-        </AdminTable>
+            </AdminTable>
+          ) : (
+            <AdminEmptyState
+              icon={Calendar}
+              title={t("admin.noEventsFound")}
+              description={t("admin.noEventsMatchFilters")}
+            />
+          )}
+
+          {/* Event Details Modal */}
+          <EventDetailsModal
+            event={selectedEvent}
+            onClose={() => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.delete(QP.EVENT_ID);
+              setSearchParams(newParams);
+            }}
+            allEvents={events}
+            hideSimilarEvents
+          />
+
+          {filteredEvents.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredEvents.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              itemLabel={t("common.event")}
+              itemLabelPlural={t("common.events")}
+              onPageChange={setCurrentPage}
+            />
+          )}
+
+          <AdminDeleteDialog
+            isOpen={deleteConfirmId !== null}
+            onClose={() => setDeleteConfirmId(null)}
+            onConfirm={() => deleteConfirmId != null && handleDelete(deleteConfirmId)}
+            title={t("events.deleteEventTitle")}
+            description={t("events.deleteEventConfirm", {
+              title: deleteConfirmId
+                ? events.find((e) => e.id === deleteConfirmId)?.title || ""
+                : "",
+            })}
+            isLoading={isDeleting}
+          />
+        </>
       ) : (
-        <AdminEmptyState
-          icon={Calendar}
-          title={t("admin.noEventsFound")}
-          description={t("admin.noEventsMatchFilters")}
-        />
+        <>
+          {/* Submissions Section */}
+          <div className="flex gap-3">
+            <AdminSearchBar
+              value={submissionFilters.searchQuery}
+              onChange={(value) => {
+                submissionFilters.setSearchQuery(value);
+                submissionPagination.setCurrentPage(1);
+              }}
+              placeholder={t("admin.searchSubmissions")}
+            />
+            <Select
+              value={submissionFilters.statusFilter}
+              onValueChange={(value) => {
+                submissionFilters.setStatusFilter(value as "all" | SubmissionStatus);
+                submissionPagination.setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("admin.allStatus")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("admin.allStatus")}</SelectItem>
+                <SelectItem value={SUBMISSION_PENDING}>{t("admin.pending")}</SelectItem>
+                <SelectItem value={SUBMISSION_APPROVED}>{t("admin.approved")}</SelectItem>
+                <SelectItem value={SUBMISSION_REJECTED}>{t("admin.rejected")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <AdminResultsCount
+            count={submissionFilters.filteredSubmissions.length}
+            singularLabel={t("admin.submission")}
+            pluralLabel={t("admin.submissions")}
+          />
+
+          {submissionFilters.filteredSubmissions.length > 0 ? (
+            <AdminTable
+              headers={[
+                { label: t("events.eventTitle") },
+                { label: t("events.club") },
+                { label: <span className="flex items-center gap-1.5"><User className="size-3.5" />{t("admin.submittedBy")}</span> },
+                { label: <span className="flex items-center gap-1.5"><Clock className="size-3.5" />{t("admin.submittedAt")}</span> },
+                { label: t("events.status") },
+                { label: t("common.actions"), align: "right" },
+              ]}
+            >
+              {submissionPagination.paginatedSubmissions.map((submission) => (
+                <TableRow
+                  key={submission.id}
+                  id={`submission-${submission.id}`}
+                  className={`cursor-pointer hover:bg-secondary/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.set(QP.SUBMISSION_ID, submission.id);
+                    setSearchParams(newParams);
+                  }}
+                >
+                  <TableCell>
+                    <div className="font-medium text-sm text-foreground">
+                      {submission.eventData.title}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {getClubName(submission.eventData.club_id)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {submission.submittedBy}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {fmtTime(submission.submittedAt)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <AdminStatusBadge status={submission.status} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
+                      {submission.status === SUBMISSION_PENDING && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              submissionActions.handleApprove(submission);
+                            }}
+                            className="text-success hover:text-success hover:bg-success/10"
+                          >
+                            {t("admin.approve") || "Approve"}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              submissionActions.handleRejectClick(submission);
+                            }}
+                            className="text-error hover:text-error hover:bg-error/10"
+                          >
+                            {t("admin.reject") || "Reject"}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </AdminTable>
+          ) : (
+            <AdminEmptyState
+              icon={FileText}
+              title={t("admin.noSubmissionsFound")}
+              description={t("admin.noSubmissionsMatchFilters")}
+            />
+          )}
+
+          {submissionFilters.filteredSubmissions.length > 0 && (
+            <Pagination
+              currentPage={submissionPagination.currentPage}
+              totalPages={submissionPagination.totalPages}
+              totalItems={submissionFilters.filteredSubmissions.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              itemLabel={t("admin.submission")}
+              itemLabelPlural={t("admin.submissions")}
+              onPageChange={submissionPagination.setCurrentPage}
+            />
+          )}
+
+          <SubmissionDetailsDialog
+            submission={selectedSubmission}
+            clubName={getClubName(selectedSubmission?.eventData.club_id)}
+            isOpen={selectedSubmission !== null}
+            onClose={() => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.delete(QP.SUBMISSION_ID);
+              setSearchParams(newParams);
+            }}
+            onApprove={submissionActions.handleApprove}
+            onRejectClick={submissionActions.handleRejectClick}
+            formatRelativeTime={fmtTime}
+          />
+
+          <RejectSubmissionDialog
+            isOpen={submissionActions.rejectSubmissionId !== null}
+            rejectionReason={submissionActions.rejectionReason}
+            onClose={() => {
+              submissionActions.setRejectSubmissionId(null);
+              submissionActions.setRejectionReason("");
+            }}
+            onConfirm={() => {
+              submissionActions.handleRejectConfirm(submissionIdParam);
+            }}
+            onRejectionReasonChange={submissionActions.setRejectionReason}
+          />
+        </>
       )}
-
-      {/* Event Details Modal */}
-      <EventDetailsModal
-        event={selectedEvent}
-        onClose={() => {
-          const newParams = new URLSearchParams(searchParams);
-          newParams.delete(QP.EVENT_ID);
-          setSearchParams(newParams);
-        }}
-        allEvents={events}
-        hideSimilarEvents
-      />
-
-      {filteredEvents.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredEvents.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          itemLabel={t("common.event")}
-          itemLabelPlural={t("common.events")}
-          onPageChange={setCurrentPage}
-        />
-      )}
-
-      <AdminDeleteDialog
-        isOpen={deleteConfirmId !== null}
-        onClose={() => setDeleteConfirmId(null)}
-        onConfirm={() => deleteConfirmId != null && handleDelete(deleteConfirmId)}
-        title={t("events.deleteEventTitle")}
-        description={t("events.deleteEventConfirm", {
-          title: deleteConfirmId
-            ? events.find((e) => e.id === deleteConfirmId)?.title || ""
-            : "",
-        })}
-        isLoading={isDeleting}
-      />
     </div>
   );
 }
