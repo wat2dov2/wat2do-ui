@@ -505,6 +505,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clubs/{club_id}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request To Join Club
+         * @description Create a pending request to join the club.
+         */
+        post: operations["request_to_join_club_clubs__club_id__join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Membership Status
+         * @description Get the current user's membership details for this club.
+         */
+        get: operations["get_my_membership_status_clubs__club_id__membership_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Leave Club Or Cancel Request
+         * @description Leave a club or cancel a pending join request.
+         */
+        delete: operations["leave_club_or_cancel_request_clubs__club_id__membership_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Club Memberships
+         * @description Club Admin/Owner: List student memberships and pending requests for the club.
+         */
+        get: operations["list_club_memberships_clubs__club_id__memberships_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/memberships/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Club Membership
+         * @description Club Admin/Owner: Remove a student member or request from the club roster.
+         */
+        delete: operations["remove_club_membership_clubs__club_id__memberships__user_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Club Membership
+         * @description Club Admin/Owner: Approve/reject a request or change role of a student member.
+         */
+        patch: operations["update_club_membership_clubs__club_id__memberships__user_id__patch"];
+        trace?: never;
+    };
+    "/clubs/{club_id}/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Claim
+         * @description Submit a claim for an unowned club.
+         */
+        post: operations["create_claim_clubs__club_id__claims_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/claims/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Pending Claims
+         * @description List pending claims (admin only).
+         */
+        get: operations["list_pending_claims_clubs_claims_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/claims/{claim_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Claim
+         * @description Approve or reject a claim (admin only).
+         */
+        patch: operations["update_claim_clubs_claims__claim_id__patch"];
+        trace?: never;
+    };
+    "/clubs/{club_id}/join-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Join Requests
+         * @description List pending join requests for a club (members only).
+         */
+        get: operations["list_join_requests_clubs__club_id__join_requests_get"];
+        put?: never;
+        /**
+         * Create Join Request
+         * @description Submit a request to join a club's management team.
+         */
+        post: operations["create_join_request_clubs__club_id__join_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/join-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Join Request
+         * @description Approve or reject a join request (members only).
+         */
+        patch: operations["update_join_request_clubs__club_id__join_requests__request_id__patch"];
+        trace?: never;
+    };
     "/credits/": {
         parameters: {
             query?: never;
@@ -592,6 +784,26 @@ export interface paths {
          * @description Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'.
          */
         get: operations["get_latest_added_events_latest_added_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/promoted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Promoted Events
+         * @description Public browse list: only promoted events for a school.
+         */
+        get: operations["list_promoted_events_events_promoted_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1329,6 +1541,53 @@ export interface components {
             /** Feed Url */
             feed_url: string;
         };
+        /** ClubClaimCreate */
+        ClubClaimCreate: {
+            /** Executive Role */
+            executive_role: string;
+            /** Proof Url */
+            proof_url?: string | null;
+        };
+        /** ClubClaimResponse */
+        ClubClaimResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Executive Role */
+            executive_role: string;
+            /** Proof Url */
+            proof_url: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            clubs?: components["schemas"]["ClubResponse"] | null;
+            users?: components["schemas"]["UserResponse"] | null;
+        };
+        /** ClubClaimUpdate */
+        ClubClaimUpdate: {
+            /** Status */
+            status: string;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+        };
         /** ClubCreate */
         ClubCreate: {
             /** Club Name */
@@ -1456,6 +1715,46 @@ export interface components {
              */
             expires_at: string;
         };
+        /** ClubJoinRequestCreate */
+        ClubJoinRequestCreate: {
+            /** Pitch */
+            pitch: string;
+        };
+        /** ClubJoinRequestResponse */
+        ClubJoinRequestResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Pitch */
+            pitch: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            users?: components["schemas"]["UserResponse"] | null;
+        };
+        /** ClubJoinRequestUpdate */
+        ClubJoinRequestUpdate: {
+            /** Status */
+            status: string;
+        };
         /** ClubMemberAdd */
         ClubMemberAdd: {
             /** Email */
@@ -1482,6 +1781,87 @@ export interface components {
              */
             joined_at: string;
         };
+        /** ClubMembershipResponse */
+        ClubMembershipResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "member" | "officer" | "owner";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ClubMembershipUpdate */
+        ClubMembershipUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Role */
+            role?: ("member" | "officer" | "owner") | null;
+        };
+        /** ClubMembershipWithUserResponse */
+        ClubMembershipWithUserResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "member" | "officer" | "owner";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            user: components["schemas"]["UserMinResponse"];
+        };
         /** ClubResponse */
         ClubResponse: {
             /** Id */
@@ -1504,6 +1884,8 @@ export interface components {
             created_by?: string | null;
             /** School */
             school?: string | null;
+            /** Owner Email */
+            owner_email?: string | null;
         };
         /** ClubUpdate */
         ClubUpdate: {
@@ -2421,6 +2803,8 @@ export interface components {
             submitted_at: string;
             /** Reviewed At */
             reviewed_at?: string | null;
+            /** Submitted By Email */
+            submitted_by_email?: string | null;
         };
         /** SubmissionUpdate */
         SubmissionUpdate: {
@@ -2455,6 +2839,22 @@ export interface components {
         UploadResponse: {
             /** Url */
             url: string;
+        };
+        /** UserMinResponse */
+        UserMinResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** Username */
+            username?: string | null;
+            /** Full Name */
+            full_name?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
         };
         /** UserProfileUpdate */
         UserProfileUpdate: {
@@ -3493,6 +3893,388 @@ export interface operations {
             };
         };
     };
+    request_to_join_club_clubs__club_id__join_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMembershipResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_membership_status_clubs__club_id__membership_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMembershipResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    leave_club_or_cancel_request_clubs__club_id__membership_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_club_memberships_clubs__club_id__memberships_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+            };
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMembershipWithUserResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_club_membership_clubs__club_id__memberships__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_club_membership_clubs__club_id__memberships__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubMembershipUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMembershipResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_claim_clubs__club_id__claims_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubClaimCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pending_claims_clubs_claims_pending_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"][];
+                };
+            };
+        };
+    };
+    update_claim_clubs_claims__claim_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubClaimUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_join_requests_clubs__club_id__join_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubJoinRequestResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_join_request_clubs__club_id__join_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubJoinRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubJoinRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_join_request_clubs__club_id__join_requests__request_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubJoinRequestUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubJoinRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_credits_credits__get: {
         parameters: {
             query?: never;
@@ -3651,6 +4433,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LatestEventResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_promoted_events_events_promoted_get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSummaryResponse"][];
                 };
             };
             /** @description Validation Error */

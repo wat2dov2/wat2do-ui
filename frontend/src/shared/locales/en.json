@@ -224,6 +224,7 @@
     "clubName": "Club Name",
     "clubNameRequired": "Club name is required",
     "ownerUserId": "Owner User ID",
+    "ownerEmail": "Owner Email",
     "ownerUserIdPlaceholder": "Internal user UUID",
     "ownerUserIdDescription": "Assign this club to the approved user who should manage it.",
     "categories": "Categories",

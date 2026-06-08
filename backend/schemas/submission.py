@@ -53,3 +53,5 @@ class SubmissionResponse(BaseModel):
     rejection_reason: str | None = None
     submitted_at: datetime
     reviewed_at: datetime | None = None
+    submitted_by_email: str | None = None
+

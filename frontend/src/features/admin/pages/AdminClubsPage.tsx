@@ -98,6 +98,11 @@ export function AdminClubsPage({
   };
 
   useEffect(() => {
+    void loadClaimsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "claims") {
       void loadClaimsData();
     }
@@ -268,7 +273,7 @@ export function AdminClubsPage({
                 { label: t("forms.clubName") },
                 { label: t("forms.categories") },
                 { label: t("forms.clubType") },
-                { label: t("forms.ownerUserId") },
+                { label: t("forms.ownerEmail") || "Owner Email" },
                 { label: t("admin.instagram") },
                 { label: t("admin.discord") },
                 { label: t("common.actions"), align: "right" },
@@ -305,7 +310,7 @@ export function AdminClubsPage({
                   </TableCell>
                   <TableCell>
                     <span className="block max-w-[140px] truncate text-xs text-muted-foreground">
-                      {club.created_by || "-"}
+                      {club.owner_email || club.created_by || "-"}
                     </span>
                   </TableCell>
                   <TableCell>

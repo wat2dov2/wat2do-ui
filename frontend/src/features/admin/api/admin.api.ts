@@ -69,7 +69,7 @@ function toEventSubmission(row: SubmissionResponse): EventSubmission {
   return {
     id: row.id,
     eventData: toEventFormData(row.event_data as ApiEventCreate),
-    submittedBy: row.user_id,
+    submittedBy: row.submitted_by_email || row.user_id,
     submittedAt: row.submitted_at,
     status: row.status as EventSubmission["status"],
     rejectionReason: row.rejection_reason ?? undefined,

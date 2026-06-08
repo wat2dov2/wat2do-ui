@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import {
   Search,
-  Shield,
   Mail,
   Settings,
   Compass,
   Plus,
+  Users,
 } from "@/shared/ui/doodle-icons";
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
@@ -56,7 +56,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       : []),
     {
       title: t("navigation.clubs"),
-      icon: <Shield className="size-4" />,
+      icon: <Users className="size-4" />,
       href: ROUTES.CLUBS,
       isActive: isActive(ROUTES.CLUBS),
     },

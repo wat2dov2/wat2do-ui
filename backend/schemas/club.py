@@ -120,6 +120,7 @@ class ClubResponse(BaseModel):
     logo_url: str | None = None
     created_by: str | None = None
     school: str | None = None
+    owner_email: str | None = None
 
     model_config = {"from_attributes": True}
 

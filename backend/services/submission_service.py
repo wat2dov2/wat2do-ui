@@ -22,6 +22,20 @@ _ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 
+def _fetch_user_email(user_id: str) -> str | None:
+    try:
+        user_row = get_sb().table("users").select("email").eq("id", user_id).execute()
+        if user_row.data and isinstance(user_row.data, list) and len(user_row.data) > 0:
+            first_row = user_row.data[0]
+            if isinstance(first_row, dict):
+                email = first_row.get("email")
+                if isinstance(email, str):
+                    return email
+    except Exception as e:
+        log.warning("Failed to fetch user email for %s: %s", user_id, e)
+    return None
+
+
 def create_submission(user_id: str, event_data: EventCreate | dict) -> SubmissionResponse:
     event_dict = (
         event_data.model_dump(mode="json", exclude_none=True)
@@ -36,9 +50,11 @@ def create_submission(user_id: str, event_data: EventCreate | dict) -> Submissio
     }
     r = get_sb().table(EVENT_SUBMISSIONS).insert(payload).execute()
     if r.data:
-        return SubmissionResponse.model_validate(r.data[0])
+        email = _fetch_user_email(user_id)
+        return SubmissionResponse.model_validate({**r.data[0], "submitted_by_email": email})
     log.warning("Insert returned no data for create_submission(user_id=%s)", user_id)
     return SubmissionResponse(**payload, submitted_at=datetime.now(timezone.utc).isoformat())
+
 
 
 def get_submissions(
@@ -47,20 +63,34 @@ def get_submissions(
     offset: int = 0,
     limit: int | None = None,
 ) -> tuple[list[SubmissionResponse], int]:
-    q = get_sb().table(EVENT_SUBMISSIONS).select("*", count="exact")
+    q = get_sb().table(EVENT_SUBMISSIONS).select("*, users(email)", count="exact")
     if status:
         q = q.eq("status", status)
     q = q.order("submitted_at", desc=True)
     if limit is not None:
         q = q.range(offset, offset + limit - 1)
     r = q.execute()
-    items = [SubmissionResponse.model_validate(row) for row in (r.data or [])]
+    items = []
+    for row in (r.data or []):
+        email = None
+        if "users" in row and isinstance(row["users"], dict):
+            email = row["users"].get("email")
+        model_data = {**row, "submitted_by_email": email}
+        items.append(SubmissionResponse.model_validate(model_data))
     return items, r.count or len(items)
 
 
 def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
-    r = get_sb().table(EVENT_SUBMISSIONS).select("*").eq("id", submission_id).execute()
-    return SubmissionResponse.model_validate(r.data[0]) if r.data else None
+    r = get_sb().table(EVENT_SUBMISSIONS).select("*, users(email)").eq("id", submission_id).execute()
+    if not r.data:
+        return None
+    row = r.data[0]
+    email = None
+    if "users" in row and isinstance(row["users"], dict):
+        email = row["users"].get("email")
+    model_data = {**row, "submitted_by_email": email}
+    return SubmissionResponse.model_validate(model_data)
+
 
 
 def update_submission(
@@ -118,7 +148,10 @@ def update_submission(
                 submission_id,
                 exc_info=True,
             )
-    return SubmissionResponse.model_validate(r.data[0]) if r.data else None
+    if r.data:
+        email = _fetch_user_email(r.data[0]["user_id"])
+        return SubmissionResponse.model_validate({**r.data[0], "submitted_by_email": email})
+    return None
 
 
 def delete_submission(submission_id: str) -> bool:

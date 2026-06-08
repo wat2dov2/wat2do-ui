@@ -15,5 +15,6 @@ export interface Club {
   club_type: string;
   logo_url?: string | null;
   created_by?: string | null;
+  owner_email?: string | null;
   school: string;
 }

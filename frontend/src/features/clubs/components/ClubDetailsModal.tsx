@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
-  Building2,
+  Users,
   Instagram,
   MessageCircle,
   Globe,
@@ -208,7 +208,7 @@ export function ClubDetailsModal({ club, isOpen, onClose, onStatusChange }: Club
                   className="size-full object-cover rounded-2xl"
                 />
               ) : (
-                <Building2 className="size-8 text-primary" />
+                <Users className="size-8 text-primary" />
               )}
             </div>
             <div className="space-y-1">

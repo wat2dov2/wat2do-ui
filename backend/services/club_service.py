@@ -28,6 +28,22 @@ def _normalize_club_name(name: str | None) -> str:
     return " ".join((name or "").casefold().split())
 
 
+def _fetch_owner_email(user_id: str | None) -> str | None:
+    if not user_id:
+        return None
+    try:
+        user_row = get_sb().table("users").select("email").eq("id", user_id).execute()
+        if user_row.data and isinstance(user_row.data, list) and len(user_row.data) > 0:
+            first_row = user_row.data[0]
+            if isinstance(first_row, dict):
+                email = first_row.get("email")
+                if isinstance(email, str):
+                    return email
+    except Exception as e:
+        log.warning("Failed to fetch owner email for %s: %s", user_id, e)
+    return None
+
+
 def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
     """Return all clubs where the user is a member/manager."""
     clubs_dict = {}
@@ -39,7 +55,9 @@ def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
         )
         for row in r_members.data or []:
             if row.get("clubs"):
-                club = ClubResponse.model_validate(row["clubs"])
+                club_data = row["clubs"]
+                email = _fetch_owner_email(club_data.get("created_by"))
+                club = ClubResponse.model_validate({**club_data, "owner_email": email})
                 clubs_dict[club.id] = club
     except Exception as e:
         log.warning("Failed to query club_members for owner_id %s: %s", owner_id, e)
@@ -147,7 +165,8 @@ def get_club(club_id: int) -> ClubResponse | None:
     r = get_sb().table(CLUBS).select("*").eq("id", club_id).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return ClubResponse.model_validate(r.data[0])
+    email = _fetch_owner_email(r.data[0].get("created_by"))
+    return ClubResponse.model_validate({**r.data[0], "owner_email": email})
 
 
 def list_clubs(
@@ -171,14 +190,19 @@ def list_clubs(
             q = q.or_(f"club_name.ilike.{quoted}")
     q = q.order("club_name").range(skip, skip + limit - 1)
     r = q.execute()
-    return [ClubResponse.model_validate(c) for c in (r.data or [])]
+    items = []
+    for row in (r.data or []):
+        email = _fetch_owner_email(row.get("created_by"))
+        items.append(ClubResponse.model_validate({**row, "owner_email": email}))
+    return items
 
 
 def create_club(data: ClubCreate, *, created_by: str) -> ClubResponse:
     payload = data.model_dump(exclude={"owner_user_id"})
     payload["created_by"] = created_by
     r = get_sb().table(CLUBS).insert(payload).execute()
-    club = ClubResponse.model_validate(r.data[0])
+    email = _fetch_owner_email(created_by)
+    club = ClubResponse.model_validate({**r.data[0], "owner_email": email})
     # Auto-add the creator/owner as a member
     try:
         add_club_member(club.id, UUID(created_by))
@@ -195,7 +219,10 @@ def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     if not payload:
         return existing
     r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
-    return ClubResponse.model_validate(r.data[0]) if r.data else None
+    if r.data:
+        email = _fetch_owner_email(r.data[0].get("created_by"))
+        return ClubResponse.model_validate({**r.data[0], "owner_email": email})
+    return None
 
 
 def delete_club(club_id: int) -> bool:
