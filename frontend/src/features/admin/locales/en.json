@@ -59,6 +59,7 @@
     "noClubsFound": "No clubs found",
     "noClubsMatchFilters": "No clubs match your current filters.",
     "deleteClubConfirm": "Are you sure you want to delete this club? This action cannot be undone.",
+    "eventsList": "Events List",
     "clubsList": "Clubs List",
     "pendingClaims": "Pending Claims",
     "rejectClubClaim": "Reject Club Claim",
