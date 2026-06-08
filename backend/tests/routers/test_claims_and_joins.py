@@ -43,3 +43,28 @@ def test_create_join_request_success(authenticated_client, monkeypatch):
     assert resp.status_code == 201
     assert resp.json()["pitch"] == "I love tech!"
     assert resp.json()["status"] == "pending"
+
+def test_update_claim_success(admin_client, monkeypatch):
+    claim_id = str(uuid4())
+    mock_claim = {
+        "id": claim_id,
+        "club_id": 1,
+        "user_id": str(uuid4()),
+        "executive_role": "President",
+        "proof_url": "http://example.com/proof.png",
+        "status": "approved",
+        "created_at": "2026-06-07T00:00:00Z",
+        "updated_at": "2026-06-07T00:00:00Z"
+    }
+
+    monkeypatch.setattr(
+        club_service,
+        "update_claim",
+        lambda cid, status, reason: {**mock_claim, "id": str(cid), "status": status, "rejection_reason": reason}
+    )
+
+    resp = admin_client.patch(f"/clubs/claims/{claim_id}", json={
+        "status": "approved"
+    })
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "approved"

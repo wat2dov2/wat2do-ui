@@ -746,12 +746,8 @@ def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = Non
 
     claim = r.data[0]
     if status == "approved":
-        # Get the supabase_auth_id of the user
-        r_user = get_sb().table("users").select("supabase_auth_id").eq("id", claim["user_id"]).execute()
-        if r_user.data:
-            supabase_auth_id = r_user.data[0]["supabase_auth_id"]
-            # Set club creator
-            get_sb().table("clubs").update({"created_by": supabase_auth_id}).eq("id", claim["club_id"]).execute()
+        # Set club creator (internal users.id UUID)
+        get_sb().table("clubs").update({"created_by": claim["user_id"]}).eq("id", claim["club_id"]).execute()
         # Add to club members
         try:
             add_club_member(claim["club_id"], UUID(claim["user_id"]))
