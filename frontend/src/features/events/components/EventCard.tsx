@@ -5,13 +5,12 @@ import { useTranslation } from "react-i18next";
 import {
   Download,
   Heart,
-  Sparkles,
   ImageOff,
   MoreHorizontal,
   Share2,
   Flag,
   Trash2,
-} from "lucide-react";
+} from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import {
   DropdownMenu,
@@ -62,7 +61,6 @@ const EventReportDialog = lazy(() =>
 interface EventCardProps {
   event: Event;
   isSaved?: boolean;
-  isPromoted?: boolean;
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
   /** Called when the user confirms deletion (shown only to owners/admins). */
@@ -83,7 +81,6 @@ type EventCardDialog = "delete" | "share" | "report";
 export function EventCard({
   event,
   isSaved = false,
-  isPromoted = false,
   onEventClick,
   disableModal,
   onDelete,
@@ -148,11 +145,7 @@ export function EventCard({
             handleCardActivate();
           }
         }}
-        className={`rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card [&:hover:not(:has(.event-card-actions-trigger:hover))]:shadow-lg [&:hover:not(:has(.event-card-actions-trigger:hover))]:opacity-80 ${
-          isPromoted
-            ? "ring-2 ring-amber-400 shadow-amber-100 dark:shadow-amber-900/20 shadow-md"
-            : ""
-        }`}
+        className="rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card [&:hover:not(:has(.event-card-actions-trigger:hover))]:opacity-90 [&:hover:not(:has(.event-card-actions-trigger:hover))]:shadow-lg"
       >
         {/* Event Image */}
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
@@ -163,22 +156,14 @@ export function EventCard({
             className="absolute inset-0 w-full h-full"
             fallback={
               <div
-                className={`absolute inset-0 ${
-                  isPromoted
-                    ? "bg-linear-to-br from-yellow-100 to-yellow-50"
-                    : categoryClasses.bg
-                } flex items-center justify-center`}
+                className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}
               >
                 <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
               </div>
             }
             placeholder={
               <div
-                className={`absolute inset-0 ${
-                  isPromoted
-                    ? "bg-linear-to-br from-yellow-100 to-yellow-50"
-                    : categoryClasses.bg
-                } animate-pulse`}
+                className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`}
               />
             }
           />
@@ -190,16 +175,6 @@ export function EventCard({
               {translateCategory(eventCategory, t)}
             </span>
           </BadgeMask>
-
-          {/* Promoted Badge - Below Category on left side */}
-          {isPromoted && (
-            <div className="absolute top-8 left-2 z-10">
-              <span className="bg-linear-to-r from-amber-500 to-amber-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Sparkles className="size-3" />
-                {t("events.promoted")}
-              </span>
-            </div>
-          )}
 
           {/* Menu Badge - Top Right */}
           <BadgeMask variant="top-right">

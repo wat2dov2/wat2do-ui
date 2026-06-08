@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles } from "@/shared/ui/doodle-icons";
 import { Input } from "@/shared/ui/input";
 import { Spinner } from "@/shared/ui/spinner";
 import { cn } from "@/shared/lib/utils";

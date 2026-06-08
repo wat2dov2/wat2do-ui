@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X } from "@/shared/ui/doodle-icons";
 import { Popover, PopoverTrigger, PopoverContent } from "@/shared/ui/popover";
 
 interface MoreFiltersButtonProps {

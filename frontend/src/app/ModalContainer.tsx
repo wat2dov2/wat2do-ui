@@ -21,7 +21,7 @@
 import { useCallback, useState, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Heart, LogIn } from "lucide-react";
+import { Heart, LogIn } from "@/shared/ui/doodle-icons";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { CommandPalette } from "@/shared/components/CommandPalette";
 import { useCreditsStore } from "@/features/credits/store/credits.store";

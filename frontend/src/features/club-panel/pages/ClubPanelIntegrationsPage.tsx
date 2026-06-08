@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Link, MessageCircle } from "lucide-react";
+import { ArrowLeft, Link, MessageCircle } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "@/shared/ui/doodle-icons";
+import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
 import { translateCategory } from "@/shared/utils/event";
 import { PieMenu } from "@/shared/ui/pie-menu";

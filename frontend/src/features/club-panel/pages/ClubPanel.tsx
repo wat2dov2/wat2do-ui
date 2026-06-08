@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Building2, Megaphone, Link, Users } from "lucide-react";
+import { Building2, Megaphone, Link, Users } from "@/shared/ui/doodle-icons";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import { useBackendPosters } from "@/features/posters";
 import { LoadingPage } from "@/shared/ui/loading-page";

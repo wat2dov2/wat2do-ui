@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Coins, Check, CreditCard, AlertCircle } from "lucide-react";
+import { Coins, Check, CreditCard, AlertCircle } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { useConfetti } from "@/shared/hooks/useConfetti";
 import { useBuyCreditsForm } from "@/features/credits/hooks/useBuyCreditsForm";

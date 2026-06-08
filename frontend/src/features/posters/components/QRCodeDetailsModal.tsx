@@ -6,7 +6,7 @@
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
-import { Eye, Megaphone } from "lucide-react";
+import { Eye, Megaphone } from "@/shared/ui/doodle-icons";
 import {
   Dialog,
   DialogContent,

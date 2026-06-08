@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Eye, Users } from "lucide-react";
+import { Eye, Users } from "@/shared/ui/doodle-icons";
 
 interface QRCodeStatsDisplayProps {
   totalScans: number;

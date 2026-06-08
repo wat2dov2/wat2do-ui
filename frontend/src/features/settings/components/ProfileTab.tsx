@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Mail, Camera } from "lucide-react";
+import { Mail, Camera } from "@/shared/ui/doodle-icons";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
 import { LoadingButton } from "@/shared/ui/loading-button";

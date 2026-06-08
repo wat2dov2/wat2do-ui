@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/shared/ui/doodle-icons";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { ViewMode } from "@/shared/types";
 

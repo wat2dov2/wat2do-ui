@@ -9,7 +9,6 @@
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getUserProfile, updateUserProfile, type UserProfile } from "@/features/auth";
-import type { ViewMode, FilterViewMode } from "@/shared/types";
 
 // Re-export UserProfile for feature use
 export type { UserProfile };
@@ -20,10 +19,6 @@ export interface PrivacyPreferences {
   dataSharing: boolean;
 }
 
-export interface AppearancePreferences {
-  viewMode: ViewMode;
-  filterViewMode: FilterViewMode;
-}
 
 // Default values
 const DEFAULT_PRIVACY_PREFS: PrivacyPreferences = {
@@ -58,10 +53,3 @@ export function saveProfile(profile: UserProfile): void {
   updateUserProfile(profile);
 }
 
-/**
- * Appearance Preferences API
- *
- * viewMode and filterViewMode are persisted via the `useUIStore`
- * Zustand store (see `src/shared/store/ui.store.ts`) — no API
- * functions are needed here.
- */

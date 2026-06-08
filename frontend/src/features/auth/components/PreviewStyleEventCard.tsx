@@ -5,7 +5,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ImageOff } from "lucide-react";
+import { ImageOff } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";

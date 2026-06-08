@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 import type { Club, EventFormData, EventFormOccurrence, ValidationErrors } from "@/shared/types";
 
-interface EventFormContextValue {
+export interface EventFormContextValue {
   formData: EventFormData;
   updateField: <K extends keyof EventFormData>(
     field: K,

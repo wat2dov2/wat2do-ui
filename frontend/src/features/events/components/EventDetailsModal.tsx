@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatDisplayDate, formatDisplayTime } from "@/shared/utils/date";
-import { ImageOff, ExternalLink } from "lucide-react";
+import { ImageOff, ExternalLink } from "@/shared/ui/doodle-icons";
 import {
   Dialog,
   DialogContent,

@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronUp, ChevronDown, X } from "lucide-react";
+import { ChevronUp, ChevronDown, X } from "@/shared/ui/doodle-icons";
 import {
   Tooltip,
   TooltipTrigger,

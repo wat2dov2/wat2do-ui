@@ -3,7 +3,7 @@
  * Reusable search input with clear button
  */
 
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/shared/ui/doodle-icons";
 import { Input } from "@/shared/ui/input";
 
 interface AdminSearchBarProps {

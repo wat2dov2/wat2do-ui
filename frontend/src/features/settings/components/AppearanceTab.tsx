@@ -4,11 +4,9 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { Grid3x3, Calendar, MapPin } from "lucide-react";
+import { Grid3x3, Calendar, MapPin } from "@/shared/ui/doodle-icons";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
-import { Toggle } from "@/shared/ui/toggle";
-import { Separator } from "@/shared/ui/separator";
 import {
   Select,
   SelectContent,
@@ -27,8 +25,6 @@ export function AppearanceTab() {
   // Each selector is narrow so only the consuming slot re-renders.
   const viewMode = useUIStore((s) => s.viewMode);
   const setViewMode = useUIStore((s) => s.setViewMode);
-  const filterViewMode = useUIStore((s) => s.filterViewMode);
-  const setFilterViewMode = useUIStore((s) => s.setFilterViewMode);
 
   return (
     <div className="space-y-6">
@@ -101,37 +97,6 @@ export function AppearanceTab() {
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <Separator />
-          <div className="space-y-2">
-            <Label className="text-base font-medium">
-              {t("settings.appearance.filterViewMode")}
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              {t("settings.appearance.filterViewModeDesc")}
-            </p>
-            <div className="flex gap-2">
-              <Toggle
-                pressed={filterViewMode === "visual"}
-                onPressedChange={(pressed) => {
-                  if (pressed) setFilterViewMode("visual");
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                {t("settings.appearance.visual")}
-              </Toggle>
-              <Toggle
-                pressed={filterViewMode === "json"}
-                onPressedChange={(pressed) => {
-                  if (pressed) setFilterViewMode("json");
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                {t("settings.appearance.json")}
-              </Toggle>
-            </div>
           </div>
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { Check, Clock, FileText, User, X as XIcon } from "lucide-react";
+import { Check, Clock, FileText, User, X as XIcon } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,

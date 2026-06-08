@@ -44,8 +44,6 @@
       "viewPreferencesDesc": "Customize how events are displayed",
       "defaultViewMode": "Default View Mode",
       "defaultViewModeDesc": "Choose how events are displayed by default",
-      "filterViewMode": "Filter View Mode",
-      "filterViewModeDesc": "Choose how filters are displayed",
       "grid": "Grid",
       "calendar": "Calendar",
       "map": "Map",

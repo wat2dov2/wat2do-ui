@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, Edit, Trash2, Plus, Instagram, MessageCircle } from "lucide-react";
+import { Users, Edit, Trash2, Plus, Instagram, MessageCircle, Check, X, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -21,6 +21,7 @@ import {
   adminUpdateClub,
   adminDeleteClub,
 } from "@/features/admin/api/admin.api";
+import { useAdminStore } from "@/features/admin/store/admin.store";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminResultsCount } from "@/features/admin/components/shared/AdminResultsCount";
@@ -30,6 +31,9 @@ import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDelet
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
+import { toast } from "@/shared/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
+import { Textarea } from "@/shared/ui/textarea";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
@@ -64,8 +68,41 @@ export function AdminClubsPage({
     refreshClubs,
   } = useAdminClubsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
+  const [activeTab, setActiveTab] = useState<"clubs" | "claims">("clubs");
+  
+  // Load claims from Zustand store
+  const pendingClaims = useAdminStore((s) => s.claims);
+  const fetchClaims = useAdminStore((s) => s.fetchClaims);
+  const approveClaimAction = useAdminStore((s) => s.approveClaim);
+  const rejectClaimAction = useAdminStore((s) => s.rejectClaim);
+
+  const [loadingClaims, setLoadingClaims] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Rejection Dialog State
+  const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [submittingResolution, setSubmittingResolution] = useState(false);
+
   const visibleClubTypes = clubTypes.filter((type) => type.trim().length > 0);
+
+  const loadClaimsData = async () => {
+    setLoadingClaims(true);
+    try {
+      await fetchClaims();
+    } catch (error) {
+      console.error("Failed to load pending claims:", error);
+    } finally {
+      setLoadingClaims(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "claims") {
+      void loadClaimsData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const handleDelete = async (clubId: number) => {
     setIsDeleting(true);
@@ -94,6 +131,48 @@ export function AdminClubsPage({
     }
   };
 
+  const handleApproveClaim = async (claimId: string) => {
+    try {
+      await approveClaimAction(claimId);
+      toast({
+        title: t("common.success") || "Success",
+        description: t("admin.claimApprovedSuccess"),
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Failed to approve claim:", error);
+      toast({
+        title: t("common.error") || "Error",
+        description: t("admin.claimApprovedError"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectClaim = async () => {
+    if (!rejectClaimId) return;
+    setSubmittingResolution(true);
+    try {
+      await rejectClaimAction(rejectClaimId, rejectionReason);
+      toast({
+        title: t("common.success") || "Success",
+        description: t("admin.claimRejectedSuccess"),
+        variant: "success",
+      });
+      setRejectClaimId(null);
+      setRejectionReason("");
+    } catch (error) {
+      console.error("Failed to reject claim:", error);
+      toast({
+        title: t("common.error") || "Error",
+        description: t("admin.claimRejectedError"),
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingResolution(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
@@ -101,159 +180,293 @@ export function AdminClubsPage({
         title={t("admin.manageClubs")}
         description={t("admin.manageClubsDesc")}
         onBack={onBack}
-        action={{
-          label: t("clubs.addClub"),
-          onClick: openAddModal,
-          icon: Plus,
-        }}
+        action={
+          activeTab === "clubs"
+            ? {
+                label: t("clubs.addClub"),
+                onClick: openAddModal,
+                icon: Plus,
+              }
+            : undefined
+        }
       />
 
-      {/* Search and Filters */}
-      <div className="flex gap-3">
-        <AdminSearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder={t("clubs.searchPlaceholder")}
-        />
-        <Select
-          value={selectedClubType || ALL_CLUB_TYPES_VALUE}
-          onValueChange={(value) =>
-            setSelectedClubType(value === ALL_CLUB_TYPES_VALUE ? "" : value)
-          }
+      {/* Tabs toggle */}
+      <div className="flex gap-2 border-b border-border pb-3">
+        <button
+          onClick={() => setActiveTab("clubs")}
+          data-elevation="control"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+            activeTab === "clubs"
+              ? "bg-primary/80 text-primary-foreground font-semibold"
+              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+          }`}
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t("admin.allTypes")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_CLUB_TYPES_VALUE}>
-              {t("admin.allTypes")}
-            </SelectItem>
-            {visibleClubTypes.map((type) => (
-              <SelectItem key={type} value={type}>
-                {type}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {t("admin.clubsList") || "Clubs List"}
+        </button>
+        <button
+          onClick={() => setActiveTab("claims")}
+          data-elevation="control"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
+            activeTab === "claims"
+              ? "bg-primary/80 text-primary-foreground font-semibold"
+              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+          }`}
+        >
+          {t("admin.pendingClaims") || "Pending Claims"}
+          {pendingClaims.length > 0 && (
+            <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
+              {pendingClaims.length}
+            </span>
+          )}
+        </button>
       </div>
 
-      <AdminResultsCount
-        count={filteredClubs.length}
-        singularLabel={t("admin.club")}
-        pluralLabel={t("navigation.clubs")}
-      />
+      {activeTab === "clubs" ? (
+        <>
+          {/* Search and Filters */}
+          <div className="flex gap-3">
+            <AdminSearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder={t("clubs.searchPlaceholder")}
+            />
+            <Select
+              value={selectedClubType || ALL_CLUB_TYPES_VALUE}
+              onValueChange={(value) =>
+                setSelectedClubType(value === ALL_CLUB_TYPES_VALUE ? "" : value)
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("admin.allTypes")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_CLUB_TYPES_VALUE}>
+                  {t("admin.allTypes")}
+                </SelectItem>
+                {visibleClubTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {/* Clubs Table */}
-      {isLoading ? (
-        <LoadingPage />
-      ) : filteredClubs.length > 0 ? (
-        <AdminTable
-          headers={[
-            { label: t("forms.clubName") },
-            { label: t("forms.categories") },
-            { label: t("forms.clubType") },
-            { label: t("forms.ownerUserId") },
-            { label: t("admin.instagram") },
-            { label: t("admin.discord") },
-            { label: t("common.actions"), align: "right" },
-          ]}
-        >
-          {paginatedClubs.map((club) => (
-            <TableRow key={club.id}>
-              <TableCell>
-                <div className="font-medium text-sm text-foreground">
-                  {club.club_name}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-1">
-                  {club.categories.slice(0, 2).map((cat) => (
-                    <span
-                      key={cat}
-                      className="text-xs px-2 py-0.5 bg-secondary rounded-full text-muted-foreground"
-                    >
-                      {cat}
+          <AdminResultsCount
+            count={filteredClubs.length}
+            singularLabel={t("admin.club")}
+            pluralLabel={t("navigation.clubs")}
+          />
+
+          {/* Clubs Table */}
+          {isLoading ? (
+            <LoadingPage />
+          ) : filteredClubs.length > 0 ? (
+            <AdminTable
+              headers={[
+                { label: t("forms.clubName") },
+                { label: t("forms.categories") },
+                { label: t("forms.clubType") },
+                { label: t("forms.ownerUserId") },
+                { label: t("admin.instagram") },
+                { label: t("admin.discord") },
+                { label: t("common.actions"), align: "right" },
+              ]}
+            >
+              {paginatedClubs.map((club) => (
+                <TableRow key={club.id}>
+                  <TableCell>
+                    <div className="font-medium text-sm text-foreground">
+                      {club.club_name}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {club.categories.slice(0, 2).map((cat) => (
+                        <span
+                          key={cat}
+                          className="text-xs px-2 py-0.5 bg-secondary rounded-full text-muted-foreground"
+                        >
+                          {cat}
+                        </span>
+                      ))}
+                      {club.categories.length > 2 && (
+                        <span className="text-xs text-muted-foreground">
+                          +{club.categories.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {club.club_type}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="block max-w-[140px] truncate text-xs text-muted-foreground">
+                      {club.created_by || "-"}
                     </span>
-                  ))}
-                  {club.categories.length > 2 && (
-                    <span className="text-xs text-muted-foreground">
-                      +{club.categories.length - 2}
-                    </span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm text-muted-foreground">
-                  {club.club_type}
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="block max-w-[140px] truncate text-xs text-muted-foreground">
-                  {club.created_by || "-"}
-                </span>
-              </TableCell>
-              <TableCell>
-                {club.ig ? (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Instagram className="size-3.5" />
-                    <span>@{club.ig}</span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {club.discord ? (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <MessageCircle className="size-3.5" />
-                    <span className="max-w-[100px] truncate">{club.discord}</span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="secondary"
-                    size="icon-sm"
-                    onClick={() => openEditModal(club)}
-                    title={t("admin.editClub")}
-                  >
-                    <Edit className="size-4" />
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon-sm"
-                    onClick={() => setDeleteConfirmId(club.id)}
-                    title={t("admin.deleteClub")}
-                    className="hover:bg-error/10 hover:text-error"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </AdminTable>
+                  </TableCell>
+                  <TableCell>
+                    {club.ig ? (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Instagram className="size-3.5" />
+                        <span>@{club.ig}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {club.discord ? (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <MessageCircle className="size-3.5" />
+                        <span className="max-w-[100px] truncate">{club.discord}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        onClick={() => openEditModal(club)}
+                        title={t("admin.editClub")}
+                      >
+                        <Edit className="size-4" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        onClick={() => setDeleteConfirmId(club.id)}
+                        title={t("admin.deleteClub")}
+                        className="hover:bg-error/10 hover:text-error"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </AdminTable>
+          ) : (
+            <AdminEmptyState
+              icon={Users}
+              title={t("admin.noClubsFound")}
+              description={t("admin.noClubsMatchFilters")}
+            />
+          )}
+
+          {filteredClubs.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredClubs.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              itemLabel={t("admin.club")}
+              itemLabelPlural={t("navigation.clubs")}
+              onPageChange={setCurrentPage}
+            />
+          )}
+        </>
       ) : (
-        <AdminEmptyState
-          icon={Users}
-          title={t("admin.noClubsFound")}
-          description={t("admin.noClubsMatchFilters")}
-        />
-      )}
+        <>
+          {/* Pending Claims Section */}
+          <AdminResultsCount
+            count={pendingClaims.length}
+            singularLabel={t("admin.pendingClaim") || "pending claim"}
+            pluralLabel={t("admin.pendingClaims") || "pending claims"}
+          />
 
-      {filteredClubs.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredClubs.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          itemLabel={t("admin.club")}
-          itemLabelPlural={t("navigation.clubs")}
-          onPageChange={setCurrentPage}
-        />
+          {loadingClaims ? (
+            <LoadingPage />
+          ) : pendingClaims.length > 0 ? (
+            <AdminTable
+              headers={[
+                { label: t("forms.clubName") || "Club Name" },
+                { label: t("admin.requestedBy") || "Requested By" },
+                { label: t("admin.executiveRole") || "Executive Role" },
+                { label: t("admin.proofUrl") || "Proof URL" },
+                { label: t("admin.submittedAt") || "Submitted" },
+                { label: t("common.actions"), align: "right" },
+              ]}
+            >
+              {pendingClaims.map((claim) => (
+                <TableRow key={claim.id}>
+                  <TableCell>
+                    <div className="font-semibold text-sm text-foreground">
+                      {claim.clubs?.club_name || `Club #${claim.club_id}`}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium text-foreground">
+                      {claim.users?.full_name || "Applicant"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {claim.users?.email}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-0.5 bg-primary/10 rounded text-primary font-medium">
+                      {claim.executive_role}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {claim.proof_url ? (
+                      <a
+                        href={claim.proof_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <span>{t("admin.viewProof") || "View Proof"}</span>
+                        <ExternalLink className="size-3" />
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{t("admin.noProofProvided") || "No proof provided"}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(claim.created_at).toLocaleDateString()}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        onClick={() => handleApproveClaim(claim.id)}
+                        title={t("admin.approve") || "Approve"}
+                        className="hover:bg-primary/20 hover:text-primary border border-transparent"
+                      >
+                        <Check className="size-4 text-primary" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        onClick={() => setRejectClaimId(claim.id)}
+                        title={t("admin.reject") || "Reject"}
+                        className="hover:bg-error/10 hover:text-error border border-transparent"
+                      >
+                        <X className="size-4 text-error" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </AdminTable>
+          ) : (
+            <AdminEmptyState
+              icon={ShieldAlert}
+              title={t("admin.noPendingClaimsTitle") || "All caught up!"}
+              description={t("admin.noPendingClaimsDesc") || "There are no pending club claims to review right now."}
+            />
+          )}
+        </>
       )}
 
       <AdminDeleteDialog
@@ -271,6 +484,38 @@ export function AdminClubsPage({
         onSave={handleSave}
         initialData={editingClub || undefined}
       />
+
+      {/* Reject Claim Dialog */}
+      <Dialog open={rejectClaimId !== null} onOpenChange={(open) => !open && setRejectClaimId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("admin.rejectClubClaim") || "Reject Club Claim"}</DialogTitle>
+            <DialogDescription>
+              {t("admin.rejectClaimDescription") || "Please provide a reason why this claim is being rejected. This will help the user fix their request."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-3">
+            <Textarea
+              placeholder={t("admin.rejectionPlaceholder") || "e.g. Invalid proof URL or role cannot be verified."}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setRejectClaimId(null)} disabled={submittingResolution}>
+              {t("common.cancel") || "Cancel"}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectClaim}
+              disabled={submittingResolution || !rejectionReason.trim()}
+            >
+              {t("admin.rejectRequest") || "Reject Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

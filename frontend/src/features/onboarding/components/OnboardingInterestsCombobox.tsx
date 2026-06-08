@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef } from "react";
-import { ChevronsUpDown, X } from "lucide-react";
+import { ChevronsUpDown, X } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
 import {
   Popover,

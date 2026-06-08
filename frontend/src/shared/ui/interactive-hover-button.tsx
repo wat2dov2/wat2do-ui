@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/shared/ui/doodle-icons"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/shared/lib/utils"

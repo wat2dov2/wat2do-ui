@@ -58,6 +58,14 @@ def get_latest_added(
     return event_service.get_latest_added_event(school)
 
 
+@router.get("/promoted", response_model=list[EventSummaryResponse])
+def list_promoted_events(
+    school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
+):
+    """Public browse list: only promoted events for a school."""
+    return event_service.list_promoted_events(school=school)
+
+
 @router.get("/", response_model=list[EventSummaryResponse])
 def list_events(
     skip: int = Query(default=0, ge=0),

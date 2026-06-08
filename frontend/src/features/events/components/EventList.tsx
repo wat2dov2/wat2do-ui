@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
 import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
+import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 
 interface EventListProps {
   events: Event[];
+  promotedEvents?: Event[];
   viewMode: "grid" | "calendar" | "map";
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
@@ -15,7 +17,6 @@ interface EventListProps {
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
   savedEventIds: number[];
-  activePromotedEventIds: number[];
 }
 
 const INITIAL_RENDER_COUNT = 24;
@@ -65,13 +66,13 @@ function groupEventsByDateSection(events: Event[]): Record<EventDateCategory, Ev
  */
 export function EventList({
   events,
+  promotedEvents = [],
   viewMode,
   onEventClick,
   disableModal,
   onDelete,
   onClearFilters,
   savedEventIds,
-  activePromotedEventIds,
 }: EventListProps) {
   const { t } = useTranslation();
   const [requestedVisibleCount, setRequestedVisibleCount] = useState(INITIAL_RENDER_COUNT);
@@ -82,18 +83,21 @@ export function EventList({
     () => new Set(savedEventIds),
     [savedEventIds],
   );
-  const promotedSet = useMemo(
-    () => new Set(activePromotedEventIds),
-    [activePromotedEventIds],
-  );
+
+  // Filter out promoted events from the main feed date sections so they don't duplicate
+  const regularEvents = useMemo(() => {
+    const promotedIds = new Set((promotedEvents || []).map((e) => e.id));
+    return events.filter((e) => !promotedIds.has(e.id));
+  }, [events, promotedEvents]);
+
   const visibleCount = Math.min(
     Math.max(requestedVisibleCount, INITIAL_RENDER_COUNT),
-    events.length,
+    regularEvents.length,
   );
   const sectionOrderedEvents = useMemo(() => {
-    const groups = groupEventsByDateSection(events);
+    const groups = groupEventsByDateSection(regularEvents);
     return EVENT_DATE_SECTIONS.flatMap(({ category }) => groups[category]);
-  }, [events]);
+  }, [regularEvents]);
   const visibleEvents = useMemo(
     () => sectionOrderedEvents.slice(0, Math.min(visibleCount, sectionOrderedEvents.length)),
     [sectionOrderedEvents, visibleCount],
@@ -104,7 +108,7 @@ export function EventList({
   );
 
   useEffect(() => {
-    if (visibleCount >= events.length) return;
+    if (visibleCount >= regularEvents.length) return;
     const loadMoreNode = loadMoreRef.current;
     if (!loadMoreNode) return;
 
@@ -112,7 +116,7 @@ export function EventList({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
-        setRequestedVisibleCount((count) => Math.min(count + RENDER_CHUNK_SIZE, events.length));
+        setRequestedVisibleCount((count) => Math.min(count + RENDER_CHUNK_SIZE, regularEvents.length));
       },
       {
         root: scrollRoot,
@@ -122,7 +126,7 @@ export function EventList({
 
     observer.observe(loadMoreNode);
     return () => observer.disconnect();
-  }, [events.length, visibleCount]);
+  }, [regularEvents.length, visibleCount]);
 
   // Early returns AFTER all hooks
   if (viewMode === "calendar") {
@@ -168,6 +172,42 @@ export function EventList({
   // Grid view with content-visibility for performance
   return (
     <div className="space-y-8" role="list" aria-label={`${events.length} events found`}>
+      {/* Promoted Events Section */}
+      {promotedEvents && promotedEvents.length > 0 && (
+        <section className="space-y-3" aria-label={t("events.promotedEvents")}>
+          <h2 className="text-lg font-semibold tracking-normal text-foreground">
+            <DiaTextReveal
+              text={t("events.promotedEvents")}
+              className="text-lg font-semibold tracking-normal text-foreground"
+              textColor="var(--foreground)"
+              colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
+            />
+          </h2>
+          <div
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
+            }}
+          >
+            {promotedEvents.map((event) => (
+              <div
+                key={event.id}
+                role="listitem"
+                className="min-w-0"
+              >
+                <EventCard
+                  event={event}
+                  isSaved={savedSet.has(event.id)}
+                  onEventClick={onEventClick}
+                  disableModal={disableModal}
+                  onDelete={onDelete}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
         const sectionEvents = groupedVisibleEvents[category];
         if (sectionEvents.length === 0) return null;
@@ -192,7 +232,6 @@ export function EventList({
                   <EventCard
                     event={event}
                     isSaved={savedSet.has(event.id)}
-                    isPromoted={promotedSet.has(event.id)}
                     onEventClick={onEventClick}
                     disableModal={disableModal}
                     onDelete={onDelete}
@@ -203,7 +242,7 @@ export function EventList({
           </section>
         );
       })}
-      {visibleCount < events.length && (
+      {visibleCount < regularEvents.length && (
         <div ref={loadMoreRef} aria-hidden="true" className="h-px" />
       )}
     </div>

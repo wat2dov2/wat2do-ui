@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,

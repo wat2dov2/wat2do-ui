@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar, MapPin, Tag, AlertTriangle, Edit, Trash2, Plus } from "lucide-react";
+import { Calendar, MapPin, Tag, AlertTriangle, Edit, Trash2 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -43,11 +43,6 @@ export function AdminEventsPage({
   
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
   const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
-
-  const onCreateEvent = () => {
-    setEditingEvent(null); // Clear editing state first
-    setShowSubmitEvent(true);
-  };
 
   const onEditEvent = (event: Event) => {
     setEditingEvent(event);
@@ -96,15 +91,6 @@ export function AdminEventsPage({
         title={t("admin.manageEvents")}
         description={t("admin.manageEventsDesc")}
         onBack={onBack}
-        action={
-          onCreateEvent
-            ? {
-                label: t("events.createEvent"),
-                onClick: onCreateEvent,
-                icon: Plus,
-              }
-            : undefined
-        }
       />
 
       {/* Search and Filters */}

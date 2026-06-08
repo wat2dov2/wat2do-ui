@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 

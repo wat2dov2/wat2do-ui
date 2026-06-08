@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Check, Sparkles, Megaphone } from "lucide-react";
+import { Check, Sparkles, Megaphone } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import {

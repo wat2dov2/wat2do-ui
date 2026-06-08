@@ -13,7 +13,7 @@ import {
   Palette,
   Shield,
   HelpCircle,
-} from "lucide-react";
+} from "@/shared/ui/doodle-icons";
 import {
   CommandDialog,
   CommandInput,

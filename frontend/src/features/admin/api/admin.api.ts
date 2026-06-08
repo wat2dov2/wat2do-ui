@@ -45,23 +45,23 @@ function toReportedEvent(row: ReportResponse): ReportedEvent {
 function toEventFormData(eventData: ApiEventCreate): EventFormData {
   return {
     club_id: eventData.club_id ?? null,
-    title: eventData.title,
+    title: eventData.title || "",
     description: eventData.description ?? "",
-    occurrences: eventData.occurrences.map((occurrence) => {
-      const startsAt = new Date(occurrence.dtstart_utc);
+    occurrences: (eventData.occurrences || []).map((occurrence) => {
+      const startsAt = occurrence.dtstart_utc ? new Date(occurrence.dtstart_utc) : null;
       const endsAt = occurrence.dtend_utc ? new Date(occurrence.dtend_utc) : null;
       return {
-        dtstart_local: startsAt.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16),
+        dtstart_local: startsAt ? startsAt.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : "",
         dtend_local: endsAt
           ? endsAt.toLocaleString("sv-SE").replace(" ", "T").slice(0, 16)
           : "",
       };
     }),
-    location: eventData.location,
+    location: eventData.location || "",
     category: eventData.category ?? DEFAULT_EVENT_CATEGORY,
     price: eventData.price ?? 0,
     food: eventData.food ?? [],
-    registration: eventData.registration,
+    registration: eventData.registration ?? false,
   };
 }
 
@@ -146,6 +146,24 @@ export async function updateEventSubmission(
 
 // ── Admin Clubs API ─────────────────────────────────────────────────
 
+export interface ClubClaim {
+  id: string;
+  club_id: number;
+  user_id: string;
+  executive_role: string;
+  proof_url: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  clubs?: Club;
+  users?: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
 export async function loadAdminClubsData(): Promise<{
   clubs: Club[];
   clubTypes: string[];
@@ -155,4 +173,19 @@ export async function loadAdminClubsData(): Promise<{
     getClubTypesData(),
   ]);
   return { clubs, clubTypes };
+}
+
+export async function getPendingClaims(): Promise<ClubClaim[]> {
+  return api.get<ClubClaim[]>("/clubs/claims/pending");
+}
+
+export async function resolveClaim(
+  claimId: string,
+  status: "approved" | "rejected",
+  rejectionReason?: string
+): Promise<ClubClaim> {
+  return api.patch<ClubClaim>(`/clubs/claims/${claimId}`, {
+    status,
+    rejection_reason: rejectionReason || null,
+  });
 }

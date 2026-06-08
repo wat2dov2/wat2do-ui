@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MapPin, DollarSign, Utensils, Plus, Trash2 } from "lucide-react";
+import { MapPin, DollarSign, Utensils, Plus, Trash2 } from "@/shared/ui/doodle-icons";
 import {
   Field,
   FieldError,

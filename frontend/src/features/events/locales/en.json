@@ -8,7 +8,7 @@
     "status": "Status",
     "dayOfWeek": "Day of Week",
     "sourceLink": "Source Link",
-    "createEvent": "Create Event",
+    "createEvent": "Submit Event",
     "submitEventFor": "Submit Event for",
     "submitEventForSchool": "Submit Event for {{school}}",
     "submitEventForReview": "Submit Event for Review",
@@ -46,6 +46,7 @@
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",
+    "promotedEvents": "Promoted Events",
     "dateSections": {
       "today": "Today",
       "tomorrow": "Tomorrow",

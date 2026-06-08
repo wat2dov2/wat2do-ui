@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ImageOff } from "lucide-react";
+import { ImageOff } from "@/shared/ui/doodle-icons";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {

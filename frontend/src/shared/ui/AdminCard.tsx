@@ -3,8 +3,8 @@
  * Reusable card component for admin navigation and activity items
  */
 
-import type { LucideIcon } from "lucide-react";
-import { ArrowRight } from "lucide-react";
+import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import { ArrowRight } from "@/shared/ui/doodle-icons";
 
 interface AdminCardProps {
   icon: LucideIcon;

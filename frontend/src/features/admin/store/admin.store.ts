@@ -11,6 +11,9 @@ import {
   getEventSubmissions,
   getReportedEvents,
   updateEventSubmission,
+  getPendingClaims,
+  resolveClaim,
+  type ClubClaim,
 } from "@/features/admin/api/admin.api";
 import {
   REPORT_PENDING,
@@ -29,12 +32,16 @@ interface LoadedAt {
 interface AdminState {
   submissions: EventSubmission[];
   reportedEventIds: Set<number>;
+  claims: ClubClaim[];
   loadedAt: LoadedAt;
 
   fetchSubmissions: (force?: boolean) => Promise<void>;
   fetchReportedEventIds: (force?: boolean) => Promise<void>;
+  fetchClaims: () => Promise<void>;
   approveSubmission: (id: string) => Promise<void>;
   rejectSubmission: (id: string, reason: string) => Promise<void>;
+  approveClaim: (id: string) => Promise<void>;
+  rejectClaim: (id: string, reason?: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -44,6 +51,7 @@ const fresh = (ts: number | undefined): boolean =>
 export const useAdminStore = create<AdminState>((set, get) => ({
   submissions: [],
   reportedEventIds: new Set<number>(),
+  claims: [],
   loadedAt: {},
 
   fetchSubmissions: async (force = false) => {
@@ -77,6 +85,15 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
+  fetchClaims: async () => {
+    try {
+      const claims = await getPendingClaims();
+      set({ claims });
+    } catch (err) {
+      console.error("Failed to fetch pending claims:", err);
+    }
+  },
+
   approveSubmission: async (id) => {
     try {
       await updateEventSubmission(id, SUBMISSION_APPROVED);
@@ -107,10 +124,35 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
+  approveClaim: async (id) => {
+    try {
+      await resolveClaim(id, "approved");
+      set((state) => ({
+        claims: state.claims.filter((c) => c.id !== id),
+      }));
+    } catch (err) {
+      console.error("Failed to approve claim:", err);
+      throw err;
+    }
+  },
+
+  rejectClaim: async (id, reason) => {
+    try {
+      await resolveClaim(id, "rejected", reason);
+      set((state) => ({
+        claims: state.claims.filter((c) => c.id !== id),
+      }));
+    } catch (err) {
+      console.error("Failed to reject claim:", err);
+      throw err;
+    }
+  },
+
   reset: () => {
     set({
       submissions: [],
       reportedEventIds: new Set<number>(),
+      claims: [],
       loadedAt: {},
     });
   },

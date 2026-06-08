@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/shared/ui/doodle-icons";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/shared/ui/button";
 import {

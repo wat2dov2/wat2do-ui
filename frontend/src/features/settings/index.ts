@@ -14,6 +14,5 @@ export { setDailyNewEventsEmailPreferenceAPI } from "./api/notificationPreferenc
 // Types
 export type {
   PrivacyPreferences,
-  AppearancePreferences,
 } from "./api/settings.api";
 export type { NotificationPreferences } from "./api/notificationPreferences.api";

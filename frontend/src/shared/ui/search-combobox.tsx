@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Search } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
 import {
   Popover,

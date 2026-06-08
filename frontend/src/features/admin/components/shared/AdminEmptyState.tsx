@@ -3,7 +3,7 @@
  * Reusable empty state display
  */
 
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/shared/ui/doodle-icons";
 
 interface AdminEmptyStateProps {
   icon: LucideIcon;

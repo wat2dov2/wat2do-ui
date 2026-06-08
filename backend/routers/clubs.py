@@ -36,8 +36,11 @@ from schemas.invitation import (
     ClubInvitationPublicResponse,
     ClubInvitationResponse,
 )
+from schemas.claim import ClubClaimCreate, ClubClaimResponse, ClubClaimUpdate
+from schemas.join_request import ClubJoinRequestCreate, ClubJoinRequestResponse, ClubJoinRequestUpdate
 from schemas.user import UserResponse
 from services import club_membership_service, club_service
+
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
 
@@ -393,3 +396,62 @@ def remove_club_membership(
     success = club_membership_service.delete_membership(club_id, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Membership not found")
+
+# --- Club Claims & Join Requests Endpoints ---
+
+@router.post("/{club_id}/claims", response_model=ClubClaimResponse, status_code=status.HTTP_201_CREATED)
+def create_claim(
+    club_id: int,
+    data: ClubClaimCreate,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Submit a claim for an unowned club."""
+    return club_service.create_claim(club_id, db_user.id, data.executive_role, data.proof_url)
+
+
+@router.get("/claims/pending", response_model=list[ClubClaimResponse])
+def list_pending_claims(_: UserResponse = Depends(get_admin_user)):
+    """List pending claims (admin only)."""
+    return club_service.list_pending_claims()
+
+
+@router.patch("/claims/{claim_id}", response_model=ClubClaimResponse)
+def update_claim(
+    claim_id: UUID,
+    data: ClubClaimUpdate,
+    _: UserResponse = Depends(get_admin_user),
+):
+    """Approve or reject a claim (admin only)."""
+    return club_service.update_claim(claim_id, data.status, data.rejection_reason)
+
+
+@router.post("/{club_id}/join-requests", response_model=ClubJoinRequestResponse, status_code=status.HTTP_201_CREATED)
+def create_join_request(
+    club_id: int,
+    data: ClubJoinRequestCreate,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Submit a request to join a club's management team."""
+    return club_service.create_join_request(club_id, db_user.id, data.pitch)
+
+
+@router.get("/{club_id}/join-requests", response_model=list[ClubJoinRequestResponse])
+def list_join_requests(
+    club_id: int,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """List pending join requests for a club (members only)."""
+    _get_club_or_403(club_id, db_user)
+    return club_service.list_join_requests(club_id)
+
+
+@router.patch("/{club_id}/join-requests/{request_id}", response_model=ClubJoinRequestResponse)
+def update_join_request(
+    club_id: int,
+    request_id: UUID,
+    data: ClubJoinRequestUpdate,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    """Approve or reject a join request (members only)."""
+    _get_club_or_403(club_id, db_user)
+    return club_service.update_join_request(request_id, data.status)

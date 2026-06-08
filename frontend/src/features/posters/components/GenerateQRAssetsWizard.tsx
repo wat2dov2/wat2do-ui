@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { QrCode, ArrowLeft, ArrowRight, Download } from "lucide-react";
+import { QrCode, ArrowLeft, ArrowRight, Download } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";

@@ -1,4 +1,4 @@
-import { Circle } from "lucide-react";
+import { Circle } from "@/shared/ui/doodle-icons";
 
 interface RadioOption {
   value: string;

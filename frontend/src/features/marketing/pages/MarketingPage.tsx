@@ -6,7 +6,7 @@ import {
   Eye,
   QrCode,
   Users,
-} from "lucide-react";
+} from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   CreateQRCodeModal,

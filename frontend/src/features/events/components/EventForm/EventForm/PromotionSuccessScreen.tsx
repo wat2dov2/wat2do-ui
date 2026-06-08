@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import {

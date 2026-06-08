@@ -1,6 +1,6 @@
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle } from "@/shared/ui/doodle-icons";
 import { withTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Button } from "@/shared/ui/button";

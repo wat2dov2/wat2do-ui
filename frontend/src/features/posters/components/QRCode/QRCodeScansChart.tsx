@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Calendar } from "lucide-react";
+import { Calendar } from "@/shared/ui/doodle-icons";
 import {
   Select,
   SelectContent,

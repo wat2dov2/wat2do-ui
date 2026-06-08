@@ -16,6 +16,7 @@ import { EventFormStep, type ViewMode } from "@/features/events/components/Event
 import { SubmitSuccessStep } from "@/features/events/components/SubmitSuccessStep";
 import { PromotionUpsell } from "@/features/events/components/EventForm/EventForm/PromotionUpsell";
 import { PromotionSuccessScreen } from "@/features/events/components/EventForm/EventForm/PromotionSuccessScreen";
+import { EventFormProvider, type EventFormContextValue } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import type { EventFormData } from "@/shared/types";
 
 interface SubmitEventModalProps {
@@ -152,32 +153,38 @@ function SubmitEventModalFormBody({
 
   const stepRenderers: Record<ModalStep, () => React.ReactElement> = {
     "promotion-success": () => (
-      <PromotionSuccessScreen
-        isOpen={isOpen}
-        onClose={handleClose}
-      />
+      <EventFormProvider value={{ formData: eventForm.formData } as unknown as EventFormContextValue}>
+        <PromotionSuccessScreen
+          isOpen={isOpen}
+          onClose={handleClose}
+        />
+      </EventFormProvider>
     ),
     "promotion-upsell": () => (
-      <PromotionUpsell
-        isOpen={isOpen}
-        onClose={handleClose}
-        onPromote={eventFormPromotion.handlePromote}
-        onBuyCredits={onBuyCredits || (() => {})}
-        userCredits={userCredits}
-      />
+      <EventFormProvider value={{ formData: eventForm.formData } as unknown as EventFormContextValue}>
+        <PromotionUpsell
+          isOpen={isOpen}
+          onClose={handleClose}
+          onPromote={eventFormPromotion.handlePromote}
+          onBuyCredits={onBuyCredits || (() => {})}
+          userCredits={userCredits}
+        />
+      </EventFormProvider>
     ),
     "submit-success": () => (
-      <SubmitSuccessStep
-        isOpen={isOpen}
-        onClose={handleClose}
-        onPromote={
-          onPromote && submitResult?.createdEventId != null
-            ? () => eventFormPromotion.setShowPromotion(true)
-            : undefined
-        }
-        isEditMode={isEditMode}
-        isSubmissionOnly={submitResult?.createdEventId == null}
-      />
+      <EventFormProvider value={{ formData: eventForm.formData, selectedClubName: "" } as unknown as EventFormContextValue}>
+        <SubmitSuccessStep
+          isOpen={isOpen}
+          onClose={handleClose}
+          onPromote={
+            onPromote && submitResult?.createdEventId != null
+               ? () => eventFormPromotion.setShowPromotion(true)
+               : undefined
+          }
+          isEditMode={isEditMode}
+          isSubmissionOnly={submitResult?.createdEventId == null}
+        />
+      </EventFormProvider>
     ),
     "form": () => (
       <>

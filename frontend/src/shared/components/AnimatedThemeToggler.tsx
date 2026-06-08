@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun } from "@/shared/ui/doodle-icons"
 import { flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/shared/lib/utils"

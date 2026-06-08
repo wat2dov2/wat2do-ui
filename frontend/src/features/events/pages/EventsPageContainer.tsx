@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
-import { Utensils, Heart } from "lucide-react";
+import { Utensils, Heart } from "@/shared/ui/doodle-icons";
 import { EventList, EventCount } from "@/features/events";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { LightRays } from "@/registry/magicui/light-rays";
-import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
@@ -31,7 +30,7 @@ export function EventsPageContainer() {
     error,
     fetchEvents,
     savedEventIds,
-    activePromotedEventIds,
+    promotedEvents,
     latestAddedEvent,
     filters,
     orderedEvents,
@@ -163,11 +162,11 @@ export function EventsPageContainer() {
         ) : (
           <EventList
             events={orderedEvents}
+            promotedEvents={promotedEvents}
             viewMode={viewMode}
             onDelete={handleDeleteEvent}
             onClearFilters={filters.handleClearAllFilters}
             savedEventIds={savedEventIds}
-            activePromotedEventIds={activePromotedEventIds}
           />
         )}
       </main>
@@ -200,16 +199,10 @@ function LatestAddedButton({ title, addedAt, onClick }: LatestAddedButtonProps) 
     <button
       type="button"
       onClick={onClick}
-      className="relative -top-px text-left text-xs text-muted-foreground transition-colors [--latest-added-text-color:var(--muted-foreground)] hover:text-foreground hover:[--latest-added-text-color:var(--foreground)]"
+      className="relative -top-px text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
       aria-label={label}
     >
-      <DiaTextReveal
-        key={label}
-        className="text-xs"
-        text={label}
-        textColor="var(--latest-added-text-color)"
-        colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
-      />
+      {label}
     </button>
   );
 }

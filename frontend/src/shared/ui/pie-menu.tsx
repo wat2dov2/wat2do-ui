@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { m } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 import { Z_INDEX } from "@/shared/constants/zIndex";
-import { Check } from "lucide-react";
+import { Check } from "@/shared/ui/doodle-icons";
 
 interface PieMenuItem {
   id: string;

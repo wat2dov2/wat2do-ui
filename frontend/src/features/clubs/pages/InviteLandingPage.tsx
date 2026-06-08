@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ShieldAlert, CheckCircle, MailOpen, ArrowRight, UserCheck } from "lucide-react";
+import { ShieldAlert, CheckCircle, MailOpen, ArrowRight, UserCheck } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Card, CardTitle, CardDescription, CardContent } from "@/shared/ui/card";
 import { Spinner } from "@/shared/ui/spinner";

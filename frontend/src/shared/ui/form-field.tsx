@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Calendar as CalendarIcon, ChevronDownIcon } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronDownIcon } from "@/shared/ui/doodle-icons";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/shared/ui/input";

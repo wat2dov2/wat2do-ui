@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
 import { AnimatePresence, m } from "framer-motion";
-import { Mail } from "lucide-react";
+import { Mail } from "@/shared/ui/doodle-icons";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
 import { useUpdateProfile } from "../hooks/useUpdateProfile";
 import { getUserId } from "@/features/auth";

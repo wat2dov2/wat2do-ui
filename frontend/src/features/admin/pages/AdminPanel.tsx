@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "lucide-react";
+import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AdminCard } from "@/shared/ui/AdminCard";

@@ -3,7 +3,7 @@ import Map from "react-map-gl/mapbox";
 import { Marker } from "@vis.gl/react-mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { QRCode, QRCodeScan } from "@/features/posters/types";
-import { MapPin, Zap } from "lucide-react";
+import { MapPin, Zap } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 
 interface QRScanMapProps {

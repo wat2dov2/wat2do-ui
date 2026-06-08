@@ -5,7 +5,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronsUpDown, LogOut, Search, Shield } from "lucide-react";
+import { Check, ChevronsUpDown, LogOut, Search, Shield } from "@/shared/ui/doodle-icons";
 import {
   Tooltip,
   TooltipTrigger,

@@ -22,6 +22,17 @@ export async function fetchAllEvents(school?: string): Promise<Event[]> {
   return apiEvents;
 }
 
+/**
+ * Fetch promoted events from backend API.
+ */
+export async function fetchPromotedEvents(school?: string): Promise<Event[]> {
+  const params = new URLSearchParams();
+  if (school) params.set("school", school);
+  const qs = params.toString();
+  const apiEvents = await api.get<ApiEventResponse[]>(`/events/promoted${qs ? `?${qs}` : ""}`);
+  return apiEvents;
+}
+
 /** Response from GET /events/latest-added */
 export interface LatestAddedEvent {
   title: string;

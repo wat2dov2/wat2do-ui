@@ -8,7 +8,7 @@ import {
   Settings,
   Compass,
   Plus,
-} from "lucide-react";
+} from "@/shared/ui/doodle-icons";
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
@@ -31,6 +31,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     return pathname.startsWith(href);
   };
 
+  const isClubPanel = pathname.startsWith(ROUTES.CLUB_PANEL);
+
   const dockItems: FloatingDockItem[] = [
     {
       title: t("common.search"),
@@ -43,11 +45,15 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.HOME,
       isActive: isActive(ROUTES.HOME),
     },
-    {
-      title: t("navigation.create"),
-      icon: <Plus className="size-4" />,
-      onClick: () => setShowSubmitEvent(true),
-    },
+    ...(!isClubPanel
+      ? [
+          {
+            title: t("navigation.create"),
+            icon: <Plus className="size-4" />,
+            onClick: () => setShowSubmitEvent(true),
+          },
+        ]
+      : []),
     {
       title: t("navigation.clubs"),
       icon: <Shield className="size-4" />,

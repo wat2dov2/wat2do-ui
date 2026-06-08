@@ -11,6 +11,7 @@ import i18n from "@/shared/lib/i18n";
 import type { Event as AppEvent, EventFormData } from "@/shared/types";
 import {
   fetchAllEvents,
+  fetchPromotedEvents,
   createEventAPI,
   updateEventAPI,
   deleteEventAPI,
@@ -23,12 +24,15 @@ import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/u
 
 interface EventsState {
   events: AppEvent[];
+  promotedEvents: AppEvent[];
   isLoading: boolean;
+  isPromotedLoading: boolean;
   error: string | null;
   schoolFilter: string | null;
 
   /** Fetch all events from backend for the current school filter. */
   fetchEvents: () => Promise<void>;
+  fetchPromotedEvents: () => Promise<void>;
   setSchoolFilter: (school: string) => void;
   addEvent: (data: EventFormData) => Promise<number>;
   updateEvent: (eventId: number, data: EventFormData) => Promise<void>;
@@ -54,7 +58,9 @@ function getSchoolFetchKey(school: string | null): string {
 
 export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
+  promotedEvents: [],
   isLoading: true,
+  isPromotedLoading: false,
   error: null,
   schoolFilter: getInitialSchoolFilter(),
 
@@ -64,6 +70,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     const fetchId = ++_latestFetchId;
 
     set({ isLoading: true, error: null });
+    get().fetchPromotedEvents();
 
     let fetchPromise = _fetchesBySchool.get(schoolKey);
     if (!fetchPromise) {
@@ -85,6 +92,18 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       const message = getApiErrorMessage(err, i18n.t("events.loadFailed"));
       console.error("Failed to fetch events:", err);
       set({ isLoading: false, error: message });
+    }
+  },
+
+  fetchPromotedEvents: async () => {
+    const school = get().schoolFilter;
+    set({ isPromotedLoading: true });
+    try {
+      const promotedEvents = await fetchPromotedEvents(school ?? undefined);
+      set({ promotedEvents, isPromotedLoading: false });
+    } catch (err) {
+      console.error("Failed to fetch promoted events:", err);
+      set({ isPromotedLoading: false });
     }
   },
 

@@ -161,6 +161,17 @@ def list_events(
     return page[skip : skip + limit]
 
 
+def list_promoted_events(school: str | None = None) -> list[EventSummaryResponse]:
+    """Return upcoming promoted events for a school."""
+    from services import credit_service
+
+    active_ids = credit_service.get_active_promoted_event_ids()
+    if not active_ids:
+        return []
+    all_upcoming = list_events(school=school, limit=MAX_LIST_LIMIT)
+    return [e for e in all_upcoming if e.id in active_ids]
+
+
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
     payload.pop("occurrences", None)

@@ -675,3 +675,107 @@ def accept_invitation(token: str, user_id: UUID) -> bool:
     # 3. Mark invitation as accepted
     get_sb().table(CLUB_INVITATIONS).update({"status": "accepted"}).eq("id", inv["id"]).execute()
     return True
+
+
+# --- Club Claims & Join Requests Service Methods ---
+
+def create_claim(club_id: int, user_id: UUID, role: str, proof_url: str | None) -> dict:
+    club = get_club(club_id)
+    if not club:
+        raise NotFoundError("Club not found")
+    if club.created_by is not None:
+        raise ConflictError("Club is already claimed")
+
+    payload = {
+        "club_id": club_id,
+        "user_id": str(user_id),
+        "executive_role": role,
+        "proof_url": proof_url,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    r = get_sb().table("club_claims").insert(payload).execute()
+    if not r.data:
+        raise APIError("Failed to submit claim")
+    return r.data[0]
+
+
+def list_pending_claims() -> list[dict]:
+    r = get_sb().table("club_claims").select("*, clubs(*), users(*)").eq("status", "pending").execute()
+    return r.data or []
+
+
+def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = None) -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    r = get_sb().table("club_claims").update({
+        "status": status,
+        "rejection_reason": rejection_reason,
+        "updated_at": now
+    }).eq("id", str(claim_id)).execute()
+
+    if not r.data:
+        raise NotFoundError("Claim not found")
+
+    claim = r.data[0]
+    if status == "approved":
+        # Get the supabase_auth_id of the user
+        r_user = get_sb().table("users").select("supabase_auth_id").eq("id", claim["user_id"]).execute()
+        if r_user.data:
+            supabase_auth_id = r_user.data[0]["supabase_auth_id"]
+            # Set club creator
+            get_sb().table("clubs").update({"created_by": supabase_auth_id}).eq("id", claim["club_id"]).execute()
+        # Add to club members
+        try:
+            add_club_member(claim["club_id"], UUID(claim["user_id"]))
+        except ConflictError:
+            pass
+
+    return claim
+
+
+def create_join_request(club_id: int, user_id: UUID, pitch: str) -> dict:
+    club = get_club(club_id)
+    if not club:
+        raise NotFoundError("Club not found")
+    if is_club_member(club_id, str(user_id)):
+        raise ConflictError("You are already a member of this club")
+
+    payload = {
+        "club_id": club_id,
+        "user_id": str(user_id),
+        "pitch": pitch,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    r = get_sb().table("club_join_requests").insert(payload).execute()
+    if not r.data:
+        raise APIError("Failed to submit join request")
+    return r.data[0]
+
+
+def list_join_requests(club_id: int) -> list[dict]:
+    r = get_sb().table("club_join_requests").select("*, users(*)").eq("club_id", club_id).eq("status", "pending").execute()
+    return r.data or []
+
+
+def update_join_request(request_id: UUID, status: str) -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    r = get_sb().table("club_join_requests").update({
+        "status": status,
+        "updated_at": now
+    }).eq("id", str(request_id)).execute()
+
+    if not r.data:
+        raise NotFoundError("Join request not found")
+
+    req = r.data[0]
+    if status == "approved":
+        try:
+            add_club_member(req["club_id"], UUID(req["user_id"]))
+        except ConflictError:
+            pass
+
+    return req
+

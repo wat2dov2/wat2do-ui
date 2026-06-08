@@ -5,11 +5,9 @@ import { useSearch } from "@/features/search";
 import { useLatestAddedEvent } from "@/features/events/hooks/useLatestAddedEvent";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { useCreditsStore } from "@/features/credits";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { getUniqueEvents } from "@/shared/utils/event";
-import { useShallow } from "zustand/react/shallow";
 
 interface UseEventsPageDataOptions {
   profileCompleted: boolean;
@@ -24,19 +22,14 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   const { t } = useTranslation();
   // Read from stores (single source of truth -- no duplicate fetches)
   const events = useEventsStore((s) => s.events);
+  const promotedEvents = useEventsStore((s) => s.promotedEvents);
   const isLoading = useEventsStore((s) => s.isLoading);
+  const isPromotedLoading = useEventsStore((s) => s.isPromotedLoading);
   const error = useEventsStore((s) => s.error);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const fetchEvents = useEventsStore((s) => s.fetchEvents);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
-  // Custom equality: the store re-sets this array on every reconcile, so
-  // the reference changes even when the ID set is identical. ``useShallow``
-  // does element-wise reference equality on the array (zustand v5 dropped
-  // the equalityFn second arg).
-  const activePromotedEventIds = useCreditsStore(
-    useShallow((s) => s.activePromotedEventIds),
-  );
 
   const { latest: latestAddedEvent } = useLatestAddedEvent(schoolFilter ?? undefined);
 
@@ -49,28 +42,24 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   });
 
   // Single authoritative ordering pipeline:
-  //   1. Promoted events float to the top.
-  //   2. Within each group, recommended events sort by score (desc).
-  //   3. Otherwise preserve the original filtered order.
+  //   1. Within each group, recommended events sort by score (desc).
+  //   2. Otherwise preserve the original filtered order.
   // Dedupe happens here so the list consumer does not need to repeat it.
   const orderedEvents = useMemo(() => {
     const deduped = getUniqueEvents(filters.filteredEvents);
-    const promotedSet = new Set(activePromotedEventIds);
     const scoreMap =
       recommendations.length === 0
         ? null
         : new Map(recommendations.map((r) => [r.event_id, r.score]));
 
     // Attach a numeric priority tuple to each event, then stable-sort by it.
-    // (promotedRank, -score, originalIndex) — lower is earlier.
+    // (-score, originalIndex) — lower is earlier.
     const withRank = deduped.map((event, index) => {
-      const promotedRank = promotedSet.has(event.id) ? 0 : 1;
       const score = scoreMap?.get(event.id) ?? -1;
-      return { event, promotedRank, score, index };
+      return { event, score, index };
     });
 
     withRank.sort((a, b) => {
-      if (a.promotedRank !== b.promotedRank) return a.promotedRank - b.promotedRank;
       if (a.score >= 0 && b.score < 0) return -1;
       if (a.score < 0 && b.score >= 0) return 1;
       if (a.score >= 0 && b.score >= 0 && a.score !== b.score) return b.score - a.score;
@@ -78,7 +67,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     });
 
     return withRank.map((x) => x.event);
-  }, [filters.filteredEvents, recommendations, activePromotedEventIds]);
+  }, [filters.filteredEvents, recommendations]);
 
   const handleDeleteEvent = useCallback(
     async (eventId: number) => {
@@ -99,10 +88,11 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
 
   return {
     isLoading,
+    isPromotedLoading,
     error,
     fetchEvents,
     savedEventIds,
-    activePromotedEventIds,
+    promotedEvents,
     latestAddedEvent,
     recsLoading,
     filters,

@@ -9,7 +9,7 @@ import { Suspense } from "react";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { Megaphone, ArrowLeft, MapPin } from "lucide-react";
+import { Megaphone, ArrowLeft, MapPin } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/spinner";
 import {

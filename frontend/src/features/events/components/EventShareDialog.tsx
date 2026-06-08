@@ -6,7 +6,7 @@ import {
   Linkedin,
   Mail,
   MessageCircle,
-} from "lucide-react";
+} from "@/shared/ui/doodle-icons";
 import {
   Dialog,
   DialogContent,

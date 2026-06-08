@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
-import { GraduationCap, BookOpen } from "lucide-react";
+import { GraduationCap, BookOpen } from "@/shared/ui/doodle-icons";
 
 interface OnboardingYearStepProps {
   isFirstYear: boolean | null;

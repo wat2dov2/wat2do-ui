@@ -1,4 +1,4 @@
-import { Coins } from "lucide-react";
+import { Coins } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import {

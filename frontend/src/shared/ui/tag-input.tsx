@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
