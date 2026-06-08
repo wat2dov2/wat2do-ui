@@ -33,7 +33,7 @@
     "removeSuccess": "Member removed successfully!",
     "actions": "Actions",
     "noActiveClubSelected": "No Active Organization Selected",
-    "noActiveClubSelectedDesc": "You do not currently have an active organization profile configured. Please select or join a organization first.",
+    "noActiveClubSelectedDesc": "You do not currently have an active organization profile configured. Please select or join an organization first.",
     "inviteOrAddManager": "Invite or Add Manager",
     "inviteOrAddManagerDesc": "Invite any email address to help manage your organization. They will be auto-added if they register or log in.",
     "sending": "Sending...",

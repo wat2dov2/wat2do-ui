@@ -21,7 +21,7 @@
   },
   "promotion": {
     "promoteEvent": "Promote this event",
-    "getMoreVisibility": "Promote \"{{title}}\" with a simple featured placement for official club events.",
+    "getMoreVisibility": "Promote \"{{title}}\" with a simple featured placement for official organization events.",
     "bestValue": "BEST VALUE",
     "maybeLater": "Maybe Later",
     "notEnoughCredits": "Not enough credits",
