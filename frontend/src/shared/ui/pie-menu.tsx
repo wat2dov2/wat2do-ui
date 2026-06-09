@@ -15,7 +15,7 @@ interface PieMenuItem {
   label: string;
   icon?: React.ReactNode;
   disabled?: boolean;
-  onClick?: () => void;
+  onMouseDown?: () => void;
 }
 
 export interface PieMenuProps {
@@ -239,7 +239,7 @@ export function PieMenu({
                     e.stopPropagation();
                     e.preventDefault();
                     if (!item.disabled) {
-                      item.onClick?.();
+                      item.onMouseDown?.();
                       onSelect?.(item);
                       if (closeOnSelect) onClose();
                     }

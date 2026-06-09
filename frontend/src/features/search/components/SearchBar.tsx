@@ -38,7 +38,7 @@ export function SearchBar({
         />
         {searchQuery && (
           <button
-            onClick={onSearchClear}
+            onMouseDown={onSearchClear}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="size-4" />

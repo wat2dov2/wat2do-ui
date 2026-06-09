@@ -159,7 +159,7 @@ export function EventList({
         </p>
         {onClearFilters && (
           <button
-            onClick={onClearFilters}
+            onMouseDown={onClearFilters}
             className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
           >
             {t("events.clearAllFilters")}

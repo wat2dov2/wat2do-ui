@@ -9,13 +9,13 @@ import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganiza
 import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useAuthState } from "@/features/auth";
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 
 
 export function OrganizationsPage() {
   const { t } = useTranslation();
   const { isAuthenticated: authed } = useAuthState();
-  const savedClubIds = useSavedOrganizationsStore((s) => s.savedClubIds);
+  const savedOrganizationIds = useSavedOrganizationsStore((s) => s.savedOrganizationIds);
   const [activeTab, setActiveTab] = useState<"all" | "followed">("all");
 
   const {
@@ -28,11 +28,11 @@ export function OrganizationsPage() {
     isLoading,
   } = useOrganizationsPage();
 
-  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
 
-  // Filter clubs shown in the active tab
+  // Filter organizations shown in the active tab
   const displayOrgs = activeTab === "followed"
-    ? filteredOrganizations.filter((club) => savedClubIds.includes(club.id))
+    ? filteredOrganizations.filter((club) => savedOrganizationIds.includes(club.id))
     : filteredOrganizations;
 
   return (
@@ -51,7 +51,7 @@ export function OrganizationsPage() {
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery("")}
+              onMouseDown={() => setSearchQuery("")}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <svg
@@ -78,7 +78,7 @@ export function OrganizationsPage() {
             allCategories.slice(0, 10).map((category) => (
               <button
                 key={category}
-                onClick={() => toggleCategory(category)}
+                onMouseDown={() => toggleCategory(category)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   selectedCategories.includes(category)
                     ? "bg-primary/80 text-primary-foreground"
@@ -94,7 +94,7 @@ export function OrganizationsPage() {
       {/* Tabs */}
       <div className="flex border-b border-border">
         <button
-          onClick={() => setActiveTab("all")}
+          onMouseDown={() => setActiveTab("all")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
             activeTab === "all"
               ? "border-primary text-foreground"
@@ -105,7 +105,7 @@ export function OrganizationsPage() {
           {t("organizations.allClubs") || "All Organizations"}
         </button>
         <button
-          onClick={() => setActiveTab("followed")}
+          onMouseDown={() => setActiveTab("followed")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
             activeTab === "followed"
               ? "border-primary text-foreground"
@@ -121,7 +121,7 @@ export function OrganizationsPage() {
       {isLoading ? (
         <LoadingPage />
       ) : activeTab === "followed" && !authed ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 border border-dashed border-border rounded-2xl bg-card">
+        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl bg-card">
           <Bookmark className="size-10 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
             {t("organizations.signInToViewClubs") || "Sign in to view followed organizations"}
@@ -147,7 +147,7 @@ export function OrganizationsPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
             {displayOrgs.map((club) => (
-              <OrganizationCard key={club.id} club={club} onClick={() => setSelectedClub(club)} />
+              <OrganizationCard key={club.id} club={club} onMouseDown={() => setSelectedOrganization(club)} />
             ))}
           </div>
         </div>
@@ -170,9 +170,9 @@ export function OrganizationsPage() {
       )}
 
       <OrganizationDetailsModal
-        club={selectedClub}
-        isOpen={selectedClub !== null}
-        onClose={() => setSelectedClub(null)}
+        club={selectedOrganization}
+        isOpen={selectedOrganization !== null}
+        onClose={() => setSelectedOrganization(null)}
       />
     </div>
   );

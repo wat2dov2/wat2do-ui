@@ -41,14 +41,14 @@ export function DeleteEventDialog({
         <div className="flex gap-2 justify-end mt-4">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onMouseDown={() => onOpenChange(false)}
             disabled={isDeleting}
           >
             {t("common.cancel")}
           </Button>
           <LoadingButton
             variant="destructive"
-            onClick={async () => {
+            onMouseDown={async () => {
               setIsDeleting(true);
               try {
                 await Promise.resolve(onConfirm());
@@ -58,7 +58,7 @@ export function DeleteEventDialog({
               }
             }}
             isLoading={isDeleting}
-            loadingText={t("common.pleaseWait") || "Please wait..."}
+            loadingText={t("common.pleaseWait")}
           >
             {t("common.delete")}
           </LoadingButton>

@@ -45,6 +45,42 @@ const localeLoaders: Record<
       },
     };
   },
+  zh: async () => {
+    const [
+      shared,
+      auth,
+      events,
+      clubs,
+      clubPanel,
+      admin,
+      credits,
+      qrcode,
+      settings,
+    ] = await Promise.all([
+      import('@/shared/locales/zh.json'),
+      import('@/features/auth/locales/zh.json'),
+      import('@/features/events/locales/zh.json'),
+      import('@/features/organizations/locales/zh.json'),
+      import('@/features/organization-panel/locales/zh.json'),
+      import('@/features/admin/locales/zh.json'),
+      import('@/features/credits/locales/zh.json'),
+      import('@/features/qrcode/locales/zh.json'),
+      import('@/features/settings/locales/zh.json'),
+    ]);
+    return {
+      default: {
+        ...shared.default,
+        ...auth.default,
+        ...events.default,
+        ...clubs.default,
+        ...clubPanel.default,
+        ...admin.default,
+        ...credits.default,
+        ...qrcode.default,
+        ...settings.default,
+      },
+    };
+  },
 };
 
 export async function loadLanguage(lang: string): Promise<void> {

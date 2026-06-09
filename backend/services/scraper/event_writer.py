@@ -32,7 +32,7 @@ from services.scraper.dedup import find_match
 log = logging.getLogger(__name__)
 
 
-def write_event(event: dict, *, ig_handle: str, source_url: str) -> str:
+def write_event(event: dict, *, ig_handle: str | None, source_url: str) -> str:
     """Insert (or update) the event extracted from one Instagram post.
 
     Returns one of:
@@ -169,7 +169,7 @@ def _resolve_club_by_ig(ig_handle: str | None) -> dict | None:
     return rows[0] if rows else None
 
 
-def _resolve_organization(event: dict, *, ig_handle: str, club: dict | None) -> str:
+def _resolve_organization(event: dict, *, ig_handle: str | None, club: dict | None) -> str:
     """Pick a non-empty organization string for the events row.
 
     Order: registered club name → extractor's ``organization`` → raw IG
@@ -186,7 +186,9 @@ def _resolve_organization(event: dict, *, ig_handle: str, club: dict | None) -> 
         return org
 
     # If it falls back to the IG handle, format it as a handle (e.g. @username)
-    return f"@{ig_handle.lstrip('@')}"
+    if ig_handle:
+        return f"@{ig_handle.lstrip('@')}"
+    return "Unknown Organization"
 
 
 def _clean_food(value: object) -> list | None:

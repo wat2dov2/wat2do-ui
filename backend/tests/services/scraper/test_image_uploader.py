@@ -41,6 +41,12 @@ def test_non_instagram_host_rejected():
         assert not _is_safe_image_url("https://google.com/img.jpg")
 
 
+def test_allow_all_domains():
+    with patch("services.scraper.image_uploader.socket.getaddrinfo", _mock_addrinfo):
+        assert _is_safe_image_url("https://wusa.ca/img.jpg", allow_all_domains=True)
+        assert not _is_safe_image_url("https://wusa.ca/img.jpg", allow_all_domains=False)
+
+
 def test_metadata_service_rejected_even_if_host_allowlisted(monkeypatch):
     """DNS-rebind style: an allowlisted hostname resolves to a metadata IP."""
     with patch("services.scraper.image_uploader.socket.getaddrinfo", _mock_addrinfo_private):

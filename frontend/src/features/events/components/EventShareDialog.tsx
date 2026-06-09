@@ -148,7 +148,7 @@ export function EventShareDialog({
           </span>
           <Button
             type="button"
-            onClick={handleCopy}
+            onMouseDown={handleCopy}
             size="sm"
             className="shrink-0 gap-1.5 rounded-lg px-3 text-xs"
           >
@@ -164,7 +164,7 @@ export function EventShareDialog({
               <button
                 key={id}
                 type="button"
-                onClick={() => handleShare(id)}
+                onMouseDown={() => handleShare(id)}
                 className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary"
                 aria-label={t("events.shareDialog.shareOn", { channel: label })}
               >

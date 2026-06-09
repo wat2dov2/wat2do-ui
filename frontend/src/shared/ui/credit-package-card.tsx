@@ -15,14 +15,14 @@ interface CreditPackageCardProps {
     popular?: boolean;
   };
   isSelected: boolean;
-  onClick: () => void;
+  onMouseDown: () => void;
   popularLabel: string;
 }
 
 export function CreditPackageCard({
   package: pkg,
   isSelected,
-  onClick,
+  onMouseDown,
   popularLabel,
 }: CreditPackageCardProps) {
   const { t } = useTranslation();
@@ -31,7 +31,7 @@ export function CreditPackageCard({
 
   return (
     <button
-      onClick={onClick}
+      onMouseDown={onMouseDown}
       className={cn(
         "w-full p-4 rounded-lg border-2 text-left transition-all relative",
         isSelected

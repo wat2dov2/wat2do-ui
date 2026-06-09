@@ -76,7 +76,7 @@ export function WhatsAppConnectModal({
                   {t("common.cancel")}
                 </Button>
               </DialogClose>
-              <Button onClick={onDone}>
+              <Button onMouseDown={onDone}>
                 {t("common.done")}
               </Button>
             </Field>

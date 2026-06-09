@@ -151,7 +151,7 @@ export function ResetPasswordPage() {
       <p className="text-center">
         <button
           type="button"
-          onClick={goToLogin}
+          onMouseDown={goToLogin}
           className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
         >
           {t("auth.backToLogin")}

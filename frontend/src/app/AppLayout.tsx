@@ -12,6 +12,7 @@ import {
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
+import { useAuthState } from "@/features/auth";
 import { useUIStore } from "@/shared/store/ui.store";
 import { ROUTES } from "@/shared/constants/routes";
 
@@ -22,6 +23,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const { isAuthenticated } = useAuthState();
   const setShowCommandPalette = useUIStore((s) => s.setShowCommandPalette);
   const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
@@ -37,7 +39,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     {
       title: t("common.search"),
       icon: <Search className="size-4" />,
-      onClick: () => setShowCommandPalette(true),
+      onMouseDown: () => setShowCommandPalette(true),
     },
     {
       title: t("navigation.explore"),
@@ -50,12 +52,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           {
             title: t("navigation.create"),
             icon: <Plus className="size-4" />,
-            onClick: () => setShowSubmitEvent(true),
+            onMouseDown: () => setShowSubmitEvent(true),
           },
         ]
       : []),
     {
-      title: t("navigation.clubs"),
+      title: t("navigation.organizations"),
       icon: <Users className="size-4" />,
       href: ROUTES.ORGANIZATIONS,
       isActive: isActive(ROUTES.ORGANIZATIONS),
@@ -66,12 +68,16 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.CONTACT,
       isActive: isActive(ROUTES.CONTACT),
     },
-    {
-      title: t("navigation.settings"),
-      icon: <Settings className="size-4" />,
-      href: ROUTES.SETTINGS,
-      isActive: isActive(ROUTES.SETTINGS),
-    },
+    ...(isAuthenticated
+      ? [
+          {
+            title: t("navigation.settings"),
+            icon: <Settings className="size-4" />,
+            href: ROUTES.SETTINGS,
+            isActive: isActive(ROUTES.SETTINGS),
+          },
+        ]
+      : []),
   ];
 
   return (

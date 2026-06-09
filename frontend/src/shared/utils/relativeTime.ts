@@ -17,9 +17,21 @@ export function formatRelativeTime(
   const diffDays = Math.floor(diffMs / MS_PER_DAY);
 
   if (diffMins < 1) return t ? t("common.justNow") : "just now";
-  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  if (diffMins < 60) {
+    return t
+      ? t("common.minuteAgo", { count: diffMins })
+      : `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+  }
+  if (diffHours < 24) {
+    return t
+      ? t("common.hourAgo", { count: diffHours })
+      : `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  }
+  if (diffDays < 7) {
+    return t
+      ? t("common.dayAgo", { count: diffDays })
+      : `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  }
   return d.toLocaleDateString();
 }
 
@@ -28,7 +40,7 @@ export function formatRelativeTime(
  */
 export function formatRelativeTimeCompact(
   date: Date | string,
-  t?: (key: string) => string,
+  t?: (key: string, opts?: Record<string, unknown>) => string,
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const diffMs = Date.now() - d.getTime();
@@ -37,8 +49,20 @@ export function formatRelativeTimeCompact(
   const diffDays = Math.floor(diffMs / MS_PER_DAY);
 
   if (diffMins < 1) return t ? t("common.justNow") : "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffMins < 60) {
+    return t
+      ? t("common.minuteAgoCompact", { count: diffMins })
+      : `${diffMins}m ago`;
+  }
+  if (diffHours < 24) {
+    return t
+      ? t("common.hourAgoCompact", { count: diffHours })
+      : `${diffHours}h ago`;
+  }
+  if (diffDays < 7) {
+    return t
+      ? t("common.dayAgoCompact", { count: diffDays })
+      : `${diffDays}d ago`;
+  }
   return d.toLocaleDateString();
 }

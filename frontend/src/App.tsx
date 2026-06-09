@@ -160,7 +160,7 @@ function AppContent() {
     if (isAuthFlowRoute) return;
     useEventsStore.getState().fetchEvents();
     useSavedEventsStore.getState().fetchSavedEvents();
-    useSavedOrganizationsStore.getState().fetchSavedClubs();
+    useSavedOrganizationsStore.getState().fetchSavedOrganizations();
     useCreditsStore.getState().fetchBalance();
     useCreditsStore.getState().fetchActivePromotedEventIds();
   }, [isAuthFlowRoute]);

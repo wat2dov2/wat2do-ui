@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import type { Club, EventFormData, EventFormOccurrence, ValidationErrors } from "@/shared/types";
+import type { Organization, EventFormData, EventFormOccurrence, ValidationErrors } from "@/shared/types";
 
 export interface EventFormContextValue {
   formData: EventFormData;
@@ -10,10 +10,10 @@ export interface EventFormContextValue {
   errors: ValidationErrors;
   touched: Record<string, boolean>;
   handleBlur: (field: string) => void;
-  /** Clubs for the active school, loaded once and shared by the picker + preview. */
-  clubs: Club[];
-  /** Display name of the currently selected club (empty when none selected). */
-  selectedClubName: string;
+  /** Organizations for the active school, loaded once and shared by the picker + preview. */
+  organizations: Organization[];
+  /** Display name of the currently selected organization (empty when none selected). */
+  selectedOrganizationName: string;
   updateOccurrence: (index: number, field: keyof EventFormOccurrence, value: string) => void;
   addOccurrence: () => void;
   removeOccurrence: (index: number) => void;
@@ -59,6 +59,7 @@ export function EventFormProvider({
 
 // This file intentionally exports the provider and its colocated hook together
 // to avoid touching the in-progress event form consumers during cleanup.
+// (Updated: renamed club references to organization to align naming system).
 // eslint-disable-next-line react-refresh/only-export-components
 export function useEventFormContext() {
   const context = useContext(EventFormContext);

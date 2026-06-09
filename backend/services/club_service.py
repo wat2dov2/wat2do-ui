@@ -191,7 +191,7 @@ def list_clubs(
     q = q.order("club_name").range(skip, skip + limit - 1)
     r = q.execute()
     items = []
-    for row in (r.data or []):
+    for row in r.data or []:
         email = _fetch_owner_email(row.get("created_by"))
         items.append(ClubResponse.model_validate({**row, "owner_email": email}))
     return items
@@ -706,6 +706,7 @@ def accept_invitation(token: str, user_id: UUID) -> bool:
 
 # --- Club Claims & Join Requests Service Methods ---
 
+
 def create_claim(club_id: int, user_id: UUID, role: str, proof_url: str | None) -> dict:
     club = get_club(club_id)
     if not club:
@@ -728,18 +729,25 @@ def create_claim(club_id: int, user_id: UUID, role: str, proof_url: str | None) 
     return r.data[0]
 
 
-def list_pending_claims() -> list[dict]:
-    r = get_sb().table("club_claims").select("*, clubs(*), users(*)").eq("status", "pending").execute()
+def list_claims(status: str | None = None) -> list[dict]:
+    query = (
+        get_sb().table("club_claims").select("*, clubs(*), users(*)").order("created_at", desc=True)
+    )
+    if status is not None:
+        query = query.eq("status", status)
+    r = query.execute()
     return r.data or []
 
 
 def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = None) -> dict:
     now = datetime.now(timezone.utc).isoformat()
-    r = get_sb().table("club_claims").update({
-        "status": status,
-        "rejection_reason": rejection_reason,
-        "updated_at": now
-    }).eq("id", str(claim_id)).execute()
+    r = (
+        get_sb()
+        .table("club_claims")
+        .update({"status": status, "rejection_reason": rejection_reason, "updated_at": now})
+        .eq("id", str(claim_id))
+        .execute()
+    )
 
     if not r.data:
         raise NotFoundError("Claim not found")
@@ -747,7 +755,9 @@ def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = Non
     claim = r.data[0]
     if status == "approved":
         # Set club creator (internal users.id UUID)
-        get_sb().table("clubs").update({"created_by": claim["user_id"]}).eq("id", claim["club_id"]).execute()
+        get_sb().table("clubs").update({"created_by": claim["user_id"]}).eq(
+            "id", claim["club_id"]
+        ).execute()
         # Add to club members
         try:
             add_club_member(claim["club_id"], UUID(claim["user_id"]))
@@ -779,16 +789,26 @@ def create_join_request(club_id: int, user_id: UUID, pitch: str) -> dict:
 
 
 def list_join_requests(club_id: int) -> list[dict]:
-    r = get_sb().table("club_join_requests").select("*, users(*)").eq("club_id", club_id).eq("status", "pending").execute()
+    r = (
+        get_sb()
+        .table("club_join_requests")
+        .select("*, users(*)")
+        .eq("club_id", club_id)
+        .eq("status", "pending")
+        .execute()
+    )
     return r.data or []
 
 
 def update_join_request(request_id: UUID, status: str) -> dict:
     now = datetime.now(timezone.utc).isoformat()
-    r = get_sb().table("club_join_requests").update({
-        "status": status,
-        "updated_at": now
-    }).eq("id", str(request_id)).execute()
+    r = (
+        get_sb()
+        .table("club_join_requests")
+        .update({"status": status, "updated_at": now})
+        .eq("id", str(request_id))
+        .execute()
+    )
 
     if not r.data:
         raise NotFoundError("Join request not found")
@@ -801,4 +821,3 @@ def update_join_request(request_id: UUID, status: str) -> dict:
             pass
 
     return req
-

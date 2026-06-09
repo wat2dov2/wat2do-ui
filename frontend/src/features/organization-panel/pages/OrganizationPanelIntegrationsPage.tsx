@@ -28,7 +28,7 @@ export function OrganizationPanelIntegrationsPage() {
         <Button
           variant="secondary"
           size="icon"
-          onClick={() => navigate(ROUTES.ORGANIZATION_PANEL)}
+          onMouseDown={() => navigate(ROUTES.ORGANIZATION_PANEL)}
           className="shrink-0"
         >
           <ArrowLeft className="size-5" />

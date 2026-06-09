@@ -68,7 +68,7 @@ export function AuthEmailFormCard({
 
       <LoadingButton
         type="button"
-        onClick={onContinue}
+        onMouseDown={onContinue}
         disabled={!canContinue}
         isLoading={isLoading}
         loadingText={t("common.pleaseWait")}
@@ -81,7 +81,7 @@ export function AuthEmailFormCard({
         <p className="text-center">
           <button
             type="button"
-            onClick={onForgotPassword}
+            onMouseDown={onForgotPassword}
             className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
           >
             {t("auth.forgotPassword")}
@@ -93,7 +93,7 @@ export function AuthEmailFormCard({
         {isSignup ? t("auth.alreadyHaveAccount") : t("auth.dontHaveAccount")}{" "}
         <button
           type="button"
-          onClick={onToggleMode}
+          onMouseDown={onToggleMode}
           className="underline underline-offset-2 hover:text-foreground transition-colors"
         >
           {isSignup ? t("auth.signInLink") : t("auth.createOneLink")}

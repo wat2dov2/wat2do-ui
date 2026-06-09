@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
+import { Users, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -13,7 +13,7 @@ import {
   TableCell,
   TableRow,
 } from "@/shared/ui/table";
-import type { Club } from "@/shared/types";
+import type { Organization, SubmissionStatus } from "@/shared/types";
 import { AddOrganizationModal } from "@/features/organizations";
 import { useAdminOrganizationsPage } from "@/features/admin/hooks/useAdminOrganizationsPage";
 import {
@@ -34,6 +34,7 @@ import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { toast } from "@/shared/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
+import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
@@ -71,13 +72,54 @@ export function AdminOrganizationsPage({
   const [activeTab, setActiveTab] = useState<"clubs" | "claims">("clubs");
   
   // Load claims from Zustand store
-  const pendingClaims = useAdminStore((s) => s.claims);
+  const allClaims = useAdminStore((s) => s.claims);
   const fetchClaims = useAdminStore((s) => s.fetchClaims);
   const approveClaimAction = useAdminStore((s) => s.approveClaim);
   const rejectClaimAction = useAdminStore((s) => s.rejectClaim);
 
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Claims Filter State
+  const [claimSearchQuery, setClaimSearchQuery] = useState("");
+  const [claimStatusFilter, setClaimStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [claimCurrentPage, setClaimCurrentPage] = useState(1);
+
+  const pendingClaimsCount = useMemo(() => {
+    return allClaims.filter((c) => c.status === "pending").length;
+  }, [allClaims]);
+
+  const filteredClaims = useMemo(() => {
+    let filtered = allClaims;
+
+    if (claimStatusFilter !== "all") {
+      filtered = filtered.filter((c) => c.status === claimStatusFilter);
+    }
+
+    if (claimSearchQuery) {
+      const q = claimSearchQuery.toLowerCase();
+      filtered = filtered.filter((c) => {
+        const clubName = c.clubs?.club_name || "";
+        const userName = c.users?.full_name || "";
+        const userEmail = c.users?.email || "";
+        const role = c.executive_role || "";
+        return (
+          clubName.toLowerCase().includes(q) ||
+          userName.toLowerCase().includes(q) ||
+          userEmail.toLowerCase().includes(q) ||
+          role.toLowerCase().includes(q)
+        );
+      });
+    }
+
+    return filtered;
+  }, [allClaims, claimStatusFilter, claimSearchQuery]);
+
+  const claimTotalPages = Math.ceil(filteredClaims.length / ITEMS_PER_PAGE);
+  const paginatedClaims = useMemo(() => {
+    const start = (claimCurrentPage - 1) * ITEMS_PER_PAGE;
+    return filteredClaims.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredClaims, claimCurrentPage]);
   
   // Rejection Dialog State
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
@@ -122,7 +164,7 @@ export function AdminOrganizationsPage({
     }
   };
 
-  const handleSave = async (club: Club) => {
+  const handleSave = async (club: Organization) => {
     try {
       if (editingClub) {
         await adminUpdateOrganization(club);
@@ -140,14 +182,14 @@ export function AdminOrganizationsPage({
     try {
       await approveClaimAction(claimId);
       toast({
-        title: t("common.success") || "Success",
+        title: t("common.success"),
         description: t("admin.claimApprovedSuccess"),
         variant: "success",
       });
     } catch (error) {
       console.error("Failed to approve claim:", error);
       toast({
-        title: t("common.error") || "Error",
+        title: t("common.error"),
         description: t("admin.claimApprovedError"),
         variant: "destructive",
       });
@@ -160,7 +202,7 @@ export function AdminOrganizationsPage({
     try {
       await rejectClaimAction(rejectClaimId, rejectionReason);
       toast({
-        title: t("common.success") || "Success",
+        title: t("common.success"),
         description: t("admin.claimRejectedSuccess"),
         variant: "success",
       });
@@ -169,7 +211,7 @@ export function AdminOrganizationsPage({
     } catch (error) {
       console.error("Failed to reject claim:", error);
       toast({
-        title: t("common.error") || "Error",
+        title: t("common.error"),
         description: t("admin.claimRejectedError"),
         variant: "destructive",
       });
@@ -189,7 +231,7 @@ export function AdminOrganizationsPage({
           activeTab === "clubs"
             ? {
                 label: t("organizations.addClub"),
-                onClick: openAddModal,
+                onMouseDown: openAddModal,
                 icon: Plus,
               }
             : undefined
@@ -199,7 +241,7 @@ export function AdminOrganizationsPage({
       {/* Tabs toggle */}
       <div className="flex gap-2 border-b border-border pb-3">
         <button
-          onClick={() => setActiveTab("clubs")}
+          onMouseDown={() => setActiveTab("clubs")}
           data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             activeTab === "clubs"
@@ -207,10 +249,10 @@ export function AdminOrganizationsPage({
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
         >
-          {t("admin.clubsList") || "Clubs List"}
+          {t("admin.clubsList")}
         </button>
         <button
-          onClick={() => setActiveTab("claims")}
+          onMouseDown={() => setActiveTab("claims")}
           data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
             activeTab === "claims"
@@ -218,10 +260,10 @@ export function AdminOrganizationsPage({
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
         >
-          {t("admin.pendingClaims") || "Pending Claims"}
-          {pendingClaims.length > 0 && (
+          {t("admin.claimRequests")}
+          {pendingClaimsCount > 0 && (
             <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
-              {pendingClaims.length}
+              {pendingClaimsCount}
             </span>
           )}
         </button>
@@ -261,7 +303,7 @@ export function AdminOrganizationsPage({
           <AdminResultsCount
             count={filteredOrganizations.length}
             singularLabel={t("admin.club")}
-            pluralLabel={t("navigation.clubs")}
+            pluralLabel={t("navigation.organizations")}
           />
 
           {/* Clubs Table */}
@@ -270,10 +312,10 @@ export function AdminOrganizationsPage({
           ) : filteredOrganizations.length > 0 ? (
             <AdminTable
               headers={[
-                { label: t("forms.clubName") },
+                { label: t("forms.organizationName") },
                 { label: t("forms.categories") },
-                { label: t("forms.clubType") },
-                { label: t("forms.ownerEmail") || "Owner Email" },
+                { label: t("forms.organizationType") },
+                { label: t("forms.ownerEmail") },
                 { label: <span className="flex items-center gap-1.5"><Instagram className="size-3.5" />{t("admin.instagram")}</span> },
                 { label: <span className="flex items-center gap-1.5"><MessageCircle className="size-3.5" />{t("admin.discord")}</span> },
                 { label: t("common.actions"), align: "right" },
@@ -332,17 +374,17 @@ export function AdminOrganizationsPage({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => openEditModal(club)}
+                        onMouseDown={() => openEditModal(club)}
                       >
-                        {t("common.edit") || "Edit"}
+                        {t("common.edit")}
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => setDeleteConfirmId(club.id)}
+                        onMouseDown={() => setDeleteConfirmId(club.id)}
                         className="hover:bg-error/10 hover:text-error"
                       >
-                        {t("common.delete") || "Delete"}
+                        {t("common.delete")}
                       </Button>
                     </div>
                   </TableCell>
@@ -364,100 +406,155 @@ export function AdminOrganizationsPage({
               totalItems={filteredOrganizations.length}
               itemsPerPage={ITEMS_PER_PAGE}
               itemLabel={t("admin.club")}
-              itemLabelPlural={t("navigation.clubs")}
+              itemLabelPlural={t("navigation.organizations")}
               onPageChange={setCurrentPage}
             />
           )}
         </>
       ) : (
         <>
-          {/* Pending Claims Section */}
+          {/* Claim Requests Section Search and Filters */}
+          <div className="flex gap-3">
+            <AdminSearchBar
+              value={claimSearchQuery}
+              onChange={(value) => {
+                setClaimSearchQuery(value);
+                setClaimCurrentPage(1);
+              }}
+              placeholder={t("admin.searchSubmissions") || "Search requests..."}
+            />
+            <Select
+              value={claimStatusFilter}
+              onValueChange={(value) => {
+                setClaimStatusFilter(value as "all" | SubmissionStatus);
+                setClaimCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("admin.allStatus")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("admin.allStatus")}</SelectItem>
+                <SelectItem value="pending">{t("admin.pending")}</SelectItem>
+                <SelectItem value="approved">{t("admin.approved")}</SelectItem>
+                <SelectItem value="rejected">{t("admin.rejected")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <AdminResultsCount
-            count={pendingClaims.length}
-            singularLabel={t("admin.pendingClaim") || "pending claim"}
-            pluralLabel={t("admin.pendingClaims") || "pending claims"}
+            count={filteredClaims.length}
+            singularLabel={t("admin.claimRequest") || "claim request"}
+            pluralLabel={t("admin.claimRequests") || "claim requests"}
           />
 
           {loadingClaims ? (
             <LoadingPage />
-          ) : pendingClaims.length > 0 ? (
-            <AdminTable
-              headers={[
-                { label: t("forms.clubName") || "Club Name" },
-                { label: t("admin.requestedBy") || "Requested By" },
-                { label: t("admin.executiveRole") || "Executive Role" },
-                { label: <span className="flex items-center gap-1"><ExternalLink className="size-3" />{t("admin.proofUrl") || "Proof URL"}</span> },
-                { label: t("admin.submittedAt") || "Submitted" },
-                { label: t("common.actions"), align: "right" },
-              ]}
-            >
-              {pendingClaims.map((claim) => (
-                <TableRow key={claim.id}>
-                  <TableCell>
-                    <div className="font-semibold text-sm text-foreground">
-                      {claim.clubs?.club_name || `Club #${claim.club_id}`}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm font-medium text-foreground">
-                      {claim.users?.full_name || "Applicant"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {claim.users?.email}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs px-2 py-0.5 bg-primary/10 rounded text-primary font-medium">
-                      {claim.executive_role}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {claim.proof_url ? (
-                      <a
-                        href={claim.proof_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        <span>{t("admin.viewProof") || "View Proof"}</span>
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">{t("admin.noProofProvided") || "No proof provided"}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(claim.created_at).toLocaleDateString()}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleApproveClaim(claim.id)}
-                        className="text-primary hover:bg-primary/10 border border-transparent"
-                      >
-                        {t("admin.approve") || "Approve"}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setRejectClaimId(claim.id)}
-                        className="text-error hover:bg-error/10 border border-transparent"
-                      >
-                        {t("admin.reject") || "Reject"}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </AdminTable>
+          ) : filteredClaims.length > 0 ? (
+            <>
+              <AdminTable
+                headers={[
+                  { label: t("forms.organizationName") },
+                  { label: t("admin.requestedBy") },
+                  { label: t("admin.executiveRole") },
+                  { label: <span className="flex items-center gap-1"><ExternalLink className="size-3" />{t("admin.proofUrl")}</span> },
+                  { label: <span className="flex items-center gap-1.5"><Clock className="size-3.5" />{t("admin.submittedAt") || "Submitted At"}</span> } ,
+                  { label: t("admin.status") || "Status" },
+                  { label: t("common.actions"), align: "right" },
+                ]}
+              >
+                {paginatedClaims.map((claim) => (
+                  <TableRow key={claim.id}>
+                    <TableCell>
+                      <div className="font-semibold text-sm text-foreground">
+                        {claim.clubs?.club_name || `Club #${claim.club_id}`}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium text-foreground">
+                        {claim.users?.full_name || "Applicant"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {claim.users?.email}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs px-2 py-0.5 bg-primary/10 rounded text-primary font-medium">
+                        {claim.executive_role}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {claim.proof_url ? (
+                        <a
+                          href={claim.proof_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          <span>{t("admin.viewProof")}</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{t("admin.noProofProvided")}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(claim.created_at).toLocaleDateString()}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start">
+                        <AdminStatusBadge status={claim.status as SubmissionStatus} />
+                        {claim.status === "rejected" && claim.rejection_reason && (
+                          <span className="text-[10px] text-error font-medium max-w-[150px] truncate" title={claim.rejection_reason}>
+                            {t("admin.rejectionReason")}: {claim.rejection_reason}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-2">
+                        {claim.status === "pending" && (
+                          <>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onMouseDown={() => handleApproveClaim(claim.id)}
+                              className="text-primary hover:bg-primary/10 border border-transparent"
+                            >
+                              {t("admin.approve")}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onMouseDown={() => setRejectClaimId(claim.id)}
+                              className="text-error hover:bg-error/10 border border-transparent"
+                            >
+                              {t("admin.reject")}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </AdminTable>
+
+              <Pagination
+                currentPage={claimCurrentPage}
+                totalPages={claimTotalPages}
+                totalItems={filteredClaims.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                itemLabel={t("admin.claimRequest") || "claim request"}
+                itemLabelPlural={t("admin.claimRequests") || "claim requests"}
+                onPageChange={setClaimCurrentPage}
+              />
+            </>
           ) : (
             <AdminEmptyState
               icon={ShieldAlert}
-              title={t("admin.noPendingClaimsTitle") || "All caught up!"}
-              description={t("admin.noPendingClaimsDesc") || "There are no pending club claims to review right now."}
+              title={t("admin.noClaimsFound") || "No claim requests found"}
+              description={t("admin.noClaimsMatchFilters") || "No claim requests match your current filters."}
             />
           )}
         </>
@@ -497,12 +594,12 @@ export function AdminOrganizationsPage({
             />
           </div>
           <DialogFooter className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setRejectClaimId(null)} disabled={submittingResolution}>
+            <Button variant="outline" onMouseDown={() => setRejectClaimId(null)} disabled={submittingResolution}>
               {t("common.cancel") || "Cancel"}
             </Button>
             <Button
               variant="destructive"
-              onClick={handleRejectClaim}
+              onMouseDown={handleRejectClaim}
               disabled={submittingResolution || !rejectionReason.trim()}
             >
               {t("admin.rejectRequest") || "Reject Request"}

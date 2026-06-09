@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
-import { formatDisplayDate, formatDisplayTime } from "@/shared/utils/date";
+import { formatOccurrence } from "@/shared/utils/date";
 import { ImageOff, ExternalLink } from "@/shared/ui/doodle-icons";
 import {
   Dialog,
@@ -19,7 +19,6 @@ import {
   ModalContentWrapper,
   ModalSection,
   InfoRow,
-  InfoGrid,
   InfoSection,
   SectionTitle,
   FoodTagsContainer,
@@ -44,7 +43,7 @@ export function EventDetailsModal({
   allEvents,
   hideSimilarEvents = false,
 }: EventDetailsModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const storeEvents = useEventsStore((s) => s.events);
   // Local override allows clicking a "similar event" without remounting the
   // modal. We reset it whenever the prop event changes by tracking the prop
@@ -147,10 +146,21 @@ export function EventDetailsModal({
                   </div>
                 )}
 
-                <InfoGrid>
-                  <InfoRow label={t("filters.date")} value={formatDisplayDate(displayedEvent)} />
-                  <InfoRow label={t("forms.time")} value={formatDisplayTime(displayedEvent)} />
-                </InfoGrid>
+                <InfoRow
+                  label={t("forms.occurrences")}
+                  value={
+                    <div className="flex flex-wrap gap-2 mt-1.5">
+                      {displayedEvent.occurrences?.map((occ) => (
+                        <span
+                          key={occ.id || `${occ.dtstart_utc}-${occ.dtend_utc}`}
+                          className="inline-flex items-center text-xs font-semibold px-2.5 py-1 bg-secondary text-secondary-foreground border border-border/80 rounded-full"
+                        >
+                          {formatOccurrence(occ, t, i18n.language || "en-US")}
+                        </span>
+                      ))}
+                    </div>
+                  }
+                />
 
                 <InfoRow label={t("filters.location")} value={displayedEvent.location} />
                 <InfoRow

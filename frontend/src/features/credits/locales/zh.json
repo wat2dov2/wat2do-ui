@@ -1,0 +1,35 @@
+{
+  "credits": {
+    "buyCredits": "购买积分",
+    "currentBalance": "当前余额：",
+    "creditCount": "{{count}} 积分",
+    "creditCount_other": "{{count}} 积分",
+    "bonusCount": "+{{count}} 赠送积分",
+    "bonusCount_other": "+{{count}} 赠送积分",
+    "totalCreditCount": "共 {{count}} 积分",
+    "totalCreditCount_other": "共 {{count}} 积分",
+    "pricePerCredit": "${{price}}¢/积分",
+    "added": "积分已添加！",
+    "addedMessage": "{{count}} 积分已添加到您的账户。",
+    "processing": "处理中...",
+    "buyMore": "+ 购买更多",
+    "notEnough": "积分不足",
+    "loginRequired": "您必须登录才能购买积分。",
+    "purchaseFailed": "购买失败。请重试。",
+    "spendCredits": "消耗 {{credits}} 积分",
+    "securePayment": "由 Stripe 提供安全支付支持。积分永不过期。"
+  },
+  "promotion": {
+    "promoteEvent": "推广此活动",
+    "getMoreVisibility": "为官方组织活动购买简易的推荐位，以推广“{{title}}”。",
+    "bestValue": "最划算",
+    "maybeLater": "稍后再说",
+    "notEnoughCredits": "积分不足",
+    "promotedEventName": "推广的活动",
+    "promotedEventDescription": "更显著地向学生展示此活动",
+    "durationDays": "{{count}} 天",
+    "durationDays_other": "{{count}} 天",
+    "creditsCost": "{{credits}} 积分",
+    "spendCredits": "消耗 {{credits}} 积分"
+  }
+}

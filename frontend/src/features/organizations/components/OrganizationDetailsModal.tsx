@@ -21,7 +21,7 @@ import { ROUTES } from "@/shared/constants/routes";
 import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
 import { getCategoryClasses } from "@/shared/utils/event";
 import { sanitizeHref } from "@/shared/utils/url";
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 import {
   getMyMembershipStatus,
   requestToJoinClub,
@@ -30,7 +30,7 @@ import {
 } from "@/features/organization-panel/api/memberships.api";
 
 interface OrganizationDetailsModalProps {
-  club: Club | null;
+  club: Organization | null;
   isOpen: boolean;
   onClose: () => void;
   onStatusChange?: (clubId: number, status: "pending" | "approved" | "rejected" | null) => void;
@@ -113,7 +113,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
   const renderMembershipSection = () => {
     if (!isAuthenticated) {
       return (
-        <Button onClick={handleSignInRedirect} className="w-full font-semibold">
+        <Button onMouseDown={handleSignInRedirect} className="w-full font-semibold">
           {t("organizationPanel.signInToJoin")}
         </Button>
       );
@@ -130,7 +130,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
 
     if (!membership) {
       return (
-        <Button onClick={handleJoin} disabled={actionLoading} className="w-full font-semibold">
+        <Button onMouseDown={handleJoin} disabled={actionLoading} className="w-full font-semibold">
           {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
           {t("organizationPanel.requestToJoin")}
         </Button>
@@ -146,7 +146,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
           </div>
           <Button
             variant="outline"
-            onClick={handleLeaveOrCancel}
+            onMouseDown={handleLeaveOrCancel}
             disabled={actionLoading}
             className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold"
           >
@@ -166,7 +166,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
           </div>
           <Button
             variant="outline"
-            onClick={handleLeaveOrCancel}
+            onMouseDown={handleLeaveOrCancel}
             disabled={actionLoading}
             className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold"
           >
@@ -184,7 +184,7 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
             <XCircle className="size-4 shrink-0" />
             <span>{t("organizationPanel.requestDeclined")}</span>
           </div>
-          <Button onClick={handleJoin} disabled={actionLoading} className="w-full font-semibold">
+          <Button onMouseDown={handleJoin} disabled={actionLoading} className="w-full font-semibold">
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
             {t("organizationPanel.reapply")}
           </Button>

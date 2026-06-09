@@ -99,7 +99,7 @@ export function OrganizationPanelMembersPage() {
       .catch((err) => {
         console.error("Failed to load management team:", err);
         toast({
-          description: t("organizationPanel.loadingClubMembers") || "Failed to load management details.",
+          description: t("organizationPanel.loadManagementFailed"),
           variant: "destructive",
         });
       })
@@ -122,14 +122,14 @@ export function OrganizationPanelMembersPage() {
     try {
       await updateClubMembership(clubId, userId, { status: "approved" });
       toast({
-        description: t("organizationPanel.requestApproved") || "Membership request approved.",
+        description: t("organizationPanel.requestApproved"),
         variant: "success",
       });
       fetchRoster();
     } catch (err) {
       console.error("Failed to approve membership:", err);
       toast({
-        description: t("events.savedEvents.saveFailed") || "Failed to approve membership request.",
+        description: t("organizationPanel.approveMembershipFailed"),
         variant: "destructive",
       });
     } finally {
@@ -143,14 +143,14 @@ export function OrganizationPanelMembersPage() {
     try {
       await updateClubMembership(clubId, userId, { status: "rejected" });
       toast({
-        description: t("organizationPanel.requestRejected") || "Membership request rejected.",
+        description: t("organizationPanel.requestRejected"),
         variant: "success",
       });
       fetchRoster();
     } catch (err) {
       console.error("Failed to reject membership:", err);
       toast({
-        description: t("events.savedEvents.unsaveFailed") || "Failed to reject membership request.",
+        description: t("organizationPanel.rejectMembershipFailed"),
         variant: "destructive",
       });
     } finally {
@@ -160,21 +160,21 @@ export function OrganizationPanelMembersPage() {
 
   const handleRemoveMembership = async (userId: string) => {
     if (!clubId) return;
-    if (!confirm(t("organizationPanel.removeMemberConfirm") || "Are you sure you want to remove this member?")) {
+    if (!confirm(t("organizationPanel.removeMemberConfirm"))) {
       return;
     }
     setActionLoading(userId);
     try {
       await removeRosterMembership(clubId, userId);
       toast({
-        description: t("organizationPanel.memberRemoved") || "Member removed from roster.",
+        description: t("organizationPanel.memberRemoved"),
         variant: "success",
       });
       fetchRoster();
     } catch (err) {
       console.error("Failed to remove member:", err);
       toast({
-        description: t("events.savedEvents.unsaveFailed") || "Failed to remove member.",
+        description: t("organizationPanel.removeMemberFailed"),
         variant: "destructive",
       });
     } finally {
@@ -192,14 +192,14 @@ export function OrganizationPanelMembersPage() {
       const result = await addClubMember(clubId, emailInput.trim().toLowerCase());
       if (result && "status" in result && result.status === "pending") {
         toast({
-          title: "Success",
-          description: `Invitation sent to ${emailInput.trim().toLowerCase()}!`,
+          title: t("common.success"),
+          description: t("organizationPanel.invitationSentSuccess", { email: emailInput.trim().toLowerCase() }),
           variant: "success",
         });
       } else {
         toast({
-          title: "Success",
-          description: t("organizationPanel.addSuccess") || "Member added successfully!",
+          title: t("common.success"),
+          description: t("organizationPanel.addSuccess"),
           variant: "success",
         });
       }
@@ -208,8 +208,8 @@ export function OrganizationPanelMembersPage() {
     } catch (err) {
       console.error("Failed to add manager:", err);
       toast({
-        title: "Error",
-        description: "Failed to add manager or send invitation.",
+        title: t("common.error"),
+        description: t("organizationPanel.addManagerFailed"),
         variant: "destructive",
       });
     } finally {
@@ -219,23 +219,23 @@ export function OrganizationPanelMembersPage() {
 
   const handleRevokeInvitation = async (invitationId: string, email: string) => {
     if (!clubId) return;
-    if (!confirm(`Are you sure you want to revoke the invitation for ${email}?`)) {
+    if (!confirm(t("organizationPanel.revokeInvitationConfirm", { email }))) {
       return;
     }
     setActionLoading(invitationId);
     try {
       await revokeClubInvitation(clubId, invitationId);
       toast({
-        title: "Success",
-        description: "Invitation revoked successfully!",
+        title: t("common.success"),
+        description: t("organizationPanel.invitationRevokedSuccess"),
         variant: "success",
       });
       fetchManagement();
     } catch (err) {
       console.error("Failed to revoke invitation:", err);
       toast({
-        title: "Error",
-        description: "Failed to revoke invitation.",
+        title: t("common.error"),
+        description: t("organizationPanel.revokeInvitationFailed"),
         variant: "destructive",
       });
     } finally {
@@ -249,16 +249,18 @@ export function OrganizationPanelMembersPage() {
     try {
       await resolveJoinRequest(clubId, requestId, status);
       toast({
-        title: "Success",
-        description: `Join request ${status} successfully!`,
+        title: t("common.success"),
+        description: status === "approved"
+          ? t("organizationPanel.joinRequestApprovedSuccess")
+          : t("organizationPanel.joinRequestRejectedSuccess"),
         variant: "success",
       });
       fetchManagement();
     } catch (err) {
       console.error(err);
       toast({
-        title: "Error",
-        description: `Failed to ${status} join request.`,
+        title: t("common.error"),
+        description: t("organizationPanel.joinRequestError"),
         variant: "destructive",
       });
     } finally {
@@ -269,7 +271,7 @@ export function OrganizationPanelMembersPage() {
   const handleRemoveManager = async (userId: string, email: string) => {
     if (!clubId) return;
 
-    const confirmMsg = t("organizationPanel.removeMemberConfirm") || "Are you sure you want to remove this member? They will lose manager access to this club.";
+    const confirmMsg = t("organizationPanel.removeMemberConfirm");
     if (!confirm(`${confirmMsg}\n\nEmail: ${email}`)) {
       return;
     }
@@ -278,8 +280,8 @@ export function OrganizationPanelMembersPage() {
     try {
       await removeClubManager(clubId, userId);
       toast({
-        title: "Success",
-        description: t("organizationPanel.removeSuccess") || "Member removed successfully!",
+        title: t("common.success"),
+        description: t("organizationPanel.removeSuccess"),
         variant: "success",
       });
       fetchManagement();
@@ -368,7 +370,7 @@ export function OrganizationPanelMembersPage() {
         <Button
           variant="secondary"
           size="icon"
-          onClick={() => navigate(ROUTES.ORGANIZATION_PANEL)}
+          onMouseDown={() => navigate(ROUTES.ORGANIZATION_PANEL)}
           className="shrink-0"
         >
           <ArrowLeft className="size-5" />
@@ -385,7 +387,7 @@ export function OrganizationPanelMembersPage() {
       {/* Main Tabs */}
       <div className="flex border-b border-border">
         <button
-          onClick={() => setMainTab("roster")}
+          onMouseDown={() => setMainTab("roster")}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
             mainTab === "roster"
               ? "border-primary text-primary"
@@ -395,7 +397,7 @@ export function OrganizationPanelMembersPage() {
           {t("organizationPanel.rosterTab")}
         </button>
         <button
-          onClick={() => setMainTab("management")}
+          onMouseDown={() => setMainTab("management")}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
             mainTab === "management"
               ? "border-primary text-primary"
@@ -412,7 +414,7 @@ export function OrganizationPanelMembersPage() {
           {/* Sub Tabs */}
           <div className="flex border-b border-border/60">
             <button
-              onClick={() => setActiveTab("members")}
+              onMouseDown={() => setActiveTab("members")}
               className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
                 activeTab === "members"
                   ? "border-primary text-primary"
@@ -422,7 +424,7 @@ export function OrganizationPanelMembersPage() {
               {t("organizationPanel.activeMembers")} ({activeMembers.length})
             </button>
             <button
-              onClick={() => setActiveTab("requests")}
+              onMouseDown={() => setActiveTab("requests")}
               className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
                 activeTab === "requests"
                   ? "border-primary text-primary"
@@ -496,7 +498,7 @@ export function OrganizationPanelMembersPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleRemoveMembership(member.user.id)}
+                                onMouseDown={() => handleRemoveMembership(member.user.id)}
                                 disabled={actionLoading !== null}
                                 className="text-destructive hover:bg-destructive/10 shrink-0"
                               >
@@ -579,7 +581,7 @@ export function OrganizationPanelMembersPage() {
                               <Button
                                 variant="secondary"
                                 size="sm"
-                                onClick={() => handleApproveMembership(request.user.id)}
+                                onMouseDown={() => handleApproveMembership(request.user.id)}
                                 disabled={actionLoading !== null}
                                 className="bg-green-500/10 border border-green-500/20 text-green-500 hover:bg-green-500/20 shrink-0 font-semibold"
                               >
@@ -593,7 +595,7 @@ export function OrganizationPanelMembersPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleRejectMembership(request.user.id)}
+                                onMouseDown={() => handleRejectMembership(request.user.id)}
                                 disabled={actionLoading !== null}
                                 className="text-destructive hover:bg-destructive/10 shrink-0 font-semibold"
                               >
@@ -644,7 +646,7 @@ export function OrganizationPanelMembersPage() {
                   type="email"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder={t("organizationPanel.enterEmail") || "Enter email address"}
+                  placeholder={t("organizationPanel.enterEmail")}
                   required
                   className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground"
                 />
@@ -680,7 +682,7 @@ export function OrganizationPanelMembersPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("organizationPanel.searchManagersPlaceholder") || "Search managers by name or email..."}
+                  placeholder={t("organizationPanel.searchManagersPlaceholder")}
                   className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground"
                 />
               </div>
@@ -690,7 +692,7 @@ export function OrganizationPanelMembersPage() {
                 <div className="flex flex-col items-center justify-center py-16">
                   <Loader2 className="size-8 animate-spin text-primary mb-3" />
                   <span className="text-muted-foreground text-sm">
-                    {t("organizationPanel.loadingClubMembers") || "Loading club members..."}
+                    {t("organizationPanel.loadingClubMembers")}
                   </span>
                 </div>
               ) : filteredManagers.length > 0 ? (
@@ -748,7 +750,7 @@ export function OrganizationPanelMembersPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleRemoveManager(member.user_id, member.email)}
+                                onMouseDown={() => handleRemoveManager(member.user_id, member.email)}
                                 disabled={actionLoading !== null}
                                 className="text-destructive hover:bg-destructive/10 shrink-0"
                               >
@@ -798,13 +800,13 @@ export function OrganizationPanelMembersPage() {
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("organizationPanel.studentNameEmail") || "Student Name / Email"}
+                          {t("organizationPanel.studentNameEmail")}
                         </th>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("organizationPanel.pitch") || "Pitch"}
+                          {t("organizationPanel.pitch")}
                         </th>
                         <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
-                          {t("organizationPanel.invitedAt") || "Submitted"}
+                          {t("organizationPanel.invitedAt")}
                         </th>
                         <th className="px-6 py-4"></th>
                       </tr>
@@ -832,7 +834,7 @@ export function OrganizationPanelMembersPage() {
                                 variant="secondary"
                                 size="sm"
                                 disabled={actionLoading !== null}
-                                onClick={() => handleResolveJoinRequest(req.id, "approved")}
+                                onMouseDown={() => handleResolveJoinRequest(req.id, "approved")}
                                 className="bg-green-500/10 border border-green-500/20 text-green-500 hover:bg-green-500/20 shrink-0 font-semibold"
                               >
                                 {actionLoading === req.id ? (
@@ -840,13 +842,13 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <Check className="size-4 mr-1" />
                                 )}
-                                {t("organizationPanel.approveMember") || "Approve"}
+                                {t("organizationPanel.approveMember")}
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 disabled={actionLoading !== null}
-                                onClick={() => handleResolveJoinRequest(req.id, "rejected")}
+                                onMouseDown={() => handleResolveJoinRequest(req.id, "rejected")}
                                 className="text-destructive hover:bg-destructive/10 shrink-0 font-semibold"
                               >
                                 {actionLoading === req.id ? (
@@ -854,7 +856,7 @@ export function OrganizationPanelMembersPage() {
                                 ) : (
                                   <X className="size-4 mr-1" />
                                 )}
-                                {t("organizationPanel.rejectRequest") || "Reject"}
+                                {t("organizationPanel.reject")}
                               </Button>
                             </div>
                           </td>
@@ -921,7 +923,7 @@ export function OrganizationPanelMembersPage() {
                               variant="ghost"
                               size="sm"
                               disabled={actionLoading !== null}
-                              onClick={() => handleRevokeInvitation(invite.id, invite.email)}
+                              onMouseDown={() => handleRevokeInvitation(invite.id, invite.email)}
                               className="text-destructive hover:bg-destructive/10 shrink-0"
                             >
                               {actionLoading === invite.id ? (
@@ -929,7 +931,7 @@ export function OrganizationPanelMembersPage() {
                               ) : (
                                 <UserMinus className="size-4 mr-1" />
                               )}
-                              {t("organizationPanel.revokeInvitationTitle") || "Revoke"}
+                              {t("organizationPanel.revokeInvitationTitle")}
                             </Button>
                           </td>
                         </tr>

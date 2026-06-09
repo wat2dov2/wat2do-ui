@@ -58,44 +58,6 @@ export function formatCardDate(
 }
 
 /**
- * Format event date for modal/detail display (e.g., "Mon, Jan 27, 2025").
- */
-export function formatDisplayDate(event: {
-  occurrences?: Occurrence[];
-}): string {
-  const primary = getPrimaryOccurrence(event);
-  const raw = primary?.dtstart_utc;
-  if (!raw) return "";
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-/**
- * Format event time for modal/detail display (e.g., "8:00 AM – 10:00 AM").
- */
-export function formatDisplayTime(event: {
-  occurrences?: Occurrence[];
-}): string {
-  const primary = getPrimaryOccurrence(event);
-  const raw = primary?.dtstart_utc;
-  if (!raw) return "";
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return "";
-  const end = primary?.dtend_utc ? new Date(primary.dtend_utc) : null;
-  const start = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  if (end && !isNaN(end.getTime())) {
-    return `${start} \u2013 ${end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
-  }
-  return start;
-}
-
-/**
  * Format event time for card display (e.g., "12:30 PM to 3:00 PM")
  */
 export function formatCardTime(event: {
@@ -172,3 +134,45 @@ export function getEventDateCategory(
   if (startDate <= endOfMonth) return "later this month";
   return "later";
 }
+
+/**
+ * Format a single occurrence into a badge label (e.g. "Monday May 25, 6:00 PM - 7:00 PM" or "Today, 6:00 PM - 7:00 PM")
+ */
+export function formatOccurrence(
+  occurrence: { dtstart_utc: string; dtend_utc?: string | null },
+  t: (key: string) => string,
+  locale: string = "en-US"
+): string {
+  const start = new Date(occurrence.dtstart_utc);
+  if (isNaN(start.getTime())) return "";
+
+  let datePrefix = "";
+  const today = new Date();
+  
+  if (sameDay(start, today)) {
+    const translated = t("filters.today");
+    datePrefix = translated === "filters.today" ? "Today" : translated;
+  } else {
+    const weekday = start.toLocaleDateString(locale, { weekday: "long" });
+    const month = start.toLocaleDateString(locale, { month: "short" });
+    const day = start.getDate();
+    datePrefix = `${weekday} ${month} ${day}`;
+  }
+
+  const formatTime = (d: Date): string => {
+    return d.toLocaleTimeString(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const startStr = formatTime(start);
+  if (occurrence.dtend_utc) {
+    const end = new Date(occurrence.dtend_utc);
+    if (!isNaN(end.getTime())) {
+      return `${datePrefix}, ${startStr} - ${formatTime(end)}`;
+    }
+  }
+  return `${datePrefix}, ${startStr}`;
+}
+

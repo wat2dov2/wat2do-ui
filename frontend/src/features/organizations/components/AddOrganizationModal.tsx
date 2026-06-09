@@ -29,7 +29,7 @@ import {
   FieldSeparator,
   FieldSet,
 } from "@/shared/ui/field";
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 import { toast } from "@/shared/hooks/use-toast";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
@@ -52,8 +52,8 @@ interface ClubFormData {
 interface AddOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (club: Club) => void | Promise<void>;
-  initialData?: Club;
+  onSave: (club: Organization) => void | Promise<void>;
+  initialData?: Organization;
 }
 
 export function AddOrganizationModal({
@@ -81,7 +81,7 @@ export function AddOrganizationModal({
   const validate = useCallback((data: ClubFormData, touched: Record<string, boolean>) => {
     const newErrors: Record<string, string> = {};
     if (touched.club_name && !data.club_name.trim()) {
-      newErrors.club_name = t("forms.clubNameRequired");
+      newErrors.club_name = t("forms.organizationNameRequired");
     }
     if (touched.categories && data.categories.length === 0) {
       newErrors.categories = t("forms.categoryRequired");
@@ -154,7 +154,7 @@ export function AddOrganizationModal({
 
     if (!form.isValid) return;
 
-    const club: Club = {
+    const club: Organization = {
       id: initialData?.id || Date.now(),
       club_name: form.formData.club_name.trim(),
       categories: form.formData.categories,
@@ -185,8 +185,8 @@ export function AddOrganizationModal({
   return (
     <>
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{isEditMode ? t("organizations.editClub") : t("organizations.addClub")}</DialogTitle>
           <DialogDescription>
             {isEditMode
@@ -195,14 +195,14 @@ export function AddOrganizationModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form>
+        <form className="overflow-y-auto flex-1 min-h-0 px-6 pb-6 pt-2">
           <FieldGroup>
             <FieldSet>
               <FieldLegend>{t("forms.requiredInformation")}</FieldLegend>
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
-                    {t("forms.clubName")} <span className="text-error">*</span>
+                    {t("forms.organizationName")} <span className="text-error">*</span>
                   </FieldLabel>
                   <Input
                     id="club-name"
@@ -210,7 +210,7 @@ export function AddOrganizationModal({
                     value={form.formData.club_name}
                     onChange={(e) => form.updateField("club_name", e.target.value)}
                     onBlur={() => form.handleBlur("club_name")}
-                    placeholder={t("forms.clubNamePlaceholder")}
+                    placeholder={t("forms.organizationNamePlaceholder")}
                     className={form.errors.club_name ? "border-error" : ""}
                   />
                   {form.errors.club_name && (
@@ -275,7 +275,7 @@ export function AddOrganizationModal({
 
           <Field>
             <FieldLabel htmlFor="club-type" className="text-sm font-medium text-foreground">
-              {t("forms.clubType")}
+              {t("forms.organizationType")}
             </FieldLabel>
             <Select
               value={form.formData.club_type}
@@ -294,14 +294,14 @@ export function AddOrganizationModal({
 
           <Field>
             <FieldLabel htmlFor="club-page" className="text-sm font-medium text-foreground">
-              {t("forms.clubPageUrl")}
+              {t("forms.organizationPageUrl")}
             </FieldLabel>
               <Input
                 id="club-page"
                 type="text"
                 value={form.formData.club_page}
                 onChange={(e) => form.updateField("club_page", e.target.value)}
-                placeholder={t("forms.clubPageUrlPlaceholder")}
+                placeholder={t("forms.organizationPageUrlPlaceholder")}
               />
           </Field>
 
@@ -347,7 +347,7 @@ export function AddOrganizationModal({
               </DialogClose>
               <LoadingButton
                 type="button"
-                onClick={handleSubmit}
+                onMouseDown={handleSubmit}
                 isLoading={isSubmitting}
                 loadingText={t("common.pleaseWait") || "Please wait..."}
               >
@@ -364,7 +364,7 @@ export function AddOrganizationModal({
             </Button>
           </DialogClose>
           <LoadingButton
-            onClick={handleSubmit}
+            onMouseDown={handleSubmit}
             isLoading={isSubmitting}
             loadingText={t("common.pleaseWait") || "Please wait..."}
           >

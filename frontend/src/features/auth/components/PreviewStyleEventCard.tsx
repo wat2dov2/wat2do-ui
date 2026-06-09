@@ -28,7 +28,7 @@ export interface PreviewEventData {
 interface PreviewStyleEventCardProps {
   event: PreviewEventData;
   selected?: boolean;
-  onClick?: () => void;
+  onMouseDown?: () => void;
   /** Optional key for list (e.g. event id when used with real events) */
   "data-event-id"?: number;
 }
@@ -36,23 +36,23 @@ interface PreviewStyleEventCardProps {
 export function PreviewStyleEventCard({
   event,
   selected = false,
-  onClick,
+  onMouseDown,
   "data-event-id": dataEventId,
 }: PreviewStyleEventCardProps) {
   const { t } = useTranslation();
   const catClasses = getCategoryClasses(event.category);
 
-  // Only attach interactive props when there is an onClick — keeps static
+  // Only attach interactive props when there is an onMouseDown — keeps static
   // a11y analysis happy (role is always present when an event handler is).
-  const interactiveProps = onClick
+  const interactiveProps = onMouseDown
     ? {
         role: "button" as const,
         tabIndex: 0,
-        onClick,
+        onMouseDown,
         onKeyDown: (e: React.KeyboardEvent) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onClick();
+            onMouseDown();
           }
         },
       }
@@ -64,7 +64,7 @@ export function PreviewStyleEventCard({
       data-event-id={dataEventId}
       className={cn(
         "rounded-xl overflow-hidden flex flex-col bg-card",
-        onClick && "cursor-pointer transition-shadow duration-200 hover:opacity-90",
+        onMouseDown && "cursor-pointer transition-shadow duration-200 hover:opacity-90",
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl"
       )}
     >

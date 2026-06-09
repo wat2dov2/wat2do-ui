@@ -22,7 +22,7 @@ export interface QuickFilterConfig {
   icon: ReactNode;
   labelKey: string; // i18n key
   active: boolean;
-  onClick: () => void;
+  onMouseDown: () => void;
   badge?: number;
   visible?: boolean; // for conditional rendering (e.g., profileCompleted)
 }

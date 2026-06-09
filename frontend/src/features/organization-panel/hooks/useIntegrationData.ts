@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 import { isApiError } from "@/shared/services/apiClient";
-import { getMyClubs } from "@/features/organizations";
+import { getMyOrganizations } from "@/features/organizations";
 import { useAuthState } from "@/features/auth";
 import {
   getIntegrationOptions,
@@ -88,8 +88,8 @@ export function mapResponseToIntegration(
 }
 
 /**
- * Manages data loading for integrations: the user's associated club, platform
- * options, and per-club integration state. Separated from connection logic.
+ * Manages data loading for integrations: the user's associated organization, platform
+ * options, and per-organization integration state. Separated from connection logic.
  */
 export function useIntegrationData() {
   const { t } = useTranslation();
@@ -98,9 +98,9 @@ export function useIntegrationData() {
 
   // Core data
   const [integrations, setIntegrations] = useState<Integration[]>(buildInitialIntegrations);
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const selectedClubId =
-    clubs.find((club) => club.id === activeOrganizationId)?.id ?? clubs[0]?.id ?? null;
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const selectedOrganizationId =
+    organizations.find((org) => org.id === activeOrganizationId)?.id ?? organizations[0]?.id ?? null;
 
   // Platform options (loaded once at boot)
   const [options, setOptions] = useState<PlatformOptions>(initialPlatformOptions);
@@ -120,7 +120,7 @@ export function useIntegrationData() {
     [navigate]
   );
 
-  // --- Boot data (clubs + platform options) ---
+  // --- Boot data (organizations + platform options) ---
   useEffect(() => {
     let cancelled = false;
     const loadBootData = async () => {
@@ -128,14 +128,14 @@ export function useIntegrationData() {
       setError(null);
       try {
         const [
-          clubsData,
+          organizationsData,
           discordOptions,
           slackOptions,
           telegramOptions,
           linkedinOptions,
           facebookOptions,
         ] = await Promise.all([
-          getMyClubs(),
+          getMyOrganizations(),
           getIntegrationOptions("discord"),
           getIntegrationOptions("slack"),
           getIntegrationOptions("telegram"),
@@ -143,7 +143,7 @@ export function useIntegrationData() {
           getIntegrationOptions("facebook"),
         ]);
         if (cancelled) return;
-        setClubs(clubsData);
+        setOrganizations(organizationsData);
         setOptions({
           discordServers: discordOptions.servers,
           slackServers: slackOptions.servers,
@@ -170,9 +170,9 @@ export function useIntegrationData() {
     };
   }, [redirectIfUnauthorized, t]);
 
-  // --- Load integrations for selected club ---
+  // --- Load integrations for selected organization ---
   useEffect(() => {
-    if (!selectedClubId) {
+    if (!selectedOrganizationId) {
       setIntegrations(buildInitialIntegrations());
       return;
     }
@@ -182,7 +182,7 @@ export function useIntegrationData() {
       setError(null);
       try {
         const data = await Promise.all(
-          ALL_PLATFORMS.map((platform) => getPlatformIntegration(selectedClubId, platform))
+          ALL_PLATFORMS.map((platform) => getPlatformIntegration(selectedOrganizationId, platform))
         );
         if (cancelled) return;
         const byPlatform = new Map(data.map((row) => [row.platform, row]));
@@ -206,7 +206,7 @@ export function useIntegrationData() {
     return () => {
       cancelled = true;
     };
-  }, [selectedClubId, redirectIfUnauthorized, t]);
+  }, [selectedOrganizationId, redirectIfUnauthorized, t]);
 
   const getIntegration = (platform: IntegrationPlatform) =>
     integrations.find((i) => i.platform === platform);
@@ -214,7 +214,7 @@ export function useIntegrationData() {
   return {
     integrations,
     setIntegrations,
-    selectedClubId,
+    selectedClubId: selectedOrganizationId,
     options,
     loading,
     error,

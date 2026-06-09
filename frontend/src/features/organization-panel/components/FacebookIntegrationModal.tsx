@@ -61,7 +61,7 @@ export function FacebookIntegrationModal({
           type="button"
           variant={connectionType === "page" ? "default" : "outline"}
           className="flex-1"
-          onClick={() => handleConnectionTypeChange("page")}
+          onMouseDown={() => handleConnectionTypeChange("page")}
         >
           {t("integrations.facebookPage")}
         </Button>
@@ -69,7 +69,7 @@ export function FacebookIntegrationModal({
           type="button"
           variant={connectionType === "group" ? "default" : "outline"}
           className="flex-1"
-          onClick={() => handleConnectionTypeChange("group")}
+          onMouseDown={() => handleConnectionTypeChange("group")}
         >
           {t("integrations.facebookGroup")}
         </Button>

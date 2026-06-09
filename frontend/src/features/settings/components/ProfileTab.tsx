@@ -72,7 +72,7 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
                   size="sm"
                   variant="secondary"
                   className="absolute -bottom-1 -right-1 rounded-full size-7 p-0"
-                  onClick={() => fileRef.current?.click()}
+                  onMouseDown={() => fileRef.current?.click()}
                   disabled={uploading}
                   isLoading={uploading}
                   loadingText=""

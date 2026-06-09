@@ -84,8 +84,18 @@
     "pitch": "Pitch",
     "studentNameEmail": "Student Name / Email",
     "approveMember": "Approve Member",
-    "rejectRequest": "Reject Request",
-    "noJoinRequests": "No pending requests"
+    "noJoinRequests": "No pending requests",
+    "invitationSentSuccess": "Invitation sent to {{email}}!",
+    "revokeInvitationConfirm": "Are you sure you want to revoke the invitation for {{email}}?",
+    "addManagerFailed": "Failed to add manager or send invitation.",
+    "invitationRevokedSuccess": "Invitation revoked successfully!",
+    "revokeInvitationFailed": "Failed to revoke invitation.",
+    "joinRequestApprovedSuccess": "Join request approved successfully!",
+    "joinRequestRejectedSuccess": "Join request rejected successfully!",
+    "approveMembershipFailed": "Failed to approve membership request.",
+    "rejectMembershipFailed": "Failed to reject membership request.",
+    "removeMemberFailed": "Failed to remove member.",
+    "loadManagementFailed": "Failed to load management details."
   },
   "integrations": {
     "pageDescription": "Connect your platforms to auto-import events",

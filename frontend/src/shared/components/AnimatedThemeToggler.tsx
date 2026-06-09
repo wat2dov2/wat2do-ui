@@ -81,7 +81,7 @@ export const AnimatedThemeToggler = ({
   return (
     <button
       ref={buttonRef}
-      onClick={toggleTheme}
+      onMouseDown={toggleTheme}
       className={cn(
         "rounded-xl p-2 hover:bg-secondary text-foreground transition-colors",
         className

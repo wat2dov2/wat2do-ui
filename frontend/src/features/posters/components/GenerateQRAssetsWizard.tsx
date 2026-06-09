@@ -446,7 +446,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
                       type="button"
                       variant="secondary"
                       size="icon"
-                      onClick={() => handleRemoveAsset(asset.id)}
+                      onMouseDown={() => handleRemoveAsset(asset.id)}
                     >
                       <span className="sr-only">{t("common.delete")}</span>
                       ×
@@ -469,7 +469,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               <button
                 key={asset.id}
                 type="button"
-                onClick={() => selectAsset(asset.id)}
+                onMouseDown={() => selectAsset(asset.id)}
                 className={`rounded-lg border px-2 py-1 text-xs shrink-0 ${
                   selectedAsset?.id === asset.id
                     ? "border-primary bg-primary/10 text-primary-foreground"
@@ -578,14 +578,14 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               type="button"
               variant="secondary"
               size="sm"
-              onClick={() => setStep((prev) => (prev === 1 ? 1 : ((prev - 1) as WizardStep)))}
+              onMouseDown={() => setStep((prev) => (prev === 1 ? 1 : ((prev - 1) as WizardStep)))}
             >
               <ArrowLeft className="size-3 mr-1" />
               {t("common.back")}
             </Button>
           ) : (
             onClose && (
-              <Button type="button" variant="secondary" size="sm" onClick={onClose}>
+              <Button type="button" variant="secondary" size="sm" onMouseDown={onClose}>
                 {t("common.cancel")}
               </Button>
             )
@@ -596,7 +596,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
             <Button
               type="button"
               size="sm"
-              onClick={() => {
+              onMouseDown={() => {
                 if (step === 1) {
                   goToStep2();
                 } else if (step === 2) {
@@ -616,7 +616,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               <Button
                 type="button"
                 size="sm"
-                onClick={handleGenerateAndDownload}
+                onMouseDown={handleGenerateAndDownload}
                 disabled={pdfGenerating}
               >
                 {pdfGenerating ? (

@@ -38,7 +38,7 @@ export function MoreFiltersButton({
               role="button"
               tabIndex={0}
               aria-label={t("common.clearFilters", "Clear filters")}
-              onClick={(e) => {
+              onMouseDown={(e) => {
                 e.stopPropagation();
                 onClearFilters?.();
               }}

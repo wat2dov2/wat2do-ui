@@ -90,6 +90,13 @@ export function EventCard({
   const [searchParams] = useSearchParams();
   const [activeDialog, setActiveDialog] = useState<EventCardDialog | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHoveringBadge, setIsHoveringBadge] = useState(false);
+
+  const badgeHoverProps = {
+    onMouseEnter: () => setIsHoveringBadge(true),
+    onMouseLeave: () => setIsHoveringBadge(false),
+  };
+
   const { t, i18n } = useTranslation();
 
   const profileCompleted = useProfileCompleted();
@@ -130,7 +137,7 @@ export function EventCard({
     }
   };
 
-  const handleOrganizationClick = (e: React.MouseEvent) => {
+  const handleOrganizationMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (event.organization) {
@@ -161,14 +168,16 @@ export function EventCard({
         role="button"
         tabIndex={0}
         aria-label={`Event: ${event.title}`}
-        onClick={handleCardActivate}
+        onMouseDown={handleCardActivate}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             handleCardActivate();
           }
         }}
-        className="rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card [&:hover:not(:has(.event-card-actions-trigger:hover))]:opacity-90 [&:hover:not(:has(.event-card-actions-trigger:hover))]:shadow-lg"
+        className={`rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
+          isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
+        }`}
       >
         {/* Event Image */}
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
@@ -194,8 +203,9 @@ export function EventCard({
           <BadgeMask variant="top-left">
             <button
               type="button"
-              onClick={handleCategoryClick}
-              className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-all hover:opacity-80 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
+              onMouseDown={handleCategoryClick}
+              {...badgeHoverProps}
+              className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
             >
               {translateCategory(eventCategory, t)}
             </button>
@@ -208,8 +218,9 @@ export function EventCard({
                 <button
                   type="button"
                   aria-label={t("events.actions")}
+                  {...badgeHoverProps}
                   className="event-card-actions-trigger font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center opacity-70 transition-[background-color,opacity] hover:bg-secondary hover:opacity-100 data-[state=open]:opacity-100"
-                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="size-3.5" />
@@ -218,7 +229,7 @@ export function EventCard({
               <DropdownMenuContent
                 className="w-48"
                 align="end"
-                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <DropdownMenuItem
@@ -295,8 +306,9 @@ export function EventCard({
             <BadgeMask variant="bottom-left">
               <button
                 type="button"
-                onClick={handleOrganizationClick}
-                className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center transition-all hover:bg-muted/20 active:scale-95 cursor-pointer"
+                onMouseDown={handleOrganizationMouseDown}
+                {...badgeHoverProps}
+                className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
               >
                 <span className="truncate max-w-[128px]">
                   {event.organization}
@@ -326,7 +338,7 @@ export function EventCard({
           {/* I'm Interested button */}
           <button
             type="button"
-            onClick={(e) => {
+            onMouseDown={(e) => {
               e.stopPropagation();
               if (profileCompleted) toggleSaveEvent(event.id);
             }}

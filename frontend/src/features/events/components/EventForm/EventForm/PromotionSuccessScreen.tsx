@@ -35,7 +35,7 @@ export function PromotionSuccessScreen({
             "{formData.title}" {t("events.eventPromotedDesc")}
           </p>
 
-          <Button onClick={onClose} className="w-full">
+          <Button onMouseDown={onClose} className="w-full">
             {t("common.done")}
           </Button>
         </div>

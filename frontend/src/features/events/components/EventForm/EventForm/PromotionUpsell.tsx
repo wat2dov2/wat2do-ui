@@ -55,7 +55,7 @@ export function PromotionUpsell({
               type="button"
               variant="secondary"
               size="sm"
-              onClick={onBuyCredits}
+              onMouseDown={onBuyCredits}
               className="text-xs font-medium text-warning hover:text-warning/80 h-auto p-0"
             >
               {t("credits.buyMore")}
@@ -88,7 +88,7 @@ export function PromotionUpsell({
               </Button>
             </DialogClose>
             <Button
-              onClick={onPromote}
+              onMouseDown={onPromote}
               disabled={!canAfford}
               className="flex-1 bg-primary hover:bg-primary/90"
             >

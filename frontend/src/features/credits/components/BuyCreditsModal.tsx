@@ -100,7 +100,7 @@ export function BuyCreditsModal({
                   {t("credits.creditCount", { count: currentCredits + form.purchasedCredits })}
                 </span>
               </div>
-              <Button onClick={modalState.handleClose} className="w-full">
+              <Button onMouseDown={modalState.handleClose} className="w-full">
                 {t("common.done")}
               </Button>
             </FlexCol>
@@ -135,7 +135,7 @@ export function BuyCreditsModal({
                 key={pkg.credits}
                 package={pkg}
                 isSelected={form.selectedPackage === index}
-                onClick={() => form.setSelectedPackage(index)}
+                onMouseDown={() => form.setSelectedPackage(index)}
                 popularLabel={t("promotion.bestValue")}
               />
             ))}
@@ -152,7 +152,7 @@ export function BuyCreditsModal({
           )}
 
           <LoadingButton
-            onClick={handlePurchase}
+            onMouseDown={handlePurchase}
             disabled={form.selectedPackage === null}
             isLoading={form.isPurchasing}
             loadingText={t("credits.processing")}

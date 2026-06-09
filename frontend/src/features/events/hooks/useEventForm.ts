@@ -39,7 +39,7 @@ export function useEventForm(options: UseEventFormOptions) {
     (data: EventFormData, touched: Record<string, boolean>) =>
       validateEventForm(data, touched, {
         titleRequired: t("forms.titleRequired"),
-        clubRequired: t("forms.clubRequired"),
+        clubRequired: t("forms.organizationRequired"),
         occurrenceRequired: t("forms.occurrenceRequired"),
         locationRequired: t("forms.locationRequired"),
         jsonInvalid: t("forms.invalidJsonFormat"),

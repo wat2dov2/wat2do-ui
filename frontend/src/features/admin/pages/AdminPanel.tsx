@@ -72,19 +72,19 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
           icon={Calendar}
           title={t("navigation.events")}
           description={t("admin.manageEventsDesc")}
-          onClick={() => onNavigate("admin-events")}
+          onMouseDown={() => onNavigate("admin-events")}
         />
         <AdminCard
           icon={Users}
-          title={t("navigation.clubs")}
+          title={t("navigation.organizations")}
           description={t("admin.manageClubsDescAlt")}
-          onClick={() => onNavigate("admin-organizations")}
+          onMouseDown={() => onNavigate("admin-organizations")}
         />
         <AdminCard
           icon={Megaphone}
           title={t("admin.posters")}
           description={t("admin.managePostersDescAlt")}
-          onClick={() => onNavigate("admin-posters")}
+          onMouseDown={() => onNavigate("admin-posters")}
         />
       </div>
 
@@ -110,7 +110,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
                   role="button"
                   tabIndex={0}
                   className="w-full p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
-                  onClick={() => handleActivityClick(display)}
+                  onMouseDown={() => handleActivityClick(display)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -131,7 +131,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
                           </p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Clock className="size-3" />
-                            <span>{formatRelativeTime(display.timestamp)}</span>
+                            <span>{formatRelativeTime(display.timestamp, t)}</span>
                             {display.submittedBy && (
                               <>
                                 <span>{t("common.separatorBullet")}</span>
@@ -144,7 +144,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
                           variant="secondary"
                           size="sm"
                           className="shrink-0"
-                          onClick={(e) => {
+                          onMouseDown={(e) => {
                             e.stopPropagation();
                             handleActivityClick(display);
                           }}

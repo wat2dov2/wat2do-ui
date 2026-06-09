@@ -83,7 +83,7 @@ export function DiscordConnectModal({
                   </p>
                   <Button
                     className="w-full bg-primary hover:bg-primary/90"
-                    onClick={onAddBot}
+                    onMouseDown={onAddBot}
                     disabled={botAdded || saving || !selectedClubId}
                   >
                     {botAdded ? (
@@ -165,7 +165,7 @@ export function DiscordConnectModal({
               </DialogClose>
               {step === "select" && (
                 <Button
-                  onClick={onActivate}
+                  onMouseDown={onActivate}
                   disabled={
                     !selectedServerId ||
                     !selectedChannelId ||

@@ -7,12 +7,12 @@ import type {
   EventFormData,
   EventSubmission,
   ReportedEvent,
-  Club,
+  Organization,
   SubmissionStatus,
 } from "@/shared/types";
 import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
 import {
-  getAllClubs as getAllClubsData,
+  getAllOrganizations as getAllOrganizationsData,
   getOrganizationTypes as getOrganizationTypesData,
   createOrganizationAPI,
   updateOrganizationAPI,
@@ -78,7 +78,7 @@ function toEventSubmission(row: SubmissionResponse): EventSubmission {
 
 // ── Club mutations ─────────────────────────────────────────────────
 
-export async function adminCreateOrganization(club: Club): Promise<Club> {
+export async function adminCreateOrganization(club: Organization): Promise<Organization> {
   return createOrganizationAPI({
     club_name: club.club_name,
     categories: club.categories,
@@ -92,7 +92,7 @@ export async function adminCreateOrganization(club: Club): Promise<Club> {
   });
 }
 
-export async function adminUpdateOrganization(club: Club): Promise<Club> {
+export async function adminUpdateOrganization(club: Organization): Promise<Organization> {
   return updateOrganizationAPI(club, {
     club_name: club.club_name,
     categories: club.categories,
@@ -153,9 +153,10 @@ export interface OrganizationClaim {
   executive_role: string;
   proof_url: string | null;
   status: string;
+  rejection_reason?: string | null;
   created_at: string;
   updated_at: string;
-  clubs?: Club;
+  clubs?: Organization;
   users?: {
     id: string;
     email: string;
@@ -165,18 +166,19 @@ export interface OrganizationClaim {
 }
 
 export async function loadAdminOrganizationsData(): Promise<{
-  clubs: Club[];
+  clubs: Organization[];
   clubTypes: string[];
 }> {
   const [clubs, clubTypes] = await Promise.all([
-    getAllClubsData(),
+    getAllOrganizationsData(),
     getOrganizationTypesData(),
   ]);
   return { clubs, clubTypes };
 }
 
-export async function getPendingOrganizationClaims(): Promise<OrganizationClaim[]> {
-  return api.get<OrganizationClaim[]>("/clubs/claims/pending");
+export async function getOrganizationClaims(status?: string): Promise<OrganizationClaim[]> {
+  const url = status ? `/clubs/claims?status=${status}` : "/clubs/claims";
+  return api.get<OrganizationClaim[]>(url);
 }
 
 export async function resolveClaim(

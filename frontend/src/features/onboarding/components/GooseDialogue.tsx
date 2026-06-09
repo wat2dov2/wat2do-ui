@@ -41,7 +41,7 @@ export function GooseDialogue({
               className="text-lg text-foreground leading-relaxed mt-1 cursor-pointer"
               role={!done ? "button" : undefined}
               tabIndex={!done ? 0 : undefined}
-              onClick={!done ? skip : undefined}
+              onMouseDown={!done ? skip : undefined}
               onKeyDown={
                 !done
                   ? (e) => {
@@ -60,14 +60,14 @@ export function GooseDialogue({
 
           <div className="flex items-center gap-2">
             {showBack && onBack && (
-              <Button type="button" variant="secondary" size="sm" onClick={onBack}>
+              <Button type="button" variant="secondary" size="sm" onMouseDown={onBack}>
                 {t("common.back")}
               </Button>
             )}
             <Button
               type="button"
               size="sm"
-              onClick={onNext}
+              onMouseDown={onNext}
               disabled={nextDisabled}
             >
               {resolvedNextLabel}

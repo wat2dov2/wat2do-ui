@@ -5,6 +5,8 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
+    "success": "Success",
+    "error": "Error",
     "search": "Search",
     "later": "Later",
     "or": "or",
@@ -22,6 +24,15 @@
     "none": "None",
     "noDescription": "No description",
     "justNow": "Just now",
+    "minuteAgo": "{{count}} minute ago",
+    "minuteAgo_other": "{{count}} minutes ago",
+    "hourAgo": "{{count}} hour ago",
+    "hourAgo_other": "{{count}} hours ago",
+    "dayAgo": "{{count}} day ago",
+    "dayAgo_other": "{{count}} days ago",
+    "minuteAgoCompact": "{{count}}m ago",
+    "hourAgoCompact": "{{count}}h ago",
+    "dayAgoCompact": "{{count}}d ago",
     "moreFilters": "More Filters",
     "event": "event",
     "events": "events",
@@ -51,7 +62,8 @@
     "selectPlaceholder": "Select...",
     "imageLoadErrorAlt": "Error loading image",
     "logo": "Logo",
-    "loadingMap": "Loading map..."
+    "loadingMap": "Loading map...",
+    "clearFilters": "Clear filters"
   },
   "errorBoundary": {
     "title": "Something went wrong",
@@ -201,7 +213,7 @@
     "locationPlaceholder": "e.g. MC 1234, SLC Great Hall",
     "selectPackage": "Select a package",
     "eventTitlePlaceholder": "e.g., Tech Talk: AI in 2024",
-    "clubNamePlaceholder": "e.g., Computer Science Organization",
+    "organizationNamePlaceholder": "e.g., Computer Science Organization",
     "selectOrganization": "Select an organization",
     "searchOrganizationPlaceholder": "Search organizations...",
     "noOrganizationFound": "No organization found",
@@ -289,7 +301,9 @@
     "academic": "Academic",
     "religious": "Religious",
     "cultural": "Cultural",
-    "socialGames": "Social & Games"
+    "socialGames": "Social & Games",
+    "social": "Social",
+    "gaming": "Gaming"
   },
   "locations": {
     "LAX": "LAX",

@@ -62,7 +62,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
             </p>
           </div>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button onMouseDown={() => setShowCreateModal(true)}>
           <Plus className="size-4 mr-2" />
           {t("marketing.createQRCode")}
         </Button>
@@ -77,7 +77,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
               role="button"
               tabIndex={0}
               aria-label={`View QR code: ${qr.name}`}
-              onClick={() => handleViewDetails(qr)}
+              onMouseDown={() => handleViewDetails(qr)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -151,7 +151,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
           <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
             {t("marketing.noQRCodesDesc")}
           </p>
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button onMouseDown={() => setShowCreateModal(true)}>
             <Plus className="size-4 mr-2" />
             {t("marketing.createQRCode")}
           </Button>

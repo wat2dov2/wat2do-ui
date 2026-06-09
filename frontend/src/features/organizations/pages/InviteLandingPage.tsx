@@ -118,7 +118,7 @@ export function InviteLandingPage() {
               <CardDescription className="text-sm text-muted-foreground">
                 {error}
               </CardDescription>
-              <Button onClick={() => navigate(ROUTES.HOME)} className="w-full mt-2">
+              <Button onMouseDown={() => navigate(ROUTES.HOME)} className="w-full mt-2">
                 {t("inviteLanding.goHome")}
               </Button>
             </div>
@@ -174,7 +174,7 @@ export function InviteLandingPage() {
               {/* Dynamic Action Buttons depending on login state */}
               <div className="space-y-3 pt-2">
                 {isAuthenticated ? (
-                  <Button onClick={handleAccept} className="w-full h-11 text-sm font-medium" disabled={accepting}>
+                  <Button onMouseDown={handleAccept} className="w-full h-11 text-sm font-medium" disabled={accepting}>
                     {accepting ? (
                       <>
                         <Spinner className="size-4 mr-2" />
@@ -189,14 +189,14 @@ export function InviteLandingPage() {
                   </Button>
                 ) : (
                   <div className="space-y-3">
-                    <Button onClick={() => handleAuthRedirect("signup")} className="w-full h-11 text-sm font-medium group">
+                    <Button onMouseDown={() => handleAuthRedirect("signup")} className="w-full h-11 text-sm font-medium group">
                       {t("inviteLanding.signUpButton")}
                       <ArrowRight className="size-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
                     <div className="text-xs text-muted-foreground text-center">
                       {t("inviteLanding.alreadyHaveAccount")}{" "}
                       <button
-                        onClick={() => handleAuthRedirect("login")}
+                        onMouseDown={() => handleAuthRedirect("login")}
                         className="text-primary hover:underline font-semibold bg-transparent border-none p-0 inline-block align-baseline"
                       >
                         {t("inviteLanding.logIn")}

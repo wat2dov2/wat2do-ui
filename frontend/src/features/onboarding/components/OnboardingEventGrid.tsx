@@ -93,7 +93,7 @@ export function OnboardingEventGrid({
             key={event.id}
             event={preview}
             selected={isSelected}
-            onClick={() => onToggleEventId(event.id)}
+            onMouseDown={() => onToggleEventId(event.id)}
             data-event-id={event.id}
           />
         );

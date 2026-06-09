@@ -18,13 +18,13 @@ import {
   FieldGroup,
 } from "@/shared/ui/field";
 import { toast } from "@/shared/hooks/use-toast";
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 import { api } from "@/shared/services/apiClient";
 
 interface JoinOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  club: Club;
+  club: Organization;
 }
 
 export function JoinOrganizationModal({ isOpen, onClose, club }: JoinOrganizationModalProps) {

@@ -27,7 +27,7 @@ export const FilterSection = React.memo(function FilterSection({
   return (
     <div className={`space-y-2 relative -mx-4 ${expanded ? "border-y border-border" : ""}`}>
       <button
-        onClick={onToggle}
+        onMouseDown={onToggle}
         className="flex items-center justify-between w-full group hover:opacity-80 transition-opacity py-3 px-4"
       >
         <div className="flex items-center gap-2">
@@ -46,7 +46,7 @@ export const FilterSection = React.memo(function FilterSection({
               role="button"
               tabIndex={0}
               aria-label={`Clear ${title}`}
-              onClick={(e) => {
+              onMouseDown={(e) => {
                 e.stopPropagation();
                 onClear?.();
               }}

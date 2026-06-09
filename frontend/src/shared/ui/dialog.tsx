@@ -50,7 +50,7 @@ const DialogOverlay = React.forwardRef<
       className
     )}
     style={{ pointerEvents: "auto" }}
-    onClick={(e) => {
+    onMouseDown={(e) => {
       // Don't close when clicking on pie menu
       const target = e.target as HTMLElement;
       if (isNestedPortalTarget(target)) {

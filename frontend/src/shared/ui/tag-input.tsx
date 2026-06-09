@@ -86,9 +86,9 @@ export function TagInput({
         />
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           size="icon"
-          onClick={onAdd}
+          onMouseDown={onAdd}
           className="shrink-0"
         >
           <Plus className="size-4" />
@@ -107,7 +107,7 @@ export function TagInput({
               {item}
               <button
                 type="button"
-                onClick={() => onRemove(index)}
+                onMouseDown={() => onRemove(index)}
                 className="bg-foreground/30 text-primary-foreground rounded-full p-0.5 size-4 flex items-center justify-center hover:bg-foreground/40 transition-colors"
               >
                 <X className="size-3" />

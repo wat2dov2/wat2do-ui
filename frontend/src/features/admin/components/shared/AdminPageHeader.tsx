@@ -14,7 +14,7 @@ interface AdminPageHeaderProps {
   onBack?: () => void;
   action?: {
     label: string;
-    onClick: () => void;
+    onMouseDown: () => void;
     icon?: LucideIcon;
   };
 }
@@ -30,7 +30,7 @@ export function AdminPageHeader({
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
         {onBack && (
-          <Button variant="secondary" size="icon" onClick={onBack}>
+          <Button variant="secondary" size="icon" onMouseDown={onBack}>
             <ArrowLeft className="size-4" />
           </Button>
         )}
@@ -43,7 +43,7 @@ export function AdminPageHeader({
         </div>
       </div>
       {action && (
-        <Button onClick={action.onClick}>
+        <Button onMouseDown={action.onMouseDown}>
           {action.icon && <action.icon className="size-4 mr-2" />}
           {action.label}
         </Button>

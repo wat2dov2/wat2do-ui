@@ -56,7 +56,6 @@ def create_submission(user_id: str, event_data: EventCreate | dict) -> Submissio
     return SubmissionResponse(**payload, submitted_at=datetime.now(timezone.utc).isoformat())
 
 
-
 def get_submissions(
     status: str | None = None,
     *,
@@ -71,7 +70,7 @@ def get_submissions(
         q = q.range(offset, offset + limit - 1)
     r = q.execute()
     items = []
-    for row in (r.data or []):
+    for row in r.data or []:
         email = None
         if "users" in row and isinstance(row["users"], dict):
             email = row["users"].get("email")
@@ -81,7 +80,13 @@ def get_submissions(
 
 
 def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
-    r = get_sb().table(EVENT_SUBMISSIONS).select("*, users(email)").eq("id", submission_id).execute()
+    r = (
+        get_sb()
+        .table(EVENT_SUBMISSIONS)
+        .select("*, users(email)")
+        .eq("id", submission_id)
+        .execute()
+    )
     if not r.data:
         return None
     row = r.data[0]
@@ -90,7 +95,6 @@ def get_submission_by_id(submission_id: str) -> SubmissionResponse | None:
         email = row["users"].get("email")
     model_data = {**row, "submitted_by_email": email}
     return SubmissionResponse.model_validate(model_data)
-
 
 
 def update_submission(

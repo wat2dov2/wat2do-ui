@@ -27,7 +27,7 @@ export function MultiSelect({
           return (
             <Button
               key={value}
-              onClick={() => onToggle(value)}
+              onMouseDown={() => onToggle(value)}
               variant={isSelected ? "default" : "secondary"}
               className={cn(
                 "rounded-full",

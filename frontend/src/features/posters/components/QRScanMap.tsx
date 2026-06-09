@@ -48,13 +48,13 @@ function PosterMarker({
   scanCount, 
   maxScanCount,
   index,
-  onClick
+  onMouseDown
 }: { 
   posterData: { qrCodeId: string; name: string; latitude: number; longitude: number };
   scanCount: number;
   maxScanCount: number;
   index: number;
-  onClick?: (qrCodeId: string) => void;
+  onMouseDown?: (qrCodeId: string) => void;
 }) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
@@ -64,8 +64,8 @@ function PosterMarker({
 
   const handleActivatePoster = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
-    if (onClick) {
-      onClick(posterData.qrCodeId);
+    if (onMouseDown) {
+      onMouseDown(posterData.qrCodeId);
     }
   };
 
@@ -77,7 +77,7 @@ function PosterMarker({
       aria-label={t("qrCode.posterAriaLabel", { id: posterData.qrCodeId })}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={handleActivatePoster}
+      onMouseDown={handleActivatePoster}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -318,7 +318,7 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
                 scanCount={poster.scanCount}
                 maxScanCount={maxScanCount}
                 index={index}
-                onClick={onMarkerClick}
+                onMouseDown={onMarkerClick}
               />
             </Marker>
           ))}

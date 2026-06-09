@@ -40,7 +40,7 @@ export function stripTrailingSlash(url: string): string {
  * Sanitize an HTML string to allow only safe inline formatting tags.
  *
  * Strips every HTML tag except `<strong>`, `</strong>`, `<em>`, and `</em>`.
- * The sanitizer rejects any attributes on allowed tags (so `<strong onclick>` is
+ * The sanitizer rejects any attributes on allowed tags (so `<strong onmousedown>` is
  * stripped), tolerates extra whitespace (`<strong >`), and is immune to nul-byte
  * placeholder forgery: nul bytes are removed from input up front.
  *

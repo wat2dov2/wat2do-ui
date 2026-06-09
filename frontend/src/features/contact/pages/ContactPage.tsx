@@ -89,42 +89,42 @@ export function ContactPage() {
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
               {t("contact.about.welcome")}
               <span
-                onClick={() => handleSearchClick("hip-hop")}
+                onMouseDown={() => handleSearchClick("hip-hop")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.hipHop")}
               </span>
               {t("contact.about.remoteCarPrefix")}
               <span
-                onClick={() => handleSearchClick("remote-controlled")}
+                onMouseDown={() => handleSearchClick("remote-controlled")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.remoteCar")}
               </span>
               , 🍽️{" "}
               <span
-                onClick={() => handleSearchClick("cooking")}
+                onMouseDown={() => handleSearchClick("cooking")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.cooking")}
               </span>
               {t("contact.about.cookingSuffix")}
               <span
-                onClick={() => handleSearchClick("curling")}
+                onMouseDown={() => handleSearchClick("curling")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.curling")}
               </span>
               {t("contact.about.boatCruisePrefix")}
               <span
-                onClick={() => handleSearchClick("harbour boat")}
+                onMouseDown={() => handleSearchClick("harbour boat")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.boatCruise")}
               </span>
               {t("contact.about.stratfordPrefix")}
               <span
-                onClick={() => handleSearchClick("Stratford")}
+                onMouseDown={() => handleSearchClick("Stratford")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.stratford")}
@@ -132,21 +132,21 @@ export function ContactPage() {
               {t("contact.about.anniePrefix")}
               <span className="italic">{t("contact.about.annie")}</span>, 🎢{" "}
               <span
-                onClick={() => handleSearchClick("Wonderland")}
+                onMouseDown={() => handleSearchClick("Wonderland")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.wonderland")}
               </span>
               {t("contact.about.networkingPrefix")}
               <span
-                onClick={() => handleSearchClick("networking")}
+                onMouseDown={() => handleSearchClick("networking")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.networking")}
               </span>
               {t("contact.about.builtPrefix")}
               <span
-                onClick={() => handleSearchClick("August 2025")}
+                onMouseDown={() => handleSearchClick("August 2025")}
                 className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
               >
                 {t("contact.about.builtDate")}
@@ -234,21 +234,21 @@ export function ContactPage() {
               <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
                 {t("contact.tips.random.desc")}
                 <span
-                  onClick={() => handleSearchClick("Repair Club", true)}
+                  onMouseDown={() => handleSearchClick("Repair Club", true)}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   {t("contact.tips.random.repair")}
                 </span>
                 {t("contact.tips.random.repairSuffix")}
                 <span
-                  onClick={() => handleSearchClick("Zumba")}
+                  onMouseDown={() => handleSearchClick("Zumba")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   {t("contact.tips.random.zumba")}
                 </span>
                 {t("contact.tips.random.zumbaSuffix")}
                 <span
-                  onClick={() => handleSearchClick("Barbells")}
+                  onMouseDown={() => handleSearchClick("Barbells")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   {t("contact.tips.random.barbells")}
@@ -268,21 +268,21 @@ export function ContactPage() {
               <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans mt-4">
                 {t("contact.tips.search.friendsIntro")}
                 <span
-                  onClick={() => handleSearchClick("Pho Night")}
+                  onMouseDown={() => handleSearchClick("Pho Night")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   {t("contact.tips.search.pho")}
                 </span>
                 ,{" "}
                 <span
-                  onClick={() => handleSearchClick("Campfire Jam")}
+                  onMouseDown={() => handleSearchClick("Campfire Jam")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   {t("contact.tips.search.campfire")}
                 </span>
                 {t("contact.tips.search.or")}
                 <span
-                  onClick={() => handleSearchClick("Global Games Night")}
+                  onMouseDown={() => handleSearchClick("Global Games Night")}
                   className="underline decoration-1 underline-offset-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   {t("contact.tips.search.global")}
@@ -308,13 +308,13 @@ export function ContactPage() {
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 pt-6">
             <button
-              onClick={() => navigate(ROUTES.HOME)}
+              onMouseDown={() => navigate(ROUTES.HOME)}
               className="px-5 py-2.5 bg-background border border-border text-foreground hover:bg-muted font-semibold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
             >
               {t("contact.actions.browse")}
             </button>
             <button
-              onClick={() => navigate(ROUTES.ORGANIZATIONS)}
+              onMouseDown={() => navigate(ROUTES.ORGANIZATIONS)}
               className="px-5 py-2.5 bg-background border border-border text-foreground hover:bg-muted font-semibold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
             >
               {t("contact.actions.explore")}

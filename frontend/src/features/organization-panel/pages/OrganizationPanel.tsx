@@ -33,19 +33,19 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
           icon={Megaphone}
           title={t("organizationPanel.posters")}
           description={t("organizationPanel.postersDesc")}
-          onClick={() => onNavigate("organization-panel-posters")}
+          onMouseDown={() => onNavigate("organization-panel-posters")}
         />
         <AdminCard
           icon={Link}
           title={t("organizationPanel.integrations")}
           description={t("organizationPanel.integrationsDesc")}
-          onClick={() => onNavigate("organization-panel-integrations")}
+          onMouseDown={() => onNavigate("organization-panel-integrations")}
         />
         <AdminCard
           icon={Users}
           title={t("organizationPanel.members")}
           description={t("organizationPanel.membersDesc")}
-          onClick={() => onNavigate("organization-panel-members")}
+          onMouseDown={() => onNavigate("organization-panel-members")}
         />
       </div>
 

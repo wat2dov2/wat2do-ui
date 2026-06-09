@@ -1,0 +1,12 @@
+[
+  {
+    "id": "wusa",
+    "name": "WUSA Events",
+    "school": "University of Waterloo",
+    "entry_url": "https://wusa.ca/events/",
+    "event_url_contains": "/event/",
+    "next_page_selector": "a.tribe-events-c-nav__next",
+    "content_selector": ".tribe-events-single-event-description, .tribe-events-calendar-single, .entry-content",
+    "image_selector": ".tribe-events-event-image img, .entry-content img"
+  }
+]

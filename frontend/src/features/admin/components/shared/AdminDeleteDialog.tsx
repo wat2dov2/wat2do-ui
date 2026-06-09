@@ -45,14 +45,14 @@ export function AdminDeleteDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex gap-2 justify-end mt-4">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onMouseDown={onClose} disabled={isLoading}>
             {cancelLabel || t("common.cancel")}
           </Button>
           <LoadingButton
             variant="destructive"
-            onClick={onConfirm}
+            onMouseDown={onConfirm}
             isLoading={isLoading}
-            loadingText={t("common.pleaseWait") || "Please wait..."}
+            loadingText={t("common.pleaseWait")}
           >
             {confirmLabel || t("common.delete")}
           </LoadingButton>

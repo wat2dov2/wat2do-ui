@@ -75,7 +75,7 @@ export function InstagramIntegrationModal({
                 </Button>
               </DialogClose>
               <Button
-                onClick={onConnect}
+                onMouseDown={onConnect}
                 disabled={!handle}
               >
                 {t("integrations.connect")}

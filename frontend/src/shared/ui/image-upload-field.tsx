@@ -57,7 +57,7 @@ export function ImageUploadField({
             type="button"
             variant="outline"
             size="sm"
-            onClick={onRemoveImage}
+            onMouseDown={onRemoveImage}
             className="absolute top-2 right-2"
           >
             <X className="size-4" />
@@ -66,7 +66,7 @@ export function ImageUploadField({
       ) : (
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onMouseDown={() => fileInputRef.current?.click()}
           className="flex w-full flex-col items-center justify-center gap-2 rounded-xl bg-secondary px-3 py-6 text-center text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 cursor-pointer"
         >
           <ImagePlus className="size-8 text-muted-foreground" />

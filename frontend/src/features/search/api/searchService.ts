@@ -1,5 +1,6 @@
 import type { Event } from "@/shared/types";
 import { getPrimaryOccurrence } from "@/shared/utils/date";
+import { getEventCategory } from "@/shared/utils/event";
 
 /**
  * Search Service
@@ -45,7 +46,7 @@ export function filterEvents(
   return events.filter((event) => {
     const food = event.food ?? [];
     const price = event.price ?? 0;
-    const category = event.category ?? "";
+    const category = getEventCategory(event);
     const dayOfWeek = getEventDayOfWeek(event);
     const needsRegistration = event.registration ?? false;
 

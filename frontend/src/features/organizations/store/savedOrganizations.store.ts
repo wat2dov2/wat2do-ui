@@ -1,7 +1,7 @@
 /**
- * Saved Clubs Store (Zustand)
+ * Saved Organizations Store (Zustand)
  *
- * Single source of truth for saved/followed club IDs. Optimistic toggle with
+ * Single source of truth for saved/followed organization IDs. Optimistic toggle with
  * backend sync.
  */
 
@@ -15,19 +15,19 @@ import {
 import { isAuthenticated } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
 
-interface SavedClubsState {
-  savedClubIds: number[];
+interface SavedOrganizationsState {
+  savedOrganizationIds: number[];
   isLoading: boolean;
   hasLoaded: boolean;
 
-  /** Fetch saved club IDs from backend. Idempotent — skips if already loaded successfully. */
-  fetchSavedClubs: () => Promise<void>;
+  /** Fetch saved organization IDs from backend. Idempotent — skips if already loaded successfully. */
+  fetchSavedOrganizations: () => Promise<void>;
   /** Clear per-user state (called on logout / user switch). */
   reset: () => void;
   /** Pure local toggle — no backend sync. */
-  _toggleLocal: (clubId: number) => void;
+  _toggleLocal: (organizationId: number) => void;
   /** Full toggle: local mutation + backend sync. */
-  toggleSaveClub: (clubId: number) => void;
+  toggleSaveOrganization: (organizationId: number) => void;
 }
 
 let _savedFetchInFlight = false;
@@ -35,14 +35,14 @@ let _lastFetchErrored = false;
 
 const _optimisticToggles = new Map<number, boolean>();
 
-export const useSavedOrganizationsStore = create<SavedClubsState>((set, get) => ({
-  savedClubIds: [],
+export const useSavedOrganizationsStore = create<SavedOrganizationsState>((set, get) => ({
+  savedOrganizationIds: [],
   isLoading: true,
   hasLoaded: false,
 
-  fetchSavedClubs: async () => {
+  fetchSavedOrganizations: async () => {
     if (!isAuthenticated()) {
-      set({ savedClubIds: [], isLoading: false, hasLoaded: false });
+      set({ savedOrganizationIds: [], isLoading: false, hasLoaded: false });
       return;
     }
     const state = get();
@@ -57,21 +57,21 @@ export const useSavedOrganizationsStore = create<SavedClubsState>((set, get) => 
 
       // Apply in-flight overrides to the fetched list
       const merged = new Set(ids.map(Number).filter(Number.isFinite));
-      _optimisticToggles.forEach((shouldSave, clubId) => {
+      _optimisticToggles.forEach((shouldSave, organizationId) => {
         if (shouldSave) {
-          merged.add(clubId);
+          merged.add(organizationId);
         } else {
-          merged.delete(clubId);
+          merged.delete(organizationId);
         }
       });
 
       set({
-        savedClubIds: Array.from(merged),
+        savedOrganizationIds: Array.from(merged),
         isLoading: false,
         hasLoaded: true,
       });
     } catch (err) {
-      console.error("Failed to fetch saved club IDs:", err);
+      console.error("Failed to fetch saved organization IDs:", err);
       _lastFetchErrored = true;
       set({ isLoading: false });
     } finally {
@@ -82,47 +82,47 @@ export const useSavedOrganizationsStore = create<SavedClubsState>((set, get) => 
   reset: () => {
     _lastFetchErrored = false;
     _optimisticToggles.clear();
-    set({ savedClubIds: [], isLoading: false, hasLoaded: false });
+    set({ savedOrganizationIds: [], isLoading: false, hasLoaded: false });
   },
 
-  _toggleLocal: (clubId) => {
-    const prev = get().savedClubIds;
-    const newIds = prev.includes(clubId)
-      ? prev.filter((id) => id !== clubId)
-      : [...prev, clubId];
-    set({ savedClubIds: newIds });
+  _toggleLocal: (organizationId) => {
+    const prev = get().savedOrganizationIds;
+    const newIds = prev.includes(organizationId)
+      ? prev.filter((id) => id !== organizationId)
+      : [...prev, organizationId];
+    set({ savedOrganizationIds: newIds });
   },
 
-  toggleSaveClub: (clubId) => {
-    const prev = get().savedClubIds;
-    const wasSaved = prev.includes(clubId);
+  toggleSaveOrganization: (organizationId) => {
+    const prev = get().savedOrganizationIds;
+    const wasSaved = prev.includes(organizationId);
     const shouldSave = !wasSaved;
     const authenticated = isAuthenticated();
 
     // 1. Optimistic local update
-    get()._toggleLocal(clubId);
+    get()._toggleLocal(organizationId);
 
     if (authenticated) {
       // 2. Register optimistic intent
-      _optimisticToggles.set(clubId, shouldSave);
+      _optimisticToggles.set(organizationId, shouldSave);
 
       // 3. Sync to backend
       const backendCall = shouldSave
-        ? saveOrganizationToBackend(clubId)
-        : unsaveOrganizationToBackend(clubId);
+        ? saveOrganizationToBackend(organizationId)
+        : unsaveOrganizationToBackend(organizationId);
 
       backendCall
         .then(() => {
-          _optimisticToggles.delete(clubId);
+          _optimisticToggles.delete(organizationId);
         })
         .catch((err) => {
           console.error(
-            shouldSave ? "Failed to save club:" : "Failed to unsave club:",
+            shouldSave ? "Failed to save organization:" : "Failed to unsave organization:",
             err,
           );
-          _optimisticToggles.delete(clubId);
+          _optimisticToggles.delete(organizationId);
           // Rollback local change
-          get()._toggleLocal(clubId);
+          get()._toggleLocal(organizationId);
           toast({
             description: shouldSave
               ? i18n.t("organizations.savedClubs.saveFailed")
@@ -132,9 +132,9 @@ export const useSavedOrganizationsStore = create<SavedClubsState>((set, get) => 
         });
     } else {
       // If not authenticated, roll back and show sign-in toast
-      get()._toggleLocal(clubId);
+      get()._toggleLocal(organizationId);
       toast({
-        description: i18n.t("auth.signInToUnlockFeatures") || "Please sign in to follow clubs",
+        description: i18n.t("auth.signInToUnlockFeatures") || "Please sign in to follow organizations",
       });
     }
   },
@@ -148,6 +148,6 @@ if (typeof window !== "undefined") {
   window.addEventListener("auth-user-login", () => {
     const store = useSavedOrganizationsStore.getState();
     store.reset();
-    void store.fetchSavedClubs();
+    void store.fetchSavedOrganizations();
   });
 }

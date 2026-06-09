@@ -1,44 +1,44 @@
 /**
- * Club Service
- * Handles club CRUD operations
+ * Organization Service
+ * Handles organization filtering and helper operations
  */
 
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 
 /**
- * Filter clubs by search query
+ * Filter organizations by search query
  */
-export function filterOrganizationsBySearch(clubs: Club[], searchQuery: string): Club[] {
+export function filterOrganizationsBySearch(organizations: Organization[], searchQuery: string): Organization[] {
   if (!searchQuery.trim()) {
-    return clubs;
+    return organizations;
   }
   const query = searchQuery.toLowerCase();
-  return clubs.filter((club) =>
-    club.club_name.toLowerCase().includes(query)
+  return organizations.filter((org) =>
+    org.club_name.toLowerCase().includes(query)
   );
 }
 
 /**
- * Filter clubs by category
+ * Filter organizations by category
  */
 export function filterOrganizationsByCategory(
-  clubs: Club[],
+  organizations: Organization[],
   categories: string[]
-): Club[] {
+): Organization[] {
   if (categories.length === 0) {
-    return clubs;
+    return organizations;
   }
-  return clubs.filter((club) =>
-    club.categories.some((cat) => categories.includes(cat))
+  return organizations.filter((org) =>
+    org.categories.some((cat) => categories.includes(cat))
   );
 }
 
 /**
- * Filter clubs by club type
+ * Filter organizations by type
  */
-export function filterOrganizationsByType(clubs: Club[], clubType: string): Club[] {
+export function filterOrganizationsByType(organizations: Organization[], clubType: string): Organization[] {
   if (!clubType) {
-    return clubs;
+    return organizations;
   }
-  return clubs.filter((club) => club.club_type?.trim() === clubType);
+  return organizations.filter((org) => org.club_type?.trim() === clubType);
 }

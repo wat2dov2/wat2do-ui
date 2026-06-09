@@ -128,7 +128,7 @@ export function PostersPageContent({
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="secondary" size="icon" onClick={onBack}>
+        <Button variant="secondary" size="icon" onMouseDown={onBack}>
           <ArrowLeft className="size-4" />
         </Button>
         <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">

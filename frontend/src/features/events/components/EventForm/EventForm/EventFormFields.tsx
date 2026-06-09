@@ -16,7 +16,7 @@ import { translateCategory } from "@/shared/utils/event";
 import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
-import { ClubCombobox } from "@/features/events/components/ClubCombobox";
+import { OrganizationCombobox } from "@/features/events/components/OrganizationCombobox";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 
 export function EventFormFields() {
@@ -27,7 +27,7 @@ export function EventFormFields() {
     errors,
     touched,
     handleBlur,
-    clubs,
+    organizations,
     updateOccurrence,
     addOccurrence,
     removeOccurrence,
@@ -61,13 +61,13 @@ export function EventFormFields() {
               htmlFor="field-club_id"
               className="text-sm font-medium text-foreground flex items-center gap-1.5"
             >
-              {t("events.club")}
+              {t("events.organization")}
               <span className="text-error">*</span>
             </FieldLabel>
-            <ClubCombobox
+            <OrganizationCombobox
               id="field-club_id"
               value={formData.club_id}
-              clubs={clubs}
+              organizations={organizations}
               onChange={(clubId) => updateField("club_id", clubId)}
               onBlur={() => handleBlur("club_id")}
               hasError={Boolean(touched.club_id && errors.club_id)}
@@ -84,9 +84,9 @@ export function EventFormFields() {
               </FieldLabel>
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 size="sm"
-                onClick={addOccurrence}
+                onMouseDown={addOccurrence}
               >
                 <Plus className="size-4" />
                 {t("forms.addDate")}
@@ -118,7 +118,7 @@ export function EventFormFields() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeOccurrence(index)}
+                    onMouseDown={() => removeOccurrence(index)}
                     disabled={formData.occurrences.length === 1}
                     aria-label={t("forms.removeDate")}
                   >
@@ -211,7 +211,7 @@ export function EventFormFields() {
           </Field>
 
           <ImageUploadField
-            label={t("forms.eventImage") || "Event Image"}
+            label={t("forms.eventImage")}
             imagePreview={imagePreview}
             onImageUpload={onImageUpload}
             onRemoveImage={onRemoveImage}

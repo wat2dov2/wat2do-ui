@@ -136,7 +136,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
       >
         <div className="relative">
           <button
-            onClick={categoryPieMenu.open}
+            onMouseDown={categoryPieMenu.open}
             className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
@@ -199,7 +199,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
       >
         <div className="relative">
           <button
-            onClick={foodPieMenu.open}
+            onMouseDown={foodPieMenu.open}
             className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
@@ -242,7 +242,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
       >
         <div className="relative">
           <button
-            onClick={dayPieMenu.open}
+            onMouseDown={dayPieMenu.open}
             className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
           >
             <span>
@@ -379,7 +379,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         <div className="space-y-2">
           <div className="relative">
             <button
-              onClick={sortPieMenu.open}
+              onMouseDown={sortPieMenu.open}
               className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
             >
               <span>
@@ -405,7 +405,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() =>
+              onMouseDown={() =>
                 filters.setSortOrder(
                   filters.sortOrder === "asc" ? "desc" : "asc",
                 )

@@ -1,10 +1,10 @@
 /**
- * Admin Clubs Page Hook
+ * Admin Organizations Page Hook
  * Manages state and logic for AdminOrganizationsPage.
  */
 
 import { useCallback, useMemo, useEffect, useState } from "react";
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 import { loadAdminOrganizationsData } from "@/features/admin/api/admin.api";
 import { filterOrganizations as filterOrganizationsSync } from "@/features/organizations";
 
@@ -12,33 +12,33 @@ interface UseAdminOrganizationsPageOptions {
   itemsPerPage?: number;
 }
 
-type ClubModalState =
+type OrganizationModalState =
   | { mode: "add" }
-  | { mode: "edit"; club: Club }
+  | { mode: "edit"; organization: Organization }
   | null;
 
 export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganizationsPageOptions = {}) {
   const [searchQuery, setSearchQueryState] = useState("");
-  const [selectedClubType, setSelectedClubTypeState] = useState("");
+  const [selectedOrganizationType, setSelectedOrganizationTypeState] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [clubModal, setClubModal] = useState<ClubModalState>(null);
+  const [organizationModal, setOrganizationModal] = useState<OrganizationModalState>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const [clubTypes, setClubTypes] = useState<string[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const showAddModal = clubModal !== null;
-  const editingClub = clubModal?.mode === "edit" ? clubModal.club : null;
+  const showAddModal = organizationModal !== null;
+  const editingOrganization = organizationModal?.mode === "edit" ? organizationModal.organization : null;
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { clubs: loadedClubs, clubTypes: types } =
+      const { clubs: loadedOrganizations, clubTypes: types } =
         await loadAdminOrganizationsData();
-      setClubs(loadedClubs);
-      setClubTypes(types);
+      setOrganizations(loadedOrganizations);
+      setOrganizationTypes(types);
     } catch (error) {
-      console.error("Failed to load admin clubs data:", error);
+      console.error("Failed to load admin organizations data:", error);
     } finally {
       setIsLoading(false);
     }
@@ -53,25 +53,25 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     setCurrentPage(1);
   }, []);
 
-  const setSelectedClubType = useCallback((type: string) => {
-    setSelectedClubTypeState(type);
+  const setSelectedOrganizationType = useCallback((type: string) => {
+    setSelectedOrganizationTypeState(type);
     setCurrentPage(1);
   }, []);
 
-  // Filter clubs synchronously — `filterOrganizationsSync` is a pure function, so
+  // Filter organizations synchronously — `filterOrganizationsSync` is a pure function, so
   // running it inside an async effect would introduce an extra render
   // cycle per keystroke. A `useMemo` is both correct and cheaper.
-  const filteredOrganizations = useMemo<Club[]>(() => {
+  const filteredOrganizations = useMemo<Organization[]>(() => {
     if (isLoading) return [];
-    return filterOrganizationsSync(clubs, {
+    return filterOrganizationsSync(organizations, {
       searchQuery,
-      clubType: selectedClubType,
+      clubType: selectedOrganizationType,
     });
-  }, [clubs, searchQuery, selectedClubType, isLoading]);
+  }, [organizations, searchQuery, selectedOrganizationType, isLoading]);
 
   // Pagination
   const totalPages = Math.ceil(filteredOrganizations.length / itemsPerPage);
-  const paginatedClubs = useMemo(() => {
+  const paginatedOrganizations = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredOrganizations.slice(startIndex, endIndex);
@@ -80,23 +80,23 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
   return {
     // State
     searchQuery,
-    selectedClubType,
+    selectedClubType: selectedOrganizationType,
     deleteConfirmId,
     showAddModal,
-    editingClub,
+    editingClub: editingOrganization,
     currentPage,
-    clubTypes,
+    clubTypes: organizationTypes,
     filteredOrganizations,
-    paginatedClubs,
+    paginatedClubs: paginatedOrganizations,
     totalPages,
     isLoading,
     // Actions
     setSearchQuery,
-    setSelectedClubType,
+    setSelectedClubType: setSelectedOrganizationType,
     setDeleteConfirmId,
-    openAddModal: () => setClubModal({ mode: "add" }),
-    openEditModal: (club: Club) => setClubModal({ mode: "edit", club }),
-    closeModal: () => setClubModal(null),
+    openAddModal: () => setOrganizationModal({ mode: "add" }),
+    openEditModal: (org: Organization) => setOrganizationModal({ mode: "edit", organization: org }),
+    closeModal: () => setOrganizationModal(null),
     setCurrentPage,
     refreshClubs: loadData,
   };

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Club } from "@/shared/types";
-import { getAllClubs } from "@/features/organizations";
+import type { Organization } from "@/shared/types";
+import { getAllOrganizations } from "@/features/organizations";
 import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
 import { useEventsStore } from "@/features/events/store/events.store";
 import {
@@ -24,7 +24,7 @@ import type { useEventForm } from "@/features/events/hooks/useEventForm";
 
 export type ViewMode = "visual" | "json";
 
-const NO_CLUBS: Club[] = [];
+const NO_ORGANIZATIONS: Organization[] = [];
 
 /** The subset of useEventForm's return value that EventFormStep needs. */
 type EventFormHookReturn = ReturnType<typeof useEventForm>;
@@ -83,16 +83,16 @@ export function EventFormStep({
   const { t } = useTranslation();
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
 
-  const fetchClubs = useCallback(
-    () => getAllClubs(schoolFilter ?? undefined),
+  const fetchOrganizations = useCallback(
+    () => getAllOrganizations(schoolFilter ?? undefined),
     [schoolFilter],
   );
-  const { data: clubs } = useBackendQuery(fetchClubs, NO_CLUBS, schoolFilter);
+  const { data: organizations } = useBackendQuery(fetchOrganizations, NO_ORGANIZATIONS, schoolFilter);
 
-  const selectedClubName = useMemo(() => {
+  const selectedOrganizationName = useMemo(() => {
     const id = eventForm.formData.club_id;
-    return id != null ? clubs.find((club) => club.id === id)?.club_name ?? "" : "";
-  }, [clubs, eventForm.formData.club_id]);
+    return id != null ? organizations.find((org) => org.id === id)?.club_name ?? "" : "";
+  }, [organizations, eventForm.formData.club_id]);
 
   const handleViewModeTabChange = useCallback(
     (value: string) => onViewModeChange(value as ViewMode),
@@ -108,8 +108,8 @@ export function EventFormStep({
       errors: eventForm.errors,
       touched: eventForm.touched,
       handleBlur: eventForm.handleBlur,
-      clubs,
-      selectedClubName,
+      organizations,
+      selectedOrganizationName,
       updateOccurrence: eventForm.updateOccurrence,
       addOccurrence: eventForm.addOccurrence,
       removeOccurrence: eventForm.removeOccurrence,
@@ -131,7 +131,7 @@ export function EventFormStep({
       handleAiGenerate: eventFormAI.handleAiGenerate,
       isDarkMode,
     }),
-    [eventForm, eventFormAI, isDarkMode, clubs, selectedClubName]
+    [eventForm, eventFormAI, isDarkMode, organizations, selectedOrganizationName]
   );
 
   return (
@@ -205,7 +205,7 @@ export function EventFormStep({
                   </DialogClose>
                   <LoadingButton
                     type="button"
-                    onClick={onSubmit}
+                    onMouseDown={onSubmit}
                     disabled={!eventForm.isValid}
                     isLoading={isSubmitting}
                     loadingText={t("common.pleaseWait")}

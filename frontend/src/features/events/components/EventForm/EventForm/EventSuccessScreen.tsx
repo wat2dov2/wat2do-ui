@@ -28,7 +28,7 @@ export function EventSuccessScreen({
   isSubmissionOnly,
 }: EventSuccessScreenProps) {
   const { t } = useTranslation();
-  const { formData, selectedClubName } = useEventFormContext();
+  const { formData, selectedOrganizationName } = useEventFormContext();
   const successEvent = useMemo(
     () => ({
       occurrences: formData.occurrences.map((o) => ({
@@ -97,7 +97,7 @@ export function EventSuccessScreen({
           <div className="w-full rounded-lg p-4 text-left bg-secondary space-y-1">
             <p className="font-medium text-foreground">{formData.title}</p>
             <p className="text-sm text-muted-foreground">
-              {selectedClubName}
+              {selectedOrganizationName}
             </p>
             <p className="text-sm text-muted-foreground">
               {formatCardDate(successEvent)}
@@ -109,12 +109,12 @@ export function EventSuccessScreen({
           </div>
 
           <div className="flex gap-2 w-full">
-            <Button variant="outline" onClick={handleDone} className="flex-1">
+            <Button variant="outline" onMouseDown={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
             {onPromote && (
               <Button
-                onClick={onPromote}
+                onMouseDown={onPromote}
                 className="flex-1 bg-primary hover:bg-primary/90"
               >
                 <Megaphone className="size-4 mr-1.5" />

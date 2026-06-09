@@ -76,6 +76,11 @@
     "year": {
       "yesFirstYear": "Yep, brand new!",
       "noReturning": "Nope, been here"
+    },
+    "events": {
+      "noEvents": "No events right now.",
+      "noEventsAvailable": "No events right now. You can continue without selecting.",
+      "selectAriaLabel": "Select events that catch your eye"
     }
   }
 }

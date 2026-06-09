@@ -29,7 +29,7 @@ export function AdminSearchBar({
       />
       {value && (
         <button
-          onClick={() => onChange("")}
+          onMouseDown={() => onChange("")}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
         >
           <X className="size-4" />

@@ -1,7 +1,7 @@
 import { cn } from "@/shared/lib/utils";
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { MotionValue } from "motion/react";
 import {
   AnimatePresence,
@@ -15,7 +15,7 @@ export interface FloatingDockItem {
   title: string;
   icon: ReactNode;
   href?: string;
-  onClick?: () => void;
+  onMouseDown?: () => void;
   isActive?: boolean;
 }
 
@@ -60,8 +60,9 @@ function IconContainer({
   mouseX: MotionValue<number>;
   item: FloatingDockItem;
 }) {
-  const { title, icon, href, onClick, isActive } = item;
+  const { title, icon, href, onMouseDown, isActive } = item;
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const distance = useTransform(mouseX, (val) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -138,16 +139,28 @@ function IconContainer({
     </motion.div>
   );
 
-  if (onClick) {
+  if (onMouseDown) {
     return (
-      <button type="button" onClick={onClick} className="cursor-pointer">
+      <button type="button" onMouseDown={onMouseDown} className="cursor-pointer">
         {content}
       </button>
     );
   }
 
   if (href) {
-    return <Link to={href}>{content}</Link>;
+    return (
+      <Link
+        to={href}
+        onMouseDown={(e) => {
+          if (e.button === 0) {
+            e.preventDefault();
+            navigate(href);
+          }
+        }}
+      >
+        {content}
+      </Link>
+    );
   }
 
   return content;

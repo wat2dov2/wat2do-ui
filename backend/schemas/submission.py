@@ -54,4 +54,3 @@ class SubmissionResponse(BaseModel):
     submitted_at: datetime
     reviewed_at: datetime | None = None
     submitted_by_email: str | None = None
-

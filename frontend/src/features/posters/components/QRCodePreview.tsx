@@ -47,12 +47,12 @@ export function QRCodePreview({
       {(onDownload || onDone) && (
         <div className="flex gap-2 justify-end">
           {onDone && (
-            <Button variant="outline" onClick={onDone}>
+            <Button variant="outline" onMouseDown={onDone}>
               {doneLabel || t("common.done")}
             </Button>
           )}
           {onDownload && (
-            <Button onClick={onDownload}>
+            <Button onMouseDown={onDownload}>
               {downloadLabel || t("common.download")}
             </Button>
           )}

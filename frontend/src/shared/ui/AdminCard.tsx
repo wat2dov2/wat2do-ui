@@ -10,7 +10,7 @@ interface AdminCardProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  onClick?: () => void;
+  onMouseDown?: () => void;
   className?: string;
 }
 
@@ -18,16 +18,16 @@ export function AdminCard({
   icon: Icon,
   title,
   description,
-  onClick,
+  onMouseDown,
   className = "",
 }: AdminCardProps) {
   const baseClasses = "bg-secondary hover:bg-secondary rounded-xl p-6 flex flex-col items-start gap-3 transition-colors text-left border border-border";
 
-  const Component = onClick ? "button" : "div";
+  const Component = onMouseDown ? "button" : "div";
 
   return (
     <Component
-      onClick={onClick}
+      onMouseDown={onMouseDown}
       className={`${baseClasses} ${className}`}
     >
       <div className="size-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -37,7 +37,7 @@ export function AdminCard({
         <h3 className="font-semibold text-foreground mb-1">{title}</h3>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      {onClick && <ArrowRight className="size-4 text-muted-foreground" />}
+      {onMouseDown && <ArrowRight className="size-4 text-muted-foreground" />}
     </Component>
   );
 }

@@ -95,7 +95,7 @@ export function OnboardingInterestsCombobox({
                 <button
                   key={option}
                   type="button"
-                  onClick={() => {
+                  onMouseDown={() => {
                     onToggle(option);
                   }}
                   className={cn(
@@ -125,7 +125,7 @@ export function OnboardingInterestsCombobox({
               {item}
               <button
                 type="button"
-                onClick={() => onToggle(item)}
+                onMouseDown={() => onToggle(item)}
                 className="rounded-full p-0.5 size-4 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
                 aria-label={`Remove ${item}`}
               >

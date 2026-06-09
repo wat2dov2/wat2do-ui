@@ -45,7 +45,7 @@ export function ForgotPasswordFormCard() {
       </div>
       <button
         type="button"
-        onClick={handleBackToLogin}
+        onMouseDown={handleBackToLogin}
         className="w-full text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
       >
         {t("auth.backToLogin")}
@@ -70,7 +70,7 @@ export function ForgotPasswordFormCard() {
 
       <LoadingButton
         type="button"
-        onClick={handleSubmit}
+        onMouseDown={handleSubmit}
         disabled={!isValid}
         isLoading={isLoading}
         loadingText={t("common.pleaseWait")}
@@ -82,7 +82,7 @@ export function ForgotPasswordFormCard() {
       <p className="text-center">
         <button
           type="button"
-          onClick={handleBackToLogin}
+          onMouseDown={handleBackToLogin}
           className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
         >
           {t("auth.backToLogin")}

@@ -17,7 +17,7 @@ export function OnboardingYearStep({
     <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto justify-center">
       <button
         type="button"
-        onClick={() => onChange(true)}
+        onMouseDown={() => onChange(true)}
         className={cn(
           "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-all duration-300",
           "hover:border-primary hover:bg-primary/5 hover:scale-[1.02]",
@@ -44,7 +44,7 @@ export function OnboardingYearStep({
 
       <button
         type="button"
-        onClick={() => onChange(false)}
+        onMouseDown={() => onChange(false)}
         className={cn(
           "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-all duration-300",
           "hover:border-primary hover:bg-primary/5 hover:scale-[1.02]",

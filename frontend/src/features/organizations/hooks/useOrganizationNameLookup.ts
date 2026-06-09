@@ -1,29 +1,29 @@
 import { useCallback, useMemo } from "react";
-import type { Club } from "@/shared/types";
-import { getAllClubs } from "@/features/organizations/api/organizations.api";
+import type { Organization } from "@/shared/types";
+import { getAllOrganizations } from "@/features/organizations/api/organizations.api";
 import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
 
-const NO_CLUBS: Club[] = [];
+const NO_ORGANIZATIONS: Organization[] = [];
 
 /**
- * Resolve a club id to its display name. Loads the full club list once and
- * exposes a stable lookup — the single source of truth for showing the club
+ * Resolve an organization id to its display name. Loads the full organization list once and
+ * exposes a stable lookup — the single source of truth for showing the organization
  * name of an event/submission that only carries a club_id.
  */
 export function useOrganizationNameLookup() {
-  const { data: clubs } = useBackendQuery(getAllClubs, NO_CLUBS);
+  const { data: organizations } = useBackendQuery(getAllOrganizations, NO_ORGANIZATIONS);
 
   const namesById = useMemo(() => {
     const map = new Map<number, string>();
-    clubs.forEach((club) => map.set(club.id, club.club_name));
+    organizations.forEach((org) => map.set(org.id, org.club_name));
     return map;
-  }, [clubs]);
+  }, [organizations]);
 
-  const getClubName = useCallback(
-    (clubId: number | null | undefined): string =>
-      clubId != null ? namesById.get(clubId) ?? "" : "",
+  const getOrganizationName = useCallback(
+    (organizationId: number | null | undefined): string =>
+      organizationId != null ? namesById.get(organizationId) ?? "" : "",
     [namesById],
   );
 
-  return { getClubName };
+  return { getClubName: getOrganizationName };
 }

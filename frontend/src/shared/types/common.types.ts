@@ -18,5 +18,3 @@ export interface Organization {
   owner_email?: string | null;
   school: string;
 }
-
-export type Club = Organization;

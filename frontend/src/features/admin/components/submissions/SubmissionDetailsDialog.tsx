@@ -40,19 +40,19 @@ export function SubmissionDetailsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>{t("admin.submissionDetails")}</DialogTitle>
           <DialogDescription>
             {t("admin.reviewSubmissionDetails")}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="overflow-y-auto flex-1 min-h-0 px-6 pb-6 pt-2 space-y-4">
           <DetailRow label={t("events.eventTitle")} value={submission.eventData.title} />
-          <DetailRow label={t("events.club")} value={clubName} />
+          <DetailRow label={t("events.organization")} value={clubName} />
           <DetailRow
-            label={t("events.description")}
+            label={t("forms.description")}
             value={submission.eventData.description || t("common.noDescription")}
           />
           <div>
@@ -76,12 +76,12 @@ export function SubmissionDetailsDialog({
             label={t("filters.category")}
             value={submission.eventData.category || t("common.none")}
           />
-          <DetailRow label={t("events.price")} value={`$${submission.eventData.price}`} />
+          <DetailRow label={t("filters.price")} value={`$${submission.eventData.price}`} />
 
           {submission.eventData.food.length > 0 && (
             <div>
               <h3 className="font-semibold text-sm text-foreground mb-1">
-                {t("events.foodProvided")}
+                {t("forms.foodProvided")}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {submission.eventData.food.map((food) => (
@@ -110,19 +110,19 @@ export function SubmissionDetailsDialog({
 
           {submission.status === SUBMISSION_PENDING && (
             <div className="flex gap-2 justify-end pt-4 border-t border-border">
-              <Button variant="outline" onClick={onClose} disabled={isApproving}>
+              <Button variant="outline" onMouseDown={onClose} disabled={isApproving}>
                 {t("common.cancel")}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => onRejectClick(submission)}
+                onMouseDown={() => onRejectClick(submission)}
                 className="text-error hover:text-error hover:bg-error/10"
                 disabled={isApproving}
               >
                 {t("admin.reject")}
               </Button>
               <LoadingButton
-                onClick={() => onApprove(submission)}
+                onMouseDown={() => onApprove(submission)}
                 isLoading={isApproving}
                 loadingText={t("common.pleaseWait")}
               >

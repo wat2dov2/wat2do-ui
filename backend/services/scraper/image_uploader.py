@@ -54,13 +54,13 @@ _ALLOWED_HOST_SUFFIXES: tuple[str, ...] = (
 )
 
 
-def _is_safe_image_url(url: str) -> bool:
-    """Return True if ``url`` is an HTTPS Instagram CDN URL safe to fetch.
+def _is_safe_image_url(url: str, allow_all_domains: bool = False) -> bool:
+    """Return True if ``url`` is an HTTPS URL safe to fetch.
 
     Three layers of defence:
       1. Scheme must be ``https``. ``http`` is rejected (no transport
-         security to the CDN), as are ``file``/``ftp``/``data``.
-      2. Host must end in one of ``_ALLOWED_HOST_SUFFIXES``.
+         security), as are ``file``/``ftp``/``data``.
+      2. Host must end in one of ``_ALLOWED_HOST_SUFFIXES`` (or allow_all_domains must be True).
       3. The resolved IP must not be loopback / link-local / private /
          reserved. This catches DNS-rebinding-style attacks and any
          operator misconfiguration where a CDN suffix points internal.
@@ -74,7 +74,7 @@ def _is_safe_image_url(url: str) -> bool:
     host = (parsed.hostname or "").lower()
     if not host:
         return False
-    if not any(host.endswith(s) for s in _ALLOWED_HOST_SUFFIXES):
+    if not allow_all_domains and not any(host.endswith(s) for s in _ALLOWED_HOST_SUFFIXES):
         return False
 
     # Resolve to IP(s) and reject private/loopback/link-local. ``getaddrinfo``
@@ -95,16 +95,16 @@ def _is_safe_image_url(url: str) -> bool:
     return True
 
 
-def upload_image_from_url(url: str) -> str | None:
-    """Fetch ``url`` from Instagram CDN, push to event-images bucket.
+def upload_image_from_url(url: str, allow_all_domains: bool = False) -> str | None:
+    """Fetch ``url`` from HTTP source, push to event-images bucket.
 
     Returns the public Supabase Storage URL on success, ``None`` on any
     failure. Failures are logged but never raised — the pipeline tolerates
     individual image upload errors and just drops that image from the
     list passed to the extractor.
     """
-    if not _is_safe_image_url(url):
-        log.warning("Refusing to fetch image — URL not on the IG CDN allowlist: %s", url)
+    if not _is_safe_image_url(url, allow_all_domains=allow_all_domains):
+        log.warning("Refusing to fetch image — URL not allowed by safety check: %s", url)
         return None
 
     try:
@@ -115,10 +115,10 @@ def upload_image_from_url(url: str) -> str | None:
             resp = client.get(url, headers={"User-Agent": _USER_AGENT})
         resp.raise_for_status()
     except httpx.HTTPError as e:
-        log.warning("Failed to download IG image %s: %s", url, e)
+        log.warning("Failed to download image %s: %s", url, e)
         return None
     except Exception as e:
-        log.warning("Unexpected error downloading IG image %s: %s", url, e)
+        log.warning("Unexpected error downloading image %s: %s", url, e)
         return None
 
     content_type = resp.headers.get("content-type", "").split(";")[0].strip()
@@ -134,11 +134,11 @@ def upload_image_from_url(url: str) -> str | None:
     except Exception as e:
         # ValidationError (unsupported MIME, oversize, decoding failure)
         # falls in here too; we treat all upload failures as soft drops.
-        log.warning("Failed to upload IG image %s -> bucket: %s", url, e)
+        log.warning("Failed to upload image %s -> bucket: %s", url, e)
         return None
 
 
-def upload_post_images(image_urls: Iterable[str]) -> list[str]:
+def upload_post_images(image_urls: Iterable[str], allow_all_domains: bool = False) -> list[str]:
     """Upload each url in order; preserve list position by replacing failures with ``None`` then dropping.
 
     The extractor's ``image_index`` semantics depend on the carousel
@@ -149,7 +149,7 @@ def upload_post_images(image_urls: Iterable[str]) -> list[str]:
     for url in image_urls:
         if not url:
             continue
-        result = upload_image_from_url(url)
+        result = upload_image_from_url(url, allow_all_domains=allow_all_domains)
         if result is not None:
             uploaded.append(result)
     return uploaded

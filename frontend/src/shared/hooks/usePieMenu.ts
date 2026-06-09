@@ -7,7 +7,7 @@ export interface UsePieMenuReturn {
   close: () => void;
   toggle: (e: React.MouseEvent | MouseEvent) => void;
   triggerProps: {
-    onClick: (e: React.MouseEvent) => void;
+    onMouseDown: (e: React.MouseEvent) => void;
   };
 }
 
@@ -56,7 +56,7 @@ export function usePieMenu(): UsePieMenuReturn {
   }, [isOpen, open, close]);
 
   const triggerProps = {
-    onClick: open,
+    onMouseDown: open,
   };
 
   return {

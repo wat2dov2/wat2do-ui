@@ -11,7 +11,7 @@ import {
   getEventSubmissions,
   getReportedEvents,
   updateEventSubmission,
-  getPendingOrganizationClaims,
+  getOrganizationClaims,
   resolveClaim,
   type OrganizationClaim,
 } from "@/features/admin/api/admin.api";
@@ -87,10 +87,10 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   fetchClaims: async () => {
     try {
-      const claims = await getPendingOrganizationClaims();
+      const claims = await getOrganizationClaims();
       set({ claims });
     } catch (err) {
-      console.error("Failed to fetch pending claims:", err);
+      console.error("Failed to fetch claims:", err);
     }
   },
 
@@ -128,7 +128,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       await resolveClaim(id, "approved");
       set((state) => ({
-        claims: state.claims.filter((c) => c.id !== id),
+        claims: state.claims.map((c) =>
+          c.id === id ? { ...c, status: "approved" } : c
+        ),
       }));
     } catch (err) {
       console.error("Failed to approve claim:", err);
@@ -140,7 +142,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       await resolveClaim(id, "rejected", reason);
       set((state) => ({
-        claims: state.claims.filter((c) => c.id !== id),
+        claims: state.claims.map((c) =>
+          c.id === id
+            ? { ...c, status: "rejected", rejection_reason: reason ?? null }
+            : c
+        ),
       }));
     } catch (err) {
       console.error("Failed to reject claim:", err);

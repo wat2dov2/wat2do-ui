@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Instagram, MessageCircle, Tag, Bookmark } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
-import type { Club } from "@/shared/types";
+import type { Organization } from "@/shared/types";
 import { sanitizeHref } from "@/shared/utils/url";
 import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
 import { getCategoryClasses } from "@/shared/utils/event";
@@ -12,15 +12,15 @@ import { ClaimOrganizationModal } from "./ClaimOrganizationModal";
 import { JoinOrganizationModal } from "./JoinOrganizationModal";
 
 interface OrganizationCardProps {
-  club: Club;
-  onClick?: () => void;
+  club: Organization;
+  onMouseDown?: () => void;
 }
 
-export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
+export function OrganizationCard({ club, onMouseDown }: OrganizationCardProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthState();
-  const isSaved = useSavedOrganizationsStore((s) => s.savedClubIds.includes(club.id));
-  const toggleSave = useSavedOrganizationsStore((s) => s.toggleSaveClub);
+  const isSaved = useSavedOrganizationsStore((s) => s.savedOrganizationIds.includes(club.id));
+  const toggleSave = useSavedOrganizationsStore((s) => s.toggleSaveOrganization);
 
   const [isClaimOpen, setIsClaimOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
@@ -35,7 +35,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
   return (
     <>
       <article
-        onClick={onClick}
+        onMouseDown={onMouseDown}
         className="rounded-xl overflow-hidden hover:shadow-lg hover:opacity-80 cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card border border-border"
       >
         <div className="p-4 flex flex-col gap-3 flex-1">
@@ -45,7 +45,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
               {club.club_name}
             </h3>
             <button
-              onClick={handleToggleSave}
+              onMouseDown={handleToggleSave}
               aria-label={isSaved ? t("organizations.saved") : t("organizations.save")}
               className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200"
               id={`follow-club-${club.id}`}
@@ -92,7 +92,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
                 <button
                   type="button"
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-primary/20 bg-primary/5 text-primary rounded-lg transition-all duration-200 hover:bg-primary/10"
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                     e.stopPropagation();
                     setIsClaimOpen(true);
                   }}
@@ -103,7 +103,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
                 <button
                   type="button"
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-border bg-secondary/30 text-foreground rounded-lg transition-all duration-200 hover:bg-secondary"
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                     e.stopPropagation();
                     setIsJoinOpen(true);
                   }}
@@ -121,7 +121,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
                 href={`https://instagram.com/${club.ig}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Instagram className="size-3.5" />
@@ -133,7 +133,7 @@ export function OrganizationCard({ club, onClick }: OrganizationCardProps) {
                 href={sanitizeHref(club.discord)}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <MessageCircle className="size-3.5" />

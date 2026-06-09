@@ -1,4 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { Check, ChevronsUpDown, Search } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -77,6 +83,7 @@ export function SearchCombobox<T>({
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const suppressTriggerClickRef = useRef(false);
 
   // Loading is toggled in the event handlers below (open/typing); the effect
   // only fires the fetch and writes results from async callbacks — keeping
@@ -148,6 +155,32 @@ export function SearchCombobox<T>({
     setIsLoading(false);
   };
 
+  const handleTriggerMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return;
+
+    e.preventDefault();
+    suppressTriggerClickRef.current = true;
+    handleOpenChange(!open);
+
+    const ownerWindow = e.currentTarget.ownerDocument.defaultView ?? window;
+    ownerWindow.addEventListener(
+      "mouseup",
+      () => {
+        ownerWindow.setTimeout(() => {
+          suppressTriggerClickRef.current = false;
+        }, 0);
+      },
+      { once: true },
+    );
+  };
+
+  const handleTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {
+    if (!suppressTriggerClickRef.current) return;
+
+    e.preventDefault();
+    suppressTriggerClickRef.current = false;
+  };
+
   const hasQuery = search.trim().length > 0;
   const showEmpty = !isLoading && results.length === 0 && (hasQuery || searchOnEmpty);
 
@@ -180,6 +213,8 @@ export function SearchCombobox<T>({
           className={triggerClasses}
           aria-expanded={open}
           aria-haspopup="listbox"
+          onMouseDown={handleTriggerMouseDown}
+          onClick={handleTriggerClick}
         >
           {labelNode}
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
@@ -214,7 +249,7 @@ export function SearchCombobox<T>({
                 <button
                   key={key}
                   type="button"
-                  onClick={() => handleSelect(item)}
+                  onMouseDown={() => handleSelect(item)}
                   className={cn(
                     "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                     selected

@@ -73,7 +73,7 @@ export function EventReportDialog({
             </DialogHeader>
 
             <div className="flex justify-end">
-              <Button type="button" onClick={() => onOpenChange(false)}>
+              <Button type="button" onMouseDown={() => onOpenChange(false)}>
                 {t("common.done")}
               </Button>
             </div>
@@ -101,14 +101,14 @@ export function EventReportDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onMouseDown={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >
                 {t("common.cancel")}
               </Button>
               <LoadingButton
                 type="button"
-                onClick={handleSubmit}
+                onMouseDown={handleSubmit}
                 disabled={!trimmedReason}
                 isLoading={isSubmitting}
                 loadingText={t("common.submitting")}

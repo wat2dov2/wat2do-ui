@@ -125,7 +125,7 @@ export function PlatformConnectModal({
                   </p>
                   <Button
                     className={`w-full ${config.brandColorClass}`}
-                    onClick={onAuthorize}
+                    onMouseDown={onAuthorize}
                     disabled={authorized}
                   >
                     {authorized ? (
@@ -186,7 +186,7 @@ export function PlatformConnectModal({
               </DialogClose>
               {step === "select" && (
                 <Button
-                  onClick={onActivate}
+                  onMouseDown={onActivate}
                   disabled={activateDisabled ?? !selectedPrimaryId}
                 >
                   {t("integrations.activate")}

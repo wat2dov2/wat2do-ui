@@ -21,6 +21,7 @@
     "qrCodeGeneratedSuccessfully": "QR Code generated successfully!",
     "done": "Done",
     "posterCreated": "Poster Created!",
+    "posterCreatedMessage": "Poster \"{{name}}\" has been created successfully.",
     "posterPreview": "Poster Preview",
     "imageFileError": "Please select an image file",
     "imageSizeError": "Image must be less than 5MB",

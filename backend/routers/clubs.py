@@ -14,6 +14,7 @@ from core.constants import (
 )
 from core.errors import CLUB_NOT_FOUND, NOT_AUTHORIZED
 from core.exceptions import AuthorizationError, NotFoundError, ValidationError, get_or_404
+from schemas.claim import ClubClaimCreate, ClubClaimResponse, ClubClaimUpdate
 from schemas.club import (
     ClubCreate,
     ClubIntegrationResponse,
@@ -36,11 +37,13 @@ from schemas.invitation import (
     ClubInvitationPublicResponse,
     ClubInvitationResponse,
 )
-from schemas.claim import ClubClaimCreate, ClubClaimResponse, ClubClaimUpdate
-from schemas.join_request import ClubJoinRequestCreate, ClubJoinRequestResponse, ClubJoinRequestUpdate
+from schemas.join_request import (
+    ClubJoinRequestCreate,
+    ClubJoinRequestResponse,
+    ClubJoinRequestUpdate,
+)
 from schemas.user import UserResponse
 from services import club_membership_service, club_service
-
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
 
@@ -109,6 +112,15 @@ def get_platform_options(
     _=Depends(get_current_user),
 ):
     return club_service.get_integration_options(platform)
+
+
+@router.get("/claims", response_model=list[ClubClaimResponse])
+def list_claims(
+    status: str | None = Query(default=None),
+    _: UserResponse = Depends(get_admin_user),
+):
+    """List claims (admin only)."""
+    return club_service.list_claims(status=status)
 
 
 @router.get("/{club_id}", response_model=ClubResponse)
@@ -397,9 +409,13 @@ def remove_club_membership(
     if not success:
         raise HTTPException(status_code=404, detail="Membership not found")
 
+
 # --- Club Claims & Join Requests Endpoints ---
 
-@router.post("/{club_id}/claims", response_model=ClubClaimResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/{club_id}/claims", response_model=ClubClaimResponse, status_code=status.HTTP_201_CREATED
+)
 def create_claim(
     club_id: int,
     data: ClubClaimCreate,
@@ -407,12 +423,6 @@ def create_claim(
 ):
     """Submit a claim for an unowned club."""
     return club_service.create_claim(club_id, db_user.id, data.executive_role, data.proof_url)
-
-
-@router.get("/claims/pending", response_model=list[ClubClaimResponse])
-def list_pending_claims(_: UserResponse = Depends(get_admin_user)):
-    """List pending claims (admin only)."""
-    return club_service.list_pending_claims()
 
 
 @router.patch("/claims/{claim_id}", response_model=ClubClaimResponse)
@@ -425,7 +435,11 @@ def update_claim(
     return club_service.update_claim(claim_id, data.status, data.rejection_reason)
 
 
-@router.post("/{club_id}/join-requests", response_model=ClubJoinRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{club_id}/join-requests",
+    response_model=ClubJoinRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_join_request(
     club_id: int,
     data: ClubJoinRequestCreate,

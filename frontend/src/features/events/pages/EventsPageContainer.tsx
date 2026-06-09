@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
+import { zhCN, enUS } from "date-fns/locale";
 import { Utensils, Heart } from "@/shared/ui/doodle-icons";
 import { EventList, EventCount } from "@/features/events";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -54,7 +55,7 @@ export function EventsPageContainer() {
           icon: <Utensils className="size-3.5" />,
           labelKey: "common.freeFood",
           active: filters.freeFoodFilter,
-          onClick: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
+          onMouseDown: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
           badge:
             filters.freeFoodEventsCount > 0
               ? filters.freeFoodEventsCount
@@ -65,7 +66,7 @@ export function EventsPageContainer() {
           icon: <Heart className="size-3.5" />,
           labelKey: "filters.saved",
           active: filters.savedFilter,
-          onClick: () => filters.setSavedFilter(!filters.savedFilter),
+          onMouseDown: () => filters.setSavedFilter(!filters.savedFilter),
           badge: savedEventIds.length > 0 ? savedEventIds.length : undefined,
           visible: profileCompleted,
         },
@@ -79,12 +80,14 @@ export function EventsPageContainer() {
         className="pointer-events-none fixed left-0 right-2.5 top-0 z-[45] h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]"
         aria-hidden="true"
       >
-        <LightRays
-          data-page-light-rays
-          length="110dvh"
-          color={isDarkMode ? "rgba(255, 255, 255, 0.06)" : "rgba(30, 30, 30, 0.16)"}
-          blendMode={isDarkMode ? "screen" : "multiply"}
-        />
+        {isDarkMode && (
+          <LightRays
+            data-page-light-rays
+            length="110dvh"
+            color="rgba(255, 255, 255, 0.06)"
+            blendMode="screen"
+          />
+        )}
       </div>
       <div className="-mt-6 space-y-3">
         {/* Sticky toolbar hugs TopNav when scrolling (-top-6 cancels AppLayout top padding). */}
@@ -108,7 +111,7 @@ export function EventsPageContainer() {
                 <LatestAddedButton
                   title={latestAddedEvent.title}
                   addedAt={latestAddedEvent.added_at}
-                  onClick={() => filters.setSearchQuery(latestAddedEvent.title)}
+                  onMouseDown={() => filters.setSearchQuery(latestAddedEvent.title)}
                 />
               )}
             </div>
@@ -122,7 +125,7 @@ export function EventsPageContainer() {
                         icon={config.icon}
                         label={t(config.labelKey)}
                         active={config.active}
-                        onClick={config.onClick}
+                        onMouseDown={config.onMouseDown}
                         badge={config.badge}
                       />,
                     ],
@@ -153,7 +156,7 @@ export function EventsPageContainer() {
             <p className="text-destructive text-sm text-center max-w-md">{error}</p>
             <button
               type="button"
-              onClick={() => fetchEvents()}
+              onMouseDown={() => fetchEvents()}
               className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               {t("common.tryAgain")}
@@ -178,14 +181,14 @@ export function EventsPageContainer() {
 interface LatestAddedButtonProps {
   title: string;
   addedAt: string;
-  onClick: () => void;
+  onMouseDown: () => void;
 }
 
 // `formatDistanceToNow` reads the current time. We compute it inline (pure
 // render) and bump a `tick` counter once a minute so the relative-time label
 // stays fresh without setState-in-effect.
-function LatestAddedButton({ title, addedAt, onClick }: LatestAddedButtonProps) {
-  const { t } = useTranslation();
+function LatestAddedButton({ title, addedAt, onMouseDown }: LatestAddedButtonProps) {
+  const { t, i18n } = useTranslation();
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -193,12 +196,13 @@ function LatestAddedButton({ title, addedAt, onClick }: LatestAddedButtonProps) 
     return () => clearInterval(id);
   }, []);
 
-  const timeAgo = formatDistanceToNow(new Date(addedAt), { addSuffix: true });
+  const locale = i18n.language.startsWith("zh") ? zhCN : enUS;
+  const timeAgo = formatDistanceToNow(new Date(addedAt), { addSuffix: true, locale });
   const label = t("events.latestAdded", { title, timeAgo });
   return (
     <button
       type="button"
-      onClick={onClick}
+      onMouseDown={onMouseDown}
       className="relative -top-px text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
       aria-label={label}
     >

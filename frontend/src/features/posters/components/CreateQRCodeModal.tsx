@@ -287,7 +287,7 @@ function CreateQRCodeModalContent({
                   </DialogClose>
                   <LoadingButton
                     type="button"
-                    onClick={handleGenerate}
+                    onMouseDown={handleGenerate}
                     isLoading={isGenerating}
                     loadingText={t("common.pleaseWait") || "Please wait..."}
                   >

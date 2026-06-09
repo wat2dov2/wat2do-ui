@@ -161,7 +161,7 @@ export function AdminEventsPage({
       {/* Tabs toggle */}
       <div className="flex gap-2 border-b border-border pb-3">
         <button
-          onClick={() => setActiveTab("events")}
+          onMouseDown={() => setActiveTab("events")}
           data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             activeTab === "events"
@@ -169,10 +169,10 @@ export function AdminEventsPage({
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
         >
-          {t("admin.eventsList") || "Events List"}
+          {t("admin.eventsList")}
         </button>
         <button
-          onClick={() => setActiveTab("submissions")}
+          onMouseDown={() => setActiveTab("submissions")}
           data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
             activeTab === "submissions"
@@ -180,7 +180,7 @@ export function AdminEventsPage({
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
         >
-          {t("admin.eventSubmissions") || "Event Submissions"}
+          {t("admin.eventSubmissions")}
           {pendingSubmissionsCount > 0 && (
             <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
               {pendingSubmissionsCount}
@@ -217,7 +217,7 @@ export function AdminEventsPage({
               type="button"
               variant="secondary"
               size="sm"
-              onClick={toggleReportedOnly}
+              onMouseDown={toggleReportedOnly}
               aria-pressed={showReportedOnly}
               className={cn(
                 "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
@@ -242,7 +242,7 @@ export function AdminEventsPage({
             <AdminTable
               headers={[
                 { label: t("events.eventTitle") },
-                { label: t("events.club") },
+                { label: t("events.organization") },
                 { label: <span className="flex items-center gap-1.5"><Calendar className="size-3.5" />{t("filters.date")}</span> },
                 { label: <span className="flex items-center gap-1.5"><MapPin className="size-3.5" />{t("filters.location")}</span> },
                 { label: <span className="flex items-center gap-1.5"><Tag className="size-3.5" />{t("filters.category")}</span> },
@@ -258,7 +258,7 @@ export function AdminEventsPage({
                     key={event.id}
                     id={`event-${event.id}`}
                     className={`cursor-pointer hover:bg-secondary/50 ${isHighlighted ? "bg-primary/10" : ""}`}
-                    onClick={() => {
+                    onMouseDown={() => {
                       const newParams = new URLSearchParams(searchParams);
                       newParams.set(QP.EVENT_ID, event.id.toString());
                       setSearchParams(newParams);
@@ -305,23 +305,23 @@ export function AdminEventsPage({
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={async (e) => {
+                          onMouseDown={async (e) => {
                             e.stopPropagation();
                             await onEditEvent?.(event);
                           }}
                         >
-                          {t("common.edit") || "Edit"}
+                          {t("common.edit")}
                         </Button>
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={(e) => {
+                          onMouseDown={(e) => {
                             e.stopPropagation();
                             setDeleteConfirmId(event.id);
                           }}
                           className="hover:bg-error/10 hover:text-error"
                         >
-                          {t("common.delete") || "Delete"}
+                          {t("common.delete")}
                         </Button>
                       </div>
                     </TableCell>
@@ -415,7 +415,7 @@ export function AdminEventsPage({
             <AdminTable
               headers={[
                 { label: t("events.eventTitle") },
-                { label: t("events.club") },
+                { label: t("events.organization") },
                 { label: <span className="flex items-center gap-1.5"><User className="size-3.5" />{t("admin.submittedBy")}</span> },
                 { label: <span className="flex items-center gap-1.5"><Clock className="size-3.5" />{t("admin.submittedAt")}</span> },
                 { label: t("events.status") },
@@ -427,7 +427,7 @@ export function AdminEventsPage({
                   key={submission.id}
                   id={`submission-${submission.id}`}
                   className={`cursor-pointer hover:bg-secondary/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
-                  onClick={() => {
+                  onMouseDown={() => {
                     const newParams = new URLSearchParams(searchParams);
                     newParams.set(QP.SUBMISSION_ID, submission.id);
                     setSearchParams(newParams);
@@ -463,24 +463,24 @@ export function AdminEventsPage({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={(e) => {
+                            onMouseDown={(e) => {
                               e.stopPropagation();
                               submissionActions.handleApprove(submission);
                             }}
                             className="text-success hover:text-success hover:bg-success/10"
                           >
-                            {t("admin.approve") || "Approve"}
+                            {t("admin.approve")}
                           </Button>
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={(e) => {
+                            onMouseDown={(e) => {
                               e.stopPropagation();
                               submissionActions.handleRejectClick(submission);
                             }}
                             className="text-error hover:text-error hover:bg-error/10"
                           >
-                            {t("admin.reject") || "Reject"}
+                            {t("admin.reject")}
                           </Button>
                         </>
                       )}

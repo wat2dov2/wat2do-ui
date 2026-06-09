@@ -1,0 +1,66 @@
+{
+  "settings": {
+    "description": "管理您的账户偏好和设置",
+    "tabs": {
+      "profile": "个人资料",
+      "notifications": "通知设置",
+      "appearance": "界面外观",
+      "privacy": "隐私设置"
+    },
+    "profile": {
+      "title": "个人信息",
+      "description": "管理您的个人信息详情和偏好",
+      "status": "个人资料状态",
+      "statusComplete": "您的个人资料已设置完毕",
+      "statusIncomplete": "完善您的个人资料以获取个性化推荐",
+      "email": "电子邮箱",
+      "editProfile": "编辑个人资料",
+      "completeProfile": "完善个人资料",
+      "school": "学校",
+      "selectSchool": "选择学校",
+      "faculty": "学院",
+      "selectFaculty": "选择学院",
+      "firstYearStudent": "大一新生",
+      "interests": "兴趣爱好",
+      "selectInterests": "选择您的兴趣",
+      "avatarAlt": "头像"
+    },
+    "notifications": {
+      "title": "通知偏好",
+      "description": "选择您希望接收活动和更新通知的方式",
+      "emailNotifications": "邮件通知",
+      "emailNotificationsDesc": "接收关于活动和校园事件的邮件更新",
+      "eventReminders": "活动提醒",
+      "eventRemindersDesc": "获取已保存和已报名活动的提醒",
+      "newEventAlerts": "新活动提醒",
+      "newEventAlertsDesc": "当有符合您兴趣的新活动添加时接收通知"
+    },
+    "appearance": {
+      "theme": "主题",
+      "themeDescription": "自定义应用程序的外观界面",
+      "colorTheme": "颜色主题",
+      "colorThemeDesc": "在浅色和深色模式之间切换",
+      "viewPreferences": "视图偏好",
+      "viewPreferencesDesc": "自定义活动的显示方式",
+      "defaultViewMode": "默认视图模式",
+      "defaultViewModeDesc": "选择默认的活动显示方式",
+      "grid": "网格",
+      "calendar": "日历",
+      "map": "地图",
+      "visual": "可视化",
+      "json": "JSON",
+      "language": "语言",
+      "languageDescription": "选择您偏好的语言"
+    },
+    "privacy": {
+      "title": "隐私设置",
+      "description": "控制您的隐私和数据共享偏好",
+      "profileVisibility": "个人资料可见性",
+      "profileVisibilityDesc": "控制谁能看到您的个人资料信息",
+      "public": "公开",
+      "private": "私密",
+      "dataSharing": "数据共享",
+      "dataSharingDesc": "允许收集匿名使用数据以帮助改进平台"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 /**
- * Clubs Feature
- * Main export point for clubs feature
+ * Organizations Feature
+ * Main export point for organizations feature
  * 
  * Architecture:
  * - pages/ - Page components
@@ -16,8 +16,8 @@ export { AddOrganizationModal } from "./components/AddOrganizationModal";
 
 // API
 export {
-  getAllClubs,
-  getMyClubs,
+  getAllOrganizations,
+  getMyOrganizations,
   createOrganizationAPI,
   updateOrganizationAPI,
   deleteOrganizationAPI,

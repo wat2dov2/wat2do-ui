@@ -124,7 +124,7 @@ export function DateTimePicker({
                     size="icon"
                     variant={date && date.getHours() % 12 === hour % 12 ? "default" : "ghost"}
                     className="sm:w-full shrink-0 aspect-square"
-                    onClick={() => handleTimeChange("hour", String(hour))}
+                    onMouseDown={() => handleTimeChange("hour", String(hour))}
                   >
                     {hour}
                   </Button>
@@ -140,7 +140,7 @@ export function DateTimePicker({
                     size="icon"
                     variant={date && date.getMinutes() === minute ? "default" : "ghost"}
                     className="sm:w-full shrink-0 aspect-square"
-                    onClick={() => handleTimeChange("minute", String(minute))}
+                    onMouseDown={() => handleTimeChange("minute", String(minute))}
                   >
                     {String(minute).padStart(2, "0")}
                   </Button>
@@ -162,7 +162,7 @@ export function DateTimePicker({
                         : "ghost"
                     }
                     className="sm:w-full shrink-0 aspect-square"
-                    onClick={() => handleTimeChange("ampm", period)}
+                    onMouseDown={() => handleTimeChange("ampm", period)}
                   >
                     {period}
                   </Button>
