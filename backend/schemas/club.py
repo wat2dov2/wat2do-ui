@@ -10,6 +10,7 @@ from core.constants import (
     MAX_CLUB_CATEGORY_COUNT,
     MAX_CLUB_CATEGORY_LENGTH,
     ORGANIZATION_CATEGORIES,
+    canonicalize_organization_category,
     MAX_CLUB_NAME_LENGTH,
     MAX_CLUB_TYPE_LENGTH,
     MAX_INTEGRATION_METADATA_KEY_LENGTH,
@@ -51,18 +52,15 @@ from typing import Annotated
 
 _log = logging.getLogger(__name__)
 
-_CANONICAL_ORG_CATEGORIES = frozenset(ORGANIZATION_CATEGORIES)
-
 CategoryStr = Annotated[str, Field(min_length=1, max_length=MAX_CLUB_CATEGORY_LENGTH)]
 
 
 def normalize_organization_category(raw: str) -> str | None:
     """Return the canonical organization category, or None if unrecognized."""
-    raw = raw.strip()
-    if raw in _CANONICAL_ORG_CATEGORIES:
-        return raw
-    _log.warning("Unrecognized organization category %r, dropping it", raw)
-    return None
+    category = canonicalize_organization_category(raw)
+    if category is None and (raw or "").strip():
+        _log.warning("Unrecognized organization category %r, dropping it", raw)
+    return category
 
 
 def _validate_organization_categories(v: list[str] | None) -> list[str] | None:
