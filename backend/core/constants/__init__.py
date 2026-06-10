@@ -11,12 +11,7 @@ from core.constants.credits import (
     PROMOTION_PACKAGES,
 )
 from core.constants.events import EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
-from core.constants.organizations import (
-    LEGACY_ORGANIZATION_CATEGORY_ALIASES,
-    ORGANIZATION_CATEGORIES,
-    canonicalize_organization_categories,
-    canonicalize_organization_category,
-)
+from core.constants.organizations import ORGANIZATION_CATEGORIES
 from core.constants.experiments import (
     AB_DEFAULT_VARIANTS,
     AB_EVENT_CLICK,
@@ -184,10 +179,7 @@ __all__ = (
     "DEFAULT_PAGE_SIZE",
     "DEFAULT_PROMOTION_PACKAGE",
     "EVENT_CATEGORIES",
-    "LEGACY_ORGANIZATION_CATEGORY_ALIASES",
     "ORGANIZATION_CATEGORIES",
-    "canonicalize_organization_categories",
-    "canonicalize_organization_category",
     "INTERACTION_CLICK",
     "INTERACTION_DETAIL_VIEW",
     "INTERACTION_SAVE",
