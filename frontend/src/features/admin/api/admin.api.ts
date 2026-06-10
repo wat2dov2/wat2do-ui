@@ -10,7 +10,7 @@ import type {
   Organization,
   SubmissionStatus,
 } from "@/shared/types";
-import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
+import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import {
   getAllOrganizations as getAllOrganizationsData,
   getOrganizationTypes as getOrganizationTypesData,
@@ -58,7 +58,7 @@ function toEventFormData(eventData: ApiEventCreate): EventFormData {
       };
     }),
     location: eventData.location || "",
-    category: eventData.category ?? DEFAULT_EVENT_CATEGORY,
+    category: eventData.category ?? getDefaultEventCategory(),
     price: eventData.price ?? 0,
     food: eventData.food ?? [],
     registration: eventData.registration ?? false,

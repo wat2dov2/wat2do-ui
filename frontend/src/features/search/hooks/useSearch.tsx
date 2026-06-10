@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
-import { EVENT_CATEGORIES as availableCategories } from "@/shared/constants/eventCategories";
+import { getEventCategories } from "@/shared/data/eventCategories";
 import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
@@ -127,7 +127,7 @@ export function useSearch({
 
   const categoryPieItems = useMemo(
     () =>
-      availableCategories.map((cat) => ({
+      getEventCategories().map((cat) => ({
         id: cat,
         label: translateCategory(cat, t),
         iconName: "Tag" as const,

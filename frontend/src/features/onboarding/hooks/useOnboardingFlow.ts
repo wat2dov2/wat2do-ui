@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { EVENT_CATEGORIES, type EventCategory } from "@/shared/constants/eventCategories";
+import { isEventCategory } from "@/shared/data/eventCategories";
 
 export const ONBOARDING_TOTAL_STEPS = 6;
 
@@ -40,7 +40,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   const [dailyNewEventsOptIn, setDailyNewEventsOptIn] = useState(false);
 
   const validTopics = useMemo(
-    () => selectedTopics.filter((t) => EVENT_CATEGORIES.includes(t as EventCategory)),
+    () => selectedTopics.filter((t) => isEventCategory(t)),
     [selectedTopics]
   );
 

@@ -11,7 +11,7 @@ import {
 } from "@/shared/ui/field";
 import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
-import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
+import { getEventCategories } from "@/shared/data/eventCategories";
 import { translateCategory } from "@/shared/utils/event";
 import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
@@ -165,7 +165,7 @@ export function EventFormFields() {
               value={formData.category}
               onChange={(value) => updateField("category", value)}
               placeholder={t("forms.selectCategory")}
-              options={EVENT_CATEGORIES.map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
+              options={getEventCategories().map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
             />
 
             <FormInput

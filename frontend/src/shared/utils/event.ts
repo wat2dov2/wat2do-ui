@@ -1,5 +1,5 @@
 import type { Event, EventFormData, EventFormOccurrence } from "@/shared/types";
-import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
+import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 
 /**
  * Event Utilities
@@ -11,7 +11,7 @@ import { DEFAULT_EVENT_CATEGORY } from "@/shared/constants/eventCategories";
  * Prefers explicit category; falls back to default.
  */
 export function getEventCategory(event: Pick<Event, "category">): string {
-  return event.category || DEFAULT_EVENT_CATEGORY;
+  return event.category || getDefaultEventCategory();
 }
 
 function toLocalDateTimeInput(value: string): string {

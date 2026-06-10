@@ -2,10 +2,7 @@
  * Fetches shared domain constants from the backend (/meta/constants).
  *
  * Called during app init (main.tsx) so categories, interest mappings,
- * and status enums can hydrate from one backend source of truth.
- *
- * Consumers use the synchronous `getAppConstants()` getter, which returns
- * compiled fallbacks until the backend constants have loaded.
+ * and status enums hydrate from one backend source of truth before render.
  */
 
 import { api } from "@/shared/services/apiClient";

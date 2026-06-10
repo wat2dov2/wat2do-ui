@@ -66,9 +66,8 @@ async function bootstrapAuth() {
   }
 }
 
-// Initialize app. Language is the only render-blocking work; constants have
-// compiled fallbacks and auth can hydrate from localStorage before the refresh
-// request completes, so both run after first paint.
+// Initialize app. Language and domain constants block first paint; auth can
+// hydrate from localStorage before the refresh request completes.
 async function initApp() {
   try {
     const initialLang = getStoredLanguage();
@@ -78,8 +77,8 @@ async function initApp() {
     console.error("Language initialization failed, falling back to English:", err);
   }
 
+  await bootstrapConstants();
   renderApp();
-  void bootstrapConstants();
   void bootstrapAuth();
 }
 

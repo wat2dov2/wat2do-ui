@@ -11,7 +11,7 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/shared/ui/popover";
-import { EVENT_CATEGORIES } from "@/shared/constants/eventCategories";
+import { getEventCategories } from "@/shared/data/eventCategories";
 
 const LABELS = {
   defaultPlaceholder: "Search or select...",
@@ -35,7 +35,7 @@ export function OnboardingInterestsCombobox({
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = EVENT_CATEGORIES.filter((cat) =>
+  const filtered = getEventCategories().filter((cat) =>
     cat.toLowerCase().includes(search.toLowerCase().trim())
   );
 
