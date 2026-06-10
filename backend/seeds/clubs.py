@@ -11,10 +11,16 @@ def _public_url(bucket: str, path: str) -> str | None:
     return f"{base}/storage/v1/object/public/{bucket}/{path}"
 
 
+_ACADEMIC = "Political and Social Awareness"
+_GAMES = "Games, Recreational and Social"
+_TECH = "Media, Publications and Web Development"
+_ARTS = "Creative Arts, Dance and Music"
+_HEALTH = "Health Promotion"
+
 SEED_CLUBS = [
     {
         "club_name": "Pre-Pharmacy, UW",
-        "categories": ["Academic"],
+        "categories": [_HEALTH],
         "club_page": "152",
         "ig": "uwprepharmacy",
         "club_type": "WUSA",
@@ -23,7 +29,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "UW Board Games Club",
-        "categories": ["Social & Games"],
+        "categories": [_GAMES],
         "club_page": "200",
         "ig": "uwboardgames",
         "discord": "uwboardgames",
@@ -33,7 +39,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "UW Computer Science Club",
-        "categories": ["Academic", "Technology"],
+        "categories": [_ACADEMIC, _TECH],
         "club_page": "310",
         "ig": "uwcsclub",
         "discord": "uwcsclub",
@@ -43,7 +49,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "UW Music Society",
-        "categories": ["Cultural"],
+        "categories": [_ARTS],
         "club_page": "420",
         "ig": "uwmusic",
         "club_type": "WUSA",
@@ -52,7 +58,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "UW Intramurals",
-        "categories": ["Sports"],
+        "categories": [_HEALTH],
         "club_page": "515",
         "ig": "uwintramurals",
         "club_type": "University",
@@ -61,7 +67,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "U of T Computer Science Student Union",
-        "categories": ["Academic", "Technology"],
+        "categories": [_ACADEMIC, _TECH],
         "club_page": "https://cssu.ca",
         "ig": "cssu_uoft",
         "discord": "cssu_discord",
@@ -71,7 +77,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "U of T Board Games Club",
-        "categories": ["Social & Games"],
+        "categories": [_GAMES],
         "club_page": "https://uoftboardgames.ca",
         "ig": "uoftboardgames",
         "discord": "uoftboardgames",
@@ -81,7 +87,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "McGill Computer Science Undergraduate Society",
-        "categories": ["Academic", "Technology"],
+        "categories": [_ACADEMIC, _TECH],
         "club_page": "https://csusmcgill.ca",
         "ig": "csus_mcgill",
         "discord": "csus_mcgill",
@@ -91,7 +97,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "McGill Board Games Club",
-        "categories": ["Social & Games"],
+        "categories": [_GAMES],
         "club_page": "https://mcgillboardgames.ca",
         "ig": "mcgillboardgames",
         "discord": "mcgillboardgames",
@@ -101,7 +107,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "UBC Computer Science Student Society",
-        "categories": ["Academic", "Technology"],
+        "categories": [_ACADEMIC, _TECH],
         "club_page": "https://ubccsss.ca",
         "ig": "ubccsss",
         "discord": "ubccsss",
@@ -111,7 +117,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "UBC Board Games Club",
-        "categories": ["Social & Games"],
+        "categories": [_GAMES],
         "club_page": "https://ubcboardgames.ca",
         "ig": "ubcboardgames",
         "discord": "ubcboardgames",
@@ -121,7 +127,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "McMaster Computer Science Society",
-        "categories": ["Academic", "Technology"],
+        "categories": [_ACADEMIC, _TECH],
         "club_page": "https://mcmastercss.ca",
         "ig": "mcmastercss",
         "discord": "mcmastercss",
@@ -131,7 +137,7 @@ SEED_CLUBS = [
     },
     {
         "club_name": "McMaster Board Games Club",
-        "categories": ["Social & Games"],
+        "categories": [_GAMES],
         "club_page": "https://mcmasterboardgames.ca",
         "ig": "mcmasterboardgames",
         "discord": "mcmasterboardgames",

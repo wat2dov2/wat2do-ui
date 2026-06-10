@@ -11,6 +11,7 @@ from core.constants.credits import (
     PROMOTION_PACKAGES,
 )
 from core.constants.events import EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
+from core.constants.organizations import ORGANIZATION_CATEGORIES
 from core.constants.experiments import (
     AB_DEFAULT_VARIANTS,
     AB_EVENT_CLICK,
@@ -178,6 +179,7 @@ __all__ = (
     "DEFAULT_PAGE_SIZE",
     "DEFAULT_PROMOTION_PACKAGE",
     "EVENT_CATEGORIES",
+    "ORGANIZATION_CATEGORIES",
     "INTERACTION_CLICK",
     "INTERACTION_DETAIL_VIEW",
     "INTERACTION_SAVE",

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Literal
 from urllib.parse import urlparse
@@ -8,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from core.constants import (
     MAX_CLUB_CATEGORY_COUNT,
     MAX_CLUB_CATEGORY_LENGTH,
+    ORGANIZATION_CATEGORIES,
     MAX_CLUB_NAME_LENGTH,
     MAX_CLUB_TYPE_LENGTH,
     MAX_INTEGRATION_METADATA_KEY_LENGTH,
@@ -45,11 +47,37 @@ def _validate_http_url(v: str | None) -> str | None:
     return v
 
 
-# Category entries are single short tags; list length is already bounded on
-# the model by ``max_length=MAX_CLUB_CATEGORY_COUNT``.
 from typing import Annotated
 
+_log = logging.getLogger(__name__)
+
+_CANONICAL_ORG_CATEGORIES = frozenset(ORGANIZATION_CATEGORIES)
+
 CategoryStr = Annotated[str, Field(min_length=1, max_length=MAX_CLUB_CATEGORY_LENGTH)]
+
+
+def normalize_organization_category(raw: str) -> str | None:
+    """Return the canonical organization category, or None if unrecognized."""
+    raw = raw.strip()
+    if raw in _CANONICAL_ORG_CATEGORIES:
+        return raw
+    _log.warning("Unrecognized organization category %r, dropping it", raw)
+    return None
+
+
+def _validate_organization_categories(v: list[str] | None) -> list[str] | None:
+    if v is None:
+        return None
+    normalized: list[str] = []
+    for item in v:
+        category = normalize_organization_category(item)
+        if category is None:
+            raise ValueError(
+                f"categories must be from: {', '.join(ORGANIZATION_CATEGORIES)}"
+            )
+        if category not in normalized:
+            normalized.append(category)
+    return normalized
 
 
 class ClubCreate(BaseModel):
@@ -80,6 +108,11 @@ class ClubCreate(BaseModel):
     def _safe_url(cls, v: str | None) -> str | None:
         return _validate_http_url(v)
 
+    @field_validator("categories")
+    @classmethod
+    def _categories(cls, v: list[str] | None) -> list[str] | None:
+        return _validate_organization_categories(v)
+
 
 class ClubUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -107,6 +140,11 @@ class ClubUpdate(BaseModel):
     @classmethod
     def _safe_url(cls, v: str | None) -> str | None:
         return _validate_http_url(v)
+
+    @field_validator("categories")
+    @classmethod
+    def _categories(cls, v: list[str] | None) -> list[str] | None:
+        return _validate_organization_categories(v)
 
 
 class ClubResponse(BaseModel):

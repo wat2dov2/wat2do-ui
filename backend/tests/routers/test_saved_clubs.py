@@ -12,7 +12,7 @@ def _mock_club(**overrides) -> ClubResponse:
         "id": 42,
         "club_name": "Mock Club",
         "club_type": "Social",
-        "categories": ["Games"],
+        "categories": ["Games, Recreational and Social"],
         "created_by": FAKE_USER["id"],
         "school": "University of Waterloo",
     }

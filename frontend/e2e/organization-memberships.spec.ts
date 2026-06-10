@@ -9,7 +9,7 @@ const OWNER_EMAIL = "owner@uwaterloo.ca";
 const MOCK_CLUB = {
   id: 1,
   club_name: "UW Computer Science Club",
-  categories: ["Technology", "Academic"],
+  categories: ["Media, Publications and Web Development", "Political and Social Awareness"],
   club_page: "https://csclub.uwaterloo.ca",
   ig: "uwcsc",
   discord: "https://discord.gg/csc",

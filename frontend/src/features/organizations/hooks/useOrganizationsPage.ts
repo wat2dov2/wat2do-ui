@@ -11,8 +11,9 @@ import {
 } from "@/features/organizations/api/organizations.api";
 import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
 import { useEventsStore } from "@/features/events/store/events.store";
+import { getOrganizationCategories } from "@/shared/data/organizationCategories";
 
-const EMPTY_DATA: { organizations: Organization[]; categories: string[] } = { organizations: [], categories: [] };
+const EMPTY_ORGANIZATIONS: Organization[] = [];
 
 export function useOrganizationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,9 +22,12 @@ export function useOrganizationsPage() {
 
   const fetchOrganizations = useCallback(() => loadOrganizationsData(schoolFilter ?? undefined), [schoolFilter]);
 
-  const { data, loading: isLoading } = useBackendQuery(fetchOrganizations, EMPTY_DATA, schoolFilter);
-  const organizations = data.organizations;
-  const allCategories = data.categories;
+  const { data: organizations, loading: isLoading } = useBackendQuery(
+    fetchOrganizations,
+    EMPTY_ORGANIZATIONS,
+    schoolFilter,
+  );
+  const allCategories = getOrganizationCategories();
 
   // Derive filtered organizations from source data (no useState+useEffect sync needed)
   const filteredOrganizations = useMemo(() => {

@@ -32,13 +32,14 @@ import {
 import type { Organization } from "@/shared/types";
 import { toast } from "@/shared/hooks/use-toast";
 import { useForm } from "@/shared/hooks/useForm";
-import { useTagInput } from "@/shared/hooks/useTagInput";
 import { useModalState } from "@/shared/hooks/useModalState";
-import { TagInput } from "@/shared/ui/tag-input";
+import { MultiSelect } from "@/shared/ui/multi-select";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
+import { getOrganizationCategories } from "@/shared/data/organizationCategories";
+import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
 
-interface ClubFormData {
+interface OrganizationFormData {
   club_name: string;
   categories: string[];
   club_page: string;
@@ -52,7 +53,7 @@ interface ClubFormData {
 interface AddOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (club: Organization) => void | Promise<void>;
+  onSave: (organization: Organization) => void | Promise<void>;
   initialData?: Organization;
 }
 
@@ -78,7 +79,7 @@ export function AddOrganizationModal({
   }), []);
 
   // Memoize validate to prevent infinite loops
-  const validate = useCallback((data: ClubFormData, touched: Record<string, boolean>) => {
+  const validate = useCallback((data: OrganizationFormData, touched: Record<string, boolean>) => {
     const newErrors: Record<string, string> = {};
     if (touched.club_name && !data.club_name.trim()) {
       newErrors.club_name = t("forms.organizationNameRequired");
@@ -92,7 +93,7 @@ export function AddOrganizationModal({
     return newErrors;
   }, [t]);
 
-  const form = useForm<ClubFormData>({
+  const form = useForm<OrganizationFormData>({
     initialData: initialData
       ? {
           club_name: initialData.club_name,
@@ -111,39 +112,23 @@ export function AddOrganizationModal({
     validate,
   });
 
-  // Use tag input hook to manage category input state
-  const categoryInput = useTagInput({
-    onAdd: (value) => {
-      if (!form.formData.categories.includes(value)) {
-        form.updateField("categories", [...form.formData.categories, value]);
-        form.handleBlur("categories");
-      }
-    },
-  });
-
-  // Use modal state hook for standardized open/close handling
-  // Combined reset function for form and category input
-  const combinedReset = useCallback(() => {
-    form.reset();
-    categoryInput.reset();
-  }, [form, categoryInput]);
-
-  const modalState = useModalState({ 
+  const modalState = useModalState({
     onClose,
     resetOnClose: true,
-    resetFn: combinedReset,
+    resetFn: form.reset,
   });
 
-  const addCategory = useCallback(() => {
-    categoryInput.handleAdd();
-  }, [categoryInput]);
-
-  const removeCategory = (index: number) => {
-    form.updateField(
-      "categories",
-      form.formData.categories.filter((_, i) => i !== index)
-    );
-  };
+  const toggleCategory = useCallback(
+    (category: string) => {
+      const current = form.formData.categories;
+      const next = current.includes(category)
+        ? current.filter((value) => value !== category)
+        : [...current, category];
+      form.updateField("categories", next);
+      form.handleBlur("categories");
+    },
+    [form],
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -154,7 +139,7 @@ export function AddOrganizationModal({
 
     if (!form.isValid) return;
 
-    const club: Organization = {
+    const organization: Organization = {
       id: initialData?.id || Date.now(),
       club_name: form.formData.club_name.trim(),
       categories: form.formData.categories,
@@ -168,12 +153,12 @@ export function AddOrganizationModal({
 
     setIsSubmitting(true);
     try {
-      await Promise.resolve(onSave(club));
+      await Promise.resolve(onSave(organization));
       toast({
         title: isEditMode ? t("organizations.clubUpdated") : t("organizations.clubCreated"),
         description: isEditMode
-          ? t("organizations.clubUpdatedMessage", { name: club.club_name })
-          : t("organizations.clubCreatedMessage", { name: club.club_name }),
+          ? t("organizations.clubUpdatedMessage", { name: organization.club_name })
+          : t("organizations.clubCreatedMessage", { name: organization.club_name }),
         variant: "success",
       });
       onClose();
@@ -234,19 +219,21 @@ export function AddOrganizationModal({
                   )}
                 </Field>
 
-                <TagInput
-                  label={t("forms.categories")}
-                  value={form.formData.categories}
-                  inputValue={categoryInput.inputValue}
-                  onInputChange={categoryInput.setInputValue}
-                  onAdd={addCategory}
-                  onRemove={removeCategory}
-                  placeholder={t("forms.addCategoryPlaceholder")}
-                  error={form.errors.categories}
-                  touched={!!form.touched.categories}
-                  tagColor="primary"
-                  required
-                />
+                <Field>
+                  <FieldLabel className="text-sm font-medium text-foreground">
+                    {t("forms.categories")} <span className="text-error">*</span>
+                  </FieldLabel>
+                  <MultiSelect
+                    options={getOrganizationCategories()}
+                    selected={form.formData.categories}
+                    onToggle={toggleCategory}
+                    className="justify-start"
+                    getLabel={(category) => getClubCategoryTranslation(category, t)}
+                  />
+                  {form.touched.categories && form.errors.categories && (
+                    <FieldError className="text-xs">{form.errors.categories}</FieldError>
+                  )}
+                </Field>
                 {!isEditMode && (
                   <Field>
                     <FieldLabel htmlFor="owner-user-id" className="text-sm font-medium text-foreground">

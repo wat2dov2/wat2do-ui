@@ -721,6 +721,65 @@
         }
       }
     },
+    "/clubs/claims": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "List Claims",
+        "description": "List claims (admin only).",
+        "operationId": "list_claims_clubs_claims_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClubClaimResponse"
+                  },
+                  "title": "Response List Claims Clubs Claims Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/clubs/{club_id}": {
       "get": {
         "tags": [
@@ -1822,7 +1881,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OrganizationClaimCreate"
+                "$ref": "#/components/schemas/ClubClaimCreate"
               }
             }
           }
@@ -1833,7 +1892,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationClaimResponse"
+                  "$ref": "#/components/schemas/ClubClaimResponse"
                 }
               }
             }
@@ -1849,37 +1908,6 @@
             }
           }
         }
-      }
-    },
-    "/clubs/claims/pending": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List Pending Claims",
-        "description": "List pending claims (admin only).",
-        "operationId": "list_pending_claims_clubs_claims_pending_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/OrganizationClaimResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List Pending Claims Clubs Claims Pending Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
       }
     },
     "/clubs/claims/{claim_id}": {
@@ -1912,7 +1940,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OrganizationClaimUpdate"
+                "$ref": "#/components/schemas/ClubClaimUpdate"
               }
             }
           }
@@ -1923,7 +1951,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationClaimResponse"
+                  "$ref": "#/components/schemas/ClubClaimResponse"
                 }
               }
             }
@@ -2504,6 +2532,22 @@
                 }
               ],
               "title": "School"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
             }
           }
         ],
@@ -4736,6 +4780,13 @@
             "type": "array",
             "title": "Event Categories"
           },
+          "organization_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Organization Categories"
+          },
           "interests": {
             "items": {
               "type": "string"
@@ -4764,6 +4815,7 @@
         "type": "object",
         "required": [
           "event_categories",
+          "organization_categories",
           "interests",
           "interest_to_categories",
           "report_statuses"
@@ -4846,7 +4898,7 @@
         "title": "CalendarTokenResponse",
         "description": "Returned by GET /calendar/token and POST /calendar/token/regenerate."
       },
-      "OrganizationClaimCreate": {
+      "ClubClaimCreate": {
         "properties": {
           "executive_role": {
             "type": "string",
@@ -4871,9 +4923,9 @@
         "required": [
           "executive_role"
         ],
-        "title": "OrganizationClaimCreate"
+        "title": "ClubClaimCreate"
       },
-      "OrganizationClaimResponse": {
+      "ClubClaimResponse": {
         "properties": {
           "id": {
             "type": "string",
@@ -4907,6 +4959,17 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
           },
           "created_at": {
             "type": "string",
@@ -4950,9 +5013,9 @@
           "created_at",
           "updated_at"
         ],
-        "title": "OrganizationClaimResponse"
+        "title": "ClubClaimResponse"
       },
-      "OrganizationClaimUpdate": {
+      "ClubClaimUpdate": {
         "properties": {
           "status": {
             "type": "string",
@@ -4976,7 +5039,7 @@
         "required": [
           "status"
         ],
-        "title": "OrganizationClaimUpdate"
+        "title": "ClubClaimUpdate"
       },
       "ClubCreate": {
         "properties": {

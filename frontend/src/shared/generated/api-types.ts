@@ -336,6 +336,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clubs/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Claims
+         * @description List claims (admin only).
+         */
+        get: operations["list_claims_clubs_claims_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clubs/{club_id}": {
         parameters: {
             query?: never;
@@ -607,26 +627,6 @@ export interface paths {
          * @description Submit a claim for an unowned club.
          */
         post: operations["create_claim_clubs__club_id__claims_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clubs/claims/pending": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Pending Claims
-         * @description List pending claims (admin only).
-         */
-        get: operations["list_pending_claims_clubs_claims_pending_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1502,6 +1502,8 @@ export interface components {
         AppConstantsResponse: {
             /** Event Categories */
             event_categories: string[];
+            /** Organization Categories */
+            organization_categories: string[];
             /** Interests */
             interests: string[];
             /** Interest To Categories */
@@ -1541,15 +1543,15 @@ export interface components {
             /** Feed Url */
             feed_url: string;
         };
-        /** OrganizationClaimCreate */
-        OrganizationClaimCreate: {
+        /** ClubClaimCreate */
+        ClubClaimCreate: {
             /** Executive Role */
             executive_role: string;
             /** Proof Url */
             proof_url?: string | null;
         };
-        /** OrganizationClaimResponse */
-        OrganizationClaimResponse: {
+        /** ClubClaimResponse */
+        ClubClaimResponse: {
             /**
              * Id
              * Format: uuid
@@ -1568,6 +1570,8 @@ export interface components {
             proof_url: string | null;
             /** Status */
             status: string;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1581,8 +1585,8 @@ export interface components {
             clubs?: components["schemas"]["ClubResponse"] | null;
             users?: components["schemas"]["UserResponse"] | null;
         };
-        /** OrganizationClaimUpdate */
-        OrganizationClaimUpdate: {
+        /** ClubClaimUpdate */
+        ClubClaimUpdate: {
             /** Status */
             status: string;
             /** Rejection Reason */
@@ -3446,6 +3450,37 @@ export interface operations {
             };
         };
     };
+    list_claims_clubs_claims_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_club_clubs__club_id__get: {
         parameters: {
             query?: never;
@@ -4094,7 +4129,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OrganizationClaimCreate"];
+                "application/json": components["schemas"]["ClubClaimCreate"];
             };
         };
         responses: {
@@ -4104,7 +4139,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OrganizationClaimResponse"];
+                    "application/json": components["schemas"]["ClubClaimResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4114,26 +4149,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_pending_claims_clubs_claims_pending_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OrganizationClaimResponse"][];
                 };
             };
         };
@@ -4149,7 +4164,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OrganizationClaimUpdate"];
+                "application/json": components["schemas"]["ClubClaimUpdate"];
             };
         };
         responses: {
@@ -4159,7 +4174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OrganizationClaimResponse"];
+                    "application/json": components["schemas"]["ClubClaimResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4483,6 +4498,7 @@ export interface operations {
                 skip?: number;
                 limit?: number;
                 school?: string | null;
+                category?: string | null;
             };
             header?: never;
             path?: never;

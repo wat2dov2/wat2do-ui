@@ -9,6 +9,7 @@ import { api } from "@/shared/services/apiClient";
 
 interface AppConstants {
   event_categories: string[];
+  organization_categories: string[];
   interests: string[];
   interest_to_categories: Record<string, string[]>;
   report_statuses: string[];
@@ -19,6 +20,7 @@ interface AppConstants {
 // ---------------------------------------------------------------------------
 let cached: AppConstants = {
   event_categories: [],
+  organization_categories: [],
   interests: [],
   interest_to_categories: {},
   report_statuses: [],

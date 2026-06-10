@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import NumberFlow from "@number-flow/react";
-import { Search, Bookmark } from "lucide-react";
+import { Bookmark, Search, Users } from "lucide-react";
 import { OrganizationCard } from "@/features/organizations/components/OrganizationCard";
 import { OrganizationDetailsModal } from "@/features/organizations/components/OrganizationDetailsModal";
 import { LoadingPage } from "@/shared/ui/loading-page";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganizationsPage";
 import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
@@ -34,6 +35,9 @@ export function OrganizationsPage() {
   const displayOrgs = activeTab === "followed"
     ? filteredOrganizations.filter((club) => savedOrganizationIds.includes(club.id))
     : filteredOrganizations;
+  const followedFilteredCount = filteredOrganizations.filter((club) =>
+    savedOrganizationIds.includes(club.id)
+  ).length;
 
   return (
     <div className="-mt-6 space-y-4">
@@ -75,7 +79,7 @@ export function OrganizationsPage() {
         <div className="flex flex-wrap gap-2">
           {/* Category Chips */}
           {!isLoading &&
-            allCategories.slice(0, 10).map((category) => (
+            allCategories.map((category) => (
               <button
                 key={category}
                 onMouseDown={() => toggleCategory(category)}
@@ -92,30 +96,36 @@ export function OrganizationsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border">
-        <button
-          onMouseDown={() => setActiveTab("all")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
-            activeTab === "all"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          id="tab-all-clubs"
-        >
-          {t("organizations.allClubs") || "All Organizations"}
-        </button>
-        <button
-          onMouseDown={() => setActiveTab("followed")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
-            activeTab === "followed"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          id="tab-followed-clubs"
-        >
-          {t("organizations.followedClubs") || "Followed Organizations"}
-        </button>
-      </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as "all" | "followed")}
+        className="w-full"
+      >
+        <TabsList className="grid h-auto w-full grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-1 rounded-xl bg-secondary/70 p-1 sm:inline-grid sm:w-auto sm:grid-cols-2">
+          <TabsTrigger
+            value="all"
+            id="tab-all-clubs"
+            className="min-w-0 gap-1.5 px-2 py-2.5 text-xs sm:min-w-[190px] sm:gap-2 sm:px-3 sm:text-sm"
+          >
+            <Users className="hidden size-4 shrink-0 sm:block" />
+            <span className="truncate">{t("organizations.allClubs") || "All Organizations"}</span>
+            <span className="ml-auto rounded-lg bg-background/80 px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              {filteredOrganizations.length}
+            </span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="followed"
+            id="tab-followed-clubs"
+            className="min-w-0 gap-1.5 px-2 py-2.5 text-xs sm:min-w-[220px] sm:gap-2 sm:px-3 sm:text-sm"
+          >
+            <Bookmark className="hidden size-4 shrink-0 sm:block" />
+            <span className="truncate">{t("organizations.followedClubs") || "Followed Organizations"}</span>
+            <span className="ml-auto rounded-lg bg-background/80 px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              {followedFilteredCount}
+            </span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Results Count / State Display */}
       {isLoading ? (
@@ -147,7 +157,7 @@ export function OrganizationsPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
             {displayOrgs.map((club) => (
-              <OrganizationCard key={club.id} club={club} onMouseDown={() => setSelectedOrganization(club)} />
+              <OrganizationCard key={club.id} organization={club} onMouseDown={() => setSelectedOrganization(club)} />
             ))}
           </div>
         </div>
@@ -170,7 +180,7 @@ export function OrganizationsPage() {
       )}
 
       <OrganizationDetailsModal
-        club={selectedOrganization}
+        organization={selectedOrganization}
         isOpen={selectedOrganization !== null}
         onClose={() => setSelectedOrganization(null)}
       />

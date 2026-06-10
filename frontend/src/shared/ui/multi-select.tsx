@@ -8,6 +8,7 @@ interface MultiSelectProps {
   onToggle: (value: string) => void;
   className?: string;
   translationKeyPrefix?: string;
+  getLabel?: (value: string) => string;
 }
 
 export function MultiSelect({
@@ -16,13 +17,17 @@ export function MultiSelect({
   onToggle,
   className = "",
   translationKeyPrefix,
+  getLabel,
 }: MultiSelectProps) {
   const translatedOptions = useTranslatedOptions(options, translationKeyPrefix);
+  const labeledOptions = getLabel
+    ? options.map((value) => ({ value, label: getLabel(value) }))
+    : translatedOptions;
 
   return (
     <div className={className}>
       <div className="flex flex-wrap gap-2 justify-center">
-        {translatedOptions.map(({ value, label }) => {
+        {labeledOptions.map(({ value, label }) => {
           const isSelected = selected.includes(value);
           return (
             <Button
