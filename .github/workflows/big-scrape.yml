@@ -11,6 +11,11 @@ on:
         description: 'School to scrape'
         required: true
         type: choice
+        # The dropdown is intentionally limited to schools with a curated
+        # backend/services/scraper/urls/<school>.txt handle list.  The
+        # process-single-user.yml workflow supports the full 19-school set;
+        # extending big-scrape to those schools requires a URL file (or a
+        # follow-up that reads handles directly from the `clubs` table).
         options:
           - 'University of Waterloo'
           - 'University of Pennsylvania'

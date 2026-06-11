@@ -17,14 +17,9 @@ BEGIN;
 -- 1. Tables -----------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.schools (
-    id                   serial PRIMARY KEY,
-    name                 varchar(255) NOT NULL UNIQUE,
-    slug                 varchar(64)  NOT NULL UNIQUE,
-    timezone             varchar(64),
-    semester_fall_end    timestamptz,
-    semester_spring_end  timestamptz,
-    semester_summer_end  timestamptz,
-    created_at           timestamptz NOT NULL DEFAULT now()
+    id          serial PRIMARY KEY,
+    name        varchar(255) NOT NULL UNIQUE,
+    created_at  timestamptz  NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS public.school_email_domains (
@@ -39,34 +34,31 @@ CREATE INDEX IF NOT EXISTS ix_school_email_domains_school_id
     ON public.school_email_domains(school_id);
 
 -- 2. Seed schools (canonical long names) ------------------------------------
--- Slugs are kebab-case to keep them URL-friendly and stable.
--- Timezones / semester anchors are populated only for Waterloo, matching the
--- existing constants in backend/core/constants/schools.py — every other
--- school keeps null and falls back through the same code path it does today.
+-- These names must match the `school` varchar values written by the
+-- bulk-import script (backend/scripts/import_master_clubs_xlsx.py) and
+-- by core.allowed_emails when resolving an email's school.
 
-INSERT INTO public.schools (name, slug, timezone, semester_fall_end, semester_spring_end, semester_summer_end)
-VALUES
-  ('University of Waterloo',                'university-of-waterloo',     'America/Toronto',
-       '2025-12-31 23:59:59+00', '2026-04-30 23:59:59+00', '2026-08-31 23:59:59+00'),
-  ('University of Toronto - St. George',    'uoft-st-george',             'America/Toronto', NULL, NULL, NULL),
-  ('University of Toronto - Scarborough',   'uoft-scarborough',           'America/Toronto', NULL, NULL, NULL),
-  ('McGill University',                     'mcgill-university',          'America/Toronto', NULL, NULL, NULL),
-  ('McMaster University',                   'mcmaster-university',        'America/Toronto', NULL, NULL, NULL),
-  ('Western University',                    'western-university',         'America/Toronto', NULL, NULL, NULL),
-  ('Queen''s University',                   'queens-university',          'America/Toronto', NULL, NULL, NULL),
-  ('Carleton University',                   'carleton-university',        'America/Toronto', NULL, NULL, NULL),
-  ('Brock University',                      'brock-university',           'America/Toronto', NULL, NULL, NULL),
-  ('Wilfrid Laurier University',            'wilfrid-laurier-university', 'America/Toronto', NULL, NULL, NULL),
-  ('York University',                       'york-university',            'America/Toronto', NULL, NULL, NULL),
-  ('Toronto Metropolitan University',       'toronto-metropolitan',       'America/Toronto', NULL, NULL, NULL),
-  ('University of Ottawa',                  'university-of-ottawa',       'America/Toronto', NULL, NULL, NULL),
-  ('OCAD University',                       'ocad-university',            'America/Toronto', NULL, NULL, NULL),
-  ('Cornell University',                    'cornell-university',         'America/New_York', NULL, NULL, NULL),
-  ('New York University',                   'new-york-university',        'America/New_York', NULL, NULL, NULL),
-  ('University of Pennsylvania',            'university-of-pennsylvania', 'America/New_York', NULL, NULL, NULL),
-  ('Columbia University',                   'columbia-university',        'America/New_York', NULL, NULL, NULL),
-  ('Massachusetts Institute of Technology', 'mit',                        'America/New_York', NULL, NULL, NULL),
-  ('University of British Columbia',        'ubc',                        'America/Vancouver', NULL, NULL, NULL)
+INSERT INTO public.schools (name) VALUES
+  ('University of Waterloo'),
+  ('University of Toronto - St. George'),
+  ('University of Toronto - Scarborough'),
+  ('McGill University'),
+  ('McMaster University'),
+  ('Western University'),
+  ('Queen''s University'),
+  ('Carleton University'),
+  ('Brock University'),
+  ('Wilfrid Laurier University'),
+  ('York University'),
+  ('Toronto Metropolitan University'),
+  ('University of Ottawa'),
+  ('OCAD University'),
+  ('Cornell University'),
+  ('New York University'),
+  ('University of Pennsylvania'),
+  ('Columbia University'),
+  ('Massachusetts Institute of Technology'),
+  ('University of British Columbia')
 ON CONFLICT (name) DO NOTHING;
 
 -- 3. Seed email domains -----------------------------------------------------
