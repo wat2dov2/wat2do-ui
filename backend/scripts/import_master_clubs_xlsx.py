@@ -220,6 +220,25 @@ def _validate_rows(rows: list[dict]) -> tuple[list[dict], dict[str, int], list[s
             "xlsx Category values not in ORGANIZATION_CATEGORIES: "
             + ", ".join(sorted(bad_categories))
         )
+
+    # Guard against (school, club_name) duplicates — they break idempotency
+    # because the SELECT-then-write upsert keys on that pair, so the second
+    # row in a dup pair always looks "new".  Run scripts/dedup_master_clubs_xlsx.py
+    # to collapse them before re-importing.
+    seen: dict[tuple[str, str], int] = {}
+    duplicate_keys: list[str] = []
+    for row in kept:
+        key = (row["school"], row["club_name"])
+        if key in seen:
+            duplicate_keys.append(f"{key[0]} | {key[1]} (rows {seen[key]} and {row['row_idx']})")
+        else:
+            seen[key] = row["row_idx"]
+    if duplicate_keys:
+        errors.append(
+            "xlsx contains duplicate (School, Name) rows — dedup before importing:\n  "
+            + "\n  ".join(duplicate_keys)
+        )
+
     return kept, dict(skipped), errors
 
 
