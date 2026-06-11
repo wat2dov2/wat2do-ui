@@ -1,8 +1,4 @@
 
-export function toSchoolTranslationKey(school: string): string {
-  return school;
-}
-
 /**
  * School names are backend-owned data, so the frontend shows them as-is.
  */

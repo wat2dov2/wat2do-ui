@@ -55,7 +55,7 @@ def _normalize_domain(domain: str) -> str | None:
 
 
 def load_allowed_domains() -> None:
-    """Populate ``ALLOWED_EMAIL_DOMAINS`` from Supabase, merging fallback entries.
+    """Populate ``ALLOWED_EMAIL_DOMAINS`` and school metadata from Supabase, merging fallback entries.
 
     Idempotent — sets ``_loaded`` so subsequent calls are no-ops.  Imported
     lazily inside the function so module import doesn't trigger a Supabase
@@ -65,18 +65,64 @@ def load_allowed_domains() -> None:
     ALLOWED_EMAIL_DOMAINS.clear()
     ALLOWED_EMAIL_DOMAINS.update(FALLBACK_DOMAINS)
 
+    from core.constants.schools import (
+        FALLBACK_ALIASES,
+        FALLBACK_SEMESTER_ENDS,
+        FALLBACK_TIMEZONES,
+        SCHOOL_ALIASES,
+        SCHOOL_SEMESTER_ENDS,
+        SCHOOL_TIMEZONES,
+    )
+
+    SCHOOL_TIMEZONES.clear()
+    SCHOOL_TIMEZONES.update(FALLBACK_TIMEZONES)
+
+    SCHOOL_ALIASES.clear()
+    SCHOOL_ALIASES.update(FALLBACK_ALIASES)
+
+    SCHOOL_SEMESTER_ENDS.clear()
+    SCHOOL_SEMESTER_ENDS.update(FALLBACK_SEMESTER_ENDS)
+
     try:
         from core.database import get_sb
-        from core.tables import SCHOOL_EMAIL_DOMAINS
+        from core.tables import SCHOOL_EMAIL_DOMAINS, SCHOOLS
 
         sb = get_sb()
-        # PostgREST nested-select: pull the parent school name in the same row.
-        res = (
+
+        # 1. Load school metadata (timezone, aliases, semester_ends)
+        res_schools = (
+            sb.table(SCHOOLS)
+              .select("name, timezone, aliases, semester_ends")
+              .execute()
+        )
+        for row in res_schools.data or []:
+            school_name = row.get("name")
+            if not school_name:
+                continue
+
+            key_name = school_name.strip().lower()
+
+            tz = row.get("timezone")
+            if tz:
+                SCHOOL_TIMEZONES[key_name] = tz.strip()
+
+            aliases = row.get("aliases") or []
+            for alias in aliases:
+                alias_clean = alias.strip().lower()
+                if alias_clean:
+                    SCHOOL_ALIASES[alias_clean] = key_name
+
+            ends = row.get("semester_ends") or []
+            if len(ends) == 3:
+                SCHOOL_SEMESTER_ENDS[key_name] = (ends[0], ends[1], ends[2])
+
+        # 2. Load email domains mapping
+        res_domains = (
             sb.table(SCHOOL_EMAIL_DOMAINS)
               .select("domain, schools(name)")
               .execute()
         )
-        for row in res.data or []:
+        for row in res_domains.data or []:
             domain = row.get("domain")
             school = (row.get("schools") or {}).get("name")
             if not domain or not school:
@@ -85,9 +131,8 @@ def load_allowed_domains() -> None:
             if canonical and canonical not in ALLOWED_EMAIL_DOMAINS:
                 ALLOWED_EMAIL_DOMAINS[canonical] = school
     except Exception as e:
-        # If Supabase is unreachable, stick with FALLBACK_DOMAINS so the
-        # app still resolves UWaterloo emails.
-        log.error("Failed to load school email domains from Supabase: %s", e)
+        # If Supabase is unreachable, stick with fallback domains and metadata
+        log.error("Failed to load school email domains/metadata from Supabase: %s", e)
 
     _loaded = True
 

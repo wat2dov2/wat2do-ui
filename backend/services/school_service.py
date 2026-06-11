@@ -29,12 +29,6 @@ def _canonical_school_lookup() -> dict[str, str]:
     return lookup
 
 
-def list_schools() -> list[str]:
-    """Return the canonical school names the backend knows about."""
-    lookup = _canonical_school_lookup()
-    ordered_keys = sorted(lookup, key=lambda key: lookup[key].casefold())
-    return [lookup[key] for key in ordered_keys]
-
 
 def _search_index() -> dict[str, tuple[str, ...]]:
     lookup = _canonical_school_lookup()
@@ -94,4 +88,4 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[str]:
     return [school for _, school in ranked[:limit]]
 
 
-__all__ = ["DEFAULT_SEARCH_LIMIT", "list_schools", "search_schools"]
+__all__ = ["DEFAULT_SEARCH_LIMIT", "search_schools"]

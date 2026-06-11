@@ -93,3 +93,87 @@ class TestIsEmailAllowed:
 
     def test_seeded_domain_allowed(self):
         assert is_email_allowed("student@cornell.edu") is True
+
+
+class TestLoadMetadataFromDatabase:
+    def test_load_metadata_updates_constants(self, monkeypatch):
+        """Verify that load_allowed_domains correctly queries and updates the constants."""
+        # 1. Reset state
+        monkeypatch.setattr(allowed_emails, "_loaded", False)
+
+        from unittest.mock import MagicMock
+
+        from core import allowed_emails as ae
+        from core.constants.schools import (
+            SCHOOL_ALIASES,
+            SCHOOL_SEMESTER_ENDS,
+            SCHOOL_TIMEZONES,
+        )
+
+        # Mock database client responses
+        mock_schools_data = [
+            {
+                "name": "University of Waterloo",
+                "timezone": "America/Toronto",
+                "aliases": ["uw", "uwaterloo"],
+                "semester_ends": ["20251231T235959Z", "20260430T235959Z", "20260831T235959Z"],
+            },
+            {
+                "name": "Test University",
+                "timezone": "America/New_York",
+                "aliases": ["tu", "testu"],
+                "semester_ends": ["20251231T000000Z", "20260430T000000Z", "20260831T000000Z"],
+            },
+        ]
+
+        mock_domains_data = [
+            {"domain": "uwaterloo.ca", "schools": {"name": "University of Waterloo"}},
+            {"domain": "testu.edu", "schools": {"name": "Test University"}},
+        ]
+
+        # We construct a mock query chain
+        mock_schools_res = MagicMock(data=mock_schools_data)
+        mock_domains_res = MagicMock(data=mock_domains_data)
+
+        mock_schools_chain = MagicMock()
+        mock_schools_chain.select.return_value.execute.return_value = mock_schools_res
+
+        mock_domains_chain = MagicMock()
+        mock_domains_chain.select.return_value.execute.return_value = mock_domains_res
+
+        mock_sb = MagicMock()
+        def mock_table(table_name):
+            if table_name == "schools":
+                return mock_schools_chain
+            elif table_name == "school_email_domains":
+                return mock_domains_chain
+            return MagicMock()
+
+        mock_sb.table.side_effect = mock_table
+
+        monkeypatch.setattr("core.database.get_sb", lambda: mock_sb)
+
+        # 2. Run the load function
+        ae.load_allowed_domains()
+
+        # 3. Assertions
+        assert ae.ALLOWED_EMAIL_DOMAINS["uwaterloo.ca"] == "University of Waterloo"
+        assert ae.ALLOWED_EMAIL_DOMAINS["testu.edu"] == "Test University"
+
+        assert SCHOOL_TIMEZONES["university of waterloo"] == "America/Toronto"
+        assert SCHOOL_TIMEZONES["test university"] == "America/New_York"
+
+        assert SCHOOL_ALIASES["uw"] == "university of waterloo"
+        assert SCHOOL_ALIASES["tu"] == "test university"
+
+        assert SCHOOL_SEMESTER_ENDS["university of waterloo"] == (
+            "20251231T235959Z",
+            "20260430T235959Z",
+            "20260831T235959Z",
+        )
+        assert SCHOOL_SEMESTER_ENDS["test university"] == (
+            "20251231T000000Z",
+            "20260430T000000Z",
+            "20260831T000000Z",
+        )
+

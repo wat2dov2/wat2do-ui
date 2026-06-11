@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from core.constants import (
     MAX_CLUB_CATEGORY_COUNT,
     MAX_CLUB_CATEGORY_LENGTH,
-    ORGANIZATION_CATEGORIES,
     MAX_CLUB_NAME_LENGTH,
     MAX_CLUB_TYPE_LENGTH,
     MAX_INTEGRATION_METADATA_KEY_LENGTH,
@@ -18,6 +17,7 @@ from core.constants import (
     MAX_INTEGRATION_NAME_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_URL_LENGTH,
+    ORGANIZATION_CATEGORIES,
 )
 
 # ---------------------------------------------------------------------------

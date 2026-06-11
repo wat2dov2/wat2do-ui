@@ -43,6 +43,7 @@ on:
           - 'University of Pennsylvania'
           - 'Columbia University'
           - 'Massachusetts Institute of Technology'
+          - 'University of British Columbia'
 
 jobs:
   process-post:

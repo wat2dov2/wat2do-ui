@@ -11,7 +11,6 @@ from core.constants.credits import (
     PROMOTION_PACKAGES,
 )
 from core.constants.events import EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
-from core.constants.organizations import ORGANIZATION_CATEGORIES
 from core.constants.experiments import (
     AB_DEFAULT_VARIANTS,
     AB_EVENT_CLICK,
@@ -46,6 +45,7 @@ from core.constants.notifications import (
     NOTIFICATION_TYPE_WEEKLY_DIGEST,
     NOTIFICATION_TYPES,
 )
+from core.constants.organizations import ORGANIZATION_CATEGORIES
 from core.constants.pagination import (
     DEFAULT_LIST_LIMIT,
     DEFAULT_PAGE_SIZE,

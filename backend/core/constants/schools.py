@@ -4,24 +4,26 @@ Waterloo is the only school with explicit special-case constants. All other
 schools fall back to neutral defaults in the shared school-context helpers.
 """
 
-# Keys are canonical school names from core.allowed_emails values, lowercased.
-SCHOOL_TIMEZONES: dict[str, str] = {
+FALLBACK_TIMEZONES: dict[str, str] = {
     "university of waterloo": "America/Toronto",
 }
 
-SCHOOL_ALIASES: dict[str, str] = {
+FALLBACK_ALIASES: dict[str, str] = {
     "uw": "university of waterloo",
     "u of w": "university of waterloo",
     "uwaterloo": "university of waterloo",
     "waterloo": "university of waterloo",
 }
 
-# Fall, Winter/Spring, Summer end times in UTC, format YYYYMMDDTHHMMSSZ.
-# Only Waterloo has explicit semester anchors; other schools return None.
-SCHOOL_SEMESTER_ENDS: dict[str, tuple[str, str, str]] = {
+FALLBACK_SEMESTER_ENDS: dict[str, tuple[str, str, str]] = {
     "university of waterloo": (
         "20251231T235959Z",
         "20260430T235959Z",
         "20260831T235959Z",
     ),
 }
+
+# These are dynamically updated from the schools table in Supabase.
+SCHOOL_TIMEZONES: dict[str, str] = dict(FALLBACK_TIMEZONES)
+SCHOOL_ALIASES: dict[str, str] = dict(FALLBACK_ALIASES)
+SCHOOL_SEMESTER_ENDS: dict[str, tuple[str, str, str]] = dict(FALLBACK_SEMESTER_ENDS)

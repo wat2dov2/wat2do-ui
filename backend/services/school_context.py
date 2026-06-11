@@ -19,6 +19,9 @@ _UTC_TZID = "UTC"
 
 def canonical_school_key(school: str | None) -> str:
     """Return the normalized key used by school constants."""
+    from core.allowed_emails import _ensure_loaded
+
+    _ensure_loaded()
     raw = (school or "").strip().lower()
     return SCHOOL_ALIASES.get(raw, raw)
 

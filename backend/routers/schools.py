@@ -7,7 +7,7 @@ router = APIRouter(prefix="/schools", tags=["schools"])
 
 
 @router.get("", response_model=list[str])
-def list_schools(
+def search_schools_endpoint(
     q: str = Query(default="", max_length=MAX_SEARCH_QUERY_LENGTH),
     limit: int = Query(default=school_service.DEFAULT_SEARCH_LIMIT, ge=1, le=50),
 ):

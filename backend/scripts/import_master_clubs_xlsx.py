@@ -2,6 +2,9 @@
 """Bulk-import organizations from all_schools_student_clubs_master.xlsx into the
 Supabase ``clubs`` table.
 
+NOTE: The spreadsheet must be run through ``scripts/normalize_master_clubs_xlsx.py``
+first to map category columns to their canonical taxonomy values.
+
 Only rows whose ``IG Source`` is one of ``{found, confirmed, profile_page}``
 (prefix-matched against ``|``-separated annotations) are imported — the rest
 are speculative matches and will be re-imported once their handles are
@@ -95,6 +98,9 @@ def _normalize_handle(value: object) -> str | None:
 def _normalize_categories(raw: object) -> list[str]:
     """Parse a Category cell into a list of canonical category names.
 
+    Assumes the spreadsheet has already been normalized via the prerequisite
+    step ``scripts/normalize_master_clubs_xlsx.py``.
+
     The xlsx uses ``, `` as a separator BUT some canonical names also
     contain commas (e.g. "Charitable, Community Service & International
     Development").  We split on ``, ``, then greedily re-join adjacent
@@ -170,7 +176,9 @@ def _read_xlsx_rows() -> list[dict]:
     return rows
 
 
-def _validate_rows(rows: list[dict]) -> tuple[list[dict], dict[str, int], list[str]]:
+def _validate_rows(
+    rows: list[dict], db_schools: set[str]
+) -> tuple[list[dict], dict[str, int], list[str]]:
     """Filter, validate, and canonicalize rows.  Returns (kept, skipped, errors)."""
     kept: list[dict] = []
     skipped: Counter[str] = Counter()
@@ -191,6 +199,12 @@ def _validate_rows(rows: list[dict]) -> tuple[list[dict], dict[str, int], list[s
         canonical_school = SCHOOL_NAME_MAP.get(row["school_short"])
         if not canonical_school:
             unknown_schools.add(row["school_short"])
+            continue
+        if canonical_school not in db_schools:
+            errors.append(
+                f"Canonical school {canonical_school!r} (mapped from short name {row['school_short']!r}) "
+                "is not registered in the Supabase 'schools' table."
+            )
             continue
         for category in row["categories"]:
             if category not in ORGANIZATION_CATEGORIES:
@@ -295,10 +309,19 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    sb = get_sb()
+    try:
+        from core.tables import SCHOOLS
+        res_schools = sb.table(SCHOOLS).select("name").execute()
+        db_schools = {row["name"] for row in res_schools.data or []}
+    except Exception as e:
+        log.error("Failed to fetch canonical schools from Supabase: %s", e)
+        return 2
+
     rows = _read_xlsx_rows()
     log.info("xlsx rows scanned: %s", len(rows))
 
-    kept, skipped, errors = _validate_rows(rows)
+    kept, skipped, errors = _validate_rows(rows, db_schools)
     if errors:
         for err in errors:
             log.error(err)
@@ -310,7 +333,6 @@ def main() -> int:
         log.info("  skipped (%s): %s", reason, count)
 
     schools_in_play = {row["school"] for row in kept}
-    sb = get_sb()
     existing = _fetch_existing(sb, schools_in_play)
     log.info("existing rows in Supabase for those schools: %s", len(existing))
 
