@@ -1,7 +1,6 @@
 """Shared validation limits for schemas and routers."""
 
 MAX_SESSION_ID_LENGTH = 128
-MAX_USERNAME_LENGTH = 100
 MAX_FULL_NAME_LENGTH = 255
 MAX_FACULTY_LENGTH = 255
 MAX_SCHOOL_LENGTH = 255
