@@ -1,7 +1,5 @@
 from uuid import UUID, uuid4
 
-import pytest
-
 from services import club_service
 
 
@@ -94,7 +92,6 @@ def test_list_claims_success(admin_client, monkeypatch):
     monkeypatch.setattr(club_service, "list_claims", lambda status=None: mock_claims)
 
     resp = admin_client.get("/clubs/claims")
-    print("RESPONSE JSON:", resp.json())
     assert resp.status_code == 200
     assert len(resp.json()) == 1
     assert resp.json()[0]["executive_role"] == "President"

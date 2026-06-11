@@ -25,10 +25,10 @@ import { api } from "@/shared/services/apiClient";
 interface ClaimOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  club: Organization;
+  organization: Organization;
 }
 
-export function ClaimOrganizationModal({ isOpen, onClose, club }: ClaimOrganizationModalProps) {
+export function ClaimOrganizationModal({ isOpen, onClose, organization }: ClaimOrganizationModalProps) {
   const { t } = useTranslation();
   const [role, setRole] = useState("");
   const [proofUrl, setProofUrl] = useState("");
@@ -47,14 +47,14 @@ export function ClaimOrganizationModal({ isOpen, onClose, club }: ClaimOrganizat
 
     setIsSubmitting(true);
     try {
-      await api.post(`/clubs/${club.id}/claims`, {
+      await api.post(`/clubs/${organization.id}/claims`, {
         executive_role: role.trim(),
         proof_url: proofUrl.trim() || null,
       });
 
       toast({
         title: t("organizations.claimSubmitted"),
-        description: t("organizations.claimSubmittedDesc", { name: club.club_name }),
+        description: t("organizations.claimSubmittedDesc", { name: organization.club_name }),
         variant: "success",
       });
       onClose();
@@ -75,7 +75,7 @@ export function ClaimOrganizationModal({ isOpen, onClose, club }: ClaimOrganizat
         <DialogHeader>
           <DialogTitle>{t("organizations.claimOwnership")}</DialogTitle>
           <DialogDescription>
-            {t("organizations.claimOwnershipDesc")} <strong>{club.club_name}</strong>.
+            {t("organizations.claimOwnershipDesc")} <strong>{organization.club_name}</strong>.
           </DialogDescription>
         </DialogHeader>
 

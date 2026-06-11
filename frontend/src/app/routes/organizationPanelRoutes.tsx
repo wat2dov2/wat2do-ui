@@ -1,9 +1,9 @@
 /**
- * Club Panel Routes Configuration
- * Centralized club panel route handlers and props.
+ * Organization Panel Routes Configuration
+ * Centralized organization panel route handlers and props.
  *
- * Heavy club-panel page components are lazy-loaded so they are split into a
- * separate chunk that only club managers ever download.
+ * Heavy organization-panel page components are lazy-loaded so they are split into a
+ * separate chunk that only organization managers ever download.
  */
 
 import { lazy, Suspense, useCallback } from "react";
@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES, ORGANIZATION_PANEL_ROUTE_MAP, type OrganizationPanelRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
-// Lazy-loaded club-panel page components.
+// Lazy-loaded organization-panel page components.
 const OrganizationPanel = lazy(() =>
   import("@/features/organization-panel").then((m) => ({ default: m.OrganizationPanel }))
 );
@@ -27,7 +27,7 @@ const OrganizationPanelMembersPage = lazy(() =>
 );
 
 /**
- * Club panel navigation handler
+ * Organization panel navigation handler
  */
 function useOrganizationPanelNavigation() {
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ function useOrganizationPanelNavigation() {
   );
 }
 
-/** Suspense wrapper for lazy-loaded club-panel pages. */
+/** Suspense wrapper for lazy-loaded organization-panel pages. */
 function OrganizationPanelSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
@@ -50,7 +50,7 @@ function OrganizationPanelSuspense({ children }: { children: ReactNode }) {
 }
 
 /**
- * Club Panel Route Component
+ * Organization Panel Route Component
  */
 export function OrganizationPanelRoute() {
   const handleNavigate = useOrganizationPanelNavigation();
@@ -63,7 +63,7 @@ export function OrganizationPanelRoute() {
 }
 
 /**
- * Club Panel Posters Route Component
+ * Organization Panel Posters Route Component
  */
 export function OrganizationPanelPostersRoute() {
   const navigate = useNavigate();
@@ -80,7 +80,7 @@ export function OrganizationPanelPostersRoute() {
 }
 
 /**
- * Club Panel Integrations Route Component
+ * Organization Panel Integrations Route Component
  */
 export function OrganizationPanelIntegrationsRoute() {
   return (
@@ -91,7 +91,7 @@ export function OrganizationPanelIntegrationsRoute() {
 }
 
 /**
- * Club Panel Members Route Component
+ * Organization Panel Members Route Component
  */
 export function OrganizationPanelMembersRoute() {
   return (

@@ -24,10 +24,10 @@ import { api } from "@/shared/services/apiClient";
 interface JoinOrganizationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  club: Organization;
+  organization: Organization;
 }
 
-export function JoinOrganizationModal({ isOpen, onClose, club }: JoinOrganizationModalProps) {
+export function JoinOrganizationModal({ isOpen, onClose, organization }: JoinOrganizationModalProps) {
   const { t } = useTranslation();
   const [pitch, setPitch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,13 +45,13 @@ export function JoinOrganizationModal({ isOpen, onClose, club }: JoinOrganizatio
 
     setIsSubmitting(true);
     try {
-      await api.post(`/clubs/${club.id}/join-requests`, {
+      await api.post(`/clubs/${organization.id}/join-requests`, {
         pitch: pitch.trim(),
       });
 
       toast({
         title: "Application Sent",
-        description: t("organizations.joinRequestSubmittedDesc", { name: club.club_name }),
+        description: t("organizations.joinRequestSubmittedDesc", { name: organization.club_name }),
         variant: "success",
       });
       onClose();
@@ -72,7 +72,7 @@ export function JoinOrganizationModal({ isOpen, onClose, club }: JoinOrganizatio
         <DialogHeader>
           <DialogTitle>{t("organizations.joinTeam")}</DialogTitle>
           <DialogDescription>
-            {t("organizations.joinTeamDesc")} <strong>{club.club_name}</strong>.
+            {t("organizations.joinTeamDesc")} <strong>{organization.club_name}</strong>.
           </DialogDescription>
         </DialogHeader>
 

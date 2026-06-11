@@ -1,6 +1,6 @@
 import { api } from "@/shared/services/apiClient";
 
-export interface ClubJoinRequest {
+export interface OrganizationJoinRequest {
   id: string;
   club_id: number;
   user_id: string;
@@ -16,16 +16,16 @@ export interface ClubJoinRequest {
   };
 }
 
-export async function fetchJoinRequests(clubId: number): Promise<ClubJoinRequest[]> {
-  return api.get<ClubJoinRequest[]>(`/clubs/${clubId}/join-requests`);
+export async function fetchJoinRequests(organizationId: number): Promise<OrganizationJoinRequest[]> {
+  return api.get<OrganizationJoinRequest[]>(`/clubs/${organizationId}/join-requests`);
 }
 
 export async function resolveJoinRequest(
-  clubId: number,
+  organizationId: number,
   requestId: string,
   status: "approved" | "rejected"
-): Promise<ClubJoinRequest> {
-  return api.patch<ClubJoinRequest>(`/clubs/${clubId}/join-requests/${requestId}`, {
+): Promise<OrganizationJoinRequest> {
+  return api.patch<OrganizationJoinRequest>(`/clubs/${organizationId}/join-requests/${requestId}`, {
     status,
   });
 }

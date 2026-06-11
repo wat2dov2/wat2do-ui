@@ -14,46 +14,44 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
 import { toast } from "@/shared/hooks/use-toast";
 import { useAuthState } from "@/features/auth";
 import { ROUTES } from "@/shared/constants/routes";
-import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
-import { getCategoryClasses } from "@/shared/utils/event";
 import { sanitizeHref } from "@/shared/utils/url";
 import type { Organization } from "@/shared/types";
+import { OrganizationCategoryBadges } from "./OrganizationCategoryBadges";
 import {
   getMyMembershipStatus,
-  requestToJoinClub,
-  leaveClubOrCancelRequest,
-  type ClubMembership,
+  requestToJoinOrganization,
+  leaveOrganizationOrCancelRequest,
+  type OrganizationMembership,
 } from "@/features/organization-panel/api/memberships.api";
 
 interface OrganizationDetailsModalProps {
-  club: Organization | null;
+  organization: Organization | null;
   isOpen: boolean;
   onClose: () => void;
-  onStatusChange?: (clubId: number, status: "pending" | "approved" | "rejected" | null) => void;
+  onStatusChange?: (organizationId: number, status: "pending" | "approved" | "rejected" | null) => void;
 }
 
-export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange }: OrganizationDetailsModalProps) {
+export function OrganizationDetailsModal({ organization, isOpen, onClose, onStatusChange }: OrganizationDetailsModalProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthState();
 
-  const [membership, setMembership] = useState<ClubMembership | null>(null);
+  const [membership, setMembership] = useState<OrganizationMembership | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Fetch membership status
   useEffect(() => {
-    if (!club || !isOpen || !isAuthenticated) {
+    if (!organization || !isOpen || !isAuthenticated) {
       setMembership(null);
       return;
     }
 
     setLoading(true);
-    getMyMembershipStatus(club.id)
+    getMyMembershipStatus(organization.id)
       .then((status) => {
         setMembership(status);
       })
@@ -63,21 +61,21 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
       .finally(() => {
         setLoading(false);
       });
-  }, [club, isOpen, isAuthenticated]);
+  }, [organization, isOpen, isAuthenticated]);
 
-  if (!club) return null;
+  if (!organization) return null;
 
   const handleJoin = async () => {
     setActionLoading(true);
     try {
-      const newMembership = await requestToJoinClub(club.id);
+      const newMembership = await requestToJoinOrganization(organization.id);
       setMembership(newMembership);
       toast({ description: t("organizationPanel.joinSuccess"), variant: "success" });
-      onStatusChange?.(club.id, "pending");
+      onStatusChange?.(organization.id, "pending");
     } catch (err) {
-      console.error("Failed to join club:", err);
+      console.error("Failed to join organization:", err);
       toast({
-        description: t("integrations.errors.connectFailed", { platform: club.club_name }),
+        description: t("integrations.errors.connectFailed", { platform: organization.club_name }),
         variant: "destructive",
       });
     } finally {
@@ -89,15 +87,15 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
     const isPending = membership?.status === "pending";
     setActionLoading(true);
     try {
-      await leaveClubOrCancelRequest(club.id);
+      await leaveOrganizationOrCancelRequest(organization.id);
       setMembership(null);
       toast({
         description: isPending ? t("organizationPanel.cancelSuccess") : t("organizationPanel.leaveSuccess"),
         variant: "success",
       });
-      onStatusChange?.(club.id, null);
+      onStatusChange?.(organization.id, null);
     } catch (err) {
-      console.error("Failed to leave/cancel request:", err);
+      console.error("Failed to leave/cancel organization request:", err);
       toast({ description: t("events.savedEvents.unsaveFailed"), variant: "destructive" });
     } finally {
       setActionLoading(false);
@@ -201,52 +199,34 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
         <DialogHeader className="mb-4">
           <div className="flex items-start gap-4">
             <div className="size-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-inner">
-              {club.logo_url ? (
-                <img
-                  src={club.logo_url}
-                  alt={club.club_name}
-                  className="size-full object-cover rounded-2xl"
-                />
-              ) : (
-                <Users className="size-8 text-primary" />
-              )}
+              <Users className="size-8 text-primary" />
             </div>
             <div className="space-y-1">
               <DialogTitle className="text-xl font-bold text-foreground leading-tight">
-                {club.club_name}
+                {organization.club_name}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
-                {club.school}
+                {organization.school}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Club Details Body */}
+        {/* Organization Details Body */}
         <div className="space-y-5">
           {/* Metadata Section */}
           <div className="space-y-3">
-            {/* Club Type */}
+            {/* Organization Type */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Tag className="size-4 text-muted-foreground" />
-              <span>{club.club_type}</span>
+              <span>{organization.club_type}</span>
             </div>
 
             {/* Categories */}
-            <div className="flex flex-wrap gap-1.5">
-              {club.categories.map((category) => {
-                const colors = getCategoryClasses(category);
-                return (
-                  <Badge
-                    key={category}
-                    variant="outline"
-                    className={`${colors.bg} ${colors.text} text-xs px-2.5 py-0.5 rounded-full font-medium border-0`}
-                  >
-                    {getClubCategoryTranslation(category, t)}
-                  </Badge>
-                );
-              })}
-            </div>
+            <OrganizationCategoryBadges
+              categories={organization.categories}
+              badgeClassName="text-xs px-2.5"
+            />
           </div>
 
           {/* Social Links */}
@@ -255,31 +235,31 @@ export function OrganizationDetailsModal({ club, isOpen, onClose, onStatusChange
               {t("organizationPanel.linksAndSocials")}
             </h4>
             <div className="grid grid-cols-1 gap-2">
-              {club.club_page && (
+              {organization.club_page && (
                 <a
-                  href={sanitizeHref(club.club_page)}
+                  href={sanitizeHref(organization.club_page)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Globe className="size-4 text-muted-foreground" />
-                  <span className="truncate">{club.club_page}</span>
+                  <span className="truncate">{organization.club_page}</span>
                 </a>
               )}
-              {club.ig && (
+              {organization.ig && (
                 <a
-                  href={`https://instagram.com/${club.ig}`}
+                  href={`https://instagram.com/${organization.ig}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Instagram className="size-4 text-muted-foreground" />
-                  <span>@{club.ig}</span>
+                  <span>@{organization.ig}</span>
                 </a>
               )}
-              {club.discord && sanitizeHref(club.discord) && (
+              {organization.discord && sanitizeHref(organization.discord) && (
                 <a
-                  href={sanitizeHref(club.discord)}
+                  href={sanitizeHref(organization.discord)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"

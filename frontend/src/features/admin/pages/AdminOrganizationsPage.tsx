@@ -35,6 +35,7 @@ import { toast } from "@/shared/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
+import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
@@ -329,21 +330,11 @@ export function AdminOrganizationsPage({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {club.categories.slice(0, 2).map((cat) => (
-                        <span
-                          key={cat}
-                          className="text-xs px-2 py-0.5 bg-secondary rounded-full text-muted-foreground"
-                        >
-                          {cat}
-                        </span>
-                      ))}
-                      {club.categories.length > 2 && (
-                        <span className="text-xs text-muted-foreground">
-                          +{club.categories.length - 2}
-                        </span>
-                      )}
-                    </div>
+                    <OrganizationCategoryBadges
+                      categories={club.categories}
+                      maxVisible={2}
+                      badgeClassName="h-5 text-[11px]"
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">

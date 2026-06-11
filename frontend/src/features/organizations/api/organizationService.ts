@@ -36,9 +36,9 @@ export function filterOrganizationsByCategory(
 /**
  * Filter organizations by type
  */
-export function filterOrganizationsByType(organizations: Organization[], clubType: string): Organization[] {
-  if (!clubType) {
+export function filterOrganizationsByType(organizations: Organization[], organizationType: string): Organization[] {
+  if (!organizationType) {
     return organizations;
   }
-  return organizations.filter((org) => org.club_type?.trim() === clubType);
+  return organizations.filter((org) => org.club_type?.trim() === organizationType);
 }

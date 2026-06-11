@@ -49,13 +49,13 @@ export function TopNav() {
     navigate(ROUTES.ADMIN);
   }, [navigate]);
 
-  const handleClubSelect = useCallback((club: NavOrganization) => {
+  const handleOrganizationSelect = useCallback((org: NavOrganization) => {
     const profile = getUserProfile();
     if (profile) {
       updateUserProfile({
         ...profile,
-        clubId: club.id,
-        clubName: club.club_name,
+        clubId: org.id,
+        clubName: org.club_name,
       });
     }
     navigate(ROUTES.ORGANIZATION_PANEL);
@@ -110,7 +110,7 @@ export function TopNav() {
           </Tooltip>
         )}
 
-        {/* Club switcher – only visible when the user has associated clubs */}
+        {/* Organization switcher – only visible when the user has associated organizations */}
         {canOpenOrganizationPanel && (
           <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
             <PopoverTrigger asChild>
@@ -149,17 +149,17 @@ export function TopNav() {
                     {t("organizations.noClubsFound")}
                   </div>
                 ) : (
-                  filteredOrganizations.map((club) => (
+                  filteredOrganizations.map((org) => (
                     <button
-                      key={club.id}
+                      key={org.id}
                       onMouseDown={() => {
-                        handleClubSelect(club);
+                        handleOrganizationSelect(org);
                         setOrgMenuOpen(false);
                         setOrgSearch("");
                       }}
                       className={cn(
                         "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
-                        activeOrganization.id === club.id
+                        activeOrganization.id === org.id
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-secondary text-foreground"
                       )}
@@ -168,10 +168,10 @@ export function TopNav() {
                       <Check
                         className={cn(
                           "w-4 h-4 shrink-0",
-                          activeOrganization.id === club.id ? "opacity-100" : "opacity-0"
+                          activeOrganization.id === org.id ? "opacity-100" : "opacity-0"
                         )}
                       />
-                      <span className="truncate">{club.club_name}</span>
+                      <span className="truncate">{org.club_name}</span>
                     </button>
                   ))
                 )}

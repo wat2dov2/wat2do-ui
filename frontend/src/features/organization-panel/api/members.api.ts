@@ -1,6 +1,6 @@
 import { api } from "@/shared/services/apiClient";
 
-export interface ClubMember {
+export interface OrganizationMember {
   user_id: string;
   email: string;
   full_name: string | null;
@@ -9,7 +9,7 @@ export interface ClubMember {
   joined_at: string;
 }
 
-export interface ClubInvitation {
+export interface OrganizationInvitation {
   id: string;
   club_id: number;
   email: string;
@@ -19,37 +19,36 @@ export interface ClubInvitation {
   expires_at: string;
 }
 
-export interface ClubInvitationPublic {
+export interface OrganizationInvitationPublic {
   club_name: string;
   email: string;
   expires_at: string;
 }
 
-export async function fetchClubMembers(clubId: number): Promise<ClubMember[]> {
-  return api.get<ClubMember[]>(`/clubs/${clubId}/members`);
+export async function fetchOrganizationMembers(organizationId: number): Promise<OrganizationMember[]> {
+  return api.get<OrganizationMember[]>(`/clubs/${organizationId}/members`);
 }
 
-export async function addClubMember(clubId: number, email: string): Promise<ClubMember | ClubInvitation> {
-  return api.post<ClubMember | ClubInvitation>(`/clubs/${clubId}/members`, { email });
+export async function addOrganizationMember(organizationId: number, email: string): Promise<OrganizationMember | OrganizationInvitation> {
+  return api.post<OrganizationMember | OrganizationInvitation>(`/clubs/${organizationId}/members`, { email });
 }
 
-export async function removeClubMember(clubId: number, userId: string): Promise<void> {
-  return api.delete<void>(`/clubs/${clubId}/members/${userId}`);
+export async function removeOrganizationMember(organizationId: number, userId: string): Promise<void> {
+  return api.delete<void>(`/clubs/${organizationId}/members/${userId}`);
 }
 
-export async function fetchClubInvitations(clubId: number): Promise<ClubInvitation[]> {
-  return api.get<ClubInvitation[]>(`/clubs/${clubId}/invitations`);
+export async function fetchOrganizationInvitations(organizationId: number): Promise<OrganizationInvitation[]> {
+  return api.get<OrganizationInvitation[]>(`/clubs/${organizationId}/invitations`);
 }
 
-export async function revokeClubInvitation(clubId: number, invitationId: string): Promise<void> {
-  return api.delete<void>(`/clubs/${clubId}/invitations/${invitationId}`);
+export async function revokeOrganizationInvitation(organizationId: number, invitationId: string): Promise<void> {
+  return api.delete<void>(`/clubs/${organizationId}/invitations/${invitationId}`);
 }
 
-export async function getInvitationByToken(token: string): Promise<ClubInvitationPublic> {
-  return api.get<ClubInvitationPublic>(`/clubs/invitations/${token}`);
+export async function getInvitationByToken(token: string): Promise<OrganizationInvitationPublic> {
+  return api.get<OrganizationInvitationPublic>(`/clubs/invitations/${token}`);
 }
 
 export async function acceptInvitationByToken(token: string): Promise<void> {
   return api.post<void>(`/clubs/invitations/${token}/accept`);
 }
-

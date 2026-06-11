@@ -19,24 +19,24 @@ import { useAuthState } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
-  listClubMemberships,
-  updateClubMembership,
-  removeClubMember as removeRosterMembership,
-  type ClubMembershipWithUser,
+  listOrganizationMemberships,
+  updateOrganizationMembership,
+  removeOrganizationMember as removeRosterMembership,
+  type OrganizationMembershipWithUser,
 } from "@/features/organization-panel/api/memberships.api";
 import {
-  fetchClubMembers,
-  addClubMember,
-  removeClubMember as removeClubManager,
-  fetchClubInvitations,
-  revokeClubInvitation,
-  type ClubMember,
-  type ClubInvitation,
+  fetchOrganizationMembers,
+  addOrganizationMember,
+  removeOrganizationMember as removeOrganizationManager,
+  fetchOrganizationInvitations,
+  revokeOrganizationInvitation,
+  type OrganizationMember,
+  type OrganizationInvitation,
 } from "../api/members.api";
 import {
   fetchJoinRequests,
   resolveJoinRequest,
-  type ClubJoinRequest,
+  type OrganizationJoinRequest,
 } from "../api/joinRequests.api";
 
 export function OrganizationPanelMembersPage() {
@@ -49,13 +49,13 @@ export function OrganizationPanelMembersPage() {
   const [activeTab, setActiveTab] = useState<"members" | "requests">("members");
 
   // Roster state
-  const [memberships, setMemberships] = useState<ClubMembershipWithUser[]>([]);
+  const [memberships, setMemberships] = useState<OrganizationMembershipWithUser[]>([]);
   const [rosterLoading, setRosterLoading] = useState(false);
 
   // Management state
-  const [managers, setManagers] = useState<ClubMember[]>([]);
-  const [invitations, setInvitations] = useState<ClubInvitation[]>([]);
-  const [joinRequests, setJoinRequests] = useState<ClubJoinRequest[]>([]);
+  const [managers, setManagers] = useState<OrganizationMember[]>([]);
+  const [invitations, setInvitations] = useState<OrganizationInvitation[]>([]);
+  const [joinRequests, setJoinRequests] = useState<OrganizationJoinRequest[]>([]);
   const [managementLoading, setManagementLoading] = useState(false);
 
   // Form & Search inputs
@@ -67,12 +67,12 @@ export function OrganizationPanelMembersPage() {
   const fetchRoster = useCallback(() => {
     if (!clubId) return;
     setRosterLoading(true);
-    listClubMemberships(clubId)
+    listOrganizationMemberships(clubId)
       .then((data) => {
         setMemberships(data);
       })
       .catch((err) => {
-        console.error("Failed to load club roster:", err);
+        console.error("Failed to load organization roster:", err);
         toast({
           description: t("integrations.errors.loadIntegrationsFailed"),
           variant: "destructive",
@@ -87,8 +87,8 @@ export function OrganizationPanelMembersPage() {
     if (!clubId) return;
     setManagementLoading(true);
     Promise.all([
-      fetchClubMembers(clubId),
-      fetchClubInvitations(clubId),
+      fetchOrganizationMembers(clubId),
+      fetchOrganizationInvitations(clubId),
       fetchJoinRequests(clubId),
     ])
       .then(([membersData, invitesData, requestsData]) => {
@@ -120,7 +120,7 @@ export function OrganizationPanelMembersPage() {
     if (!clubId) return;
     setActionLoading(userId);
     try {
-      await updateClubMembership(clubId, userId, { status: "approved" });
+      await updateOrganizationMembership(clubId, userId, { status: "approved" });
       toast({
         description: t("organizationPanel.requestApproved"),
         variant: "success",
@@ -141,7 +141,7 @@ export function OrganizationPanelMembersPage() {
     if (!clubId) return;
     setActionLoading(userId);
     try {
-      await updateClubMembership(clubId, userId, { status: "rejected" });
+      await updateOrganizationMembership(clubId, userId, { status: "rejected" });
       toast({
         description: t("organizationPanel.requestRejected"),
         variant: "success",
@@ -189,7 +189,7 @@ export function OrganizationPanelMembersPage() {
 
     setSubmitting(true);
     try {
-      const result = await addClubMember(clubId, emailInput.trim().toLowerCase());
+      const result = await addOrganizationMember(clubId, emailInput.trim().toLowerCase());
       if (result && "status" in result && result.status === "pending") {
         toast({
           title: t("common.success"),
@@ -224,7 +224,7 @@ export function OrganizationPanelMembersPage() {
     }
     setActionLoading(invitationId);
     try {
-      await revokeClubInvitation(clubId, invitationId);
+      await revokeOrganizationInvitation(clubId, invitationId);
       toast({
         title: t("common.success"),
         description: t("organizationPanel.invitationRevokedSuccess"),
@@ -278,7 +278,7 @@ export function OrganizationPanelMembersPage() {
 
     setActionLoading(userId);
     try {
-      await removeClubManager(clubId, userId);
+      await removeOrganizationManager(clubId, userId);
       toast({
         title: t("common.success"),
         description: t("organizationPanel.removeSuccess"),

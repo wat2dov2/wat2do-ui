@@ -106,7 +106,6 @@ def test_crawl_directory_links(mock_client_cls):
     """
     resp2.raise_for_status = MagicMock()
 
-    mock_client.get.side_warnings = []
     mock_client.get.side_effect = [resp1, resp2]
 
     config = DirectoryConfig(

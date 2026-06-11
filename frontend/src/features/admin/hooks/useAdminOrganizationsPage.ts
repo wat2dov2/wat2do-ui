@@ -33,7 +33,7 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { clubs: loadedOrganizations, clubTypes: types } =
+      const { organizations: loadedOrganizations, organizationTypes: types } =
         await loadAdminOrganizationsData();
       setOrganizations(loadedOrganizations);
       setOrganizationTypes(types);
@@ -65,7 +65,7 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     if (isLoading) return [];
     return filterOrganizationsSync(organizations, {
       searchQuery,
-      clubType: selectedOrganizationType,
+      organizationType: selectedOrganizationType,
     });
   }, [organizations, searchQuery, selectedOrganizationType, isLoading]);
 
@@ -80,24 +80,24 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
   return {
     // State
     searchQuery,
-    selectedClubType: selectedOrganizationType,
+    selectedOrganizationType,
     deleteConfirmId,
     showAddModal,
-    editingClub: editingOrganization,
+    editingOrganization,
     currentPage,
-    clubTypes: organizationTypes,
+    organizationTypes,
     filteredOrganizations,
-    paginatedClubs: paginatedOrganizations,
+    paginatedOrganizations,
     totalPages,
     isLoading,
     // Actions
     setSearchQuery,
-    setSelectedClubType: setSelectedOrganizationType,
+    setSelectedOrganizationType,
     setDeleteConfirmId,
     openAddModal: () => setOrganizationModal({ mode: "add" }),
     openEditModal: (org: Organization) => setOrganizationModal({ mode: "edit", organization: org }),
     closeModal: () => setOrganizationModal(null),
     setCurrentPage,
-    refreshClubs: loadData,
+    refreshOrganizations: loadData,
   };
 }

@@ -81,7 +81,7 @@ export function AdminEventsRoute() {
 }
 
 /**
- * Admin Clubs Route Component
+ * Admin Organizations Route Component
  */
 export function AdminOrganizationsRoute() {
   const navigate = useNavigate();

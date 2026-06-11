@@ -1,6 +1,6 @@
 import { api } from "@/shared/services/apiClient";
 
-export interface ClubMembership {
+export interface OrganizationMembership {
   id: string;
   club_id: number;
   user_id: string;
@@ -18,41 +18,41 @@ export interface UserMin {
   avatar_url: string | null;
 }
 
-export interface ClubMembershipWithUser extends ClubMembership {
+export interface OrganizationMembershipWithUser extends OrganizationMembership {
   user: UserMin;
 }
 
-export async function requestToJoinClub(clubId: number): Promise<ClubMembership> {
-  return api.post<ClubMembership>(`/clubs/${clubId}/join`);
+export async function requestToJoinOrganization(organizationId: number): Promise<OrganizationMembership> {
+  return api.post<OrganizationMembership>(`/clubs/${organizationId}/join`);
 }
 
-export async function leaveClubOrCancelRequest(clubId: number): Promise<void> {
-  await api.delete(`/clubs/${clubId}/membership`);
+export async function leaveOrganizationOrCancelRequest(organizationId: number): Promise<void> {
+  await api.delete(`/clubs/${organizationId}/membership`);
 }
 
-export async function getMyMembershipStatus(clubId: number): Promise<ClubMembership | null> {
-  return api.get<ClubMembership | null>(`/clubs/${clubId}/membership`);
+export async function getMyMembershipStatus(organizationId: number): Promise<OrganizationMembership | null> {
+  return api.get<OrganizationMembership | null>(`/clubs/${organizationId}/membership`);
 }
 
-export async function listClubMemberships(
-  clubId: number,
+export async function listOrganizationMemberships(
+  organizationId: number,
   status?: "pending" | "approved" | "rejected"
-): Promise<ClubMembershipWithUser[]> {
+): Promise<OrganizationMembershipWithUser[]> {
   const params = new URLSearchParams();
   if (status) {
     params.set("status", status);
   }
-  return api.get<ClubMembershipWithUser[]>(`/clubs/${clubId}/memberships?${params.toString()}`);
+  return api.get<OrganizationMembershipWithUser[]>(`/clubs/${organizationId}/memberships?${params.toString()}`);
 }
 
-export async function updateClubMembership(
-  clubId: number,
+export async function updateOrganizationMembership(
+  organizationId: number,
   userId: string,
   data: { status: "pending" | "approved" | "rejected"; role?: "member" | "officer" | "owner" }
-): Promise<ClubMembership> {
-  return api.patch<ClubMembership>(`/clubs/${clubId}/memberships/${userId}`, data);
+): Promise<OrganizationMembership> {
+  return api.patch<OrganizationMembership>(`/clubs/${organizationId}/memberships/${userId}`, data);
 }
 
-export async function removeClubMember(clubId: number, userId: string): Promise<void> {
-  await api.delete(`/clubs/${clubId}/memberships/${userId}`);
+export async function removeOrganizationMember(organizationId: number, userId: string): Promise<void> {
+  await api.delete(`/clubs/${organizationId}/memberships/${userId}`);
 }
