@@ -2,9 +2,6 @@
 """Bulk-import organizations from all_schools_student_clubs_master.xlsx into the
 Supabase ``clubs`` table.
 
-NOTE: The spreadsheet must be run through ``scripts/normalize_master_clubs_xlsx.py``
-first to map category columns to their canonical taxonomy values.
-
 Only rows whose ``IG Source`` is one of ``{found, confirmed, profile_page}``
 (prefix-matched against ``|``-separated annotations) are imported — the rest
 are speculative matches and will be re-imported once their handles are
@@ -98,13 +95,7 @@ def _normalize_handle(value: object) -> str | None:
 def _normalize_categories(raw: object) -> list[str]:
     """Parse a Category cell into a list of canonical category names.
 
-    Assumes the spreadsheet has already been normalized via the prerequisite
-    step ``scripts/normalize_master_clubs_xlsx.py``.
-
-    The xlsx uses ``, `` as a separator BUT some canonical names also
-    contain commas (e.g. "Charitable, Community Service & International
-    Development").  We split on ``, ``, then greedily re-join adjacent
-    fragments into the longest prefix that matches a canonical name.
+    Automatically maps directory category labels to their canonical WUSA taxonomy.
     """
     if raw is None:
         return []
@@ -112,32 +103,8 @@ def _normalize_categories(raw: object) -> list[str]:
     if not text:
         return []
 
-    parts = [p.strip() for p in text.split(",")]
-    parts = [p for p in parts if p]
-
-    # Greedy re-join: at each position, find the longest run of
-    # consecutive parts whose ", "-joined form is a canonical category.
-    results: list[str] = []
-    i = 0
-    canonical_set = set(ORGANIZATION_CATEGORIES)
-    while i < len(parts):
-        matched = None
-        # Try the longest run first so "Charitable, Community Service & ..."
-        # wins over the prefix "Charitable".
-        for j in range(len(parts), i, -1):
-            candidate = ", ".join(parts[i:j])
-            if candidate in canonical_set:
-                matched = (candidate, j)
-                break
-        if matched is None:
-            # Couldn't match this fragment to any canonical name — keep
-            # the raw fragment so _validate_rows surfaces it as an error.
-            results.append(parts[i])
-            i += 1
-        else:
-            results.append(matched[0])
-            i = matched[1]
-    return results
+    from services.scraper.organization_category_taxonomy import map_directory_category_list
+    return map_directory_category_list(text)
 
 
 def _normalize_str(value: object) -> str | None:
