@@ -95,10 +95,9 @@ def _normalize_handle(value: object) -> str | None:
 def _normalize_categories(raw: object) -> list[str]:
     """Parse a Category cell into a list of canonical category names.
 
-    The xlsx uses ``, `` as a separator BUT some canonical names also
-    contain commas (e.g. "Charitable, Community Service & International
-    Development").  We split on ``, ``, then greedily re-join adjacent
-    fragments into the longest prefix that matches a canonical name.
+    Splits and extracts canonical WUSA category names directly. Any leftovers
+    that do not match canonical categories are returned as-is so they fail
+    validation and are flagged.
     """
     if raw is None:
         return []
@@ -106,32 +105,15 @@ def _normalize_categories(raw: object) -> list[str]:
     if not text:
         return []
 
-    parts = [p.strip() for p in text.split(",")]
-    parts = [p for p in parts if p]
+    matched = []
+    remaining = text
+    for category in ORGANIZATION_CATEGORIES:
+        if category in text:
+            matched.append(category)
+            remaining = remaining.replace(category, "")
 
-    # Greedy re-join: at each position, find the longest run of
-    # consecutive parts whose ", "-joined form is a canonical category.
-    results: list[str] = []
-    i = 0
-    canonical_set = set(ORGANIZATION_CATEGORIES)
-    while i < len(parts):
-        matched = None
-        # Try the longest run first so "Charitable, Community Service & ..."
-        # wins over the prefix "Charitable".
-        for j in range(len(parts), i, -1):
-            candidate = ", ".join(parts[i:j])
-            if candidate in canonical_set:
-                matched = (candidate, j)
-                break
-        if matched is None:
-            # Couldn't match this fragment to any canonical name — keep
-            # the raw fragment so _validate_rows surfaces it as an error.
-            results.append(parts[i])
-            i += 1
-        else:
-            results.append(matched[0])
-            i = matched[1]
-    return results
+    leftovers = [p.strip() for p in remaining.split(",") if p.strip()]
+    return matched + leftovers
 
 
 def _normalize_str(value: object) -> str | None:
@@ -145,27 +127,35 @@ def _read_xlsx_rows() -> list[dict]:
     wb = openpyxl.load_workbook(XLSX_PATH, read_only=True, data_only=True)
     ws = wb.active
     header = [c.value for c in next(ws.iter_rows(min_row=2, max_row=2))]
-    expected = ["School", "Name", "Category", "Campus", "Directory URL",
-                "Instagram URL", "Instagram Handle", "IG Source"]
+    expected = [
+        "School",
+        "Name",
+        "Category",
+        "Campus",
+        "Directory URL",
+        "Instagram URL",
+        "Instagram Handle",
+        "IG Source",
+    ]
     if header != expected:
-        raise RuntimeError(
-            f"Unexpected xlsx header.  Expected {expected!r}, got {header!r}"
-        )
+        raise RuntimeError(f"Unexpected xlsx header.  Expected {expected!r}, got {header!r}")
 
     rows: list[dict] = []
     for raw_row in ws.iter_rows(min_row=3, values_only=True):
         if not raw_row or not any(raw_row):
             continue
-        rows.append({
-            "school_short": _normalize_str(raw_row[0]),
-            "name":         _normalize_str(raw_row[1]),
-            "categories":   _normalize_categories(raw_row[2]),
-            "campus":       _normalize_str(raw_row[3]),
-            "directory":    _normalize_str(raw_row[4]),
-            "ig_url":       _normalize_str(raw_row[5]),
-            "ig_handle":    _normalize_handle(raw_row[6]),
-            "ig_source":    _normalize_ig_source(raw_row[7]),
-        })
+        rows.append(
+            {
+                "school_short": _normalize_str(raw_row[0]),
+                "name": _normalize_str(raw_row[1]),
+                "categories": _normalize_categories(raw_row[2]),
+                "campus": _normalize_str(raw_row[3]),
+                "directory": _normalize_str(raw_row[4]),
+                "ig_url": _normalize_str(raw_row[5]),
+                "ig_handle": _normalize_handle(raw_row[6]),
+                "ig_source": _normalize_ig_source(raw_row[7]),
+            }
+        )
     wb.close()
     return rows
 
@@ -208,15 +198,17 @@ def _validate_rows(
         if len(row["name"]) > CLUB_NAME_MAX:
             log.warning("Row %s: club_name truncated to %s chars", idx, CLUB_NAME_MAX)
 
-        kept.append({
-            "row_idx":     idx,
-            "club_name":   club_name,
-            "school":      canonical_school,
-            "categories":  row["categories"],
-            "club_page":   row["directory"],
-            "ig":          row["ig_handle"],
-            "club_type":   DEFAULT_CLUB_TYPE,
-        })
+        kept.append(
+            {
+                "row_idx": idx,
+                "club_name": club_name,
+                "school": canonical_school,
+                "categories": row["categories"],
+                "club_page": row["directory"],
+                "ig": row["ig_handle"],
+                "club_type": DEFAULT_CLUB_TYPE,
+            }
+        )
 
     if unknown_schools:
         errors.append(
@@ -262,10 +254,10 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
     while True:
         res = (
             sb.table(CLUBS)
-              .select("id, club_name, school, categories, club_page, ig, club_type")
-              .in_("school", list(schools))
-              .range(offset, offset + page_size - 1)
-              .execute()
+            .select("id, club_name, school, categories, club_page, ig, club_type")
+            .in_("school", list(schools))
+            .range(offset, offset + page_size - 1)
+            .execute()
         )
         batch = res.data or []
         for row in batch:
@@ -298,7 +290,8 @@ def _diff(planned: dict, existing: dict) -> dict | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--apply", action="store_true",
+        "--apply",
+        action="store_true",
         help="Write inserts and updates to Supabase.  Without this flag, prints the diff and exits.",
     )
     args = parser.parse_args()
@@ -306,6 +299,7 @@ def main() -> int:
     sb = get_sb()
     try:
         from core.tables import SCHOOLS
+
         res_schools = sb.table(SCHOOLS).select("name").execute()
         db_schools = {row["name"] for row in res_schools.data or []}
     except Exception as e:
@@ -361,8 +355,13 @@ def main() -> int:
         log.info("Dry run only.  Pass --apply to write.")
         # Show first few example diffs to help the operator sanity-check.
         for cid, planned, diff in to_update[:5]:
-            log.info("update example id=%s school=%r name=%r diff=%s",
-                     cid, planned["school"], planned["club_name"], diff)
+            log.info(
+                "update example id=%s school=%r name=%r diff=%s",
+                cid,
+                planned["school"],
+                planned["club_name"],
+                diff,
+            )
         return 0
 
     # Apply.  Insert in batches; update one row at a time (Supabase doesn't
@@ -372,29 +371,31 @@ def main() -> int:
         batch_size = 200
         payload = [
             {
-                "club_name":  row["club_name"],
-                "school":     row["school"],
+                "club_name": row["club_name"],
+                "school": row["school"],
                 "categories": row["categories"],
-                "club_page":  row["club_page"],
-                "ig":         row["ig"],
-                "club_type":  row["club_type"],
+                "club_page": row["club_page"],
+                "ig": row["ig"],
+                "club_type": row["club_type"],
             }
             for row in to_insert
         ]
         for start in range(0, len(payload), batch_size):
-            chunk = payload[start:start + batch_size]
+            chunk = payload[start : start + batch_size]
             sb.table(CLUBS).insert(chunk).execute()
             inserted += len(chunk)
             log.info("  inserted %s/%s", inserted, len(payload))
 
     updated = 0
     for cid, planned, _ in to_update:
-        sb.table(CLUBS).update({
-            "categories": planned["categories"],
-            "club_page":  planned["club_page"],
-            "ig":         planned["ig"],
-            "club_type":  planned["club_type"],
-        }).eq("id", cid).execute()
+        sb.table(CLUBS).update(
+            {
+                "categories": planned["categories"],
+                "club_page": planned["club_page"],
+                "ig": planned["ig"],
+                "club_type": planned["club_type"],
+            }
+        ).eq("id", cid).execute()
         updated += 1
         if updated % 100 == 0:
             log.info("  updated %s/%s", updated, len(to_update))
