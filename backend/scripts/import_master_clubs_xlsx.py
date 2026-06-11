@@ -223,8 +223,7 @@ def _validate_rows(
 
     # Guard against (school, club_name) duplicates — they break idempotency
     # because the SELECT-then-write upsert keys on that pair, so the second
-    # row in a dup pair always looks "new".  Run scripts/dedup_master_clubs_xlsx.py
-    # to collapse them before re-importing.
+    # row in a dup pair always looks "new".
     seen: dict[tuple[str, str], int] = {}
     duplicate_keys: list[str] = []
     for row in kept:
