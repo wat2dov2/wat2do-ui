@@ -73,7 +73,7 @@ SEED_CLUBS = [
         "discord": "cssu_discord",
         "club_type": "Independent",
         "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-001.jpg"),
-        "school": "University of Toronto",
+        "school": "University of Toronto - St. George",
     },
     {
         "club_name": "U of T Board Games Club",
@@ -83,7 +83,7 @@ SEED_CLUBS = [
         "discord": "uoftboardgames",
         "club_type": "Independent",
         "logo_url": _public_url(BUCKET_CLUB_LOGOS, "seed/logo-002.jpg"),
-        "school": "University of Toronto",
+        "school": "University of Toronto - St. George",
     },
     {
         "club_name": "McGill Computer Science Undergraduate Society",

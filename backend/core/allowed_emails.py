@@ -1,25 +1,32 @@
 """
 Allowed student email domains mapped to schools.
 Only emails from these domains can sign up.
+
+The {domain -> school name} mapping is stored in the Supabase
+``school_email_domains`` table (joined to ``schools``) and is loaded
+lazily on first lookup.  Falls back to a hardcoded UWaterloo entry if
+Supabase is unreachable so the app still boots.
 """
 
-import json
 import logging
 import unicodedata
-from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-# Base dictionary for fallback / fast lookup.
-# Waterloo stays as the only hardcoded school; every other school comes from
-# the dynamic university-domain dataset loaded below.
+# Hardcoded safety net so the app still resolves UWaterloo emails if
+# Supabase is unreachable at first-lookup time.  The seed migration
+# 20260610180000 writes the same entries to ``school_email_domains`` so
+# the values match.
 FALLBACK_DOMAINS: dict[str, str] = {
     "uwaterloo.ca": "University of Waterloo",
     "edu.uwaterloo.ca": "University of Waterloo",
 }
 
-# Dynamic mapping of domain -> school name loaded from the JSON dataset
+# Dynamic mapping of domain -> school name.  Lazily populated on first
+# lookup from the ``school_email_domains`` table.  Tests can monkeypatch
+# this dict directly; set ``_loaded`` to True to skip the Supabase load.
 ALLOWED_EMAIL_DOMAINS: dict[str, str] = {}
+_loaded: bool = False
 
 
 def _has_control_chars(value: str) -> bool:
@@ -48,38 +55,46 @@ def _normalize_domain(domain: str) -> str | None:
 
 
 def load_allowed_domains() -> None:
-    """Load domains from world_universities_and_domains.json and merge with FALLBACK_DOMAINS."""
-    global ALLOWED_EMAIL_DOMAINS
+    """Populate ``ALLOWED_EMAIL_DOMAINS`` from Supabase, merging fallback entries.
+
+    Idempotent — sets ``_loaded`` so subsequent calls are no-ops.  Imported
+    lazily inside the function so module import doesn't trigger a Supabase
+    client construction (matters for scripts and tests).
+    """
+    global _loaded
     ALLOWED_EMAIL_DOMAINS.clear()
     ALLOWED_EMAIL_DOMAINS.update(FALLBACK_DOMAINS)
 
-    json_path = Path(__file__).parent / "world_universities_and_domains.json"
-    if not json_path.exists():
-        log.warning(
-            "world_universities_and_domains.json not found at %s. Using fallback domains.",
-            json_path,
-        )
-        return
-
     try:
-        with open(json_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            for item in data:
-                name = item.get("name")
-                domains = item.get("domains") or []
-                if name and domains:
-                    for domain in domains:
-                        norm = _normalize_domain(domain)
-                        if norm:
-                            # Note: do not overwrite the custom mappings in FALLBACK_DOMAINS
-                            if norm not in ALLOWED_EMAIL_DOMAINS:
-                                ALLOWED_EMAIL_DOMAINS[norm] = name
+        from core.database import get_sb
+        from core.tables import SCHOOL_EMAIL_DOMAINS
+
+        sb = get_sb()
+        # PostgREST nested-select: pull the parent school name in the same row.
+        res = (
+            sb.table(SCHOOL_EMAIL_DOMAINS)
+              .select("domain, schools(name)")
+              .execute()
+        )
+        for row in res.data or []:
+            domain = row.get("domain")
+            school = (row.get("schools") or {}).get("name")
+            if not domain or not school:
+                continue
+            canonical = _normalize_domain(domain)
+            if canonical and canonical not in ALLOWED_EMAIL_DOMAINS:
+                ALLOWED_EMAIL_DOMAINS[canonical] = school
     except Exception as e:
-        log.error("Failed to load world_universities_and_domains.json: %s", e)
+        # If Supabase is unreachable, stick with FALLBACK_DOMAINS so the
+        # app still resolves UWaterloo emails.
+        log.error("Failed to load school email domains from Supabase: %s", e)
+
+    _loaded = True
 
 
-# Populate the dynamic whitelist at startup
-load_allowed_domains()
+def _ensure_loaded() -> None:
+    if not _loaded:
+        load_allowed_domains()
 
 
 def get_school_for_email(email: str) -> str | None:
@@ -111,6 +126,7 @@ def get_school_for_email(email: str) -> str | None:
     canonical = _normalize_domain(domain)
     if canonical is None:
         return None
+    _ensure_loaded()
     return ALLOWED_EMAIL_DOMAINS.get(canonical)
 
 

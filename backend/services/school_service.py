@@ -6,7 +6,7 @@ import re
 import unicodedata
 from typing import Final
 
-from core.allowed_emails import ALLOWED_EMAIL_DOMAINS
+from core.allowed_emails import ALLOWED_EMAIL_DOMAINS, _ensure_loaded
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 
@@ -20,6 +20,7 @@ def _compact(text: str | None) -> str:
 
 
 def _canonical_school_lookup() -> dict[str, str]:
+    _ensure_loaded()
     lookup: dict[str, str] = {}
     for school in ALLOWED_EMAIL_DOMAINS.values():
         normalized = _normalize(school)

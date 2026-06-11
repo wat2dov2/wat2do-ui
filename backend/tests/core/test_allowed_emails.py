@@ -1,6 +1,33 @@
 """Tests for core.allowed_emails — school lookup + multi-@ rejection."""
 
+import pytest
+
+from core import allowed_emails
 from core.allowed_emails import get_school_for_email, is_email_allowed
+
+
+@pytest.fixture(autouse=True)
+def _stub_domain_table(monkeypatch):
+    """Replace the Supabase-backed domain table with a fixed in-memory dict.
+
+    Mirrors the seeds in 20260610180000_add_schools_and_email_domains.sql so
+    the tests don't reach out to a live database.
+    """
+    monkeypatch.setattr(
+        allowed_emails,
+        "ALLOWED_EMAIL_DOMAINS",
+        {
+            "uwaterloo.ca": "University of Waterloo",
+            "edu.uwaterloo.ca": "University of Waterloo",
+            "wlu.ca": "Wilfrid Laurier University",
+            "utoronto.ca": "University of Toronto - St. George",
+            "scar.utoronto.ca": "University of Toronto - Scarborough",
+            "cornell.edu": "Cornell University",
+            "nyu.edu": "New York University",
+            "mit.edu": "Massachusetts Institute of Technology",
+        },
+    )
+    monkeypatch.setattr(allowed_emails, "_loaded", True)
 
 
 class TestGetSchoolForEmail:
@@ -42,9 +69,16 @@ class TestGetSchoolForEmail:
     def test_no_at_sign_returns_none(self):
         assert get_school_for_email("alice.uwaterloo.ca") is None
 
-    def test_dynamic_json_domain_lookup(self):
-        assert get_school_for_email("student@fho.edu.br") == "Fundação Hermínio Ometto"
-        assert get_school_for_email("admin@noah.edu.gr") == "Hellenic College of Noah"
+    def test_resolves_each_seeded_school(self):
+        assert get_school_for_email("a@cornell.edu") == "Cornell University"
+        assert get_school_for_email("b@nyu.edu") == "New York University"
+        assert get_school_for_email("c@mit.edu") == "Massachusetts Institute of Technology"
+
+    def test_uoft_domain_routes_to_st_george(self):
+        assert get_school_for_email("d@utoronto.ca") == "University of Toronto - St. George"
+
+    def test_uoft_scarborough_subdomain(self):
+        assert get_school_for_email("e@scar.utoronto.ca") == "University of Toronto - Scarborough"
 
 
 class TestIsEmailAllowed:
@@ -57,5 +91,5 @@ class TestIsEmailAllowed:
     def test_multi_at_not_allowed(self):
         assert is_email_allowed("a@b@uwaterloo.ca") is False
 
-    def test_dynamic_json_domain_allowed(self):
-        assert is_email_allowed("student@fho.edu.br") is True
+    def test_seeded_domain_allowed(self):
+        assert is_email_allowed("student@cornell.edu") is True

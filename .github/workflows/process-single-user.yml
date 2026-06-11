@@ -25,8 +25,22 @@ on:
         default: 'University of Waterloo'
         options:
           - 'University of Waterloo'
-          - 'University of Pennsylvania'
+          - 'University of Toronto - St. George'
+          - 'University of Toronto - Scarborough'
+          - 'McGill University'
+          - 'McMaster University'
+          - 'Western University'
+          - "Queen's University"
+          - 'Carleton University'
+          - 'Brock University'
+          - 'Wilfrid Laurier University'
+          - 'York University'
+          - 'Toronto Metropolitan University'
+          - 'University of Ottawa'
+          - 'OCAD University'
+          - 'Cornell University'
           - 'New York University'
+          - 'University of Pennsylvania'
           - 'Columbia University'
           - 'Massachusetts Institute of Technology'
 
