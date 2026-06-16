@@ -16,7 +16,7 @@ const ITEMS_PER_PAGE = 20;
 
 export function useOrganizationsPage() {
   const { isAuthenticated, clubs: claimedClubs } = useAuthState();
-  const claimedOrganizationIds = useMemo(() => claimedClubs.map((c) => c.id), [JSON.stringify(claimedClubs)]);
+  const claimedOrganizationIds = useMemo(() => claimedClubs.map((c) => c.id), [claimedClubs]);
   const savedOrganizationIds = useSavedOrganizationsStore(useShallow((s) => s.savedOrganizationIds));
   const [activeTab, setActiveTab] = useState<"all" | "followed" | "claimed">("all");
   const [searchQuery, setSearchQueryState] = useState("");
@@ -27,6 +27,8 @@ export function useOrganizationsPage() {
   const resolvedSchoolFilter = schoolFilter ? resolveSchool(schoolFilter) : undefined;
 
   const allCategories = getOrganizationCategories();
+
+  const isSavedLoaded = useSavedOrganizationsStore((s) => s.hasLoaded);
 
   const {
     organizations,
@@ -44,6 +46,7 @@ export function useOrganizationsPage() {
     ids: activeTab === "followed" ? savedOrganizationIds : (activeTab === "claimed" ? claimedOrganizationIds : undefined),
     isAuthenticated,
     activeTab,
+    isSavedLoaded: activeTab === "followed" ? isSavedLoaded : true,
   });
 
   const setSearchQuery = useCallback((query: string) => {

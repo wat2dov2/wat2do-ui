@@ -128,3 +128,7 @@ cd frontend && \
 - Fix the failure; do not push broken code to `main`.
 - Do not skip hooks (`--no-verify`) or force-push unless the user explicitly requests it.
 - Report exactly which command failed and the error output in your handoff.
+
+## Verification
+
+Last agent-verified: 2026-06-16
