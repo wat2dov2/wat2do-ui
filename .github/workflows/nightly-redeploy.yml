@@ -185,6 +185,11 @@ jobs:
         working-directory: frontend
         run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
+      - name: Expose Vercel environment to Vite
+        if: env.VERCEL_TOKEN != ''
+        working-directory: frontend
+        run: cp .vercel/.env.production.local .env.production.local
+
       - name: Build Vercel output
         if: env.VERCEL_TOKEN != ''
         working-directory: frontend
