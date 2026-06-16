@@ -10,7 +10,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   let savedIds: number[] = [];
 
   // Mock auth refresh
-  await page.route((url) => url.pathname.includes("/auth/refresh"), async (route) => {
+  await page.route((url) => url.pathname.includes("/auth/refresh") && url.port === "8000", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -24,7 +24,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock users/me
-  await page.route((url) => url.pathname.includes("/users/me"), async (route) => {
+  await page.route((url) => url.pathname.includes("/users/me") && url.port === "8000", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -41,7 +41,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock organizations/mine (empty)
-  await page.route((url) => url.pathname === "/organizations/mine", async (route) => {
+  await page.route((url) => url.pathname === "/organizations/mine" && url.port === "8000", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -50,30 +50,41 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock GET /organizations/ list
-  await page.route((url) => url.pathname === "/organizations" || url.pathname === "/organizations/", async (route) => {
+  await page.route((url) => (url.pathname === "/organizations" || url.pathname === "/organizations/") && url.port === "8000", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const idsParam = requestUrl.searchParams.getAll("ids");
+
+    const allItems = [
+      {
+        id: 1,
+        organization_name: "UW Tech Club",
+        organization_type: "Technology",
+        description: "A test club",
+        school: "University of Waterloo",
+        categories: ["Technology"],
+      },
+      {
+        id: 2,
+        organization_name: "UW Board Games Club",
+        organization_type: "Social",
+        description: "Board games club",
+        school: "University of Waterloo",
+        categories: ["Social"],
+      }
+    ];
+
+    let items = allItems;
+    if (requestUrl.searchParams.has("ids")) {
+      const ids = idsParam.map(Number);
+      items = allItems.filter(item => ids.includes(item.id));
+    }
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        items: [
-          {
-            id: 1,
-            organization_name: "UW Tech Club",
-            organization_type: "Technology",
-            description: "A test club",
-            school: "University of Waterloo",
-            categories: ["Technology"],
-          },
-          {
-            id: 2,
-            organization_name: "UW Board Games Club",
-            organization_type: "Social",
-            description: "Board games club",
-            school: "University of Waterloo",
-            categories: ["Social"],
-          }
-        ],
-        total: 2,
+        items,
+        total: items.length,
         page: 1,
         page_size: 20,
         total_pages: 1
@@ -82,9 +93,10 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock GET/PUT/DELETE /saved-organizations/
-  await page.route((url) => url.pathname.includes("/saved-organizations"), async (route) => {
+  await page.route((url) => url.pathname.includes("/saved-organizations") && url.port === "8000", async (route) => {
+    const requestUrl = new URL(route.request().url());
     const method = route.request().method();
-    const pathname = new URL(route.request().url()).pathname;
+    const pathname = requestUrl.pathname;
     const match = pathname.match(/\/saved-organizations\/(\d+)/);
 
     if (match) {
@@ -119,7 +131,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock GET /credits/
-  await page.route((url) => url.pathname.includes("/credits"), async (route) => {
+  await page.route((url) => url.pathname.includes("/credits") && url.port === "8000", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -128,7 +140,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock GET /saved-events/
-  await page.route((url) => url.pathname.includes("/saved-events"), async (route) => {
+  await page.route((url) => url.pathname.includes("/saved-events") && url.port === "8000", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",

@@ -11,6 +11,7 @@ interface UseOrganizationsListOptions {
   ids?: number[];
   isAuthenticated?: boolean;
   activeTab?: "all" | "followed" | "claimed";
+  isSavedLoaded?: boolean;
 }
 
 /**
@@ -27,6 +28,7 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
     ids,
     isAuthenticated,
     activeTab = "all",
+    isSavedLoaded = true,
   } = options;
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,6 +52,7 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
     ids,
     isAuthenticated,
     activeTab,
+    isSavedLoaded,
   });
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
       ids,
       isAuthenticated,
       activeTab,
+      isSavedLoaded,
     };
   });
 
@@ -77,6 +81,7 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
       ids: latestIds,
       isAuthenticated: latestAuth,
       activeTab: latestTab,
+      isSavedLoaded: latestSavedLoaded,
     } = latestOptionsRef.current;
 
     // Generate serialized options for deduplication
@@ -90,9 +95,12 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
       ...((latestTab === "followed" || latestTab === "claimed") ? {
         ids: (latestIds || []).join(","),
         isAuthenticated: Boolean(latestAuth),
+        isSavedLoaded: Boolean(latestSavedLoaded),
       } : {}),
       activeTab: latestTab,
     };
+
+    const queryKey = JSON.stringify(queryParams);
 
     // If followed or claimed tab but user not authenticated, don't query
     if ((latestTab === "followed" || latestTab === "claimed") && !latestAuth) {
@@ -100,10 +108,26 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
       setTotalItems(0);
       setTotalPages(0);
       setIsLoading(false);
+      lastFetchedOptionsRef.current = queryKey;
       return;
     }
 
-    const queryKey = JSON.stringify(queryParams);
+    // If followed tab and saved store hasn't loaded yet, show loading and don't query
+    if (latestTab === "followed" && !latestSavedLoaded) {
+      setIsLoading(true);
+      return;
+    }
+
+    // If followed or claimed tab and we have no ids to query, return empty list
+    if ((latestTab === "followed" || latestTab === "claimed") && (!latestIds || latestIds.length === 0)) {
+      setOrganizations([]);
+      setTotalItems(0);
+      setTotalPages(0);
+      setIsLoading(false);
+      lastFetchedOptionsRef.current = queryKey;
+      return;
+    }
+
     if (lastFetchedOptionsRef.current === queryKey) {
       return; // Skip duplicate fetch
     }
@@ -142,6 +166,7 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
     idsStr,
     isAuthenticated,
     activeTab,
+    isSavedLoaded,
     loadData,
   ]);
 
