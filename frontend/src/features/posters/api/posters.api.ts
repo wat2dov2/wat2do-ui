@@ -14,7 +14,7 @@ import { stripTrailingSlash } from "@/shared/utils/string";
 import { generatedFilterStateToFilterState } from "@/features/search/api/filterService";
 
 /** Poster row from GET /qr/ or POST /qr/. */
-export type QrCodePosterBackend = ApiQrCodeResponse;
+type QrCodePosterBackend = ApiQrCodeResponse;
 
 export type CreatePosterPayload =
   Omit<ApiQrCodeCreate, "latitude" | "longitude"> &
@@ -31,7 +31,7 @@ function normalizePosterFilters(
 }
 
 /** Map backend poster to frontend QRCode. */
-export function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
+function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
   const destinationType = b.destination_type;
   return {
     id: b.id,
@@ -50,8 +50,9 @@ export function normalizeBackendPoster(b: QrCodePosterBackend): QRCode {
 }
 
 /** List all posters (auth). */
-export async function listPostersFromBackend(): Promise<QRCode[]> {
-  const list = await getPaginatedItems<QrCodePosterBackend>("/qr/");
+export async function listPostersFromBackend(school?: string): Promise<QRCode[]> {
+  const url = school ? `/qr/?school=${school}` : "/qr/";
+  const list = await getPaginatedItems<QrCodePosterBackend>(url);
   return (list ?? []).map(normalizeBackendPoster);
 }
 

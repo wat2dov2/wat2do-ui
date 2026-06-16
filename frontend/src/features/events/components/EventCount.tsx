@@ -9,7 +9,7 @@ export function EventCount({ count }: EventCountProps) {
   const { t } = useTranslation();
 
   return (
-    <span className="font-bold text-xl text-foreground inline-flex items-baseline gap-1">
+    <span className="font-bold text-base text-foreground inline-flex items-baseline gap-1">
       <NumberFlow value={count} respectMotionPreference={false} />
       <span>{count === 1 ? t("common.event") : t("common.events")}</span>
     </span>

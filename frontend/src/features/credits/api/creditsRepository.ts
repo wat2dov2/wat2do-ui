@@ -24,7 +24,7 @@ export async function fetchBalance(): Promise<number> {
  * The frontend must send both fields — passing only `{ amount }` fails
  * Pydantic validation with a 422. Non-admin callers will receive a 403.
  */
-export async function addCreditsAPI(
+export async function addCreditsRepo(
   userId: string,
   amount: number,
 ): Promise<number> {

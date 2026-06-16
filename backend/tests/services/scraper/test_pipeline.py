@@ -34,13 +34,13 @@ def test_parse_post_timestamp_invalid_returns_none():
 
 def test_group_by_handle_buckets_by_owner_username():
     posts = [
-        {"ownerUsername": "uwteaclub", "url": "https://instagram.com/p/a/"},
+        {"ownerUsername": "uwteaorganization", "url": "https://instagram.com/p/a/"},
         {"ownerUsername": "wasawaterloo", "url": "https://instagram.com/p/b/"},
-        {"ownerUsername": "uwteaclub", "url": "https://instagram.com/p/c/"},
+        {"ownerUsername": "uwteaorganization", "url": "https://instagram.com/p/c/"},
         {"ownerUsername": "unknown_handle", "url": "https://instagram.com/p/d/"},
     ]
-    grouped = _group_by_handle(posts, ["uwteaclub", "wasawaterloo"])
-    assert len(grouped["uwteaclub"]) == 2
+    grouped = _group_by_handle(posts, ["uwteaorganization", "wasawaterloo"])
+    assert len(grouped["uwteaorganization"]) == 2
     assert len(grouped["wasawaterloo"]) == 1
     # Posts whose owner isn't in the requested list are dropped.
     assert "unknown_handle" not in grouped
@@ -48,22 +48,43 @@ def test_group_by_handle_buckets_by_owner_username():
 
 def test_group_by_handle_falls_back_to_username_field():
     """Apify sometimes returns ``username`` instead of ``ownerUsername``."""
-    posts = [{"username": "uwteaclub", "url": "https://instagram.com/p/a/"}]
-    grouped = _group_by_handle(posts, ["uwteaclub"])
-    assert len(grouped["uwteaclub"]) == 1
+    posts = [{"username": "uwteaorganization", "url": "https://instagram.com/p/a/"}]
+    grouped = _group_by_handle(posts, ["uwteaorganization"])
+    assert len(grouped["uwteaorganization"]) == 1
 
 
 def test_group_by_handle_is_case_insensitive():
     """Instagram handles are case-insensitive; Apify sometimes returns
     ``ownerUsername`` in different casing than what we requested."""
     posts = [
-        {"ownerUsername": "UWTeaClub", "url": "https://instagram.com/p/a/"},
-        {"ownerUsername": "uwteaclub", "url": "https://instagram.com/p/b/"},
-        {"ownerUsername": "UwTeaClub", "url": "https://instagram.com/p/c/"},
+        {"ownerUsername": "UWTeaOrganization", "url": "https://instagram.com/p/a/"},
+        {"ownerUsername": "uwteaorganization", "url": "https://instagram.com/p/b/"},
+        {"ownerUsername": "UwTeaOrganization", "url": "https://instagram.com/p/c/"},
     ]
-    grouped = _group_by_handle(posts, ["uwteaclub"])
+    grouped = _group_by_handle(posts, ["uwteaorganization"])
     # All three casings should land in the canonical-cased key.
-    assert len(grouped["uwteaclub"]) == 3
+    assert len(grouped["uwteaorganization"]) == 3
+
+
+def test_group_by_handle_supports_coauthor_producers():
+    posts = [
+        {
+            "ownerUsername": "external_collaborator",
+            "url": "https://instagram.com/p/a/",
+            "coauthor_producers": [
+                {"username": "external_collaborator"},
+                {"username": "UWTeaOrganization"},
+            ],
+        },
+        {
+            "ownerUsername": "another_external",
+            "url": "https://instagram.com/p/b/",
+            "coauthors": ["another_external", "wasawaterloo"],
+        },
+    ]
+    grouped = _group_by_handle(posts, ["uwteaorganization", "wasawaterloo"])
+    assert len(grouped["uwteaorganization"]) == 1
+    assert len(grouped["wasawaterloo"]) == 1
 
 
 # ── _filter_new_posts ─────────────────────────────────────────────────
@@ -96,7 +117,7 @@ def test_filter_new_posts_drops_non_post_urls():
     """Non-/p/ and non-/reel/ URLs (profile links, story URLs) are dropped."""
     cutoff = datetime.now(timezone.utc) - timedelta(days=7)
     posts = [
-        {"url": "https://instagram.com/uwteaclub", "timestamp": _now_iso()},
+        {"url": "https://instagram.com/uwteaorganization", "timestamp": _now_iso()},
         {"url": "https://instagram.com/p/REAL/", "timestamp": _now_iso()},
     ]
     fresh = _filter_new_posts(posts, seen_shortcodes=set(), cutoff=cutoff)

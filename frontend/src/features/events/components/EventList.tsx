@@ -5,6 +5,9 @@ import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
 import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
+import { m } from "framer-motion";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 
 interface EventListProps {
   events: Event[];
@@ -16,7 +19,9 @@ interface EventListProps {
   onDelete?: (eventId: number) => void;
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
+  hasActiveFilters?: boolean;
   savedEventIds: number[];
+  isLoading?: boolean;
 }
 
 const INITIAL_RENDER_COUNT = 24;
@@ -72,7 +77,9 @@ export function EventList({
   disableModal,
   onDelete,
   onClearFilters,
+  hasActiveFilters = false,
   savedEventIds,
+  isLoading = false,
 }: EventListProps) {
   const { t } = useTranslation();
   const [requestedVisibleCount, setRequestedVisibleCount] = useState(INITIAL_RENDER_COUNT);
@@ -129,6 +136,26 @@ export function EventList({
   }, [regularEvents.length, visibleCount]);
 
   // Early returns AFTER all hooks
+  if (isLoading) {
+    return (
+      <div className="space-y-5">
+        <section className="space-y-2.5">
+          <Skeleton className="h-5 w-28 rounded-lg" />
+          <div
+            className="grid gap-3"
+            style={{
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
+            }}
+          >
+            {Array.from({ length: 12 }).map((_, i) => (
+              <EventCardSkeleton key={i} />
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   if (viewMode === "calendar") {
     return (
       <div className="text-center py-32 text-muted-foreground">
@@ -152,12 +179,12 @@ export function EventList({
           <Search className="size-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">
-          {t("events.noEventsFound")}
+          {hasActiveFilters ? t("events.noEventsFound") : t("events.noEventsScheduled")}
         </h3>
         <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-          {t("events.noEventsFoundDesc")}
+          {hasActiveFilters ? t("events.noEventsFoundDesc") : t("events.noEventsScheduledDesc")}
         </p>
-        {onClearFilters && (
+        {hasActiveFilters && onClearFilters && (
           <button
             onMouseDown={onClearFilters}
             className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
@@ -171,39 +198,54 @@ export function EventList({
 
   // Grid view with content-visibility for performance
   return (
-    <div className="space-y-8" role="list" aria-label={`${events.length} events found`}>
+    <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
       {/* Promoted Events Section */}
       {promotedEvents && promotedEvents.length > 0 && (
-        <section className="space-y-3" aria-label={t("events.promotedEvents")}>
-          <h2 className="text-lg font-semibold tracking-normal text-foreground">
+        <section className="space-y-2.5" aria-label={t("events.promotedEvents")}>
+          <h2 className="text-base font-normal tracking-normal text-foreground">
             <DiaTextReveal
               text={t("events.promotedEvents")}
-              className="text-lg font-semibold tracking-normal text-foreground"
+              className="text-base font-normal tracking-normal text-foreground"
               textColor="var(--foreground)"
               colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
             />
           </h2>
           <div
-            className="grid gap-4"
+            className="grid gap-3"
             style={{
               gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
             }}
           >
-            {promotedEvents.map((event) => (
-              <div
-                key={event.id}
-                role="listitem"
-                className="min-w-0"
-              >
-                <EventCard
-                  event={event}
-                  isSaved={savedSet.has(event.id)}
-                  onEventClick={onEventClick}
-                  disableModal={disableModal}
-                  onDelete={onDelete}
-                />
-              </div>
-            ))}
+            {promotedEvents.map((event, index) => {
+              const delay = index * 0.033;
+              return (
+                <m.div
+                  key={event.id}
+                  role="listitem"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: delay,
+                    ease: [0.18, 0.39, 0.14, 0.9],
+                  }}
+                  className="min-w-0"
+                  style={{
+                    pointerEvents: "auto",
+                    contentVisibility: "auto",
+                    containIntrinsicSize: "auto 360px",
+                  }}
+                >
+                  <EventCard
+                    event={event}
+                    isSaved={savedSet.has(event.id)}
+                    onEventClick={onEventClick}
+                    disableModal={disableModal}
+                    onDelete={onDelete}
+                  />
+                </m.div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -213,31 +255,48 @@ export function EventList({
         if (sectionEvents.length === 0) return null;
 
         return (
-          <section key={category} className="space-y-3" aria-label={t(labelKey)}>
-            <h2 className="text-lg font-semibold tracking-normal text-foreground">
+          <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
+            <h2 className="text-base font-normal tracking-normal text-foreground">
               {t(labelKey)}
             </h2>
             <div
-              className="grid gap-4"
+              className="grid gap-3"
               style={{
                 gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
               }}
             >
-              {sectionEvents.map((event) => (
-                <div
-                  key={event.id}
-                  role="listitem"
-                  className="min-w-0"
-                >
-                  <EventCard
-                    event={event}
-                    isSaved={savedSet.has(event.id)}
-                    onEventClick={onEventClick}
-                    disableModal={disableModal}
-                    onDelete={onDelete}
-                  />
-                </div>
-              ))}
+              {sectionEvents.map((event, index) => {
+                // Find the event's flat index within the full visibleEvents array
+                const flatIndex = visibleEvents.findIndex((e) => e.id === event.id);
+                const delay = ((flatIndex >= 0 ? flatIndex : index) % RENDER_CHUNK_SIZE) * 0.033;
+                return (
+                  <m.div
+                    key={event.id}
+                    role="listitem"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.5,
+                      delay: delay,
+                      ease: [0.18, 0.39, 0.14, 0.9],
+                    }}
+                    className="min-w-0"
+                    style={{
+                      pointerEvents: "auto",
+                      contentVisibility: "auto",
+                      containIntrinsicSize: "auto 360px",
+                    }}
+                  >
+                    <EventCard
+                      event={event}
+                      isSaved={savedSet.has(event.id)}
+                      onEventClick={onEventClick}
+                      disableModal={disableModal}
+                      onDelete={onDelete}
+                    />
+                  </m.div>
+                );
+              })}
             </div>
           </section>
         );

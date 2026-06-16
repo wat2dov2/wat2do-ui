@@ -1,5 +1,4 @@
-import { PlatformConnectModal, type PlatformConnectConfig } from "./PlatformConnectModal";
-import type { IntegrationServerOption } from "@/features/organization-panel/api/integrations.api";
+import { PlatformConnectModal, type PlatformConnectConfig, type PlatformConnectModalProps } from "./PlatformConnectModal";
 
 const telegramConfig: PlatformConnectConfig = {
   titleKey: "integrations.connectTelegram",
@@ -16,18 +15,6 @@ const telegramConfig: PlatformConnectConfig = {
   noteKey: "integrations.telegramAutoPublishNote",
 };
 
-interface TelegramIntegrationModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  step: "connect" | "select";
-  authorized: boolean;
-  selectedPrimaryId: string;
-  servers: IntegrationServerOption[];
-  onAuthorize: () => void;
-  onSelectPrimary: (id: string) => void;
-  onActivate: () => void;
-}
-
-export function TelegramIntegrationModal(props: TelegramIntegrationModalProps) {
+export function TelegramIntegrationModal(props: Omit<PlatformConnectModalProps, "config">) {
   return <PlatformConnectModal {...props} config={telegramConfig} />;
 }

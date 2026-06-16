@@ -4,22 +4,27 @@
  */
 
 
+import type { ReactNode } from "react";
+
 interface AdminResultsCountProps {
   count: number;
   singularLabel: string;
   pluralLabel: string;
+  children?: ReactNode;
 }
 
 export function AdminResultsCount({
   count,
   singularLabel,
   pluralLabel,
+  children,
 }: AdminResultsCountProps) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between w-full">
       <span className="font-bold text-xl text-foreground">
         {count} {count === 1 ? singularLabel : pluralLabel}
       </span>
+      {children}
     </div>
   );
 }

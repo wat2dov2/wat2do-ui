@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -7,6 +8,7 @@ import {
 } from "react";
 import { Check, ChevronsUpDown, Search } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
+import { useEnterKeySubmit } from "@/shared/hooks";
 import {
   Popover,
   PopoverContent,
@@ -85,6 +87,18 @@ export function SearchCombobox<T>({
   const [isLoading, setIsLoading] = useState(false);
   const suppressTriggerClickRef = useRef(false);
 
+  const fetchResults = useCallback(
+    async (query: string) => {
+      try {
+        return await Promise.resolve(fetcher(query));
+      } catch (err) {
+        console.error("SearchCombobox fetch failed:", err);
+        return [];
+      }
+    },
+    [fetcher],
+  );
+
   // Loading is toggled in the event handlers below (open/typing); the effect
   // only fires the fetch and writes results from async callbacks — keeping
   // setState out of the synchronous effect body.
@@ -96,13 +110,9 @@ export function SearchCombobox<T>({
 
     let cancelled = false;
     const run = () => {
-      Promise.resolve(fetcher(query))
+      fetchResults(query)
         .then((items) => {
           if (!cancelled) setResults(items);
-        })
-        .catch((err) => {
-          console.error("SearchCombobox fetch failed:", err);
-          if (!cancelled) setResults([]);
         })
         .finally(() => {
           if (!cancelled) setIsLoading(false);
@@ -121,9 +131,12 @@ export function SearchCombobox<T>({
     return () => {
       cancelled = true;
     };
-  }, [open, search, searchOnEmpty, debounceMs, fetcher]);
+  }, [open, search, searchOnEmpty, debounceMs, fetchResults]);
 
-  const willFetch = (query: string) => query.trim().length > 0 || searchOnEmpty;
+  const willFetch = useCallback(
+    (query: string) => query.trim().length > 0 || searchOnEmpty,
+    [searchOnEmpty],
+  );
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -147,13 +160,37 @@ export function SearchCombobox<T>({
     }
   };
 
-  const handleSelect = (item: T) => {
+  const handleSelect = useCallback((item: T) => {
     onSelect(item);
     setOpen(false);
     setSearch("");
     setResults([]);
     setIsLoading(false);
-  };
+  }, [onSelect]);
+
+  const handleSelectFirstResult = useCallback(async () => {
+    const firstResult = results[0];
+    if (firstResult) {
+      handleSelect(firstResult);
+      return;
+    }
+
+    const query = search.trim();
+    if (!willFetch(search)) return;
+
+    setIsLoading(true);
+    const items = await fetchResults(query);
+    setResults(items);
+    if (items[0]) {
+      handleSelect(items[0]);
+    } else {
+      setIsLoading(false);
+    }
+  }, [fetchResults, handleSelect, results, search, willFetch]);
+
+  const handleSearchKeyDown = useEnterKeySubmit<HTMLInputElement>({
+    onSubmit: handleSelectFirstResult,
+  });
 
   const handleTriggerMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return;
@@ -228,6 +265,7 @@ export function SearchCombobox<T>({
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
             className="flex-1 px-2 py-2.5 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
           />
         </div>

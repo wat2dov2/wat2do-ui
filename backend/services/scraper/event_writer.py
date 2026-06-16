@@ -12,18 +12,18 @@ import logging
 from datetime import datetime, timezone
 
 from core.constants import (
-    MAX_EVENT_CLUB_TYPE_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
     MAX_EVENT_FOOD_COUNT,
     MAX_EVENT_FOOD_ITEM_LENGTH,
     MAX_EVENT_HANDLE_LENGTH,
     MAX_EVENT_LOCATION_LENGTH,
     MAX_EVENT_ORGANIZATION_LENGTH,
+    MAX_EVENT_ORGANIZATION_TYPE_LENGTH,
     MAX_EVENT_SCHOOL_LENGTH,
     MAX_EVENT_TITLE_LENGTH,
 )
 from core.database import get_sb
-from core.tables import CLUBS, EVENTS
+from core.tables import EVENTS, ORGANIZATIONS
 from schemas.event import normalize_category
 from schemas.event_date import OccurrenceCreate
 from services import event_date_service
@@ -32,13 +32,15 @@ from services.scraper.dedup import find_match
 log = logging.getLogger(__name__)
 
 
-def write_event(event: dict, *, ig_handle: str | None, source_url: str) -> str:
+def write_event(
+    event: dict, *, ig_handle: str | None, source_url: str, allow_past_events: bool = False
+) -> str:
     """Insert (or update) the event extracted from one Instagram post.
 
     Returns one of:
         ``"inserted"``  — new event row + occurrences created.
-        ``"updated"``   — same-club update applied to an existing row.
-        ``"duplicate"`` — cross-club duplicate, skipped.
+        ``"updated"``   — same-organization update applied to an existing row.
+        ``"duplicate"`` — cross-organization duplicate, skipped.
         ``"skipped"``   — required field missing (e.g. no occurrence,
                           no location); caller should log.
     """
@@ -58,14 +60,18 @@ def write_event(event: dict, *, ig_handle: str | None, source_url: str) -> str:
         )
         return "skipped"
 
-    club = _resolve_club_by_ig(ig_handle)
-    organization = _resolve_organization(event, ig_handle=ig_handle, club=club)
-    club_type = club.get("club_type") if club else None
+    organization_dict = _resolve_organization_by_ig(ig_handle)
+    organization_name = _resolve_organization_name(
+        event, ig_handle=ig_handle, organization=organization_dict
+    )
+    organization_type = organization_dict.get("organization_type") if organization_dict else None
     category = normalize_category(event.get("category")) if event.get("category") else None
 
     # Build the future-only occurrence list. Past-dated occurrences from
     # mis-parsed captions are dropped here rather than at insert time.
-    future_occurrences = _coerce_future_occurrences(occurrences)
+    future_occurrences = _coerce_future_occurrences(
+        occurrences, allow_past_events=allow_past_events
+    )
     if not future_occurrences:
         log.info(
             "[%s] all %d occurrences for %r are in the past — skipping",
@@ -75,7 +81,7 @@ def write_event(event: dict, *, ig_handle: str | None, source_url: str) -> str:
         )
         return "skipped"
 
-    # Same-club / same-day dedup against the events table. Pass the
+    # Same-organization / same-day dedup against the events table. Pass the
     # filtered future-only list so the same-day window is computed
     # against an actual upcoming date — passing the unfiltered list
     # could put ``occurrences[0]`` at a past dtstart and drive the
@@ -90,7 +96,7 @@ def write_event(event: dict, *, ig_handle: str | None, source_url: str) -> str:
     )
     if match is not None and match.kind == "duplicate":
         log.info(
-            "[%s] cross-club duplicate of event id=%s — skipping",
+            "[%s] cross-organization duplicate of event id=%s — skipping",
             ig_handle,
             match.event.get("id"),
         )
@@ -110,18 +116,20 @@ def write_event(event: dict, *, ig_handle: str | None, source_url: str) -> str:
         "registration": bool(event.get("registration", False)),
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
-        "club_id": club.get("id") if club else None,
-        "club_type": (club_type[:MAX_EVENT_CLUB_TYPE_LENGTH] if club_type else None),
+        "organization_id": organization_dict.get("id") if organization_dict else None,
+        "organization_type": (
+            organization_type[:MAX_EVENT_ORGANIZATION_TYPE_LENGTH] if organization_type else None
+        ),
         "school": (event.get("school") or "")[:MAX_EVENT_SCHOOL_LENGTH] or None,
         "category": category,
-        "organization": organization[:MAX_EVENT_ORGANIZATION_LENGTH],
+        "organization": organization_name[:MAX_EVENT_ORGANIZATION_LENGTH],
         "ig_handle": ig_handle[:MAX_EVENT_HANDLE_LENGTH] if ig_handle else None,
     }
 
-    if match is not None and match.kind == "same_club":
+    if match is not None and match.kind == "same_organization":
         existing_id = match.event.get("id")
         log.info(
-            "[%s] same-club update on event id=%s for %r",
+            "[%s] same-organization update on event id=%s for %r",
             ig_handle,
             existing_id,
             title,
@@ -154,14 +162,14 @@ def write_event(event: dict, *, ig_handle: str | None, source_url: str) -> str:
     return "inserted"
 
 
-def _resolve_club_by_ig(ig_handle: str | None) -> dict | None:
-    """Return the registered club row for an Instagram handle, if any."""
+def _resolve_organization_by_ig(ig_handle: str | None) -> dict | None:
+    """Return the registered organization row for an Instagram handle, if any."""
     if not ig_handle:
         return None
     rows = (
         get_sb()
-        .table(CLUBS)
-        .select("id,club_name,club_type")
+        .table(ORGANIZATIONS)
+        .select("id,organization_name,organization_type")
         .eq("ig", ig_handle)
         .limit(1)
         .execute()
@@ -169,17 +177,19 @@ def _resolve_club_by_ig(ig_handle: str | None) -> dict | None:
     return rows[0] if rows else None
 
 
-def _resolve_organization(event: dict, *, ig_handle: str | None, club: dict | None) -> str:
+def _resolve_organization_name(
+    event: dict, *, ig_handle: str | None, organization: dict | None
+) -> str:
     """Pick a non-empty organization string for the events row.
 
-    Order: registered club name → extractor's ``organization`` → raw IG
-    handle. ``club_id`` is the canonical ownership link when the handle maps
-    to a known club.
+    Order: registered organization name → extractor's ``organization`` → raw IG
+    handle. ``organization_id`` is the canonical ownership link when the handle maps
+    to a known organization.
     """
-    if club:
-        club_name = (club.get("club_name") or "").strip()
-        if club_name:
-            return club_name
+    if organization:
+        organization_name = (organization.get("organization_name") or "").strip()
+        if organization_name:
+            return organization_name
 
     org = (event.get("organization") or "").strip()
     if org:
@@ -213,7 +223,9 @@ def _clean_food(value: object) -> list | None:
     return deduped or None
 
 
-def _coerce_future_occurrences(occurrences: list[dict]) -> list[OccurrenceCreate]:
+def _coerce_future_occurrences(
+    occurrences: list[dict], allow_past_events: bool = False
+) -> list[OccurrenceCreate]:
     """Filter to future occurrences and return validated OccurrenceCreate models.
 
     Past occurrences are dropped because scraped events with a ``dtstart_utc``
@@ -226,7 +238,9 @@ def _coerce_future_occurrences(occurrences: list[dict]) -> list[OccurrenceCreate
         if not isinstance(occ, dict):
             continue
         dtstart = _parse_iso(occ.get("dtstart_utc"))
-        if dtstart is None or dtstart < now:
+        if dtstart is None:
+            continue
+        if not allow_past_events and dtstart < now:
             continue
         dtend = _parse_iso(occ.get("dtend_utc"))
         try:

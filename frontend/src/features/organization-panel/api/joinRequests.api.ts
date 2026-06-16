@@ -2,7 +2,7 @@ import { api } from "@/shared/services/apiClient";
 
 export interface OrganizationJoinRequest {
   id: string;
-  club_id: number;
+  organization_id: number;
   user_id: string;
   pitch: string;
   status: string;
@@ -17,7 +17,7 @@ export interface OrganizationJoinRequest {
 }
 
 export async function fetchJoinRequests(organizationId: number): Promise<OrganizationJoinRequest[]> {
-  return api.get<OrganizationJoinRequest[]>(`/clubs/${organizationId}/join-requests`);
+  return api.get<OrganizationJoinRequest[]>(`/organizations/${organizationId}/join-requests`);
 }
 
 export async function resolveJoinRequest(
@@ -25,7 +25,7 @@ export async function resolveJoinRequest(
   requestId: string,
   status: "approved" | "rejected"
 ): Promise<OrganizationJoinRequest> {
-  return api.patch<OrganizationJoinRequest>(`/clubs/${organizationId}/join-requests/${requestId}`, {
+  return api.patch<OrganizationJoinRequest>(`/organizations/${organizationId}/join-requests/${requestId}`, {
     status,
   });
 }

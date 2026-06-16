@@ -4,21 +4,21 @@
  */
 
 import type { Organization } from "@/shared/types";
-import type { ApiClubResponse } from "@/shared/generated";
-import { api } from "@/shared/services/apiClient";
+import type { ApiOrganizationResponse } from "@/shared/generated";
+import { api, getPaginatedItems } from "@/shared/services/apiClient";
 import {
   filterOrganizationsBySearch,
   filterOrganizationsByCategory,
   filterOrganizationsByType,
 } from "@/features/organizations/api/organizationService";
 
-const ORGANIZATIONS_LIST_LIMIT = 500;
 
-function normalizeOrganization(raw: ApiClubResponse): Organization {
+
+function normalizeOrganization(raw: ApiOrganizationResponse): Organization {
   return {
     ...raw,
     categories: raw.categories ?? [],
-    club_page: raw.club_page ?? "",
+    organization_page: raw.organization_page ?? "",
     ig: raw.ig ?? null,
     discord: raw.discord ?? null,
     logo_url: raw.logo_url ?? null,
@@ -29,22 +29,76 @@ function normalizeOrganization(raw: ApiClubResponse): Organization {
 
 export async function getAllOrganizations(school?: string): Promise<Organization[]> {
   const params = new URLSearchParams();
-  params.set("limit", String(ORGANIZATIONS_LIST_LIMIT));
   if (school) {
     params.set("school", school);
   }
-  const rawOrgs = await api.get<ApiClubResponse[]>(`/clubs/?${params.toString()}`);
+  const url = `/organizations/${params.toString() ? `?${params.toString()}` : ""}`;
+  const rawOrgs = await getPaginatedItems<ApiOrganizationResponse>(url);
   return rawOrgs.map(normalizeOrganization);
 }
 
+export interface PaginatedOrganizationsResponse {
+  items: Organization[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export async function getOrganizationsPaginated(options: {
+  page: number;
+  limit: number;
+  school?: string;
+  search?: string;
+  categories?: string[];
+  organizationType?: string;
+  ids?: number[];
+}): Promise<PaginatedOrganizationsResponse> {
+  const params = new URLSearchParams();
+  params.set("page", String(options.page));
+  params.set("page_size", String(options.limit));
+  if (options.school) {
+    params.set("school", options.school);
+  }
+  if (options.search) {
+    params.set("search", options.search);
+  }
+  if (options.organizationType) {
+    params.set("organization_type", options.organizationType);
+  }
+  if (options.categories && options.categories.length > 0) {
+    options.categories.forEach((cat) => params.append("categories", cat));
+  }
+  if (options.ids && options.ids.length > 0) {
+    options.ids.forEach((id) => params.append("ids", String(id)));
+  }
+
+  interface PaginatedResponse {
+    items: ApiOrganizationResponse[];
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+  }
+
+  const response = await api.get<PaginatedResponse>(`/organizations/?${params.toString()}`);
+  return {
+    items: response.items.map(normalizeOrganization),
+    total: response.total,
+    page: response.page,
+    page_size: response.page_size,
+    total_pages: response.total_pages,
+  };
+}
+
 export async function getMyOrganizations(): Promise<Organization[]> {
-  const rawOrgs = await api.get<ApiClubResponse[]>("/clubs/mine");
+  const rawOrgs = await api.get<ApiOrganizationResponse[]>("/organizations/mine");
   return rawOrgs.map(normalizeOrganization);
 }
 
 export async function createOrganizationAPI(organizationData: Omit<Organization, "id">): Promise<Organization> {
   const { created_by, ...payload } = organizationData;
-  const raw = await api.post<ApiClubResponse>("/clubs/", {
+  const raw = await api.post<ApiOrganizationResponse>("/organizations/", {
     ...payload,
     owner_user_id: created_by || undefined,
   });
@@ -57,12 +111,12 @@ export async function updateOrganizationAPI(
 ): Promise<Organization> {
   const payload = { ...updates };
   delete payload.created_by;
-  const updated = await api.patch<ApiClubResponse>(`/clubs/${organization.id}`, payload);
+  const updated = await api.patch<ApiOrganizationResponse>(`/organizations/${organization.id}`, payload);
   return normalizeOrganization(updated);
 }
 
 export async function deleteOrganizationAPI(organizationId: number): Promise<void> {
-  await api.delete(`/clubs/${organizationId}`);
+  await api.delete(`/organizations/${organizationId}`);
 }
 
 export function filterOrganizations(
@@ -80,26 +134,22 @@ export async function getOrganizationTypes(existingOrganizations?: Organization[
   const organizations = existingOrganizations ?? await getAllOrganizations();
   const types = new Set<string>();
   organizations.forEach((c) => {
-    const type = c.club_type?.trim() ?? "";
+    const type = c.organization_type?.trim() ?? "";
     if (type) types.add(type);
   });
   return Array.from(types).sort();
 }
 
-export async function loadOrganizationsData(school?: string): Promise<Organization[]> {
-  return getAllOrganizations(school);
-}
-
 // --- Backend-synced saved/followed organizations ---
 
 export async function fetchSavedOrganizationIdsFromBackend(): Promise<number[]> {
-  return api.get<number[]>("/saved-clubs/");
+  return api.get<number[]>("/saved-organizations/");
 }
 
 export async function saveOrganizationToBackend(organizationId: number): Promise<void> {
-  await api.put<void>(`/saved-clubs/${organizationId}`);
+  await api.put<void>(`/saved-organizations/${organizationId}`);
 }
 
 export async function unsaveOrganizationToBackend(organizationId: number): Promise<void> {
-  await api.delete(`/saved-clubs/${organizationId}`);
+  await api.delete(`/saved-organizations/${organizationId}`);
 }

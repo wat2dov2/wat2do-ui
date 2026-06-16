@@ -80,7 +80,7 @@ export function useRecommendations(limit = DEFAULT_RECOMMENDATION_LIMIT) {
   // Re-fetch when user identity changes (login/logout)
   useEffect(() => {
     mountedRef.current = true;
-    const task = window.setTimeout(() => load(), 600);
+    const task = window.setTimeout(() => load(), 0);
     return () => {
       window.clearTimeout(task);
       mountedRef.current = false;

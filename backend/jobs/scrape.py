@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
 """Scraping job entry point.
 
-Two invocation modes, distinguished by environment + arguments:
+Two invocation modes, distinguished by subcommands:
 
-1. **Single-user mode** — set ``TARGET_USERNAME`` env var. The job
-   scrapes that one handle with a 1-day cutoff (or 5 years if
-   ``IGNORE_CUTOFF=true``). Used by ``.github/workflows/process-single-user.yml``.
+1. **User mode** — scrapes one handle with a 1-day cutoff (or 5 years if
+   run via workflow_dispatch). Used by ``.github/workflows/process-single-user.yml``.
 
-2. **Big-scrape mode** — pass ``--urls-file`` and ``--school``. The
-   job reads handles from the file and chunks them into batches of
-   ``SCRAPING_HANDLES_PER_RUN`` per Apify run. Used by
-   ``.github/workflows/big-scrape.yml``.
+2. **Batch mode** — scrapes all Instagram handles loaded dynamically from
+   the database for a given school. Used by ``.github/workflows/big-scrape.yml``.
 
 Usage:
     cd backend
-    python jobs/scrape.py --urls-file services/wat2do/urls/uwaterloo.txt \\
-        --school "University of Waterloo" --limit 100 --cutoff-days 4 --dry-run
+    python jobs/scrape.py batch --school "University of Waterloo" --limit 100 --cutoff-days 4 --dry-run true
 
 Both modes write a one-line summary to stdout and exit 0 on success /
 1 on failure so the workflow can grep the log.
@@ -27,7 +23,6 @@ import argparse
 import logging
 import os
 import sys
-from pathlib import Path
 
 # Add backend root to path so service imports resolve when invoked as a
 # script from inside backend/. Mirrors the pattern in
@@ -71,16 +66,16 @@ def _parse_args() -> argparse.Namespace:
         required=True,
         help="Whether to perform a dry run (true/false)",
     )
+    user_parser.add_argument(
+        "--allow-past-events",
+        choices=["true", "false"],
+        default="false",
+        help="Whether to allow occurrences in the past (true/false)",
+    )
 
     # Batch subcommand
     batch_parser = subparsers.add_parser(
-        "batch", help="Scrape a batch of Instagram handles from a file"
-    )
-    batch_parser.add_argument(
-        "--urls-file",
-        type=Path,
-        required=True,
-        help="Path to a text file with one URL/handle per line",
+        "batch", help="Scrape a batch of Instagram handles from the database for a school"
     )
     batch_parser.add_argument("--school", required=True, help="Canonical school name")
     batch_parser.add_argument(
@@ -95,30 +90,14 @@ def _parse_args() -> argparse.Namespace:
         required=True,
         help="Whether to perform a dry run (true/false)",
     )
+    batch_parser.add_argument(
+        "--allow-past-events",
+        choices=["true", "false"],
+        default="false",
+        help="Whether to allow occurrences in the past (true/false)",
+    )
 
     return parser.parse_args()
-
-
-def _read_handles(urls_file: Path) -> list[str]:
-    """Read one handle per line from ``urls_file``.
-
-    Skips blanks and ``#`` comments. Each non-empty line should be either
-    a full Instagram URL (``https://instagram.com/<handle>``) or a bare
-    handle. Trailing slashes / paths are stripped so URLs with extra
-    segments still resolve.
-    """
-    handles: list[str] = []
-    for raw in urls_file.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "instagram.com/" in line:
-            line = line.split("instagram.com/", 1)[1]
-        # Drop trailing path segments / slashes (e.g. "uw_animusic/posts").
-        handle = line.split("/", 1)[0].strip()
-        if handle:
-            handles.append(handle)
-    return handles
 
 
 def _chunked(items: list[str], size: int) -> list[list[str]]:
@@ -148,14 +127,16 @@ def _run_single_user_mode(
     cutoff_days: int,
     limit: int | None,
     dry_run: bool,
+    allow_past_events: bool,
 ) -> int:
     log.info(
-        "Single-user mode: username=%s, school=%s, cutoff_days=%d, limit=%s, dry_run=%s",
+        "Single-user mode: username=%s, school=%s, cutoff_days=%d, limit=%s, dry_run=%s, allow_past_events=%s",
         username,
         school,
         cutoff_days,
         limit,
         dry_run,
+        allow_past_events,
     )
 
     result = run_pipeline(
@@ -165,6 +146,7 @@ def _run_single_user_mode(
         results_limit=limit,
         dry_run=dry_run,
         github_run_id=os.getenv("GITHUB_RUN_ID"),
+        allow_past_events=allow_past_events,
     )
 
     print(
@@ -181,28 +163,61 @@ def _run_single_user_mode(
 
 
 def _run_big_scrape_mode(
-    urls_file: Path,
     school: str,
     limit: int | None,
     cutoff_days: int,
     dry_run: bool,
+    allow_past_events: bool,
 ) -> int:
-    handles = _read_handles(urls_file)
+    log.info("Fetching organization handles from database for school: %s", school)
+    try:
+        from core.database import get_sb
+        from core.tables import ORGANIZATIONS
+
+        rows = (
+            get_sb()
+            .table(ORGANIZATIONS)
+            .select("ig")
+            .eq("school", school)
+            .not_.is_("ig", "null")
+            .execute()
+        ).data or []
+        handles = []
+        for r in rows:
+            ig = r.get("ig")
+            if not ig:
+                continue
+            ig_str = str(ig).strip()
+            if ig_str and ig_str != "null":
+                if "instagram.com/" in ig_str:
+                    ig_str = ig_str.split("instagram.com/", 1)[1]
+                ig_str = ig_str.split("/", 1)[0].strip()
+                ig_str = ig_str.lstrip("@").strip()
+                if ig_str:
+                    handles.append(ig_str)
+        # Deduplicate handles
+        handles = list(dict.fromkeys(handles))
+        log.info("Loaded %d dynamic handles from database", len(handles))
+    except Exception as e:
+        log.error("Failed to load handles from database: %s", e)
+        return 1
+
     if dry_run:
         # Keep dry-runs short so operators can inspect model behaviour
         # without waiting for a multi-hour Apify run.
         handles = handles[:1]
     if not handles:
-        log.error("No handles found in %s", urls_file)
+        log.error("No handles found for school %s", school)
         return 1
 
     log.info(
-        "Big-scrape mode: school=%s, handles=%d, limit=%s, cutoff_days=%d, dry_run=%s",
+        "Big-scrape mode: school=%s, handles=%d, limit=%s, cutoff_days=%d, dry_run=%s, allow_past_events=%s",
         school,
         len(handles),
         limit,
         cutoff_days,
         dry_run,
+        allow_past_events,
     )
 
     total_inserted = 0
@@ -218,6 +233,7 @@ def _run_big_scrape_mode(
             results_limit=limit,
             dry_run=dry_run,
             github_run_id=os.getenv("GITHUB_RUN_ID"),
+            allow_past_events=allow_past_events,
         )
         total_inserted += result.total_inserted
         total_extracted += result.total_extracted
@@ -241,6 +257,7 @@ def main() -> int:
 
     # Convert string choice to boolean
     dry_run_bool = args.dry_run == "true"
+    allow_past_events_bool = args.allow_past_events == "true"
 
     if args.command == "user":
         return _run_single_user_mode(
@@ -249,14 +266,15 @@ def main() -> int:
             cutoff_days=args.cutoff_days,
             limit=args.limit,
             dry_run=dry_run_bool,
+            allow_past_events=allow_past_events_bool,
         )
     elif args.command == "batch":
         return _run_big_scrape_mode(
-            urls_file=args.urls_file,
             school=args.school,
             limit=args.limit,
             cutoff_days=args.cutoff_days,
             dry_run=dry_run_bool,
+            allow_past_events=allow_past_events_bool,
         )
 
     return 1

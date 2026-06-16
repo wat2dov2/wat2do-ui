@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN, enUS } from "date-fns/locale";
 import { Utensils, Heart } from "@/shared/ui/doodle-icons";
-import { EventList, EventCount } from "@/features/events";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { EventList } from "../components/EventList";
+import { EventCount } from "../components/EventCount";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { LightRays } from "@/registry/magicui/light-rays";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
@@ -28,6 +29,8 @@ export function EventsPageContainer() {
 
   const {
     isLoading,
+    isPromotedLoading,
+    recsLoading,
     error,
     fetchEvents,
     savedEventIds,
@@ -37,6 +40,8 @@ export function EventsPageContainer() {
     orderedEvents,
     handleDeleteEvent,
   } = useEventsPageData({ profileCompleted });
+
+  const isPageLoading = isLoading || isPromotedLoading || recsLoading;
 
   // Memoize view mode change handler to ensure stable reference
   const handleViewModeChange = useCallback((mode: ViewMode) => {
@@ -63,7 +68,7 @@ export function EventsPageContainer() {
         },
         {
           id: "saved",
-          icon: <Heart className="size-3.5" />,
+          icon: <Heart className="size-3.5" fill={filters.savedFilter ? "currentColor" : "none"} />,
           labelKey: "filters.saved",
           active: filters.savedFilter,
           onMouseDown: () => filters.setSavedFilter(!filters.savedFilter),
@@ -89,9 +94,9 @@ export function EventsPageContainer() {
           />
         )}
       </div>
-      <div className="-mt-6 space-y-3">
-        {/* Sticky toolbar hugs TopNav when scrolling (-top-6 cancels AppLayout top padding). */}
-        <div className="sticky -top-6 z-20 bg-background space-y-3 pt-6 pb-3 backdrop-blur-sm">
+      <div className="-mt-4 space-y-2">
+        {/* Sticky toolbar hugs TopNav when scrolling (-top-4 cancels AppLayout top padding). */}
+        <div className="sticky -top-4 z-20 bg-background space-y-3 pt-4 pb-2 backdrop-blur-sm">
         <SearchBar
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {
@@ -102,56 +107,58 @@ export function EventsPageContainer() {
           onViewModeChange={handleViewModeChange}
         />
 
-        {/* Filters - only show once the event list is available */}
-        {!isLoading && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-baseline gap-3">
+        {/* Filters - show even while loading but with skeletons inside */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-baseline gap-3">
+            {isPageLoading ? (
+              <Skeleton className="h-6 w-20 rounded-lg" />
+            ) : (
               <EventCount count={filters.filteredEvents.length} />
-              {latestAddedEvent && (
-                <LatestAddedButton
-                  title={latestAddedEvent.title}
-                  addedAt={latestAddedEvent.added_at}
-                  onMouseDown={() => filters.setSearchQuery(latestAddedEvent.title)}
-                />
-              )}
-            </div>
-            <div className="relative flex flex-wrap items-center gap-2">
-              {filterConfigs.flatMap((config) =>
-                config.visible === false
-                  ? []
-                  : [
-                      <QuickFilterChip
-                        key={config.id}
-                        icon={config.icon}
-                        label={t(config.labelKey)}
-                        active={config.active}
-                        onMouseDown={config.onMouseDown}
-                        badge={config.badge}
-                      />,
-                    ],
-              )}
-              <MoreFiltersButton
-                open={showFilterDropdown}
-                onOpenChange={setShowFilterDropdown}
-                filterCount={filters.filterCount}
-                onClearFilters={filters.handleClearAllFilters}
-              >
-                <FilterDropdown
-                  filterViewMode={filterViewMode}
-                  onFilterViewModeChange={setFilterViewMode}
-                  filters={filters}
-                  isDarkMode={isDarkMode}
-                />
-              </MoreFiltersButton>
-            </div>
+            )}
+            {isPageLoading ? (
+              <Skeleton className="h-4 w-48 rounded-lg self-center" />
+            ) : latestAddedEvent ? (
+              <LatestAddedButton
+                title={latestAddedEvent.title}
+                addedAt={latestAddedEvent.added_at}
+                onMouseDown={() => filters.setSearchQuery(latestAddedEvent.title)}
+              />
+            ) : null}
           </div>
-        )}
+          <div className="relative flex flex-wrap items-center gap-2">
+            {filterConfigs.flatMap((config) =>
+              config.visible === false
+                ? []
+                : [
+                    <QuickFilterChip
+                      key={config.id}
+                      icon={config.icon}
+                      label={t(config.labelKey)}
+                      active={config.active}
+                      onMouseDown={config.onMouseDown}
+                      badge={config.badge}
+                    />,
+                  ],
+            )}
+            <MoreFiltersButton
+              open={showFilterDropdown}
+              onOpenChange={setShowFilterDropdown}
+              filterCount={filters.filterCount}
+              onClearFilters={filters.handleClearAllFilters}
+            >
+              <FilterDropdown
+                filterViewMode={filterViewMode}
+                onFilterViewModeChange={setFilterViewMode}
+                filters={filters}
+                isDarkMode={isDarkMode}
+              />
+            </MoreFiltersButton>
+          </div>
+        </div>
       </div>
 
       <main className="relative z-10 w-full" role="main" aria-label={t("search.ariaLabel")}>
-        {isLoading ? (
-          <LoadingPage />
-        ) : error ? (
+        {error ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <p className="text-destructive text-sm text-center max-w-md">{error}</p>
             <button
@@ -169,7 +176,14 @@ export function EventsPageContainer() {
             viewMode={viewMode}
             onDelete={handleDeleteEvent}
             onClearFilters={filters.handleClearAllFilters}
+            hasActiveFilters={
+              filters.filterCount > 0 ||
+              filters.searchQuery !== "" ||
+              filters.freeFoodFilter ||
+              filters.savedFilter
+            }
             savedEventIds={savedEventIds}
+            isLoading={isPageLoading}
           />
         )}
       </main>

@@ -78,8 +78,6 @@ from core.client_ip import get_client_ip
 from core.constants import (
     ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
     ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS,
-    AUTH_RATE_LIMIT_MAX_REQUESTS,
-    AUTH_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
     AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
@@ -302,23 +300,13 @@ class RateLimiter:
 ai_generate_filters_rate_limiter = RateLimiter()
 ai_generate_event_rate_limiter = RateLimiter()
 # Auth endpoints: stricter limits to prevent credential stuffing / brute force.
-# Separate buckets per endpoint so a signup burst does not block legitimate
-# logins from the same IP (corporate NAT, mobile carrier).
-login_rate_limiter = RateLimiter(
-    max_requests=AUTH_RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=AUTH_RATE_LIMIT_WINDOW_SECONDS,
-)
-signup_rate_limiter = RateLimiter(
-    max_requests=AUTH_RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=AUTH_RATE_LIMIT_WINDOW_SECONDS,
-)
-# forgot-password & reset-password: very strict to prevent email-bomb abuse.
-# Separate buckets so a forgot-password spray does not block reset-password.
-forgot_password_rate_limiter = RateLimiter(
+# send-otp & verify-otp: strict to prevent email-bomb and brute-force abuse.
+# Separate buckets so a send burst does not block verification.
+send_otp_rate_limiter = RateLimiter(
     max_requests=AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
 )
-reset_password_rate_limiter = RateLimiter(
+verify_otp_rate_limiter = RateLimiter(
     max_requests=AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
 )

@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+// fallow-ignore-next-line circular-dependency
 import { EventCard } from "@/features/events/components/EventCard";
 import { translateCategory } from "@/shared/utils/event";
 import { translateFood } from "@/shared/utils/foodTranslation";

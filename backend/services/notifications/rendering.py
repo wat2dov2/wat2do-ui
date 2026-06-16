@@ -47,28 +47,24 @@ def _format_digest_window(window_start: datetime, window_end: datetime, tz: Zone
 
 def _category_email_colors(category: str | None) -> tuple[str, str]:
     c = category or "Events"
-    if c in {"Academics", "Studying"}:
-        return "#fef3c7", "#ea580c"
-    if c in {"Career", "Networking"}:
-        return "#e0f2fe", "#0284c7"
-    if c in {"Games", "Partying"}:
-        return "#ecfeff", "#0891b2"
-    if c in {"Athletics", "Sports"}:
-        return "#fef2f2", "#dc2626"
-    if c in {"Art", "Dance", "Design"}:
+    if c == "Arts & Culture":
         return "#fdf2f8", "#db2777"
-    if c == "Culture":
-        return "#fff1f2", "#e11d48"
-    if c == "Religion":
-        return "#f5f3ff", "#7c3aed"
-    if c == "Technology":
-        return "#eef2ff", "#4f46e5"
-    if c in {"Health", "Wellness", "Mental Health"}:
-        return "#ecfdf5", "#059669"
-    if c == "Music":
-        return "#fef9c3", "#ca8a04"
-    if c == "Entrepreneurship":
+    if c == "Business":
+        return "#e0f2fe", "#0284c7"
+    if c == "Community Service":
         return "#f0fdf4", "#16a34a"
+    if c == "Environment":
+        return "#ecfdf5", "#059669"
+    if c == "Games & Recreation":
+        return "#ecfeff", "#0891b2"
+    if c == "Health":
+        return "#ecfdf5", "#059669"
+    if c == "Media & Web":
+        return "#eef2ff", "#4f46e5"
+    if c == "Politics & Advocacy":
+        return "#fff1f2", "#e11d48"
+    if c == "Religion & Spirituality":
+        return "#f5f3ff", "#7c3aed"
     return "#f4f4f5", "#52525b"
 
 

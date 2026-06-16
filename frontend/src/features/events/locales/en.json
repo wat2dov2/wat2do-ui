@@ -43,6 +43,8 @@
     "previewDescription": "This is how your event will appear to others",
     "noEventsFound": "No events found",
     "noEventsFoundDesc": "Couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.",
+    "noEventsScheduled": "No events scheduled",
+    "noEventsScheduledDesc": "No events are currently scheduled. Check back later!",
     "latestAdded": "{{title}} added {{timeAgo}}",
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",

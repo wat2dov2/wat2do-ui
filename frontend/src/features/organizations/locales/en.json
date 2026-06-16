@@ -4,9 +4,8 @@
     "claimOwnershipDesc": "Request to become the primary administrator and creator of",
     "executiveRole": "Your Executive Role",
     "executiveRolePlaceholder": "e.g. President, Vice President, Treasurer",
-    "proofLink": "Link to Verification Proof",
-    "proofLinkPlaceholder": "e.g. Link to WUSA registration or official bio",
-    "proofDescription": "Provide a link showing your name listed as an executive for this organization.",
+    "proofImage": "Verification Proof Image",
+    "proofDescription": "Upload an image (JPEG, PNG, WEBP) showing proof of your executive status (e.g. WUSA registration document, official bio screenshot).",
     "submitClaim": "Submit Claim",
     "claimSubmitted": "Claim Submitted Successfully",
     "claimSubmittedDesc": "Your claim to manage \"{{name}}\" has been submitted for verification.",
@@ -24,8 +23,11 @@
     "applyToJoin": "Apply to Join",
     "description": "Discover student organizations at University of Waterloo",
     "searchPlaceholder": "Search organizations...",
+    "clearSearch": "Clear organization search",
     "activeFilters": "Active filters",
     "organizations": "organizations",
+    "organizationLabel": "organization",
+    "organizationLabel_other": "organizations",
     "noClubsFound": "No organizations found",
     "noClubsFoundDesc": "We couldn't find any organizations matching your current filters. Try adjusting your search or clearing some filters.",
     "viewClubPage": "View Organization Page",
@@ -39,8 +41,8 @@
     "editClubDescription": "Update the organization information below",
     "clubCreatedMessage": "Organization \"{{name}}\" has been created successfully!",
     "clubUpdatedMessage": "Organization \"{{name}}\" has been updated.",
-    "allClubs": "All Organizations",
-    "followedClubs": "Followed Organizations",
+    "allClubs": "All",
+    "followedClubs": "Followed",
     "signInToViewClubs": "Sign in to view followed organizations",
     "signInToViewClubsDesc": "Follow organizations you're interested in and view them all in one place.",
     "noFollowedClubs": "No followed organizations",
@@ -50,17 +52,6 @@
     "savedClubs": {
       "saveFailed": "Couldn't follow this organization",
       "unsaveFailed": "Couldn't unfollow this organization"
-    },
-    "categories": {
-      "Business and Entrepreneurial": "Business and Entrepreneurial",
-      "Charitable, Community Service & International Development": "Charitable, Community Service & International Development",
-      "Creative Arts, Dance and Music": "Creative Arts, Dance and Music",
-      "Environmental and Sustainability": "Environmental and Sustainability",
-      "Games, Recreational and Social": "Games, Recreational and Social",
-      "Health Promotion": "Health Promotion",
-      "Media, Publications and Web Development": "Media, Publications and Web Development",
-      "Political and Social Awareness": "Political and Social Awareness",
-      "Religious and Spiritual": "Religious and Spiritual"
     }
   },
   "inviteLanding": {

@@ -87,7 +87,7 @@ export function EventFormPreview() {
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
             <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
-              <span className="truncate max-w-[128px]">
+              <span className="font-bold truncate max-w-[128px]">
                 {selectedOrganizationName || t("events.organization")}
               </span>
             </span>

@@ -40,7 +40,7 @@
     "inviteAddManagerButton": "Invite / Add Manager",
     "currentlyAuthorizedManagers": "Currently authorized managers for",
     "searchManagersPlaceholder": "Search managers by name or email...",
-    "loadingClubMembers": "Loading organization members...",
+    "loadingOrganizationMembers": "Loading organization members...",
     "pendingInvitations": "Pending Invitations ({{count}})",
     "pendingInvitationsDesc": "Users who have been invited to manage this organization but haven't signed up or logged in yet.",
     "emailAddress": "Email Address",

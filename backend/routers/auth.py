@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -8,19 +10,14 @@ from core.errors import INVALID_OR_EXPIRED_TOKEN, NO_REFRESH_TOKEN
 from core.exceptions import AuthenticationError, ServiceError
 from core.rate_limit import (
     auth_refresh_rate_limiter,
-    forgot_password_rate_limiter,
-    login_rate_limiter,
-    reset_password_rate_limiter,
-    signup_rate_limiter,
+    send_otp_rate_limiter,
+    verify_otp_rate_limiter,
 )
 from schemas.auth import (
-    ForgotPasswordRequest,
-    LoginRequest,
     MessageResponse,
-    ResetPasswordRequest,
-    SignupRequest,
-    SignupResponse,
+    SendOtpRequest,
     TokenResponse,
+    VerifyOtpRequest,
 )
 from services.auth_service import auth
 
@@ -97,44 +94,44 @@ def _origin_allowed(request: Request) -> bool:
     from a trusted origin — refuse if neither Origin nor Referer is set
     or if they point outside ``settings.cors_origins``.
     """
-    allowed = set(settings.cors_origins or [])
-    if not allowed:
+    if not settings.cors_origins and not settings.cors_origin_regex:
         # No origins configured → be conservative and reject cross-origin
         # cookie-bearing POSTs regardless.
         return False
 
     origin = request.headers.get("origin")
     if origin:
-        return origin in allowed
+        return settings.is_allowed_origin(origin)
 
     referer = request.headers.get("referer")
     if referer:
-        return any(referer.startswith(o + "/") or referer == o for o in allowed)
+        parsed = urlparse(referer)
+        referer_origin = (
+            f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme and parsed.netloc else referer
+        )
+        return settings.is_allowed_origin(referer_origin)
 
     # No Origin/Referer at all — treat as untrusted.  Browsers always send
     # Origin on cross-site POSTs; its absence is suspicious.
     return False
 
 
-@router.post("/signup", response_model=SignupResponse)
-def signup(
-    data: SignupRequest,
-    response: Response,
-    _rl: None = Depends(signup_rate_limiter.ip_dependency()),
+@router.post("/send-otp", response_model=MessageResponse)
+def send_otp(
+    data: SendOtpRequest,
+    _rl: None = Depends(send_otp_rate_limiter.ip_dependency()),
 ):
-    result = auth.signup(data)
-    if result.refresh_token:
-        _set_refresh_cookie(response, result.refresh_token)
-    return result.body
+    auth.send_otp(data.email, data.token)
+    return MessageResponse(message="Verification link and code sent successfully")
 
 
-@router.post("/login", response_model=TokenResponse)
-def login(
-    data: LoginRequest,
+@router.post("/verify-otp", response_model=TokenResponse)
+def verify_otp(
+    data: VerifyOtpRequest,
     response: Response,
-    _rl: None = Depends(login_rate_limiter.ip_dependency()),
+    _rl: None = Depends(verify_otp_rate_limiter.ip_dependency()),
 ):
-    result = auth.login(data)
+    result = auth.verify_otp(data.email, data.token)
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token)
     return result.body
@@ -215,24 +212,3 @@ def logout(
             )
     _clear_refresh_cookie(response)
     return MessageResponse(message="Logged out successfully")
-
-
-@router.post("/forgot-password", response_model=MessageResponse)
-def forgot_password(
-    data: ForgotPasswordRequest,
-    _rl: None = Depends(forgot_password_rate_limiter.ip_dependency()),
-):
-    auth.forgot_password(data.email)
-    return MessageResponse(message="If that email exists, a reset link has been sent")
-
-
-@router.post("/reset-password", response_model=TokenResponse)
-def reset_password(
-    data: ResetPasswordRequest,
-    response: Response,
-    _rl: None = Depends(reset_password_rate_limiter.ip_dependency()),
-):
-    result = auth.reset_password(data)
-    if result.refresh_token:
-        _set_refresh_cookie(response, result.refresh_token)
-    return result.body

@@ -30,14 +30,14 @@ def _future_iso(days: int) -> str:
     return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
 
 
-def _apify_post(handle: str = "uwteaclub") -> dict:
+def _apify_post(handle: str = "uwteaorganization") -> dict:
     """Minimal-but-realistic Apify Instagram-post-scraper item."""
     return {
         "url": "https://www.instagram.com/p/ABC123/",
         "ownerUsername": handle,
         "caption": "Tea tasting series — Mondays in December",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "displayUrl": "https://cdn/uwteaclub-1.jpg",
+        "displayUrl": "https://cdn/uwteaorganization-1.jpg",
     }
 
 
@@ -47,8 +47,8 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
             "title": "Tea Tasting Series",
             "description": "Tea tasting series — Mondays in December",
             "location": "SLC 3223",
-            "organization": "UW Tea Club",
-            "category": "Food",
+            "organization": "UW Tea Organization",
+            "category": "Arts & Culture",
             "image_index": 0,
             "price": 0.0,
             "food": ["Yes!"],
@@ -165,7 +165,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
                 data=[
                     {
                         "id": "00000000-0000-0000-0000-000000000aaa",
-                        "ig_username": "uwteaclub",
+                        "ig_username": "uwteaorganization",
                         "github_run_id": None,
                         "status": "success",
                         "posts_fetched": 1,
@@ -180,13 +180,13 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
                 ],
                 count=0,
             )
-        # Pure read (existing_shortcodes, clubs lookup) — empty result.
+        # Pure read (existing_shortcodes, organizations lookup) — empty result.
         return MagicMock(data=[], count=0)
 
     fake_sb.execute.side_effect = _smart_execute
 
     result = pipeline_module.run_pipeline(
-        usernames=["uwteaclub"],
+        usernames=["uwteaorganization"],
         school="University of Waterloo",
         cutoff_days=4,
         results_limit=10,
@@ -246,7 +246,7 @@ def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     )
 
     result = pipeline_module.run_pipeline(
-        usernames=["uwteaclub"],
+        usernames=["uwteaorganization"],
         school="University of Waterloo",
         cutoff_days=4,
         results_limit=10,

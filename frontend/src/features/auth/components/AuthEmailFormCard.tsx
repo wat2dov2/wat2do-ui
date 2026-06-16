@@ -1,104 +1,132 @@
 import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
-import type { AuthMode } from "@/features/auth/hooks/useAuthEntryFlow";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/shared/ui/input-otp";
 
 interface AuthEmailFormCardProps {
   email: string;
-  password: string;
-  authMode: AuthMode;
+  otpToken: string;
+  emailSent: boolean;
   onEmailChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
+  onOtpChange: (value: string) => void;
   onContinue: () => void;
-  onToggleMode: () => void;
-  onForgotPassword: () => void;
+  onResend: () => void;
   canContinue: boolean;
   isLoading: boolean;
   error: string | null;
-  confirmationMessage: string | null;
   isEmailPrefilled?: boolean;
 }
 
 export function AuthEmailFormCard({
   email,
-  password,
-  authMode,
+  otpToken,
+  emailSent,
   onEmailChange,
-  onPasswordChange,
+  onOtpChange,
   onContinue,
-  onToggleMode,
-  onForgotPassword,
+  onResend,
   canContinue,
   isLoading,
   error,
-  confirmationMessage,
   isEmailPrefilled = false,
 }: AuthEmailFormCardProps) {
   const { t } = useTranslation();
-  const isSignup = authMode === "signup";
 
   return (
     <div className="w-full space-y-4">
-      <Input
-        type="email"
-        value={email}
-        onChange={(e) => onEmailChange(e.target.value)}
-        placeholder={t("auth.emailPlaceholder")}
-        onKeyDown={(e) => e.key === "Enter" && canContinue && onContinue()}
-        disabled={isEmailPrefilled}
-      />
+      {!emailSent ? (
+        <>
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+              {t("auth.emailLabel") || "Email address"}
+            </label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => onEmailChange(e.target.value)}
+              placeholder={t("auth.emailPlaceholder")}
+              onKeyDown={(e) => e.key === "Enter" && canContinue && onContinue()}
+              disabled={isEmailPrefilled}
+              autoFocus
+            />
+          </div>
 
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
 
-      <Input
-        type="password"
-        value={password}
-        onChange={(e) => onPasswordChange(e.target.value)}
-        placeholder={isSignup ? t("auth.passwordPlaceholderSignup") : t("auth.passwordPlaceholderLogin")}
-        onKeyDown={(e) => e.key === "Enter" && canContinue && onContinue()}
-      />
-
-      {confirmationMessage && (
-        <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
-          <p className="text-sm text-emerald-700 dark:text-emerald-300 text-center">{confirmationMessage}</p>
-        </div>
-      )}
-      {error && (
-        <p className="text-sm text-destructive text-center">{error}</p>
-      )}
-
-      <LoadingButton
-        type="button"
-        onMouseDown={onContinue}
-        disabled={!canContinue}
-        isLoading={isLoading}
-        loadingText={t("common.pleaseWait")}
-        className="w-full"
-      >
-        {isSignup ? t("auth.createAccount") : t("auth.signIn")}
-      </LoadingButton>
-
-      {!isSignup && (
-        <p className="text-center">
-          <button
+          <LoadingButton
             type="button"
-            onMouseDown={onForgotPassword}
-            className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+            onMouseDown={onContinue}
+            disabled={!canContinue}
+            isLoading={isLoading}
+            loadingText={t("common.pleaseWait")}
+            className="w-full"
           >
-            {t("auth.forgotPassword")}
-          </button>
-        </p>
-      )}
+            {t("auth.continue") || "Continue"}
+          </LoadingButton>
+        </>
+      ) : (
+        <>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground mb-2">
+              {t("auth.otpDescription", { email }) || `We sent a code to ${email}.`}
+            </p>
+            <div className="flex justify-center py-2">
+              <InputOTP
+                id="otp"
+                maxLength={6}
+                value={otpToken}
+                onChange={onOtpChange}
+                disabled={isLoading}
+                autoFocus
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+          </div>
 
-      <p className="text-[11px] text-center text-muted-foreground">
-        {isSignup ? t("auth.alreadyHaveAccount") : t("auth.dontHaveAccount")}{" "}
-        <button
-          type="button"
-          onMouseDown={onToggleMode}
-          className="underline underline-offset-2 hover:text-foreground transition-colors"
-        >
-          {isSignup ? t("auth.signInLink") : t("auth.createOneLink")}
-        </button>
-      </p>
+
+
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
+
+          <LoadingButton
+            type="button"
+            onMouseDown={onContinue}
+            disabled={!canContinue}
+            isLoading={isLoading}
+            loadingText={t("common.pleaseWait")}
+            className="w-full"
+          >
+            {t("auth.verifyOtp") || "Verify code"}
+          </LoadingButton>
+
+          <div className="flex flex-col items-center space-y-2 pt-2">
+            <button
+              type="button"
+              onClick={onResend}
+              disabled={isLoading}
+              className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
+            >
+              {t("auth.resendOtp") || "Resend code"}
+            </button>
+          </div>
+        </>
+      )}
 
       <p className="text-[11px] text-center text-muted-foreground">
         {t("auth.termsNotice")}

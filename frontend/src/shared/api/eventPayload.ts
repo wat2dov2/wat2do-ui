@@ -21,6 +21,6 @@ export function buildEventPayload(eventData: EventFormData): ApiEventCreate {
     food: eventData.food?.length ? eventData.food : null,
     registration: eventData.registration || false,
     category: eventData.category || null,
-    club_id: eventData.club_id!,
+    organization_id: eventData.organization_id!,
   };
 }

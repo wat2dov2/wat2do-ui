@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user, is_admin
 from core.errors import (
-    CLUB_PROMOTION_REQUIRED,
     EVENT_ALREADY_PAST,
     EVENT_NOT_FOUND,
+    ORGANIZATION_PROMOTION_REQUIRED,
 )
 from core.exceptions import AuthorizationError, ValidationError, get_or_404
 from core.rate_limit import RateLimiter
@@ -16,7 +16,7 @@ from schemas.credit import (
     PromotionCreate,
     PromotionResponse,
 )
-from services import club_service, credit_service, event_service
+from services import credit_service, event_service, organization_service
 
 router = APIRouter(tags=["credits"])
 log = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ def list_promotions(
         None,
         description="If set, filter by active (True) or expired (False) promotions.",
     ),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=100000),
     offset: int = Query(0, ge=0),
 ):
     return credit_service.get_user_promotions(
@@ -85,9 +85,10 @@ def create_promotion(
     if event_service.has_ended(event):
         raise ValidationError(EVENT_ALREADY_PAST)
     if not is_admin(user) and not (
-        event.club_id is not None and club_service.is_club_member(event.club_id, str(user.id))
+        event.organization_id is not None
+        and organization_service.is_organization_member(event.organization_id, str(user.id))
     ):
-        raise AuthorizationError(CLUB_PROMOTION_REQUIRED)
+        raise AuthorizationError(ORGANIZATION_PROMOTION_REQUIRED)
     return credit_service.create_promotion(
         user_id=str(user.id),
         event_id=data.event_id,

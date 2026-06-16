@@ -6,7 +6,7 @@ from services import school_context
 
 
 def test_canonical_school_key_normalizes_waterloo_aliases_and_blank_values():
-    assert school_context.canonical_school_key("  UW  ") == "university of waterloo"
+    assert school_context.canonical_school_key("  UW  ") == "uwaterloo"
     assert school_context.canonical_school_key(None) == ""
     assert school_context.canonical_school_key("   ") == ""
 

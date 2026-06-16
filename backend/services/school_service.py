@@ -29,7 +29,6 @@ def _canonical_school_lookup() -> dict[str, str]:
     return lookup
 
 
-
 def _search_index() -> dict[str, tuple[str, ...]]:
     lookup = _canonical_school_lookup()
     index: dict[str, set[str]] = {

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { Field, FieldLabel } from "@/shared/ui/field";
-import { PlatformConnectModal, type PlatformConnectConfig } from "./PlatformConnectModal";
-import type { IntegrationServerOption } from "@/features/organization-panel/api/integrations.api";
+import { PlatformConnectModal, type PlatformConnectConfig, type PlatformConnectModalProps } from "./PlatformConnectModal";
 
 const facebookConfig: PlatformConnectConfig = {
   titleKey: "integrations.connectFacebook",
@@ -20,23 +19,11 @@ const facebookConfig: PlatformConnectConfig = {
   noteKey: "integrations.facebookPageAutoPublishNote",
 };
 
-interface FacebookIntegrationModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  step: "connect" | "select";
-  authorized: boolean;
-  selectedPrimaryId: string;
-  servers: IntegrationServerOption[];
-  onAuthorize: () => void;
-  onSelectPrimary: (id: string) => void;
-  onActivate: () => void;
-}
-
 export function FacebookIntegrationModal({
   servers,
   onSelectPrimary,
   ...rest
-}: FacebookIntegrationModalProps) {
+}: Omit<PlatformConnectModalProps, "config">) {
   const { t } = useTranslation();
   const [connectionType, setConnectionType] = useState<"page" | "group">("page");
 

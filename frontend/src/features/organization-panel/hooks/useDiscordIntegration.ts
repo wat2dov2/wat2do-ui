@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { IntegrationServerOption } from "@/features/organization-panel/api/integrations.api";
 
-export interface DiscordFlowState {
+interface DiscordFlowState {
   modalOpen: boolean;
   step: "connect" | "select";
   selectedServerId: string;

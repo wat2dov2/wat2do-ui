@@ -11,10 +11,10 @@ from core.config import settings
 from core.constants import ROLE_ADMIN
 from core.errors import (
     ADMIN_ACCESS_REQUIRED,
-    CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     CREDENTIALS_INVALID,
     INVALID_OR_EXPIRED_TOKEN,
     NOT_AUTHORIZED,
+    ORGANIZATION_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     USER_NOT_FOUND,
 )
 from core.exceptions import AuthenticationError, AuthorizationError, NotFoundError
@@ -195,18 +195,18 @@ def get_admin_user(
     return db_user
 
 
-def get_club_owner_or_admin(
+def get_organization_owner_or_admin(
     db_user: "UserResponse" = Depends(get_db_user),
 ) -> "UserResponse":
-    """Require admin OR club owner (user who owns at least one club). Returns 403 if neither."""
+    """Require admin OR organization owner (user who owns at least one organization). Returns 403 if neither."""
     if db_user.role == ROLE_ADMIN:
         return db_user
 
-    from services import club_service
+    from services import organization_service
 
-    clubs = club_service.list_clubs_by_owner(str(db_user.id))
-    if not clubs:
-        raise AuthorizationError(CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED)
+    organizations = organization_service.list_organizations_by_owner(str(db_user.id))
+    if not organizations:
+        raise AuthorizationError(ORGANIZATION_MEMBER_OR_ADMIN_ACCESS_REQUIRED)
     return db_user
 
 

@@ -56,13 +56,39 @@ def load_upcoming_events(
     events survive if a school has more upcoming than the cap. ``model`` selects
     the response shape (and, with it, how many event columns we fetch).
     """
+    return load_events_in_window(
+        start_utc=since,
+        end_utc=None,
+        school=school,
+        cap=cap,
+        model=model,
+    )
+
+
+@supabase_retry
+def load_events_in_window(
+    *,
+    start_utc: datetime | None,
+    end_utc: datetime | None,
+    school: str | None,
+    cap: int,
+    model: type[T],
+) -> list[T]:
+    """Events with an occurrence inside the requested UTC window.
+
+    ``None`` bounds are open-ended. Results are deduped to one row per event,
+    keeping the earliest matching occurrence for ordering and capping.
+    """
     columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
     q = (
         get_sb()
         .table(EVENT_DATES)
         .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns})")
-        .gte("dtstart_utc", since.isoformat())
     )
+    if start_utc is not None:
+        q = q.gte("dtstart_utc", start_utc.isoformat())
+    if end_utc is not None:
+        q = q.lte("dtstart_utc", end_utc.isoformat())
     if school:
         q = q.eq("events.school", school)
     rows = q.order("dtstart_utc", desc=False).range(0, cap * 5 - 1).execute().data or []

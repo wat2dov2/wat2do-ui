@@ -75,7 +75,7 @@ export const TitleSlide: React.FC<Props> = ({ events }) => {
         </header>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-          <Chip tone="live">Events added in real time · wat2do.ca</Chip>
+          <Chip tone="live">Events added in real time · wat2do.io</Chip>
           <h1
             style={{
               fontSize: "clamp(44px, 6.4vw, 92px)",
@@ -121,7 +121,7 @@ export const TitleSlide: React.FC<Props> = ({ events }) => {
         </div>
 
         <footer style={{ color: "var(--text-500)", fontSize: 14 }}>
-          Tony Qiu · Erica Han · contact@wat2do.ca
+          Tony Qiu · Erica Han · contact@wat2do.io
         </footer>
       </div>
     </div>

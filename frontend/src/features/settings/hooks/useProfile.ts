@@ -10,7 +10,6 @@ import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
  */
 const PROFILE_STALE_TTL_MS = 60_000;
 
-export type { UserProfile };
 
 const DEFAULT_PROFILE: UserProfile = {
   id: "",
@@ -21,8 +20,8 @@ const DEFAULT_PROFILE: UserProfile = {
   role: "user",
   hasOrganization: false,
   clubs: [],
-  clubId: null,
-  clubName: null,
+  organizationId: null,
+  organizationName: null,
 };
 
 export function useProfile() {

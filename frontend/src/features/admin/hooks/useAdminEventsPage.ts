@@ -13,6 +13,7 @@ import { useAdminStore } from "@/features/admin/store/admin.store";
 import type { Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
+import { usePagination } from "@/shared/hooks";
 
 interface UseAdminEventsPageOptions {
   events: Event[];
@@ -28,7 +29,6 @@ export function useAdminEventsPage({
   const [showReportedOnly, setShowReportedOnly] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
   const reportedEventIds = useAdminStore((s) => s.reportedEventIds);
   const fetchReportedEventIds = useAdminStore((s) => s.fetchReportedEventIds);
@@ -90,12 +90,15 @@ export function useAdminEventsPage({
   }, [events, searchQuery, selectedCategory, showReportedOnly, reportedEventIds]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-  const paginatedEvents = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredEvents.slice(startIndex, endIndex);
-  }, [filteredEvents, currentPage, itemsPerPage]);
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedEvents,
+  } = usePagination({
+    items: filteredEvents,
+    itemsPerPage,
+  });
 
   const isEventReported = (eventId: number) => {
     return reportedEventIds.has(eventId);

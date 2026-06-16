@@ -89,7 +89,7 @@ export const SlideShell: React.FC<SlideShellProps> = ({
               letterSpacing: "0.02em",
             }}
           >
-            wat2do.ca · campus pitch
+            wat2do.io · campus pitch
           </span>
         </header>
 

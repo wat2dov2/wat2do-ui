@@ -30,7 +30,7 @@ export const DemoBackupSlide: React.FC<Props> = ({ events }) => {
           <span style={{ color: "var(--brand-primary)" }}>same story</span>.
         </>
       }
-      footer="wat2do.ca"
+      footer="wat2do.io"
     >
       <BentoGrid columns={4} gap={12} style={{ flex: 1, minHeight: 0 }}>
         <BentoTile

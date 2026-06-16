@@ -33,7 +33,7 @@ export function isSafeUrl(url: string): boolean {
  *
  * Use this for any `<a href={...}>` or `window.open(...)` where the URL
  * comes from user-controlled or backend-provided data (e.g. club.discord,
- * club.club_page, event.source_url).
+ * club.organization_page, event.source_url).
  *
  * Handles null/undefined (returns ""), and strips leading/trailing whitespace
  * before validation to defeat whitespace-padding tricks.

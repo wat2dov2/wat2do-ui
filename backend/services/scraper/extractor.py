@@ -289,7 +289,7 @@ OCCURRENCE RULES (CRITICAL):
 ADDITIONAL RULES:
 - Prioritize caption text; use image text if missing details.
 - Title-case event titles.
-- For "organization": this is the club / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Club"); if none is named, use the Instagram handle as a fallback.
+- For "organization": this is the organization / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., "UW Tea Organization"); if none is named, use the Instagram handle as a fallback.
 - If year not found, infer the NEXT occurrence of that date relative to the post creation date ({post_date}). If end time < start time (e.g., 7pm-12am), set end to the next day.
 - When no explicit date is found but there are relative terms like "tonight", "tomorrow", interpret these relative to the POST CREATION DATE ({post_date}).
 - For location: Use the exact location as stated in the caption or image. If the location is a building or room on campus, use only that (e.g., "SLC 3223", "DC Library"). Include city/province if the event is off-campus and the address is provided.

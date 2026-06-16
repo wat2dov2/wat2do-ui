@@ -3,58 +3,96 @@
  * Manages data loading and filtering for OrganizationsPage
  */
 
-import { useState, useMemo, useCallback } from "react";
-import type { Organization } from "@/shared/types";
-import {
-  loadOrganizationsData,
-  filterOrganizations,
-} from "@/features/organizations/api/organizations.api";
-import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
+import { useState, useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { getOrganizationCategories } from "@/shared/data/organizationCategories";
+import { resolveSchool } from "@/shared/constants/schools";
+import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
+import { useAuthState } from "@/features/auth";
+import { useOrganizationsList } from "@/features/organizations/hooks/useOrganizationsList";
 
-const EMPTY_ORGANIZATIONS: Organization[] = [];
+const ITEMS_PER_PAGE = 20;
 
 export function useOrganizationsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const { isAuthenticated } = useAuthState();
+  const savedOrganizationIds = useSavedOrganizationsStore(useShallow((s) => s.savedOrganizationIds));
+  const [activeTab, setActiveTab] = useState<"all" | "followed">("all");
+  const [searchQuery, setSearchQueryState] = useState("");
+  const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const resolvedSchoolFilter = schoolFilter ? resolveSchool(schoolFilter) : undefined;
 
-  const fetchOrganizations = useCallback(() => loadOrganizationsData(schoolFilter ?? undefined), [schoolFilter]);
-
-  const { data: organizations, loading: isLoading } = useBackendQuery(
-    fetchOrganizations,
-    EMPTY_ORGANIZATIONS,
-    schoolFilter,
-  );
   const allCategories = getOrganizationCategories();
 
-  // Derive filtered organizations from source data (no useState+useEffect sync needed)
-  const filteredOrganizations = useMemo(() => {
-    if (isLoading) return [];
-    return filterOrganizations(organizations, {
-      searchQuery,
-      categories: selectedCategories,
-    });
-  }, [organizations, searchQuery, selectedCategories, isLoading]);
+  const {
+    organizations,
+    totalItems,
+    totalPages,
+    isLoading,
+    currentPage,
+    setCurrentPage,
+    refresh: refreshOrganizations,
+  } = useOrganizationsList({
+    limit: ITEMS_PER_PAGE,
+    school: resolvedSchoolFilter,
+    search: submittedSearchQuery,
+    categories: selectedCategories,
+    ids: savedOrganizationIds,
+    isAuthenticated,
+    activeTab,
+  });
 
-  const toggleCategory = (category: string) => {
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryState(query);
+  }, []);
+
+  const submitSearchQuery = useCallback(() => {
+    setSubmittedSearchQuery(searchQuery.trim());
+    setCurrentPage(1);
+  }, [searchQuery, setCurrentPage]);
+
+  const clearSearchQuery = useCallback(() => {
+    setSearchQueryState("");
+    setSubmittedSearchQuery("");
+    setCurrentPage(1);
+  }, [setCurrentPage]);
+
+  const toggleCategory = useCallback((category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
-  };
+    setCurrentPage(1);
+  }, [setCurrentPage]);
 
   return {
     searchQuery,
     setSearchQuery,
+    submitSearchQuery,
+    clearSearchQuery,
     selectedCategories,
-    setSelectedCategories,
-    clubs: organizations,
+    setSelectedCategories: (cats: string[]) => {
+      setSelectedCategories(cats);
+      setCurrentPage(1);
+    },
+    organizations,
     allCategories,
-    filteredOrganizations,
     isLoading,
     toggleCategory,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalItems,
+    itemsPerPage: ITEMS_PER_PAGE,
+    refreshOrganizations,
+    activeTab,
+    setActiveTab: (tab: "all" | "followed") => {
+      setActiveTab(tab);
+      setCurrentPage(1);
+    },
   };
 }

@@ -28,7 +28,7 @@ export function mapAiResponseToFormData(
   fallbackDefaults: { occurrences: EventFormOccurrence[] },
 ): EventFormData {
   return {
-    club_id: typeof parsed.club_id === "number" ? parsed.club_id : null,
+    organization_id: typeof parsed.organization_id === "number" ? parsed.organization_id : null,
     title: (parsed.title as string) || "",
     description: (parsed.description as string) || "",
     occurrences: normalizeOccurrences(parsed.occurrences, fallbackDefaults.occurrences),
@@ -63,7 +63,7 @@ export function getInitialState(initialData?: EventFormData, isEditMode = false)
     isEditMode && initialData
       ? initialData
       : {
-        club_id: null,
+        organization_id: null,
         title: "",
         description: "",
         occurrences: smartDefaults.occurrences,

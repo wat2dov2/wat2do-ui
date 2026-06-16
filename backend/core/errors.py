@@ -19,7 +19,7 @@ USER_NOT_FOUND = "User not found"
 USER_PROFILE_NOT_FOUND = "User profile not found — complete signup first"
 EVENT_NOT_FOUND = "Event not found"
 SUBMISSION_NOT_FOUND = "Submission not found"
-CLUB_NOT_FOUND = "Club not found"
+ORGANIZATION_NOT_FOUND = "Organization not found"
 POSTER_NOT_FOUND = "Poster not found"
 REPORT_NOT_FOUND = "Report not found"
 CALENDAR_FEED_NOT_FOUND = "Calendar feed not found"
@@ -39,13 +39,15 @@ SESSION_REFRESH_FAILED = "Could not refresh session — please log in again"
 # 403 – Authorization
 # ---------------------------------------------------------------------------
 ADMIN_ACCESS_REQUIRED = "Admin access required"
-CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED = "Club manager or admin access required"
+ORGANIZATION_MEMBER_OR_ADMIN_ACCESS_REQUIRED = "Organization manager or admin access required"
 NOT_AUTHORIZED = "Not authorized"
 EMAIL_NOT_ALLOWED = (
     "Only student emails from allowed schools can sign up. "
     "Use a valid university email (e.g. @uwaterloo.ca)."
 )
-CLUB_EVENT_CREATION_REQUIRED = "Only approved club owners can create events for their club"
+ORGANIZATION_EVENT_CREATION_REQUIRED = (
+    "Only approved organization owners can create events for their organization"
+)
 
 # ---------------------------------------------------------------------------
 # 400 / 409 – Validation & conflict
@@ -59,7 +61,9 @@ INSUFFICIENT_CREDITS = "Insufficient credits"
 # snake_case so it stays stable across i18n / wording changes.
 INSUFFICIENT_CREDITS_CODE = "insufficient_credits"
 INVALID_PROMOTION_PACKAGE = "Invalid promotion package"
-CLUB_PROMOTION_REQUIRED = "Only club owners can promote events from their club"
+ORGANIZATION_PROMOTION_REQUIRED = (
+    "Only organization owners can promote events from their organization"
+)
 EVENT_NOT_ACTIVE = "Only published events can be promoted"
 ID_MISMATCH = "ID mismatch"
 REQUIRES_LOCATION = "requires_location"
@@ -70,7 +74,7 @@ DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same even
 INVALID_STATUS_TRANSITION = "Invalid status transition"
 EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted"
 SAVED_EVENTS_CAP_REACHED = "Maximum saved events limit reached"
-SAVED_CLUBS_CAP_REACHED = "Maximum saved clubs limit reached"
+SAVED_ORGANIZATIONS_CAP_REACHED = "Maximum saved organizations limit reached"
 
 INVALID_ROLE = "Role must be 'user' or 'admin'"
 CANNOT_DELETE_SELF = "Admins cannot delete their own account"
@@ -102,3 +106,10 @@ PG_CODE_TO_HTTP: dict[str, tuple[int, str]] = {
     PG_NOT_NULL_VIOLATION: (400, "Required field is missing"),
     PG_INSUFFICIENT_PRIVILEGE: (403, "Insufficient permissions"),
 }
+
+# ---------------------------------------------------------------------------
+# 500 / Service errors
+# ---------------------------------------------------------------------------
+FAILED_TO_GENERATE_TOKEN = "Unable to generate login link. Please try again later."
+FAILED_TO_SAVE_TOKEN = "Unable to save verification token. Please try again later."
+REGISTRATION_FAILED = "Unable to complete registration. Please try again later."

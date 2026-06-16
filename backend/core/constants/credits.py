@@ -3,7 +3,7 @@
 DEFAULT_CREDIT_BALANCE = 100
 MAX_CREDITS_PER_ADD = 10_000
 
-# Clubs can buy one simple event visibility boost.
+# Organizations can buy one simple event visibility boost.
 DEFAULT_PROMOTION_PACKAGE = "featured"
 
 # Server-authoritative promotion pricing: package -> (credits, days).

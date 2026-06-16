@@ -47,7 +47,7 @@ class SubmissionUpdate(BaseModel):
 
 class SubmissionResponse(BaseModel):
     id: str
-    user_id: str
+    user_id: str | None
     event_data: dict
     status: SubmissionStatus
     rejection_reason: str | None = None

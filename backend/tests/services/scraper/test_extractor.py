@@ -93,8 +93,8 @@ def test_clean_event_does_not_overwrite_explicit_price():
 
 
 def test_clean_event_category_normalized():
-    cleaned = _clean_event({"title": "X", "category": "Music"})
-    assert cleaned["category"] == "Music"
+    cleaned = _clean_event({"title": "X", "category": "Arts & Culture"})
+    assert cleaned["category"] == "Arts & Culture"
 
 
 def test_clean_event_occurrences_sorted_and_normalized():

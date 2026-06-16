@@ -1,0 +1,22 @@
+{
+  "name": "Wat2Do",
+  "short_name": "Wat2Do",
+  "description": "Discover campus events, explore student organizations, and stay connected with what's happening around you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/wat2do-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "lifestyle", "social"],
+  "lang": "en-US",
+  "scope": "/",
+  "id": "wat2do-app"
+}

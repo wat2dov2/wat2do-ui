@@ -2,7 +2,7 @@ import { api } from "@/shared/services/apiClient";
 
 export interface OrganizationMembership {
   id: string;
-  club_id: number;
+  organization_id: number;
   user_id: string;
   status: "pending" | "approved" | "rejected";
   role: "member" | "officer" | "owner";
@@ -23,15 +23,15 @@ export interface OrganizationMembershipWithUser extends OrganizationMembership {
 }
 
 export async function requestToJoinOrganization(organizationId: number): Promise<OrganizationMembership> {
-  return api.post<OrganizationMembership>(`/clubs/${organizationId}/join`);
+  return api.post<OrganizationMembership>(`/organizations/${organizationId}/join`);
 }
 
 export async function leaveOrganizationOrCancelRequest(organizationId: number): Promise<void> {
-  await api.delete(`/clubs/${organizationId}/membership`);
+  await api.delete(`/organizations/${organizationId}/membership`);
 }
 
 export async function getMyMembershipStatus(organizationId: number): Promise<OrganizationMembership | null> {
-  return api.get<OrganizationMembership | null>(`/clubs/${organizationId}/membership`);
+  return api.get<OrganizationMembership | null>(`/organizations/${organizationId}/membership`);
 }
 
 export async function listOrganizationMemberships(
@@ -42,7 +42,7 @@ export async function listOrganizationMemberships(
   if (status) {
     params.set("status", status);
   }
-  return api.get<OrganizationMembershipWithUser[]>(`/clubs/${organizationId}/memberships?${params.toString()}`);
+  return api.get<OrganizationMembershipWithUser[]>(`/organizations/${organizationId}/memberships?${params.toString()}`);
 }
 
 export async function updateOrganizationMembership(
@@ -50,9 +50,9 @@ export async function updateOrganizationMembership(
   userId: string,
   data: { status: "pending" | "approved" | "rejected"; role?: "member" | "officer" | "owner" }
 ): Promise<OrganizationMembership> {
-  return api.patch<OrganizationMembership>(`/clubs/${organizationId}/memberships/${userId}`, data);
+  return api.patch<OrganizationMembership>(`/organizations/${organizationId}/memberships/${userId}`, data);
 }
 
-export async function removeOrganizationMember(organizationId: number, userId: string): Promise<void> {
-  await api.delete(`/clubs/${organizationId}/memberships/${userId}`);
+export async function removeOrganizationMembership(organizationId: number, userId: string): Promise<void> {
+  await api.delete(`/organizations/${organizationId}/memberships/${userId}`);
 }

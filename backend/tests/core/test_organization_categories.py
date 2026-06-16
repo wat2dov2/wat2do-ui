@@ -3,7 +3,7 @@
 import pytest
 
 from core.constants import ORGANIZATION_CATEGORIES
-from schemas.club import ClubCreate, normalize_organization_category
+from schemas.organization import OrganizationCreate, normalize_organization_category
 
 
 class TestNormalizeOrganizationCategory:
@@ -12,22 +12,22 @@ class TestNormalizeOrganizationCategory:
         assert normalize_organization_category(sample) == sample
 
     def test_rejects_unknown_category(self):
-        assert normalize_organization_category("Technology") is None
+        assert normalize_organization_category("NotACategory") is None
 
 
-class TestClubCreateCategoryValidation:
+class TestOrganizationCreateCategoryValidation:
     def test_rejects_invalid_categories(self):
         with pytest.raises(ValueError, match="categories must be from"):
-            ClubCreate(
-                club_name="Test Org",
-                club_type="WUSA",
-                categories=["Technology"],
+            OrganizationCreate(
+                organization_name="Test Org",
+                organization_type="WUSA",
+                categories=["NotACategory"],
             )
 
     def test_accepts_canonical_categories(self):
-        club = ClubCreate(
-            club_name="Test Org",
-            club_type="WUSA",
+        organization = OrganizationCreate(
+            organization_name="Test Org",
+            organization_type="WUSA",
             categories=[ORGANIZATION_CATEGORIES[0]],
         )
-        assert club.categories == [ORGANIZATION_CATEGORIES[0]]
+        assert organization.categories == [ORGANIZATION_CATEGORIES[0]]

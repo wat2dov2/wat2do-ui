@@ -15,9 +15,9 @@ import {
 /** Same-tab notification event for cached auth/profile updates. */
 export const AUTH_STATE_REFRESH_EVENT = "auth-state-refresh";
 
-export interface UserClubSummary {
+export interface UserOrganizationSummary {
   id: number;
-  club_name: string;
+  organization_name: string;
 }
 
 function notifyAuthStateChanged(): void {
@@ -42,10 +42,10 @@ export interface UserProfile {
   /** True when the user owns at least one club. */
   hasOrganization: boolean;
   /** Clubs associated with the user. */
-  clubs: UserClubSummary[];
+  clubs: UserOrganizationSummary[];
   /** Currently selected associated club, if any. */
-  clubId: number | null;
-  clubName: string | null;
+  organizationId: number | null;
+  organizationName: string | null;
 }
 
 // ── In-memory caches ────────────────────────────────────────────────

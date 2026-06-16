@@ -7,12 +7,12 @@ export type ViewMode = "grid" | "calendar" | "map";
 // Organization interface
 export interface Organization {
   id: number;
-  club_name: string;
+  organization_name: string;
   categories: string[];
-  club_page: string;
+  organization_page: string;
   ig: string | null;
   discord: string | null;
-  club_type: string;
+  organization_type: string;
   logo_url?: string | null;
   created_by?: string | null;
   owner_email?: string | null;

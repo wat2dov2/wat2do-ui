@@ -19,6 +19,7 @@ interface SchoolComboboxProps {
   contentClassName?: string;
   triggerClassName?: string;
   showHighlight?: boolean;
+  isAdmin?: boolean;
 }
 
 export function SchoolCombobox({
@@ -31,6 +32,7 @@ export function SchoolCombobox({
   contentClassName,
   triggerClassName,
   showHighlight = true,
+  isAdmin = false,
 }: SchoolComboboxProps) {
   const { t } = useTranslation();
 
@@ -40,7 +42,22 @@ export function SchoolCombobox({
     return translateSchool(DEFAULT_SCHOOL);
   }, [placeholder, value]);
 
-  const fetcher = useCallback((query: string) => searchSchools(query), []);
+  const fetcher = useCallback(
+    async (query: string) => {
+      const results = await searchSchools(query);
+      if (isAdmin) {
+        const normQuery = query.trim().toLowerCase();
+        const allLabel = translateSchool("all").toLowerCase();
+        if (!normQuery || allLabel.includes(normQuery) || "all".includes(normQuery)) {
+          if (!results.includes("all")) {
+            return ["all", ...results];
+          }
+        }
+      }
+      return results;
+    },
+    [isAdmin]
+  );
 
   const renderTriggerLabel =
     variant === "nav" && showHighlight
@@ -70,6 +87,7 @@ export function SchoolCombobox({
       loadingLabel={t("common.loading")}
       contentClassName={contentClassName}
       triggerClassName={triggerClassName}
+      searchOnEmpty={isAdmin}
     />
   );
 }

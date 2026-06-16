@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 const apiProxy = {
   "/api": {
-    target: "https://api.wat2do.ca",
+    target: "https://wat2do.io",
     changeOrigin: true,
     secure: true,
   },

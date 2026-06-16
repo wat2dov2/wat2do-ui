@@ -5,18 +5,19 @@ schools fall back to neutral defaults in the shared school-context helpers.
 """
 
 FALLBACK_TIMEZONES: dict[str, str] = {
-    "university of waterloo": "America/Toronto",
+    "uwaterloo": "America/Toronto",
 }
 
 FALLBACK_ALIASES: dict[str, str] = {
-    "uw": "university of waterloo",
-    "u of w": "university of waterloo",
-    "uwaterloo": "university of waterloo",
-    "waterloo": "university of waterloo",
+    "university of waterloo": "uwaterloo",
+    "uw": "uwaterloo",
+    "u of w": "uwaterloo",
+    "uwaterloo": "uwaterloo",
+    "waterloo": "uwaterloo",
 }
 
 FALLBACK_SEMESTER_ENDS: dict[str, tuple[str, str, str]] = {
-    "university of waterloo": (
+    "uwaterloo": (
         "20251231T235959Z",
         "20260430T235959Z",
         "20260831T235959Z",

@@ -8,7 +8,7 @@ import { isSafeUrl } from "@/shared/utils/url";
 
 type DestinationType = "event" | "events-list" | "custom-url";
 
-export interface CreateQRCodeFormData {
+interface CreateQRCodeFormData {
   name: string;
   description: string;
   destinationType: DestinationType;

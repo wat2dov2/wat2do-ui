@@ -97,8 +97,8 @@ def _event(**overrides) -> dict:
         "title": "Tea Tasting",
         "description": "Come try teas.",
         "location": "SLC 3223",
-        "organization": "UW Tea Club",
-        "category": "Food",
+        "organization": "UW Tea Organization",
+        "category": "Arts & Culture",
         # dtend left as empty string — OccurrenceCreate's
         # _dtend_after_dtstart validator only fires when dtend is set.
         "occurrences": [
@@ -139,14 +139,14 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     patch_sb("services.event_date_service")
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     # Sequence of execute responses the writer hits, in order:
-    #   1. (event_writer) clubs lookup for club_type — _resolve_organization
+    #   1. (event_writer) organizations lookup for organization_type — _resolve_organization
     #      short-circuits because the event dict already has an organization.
     #   2. (event_writer) events insert -> [{"id": 7}]
     #   3. (event_date_service) event_dates insert -> [...] (>=1 row)
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
-            [],  # clubs lookup for club_type
+            [],  # organizations lookup for organization_type
             [{"id": 7}],  # events insert
             # occurrences insert — return shape must satisfy OccurrenceResponse
             [
@@ -188,7 +188,9 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
             {"dtstart_utc": _future(16), "dtend_utc": "", "duration": "", "tz": "UTC"},
         ],
     )
-    result = write_event(event, ig_handle="uwteaclub", source_url="https://instagram.com/p/abc")
+    result = write_event(
+        event, ig_handle="uwteaorganization", source_url="https://instagram.com/p/abc"
+    )
     assert result == "inserted"
 
     # The events insert should have been called exactly once, with one parent
@@ -215,7 +217,7 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
-            [],  # clubs club_type
+            [],  # organizations organization_type
             [{"id": 11}],  # events insert
             # occurrences insert — only one survives the past-event filter
             [
@@ -253,7 +255,7 @@ def test_write_event_returns_skipped_when_all_occurrences_past(fake_sb, patch_sb
     patch_sb("services.scraper.event_writer")
     fake_sb.queue_responses(
         [
-            [],  # clubs lookup for club_type
+            [],  # organizations lookup for organization_type
         ]
     )
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
@@ -264,3 +266,51 @@ def test_write_event_returns_skipped_when_all_occurrences_past(fake_sb, patch_sb
         ]
     )
     assert write_event(event, ig_handle="x", source_url="u") == "skipped"
+
+
+def test_coerce_future_occurrences_allows_past_when_flag_set():
+    past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    occurrences = [
+        {"dtstart_utc": past, "dtend_utc": "", "duration": "", "tz": "UTC"},
+    ]
+    cleaned = _coerce_future_occurrences(occurrences, allow_past_events=True)
+    assert len(cleaned) == 1
+    assert cleaned[0].dtstart_utc.isoformat().startswith(past[:13])
+
+
+def test_write_event_keeps_past_occurrences_when_flag_set(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.scraper.event_writer")
+    patch_sb("services.event_date_service")
+    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
+    occ_now = datetime.now(timezone.utc).isoformat()
+    past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    fake_sb.queue_responses(
+        [
+            [],  # organizations lookup for organization_type
+            [{"id": 12}],  # events insert
+            # occurrences insert — past occurrence survives due to flag
+            [
+                {
+                    "id": 1,
+                    "event_id": 12,
+                    "dtstart_utc": past,
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                    "created_at": occ_now,
+                }
+            ],
+        ]
+    )
+
+    event = _event(
+        occurrences=[
+            {"dtstart_utc": past, "dtend_utc": "", "duration": "", "tz": "UTC"},
+        ]
+    )
+    assert write_event(event, ig_handle="x", source_url="u", allow_past_events=True) == "inserted"
+
+    list_inserts = [call for call in fake_sb.insert.call_args_list if isinstance(call[0][0], list)]
+    assert len(list_inserts) == 1
+    occ_payload = list_inserts[0][0][0]
+    assert len(occ_payload) == 1

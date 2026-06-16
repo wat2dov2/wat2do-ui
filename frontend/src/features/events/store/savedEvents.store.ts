@@ -13,7 +13,7 @@ import {
   saveEventToBackend,
   unsaveEventFromBackend,
 } from "@/features/events/api/events.api";
-import { isAuthenticated } from "@/features/auth";
+import { isAuthenticated } from "@/features/auth/api/auth.api";
 import { tracker } from "@/shared/services/trackingService";
 import { toast } from "@/shared/hooks/use-toast";
 

@@ -6,7 +6,7 @@ import { Card, CardTitle, CardDescription, CardContent } from "@/shared/ui/card"
 import { Spinner } from "@/shared/ui/spinner";
 import { ROUTES } from "@/shared/constants/routes";
 import { useAuthState } from "@/features/auth";
-import { getInvitationByToken, acceptInvitationByToken, type ClubInvitationPublic } from "@/features/organization-panel/api/members.api";
+import { getInvitationByToken, acceptInvitationByToken, type OrganizationInvitationPublic } from "@/features/organization-panel/api/members.api";
 import confetti from "canvas-confetti";
 import { useTranslation } from "react-i18next";
 
@@ -19,7 +19,7 @@ export function InviteLandingPage() {
 
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
-  const [inviteInfo, setInviteInfo] = useState<ClubInvitationPublic | null>(null);
+  const [inviteInfo, setInviteInfo] = useState<OrganizationInvitationPublic | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -63,7 +63,7 @@ export function InviteLandingPage() {
         origin: { y: 0.6 }
       });
 
-      // Redirect to club panel after 2 seconds
+      // Redirect to organization panel after 2 seconds
       setTimeout(() => {
         navigate(ROUTES.ORGANIZATION_PANEL);
       }, 2000);
@@ -130,7 +130,7 @@ export function InviteLandingPage() {
               </div>
               <CardTitle className="text-2xl font-bold tracking-tight text-foreground">{t("inviteLanding.successTitle")}</CardTitle>
               <p className="text-muted-foreground text-sm">
-                {t("inviteLanding.successMessagePrefix")} <strong>{inviteInfo?.club_name}</strong>.
+                {t("inviteLanding.successMessagePrefix")} <strong>{inviteInfo?.organization_name}</strong>.
               </p>
               <p className="text-xs text-primary animate-pulse font-medium pt-2">
                 {t("inviteLanding.redirecting")}
@@ -145,7 +145,7 @@ export function InviteLandingPage() {
               
               <div className="space-y-2">
                 <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-                  {t("inviteLanding.manageTitle", { clubName: inviteInfo?.club_name })}
+                  {t("inviteLanding.manageTitle", { organizationName: inviteInfo?.organization_name })}
                 </CardTitle>
                 <CardDescription className="text-sm">
                   {t("inviteLanding.description")}

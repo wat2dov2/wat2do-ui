@@ -51,7 +51,6 @@ export function ModalContainer() {
   const navigate = useNavigate();
   const { profileCompleted, isAdmin, hasOrganization } = useAuthState();
   const canCreateEvents = hasOrganization || isAdmin;
-  const canSubmitEvents = profileCompleted;
 
   // ── UI-store subscriptions (isolated from AppContent) ─────
   const showSubmitEvent = useUIStore((s) => s.showSubmitEvent);
@@ -110,7 +109,7 @@ export function ModalContainer() {
 
   const handleSubmitEvent = useCallback(
     async (eventData: EventFormData) => {
-      if (eventData.club_id == null) {
+      if (eventData.organization_id == null) {
         throw new Error("A club must be selected for event submission");
       }
       if (canCreateEvents) {
@@ -158,7 +157,7 @@ export function ModalContainer() {
         onOpenChange={setShowCommandPalette}
         setShowFilterDropdown={setShowFilterDropdown}
         onClearAllFilters={clearAllFilters}
-        canSubmitEvents={canSubmitEvents}
+        canSubmitEvents
         personalItems={
           profileCompleted ? (
             <CommandItem

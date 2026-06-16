@@ -58,10 +58,10 @@ CB_FIRST_YEAR: float = 0.05  # first-year student boost
 
 FIRST_YEAR_CATEGORIES: frozenset[str] = frozenset(
     {
-        "Academics",
-        "Networking",
-        "Culture",
-        "Sports",
+        "Arts & Culture",
+        "Games & Recreation",
+        "Media & Web",
+        "Business",
     }
 )
 

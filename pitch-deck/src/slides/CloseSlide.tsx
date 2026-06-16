@@ -49,7 +49,7 @@ export const CloseSlide: React.FC<Props> = ({ events }) => {
           overlay="linear-gradient(180deg, rgba(11,18,32,0.78) 0%, rgba(17,24,39,0.92) 100%)"
         />
       }
-      footer="Tony Qiu · Erica Han · contact@wat2do.ca · wat2do.ca"
+      footer="Tony Qiu · Erica Han · contact@wat2do.io · wat2do.io"
     >
       <BentoGrid columns={2} gap={12} style={{ flex: 1, minHeight: 0 }}>
         <BentoTile
@@ -61,7 +61,7 @@ export const CloseSlide: React.FC<Props> = ({ events }) => {
         >
           <div style={{ marginTop: 4 }}>
             <TimelineItem when="Week 0" what="Scope and events to measure." />
-            <TimelineItem when="Weeks 1–2" what="Live on wat2do.ca. QR posters." />
+            <TimelineItem when="Weeks 1–2" what="Live on wat2do.io. QR posters." />
             <TimelineItem when="Weeks 3–6" what="Run. Metrics on request." />
             <TimelineItem when="Weeks 7–8" what="Report and decision." />
           </div>
@@ -71,7 +71,7 @@ export const CloseSlide: React.FC<Props> = ({ events }) => {
           <BentoTile
             eyebrow="Next step"
             title="15 minutes this week."
-            body="calendly link · contact@wat2do.ca"
+            body="calendly link · contact@wat2do.io"
             tone="surface"
           />
           {manifesto.mottoes.map((line) => (

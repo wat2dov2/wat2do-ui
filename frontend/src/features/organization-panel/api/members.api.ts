@@ -11,7 +11,7 @@ export interface OrganizationMember {
 
 export interface OrganizationInvitation {
   id: string;
-  club_id: number;
+  organization_id: number;
   email: string;
   token: string;
   status: string;
@@ -20,35 +20,35 @@ export interface OrganizationInvitation {
 }
 
 export interface OrganizationInvitationPublic {
-  club_name: string;
+  organization_name: string;
   email: string;
   expires_at: string;
 }
 
 export async function fetchOrganizationMembers(organizationId: number): Promise<OrganizationMember[]> {
-  return api.get<OrganizationMember[]>(`/clubs/${organizationId}/members`);
+  return api.get<OrganizationMember[]>(`/organizations/${organizationId}/members`);
 }
 
 export async function addOrganizationMember(organizationId: number, email: string): Promise<OrganizationMember | OrganizationInvitation> {
-  return api.post<OrganizationMember | OrganizationInvitation>(`/clubs/${organizationId}/members`, { email });
+  return api.post<OrganizationMember | OrganizationInvitation>(`/organizations/${organizationId}/members`, { email });
 }
 
 export async function removeOrganizationMember(organizationId: number, userId: string): Promise<void> {
-  return api.delete<void>(`/clubs/${organizationId}/members/${userId}`);
+  return api.delete<void>(`/organizations/${organizationId}/members/${userId}`);
 }
 
 export async function fetchOrganizationInvitations(organizationId: number): Promise<OrganizationInvitation[]> {
-  return api.get<OrganizationInvitation[]>(`/clubs/${organizationId}/invitations`);
+  return api.get<OrganizationInvitation[]>(`/organizations/${organizationId}/invitations`);
 }
 
 export async function revokeOrganizationInvitation(organizationId: number, invitationId: string): Promise<void> {
-  return api.delete<void>(`/clubs/${organizationId}/invitations/${invitationId}`);
+  return api.delete<void>(`/organizations/${organizationId}/invitations/${invitationId}`);
 }
 
 export async function getInvitationByToken(token: string): Promise<OrganizationInvitationPublic> {
-  return api.get<OrganizationInvitationPublic>(`/clubs/invitations/${token}`);
+  return api.get<OrganizationInvitationPublic>(`/organizations/invitations/${token}`);
 }
 
 export async function acceptInvitationByToken(token: string): Promise<void> {
-  return api.post<void>(`/clubs/invitations/${token}/accept`);
+  return api.post<void>(`/organizations/invitations/${token}/accept`);
 }

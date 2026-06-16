@@ -17,14 +17,14 @@ def _stub_domain_table(monkeypatch):
         allowed_emails,
         "ALLOWED_EMAIL_DOMAINS",
         {
-            "uwaterloo.ca": "University of Waterloo",
-            "edu.uwaterloo.ca": "University of Waterloo",
-            "wlu.ca": "Wilfrid Laurier University",
-            "utoronto.ca": "University of Toronto - St. George",
-            "scar.utoronto.ca": "University of Toronto - Scarborough",
-            "cornell.edu": "Cornell University",
-            "nyu.edu": "New York University",
-            "mit.edu": "Massachusetts Institute of Technology",
+            "uwaterloo.ca": "uwaterloo",
+            "edu.uwaterloo.ca": "uwaterloo",
+            "wlu.ca": "wlu",
+            "utoronto.ca": "utoronto",
+            "scar.utoronto.ca": "utsc",
+            "cornell.edu": "cornell",
+            "nyu.edu": "nyu",
+            "mit.edu": "mit",
         },
     )
     monkeypatch.setattr(allowed_emails, "_loaded", True)
@@ -32,13 +32,13 @@ def _stub_domain_table(monkeypatch):
 
 class TestGetSchoolForEmail:
     def test_standard_uwaterloo_email(self):
-        assert get_school_for_email("alice@uwaterloo.ca") == "University of Waterloo"
+        assert get_school_for_email("alice@uwaterloo.ca") == "uwaterloo"
 
     def test_case_insensitive(self):
-        assert get_school_for_email("ALICE@UWATERLOO.CA") == "University of Waterloo"
+        assert get_school_for_email("ALICE@UWATERLOO.CA") == "uwaterloo"
 
     def test_strips_whitespace(self):
-        assert get_school_for_email("  bob@wlu.ca  ") == "Wilfrid Laurier University"
+        assert get_school_for_email("  bob@wlu.ca  ") == "wlu"
 
     def test_unknown_domain_returns_none(self):
         assert get_school_for_email("evil@gmail.com") is None
@@ -70,15 +70,15 @@ class TestGetSchoolForEmail:
         assert get_school_for_email("alice.uwaterloo.ca") is None
 
     def test_resolves_each_seeded_school(self):
-        assert get_school_for_email("a@cornell.edu") == "Cornell University"
-        assert get_school_for_email("b@nyu.edu") == "New York University"
-        assert get_school_for_email("c@mit.edu") == "Massachusetts Institute of Technology"
+        assert get_school_for_email("a@cornell.edu") == "cornell"
+        assert get_school_for_email("b@nyu.edu") == "nyu"
+        assert get_school_for_email("c@mit.edu") == "mit"
 
     def test_uoft_domain_routes_to_st_george(self):
-        assert get_school_for_email("d@utoronto.ca") == "University of Toronto - St. George"
+        assert get_school_for_email("d@utoronto.ca") == "utoronto"
 
     def test_uoft_scarborough_subdomain(self):
-        assert get_school_for_email("e@scar.utoronto.ca") == "University of Toronto - Scarborough"
+        assert get_school_for_email("e@scar.utoronto.ca") == "utsc"
 
 
 class TestIsEmailAllowed:
@@ -113,22 +113,22 @@ class TestLoadMetadataFromDatabase:
         # Mock database client responses
         mock_schools_data = [
             {
-                "name": "University of Waterloo",
+                "name": "uwaterloo",
                 "timezone": "America/Toronto",
-                "aliases": ["uw", "uwaterloo"],
+                "aliases": ["University of Waterloo", "uw", "waterloo"],
                 "semester_ends": ["20251231T235959Z", "20260430T235959Z", "20260831T235959Z"],
             },
             {
-                "name": "Test University",
+                "name": "testu",
                 "timezone": "America/New_York",
-                "aliases": ["tu", "testu"],
+                "aliases": ["Test University", "tu"],
                 "semester_ends": ["20251231T000000Z", "20260430T000000Z", "20260831T000000Z"],
             },
         ]
 
         mock_domains_data = [
-            {"domain": "uwaterloo.ca", "schools": {"name": "University of Waterloo"}},
-            {"domain": "testu.edu", "schools": {"name": "Test University"}},
+            {"domain": "uwaterloo.ca", "schools": {"name": "uwaterloo"}},
+            {"domain": "testu.edu", "schools": {"name": "testu"}},
         ]
 
         # We construct a mock query chain
@@ -142,6 +142,7 @@ class TestLoadMetadataFromDatabase:
         mock_domains_chain.select.return_value.execute.return_value = mock_domains_res
 
         mock_sb = MagicMock()
+
         def mock_table(table_name):
             if table_name == "schools":
                 return mock_schools_chain
@@ -157,23 +158,22 @@ class TestLoadMetadataFromDatabase:
         ae.load_allowed_domains()
 
         # 3. Assertions
-        assert ae.ALLOWED_EMAIL_DOMAINS["uwaterloo.ca"] == "University of Waterloo"
-        assert ae.ALLOWED_EMAIL_DOMAINS["testu.edu"] == "Test University"
+        assert ae.ALLOWED_EMAIL_DOMAINS["uwaterloo.ca"] == "uwaterloo"
+        assert ae.ALLOWED_EMAIL_DOMAINS["testu.edu"] == "testu"
 
-        assert SCHOOL_TIMEZONES["university of waterloo"] == "America/Toronto"
-        assert SCHOOL_TIMEZONES["test university"] == "America/New_York"
+        assert SCHOOL_TIMEZONES["uwaterloo"] == "America/Toronto"
+        assert SCHOOL_TIMEZONES["testu"] == "America/New_York"
 
-        assert SCHOOL_ALIASES["uw"] == "university of waterloo"
-        assert SCHOOL_ALIASES["tu"] == "test university"
+        assert SCHOOL_ALIASES["uw"] == "uwaterloo"
+        assert SCHOOL_ALIASES["tu"] == "testu"
 
-        assert SCHOOL_SEMESTER_ENDS["university of waterloo"] == (
+        assert SCHOOL_SEMESTER_ENDS["uwaterloo"] == (
             "20251231T235959Z",
             "20260430T235959Z",
             "20260831T235959Z",
         )
-        assert SCHOOL_SEMESTER_ENDS["test university"] == (
+        assert SCHOOL_SEMESTER_ENDS["testu"] == (
             "20251231T000000Z",
             "20260430T000000Z",
             "20260831T000000Z",
         )
-

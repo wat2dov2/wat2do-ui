@@ -1,0 +1,25 @@
+---
+description: Always enforce the repository codebase-first engineering policy before edits.
+alwaysApply: true
+---
+
+# Codebase-First Engineering Policy
+
+`AGENTS.md` is the canonical repository policy. Read it before acting and follow
+it for every non-trivial task.
+
+Before code edits, report:
+- the existing pattern being matched,
+- the exact blast radius, including affected files, symbols, tests, types, API
+  contracts, and deletions,
+- any scope-expanding decision that needs human confirmation.
+
+Then implement by reusing the repo's existing architecture, folders, helpers,
+types, schemas, services, stores, hooks, and test patterns. Do not create a second
+way to do something that already has a path. Do not add backwards compatibility,
+aliases, duplicate helpers, fallback branches, ignored fields, or dead code. If
+replacing a path, delete the old path in the same change.
+
+After implementation, run and report tests, typecheck, and lint, or state exactly
+why any cannot run.
+

@@ -11,11 +11,12 @@ import {
   getPlatformIntegration,
   type IntegrationPlatform,
   type IntegrationServerOption,
+  type PlatformIntegrationResponse,
 } from "@/features/organization-panel/api/integrations.api";
 
 // --- Platform options state ---
 
-export interface PlatformOptions {
+interface PlatformOptions {
   slackServers: IntegrationServerOption[];
   telegramServers: IntegrationServerOption[];
   linkedinServers: IntegrationServerOption[];
@@ -94,7 +95,7 @@ export function mapResponseToIntegration(
 export function useIntegrationData() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const activeOrganizationId = useAuthState().clubId;
+  const activeOrganizationId = useAuthState().organizationId;
 
   // Core data
   const [integrations, setIntegrations] = useState<Integration[]>(buildInitialIntegrations);
@@ -185,7 +186,7 @@ export function useIntegrationData() {
           ALL_PLATFORMS.map((platform) => getPlatformIntegration(selectedOrganizationId, platform))
         );
         if (cancelled) return;
-        const byPlatform = new Map(data.map((row) => [row.platform, row]));
+        const byPlatform = new Map<IntegrationPlatform, PlatformIntegrationResponse>(data.map((row) => [row.platform, row]));
         setIntegrations(
           ALL_PLATFORMS.map((platform) => {
             const row = byPlatform.get(platform);

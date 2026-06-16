@@ -5,7 +5,7 @@
  * in the ``users`` table (see backend/core/constants.py).
  *
  * ``ROLE_ORGANIZATION`` is a frontend-only route-guard value backed by
- * /clubs/mine. A user passes this check only when an admin-assigned club
+ * /organizations/mine. A user passes this check only when an admin-assigned club
  * row lists them as its owner.
  */
 

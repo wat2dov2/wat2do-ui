@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
@@ -5,10 +6,18 @@ import { QP } from "@/shared/constants/queryParams";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import { AuthEmailFormCard } from "@/features/auth/components/AuthEmailFormCard";
 import { useAuthEntryFlow } from "@/features/auth/hooks/useAuthEntryFlow";
+import { useAuthState } from "@/features/auth";
 
 export function AuthEntryPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuthState();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(ROUTES.HOME, { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const authEntry = useAuthEntryFlow({
     onContinueToOnboarding: (initialSchool) =>
@@ -22,32 +31,26 @@ export function AuthEntryPage() {
             }
           : ROUTES.HOME,
       ),
-    onForgotPassword: () => navigate(ROUTES.FORGOT_PASSWORD),
   });
-
-  const isSignup = authEntry.authMode === "signup";
 
   return (
     <AuthPageLayout
       heading={t("auth.heading")}
-      description={isSignup ? t("auth.signupDescription") : t("auth.loginDescription")}
+      description={t("auth.description")}
     >
       <AuthEmailFormCard
         email={authEntry.email}
-        password={authEntry.password}
-        authMode={authEntry.authMode}
+        otpToken={authEntry.otpToken}
+        emailSent={authEntry.emailSent}
         onEmailChange={authEntry.onEmailChange}
-        onPasswordChange={authEntry.onPasswordChange}
+        onOtpChange={authEntry.onOtpChange}
         onContinue={authEntry.onContinue}
-        onToggleMode={authEntry.toggleAuthMode}
-        onForgotPassword={authEntry.onForgotPassword}
+        onResend={authEntry.onResend}
         canContinue={authEntry.isFormValid}
         isLoading={authEntry.isLoading}
         error={authEntry.error}
-        confirmationMessage={authEntry.confirmationMessage}
         isEmailPrefilled={authEntry.isEmailPrefilled}
       />
-
     </AuthPageLayout>
   );
 }

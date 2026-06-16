@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Users, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -32,13 +32,15 @@ import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { toast } from "@/shared/hooks/use-toast";
+import { usePagination } from "@/shared/hooks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
 import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
+import { useEventsStore } from "@/features/events";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
-const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
+const ALL_ORGANIZATION_TYPES_VALUE = "__all_organization_types__";
 
 interface AdminOrganizationsPageProps {
   onBack: () => void;
@@ -50,27 +52,29 @@ export function AdminOrganizationsPage({
   const { t } = useTranslation();
   const {
     searchQuery,
-    selectedClubType,
+    selectedOrganizationType,
     deleteConfirmId,
     showAddModal,
-    editingClub,
+    editingOrganization,
     currentPage,
-    clubTypes,
-    filteredOrganizations,
-    paginatedClubs,
+    organizationTypes,
+    organizations,
+    totalItems,
     totalPages,
     isLoading,
     setSearchQuery,
-    setSelectedClubType,
+    submitSearchQuery,
+    clearSearchQuery,
+    setSelectedOrganizationType,
     setDeleteConfirmId,
     openAddModal,
     openEditModal,
     closeModal,
     setCurrentPage,
-    refreshClubs,
+    refreshOrganizations,
   } = useAdminOrganizationsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
-  const [activeTab, setActiveTab] = useState<"clubs" | "claims">("clubs");
+  const [activeTab, setActiveTab] = useState<"organizations" | "claims">("organizations");
   
   // Load claims from Zustand store
   const allClaims = useAdminStore((s) => s.claims);
@@ -80,11 +84,11 @@ export function AdminOrganizationsPage({
 
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
   
   // Claims Filter State
   const [claimSearchQuery, setClaimSearchQuery] = useState("");
   const [claimStatusFilter, setClaimStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
-  const [claimCurrentPage, setClaimCurrentPage] = useState(1);
 
   const pendingClaimsCount = useMemo(() => {
     return allClaims.filter((c) => c.status === "pending").length;
@@ -100,12 +104,12 @@ export function AdminOrganizationsPage({
     if (claimSearchQuery) {
       const q = claimSearchQuery.toLowerCase();
       filtered = filtered.filter((c) => {
-        const clubName = c.clubs?.club_name || "";
+        const orgName = c.organizations?.organization_name || "";
         const userName = c.users?.full_name || "";
         const userEmail = c.users?.email || "";
         const role = c.executive_role || "";
         return (
-          clubName.toLowerCase().includes(q) ||
+          orgName.toLowerCase().includes(q) ||
           userName.toLowerCase().includes(q) ||
           userEmail.toLowerCase().includes(q) ||
           role.toLowerCase().includes(q)
@@ -116,66 +120,59 @@ export function AdminOrganizationsPage({
     return filtered;
   }, [allClaims, claimStatusFilter, claimSearchQuery]);
 
-  const claimTotalPages = Math.ceil(filteredClaims.length / ITEMS_PER_PAGE);
-  const paginatedClaims = useMemo(() => {
-    const start = (claimCurrentPage - 1) * ITEMS_PER_PAGE;
-    return filteredClaims.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredClaims, claimCurrentPage]);
+  const claimsPagination = usePagination({
+    items: filteredClaims,
+    itemsPerPage: ITEMS_PER_PAGE,
+  });
   
   // Rejection Dialog State
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [submittingResolution, setSubmittingResolution] = useState(false);
 
-  const visibleClubTypes = clubTypes.filter((type) => type.trim().length > 0);
+  const visibleOrganizationTypes = organizationTypes.filter((type) => type.trim().length > 0);
 
-  const loadClaimsData = async () => {
+  const loadClaimsData = useCallback(async () => {
     setLoadingClaims(true);
     try {
-      await fetchClaims();
+      await fetchClaims(schoolFilter ?? undefined);
     } catch (error) {
       console.error("Failed to load pending claims:", error);
     } finally {
       setLoadingClaims(false);
     }
-  };
-
-  useEffect(() => {
-    void loadClaimsData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchClaims, schoolFilter]);
 
   useEffect(() => {
     if (activeTab === "claims") {
       void loadClaimsData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, loadClaimsData]);
 
-  const handleDelete = async (clubId: number) => {
+  const handleDelete = async (organizationId: number) => {
     setIsDeleting(true);
     try {
-      await adminDeleteOrganization(clubId);
-      await refreshClubs();
+      await adminDeleteOrganization(organizationId);
+      await refreshOrganizations();
     } catch (error) {
-      console.error("Failed to delete club:", error);
+      console.error("Failed to delete organization:", error);
     } finally {
       setDeleteConfirmId(null);
       setIsDeleting(false);
     }
   };
 
-  const handleSave = async (club: Organization) => {
+  const handleSave = async (organization: Organization) => {
     try {
-      if (editingClub) {
-        await adminUpdateOrganization(club);
+      if (editingOrganization) {
+        await adminUpdateOrganization(organization);
       } else {
-        await adminCreateOrganization(club);
+        await adminCreateOrganization(organization);
       }
-      await refreshClubs();
+      await refreshOrganizations();
       closeModal();
     } catch (error) {
-      console.error("Failed to save club:", error);
+      console.error("Failed to save organization:", error);
     }
   };
 
@@ -229,7 +226,7 @@ export function AdminOrganizationsPage({
         description={t("admin.manageClubsDesc")}
         onBack={onBack}
         action={
-          activeTab === "clubs"
+          activeTab === "organizations"
             ? {
                 label: t("organizations.addClub"),
                 onMouseDown: openAddModal,
@@ -242,10 +239,10 @@ export function AdminOrganizationsPage({
       {/* Tabs toggle */}
       <div className="flex gap-2 border-b border-border pb-3">
         <button
-          onMouseDown={() => setActiveTab("clubs")}
+          onMouseDown={() => setActiveTab("organizations")}
           data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-            activeTab === "clubs"
+            activeTab === "organizations"
               ? "bg-primary/80 text-primary-foreground font-semibold"
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
@@ -270,29 +267,33 @@ export function AdminOrganizationsPage({
         </button>
       </div>
 
-      {activeTab === "clubs" ? (
+      {activeTab === "organizations" ? (
         <>
           {/* Search and Filters */}
           <div className="flex gap-3">
             <AdminSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
+              onSubmit={submitSearchQuery}
+              onClear={clearSearchQuery}
               placeholder={t("organizations.searchPlaceholder")}
+              submitLabel={t("common.search")}
+              clearLabel={t("organizations.clearSearch")}
             />
             <Select
-              value={selectedClubType || ALL_CLUB_TYPES_VALUE}
+              value={selectedOrganizationType || ALL_ORGANIZATION_TYPES_VALUE}
               onValueChange={(value) =>
-                setSelectedClubType(value === ALL_CLUB_TYPES_VALUE ? "" : value)
+                setSelectedOrganizationType(value === ALL_ORGANIZATION_TYPES_VALUE ? "" : value)
               }
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder={t("admin.allTypes")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL_CLUB_TYPES_VALUE}>
+                <SelectItem value={ALL_ORGANIZATION_TYPES_VALUE}>
                   {t("admin.allTypes")}
                 </SelectItem>
-                {visibleClubTypes.map((type) => (
+                {visibleOrganizationTypes.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
                   </SelectItem>
@@ -302,15 +303,28 @@ export function AdminOrganizationsPage({
           </div>
 
           <AdminResultsCount
-            count={filteredOrganizations.length}
+            count={totalItems}
             singularLabel={t("admin.club")}
             pluralLabel={t("navigation.organizations")}
-          />
+          >
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+                itemLabel={t("admin.club")}
+                itemLabelPlural={t("navigation.organizations")}
+                onPageChange={setCurrentPage}
+                hideDetails
+              />
+            )}
+          </AdminResultsCount>
 
-          {/* Clubs Table */}
+          {/* Organizations Table */}
           {isLoading ? (
             <LoadingPage />
-          ) : filteredOrganizations.length > 0 ? (
+          ) : totalItems > 0 ? (
             <AdminTable
               headers={[
                 { label: t("forms.organizationName") },
@@ -322,40 +336,44 @@ export function AdminOrganizationsPage({
                 { label: t("common.actions"), align: "right" },
               ]}
             >
-              {paginatedClubs.map((club) => (
-                <TableRow key={club.id}>
+              {organizations.map((org) => (
+                <TableRow
+                  key={org.id}
+                  className="cursor-pointer"
+                  onMouseDown={() => openEditModal(org)}
+                >
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">
-                      {club.club_name}
+                      {org.organization_name}
                     </div>
                   </TableCell>
                   <TableCell>
                     <OrganizationCategoryBadges
-                      categories={club.categories}
+                      categories={org.categories}
                       maxVisible={2}
                       badgeClassName="h-5 text-[11px]"
                     />
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {club.club_type}
+                      {org.organization_type}
                     </div>
                   </TableCell>
                   <TableCell>
                     <span className="block max-w-[140px] truncate text-xs text-muted-foreground">
-                      {club.owner_email || club.created_by || "-"}
+                      {org.owner_email || org.created_by || "-"}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {club.ig ? (
-                      <span className="text-sm text-muted-foreground">@{club.ig}</span>
+                    {org.ig ? (
+                      <span className="text-sm text-muted-foreground">@{org.ig}</span>
                     ) : (
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {club.discord ? (
-                      <span className="max-w-[100px] truncate text-sm text-muted-foreground">{club.discord}</span>
+                    {org.discord ? (
+                      <span className="max-w-[100px] truncate text-sm text-muted-foreground">{org.discord}</span>
                     ) : (
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
@@ -365,14 +383,20 @@ export function AdminOrganizationsPage({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onMouseDown={() => openEditModal(club)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          openEditModal(org);
+                        }}
                       >
                         {t("common.edit")}
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
-                        onMouseDown={() => setDeleteConfirmId(club.id)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmId(org.id);
+                        }}
                         className="hover:bg-error/10 hover:text-error"
                       >
                         {t("common.delete")}
@@ -390,17 +414,7 @@ export function AdminOrganizationsPage({
             />
           )}
 
-          {filteredOrganizations.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredOrganizations.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              itemLabel={t("admin.club")}
-              itemLabelPlural={t("navigation.organizations")}
-              onPageChange={setCurrentPage}
-            />
-          )}
+          {/* Pagination moved above the table */}
         </>
       ) : (
         <>
@@ -410,7 +424,7 @@ export function AdminOrganizationsPage({
               value={claimSearchQuery}
               onChange={(value) => {
                 setClaimSearchQuery(value);
-                setClaimCurrentPage(1);
+                claimsPagination.setCurrentPage(1);
               }}
               placeholder={t("admin.searchSubmissions") || "Search requests..."}
             />
@@ -418,7 +432,7 @@ export function AdminOrganizationsPage({
               value={claimStatusFilter}
               onValueChange={(value) => {
                 setClaimStatusFilter(value as "all" | SubmissionStatus);
-                setClaimCurrentPage(1);
+                claimsPagination.setCurrentPage(1);
               }}
             >
               <SelectTrigger className="w-[180px]">
@@ -437,7 +451,20 @@ export function AdminOrganizationsPage({
             count={filteredClaims.length}
             singularLabel={t("admin.claimRequest") || "claim request"}
             pluralLabel={t("admin.claimRequests") || "claim requests"}
-          />
+          >
+            {claimsPagination.totalPages > 1 && (
+              <Pagination
+                currentPage={claimsPagination.currentPage}
+                totalPages={claimsPagination.totalPages}
+                totalItems={filteredClaims.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                itemLabel={t("admin.claimRequest") || "claim request"}
+                itemLabelPlural={t("admin.claimRequests") || "claim requests"}
+                onPageChange={claimsPagination.setCurrentPage}
+                hideDetails
+              />
+            )}
+          </AdminResultsCount>
 
           {loadingClaims ? (
             <LoadingPage />
@@ -454,11 +481,11 @@ export function AdminOrganizationsPage({
                   { label: t("common.actions"), align: "right" },
                 ]}
               >
-                {paginatedClaims.map((claim) => (
+                {claimsPagination.paginatedItems.map((claim) => (
                   <TableRow key={claim.id}>
                     <TableCell>
                       <div className="font-semibold text-sm text-foreground">
-                        {claim.clubs?.club_name || `Club #${claim.club_id}`}
+                        {claim.organizations?.organization_name || `Organization #${claim.organization_id}`}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -531,15 +558,7 @@ export function AdminOrganizationsPage({
                 ))}
               </AdminTable>
 
-              <Pagination
-                currentPage={claimCurrentPage}
-                totalPages={claimTotalPages}
-                totalItems={filteredClaims.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-                itemLabel={t("admin.claimRequest") || "claim request"}
-                itemLabelPlural={t("admin.claimRequests") || "claim requests"}
-                onPageChange={setClaimCurrentPage}
-              />
+              {/* Pagination moved above the table */}
             </>
           ) : (
             <AdminEmptyState
@@ -564,7 +583,7 @@ export function AdminOrganizationsPage({
         isOpen={showAddModal}
         onClose={closeModal}
         onSave={handleSave}
-        initialData={editingClub || undefined}
+        initialData={editingOrganization || undefined}
       />
 
       {/* Reject Claim Dialog */}

@@ -30,15 +30,15 @@ type NavOrganization = AuthState["clubs"][number];
 export function TopNav() {
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
-  const { profileCompleted, isAdmin, clubs, clubId } = useAuthState();
+  const { profileCompleted, isAdmin, clubs, organizationId } = useAuthState();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [orgMenuOpen, setOrgMenuOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
-  const activeOrganization = clubs.find((club) => club.id === clubId) ?? clubs[0];
+  const activeOrganization = clubs.find((club) => club.id === organizationId) ?? clubs[0];
   const canOpenOrganizationPanel = profileCompleted && Boolean(activeOrganization);
   const filteredOrganizations = clubs.filter((club) =>
-    club.club_name.toLowerCase().includes(orgSearch.toLowerCase())
+    club.organization_name.toLowerCase().includes(orgSearch.toLowerCase())
   );
 
   const handleLogoClick = useCallback(() => {
@@ -54,8 +54,8 @@ export function TopNav() {
     if (profile) {
       updateUserProfile({
         ...profile,
-        clubId: org.id,
-        clubName: org.club_name,
+        organizationId: org.id,
+        organizationName: org.organization_name,
       });
     }
     navigate(ROUTES.ORGANIZATION_PANEL);
@@ -77,7 +77,7 @@ export function TopNav() {
   }, [navigate]);
 
   return (
-    <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-5 pr-5 border-b border-border bg-sidebar z-nav">
+    <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-4 pr-4 border-b border-border bg-sidebar z-nav">
       <div className="flex items-center gap-2.5">
         <button
           onMouseDown={handleLogoClick}
@@ -91,7 +91,7 @@ export function TopNav() {
           />
         </button>
         <span className="text-muted-foreground text-lg font-light">/</span>
-        <SchoolCombobox value={schoolFilter ?? ""} onChange={setSchoolFilter} />
+        <SchoolCombobox value={schoolFilter ?? ""} onChange={setSchoolFilter} isAdmin={isAdmin} />
       </div>
 
       <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function TopNav() {
               >
                 <span className="truncate">
                   <Highlighter action="highlight" color="var(--primary)">
-                    {activeOrganization.club_name}
+                    {activeOrganization.organization_name}
                   </Highlighter>
                 </span>
                 <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
@@ -171,7 +171,7 @@ export function TopNav() {
                           activeOrganization.id === org.id ? "opacity-100" : "opacity-0"
                         )}
                       />
-                      <span className="truncate">{org.club_name}</span>
+                      <span className="truncate">{org.organization_name}</span>
                     </button>
                   ))
                 )}

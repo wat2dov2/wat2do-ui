@@ -6,8 +6,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from core.auth import get_authorized_resource, get_club_owner_or_admin, is_admin
-from core.constants import MAX_SESSION_ID_LENGTH, MAX_USER_AGENT_LENGTH
+from core.auth import get_authorized_resource, get_organization_owner_or_admin, is_admin
+from core.constants import MAX_SCHOOL_LENGTH, MAX_SESSION_ID_LENGTH, MAX_USER_AGENT_LENGTH
 from core.errors import ID_MISMATCH, POSTER_NOT_FOUND
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from core.rate_limit import qr_scan_rate_limiter
@@ -31,17 +31,21 @@ def _get_poster_or_404_authorized(qr_code_id: str, db_user: UserResponse) -> QrC
 
 @router.get("/", response_model=PaginatedResponse[QrCodeResponse])
 def list_qr_codes(
+    school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
     pagination: PaginationParams = Depends(),
-    db_user: UserResponse = Depends(get_club_owner_or_admin),
+    db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
     """List QR codes.
 
-    Admins can list all QR codes. Non-admins (club managers) can only list
+    Admins can list all QR codes. Non-admins (organization managers) can only list
     QR codes created by themselves.
     """
+    if school == "all":
+        school = None
     list_kwargs = {
         "offset": pagination.offset,
         "limit": pagination.page_size,
+        "school": school,
     }
     if not is_admin(db_user):
         list_kwargs["created_by"] = str(db_user.id)
@@ -55,11 +59,11 @@ def list_scans(
     from_time: datetime | None = Query(None, description="Scans from this time (inclusive)"),
     to_time: datetime | None = Query(None, description="Scans until this time (inclusive)"),
     pagination: PaginationParams = Depends(),
-    db_user: UserResponse = Depends(get_club_owner_or_admin),
+    db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
     """List QR-code scan events analytics.
 
-    Admins can list all scans. Non-admins (club managers) can only list scans
+    Admins can list all scans. Non-admins (organization managers) can only list scans
     of QR codes created by themselves.
     """
     owned_by = None if is_admin(db_user) else str(db_user.id)
@@ -111,7 +115,7 @@ def resolve_qr_and_record_scan(
 @router.post("/", response_model=QrCodeResponse, status_code=status.HTTP_201_CREATED)
 def create_poster(
     data: QrCodeCreate,
-    db_user: UserResponse = Depends(get_club_owner_or_admin),
+    db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
     """Create a QR code.
 
@@ -125,7 +129,7 @@ def create_poster(
 def update_poster(
     qr_code_id: str,
     data: QrCodeCreate,
-    db_user: UserResponse = Depends(get_club_owner_or_admin),
+    db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
     """Update a QR code."""
     if data.id != qr_code_id:
@@ -139,7 +143,7 @@ def update_poster(
 @router.delete("/{qr_code_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_poster(
     qr_code_id: str,
-    db_user: UserResponse = Depends(get_club_owner_or_admin),
+    db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
     """Delete a QR code."""
     _get_poster_or_404_authorized(qr_code_id, db_user)

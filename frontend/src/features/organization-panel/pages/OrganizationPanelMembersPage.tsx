@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import {
   listOrganizationMemberships,
   updateOrganizationMembership,
-  removeOrganizationMember as removeRosterMembership,
+  removeOrganizationMembership as removeRosterMembership,
   type OrganizationMembershipWithUser,
 } from "@/features/organization-panel/api/memberships.api";
 import {
@@ -39,10 +39,33 @@ import {
   type OrganizationJoinRequest,
 } from "../api/joinRequests.api";
 
+interface RosterTableHeaderProps {
+  columns: string[];
+}
+
+function RosterTableHeader({ columns }: RosterTableHeaderProps) {
+  const { t } = useTranslation();
+  return (
+    <thead className="bg-secondary/35 border-b border-border">
+      <tr>
+        {columns.map((col) => (
+          <th
+            key={col}
+            className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider"
+          >
+            {t(`organizationPanel.memberColumns.${col}`)}
+          </th>
+        ))}
+        <th className="px-6 py-4"></th>
+      </tr>
+    </thead>
+  );
+}
+
 export function OrganizationPanelMembersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { clubId } = useAuthState();
+  const { organizationId } = useAuthState();
 
   // Navigation tabs
   const [mainTab, setMainTab] = useState<"roster" | "management">("roster");
@@ -65,9 +88,9 @@ export function OrganizationPanelMembersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchRoster = useCallback(() => {
-    if (!clubId) return;
+    if (!organizationId) return;
     setRosterLoading(true);
-    listOrganizationMemberships(clubId)
+    listOrganizationMemberships(organizationId)
       .then((data) => {
         setMemberships(data);
       })
@@ -81,15 +104,15 @@ export function OrganizationPanelMembersPage() {
       .finally(() => {
         setRosterLoading(false);
       });
-  }, [clubId, t]);
+  }, [organizationId, t]);
 
   const fetchManagement = useCallback(() => {
-    if (!clubId) return;
+    if (!organizationId) return;
     setManagementLoading(true);
     Promise.all([
-      fetchOrganizationMembers(clubId),
-      fetchOrganizationInvitations(clubId),
-      fetchJoinRequests(clubId),
+      fetchOrganizationMembers(organizationId),
+      fetchOrganizationInvitations(organizationId),
+      fetchJoinRequests(organizationId),
     ])
       .then(([membersData, invitesData, requestsData]) => {
         setManagers(membersData);
@@ -106,21 +129,21 @@ export function OrganizationPanelMembersPage() {
       .finally(() => {
         setManagementLoading(false);
       });
-  }, [clubId, t]);
+  }, [organizationId, t]);
 
   useEffect(() => {
-    if (clubId) {
+    if (organizationId) {
       fetchRoster();
       fetchManagement();
     }
-  }, [clubId, fetchRoster, fetchManagement]);
+  }, [organizationId, fetchRoster, fetchManagement]);
 
   // Roster Actions
   const handleApproveMembership = async (userId: string) => {
-    if (!clubId) return;
+    if (!organizationId) return;
     setActionLoading(userId);
     try {
-      await updateOrganizationMembership(clubId, userId, { status: "approved" });
+      await updateOrganizationMembership(organizationId, userId, { status: "approved" });
       toast({
         description: t("organizationPanel.requestApproved"),
         variant: "success",
@@ -138,10 +161,10 @@ export function OrganizationPanelMembersPage() {
   };
 
   const handleRejectMembership = async (userId: string) => {
-    if (!clubId) return;
+    if (!organizationId) return;
     setActionLoading(userId);
     try {
-      await updateOrganizationMembership(clubId, userId, { status: "rejected" });
+      await updateOrganizationMembership(organizationId, userId, { status: "rejected" });
       toast({
         description: t("organizationPanel.requestRejected"),
         variant: "success",
@@ -159,13 +182,13 @@ export function OrganizationPanelMembersPage() {
   };
 
   const handleRemoveMembership = async (userId: string) => {
-    if (!clubId) return;
+    if (!organizationId) return;
     if (!confirm(t("organizationPanel.removeMemberConfirm"))) {
       return;
     }
     setActionLoading(userId);
     try {
-      await removeRosterMembership(clubId, userId);
+      await removeRosterMembership(organizationId, userId);
       toast({
         description: t("organizationPanel.memberRemoved"),
         variant: "success",
@@ -185,11 +208,11 @@ export function OrganizationPanelMembersPage() {
   // Management Actions
   const handleAddManager = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clubId || !emailInput.trim()) return;
+    if (!organizationId || !emailInput.trim()) return;
 
     setSubmitting(true);
     try {
-      const result = await addOrganizationMember(clubId, emailInput.trim().toLowerCase());
+      const result = await addOrganizationMember(organizationId, emailInput.trim().toLowerCase());
       if (result && "status" in result && result.status === "pending") {
         toast({
           title: t("common.success"),
@@ -218,13 +241,13 @@ export function OrganizationPanelMembersPage() {
   };
 
   const handleRevokeInvitation = async (invitationId: string, email: string) => {
-    if (!clubId) return;
+    if (!organizationId) return;
     if (!confirm(t("organizationPanel.revokeInvitationConfirm", { email }))) {
       return;
     }
     setActionLoading(invitationId);
     try {
-      await revokeOrganizationInvitation(clubId, invitationId);
+      await revokeOrganizationInvitation(organizationId, invitationId);
       toast({
         title: t("common.success"),
         description: t("organizationPanel.invitationRevokedSuccess"),
@@ -244,10 +267,10 @@ export function OrganizationPanelMembersPage() {
   };
 
   const handleResolveJoinRequest = async (requestId: string, status: "approved" | "rejected") => {
-    if (!clubId) return;
+    if (!organizationId) return;
     setActionLoading(requestId);
     try {
-      await resolveJoinRequest(clubId, requestId, status);
+      await resolveJoinRequest(organizationId, requestId, status);
       toast({
         title: t("common.success"),
         description: status === "approved"
@@ -269,7 +292,7 @@ export function OrganizationPanelMembersPage() {
   };
 
   const handleRemoveManager = async (userId: string, email: string) => {
-    if (!clubId) return;
+    if (!organizationId) return;
 
     const confirmMsg = t("organizationPanel.removeMemberConfirm");
     if (!confirm(`${confirmMsg}\n\nEmail: ${email}`)) {
@@ -278,7 +301,7 @@ export function OrganizationPanelMembersPage() {
 
     setActionLoading(userId);
     try {
-      await removeOrganizationManager(clubId, userId);
+      await removeOrganizationManager(organizationId, userId);
       toast({
         title: t("common.success"),
         description: t("organizationPanel.removeSuccess"),
@@ -349,7 +372,7 @@ export function OrganizationPanelMembersPage() {
     }
   };
 
-  if (!clubId) {
+  if (!organizationId) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <ShieldAlert className="size-12 text-muted-foreground/45 mb-4" />
@@ -446,23 +469,7 @@ export function OrganizationPanelMembersPage() {
               {activeMembers.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
-                    <thead className="bg-secondary/35 border-b border-border">
-                      <tr>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.name")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.email")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.role")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.joined")}
-                        </th>
-                        <th className="px-6 py-4"></th>
-                      </tr>
-                    </thead>
+                    <RosterTableHeader columns={["name", "email", "role", "joined"]} />
                     <tbody className="divide-y divide-border/60">
                       {activeMembers.map((member) => (
                         <tr key={member.id} className="hover:bg-secondary/10 transition-colors">
@@ -476,10 +483,10 @@ export function OrganizationPanelMembersPage() {
                                     className="size-full object-cover"
                                   />
                                 ) : (
-                                  (member.user.full_name || member.user.username || "?").charAt(0)
+                                  (member.user.full_name || member.user.email || "?").charAt(0)
                                 )}
                               </div>
-                              <span>{member.user.full_name || member.user.username}</span>
+                              <span>{member.user.full_name || member.user.email}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm text-muted-foreground">
@@ -533,20 +540,7 @@ export function OrganizationPanelMembersPage() {
               {pendingRequests.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
-                    <thead className="bg-secondary/35 border-b border-border">
-                      <tr>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.name")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.email")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.requested")}
-                        </th>
-                        <th className="px-6 py-4"></th>
-                      </tr>
-                    </thead>
+                    <RosterTableHeader columns={["name", "email", "requested"]} />
                     <tbody className="divide-y divide-border/60">
                       {pendingRequests.map((request) => (
                         <tr key={request.id} className="hover:bg-secondary/10 transition-colors">
@@ -560,10 +554,10 @@ export function OrganizationPanelMembersPage() {
                                     className="size-full object-cover"
                                   />
                                 ) : (
-                                  (request.user.full_name || request.user.username || "?").charAt(0)
+                                  (request.user.full_name || request.user.email || "?").charAt(0)
                                 )}
                               </div>
-                              <span>{request.user.full_name || request.user.username}</span>
+                              <span>{request.user.full_name || request.user.email}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm text-muted-foreground">
@@ -692,29 +686,13 @@ export function OrganizationPanelMembersPage() {
                 <div className="flex flex-col items-center justify-center py-16">
                   <Loader2 className="size-8 animate-spin text-primary mb-3" />
                   <span className="text-muted-foreground text-sm">
-                    {t("organizationPanel.loadingClubMembers")}
+                    {t("organizationPanel.loadingOrganizationMembers")}
                   </span>
                 </div>
               ) : filteredManagers.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
-                    <thead className="bg-secondary/35 border-b border-border">
-                      <tr>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.name")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.email")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.role")}
-                        </th>
-                        <th className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider">
-                          {t("organizationPanel.memberColumns.joined")}
-                        </th>
-                        <th className="px-6 py-4"></th>
-                      </tr>
-                    </thead>
+                    <RosterTableHeader columns={["name", "email", "role", "joined"]} />
                     <tbody className="divide-y divide-border/60">
                       {filteredManagers.map((member) => (
                         <tr key={member.user_id} className="hover:bg-secondary/10 transition-colors">

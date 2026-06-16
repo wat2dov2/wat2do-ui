@@ -26,7 +26,8 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { getUserId, useProfileCompleted, useIsAdmin } from "@/features/auth";
+import { getUserId } from "@/features/auth/api/auth.api";
+import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
 import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
@@ -310,7 +311,7 @@ export function EventCard({
                 {...badgeHoverProps}
                 className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
               >
-                <span className="truncate max-w-[128px]">
+                <span className="font-bold truncate max-w-[128px]">
                   {event.organization}
                 </span>
               </button>
@@ -349,7 +350,7 @@ export function EventCard({
                 : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
             } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
           >
-            <Heart className={`w-4 h-4 ${isSaved ? "fill-error text-error" : ""}`} />
+            <Heart className={`w-4 h-4 ${isSaved ? "fill-error text-error" : ""}`} fill={isSaved ? "currentColor" : "none"} />
             {isSaved ? t("common.saved") : t("common.imInterested")}
           </button>
         </div>

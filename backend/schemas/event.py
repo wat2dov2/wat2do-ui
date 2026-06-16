@@ -116,10 +116,10 @@ class EventCreate(BaseModel):
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    # The owning club is the single source of truth for the event's display
-    # name, type, and school; the server derives those fields from club_id
-    # (see event_service._resolve_club_fields), so they are not accepted here.
-    club_id: int = Field(..., ge=1)
+    # The owning organization is the single source of truth for the event's display
+    # name, type, and school; the server derives those fields from organization_id
+    # (see event_service._resolve_organization_fields), so they are not accepted here.
+    organization_id: int = Field(..., ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
 
     @field_validator("category")
@@ -156,8 +156,8 @@ class EventUpdate(BaseModel):
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    # Reassigning the club re-derives organization/club_type/school server-side.
-    club_id: int | None = Field(default=None, ge=1)
+    # Reassigning the organization re-derives organization/organization_type/school server-side.
+    organization_id: int | None = Field(default=None, ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
 
     @field_validator("category")
@@ -238,7 +238,7 @@ class EventResponse(BaseModel):
     """
 
     id: int
-    club_id: int | None = None
+    organization_id: int | None = None
     title: str
     description: str | None = None
     location: str | None = None
@@ -247,7 +247,7 @@ class EventResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    club_type: str | None = None
+    organization_type: str | None = None
     school: str | None = None
     source_url: str | None = None
     category: str | None = None
@@ -266,7 +266,7 @@ class EventPublicResponse(BaseModel):
     """
 
     id: int
-    club_id: int | None = None
+    organization_id: int | None = None
     title: str
     description: str | None = None
     location: str | None = None
@@ -275,7 +275,7 @@ class EventPublicResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    club_type: str | None = None
+    organization_type: str | None = None
     school: str | None = None
     source_url: str | None = None
     category: str | None = None

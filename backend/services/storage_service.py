@@ -7,8 +7,9 @@ from io import BytesIO
 
 from core.constants import (
     BUCKET_AVATARS,
-    BUCKET_CLUB_LOGOS,
+    BUCKET_CLAIM_PROOFS,
     BUCKET_EVENT_IMAGES,
+    BUCKET_ORGANIZATION_LOGOS,
     BUCKET_QR_ASSETS,
     MAX_AVATAR_SIZE_BYTES,
     MAX_IMAGE_SIZE_BYTES,
@@ -45,7 +46,7 @@ _DEFAULT_BUCKETS: dict[str, dict] = {
         "file_size_limit": MAX_AVATAR_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
     },
-    BUCKET_CLUB_LOGOS: {
+    BUCKET_ORGANIZATION_LOGOS: {
         "public": True,
         "file_size_limit": MAX_AVATAR_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
@@ -54,6 +55,11 @@ _DEFAULT_BUCKETS: dict[str, dict] = {
         "public": True,
         "file_size_limit": MAX_IMAGE_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
+    },
+    BUCKET_CLAIM_PROOFS: {
+        "public": True,
+        "file_size_limit": MAX_IMAGE_SIZE_BYTES,
+        "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
     },
 }
 

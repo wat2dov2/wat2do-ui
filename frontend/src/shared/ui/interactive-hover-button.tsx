@@ -36,7 +36,7 @@ const interactiveHoverButtonVariants = cva(
   }
 )
 
-export interface InteractiveHoverButtonProps
+interface InteractiveHoverButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof interactiveHoverButtonVariants> {
   hideDot?: boolean;

@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 from core.cache import TTLCache
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
-from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
+from core.errors import EVENT_ALREADY_PAST, ORGANIZATION_NOT_FOUND
 from core.exceptions import NotFoundError, ValidationError
 from core.retry import supabase_retry
 from core.tables import EVENTS
@@ -76,22 +76,22 @@ def _to_utc(dt: datetime | None) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def _resolve_club_fields(club_id: int) -> dict[str, str | None]:
-    """Derive the event's denormalized fields from its owning club.
+def _resolve_organization_fields(organization_id: int) -> dict[str, str | None]:
+    """Derive the event's denormalized fields from its owning organization.
 
-    The club is the single source of truth for an event's display name,
+    The organization is the single source of truth for an event's display name,
     type, and school — callers never set these directly, so both the
     direct-create path and the submission-approval path stay in agreement.
     """
-    from services import club_service  # local import avoids an import cycle
+    from services import organization_service  # local import avoids an import cycle
 
-    club = club_service.get_club(club_id)
-    if club is None:
-        raise NotFoundError(CLUB_NOT_FOUND)
+    organization = organization_service.get_organization(organization_id)
+    if organization is None:
+        raise NotFoundError(ORGANIZATION_NOT_FOUND)
     return {
-        "organization": club.club_name,
-        "club_type": club.club_type,
-        "school": club.school,
+        "organization": organization.organization_name,
+        "organization_type": organization.organization_type,
+        "school": organization.school,
     }
 
 
@@ -151,13 +151,24 @@ def list_events(
     school: str | None = None,
     skip: int = 0,
     limit: int = DEFAULT_LIST_LIMIT,
+    start_utc: datetime | None = None,
+    end_utc: datetime | None = None,
 ) -> list[EventSummaryResponse]:
-    """Public browse list: the cached upcoming-events set for a school.
+    """Public browse list for a school.
 
-    Read-through cache keyed by school; the client owns all filtering, sorting,
-    and search, so this endpoint's only job is to serve the current event set.
+    With no explicit date window this returns the cached upcoming event set.
+    Supplying either bound reads the requested occurrence window directly.
     """
-    page = _events_cache.get_or_compute(school or "_all", lambda: _load_upcoming_events(school))
+    if start_utc is not None or end_utc is not None:
+        page = event_query.load_events_in_window(
+            start_utc=start_utc,
+            end_utc=end_utc,
+            school=school,
+            cap=MAX_LIST_LIMIT,
+            model=EventSummaryResponse,
+        )
+    else:
+        page = _events_cache.get_or_compute(school or "_all", lambda: _load_upcoming_events(school))
     return page[skip : skip + limit]
 
 
@@ -175,7 +186,7 @@ def list_promoted_events(school: str | None = None) -> list[EventSummaryResponse
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     payload = data.model_dump(mode="json")
     payload.pop("occurrences", None)
-    payload.update(_resolve_club_fields(data.club_id))
+    payload.update(_resolve_organization_fields(data.organization_id))
     payload["created_by"] = created_by
     r = get_sb().table(EVENTS).insert(payload).execute()
     new_row = r.data[0]
@@ -231,10 +242,10 @@ def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
     payload = data.model_dump(mode="json", exclude_unset=True)
     new_occurrences = payload.pop("occurrences", None)
 
-    # Reassigning the club re-derives the denormalized display fields so the
-    # event row never drifts from its owning club.
-    if payload.get("club_id") is not None:
-        payload.update(_resolve_club_fields(payload["club_id"]))
+    # Reassigning the organization re-derives the denormalized display fields so the
+    # event row never drifts from its owning organization.
+    if payload.get("organization_id") is not None:
+        payload.update(_resolve_organization_fields(payload["organization_id"]))
 
     if payload:
         get_sb().table(EVENTS).update(payload).eq("id", event_id).execute()

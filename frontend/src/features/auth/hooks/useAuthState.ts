@@ -16,7 +16,7 @@ import {
   loadUserProfile,
   hasAccessToken,
   AUTH_STATE_REFRESH_EVENT,
-  type UserClubSummary,
+  type UserOrganizationSummary,
 } from "@/features/auth/api/userRepository";
 import { ROLE_ADMIN } from "@/shared/constants/roles";
 
@@ -27,9 +27,9 @@ export interface AuthState {
   profileCompleted: boolean;
   isAdmin: boolean;
   hasOrganization: boolean;
-  clubs: UserClubSummary[];
-  clubId: number | null;
-  clubName: string | null;
+  clubs: UserOrganizationSummary[];
+  organizationId: number | null;
+  organizationName: string | null;
   /** Mirrors `getUserRole()`. */
   role: "user" | "admin";
 }
@@ -37,7 +37,7 @@ export interface AuthState {
 /**
  * Compute the live snapshot from the auth caches. Kept in sync with the
  * semantics of `isAuthenticated()` / `isProfileCompleted()` / `getUserRole()`
- * / `getUserHasClub()` in `auth.api.ts`.
+ * / `getUserHasOrganization()` in `auth.api.ts`.
  *
  * `profileCompleted` reflects "user has a valid authenticated session" — the
  * concept UI gates (LogOut button, save-event, saved-filter visibility) need.
@@ -59,8 +59,8 @@ function computeSnapshot(): AuthState {
     isAdmin: authed && role === ROLE_ADMIN,
     hasOrganization: authed && (profile?.hasOrganization ?? false),
     clubs,
-    clubId: authed ? profile?.clubId ?? null : null,
-    clubName: authed ? profile?.clubName ?? null : null,
+    organizationId: authed ? profile?.organizationId ?? null : null,
+    organizationName: authed ? profile?.organizationName ?? null : null,
     role,
   });
 }
@@ -137,14 +137,5 @@ export function useIsAdmin(): boolean {
     subscribe,
     () => getSnapshot().isAdmin,
     () => getSnapshot().isAdmin,
-  );
-}
-
-/** Primitive selector — re-renders only when club ownership changes. */
-export function useHasClub(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => getSnapshot().hasOrganization,
-    () => getSnapshot().hasOrganization,
   );
 }

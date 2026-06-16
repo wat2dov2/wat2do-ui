@@ -8,14 +8,14 @@ const NO_ORGANIZATIONS: Organization[] = [];
 /**
  * Resolve an organization id to its display name. Loads the full organization list once and
  * exposes a stable lookup — the single source of truth for showing the organization
- * name of an event/submission that only carries a club_id.
+ * name of an event/submission that only carries a organization_id.
  */
 export function useOrganizationNameLookup() {
   const { data: organizations } = useBackendQuery(getAllOrganizations, NO_ORGANIZATIONS);
 
   const namesById = useMemo(() => {
     const map = new Map<number, string>();
-    organizations.forEach((org) => map.set(org.id, org.club_name));
+    organizations.forEach((org) => map.set(org.id, org.organization_name));
     return map;
   }, [organizations]);
 
@@ -25,5 +25,5 @@ export function useOrganizationNameLookup() {
     [namesById],
   );
 
-  return { getClubName: getOrganizationName };
+  return { getOrganizationName: getOrganizationName };
 }

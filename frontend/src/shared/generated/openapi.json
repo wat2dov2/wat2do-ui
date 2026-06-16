@@ -151,18 +151,18 @@
         ]
       }
     },
-    "/auth/signup": {
+    "/auth/send-otp": {
       "post": {
         "tags": [
           "auth"
         ],
-        "summary": "Signup",
-        "operationId": "signup_auth_signup_post",
+        "summary": "Send Otp",
+        "operationId": "send_otp_auth_send_otp_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SignupRequest"
+                "$ref": "#/components/schemas/SendOtpRequest"
               }
             }
           },
@@ -174,7 +174,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SignupResponse"
+                  "$ref": "#/components/schemas/MessageResponse"
                 }
               }
             }
@@ -192,18 +192,18 @@
         }
       }
     },
-    "/auth/login": {
+    "/auth/verify-otp": {
       "post": {
         "tags": [
           "auth"
         ],
-        "summary": "Login",
-        "operationId": "login_auth_login_post",
+        "summary": "Verify Otp",
+        "operationId": "verify_otp_auth_verify_otp_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
+                "$ref": "#/components/schemas/VerifyOtpRequest"
               }
             }
           },
@@ -279,88 +279,6 @@
             "HTTPBearer": []
           }
         ]
-      }
-    },
-    "/auth/forgot-password": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Forgot Password",
-        "operationId": "forgot_password_auth_forgot_password_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ForgotPasswordRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/reset-password": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Reset Password",
-        "operationId": "reset_password_auth_reset_password_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetPasswordRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/calendar/token": {
@@ -439,1698 +357,6 @@
         "responses": {
           "200": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List Clubs",
-        "operationId": "list_clubs_clubs__get",
-        "parameters": [
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "title": "Skip"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 500,
-              "minimum": 1,
-              "default": 100,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "club_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 100
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Club Type"
-            }
-          },
-          {
-            "name": "school",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "School"
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 200
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClubResponse"
-                  },
-                  "title": "Response List Clubs Clubs  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Create Club",
-        "operationId": "create_club_clubs__post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/mine": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List My Clubs",
-        "description": "Return clubs owned by the authenticated user.",
-        "operationId": "list_my_clubs_clubs_mine_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ClubResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List My Clubs Clubs Mine Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/clubs/integrations/discord/options": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Discord Options",
-        "operationId": "get_discord_options_clubs_integrations_discord_options_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscordIntegrationOptionsResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/clubs/integrations/{platform}/options": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Platform Options",
-        "operationId": "get_platform_options_clubs_integrations__platform__options_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "platform",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": [
-                "whatsapp",
-                "discord",
-                "instagram",
-                "slack",
-                "telegram",
-                "linkedin",
-                "facebook"
-              ],
-              "type": "string",
-              "title": "Platform"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PlatformIntegrationOptionsResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/claims": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List Claims",
-        "description": "List claims (admin only).",
-        "operationId": "list_claims_clubs_claims_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Status"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClubClaimResponse"
-                  },
-                  "title": "Response List Claims Clubs Claims Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Club",
-        "operationId": "get_club_clubs__club_id__get",
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Update Club",
-        "operationId": "update_club_clubs__club_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Delete Club",
-        "operationId": "delete_club_clubs__club_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/integrations/{platform}": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Platform Integration",
-        "operationId": "get_platform_integration_clubs__club_id__integrations__platform__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "platform",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": [
-                "whatsapp",
-                "discord",
-                "instagram",
-                "slack",
-                "telegram",
-                "linkedin",
-                "facebook"
-              ],
-              "type": "string",
-              "title": "Platform"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubIntegrationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Upsert Platform Integration",
-        "operationId": "upsert_platform_integration_clubs__club_id__integrations__platform__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "platform",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": [
-                "whatsapp",
-                "discord",
-                "instagram",
-                "slack",
-                "telegram",
-                "linkedin",
-                "facebook"
-              ],
-              "type": "string",
-              "title": "Platform"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubIntegrationUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubIntegrationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Disconnect Platform Integration",
-        "operationId": "disconnect_platform_integration_clubs__club_id__integrations__platform__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "platform",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": [
-                "whatsapp",
-                "discord",
-                "instagram",
-                "slack",
-                "telegram",
-                "linkedin",
-                "facebook"
-              ],
-              "type": "string",
-              "title": "Platform"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubIntegrationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/members": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List Club Members",
-        "description": "List all members of a club. Admin or club members only.",
-        "operationId": "list_club_members_clubs__club_id__members_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClubMemberResponse"
-                  },
-                  "title": "Response List Club Members Clubs  Club Id  Members Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Add Club Member",
-        "description": "Add a member to the club by email. Admin or club members only.\n\nIf the user already has an account, they are added directly.\nOtherwise, a pending invitation is created and sent.",
-        "operationId": "add_club_member_clubs__club_id__members_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubMemberAdd"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/ClubMemberResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ClubInvitationResponse"
-                    }
-                  ],
-                  "title": "Response Add Club Member Clubs  Club Id  Members Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/members/{user_id}": {
-      "delete": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Remove Club Member",
-        "description": "Remove a member from the club. Admin or club members only.",
-        "operationId": "remove_club_member_clubs__club_id__members__user_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "User Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/invitations": {
-      "post": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Create Invitation",
-        "description": "Explicitly create and send an invitation.",
-        "operationId": "create_invitation_clubs__club_id__invitations_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubInvitationCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubInvitationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List Invitations",
-        "description": "List pending invitations for the club.",
-        "operationId": "list_invitations_clubs__club_id__invitations_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClubInvitationResponse"
-                  },
-                  "title": "Response List Invitations Clubs  Club Id  Invitations Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/invitations/{invitation_id}": {
-      "delete": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Revoke Invitation",
-        "description": "Revoke/delete an invitation.",
-        "operationId": "revoke_invitation_clubs__club_id__invitations__invitation_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "invitation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Invitation Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/invitations/{token}": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Invitation By Token",
-        "description": "Public route to validate an invitation token and fetch public details (club name).",
-        "operationId": "get_invitation_by_token_clubs_invitations__token__get",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubInvitationPublicResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/invitations/{token}/accept": {
-      "post": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Accept Invitation",
-        "description": "Accept an invitation token using the logged-in user's identity.",
-        "operationId": "accept_invitation_clubs_invitations__token__accept_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "token",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Token"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/join": {
-      "post": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Request To Join Club",
-        "description": "Create a pending request to join the club.",
-        "operationId": "request_to_join_club_clubs__club_id__join_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubMembershipResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/membership": {
-      "delete": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Leave Club Or Cancel Request",
-        "description": "Leave a club or cancel a pending join request.",
-        "operationId": "leave_club_or_cancel_request_clubs__club_id__membership_delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get My Membership Status",
-        "description": "Get the current user's membership details for this club.",
-        "operationId": "get_my_membership_status_clubs__club_id__membership_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/ClubMembershipResponse"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get My Membership Status Clubs  Club Id  Membership Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/memberships": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List Club Memberships",
-        "description": "Club Admin/Owner: List student memberships and pending requests for the club.",
-        "operationId": "list_club_memberships_clubs__club_id__memberships_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Status"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClubMembershipWithUserResponse"
-                  },
-                  "title": "Response List Club Memberships Clubs  Club Id  Memberships Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/memberships/{user_id}": {
-      "patch": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Update Club Membership",
-        "description": "Club Admin/Owner: Approve/reject a request or change role of a student member.",
-        "operationId": "update_club_membership_clubs__club_id__memberships__user_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "User Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubMembershipUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubMembershipResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Remove Club Membership",
-        "description": "Club Admin/Owner: Remove a student member or request from the club roster.",
-        "operationId": "remove_club_membership_clubs__club_id__memberships__user_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "User Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/claims": {
-      "post": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Create Claim",
-        "description": "Submit a claim for an unowned club.",
-        "operationId": "create_claim_clubs__club_id__claims_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubClaimCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubClaimResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/claims/{claim_id}": {
-      "patch": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Update Claim",
-        "description": "Approve or reject a claim (admin only).",
-        "operationId": "update_claim_clubs_claims__claim_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "claim_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Claim Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubClaimUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubClaimResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/join-requests": {
-      "post": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Create Join Request",
-        "description": "Submit a request to join a club's management team.",
-        "operationId": "create_join_request_clubs__club_id__join_requests_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubJoinRequestCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubJoinRequestResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "List Join Requests",
-        "description": "List pending join requests for a club (members only).",
-        "operationId": "list_join_requests_clubs__club_id__join_requests_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClubJoinRequestResponse"
-                  },
-                  "title": "Response List Join Requests Clubs  Club Id  Join Requests Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/clubs/{club_id}/join-requests/{request_id}": {
-      "patch": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Update Join Request",
-        "description": "Approve or reject a join request (members only).",
-        "operationId": "update_join_request_clubs__club_id__join_requests__request_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          },
-          {
-            "name": "request_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Request Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClubJoinRequestUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubJoinRequestResponse"
-                }
-              }
-            }
           },
           "422": {
             "description": "Validation Error",
@@ -2491,7 +717,7 @@
           "events"
         ],
         "summary": "List Events",
-        "description": "Public browse list: the current (upcoming) events for a school.\n\nThe server returns the whole upcoming set; the client owns all filtering,\nsorting, and search. The set is cached per school (see\n``event_service.list_events``) and the response omits ``created_by``\nvia ``EventSummaryResponse`` (audit I10 / S16).",
+        "description": "Public browse list for a school.\n\nBy default this returns the current upcoming set. ``start_utc`` and\n``end_utc`` expose the same occurrence-window read path for clients that\nneed a wider or narrower date range. The response omits ``created_by`` via\n``EventSummaryResponse`` (audit I10 / S16).",
         "operationId": "list_events_events__get",
         "parameters": [
           {
@@ -2548,6 +774,40 @@
                 }
               ],
               "title": "Category"
+            }
+          },
+          {
+            "name": "start_utc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Utc"
+            }
+          },
+          {
+            "name": "end_utc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Utc"
             }
           }
         ],
@@ -2893,13 +1153,1705 @@
         ]
       }
     },
+    "/organizations/": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List Organizations",
+        "operationId": "list_organizations_organizations__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "organization_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Organization Type"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationResponse"
+                  },
+                  "title": "Response List Organizations Organizations  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Create Organization",
+        "operationId": "create_organization_organizations__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/mine": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List My Organizations",
+        "description": "Return organizations owned by the authenticated user.",
+        "operationId": "list_my_organizations_organizations_mine_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List My Organizations Organizations Mine Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/organizations/integrations/discord/options": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get Discord Options",
+        "operationId": "get_discord_options_organizations_integrations_discord_options_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordIntegrationOptionsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/organizations/integrations/{platform}/options": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get Platform Options",
+        "operationId": "get_platform_options_organizations_integrations__platform__options_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "whatsapp",
+                "discord",
+                "instagram",
+                "slack",
+                "telegram",
+                "linkedin",
+                "facebook"
+              ],
+              "type": "string",
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformIntegrationOptionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/claims": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List Claims",
+        "description": "List claims (admin only).",
+        "operationId": "list_claims_organizations_claims_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationClaimResponse"
+                  },
+                  "title": "Response List Claims Organizations Claims Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get Organization",
+        "operationId": "get_organization_organizations__organization_id__get",
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Update Organization",
+        "operationId": "update_organization_organizations__organization_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Delete Organization",
+        "operationId": "delete_organization_organizations__organization_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/integrations/{platform}": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get Platform Integration",
+        "operationId": "get_platform_integration_organizations__organization_id__integrations__platform__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "whatsapp",
+                "discord",
+                "instagram",
+                "slack",
+                "telegram",
+                "linkedin",
+                "facebook"
+              ],
+              "type": "string",
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationIntegrationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Upsert Platform Integration",
+        "operationId": "upsert_platform_integration_organizations__organization_id__integrations__platform__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "whatsapp",
+                "discord",
+                "instagram",
+                "slack",
+                "telegram",
+                "linkedin",
+                "facebook"
+              ],
+              "type": "string",
+              "title": "Platform"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationIntegrationUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationIntegrationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Disconnect Platform Integration",
+        "operationId": "disconnect_platform_integration_organizations__organization_id__integrations__platform__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "whatsapp",
+                "discord",
+                "instagram",
+                "slack",
+                "telegram",
+                "linkedin",
+                "facebook"
+              ],
+              "type": "string",
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationIntegrationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/members": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List Organization Members",
+        "description": "List all members of a organization. Admin or organization members only.",
+        "operationId": "list_organization_members_organizations__organization_id__members_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationMemberResponse"
+                  },
+                  "title": "Response List Organization Members Organizations  Organization Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Add Organization Member",
+        "description": "Add a member to the organization by email. Admin or organization members only.\n\nIf the user already has an account, they are added directly.\nOtherwise, a pending invitation is created and sent.",
+        "operationId": "add_organization_member_organizations__organization_id__members_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationMemberAdd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/OrganizationMemberResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OrganizationInvitationResponse"
+                    }
+                  ],
+                  "title": "Response Add Organization Member Organizations  Organization Id  Members Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/members/{user_id}": {
+      "delete": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Remove Organization Member",
+        "description": "Remove a member from the organization. Admin or organization members only.",
+        "operationId": "remove_organization_member_organizations__organization_id__members__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/invitations": {
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Create Invitation",
+        "description": "Explicitly create and send an invitation.",
+        "operationId": "create_invitation_organizations__organization_id__invitations_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationInvitationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationInvitationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List Invitations",
+        "description": "List pending invitations for the organization.",
+        "operationId": "list_invitations_organizations__organization_id__invitations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationInvitationResponse"
+                  },
+                  "title": "Response List Invitations Organizations  Organization Id  Invitations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/invitations/{invitation_id}": {
+      "delete": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Revoke Invitation",
+        "description": "Revoke/delete an invitation.",
+        "operationId": "revoke_invitation_organizations__organization_id__invitations__invitation_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Invitation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/invitations/{token}": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get Invitation By Token",
+        "description": "Public route to validate an invitation token and fetch public details (organization name).",
+        "operationId": "get_invitation_by_token_organizations_invitations__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationInvitationPublicResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/invitations/{token}/accept": {
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Accept Invitation",
+        "description": "Accept an invitation token using the logged-in user's identity.",
+        "operationId": "accept_invitation_organizations_invitations__token__accept_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/join": {
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Request To Join Organization",
+        "description": "Create a pending request to join the organization.",
+        "operationId": "request_to_join_organization_organizations__organization_id__join_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationMembershipResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/membership": {
+      "delete": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Leave Organization Or Cancel Request",
+        "description": "Leave a organization or cancel a pending join request.",
+        "operationId": "leave_organization_or_cancel_request_organizations__organization_id__membership_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Get My Membership Status",
+        "description": "Get the current user's membership details for this organization.",
+        "operationId": "get_my_membership_status_organizations__organization_id__membership_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/OrganizationMembershipResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get My Membership Status Organizations  Organization Id  Membership Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/memberships": {
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List Organization Memberships",
+        "description": "Organization Admin/Owner: List student memberships and pending requests for the organization.",
+        "operationId": "list_organization_memberships_organizations__organization_id__memberships_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationMembershipWithUserResponse"
+                  },
+                  "title": "Response List Organization Memberships Organizations  Organization Id  Memberships Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/memberships/{user_id}": {
+      "patch": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Update Organization Membership",
+        "description": "Organization Admin/Owner: Approve/reject a request or change role of a student member.",
+        "operationId": "update_organization_membership_organizations__organization_id__memberships__user_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationMembershipUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationMembershipResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Remove Organization Membership",
+        "description": "Organization Admin/Owner: Remove a student member or request from the organization roster.",
+        "operationId": "remove_organization_membership_organizations__organization_id__memberships__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/claims": {
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Create Claim",
+        "description": "Submit a claim for an unowned organization.",
+        "operationId": "create_claim_organizations__organization_id__claims_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationClaimCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationClaimResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/claims/{claim_id}": {
+      "patch": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Update Claim",
+        "description": "Approve or reject a claim (admin only).",
+        "operationId": "update_claim_organizations_claims__claim_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationClaimUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationClaimResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/join-requests": {
+      "post": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Create Join Request",
+        "description": "Submit a request to join a organization's management team.",
+        "operationId": "create_join_request_organizations__organization_id__join_requests_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationJoinRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationJoinRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "List Join Requests",
+        "description": "List pending join requests for a organization (members only).",
+        "operationId": "list_join_requests_organizations__organization_id__join_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationJoinRequestResponse"
+                  },
+                  "title": "Response List Join Requests Organizations  Organization Id  Join Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{organization_id}/join-requests/{request_id}": {
+      "patch": {
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Update Join Request",
+        "description": "Approve or reject a join request (members only).",
+        "operationId": "update_join_request_organizations__organization_id__join_requests__request_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          },
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationJoinRequestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationJoinRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/qr/": {
       "get": {
         "tags": [
           "qr"
         ],
         "summary": "List Qr Codes",
-        "description": "List QR codes.\n\nAdmins can list all QR codes. Non-admins (club managers) can only list\nQR codes created by themselves.",
+        "description": "List QR codes.\n\nAdmins can list all QR codes. Non-admins (organization managers) can only list\nQR codes created by themselves.",
         "operationId": "list_qr_codes_qr__get",
         "security": [
           {
@@ -3011,7 +2963,7 @@
           "qr"
         ],
         "summary": "List Scans",
-        "description": "List QR-code scan events analytics.\n\nAdmins can list all scans. Non-admins (club managers) can only list scans\nof QR codes created by themselves.",
+        "description": "List QR-code scan events analytics.\n\nAdmins can list all scans. Non-admins (organization managers) can only list scans\nof QR codes created by themselves.",
         "operationId": "list_scans_qr_scans_get",
         "security": [
           {
@@ -3490,131 +3442,6 @@
         }
       }
     },
-    "/saved-clubs/": {
-      "get": {
-        "tags": [
-          "saved-clubs"
-        ],
-        "summary": "List Saved Clubs",
-        "description": "Return club IDs saved by the current user.\n\n- 401 if unauthenticated.",
-        "operationId": "list_saved_clubs_saved_clubs__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "type": "integer"
-                  },
-                  "type": "array",
-                  "title": "Response List Saved Clubs Saved Clubs  Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/saved-clubs/{club_id}": {
-      "put": {
-        "tags": [
-          "saved-clubs"
-        ],
-        "summary": "Save Club",
-        "description": "Save (bookmark) a club.\n\n- 401 if unauthenticated.\n- 404 if the referenced club does not exist.\n- 400 if the user has already hit the ``MAX_SAVED_CLUBS_PER_USER`` cap.",
-        "operationId": "save_club_saved_clubs__club_id__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SaveClubStatusResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "saved-clubs"
-        ],
-        "summary": "Unsave Club",
-        "description": "Remove a saved club.\n\n- 401 if unauthenticated.",
-        "operationId": "unsave_club_saved_clubs__club_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SaveClubStatusResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/saved-events/": {
       "get": {
         "tags": [
@@ -3740,13 +3567,138 @@
         }
       }
     },
+    "/saved-organizations/": {
+      "get": {
+        "tags": [
+          "saved-organizations"
+        ],
+        "summary": "List Saved Organizations",
+        "description": "Return organization IDs saved by the current user.\n\n- 401 if unauthenticated.",
+        "operationId": "list_saved_organizations_saved_organizations__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array",
+                  "title": "Response List Saved Organizations Saved Organizations  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/saved-organizations/{organization_id}": {
+      "put": {
+        "tags": [
+          "saved-organizations"
+        ],
+        "summary": "Save Organization",
+        "description": "Save (bookmark) a organization.\n\n- 401 if unauthenticated.\n- 404 if the referenced organization does not exist.\n- 400 if the user has already hit the ``MAX_SAVED_ORGANIZATIONS_PER_USER`` cap.",
+        "operationId": "save_organization_saved_organizations__organization_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveOrganizationStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "saved-organizations"
+        ],
+        "summary": "Unsave Organization",
+        "description": "Remove a saved organization.\n\n- 401 if unauthenticated.",
+        "operationId": "unsave_organization_saved_organizations__organization_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organization_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Organization Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveOrganizationStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/schools": {
       "get": {
         "tags": [
           "schools"
         ],
-        "summary": "List Schools",
-        "operationId": "list_schools_schools_get",
+        "summary": "Search Schools Endpoint",
+        "operationId": "search_schools_endpoint_schools_get",
         "parameters": [
           {
             "name": "q",
@@ -3782,7 +3734,7 @@
                   "items": {
                     "type": "string"
                   },
-                  "title": "Response List Schools Schools Get"
+                  "title": "Response Search Schools Endpoint Schools Get"
                 }
               }
             }
@@ -4170,13 +4122,13 @@
         ]
       }
     },
-    "/uploads/club-logo/{club_id}": {
+    "/uploads/organization-logo/{organization_id}": {
       "post": {
         "tags": [
           "uploads"
         ],
-        "summary": "Upload Club Logo",
-        "operationId": "upload_club_logo_uploads_club_logo__club_id__post",
+        "summary": "Upload Organization Logo",
+        "operationId": "upload_organization_logo_uploads_organization_logo__organization_id__post",
         "security": [
           {
             "HTTPBearer": []
@@ -4184,12 +4136,12 @@
         ],
         "parameters": [
           {
-            "name": "club_id",
+            "name": "organization_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
-              "title": "Club Id"
+              "title": "Organization Id"
             }
           }
         ],
@@ -4198,7 +4150,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_club_logo_uploads_club_logo__club_id__post"
+                "$ref": "#/components/schemas/Body_upload_organization_logo_uploads_organization_logo__organization_id__post"
               }
             }
           }
@@ -4837,20 +4789,6 @@
         ],
         "title": "Body_upload_avatar_uploads_avatar_post"
       },
-      "Body_upload_club_logo_uploads_club_logo__club_id__post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_club_logo_uploads_club_logo__club_id__post"
-      },
       "Body_upload_event_image_uploads_event_image__event_id__post": {
         "properties": {
           "file": {
@@ -4864,6 +4802,20 @@
           "file"
         ],
         "title": "Body_upload_event_image_uploads_event_image__event_id__post"
+      },
+      "Body_upload_organization_logo_uploads_organization_logo__organization_id__post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_organization_logo_uploads_organization_logo__organization_id__post"
       },
       "Body_upload_qr_asset_uploads_qr_asset_post": {
         "properties": {
@@ -4897,983 +4849,6 @@
         ],
         "title": "CalendarTokenResponse",
         "description": "Returned by GET /calendar/token and POST /calendar/token/regenerate."
-      },
-      "ClubClaimCreate": {
-        "properties": {
-          "executive_role": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 2,
-            "title": "Executive Role"
-          },
-          "proof_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 500
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Proof Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "executive_role"
-        ],
-        "title": "ClubClaimCreate"
-      },
-      "ClubClaimResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
-          },
-          "executive_role": {
-            "type": "string",
-            "title": "Executive Role"
-          },
-          "proof_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Proof Url"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "rejection_reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejection Reason"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          },
-          "clubs": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ClubResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "users": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "club_id",
-          "user_id",
-          "executive_role",
-          "proof_url",
-          "status",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "ClubClaimResponse"
-      },
-      "ClubClaimUpdate": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "pattern": "^(approved|rejected)$",
-            "title": "Status"
-          },
-          "rejection_reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 500
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejection Reason"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "ClubClaimUpdate"
-      },
-      "ClubCreate": {
-        "properties": {
-          "club_name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Club Name"
-          },
-          "categories": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "type": "array",
-                "maxItems": 20
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Categories"
-          },
-          "club_page": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Page"
-          },
-          "ig": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ig"
-          },
-          "discord": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord"
-          },
-          "club_type": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Club Type"
-          },
-          "logo_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Logo Url"
-          },
-          "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner User Id",
-            "description": "Approved club owner user ID"
-          },
-          "school": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "School",
-            "default": "University of Waterloo"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "club_name",
-          "club_type"
-        ],
-        "title": "ClubCreate"
-      },
-      "ClubIntegrationResponse": {
-        "properties": {
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "platform": {
-            "type": "string",
-            "enum": [
-              "whatsapp",
-              "discord",
-              "instagram",
-              "slack",
-              "telegram",
-              "linkedin",
-              "facebook"
-            ],
-            "title": "Platform"
-          },
-          "connected": {
-            "type": "boolean",
-            "title": "Connected"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "last_sync": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Sync"
-          },
-          "metadata": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Metadata"
-          }
-        },
-        "type": "object",
-        "required": [
-          "club_id",
-          "platform",
-          "connected"
-        ],
-        "title": "ClubIntegrationResponse"
-      },
-      "ClubIntegrationUpdate": {
-        "properties": {
-          "connected": {
-            "type": "boolean",
-            "title": "Connected",
-            "default": true
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 200
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "metadata": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Metadata"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "ClubIntegrationUpdate",
-        "description": "Update request for a club's integration configuration.\n\nThe ``metadata`` dict is now bounded on three axes:\n- max key count (``MAX_INTEGRATION_METADATA_KEYS``)\n- max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)\n- max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)\n\nUnknown envelope fields are rejected via ``extra=\"forbid\"`` so future\nrefactors that accidentally echo request data back to the DB do not\nintroduce a mass-assignment surface."
-      },
-      "ClubInvitationCreate": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "minLength": 3,
-            "title": "Email",
-            "description": "Email to invite"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "email"
-        ],
-        "title": "ClubInvitationCreate"
-      },
-      "ClubInvitationPublicResponse": {
-        "properties": {
-          "club_name": {
-            "type": "string",
-            "title": "Club Name"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Expires At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "club_name",
-          "email",
-          "expires_at"
-        ],
-        "title": "ClubInvitationPublicResponse"
-      },
-      "ClubInvitationResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "token": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Token"
-          },
-          "invited_by": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Invited By"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Expires At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "club_id",
-          "email",
-          "token",
-          "invited_by",
-          "status",
-          "created_at",
-          "expires_at"
-        ],
-        "title": "ClubInvitationResponse"
-      },
-      "ClubJoinRequestCreate": {
-        "properties": {
-          "pitch": {
-            "type": "string",
-            "maxLength": 1000,
-            "minLength": 10,
-            "title": "Pitch"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pitch"
-        ],
-        "title": "ClubJoinRequestCreate"
-      },
-      "ClubJoinRequestResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
-          },
-          "pitch": {
-            "type": "string",
-            "title": "Pitch"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          },
-          "users": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "club_id",
-          "user_id",
-          "pitch",
-          "status",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "ClubJoinRequestResponse"
-      },
-      "ClubJoinRequestUpdate": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "pattern": "^(approved|rejected)$",
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "ClubJoinRequestUpdate"
-      },
-      "ClubMemberAdd": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "title": "Email"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email"
-        ],
-        "title": "ClubMemberAdd"
-      },
-      "ClubMemberResponse": {
-        "properties": {
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "full_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Full Name"
-          },
-          "avatar_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avatar Url"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "joined_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Joined At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "user_id",
-          "email",
-          "role",
-          "joined_at"
-        ],
-        "title": "ClubMemberResponse"
-      },
-      "ClubMembershipResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ],
-            "title": "Status"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "member",
-              "officer",
-              "owner"
-            ],
-            "title": "Role"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "club_id",
-          "user_id",
-          "status",
-          "role",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "ClubMembershipResponse"
-      },
-      "ClubMembershipUpdate": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ],
-            "title": "Status"
-          },
-          "role": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "member",
-                  "officer",
-                  "owner"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "ClubMembershipUpdate"
-      },
-      "ClubMembershipWithUserResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ],
-            "title": "Status"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "member",
-              "officer",
-              "owner"
-            ],
-            "title": "Role"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserMinResponse"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "club_id",
-          "user_id",
-          "status",
-          "role",
-          "created_at",
-          "updated_at",
-          "user"
-        ],
-        "title": "ClubMembershipWithUserResponse"
-      },
-      "ClubResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "club_name": {
-            "type": "string",
-            "title": "Club Name"
-          },
-          "categories": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Categories"
-          },
-          "club_page": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Page"
-          },
-          "ig": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ig"
-          },
-          "discord": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord"
-          },
-          "club_type": {
-            "type": "string",
-            "title": "Club Type"
-          },
-          "logo_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Logo Url"
-          },
-          "created_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created By"
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          },
-          "owner_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Email"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "club_name",
-          "club_type"
-        ],
-        "title": "ClubResponse"
-      },
-      "ClubUpdate": {
-        "properties": {
-          "club_name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 200
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Name"
-          },
-          "categories": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "type": "array",
-                "maxItems": 20
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Categories"
-          },
-          "club_page": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Page"
-          },
-          "ig": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ig"
-          },
-          "discord": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Discord"
-          },
-          "club_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Type"
-          },
-          "logo_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Logo Url"
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "ClubUpdate"
       },
       "CreditBalanceResponse": {
         "properties": {
@@ -6058,10 +5033,10 @@
             ],
             "title": "Category"
           },
-          "club_id": {
+          "organization_id": {
             "type": "integer",
             "minimum": 1.0,
-            "title": "Club Id"
+            "title": "Organization Id"
           },
           "ig_handle": {
             "anyOf": [
@@ -6082,7 +5057,7 @@
           "title",
           "location",
           "occurrences",
-          "club_id"
+          "organization_id"
         ],
         "title": "EventCreate"
       },
@@ -6158,7 +5133,7 @@
             "type": "integer",
             "title": "Id"
           },
-          "club_id": {
+          "organization_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -6167,7 +5142,7 @@
                 "type": "null"
               }
             ],
-            "title": "Club Id"
+            "title": "Organization Id"
           },
           "title": {
             "type": "string",
@@ -6243,7 +5218,7 @@
             ],
             "title": "Source Image Url"
           },
-          "club_type": {
+          "organization_type": {
             "anyOf": [
               {
                 "type": "string"
@@ -6252,7 +5227,7 @@
                 "type": "null"
               }
             ],
-            "title": "Club Type"
+            "title": "Organization Type"
           },
           "school": {
             "anyOf": [
@@ -6330,7 +5305,7 @@
             "type": "integer",
             "title": "Id"
           },
-          "club_id": {
+          "organization_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -6339,7 +5314,7 @@
                 "type": "null"
               }
             ],
-            "title": "Club Id"
+            "title": "Organization Id"
           },
           "title": {
             "type": "string",
@@ -6415,7 +5390,7 @@
             ],
             "title": "Source Image Url"
           },
-          "club_type": {
+          "organization_type": {
             "anyOf": [
               {
                 "type": "string"
@@ -6424,7 +5399,7 @@
                 "type": "null"
               }
             ],
-            "title": "Club Type"
+            "title": "Organization Type"
           },
           "school": {
             "anyOf": [
@@ -6765,7 +5740,7 @@
             ],
             "title": "Category"
           },
-          "club_id": {
+          "organization_id": {
             "anyOf": [
               {
                 "type": "integer",
@@ -6775,7 +5750,7 @@
                 "type": "null"
               }
             ],
-            "title": "Club Id"
+            "title": "Organization Id"
           },
           "ig_handle": {
             "anyOf": [
@@ -6862,20 +5837,6 @@
         },
         "type": "object",
         "title": "FilterStateResponse"
-      },
-      "ForgotPasswordRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email"
-        ],
-        "title": "ForgotPasswordRequest"
       },
       "HTTPValidationError": {
         "properties": {
@@ -6978,27 +5939,6 @@
         ],
         "title": "LatestEventResponse",
         "description": "Minimal payload for 'latest added event' (e.g. for 'X added 22 minutes ago')."
-      },
-      "LoginRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 8,
-            "title": "Password"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
-        "title": "LoginRequest"
       },
       "MessageResponse": {
         "properties": {
@@ -7236,6 +6176,983 @@
           "created_at"
         ],
         "title": "OccurrenceResponse"
+      },
+      "OrganizationClaimCreate": {
+        "properties": {
+          "executive_role": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Executive Role"
+          },
+          "proof_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proof Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "executive_role"
+        ],
+        "title": "OrganizationClaimCreate"
+      },
+      "OrganizationClaimResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "organization_id": {
+            "type": "integer",
+            "title": "Organization Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "executive_role": {
+            "type": "string",
+            "title": "Executive Role"
+          },
+          "proof_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proof Url"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "organizations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "users": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "organization_id",
+          "user_id",
+          "executive_role",
+          "proof_url",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "OrganizationClaimResponse"
+      },
+      "OrganizationClaimUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "pattern": "^(approved|rejected)$",
+            "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "OrganizationClaimUpdate"
+      },
+      "OrganizationCreate": {
+        "properties": {
+          "organization_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Organization Name"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "organization_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Page"
+          },
+          "ig": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig"
+          },
+          "discord": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discord"
+          },
+          "organization_type": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Organization Type"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "owner_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner User Id",
+            "description": "Approved organization owner user ID"
+          },
+          "school": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "School",
+            "default": "University of Waterloo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "organization_name",
+          "organization_type"
+        ],
+        "title": "OrganizationCreate"
+      },
+      "OrganizationIntegrationResponse": {
+        "properties": {
+          "organization_id": {
+            "type": "integer",
+            "title": "Organization Id"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "whatsapp",
+              "discord",
+              "instagram",
+              "slack",
+              "telegram",
+              "linkedin",
+              "facebook"
+            ],
+            "title": "Platform"
+          },
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "last_sync": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "organization_id",
+          "platform",
+          "connected"
+        ],
+        "title": "OrganizationIntegrationResponse"
+      },
+      "OrganizationIntegrationUpdate": {
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "title": "Connected",
+            "default": true
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "OrganizationIntegrationUpdate",
+        "description": "Update request for a organization's integration configuration.\n\nThe ``metadata`` dict is now bounded on three axes:\n- max key count (``MAX_INTEGRATION_METADATA_KEYS``)\n- max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)\n- max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)\n\nUnknown envelope fields are rejected via ``extra=\"forbid\"`` so future\nrefactors that accidentally echo request data back to the DB do not\nintroduce a mass-assignment surface."
+      },
+      "OrganizationInvitationCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Email",
+            "description": "Email to invite"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "OrganizationInvitationCreate"
+      },
+      "OrganizationInvitationPublicResponse": {
+        "properties": {
+          "organization_name": {
+            "type": "string",
+            "title": "Organization Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "organization_name",
+          "email",
+          "expires_at"
+        ],
+        "title": "OrganizationInvitationPublicResponse"
+      },
+      "OrganizationInvitationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "organization_id": {
+            "type": "integer",
+            "title": "Organization Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "token": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Token"
+          },
+          "invited_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Invited By"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "organization_id",
+          "email",
+          "token",
+          "invited_by",
+          "status",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "OrganizationInvitationResponse"
+      },
+      "OrganizationJoinRequestCreate": {
+        "properties": {
+          "pitch": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "Pitch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pitch"
+        ],
+        "title": "OrganizationJoinRequestCreate"
+      },
+      "OrganizationJoinRequestResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "organization_id": {
+            "type": "integer",
+            "title": "Organization Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "pitch": {
+            "type": "string",
+            "title": "Pitch"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "users": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "organization_id",
+          "user_id",
+          "pitch",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "OrganizationJoinRequestResponse"
+      },
+      "OrganizationJoinRequestUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "pattern": "^(approved|rejected)$",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "OrganizationJoinRequestUpdate"
+      },
+      "OrganizationMemberAdd": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "OrganizationMemberAdd"
+      },
+      "OrganizationMemberResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Joined At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "role",
+          "joined_at"
+        ],
+        "title": "OrganizationMemberResponse"
+      },
+      "OrganizationMembershipResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "organization_id": {
+            "type": "integer",
+            "title": "Organization Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "officer",
+              "owner"
+            ],
+            "title": "Role"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "organization_id",
+          "user_id",
+          "status",
+          "role",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "OrganizationMembershipResponse"
+      },
+      "OrganizationMembershipUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "member",
+                  "officer",
+                  "owner"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "OrganizationMembershipUpdate"
+      },
+      "OrganizationMembershipWithUserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "organization_id": {
+            "type": "integer",
+            "title": "Organization Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "officer",
+              "owner"
+            ],
+            "title": "Role"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserMinResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "organization_id",
+          "user_id",
+          "status",
+          "role",
+          "created_at",
+          "updated_at",
+          "user"
+        ],
+        "title": "OrganizationMembershipWithUserResponse"
+      },
+      "OrganizationResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "organization_name": {
+            "type": "string",
+            "title": "Organization Name"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "organization_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Page"
+          },
+          "ig": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig"
+          },
+          "discord": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discord"
+          },
+          "organization_type": {
+            "type": "string",
+            "title": "Organization Type"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "owner_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "organization_name",
+          "organization_type"
+        ],
+        "title": "OrganizationResponse"
+      },
+      "OrganizationUpdate": {
+        "properties": {
+          "organization_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Name"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "organization_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Page"
+          },
+          "ig": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig"
+          },
+          "discord": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discord"
+          },
+          "organization_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Type"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "OrganizationUpdate"
       },
       "PaginatedResponse_QrCodeResponse_": {
         "properties": {
@@ -7926,53 +7843,6 @@
         ],
         "title": "ReportUpdate"
       },
-      "ResetPasswordRequest": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "maxLength": 4096,
-            "minLength": 1,
-            "title": "Access Token"
-          },
-          "refresh_token": {
-            "type": "string",
-            "maxLength": 4096,
-            "minLength": 1,
-            "title": "Refresh Token"
-          },
-          "new_password": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 8,
-            "title": "New Password"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token",
-          "refresh_token",
-          "new_password"
-        ],
-        "title": "ResetPasswordRequest"
-      },
-      "SaveClubStatusResponse": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "saved",
-              "unsaved"
-            ],
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "SaveClubStatusResponse",
-        "description": "Response for ``PUT /saved-clubs/{id}`` / ``DELETE /saved-clubs/{id}``.\n\nTyped explicitly so the response contract is locked at the\nOpenAPI boundary."
-      },
       "SaveEventStatusResponse": {
         "properties": {
           "status": {
@@ -7991,30 +7861,30 @@
         "title": "SaveEventStatusResponse",
         "description": "Response for ``PUT /saved-events/{id}`` / ``DELETE /saved-events/{id}``.\n\nTyped explicitly (audit S7) so the response contract is locked at the\nOpenAPI boundary \u2014 future refactors that add fields to the dict will\nbe caught by the frontend type generator."
       },
-      "SignupRequest": {
+      "SaveOrganizationStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "saved",
+              "unsaved"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SaveOrganizationStatusResponse",
+        "description": "Response for ``PUT /saved-organizations/{id}`` / ``DELETE /saved-organizations/{id}``.\n\nTyped explicitly so the response contract is locked at the\nOpenAPI boundary."
+      },
+      "SendOtpRequest": {
         "properties": {
           "email": {
             "type": "string",
             "format": "email",
             "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 8,
-            "title": "Password"
-          },
-          "full_name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Full Name"
           },
           "token": {
             "anyOf": [
@@ -8031,67 +7901,9 @@
         },
         "type": "object",
         "required": [
-          "email",
-          "password"
+          "email"
         ],
-        "title": "SignupRequest"
-      },
-      "SignupResponse": {
-        "properties": {
-          "user_id": {
-            "type": "string",
-            "title": "User Id"
-          },
-          "access_token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Access Token"
-          },
-          "token_type": {
-            "type": "string",
-            "title": "Token Type",
-            "default": "bearer"
-          },
-          "expires_in": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expires In"
-          },
-          "confirmation_required": {
-            "type": "boolean",
-            "title": "Confirmation Required",
-            "default": false
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          }
-        },
-        "type": "object",
-        "required": [
-          "user_id"
-        ],
-        "title": "SignupResponse"
+        "title": "SendOtpRequest"
       },
       "SubmissionCreate": {
         "properties": {
@@ -8114,7 +7926,14 @@
             "title": "Id"
           },
           "user_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "User Id"
           },
           "event_data": {
@@ -8242,6 +8061,11 @@
               }
             ],
             "title": "School"
+          },
+          "onboarding_required": {
+            "type": "boolean",
+            "title": "Onboarding Required",
+            "default": false
           }
         },
         "type": "object",
@@ -8276,17 +8100,6 @@
           "email": {
             "type": "string",
             "title": "Email"
-          },
-          "username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Username"
           },
           "full_name": {
             "anyOf": [
@@ -8623,6 +8436,27 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerifyOtpRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "token": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "token"
+        ],
+        "title": "VerifyOtpRequest"
       }
     },
     "securitySchemes": {

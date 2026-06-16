@@ -8,6 +8,7 @@ venv/
 # Environment
 .env
 .env.local
+.vercel/
 
 # Node
 node_modules/
@@ -31,3 +32,4 @@ verify-out/
 
 # Cursor
 .cursor/hooks/state/
+.fallow/

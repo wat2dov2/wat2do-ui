@@ -1,7 +1,9 @@
 
+import { getSchoolDisplayName } from "@/shared/constants/schools";
+
 /**
- * School names are backend-owned data, so the frontend shows them as-is.
+ * School slugs are backend-owned data; display labels stay at the UI edge.
  */
 export function translateSchool(school: string): string {
-  return school;
+  return getSchoolDisplayName(school);
 }

@@ -7,7 +7,7 @@ import type { TFunction } from "i18next";
 import type { PreviewEventData } from "@/features/auth/components/PreviewStyleEventCard";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { getEventCategory } from "@/shared/utils/event";
-import { computeEventBadges } from "@/features/events";
+import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 
 const AUTH_BADGE_STYLES = {
   freeBg: "bg-success/20",

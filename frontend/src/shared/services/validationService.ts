@@ -41,8 +41,8 @@ export function validateEventForm(
     errors.title = m.titleRequired;
   }
 
-  if (touched.club_id && formData.club_id == null) {
-    errors.club_id = m.clubRequired;
+  if (touched.organization_id && formData.organization_id == null) {
+    errors.organization_id = m.clubRequired;
   }
 
   if (touched.occurrences && !formData.occurrences.some((occurrence) => occurrence.dtstart_local)) {
@@ -65,7 +65,7 @@ export function isEventFormValid(
 ): boolean {
   return (
     formData.title.trim() !== "" &&
-    formData.club_id != null &&
+    formData.organization_id != null &&
     formData.occurrences.some((occurrence) => occurrence.dtstart_local !== "") &&
     formData.location !== "" &&
     Object.keys(errors).length === 0
@@ -78,7 +78,7 @@ export function isEventFormValid(
 export function markAllFieldsTouched(): Record<string, boolean> {
   return {
     title: true,
-    club_id: true,
+    organization_id: true,
     occurrences: true,
     location: true,
   };

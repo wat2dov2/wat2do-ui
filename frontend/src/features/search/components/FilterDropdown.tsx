@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { VisualFilters } from "@/features/search/components/VisualFilters";
 import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
+import { useProfileCompleted } from "@/features/auth";
 import type { FilterViewMode } from "@/shared/types";
 
 interface PieMenuItem {
@@ -71,6 +72,7 @@ export function FilterDropdown({
   isDarkMode,
 }: FilterDropdownProps) {
   const { t } = useTranslation();
+  const profileCompleted = useProfileCompleted();
 
   return (
     <>
@@ -110,8 +112,9 @@ export function FilterDropdown({
         onAiGenerate={filters.handleAiGenerate}
         error={filters.jsonError}
         title={t("filters.aiFilterGeneration")}
-        placeholder={t("filters.aiFilterPlaceholder")}
+        placeholder={!profileCompleted ? t("filters.aiFilterPlaceholderDisabled") : t("filters.aiFilterPlaceholder")}
         generatingText={t("common.generating")}
+        disabled={!profileCompleted}
       />
 
       {filterViewMode === "visual" ? (

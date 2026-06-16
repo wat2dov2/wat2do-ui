@@ -58,22 +58,22 @@ export function EventFormFields() {
 
           <Field>
             <FieldLabel
-              htmlFor="field-club_id"
+              htmlFor="field-organization_id"
               className="text-sm font-medium text-foreground flex items-center gap-1.5"
             >
               {t("events.organization")}
               <span className="text-error">*</span>
             </FieldLabel>
             <OrganizationCombobox
-              id="field-club_id"
-              value={formData.club_id}
+              id="field-organization_id"
+              value={formData.organization_id}
               organizations={organizations}
-              onChange={(clubId) => updateField("club_id", clubId)}
-              onBlur={() => handleBlur("club_id")}
-              hasError={Boolean(touched.club_id && errors.club_id)}
+              onChange={(organizationId) => updateField("organization_id", organizationId)}
+              onBlur={() => handleBlur("organization_id")}
+              hasError={Boolean(touched.organization_id && errors.organization_id)}
             />
-            {touched.club_id && errors.club_id && (
-              <FieldError className="text-xs">{errors.club_id}</FieldError>
+            {touched.organization_id && errors.organization_id && (
+              <FieldError className="text-xs">{errors.organization_id}</FieldError>
             )}
           </Field>
 

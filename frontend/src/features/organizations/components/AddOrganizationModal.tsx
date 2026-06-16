@@ -37,15 +37,15 @@ import { MultiSelect } from "@/shared/ui/multi-select";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { getOrganizationCategories } from "@/shared/data/organizationCategories";
-import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
+import { translateCategory } from "@/shared/utils/event";
 
 interface OrganizationFormData {
-  club_name: string;
+  organization_name: string;
   categories: string[];
-  club_page: string;
+  organization_page: string;
   ig: string;
   discord: string;
-  club_type: string;
+  organization_type: string;
   owner_user_id: string;
   school: string;
 }
@@ -68,12 +68,12 @@ export function AddOrganizationModal({
 
   // Memoize getDefaults to prevent infinite loops
   const getDefaults = useCallback(() => ({
-    club_name: "",
+    organization_name: "",
     categories: [],
-    club_page: "",
+    organization_page: "",
     ig: "",
     discord: "",
-    club_type: "WUSA",
+    organization_type: "WUSA",
     owner_user_id: "",
     school: DEFAULT_SCHOOL,
   }), []);
@@ -81,8 +81,8 @@ export function AddOrganizationModal({
   // Memoize validate to prevent infinite loops
   const validate = useCallback((data: OrganizationFormData, touched: Record<string, boolean>) => {
     const newErrors: Record<string, string> = {};
-    if (touched.club_name && !data.club_name.trim()) {
-      newErrors.club_name = t("forms.organizationNameRequired");
+    if (touched.organization_name && !data.organization_name.trim()) {
+      newErrors.organization_name = t("forms.organizationNameRequired");
     }
     if (touched.categories && data.categories.length === 0) {
       newErrors.categories = t("forms.categoryRequired");
@@ -96,12 +96,12 @@ export function AddOrganizationModal({
   const form = useForm<OrganizationFormData>({
     initialData: initialData
       ? {
-          club_name: initialData.club_name,
+          organization_name: initialData.organization_name,
           categories: initialData.categories,
-          club_page: initialData.club_page,
+          organization_page: initialData.organization_page,
           ig: initialData.ig || "",
           discord: initialData.discord || "",
-          club_type: initialData.club_type,
+          organization_type: initialData.organization_type,
           owner_user_id: initialData.created_by || "",
           school: initialData.school || DEFAULT_SCHOOL,
         }
@@ -141,12 +141,12 @@ export function AddOrganizationModal({
 
     const organization: Organization = {
       id: initialData?.id || Date.now(),
-      club_name: form.formData.club_name.trim(),
+      organization_name: form.formData.organization_name.trim(),
       categories: form.formData.categories,
-      club_page: form.formData.club_page.trim(),
+      organization_page: form.formData.organization_page.trim(),
       ig: form.formData.ig.trim() || null,
       discord: form.formData.discord.trim() || null,
-      club_type: form.formData.club_type,
+      organization_type: form.formData.organization_type,
       created_by: form.formData.owner_user_id.trim() || initialData?.created_by || null,
       school: form.formData.school,
     };
@@ -157,8 +157,8 @@ export function AddOrganizationModal({
       toast({
         title: isEditMode ? t("organizations.clubUpdated") : t("organizations.clubCreated"),
         description: isEditMode
-          ? t("organizations.clubUpdatedMessage", { name: organization.club_name })
-          : t("organizations.clubCreatedMessage", { name: organization.club_name }),
+          ? t("organizations.clubUpdatedMessage", { name: organization.organization_name })
+          : t("organizations.clubCreatedMessage", { name: organization.organization_name }),
         variant: "success",
       });
       onClose();
@@ -192,14 +192,14 @@ export function AddOrganizationModal({
                   <Input
                     id="club-name"
                     type="text"
-                    value={form.formData.club_name}
-                    onChange={(e) => form.updateField("club_name", e.target.value)}
-                    onBlur={() => form.handleBlur("club_name")}
+                    value={form.formData.organization_name}
+                    onChange={(e) => form.updateField("organization_name", e.target.value)}
+                    onBlur={() => form.handleBlur("organization_name")}
                     placeholder={t("forms.organizationNamePlaceholder")}
-                    className={form.errors.club_name ? "border-error" : ""}
+                    className={form.errors.organization_name ? "border-error" : ""}
                   />
-                  {form.errors.club_name && (
-                    <FieldError className="text-xs">{form.errors.club_name}</FieldError>
+                  {form.errors.organization_name && (
+                    <FieldError className="text-xs">{form.errors.organization_name}</FieldError>
                   )}
                 </Field>
 
@@ -228,7 +228,7 @@ export function AddOrganizationModal({
                     selected={form.formData.categories}
                     onToggle={toggleCategory}
                     className="justify-start"
-                    getLabel={(category) => getClubCategoryTranslation(category, t)}
+                    getLabel={(category) => translateCategory(category, t)}
                   />
                   {form.touched.categories && form.errors.categories && (
                     <FieldError className="text-xs">{form.errors.categories}</FieldError>
@@ -265,8 +265,8 @@ export function AddOrganizationModal({
               {t("forms.organizationType")}
             </FieldLabel>
             <Select
-              value={form.formData.club_type}
-              onValueChange={(value) => form.updateField("club_type", value)}
+              value={form.formData.organization_type}
+              onValueChange={(value) => form.updateField("organization_type", value)}
             >
               <SelectTrigger id="club-type" className="w-full">
                 <SelectValue />
@@ -286,8 +286,8 @@ export function AddOrganizationModal({
               <Input
                 id="club-page"
                 type="text"
-                value={form.formData.club_page}
-                onChange={(e) => form.updateField("club_page", e.target.value)}
+                value={form.formData.organization_page}
+                onChange={(e) => form.updateField("organization_page", e.target.value)}
                 placeholder={t("forms.organizationPageUrlPlaceholder")}
               />
           </Field>

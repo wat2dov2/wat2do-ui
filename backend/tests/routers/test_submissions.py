@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+from core.auth import get_optional_user
 from schemas.submission import SubmissionResponse
 from schemas.user import UserResponse
 from services import event_service, submission_service, user_service
@@ -10,7 +11,7 @@ FAKE_DB_USER = UserResponse(
     id="00000000-0000-0000-0000-000000000001",
     email=FAKE_USER["email"],
     role="user",
-    school="University of Waterloo",
+    school="uwaterloo",
     created_at=datetime.now(timezone.utc),
     updated_at=datetime.now(timezone.utc),
 )
@@ -18,7 +19,7 @@ FAKE_DB_USER = UserResponse(
 _VALID_EVENT_DATA = {
     "title": "X",
     "location": "Loc",
-    "club_id": 7,
+    "organization_id": 7,
     "occurrences": [
         {
             "dtstart_utc": "2026-12-01T18:00:00+00:00",
@@ -44,22 +45,61 @@ def _mock_submission(**overrides) -> SubmissionResponse:
     return SubmissionResponse.model_validate(defaults)
 
 
-def test_create_submission_requires_auth(client):
+def test_create_submission_anonymous(client, monkeypatch):
+    submission = _mock_submission(user_id=None)
+    mock_create = MagicMock(return_value=submission)
+    monkeypatch.setattr(submission_service, "create_submission", mock_create)
+
     resp = client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
-    assert resp.status_code == 401
+
+    assert resp.status_code == 201
+    assert resp.json()["id"] == "sub-001"
+    args, _ = mock_create.call_args
+    assert args[0] is None
 
 
 def test_create_submission_authenticated(authenticated_client, monkeypatch):
     submission = _mock_submission()
+    mock_create = MagicMock(return_value=submission)
     monkeypatch.setattr(
         user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
     )
-    monkeypatch.setattr(submission_service, "create_submission", MagicMock(return_value=submission))
+    monkeypatch.setattr(submission_service, "create_submission", mock_create)
 
-    resp = authenticated_client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
+    from main import app
+
+    app.dependency_overrides[get_optional_user] = lambda: FAKE_USER
+    try:
+        resp = authenticated_client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
+    finally:
+        app.dependency_overrides.pop(get_optional_user, None)
 
     assert resp.status_code == 201
     assert resp.json()["id"] == "sub-001"
+    args, _ = mock_create.call_args
+    assert args[0] == str(FAKE_DB_USER.id)
+
+
+def test_create_submission_optional_auth_user_uses_profile_school(client, monkeypatch):
+    submission = _mock_submission()
+    mock_create = MagicMock(return_value=submission)
+    monkeypatch.setattr(
+        user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
+    )
+    monkeypatch.setattr(submission_service, "create_submission", mock_create)
+
+    from main import app
+
+    app.dependency_overrides[get_optional_user] = lambda: FAKE_USER
+    try:
+        resp = client.post("/submissions/", json={"event_data": _VALID_EVENT_DATA})
+    finally:
+        app.dependency_overrides.pop(get_optional_user, None)
+
+    assert resp.status_code == 201
+    args, _ = mock_create.call_args
+    assert args[0] == str(FAKE_DB_USER.id)
+    assert args[1].school == FAKE_DB_USER.school
 
 
 def test_list_submissions_forbidden_for_non_admin(authenticated_client):

@@ -163,7 +163,7 @@ def _event_row(**overrides) -> dict:
         "description": "Live jazz on the quad",
         "location": "The Quad",
         "school": "University of Waterloo",
-        "organization": "Music Club",
+        "organization": "Music Organization",
         "source_url": None,
         "added_at": "2026-04-15T10:00:00+00:00",
         "created_by": None,

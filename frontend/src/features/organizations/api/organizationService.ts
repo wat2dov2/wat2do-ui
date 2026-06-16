@@ -14,7 +14,7 @@ export function filterOrganizationsBySearch(organizations: Organization[], searc
   }
   const query = searchQuery.toLowerCase();
   return organizations.filter((org) =>
-    org.club_name.toLowerCase().includes(query)
+    org.organization_name.toLowerCase().includes(query)
   );
 }
 
@@ -40,5 +40,5 @@ export function filterOrganizationsByType(organizations: Organization[], organiz
   if (!organizationType) {
     return organizations;
   }
-  return organizations.filter((org) => org.club_type?.trim() === organizationType);
+  return organizations.filter((org) => org.organization_type?.trim() === organizationType);
 }

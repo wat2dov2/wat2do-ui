@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
-import { getClubCategoryTranslation } from "@/shared/utils/categoryTranslation";
-import { getCategoryClasses } from "@/shared/utils/event";
+import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 
 interface OrganizationCategoryBadgesProps {
   categories: readonly string[];
@@ -27,7 +26,7 @@ export function OrganizationCategoryBadges({
     <div className={cn("flex min-w-0 flex-wrap items-center gap-1.5", className)}>
       {visibleCategories.map((category) => {
         const colors = getCategoryClasses(category);
-        const label = getClubCategoryTranslation(category, t);
+        const label = translateCategory(category, t);
         return (
           <Badge
             key={category}

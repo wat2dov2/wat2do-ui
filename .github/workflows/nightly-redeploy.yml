@@ -156,8 +156,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      VERCEL_ORG_ID: team_1Tdfgz24BcQgN1OedfuKr5id
-      VERCEL_PROJECT_ID: prj_N7qor8ufsFPDIykUBtU5oMv0z9S0
+      VERCEL_ORG_ID: team_qHJlaMmeF0XtEpwDcDy8lBfW
+      VERCEL_PROJECT_ID: prj_QIr7YgIs8FYXQzSDT9wT2BKdG8tu
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
     steps:

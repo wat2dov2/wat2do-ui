@@ -5,18 +5,18 @@
 </p>
 
 <p align="center">
-  <a href="https://wat2do.ca" target="_blank">
-    <img src="https://img.shields.io/badge/Live%20Site-wat2do.ca-blue?style=flat-square" alt="Live Site"/>
+  <a href="https://wat2do.io" target="_blank">
+    <img src="https://img.shields.io/badge/Live%20Site-wat2do.io-blue?style=flat-square" alt="Live Site"/>
   </a>
-  <a href="https://github.com/ericahan22/bug-free-octo-spork/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/ericahan22/bug-free-octo-spork/update-events-data.yml?branch=main&style=flat-square" alt="GitHub Actions Status"/>
+  <a href="https://github.com/tonyqiu123/wat2do-ui/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/tonyqiu123/wat2do-ui/ci-cd.yml?branch=main&style=flat-square" alt="GitHub Actions Status"/>
   </a>
-  <a href="https://vercel.com/ericas-projects-4f2175b1/bug-free-octo-spork-frontend">
-    <img src="https://deploy-badge.vercel.app/vercel/bug-free-octo-spork-frontend?logo=&name=vercel+frontend&style=flat-square" alt="Frontend Deployment Status"/>
+  <a href="https://vercel.com/ericas-projects-4f2175b1/wat2do-v2">
+    <img src="https://deploy-badge.vercel.app/vercel/wat2do-v2?logo=&name=vercel+frontend&style=flat-square" alt="Frontend Deployment Status"/>
   </a>
 </p>
 
-<a href="https://wat2do.ca" target="_blank">Wat2Do.ca</a> is a web app to help you discover club events at the University of
+<a href="https://wat2do.io" target="_blank">Wat2Do</a> is a web app to help you discover club events at the University of
 Waterloo, scraped directly from Instagram by capturing all student club events within 10 minutes!
 
 ## ✨ Features
@@ -56,7 +56,7 @@ npm run dev
 
 ## 🤝 Support
 
-If you have questions or feedback, please reach out at <a href="https://wat2do.ca/contact" target="_blank">wat2do.ca/contact</a> or add a <a href="https://github.com/ericahan22/bug-free-octo-spork/issues" target="_blank">GitHub issue</a>.
+If you have questions or feedback, please reach out at <a href="https://wat2do.io/contact" target="_blank">wat2do.io/contact</a> or add a <a href="https://github.com/tonyqiu123/wat2do-ui/issues" target="_blank">GitHub issue</a>.
 
 Enjoy discovering events!
 

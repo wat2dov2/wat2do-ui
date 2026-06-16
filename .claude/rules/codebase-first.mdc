@@ -1,0 +1,20 @@
+---
+description: Always apply the repository codebase-first workflow and one-path policy.
+alwaysApply: true
+---
+
+# Codebase-First Workflow
+
+`AGENTS.md` is the canonical repository policy, and root `CLAUDE.md` imports it at
+session start. Resolve any conflict in favor of `AGENTS.md`.
+
+Before code edits, provide the required pre-edit report:
+- existing pattern matched,
+- exact blast radius,
+- scope-expanding decisions for confirmation.
+
+Preserve one obvious implementation path. Reuse existing helpers, folders, types,
+schemas, services, stores, hooks, API contracts, and test patterns before creating
+anything new. Do not add backwards compatibility, aliases, duplicate helpers,
+fallback branches, ignored fields, or dead code. Delete replaced paths in the same
+change.

@@ -6,7 +6,6 @@
 
 import { getAppConstants } from "@/shared/api/metaApi";
 
-export type EventCategory = string;
 
 export function getEventCategories(): string[] {
   return getAppConstants().event_categories;

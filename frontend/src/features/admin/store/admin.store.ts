@@ -27,6 +27,7 @@ const TTL_MS = 60_000;
 interface LoadedAt {
   submissions?: number;
   reports?: number;
+  claims?: number;
 }
 
 interface AdminState {
@@ -34,10 +35,12 @@ interface AdminState {
   reportedEventIds: Set<number>;
   claims: OrganizationClaim[];
   loadedAt: LoadedAt;
+  submissionsSchool?: string;
+  claimsSchool?: string;
 
-  fetchSubmissions: (force?: boolean) => Promise<void>;
+  fetchSubmissions: (school?: string, force?: boolean) => Promise<void>;
   fetchReportedEventIds: (force?: boolean) => Promise<void>;
-  fetchClaims: () => Promise<void>;
+  fetchClaims: (school?: string, force?: boolean) => Promise<void>;
   approveSubmission: (id: string) => Promise<void>;
   rejectSubmission: (id: string, reason: string) => Promise<void>;
   approveClaim: (id: string) => Promise<void>;
@@ -53,13 +56,17 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   reportedEventIds: new Set<number>(),
   claims: [],
   loadedAt: {},
+  submissionsSchool: undefined,
+  claimsSchool: undefined,
 
-  fetchSubmissions: async (force = false) => {
-    if (!force && fresh(get().loadedAt.submissions)) return;
+  fetchSubmissions: async (school, force = false) => {
+    const isSchoolChanged = school !== get().submissionsSchool;
+    if (!force && !isSchoolChanged && fresh(get().loadedAt.submissions)) return;
     try {
-      const submissions = await getEventSubmissions();
+      const submissions = await getEventSubmissions(school);
       set((state) => ({
         submissions,
+        submissionsSchool: school,
         loadedAt: { ...state.loadedAt, submissions: Date.now() },
       }));
     } catch (err) {
@@ -85,10 +92,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  fetchClaims: async () => {
+  fetchClaims: async (school, force = false) => {
+    const isSchoolChanged = school !== get().claimsSchool;
+    if (!force && !isSchoolChanged && fresh(get().loadedAt.claims)) return;
     try {
-      const claims = await getOrganizationClaims();
-      set({ claims });
+      const claims = await getOrganizationClaims(undefined, school);
+      set((state) => ({
+        claims,
+        claimsSchool: school,
+        loadedAt: { ...state.loadedAt, claims: Date.now() },
+      }));
     } catch (err) {
       console.error("Failed to fetch claims:", err);
     }
@@ -160,6 +173,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       reportedEventIds: new Set<number>(),
       claims: [],
       loadedAt: {},
+      submissionsSchool: undefined,
+      claimsSchool: undefined,
     });
   },
 }));

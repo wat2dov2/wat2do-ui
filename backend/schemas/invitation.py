@@ -4,14 +4,14 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ClubInvitationCreate(BaseModel):
+class OrganizationInvitationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     email: str = Field(..., min_length=3, description="Email to invite")
 
 
-class ClubInvitationResponse(BaseModel):
+class OrganizationInvitationResponse(BaseModel):
     id: UUID
-    club_id: int
+    organization_id: int
     email: str
     token: UUID
     invited_by: UUID
@@ -22,8 +22,8 @@ class ClubInvitationResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class ClubInvitationPublicResponse(BaseModel):
-    club_name: str
+class OrganizationInvitationPublicResponse(BaseModel):
+    organization_name: str
     email: str
     expires_at: datetime
 

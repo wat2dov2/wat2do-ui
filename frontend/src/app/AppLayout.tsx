@@ -84,9 +84,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="h-dvh flex flex-col">
       <TopNav />
 
-      {/* Main Content */}
       <div
-        className="flex-1 overflow-auto mt-12 p-6 main-content-grid"
+        className="flex-1 overflow-auto mt-12 p-4 main-content-grid"
         style={{
           minHeight: "calc(100vh - 48px)",
         }}
@@ -95,7 +94,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       {/* Floating Dock — bottom center */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+      <div className="fixed bottom-0.5 left-1/2 -translate-x-1/2 z-50">
         <FloatingDock items={dockItems} />
       </div>
     </div>

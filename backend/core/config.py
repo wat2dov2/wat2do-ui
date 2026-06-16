@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # Set CORS_ORIGINS env var as a JSON list for production,
     # e.g. CORS_ORIGINS=["https://wat2do.app","https://www.wat2do.app"]
     cors_origins: list[str] = _DEV_ORIGINS
+    # Optional regex for trusted dynamic origins, e.g. school subdomains.
+    cors_origin_regex: str = ""
     cookie_domain: str = ""
     # Secure cookies by default (HTTPS-only). Set COOKIE_SECURE=false for local HTTP dev.
     cookie_secure: bool = True
@@ -117,6 +119,18 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.lower() == "production"
+
+    def is_allowed_origin(self, origin: str | None) -> bool:
+        if not origin:
+            return False
+        if origin in set(self.cors_origins or []):
+            return True
+        if not self.cors_origin_regex:
+            return False
+
+        import re
+
+        return re.fullmatch(self.cors_origin_regex, origin) is not None
 
 
 settings = Settings()

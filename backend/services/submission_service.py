@@ -22,7 +22,9 @@ _ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 
-def _fetch_user_email(user_id: str) -> str | None:
+def _fetch_user_email(user_id: str | None) -> str | None:
+    if user_id is None:
+        return None
     try:
         user_row = get_sb().table("users").select("email").eq("id", user_id).execute()
         if user_row.data and isinstance(user_row.data, list) and len(user_row.data) > 0:
@@ -36,7 +38,7 @@ def _fetch_user_email(user_id: str) -> str | None:
     return None
 
 
-def create_submission(user_id: str, event_data: EventCreate | dict) -> SubmissionResponse:
+def create_submission(user_id: str | None, event_data: EventCreate | dict) -> SubmissionResponse:
     event_dict = (
         event_data.model_dump(mode="json", exclude_none=True)
         if isinstance(event_data, EventCreate)
@@ -58,6 +60,7 @@ def create_submission(user_id: str, event_data: EventCreate | dict) -> Submissio
 
 def get_submissions(
     status: str | None = None,
+    school: str | None = None,
     *,
     offset: int = 0,
     limit: int | None = None,
@@ -65,6 +68,14 @@ def get_submissions(
     q = get_sb().table(EVENT_SUBMISSIONS).select("*, users(email)", count="exact")
     if status:
         q = q.eq("status", status)
+    if school:
+        # Get all organization IDs for the selected school
+        org_rows = get_sb().table("organizations").select("id").eq("school", school).execute()
+        org_ids = [row["id"] for row in org_rows.data or []]
+        if org_ids:
+            q = q.in_("event_data->organization_id", org_ids)
+        else:
+            return [], 0
     q = q.order("submitted_at", desc=True)
     if limit is not None:
         q = q.range(offset, offset + limit - 1)
@@ -153,7 +164,7 @@ def update_submission(
                 exc_info=True,
             )
     if r.data:
-        email = _fetch_user_email(r.data[0]["user_id"])
+        email = _fetch_user_email(r.data[0].get("user_id"))
         return SubmissionResponse.model_validate({**r.data[0], "submitted_by_email": email})
     return None
 

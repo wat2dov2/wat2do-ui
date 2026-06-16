@@ -45,13 +45,13 @@ export function JoinOrganizationModal({ isOpen, onClose, organization }: JoinOrg
 
     setIsSubmitting(true);
     try {
-      await api.post(`/clubs/${organization.id}/join-requests`, {
+      await api.post(`/organizations/${organization.id}/join-requests`, {
         pitch: pitch.trim(),
       });
 
       toast({
         title: "Application Sent",
-        description: t("organizations.joinRequestSubmittedDesc", { name: organization.club_name }),
+        description: t("organizations.joinRequestSubmittedDesc", { name: organization.organization_name }),
         variant: "success",
       });
       onClose();
@@ -72,7 +72,7 @@ export function JoinOrganizationModal({ isOpen, onClose, organization }: JoinOrg
         <DialogHeader>
           <DialogTitle>{t("organizations.joinTeam")}</DialogTitle>
           <DialogDescription>
-            {t("organizations.joinTeamDesc")} <strong>{organization.club_name}</strong>.
+            {t("organizations.joinTeamDesc")} <strong>{organization.organization_name}</strong>.
           </DialogDescription>
         </DialogHeader>
 

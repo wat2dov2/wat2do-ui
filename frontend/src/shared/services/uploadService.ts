@@ -75,10 +75,10 @@ export async function uploadAvatar(file: File): Promise<string> {
   return uploadFile("/uploads/avatar", file);
 }
 
-export async function uploadClubLogo(clubId: number, file: File): Promise<string> {
-  return uploadFile(`/uploads/club-logo/${clubId}`, file);
-}
-
 export async function uploadQRAsset(file: File): Promise<string> {
   return uploadFile("/uploads/qr-asset", file);
+}
+
+export async function uploadClaimProof(file: File): Promise<string> {
+  return uploadFile("/uploads/claim-proof", file);
 }

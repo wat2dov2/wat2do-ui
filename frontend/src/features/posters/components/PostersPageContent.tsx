@@ -5,7 +5,7 @@
  * are passed in via props so this module has zero feature imports.
  */
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -31,8 +31,8 @@ import { Pagination } from "@/shared/ui/Pagination";
 import { useBackendScans } from "@/features/posters/hooks/useBackendScans";
 import { useBackendPosters } from "@/features/posters/hooks/useBackendPosters";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
+import { usePagination } from "@/shared/hooks";
 import { usePostersFilters } from "@/features/posters/hooks/usePostersFilters";
-import { usePostersPagination } from "@/features/posters/hooks/usePostersPagination";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 import type { Event } from "@/shared/types";
 import type { QRCode, QRCodeScan } from "@/features/posters/types";
@@ -41,7 +41,8 @@ import { QP } from "@/shared/constants/queryParams";
 
 type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime";
 
-const POSTERS_PER_PAGE = 10;
+
+
 
 /** Props for the lazy-loaded scan map component. */
 interface ScanMapProps {
@@ -102,11 +103,16 @@ export function PostersPageContent({
     backendPosters,
     backendScans,
   });
-  const pagination = usePostersPagination({
-    itemsPerPage: POSTERS_PER_PAGE,
-    scansPerPage: SCANS_PER_PAGE,
-    filteredQRCodes: filters.filteredQRCodes,
-    scansMatchingPosterSearch: filters.scansMatchingPosterSearch,
+
+  const sortedScans = useMemo(() => {
+    return filters.scansMatchingPosterSearch.toSorted(
+      (a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime()
+    );
+  }, [filters.scansMatchingPosterSearch]);
+
+  const scansPagination = usePagination({
+    items: sortedScans,
+    itemsPerPage: SCANS_PER_PAGE,
   });
 
   // Get qrCodeId from URL
@@ -150,8 +156,7 @@ export function PostersPageContent({
             value={filters.timeFilter}
             onValueChange={(value) => {
               filters.setTimeFilter(value as TimeFilter);
-              pagination.setPostersPage(1);
-              pagination.setScansPage(1);
+              scansPagination.setCurrentPage(1);
             }}
           >
             <SelectTrigger className="w-[180px]">
@@ -230,8 +235,8 @@ export function PostersPageContent({
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : pagination.paginatedScans.length > 0 ? (
-                    pagination.paginatedScans.map((scan) => (
+                  ) : scansPagination.paginatedItems.length > 0 ? (
+                    scansPagination.paginatedItems.map((scan) => (
                       <TableRow key={scan.id}>
                         <TableCell className="text-sm">
                           {formatScanTimestamp(scan.scannedAt)}
@@ -261,15 +266,15 @@ export function PostersPageContent({
             </div>
 
             {/* Pagination for Scans */}
-            {pagination.sortedScans.length > 0 && (
+            {sortedScans.length > 0 && (
               <Pagination
-                currentPage={pagination.scansPage}
-                totalPages={pagination.totalScansPages}
-                totalItems={pagination.sortedScans.length}
+                currentPage={scansPagination.currentPage}
+                totalPages={scansPagination.totalPages}
+                totalItems={sortedScans.length}
                 itemsPerPage={SCANS_PER_PAGE}
                 itemLabel={t("admin.scan")}
                 itemLabelPlural={t("admin.scans")}
-                onPageChange={pagination.setScansPage}
+                onPageChange={scansPagination.setCurrentPage}
               />
             )}
           </div>

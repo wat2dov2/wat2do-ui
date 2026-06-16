@@ -14,8 +14,7 @@ import { QP } from "@/shared/constants/queryParams";
 export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
-  FORGOT_PASSWORD: "/forgot-password",
-  RESET_PASSWORD: "/reset-password",
+  AUTH_CALLBACK: "/auth/callback",
   ONBOARDING: "/onboarding",
   CONTACT: "/contact",
   ORGANIZATIONS: "/organizations",
@@ -36,6 +35,45 @@ export const ROUTES = {
   ORGANIZATION_PANEL_INTEGRATIONS: "/organization-panel/integrations",
   ORGANIZATION_PANEL_MEMBERS: "/organization-panel/members",
 } as const;
+
+const APP_NAME = "Wat2Do";
+
+const ROUTE_PAGE_TITLES: Partial<Record<(typeof ROUTES)[keyof typeof ROUTES], string>> = {
+  [ROUTES.HOME]: "Campus Events",
+  [ROUTES.LOGIN]: "Sign In",
+  [ROUTES.AUTH_CALLBACK]: "Signing In",
+  [ROUTES.ONBOARDING]: "Onboarding",
+  [ROUTES.CONTACT]: "Contact",
+  [ROUTES.ORGANIZATIONS]: "Organizations",
+  [ROUTES.SETTINGS]: "Settings",
+  [ROUTES.MARKETING]: "Marketing",
+  [ROUTES.ADMIN]: "Admin",
+  [ROUTES.ADMIN_EVENTS]: "Admin Events",
+  [ROUTES.ADMIN_ORGANIZATIONS]: "Admin Organizations",
+  [ROUTES.ADMIN_POSTERS]: "Admin Posters",
+  [ROUTES.ORGANIZATION_PANEL]: "Organization Panel",
+  [ROUTES.ORGANIZATION_PANEL_POSTERS]: "Posters",
+  [ROUTES.ORGANIZATION_PANEL_INTEGRATIONS]: "Integrations",
+  [ROUTES.ORGANIZATION_PANEL_MEMBERS]: "Members",
+};
+
+function buildDocumentTitle(pageTitle?: string): string {
+  return pageTitle ? `${pageTitle} | ${APP_NAME}` : APP_NAME;
+}
+
+export function getRouteDocumentTitle(pathname: string): string {
+  const normalizedPathname = pathname.replace(/\/+$/, "") || ROUTES.HOME;
+
+  if (normalizedPathname.startsWith("/invite/")) {
+    return buildDocumentTitle("Organization Invite");
+  }
+
+  if (normalizedPathname.startsWith("/qr/")) {
+    return buildDocumentTitle("QR Redirect");
+  }
+
+  return buildDocumentTitle(ROUTE_PAGE_TITLES[normalizedPathname as keyof typeof ROUTE_PAGE_TITLES]);
+}
 
 // ── Settings sub-tabs (used as query params: /settings?tab=<tab>) ──
 export const SETTINGS_TABS = {

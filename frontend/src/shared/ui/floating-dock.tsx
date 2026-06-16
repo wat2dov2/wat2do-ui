@@ -38,18 +38,27 @@ const FloatingDockDesktop = ({
 }) => {
   const mouseX = useMotionValue(Infinity);
   return (
-    <motion.div
-      onMouseMove={(e) => mouseX.set(e.pageX)}
-      onMouseLeave={() => mouseX.set(Infinity)}
-      className={cn(
-        "mx-auto flex h-[60px] items-end gap-4 rounded-2xl bg-secondary/60 px-4 pb-3 backdrop-blur-sm",
-        className,
-      )}
-    >
-      {items.map((item) => (
-        <IconContainer mouseX={mouseX} key={item.title} item={item} />
-      ))}
-    </motion.div>
+    <div className="relative mx-auto flex items-end">
+      <div
+        className="absolute inset-x-0 bottom-1 h-9 bg-secondary/20 border border-foreground/10 rounded-md origin-bottom pointer-events-none shadow-lg backdrop-blur-md"
+        style={{
+          transform: "perspective(140px) rotateX(45deg) scaleX(1.15)",
+        }}
+      />
+      {/* 2D Icons Container */}
+      <motion.div
+        onMouseMove={(e) => mouseX.set(e.pageX)}
+        onMouseLeave={() => mouseX.set(Infinity)}
+        className={cn(
+          "flex h-[60px] items-end gap-4 px-6 pb-2.5 relative z-10",
+          className,
+        )}
+      >
+        {items.map((item) => (
+          <IconContainer mouseX={mouseX} key={item.title} item={item} />
+        ))}
+      </motion.div>
+    </div>
   );
 };
 
@@ -114,8 +123,8 @@ function IconContainer({
       className={cn(
         "relative flex aspect-square items-center justify-center rounded-full",
         isActive
-          ? "bg-primary text-primary-foreground"
-          : "bg-muted text-foreground shadow-sm",
+          ? "bg-primary/20 border border-primary/30 backdrop-blur-md text-primary"
+          : "bg-secondary/30 border border-foreground/10 backdrop-blur-md text-foreground shadow-sm",
       )}
     >
       <AnimatePresence>

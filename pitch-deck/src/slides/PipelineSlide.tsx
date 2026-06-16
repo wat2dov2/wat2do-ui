@@ -7,7 +7,7 @@ const steps = [
   { n: "01", title: "Collect", body: "New club posts, pulled in." },
   { n: "02", title: "Read the flyer", body: "Time, place, and price on one card." },
   { n: "03", title: "Verify", body: "Real events only." },
-  { n: "04", title: "Publish", body: "On wat2do.ca within minutes." },
+  { n: "04", title: "Publish", body: "On wat2do.io within minutes." },
 ];
 
 export const PipelineSlide: React.FC = () => {

@@ -10,12 +10,14 @@ import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useSearchStore } from "@/features/search/store/search.store";
 import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
 import { ModalContainer } from "@/app/ModalContainer";
+import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { Toaster } from "@/shared/ui/toaster";
 
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
-import { ROUTES } from "@/shared/constants/routes";
+import { getRouteDocumentTitle, ROUTES } from "@/shared/constants/routes";
+import { getHostnameSchoolStatus } from "@/shared/constants/schools";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 
@@ -55,14 +57,9 @@ const OnboardingPage = lazy(() =>
     default: module.OnboardingPage,
   }))
 );
-const ForgotPasswordPage = lazy(() =>
-  import("@/features/auth/pages/ForgotPasswordPage").then((module) => ({
-    default: module.ForgotPasswordPage,
-  }))
-);
-const ResetPasswordPage = lazy(() =>
-  import("@/features/auth/pages/ResetPasswordPage").then((module) => ({
-    default: module.ResetPasswordPage,
+const AuthCallbackPage = lazy(() =>
+  import("@/features/auth/pages/AuthCallbackPage").then((module) => ({
+    default: module.AuthCallbackPage,
   }))
 );
 const InviteLandingPage = lazy(() =>
@@ -108,6 +105,10 @@ const QRRedirectPage = lazy(() =>
 export default function App() {
   const location = useLocation();
   const isQRRedirectRoute = /^\/qr\/[^/]+$/.test(location.pathname);
+  const hostnameSchoolStatus =
+    typeof window === "undefined"
+      ? { candidate: null, isKnownSchool: true }
+      : getHostnameSchoolStatus(window.location.hostname);
 
   // Full-page QR redirect: no app chrome, only loading then redirect
   if (isQRRedirectRoute) {
@@ -115,6 +116,16 @@ export default function App() {
       <LazyMotion features={domAnimation} strict>
         <TooltipProvider delayDuration={0}>
           <QRRedirectPage />
+        </TooltipProvider>
+      </LazyMotion>
+    );
+  }
+
+  if (!hostnameSchoolStatus.isKnownSchool && hostnameSchoolStatus.candidate) {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <TooltipProvider delayDuration={0}>
+          <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />
         </TooltipProvider>
       </LazyMotion>
     );
@@ -138,11 +149,14 @@ function AppContent() {
   const location = useLocation();
   const isAuthFlowRoute =
     location.pathname === ROUTES.LOGIN ||
-    location.pathname === ROUTES.FORGOT_PASSWORD ||
-    location.pathname === ROUTES.RESET_PASSWORD ||
+    location.pathname === ROUTES.AUTH_CALLBACK ||
     location.pathname === ROUTES.ONBOARDING;
 
   const userEmail = useUserEmail();
+
+  useEffect(() => {
+    document.title = getRouteDocumentTitle(location.pathname);
+  }, [location.pathname]);
   // Setter-only subscription. Setter refs are stable in Zustand, so this
   // does not cause AppContent to re-render when modal state changes — we
   // only need it for adminConfig/clubPanelConfig and
@@ -157,8 +171,8 @@ function AppContent() {
   // credits, promotions) also listen to "auth-user-login" events so a
   // post-mount login refetches without needing this useEffect to re-run.
   useEffect(() => {
-    if (isAuthFlowRoute) return;
     useEventsStore.getState().fetchEvents();
+    if (isAuthFlowRoute) return;
     useSavedEventsStore.getState().fetchSavedEvents();
     useSavedOrganizationsStore.getState().fetchSavedOrganizations();
     useCreditsStore.getState().fetchBalance();
@@ -183,8 +197,7 @@ function AppContent() {
   const appRoutes = (
     <Routes>
       <Route path={ROUTES.LOGIN} element={<AuthEntryPage />} />
-      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-      <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+      <Route path={ROUTES.AUTH_CALLBACK} element={<AuthCallbackPage />} />
       <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
       <Route
         path={ROUTES.HOME}
@@ -192,7 +205,7 @@ function AppContent() {
       />
       <Route path={ROUTES.CONTACT} element={<ContactPage />} />
       <Route path={ROUTES.ORGANIZATIONS} element={<OrganizationsPage />} />
-      <Route path="/clubs" element={<Navigate to={ROUTES.ORGANIZATIONS} replace />} />
+      <Route path="/organizations" element={<Navigate to={ROUTES.ORGANIZATIONS} replace />} />
       <Route path="/club-panel" element={<Navigate to={ROUTES.ORGANIZATION_PANEL} replace />} />
       <Route path="/club-panel/*" element={<Navigate to={ROUTES.ORGANIZATION_PANEL} replace />} />
       <Route path={ROUTES.INVITE} element={<InviteLandingPage />} />

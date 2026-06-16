@@ -42,7 +42,9 @@ export const useSavedOrganizationsStore = create<SavedOrganizationsState>((set, 
 
   fetchSavedOrganizations: async () => {
     if (!isAuthenticated()) {
-      set({ savedOrganizationIds: [], isLoading: false, hasLoaded: false });
+      if (get().isLoading) {
+        set({ isLoading: false });
+      }
       return;
     }
     const state = get();

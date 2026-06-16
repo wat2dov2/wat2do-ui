@@ -4,6 +4,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Satoshi Font */
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/WEB/fonts/Satoshi-Variable.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/WEB/fonts/Satoshi-VariableItalic.woff2") format("woff2");
+  font-display: swap;
+  font-style: italic;
+}
+
 @theme inline {
   /* Base colors */
   --color-background: var(--background);

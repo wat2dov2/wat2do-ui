@@ -242,6 +242,7 @@ def delete_qr_code(qr_code_id: str) -> None:
 def list_qr_codes(
     *,
     created_by: str | None = None,
+    school: str | None = None,
     offset: int = 0,
     limit: int | None = DEFAULT_LIST_LIMIT,
 ) -> tuple[list[QrCodeResponse], int]:
@@ -253,6 +254,14 @@ def list_qr_codes(
     q = get_sb().table(QR_CODES).select("*", count="exact").order("created_at", desc=True)
     if created_by:
         q = q.eq("created_by", created_by)
+    if school:
+        # Get users belonging to the school
+        user_rows = get_sb().table("users").select("id").eq("school", school).execute()
+        user_ids = [str(row["id"]) for row in user_rows.data or []]
+        if user_ids:
+            q = q.in_("created_by", user_ids)
+        else:
+            return [], 0
     if limit is not None:
         q = q.range(offset, offset + limit - 1)
     r = q.execute()

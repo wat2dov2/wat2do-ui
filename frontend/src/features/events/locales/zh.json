@@ -43,6 +43,8 @@
     "previewDescription": "这是您的活动在他人眼中的样式",
     "noEventsFound": "未找到活动",
     "noEventsFoundDesc": "找不到符合您当前筛选条件的活动。请尝试调整搜索或清除某些筛选条件。",
+    "noEventsScheduled": "暂无活动安排",
+    "noEventsScheduledDesc": "当前没有任何活动安排，请稍后再来看看！",
     "latestAdded": "{{timeAgo}}添加了 {{title}}",
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",

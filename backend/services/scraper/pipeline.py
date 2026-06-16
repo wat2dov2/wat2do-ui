@@ -84,6 +84,7 @@ def run_pipeline(
     results_limit: int | None = None,
     dry_run: bool = False,
     github_run_id: str | None = None,
+    allow_past_events: bool = False,
 ) -> PipelineResult:
     """Run the four-stage pipeline against ``usernames`` for ``school``.
 
@@ -155,7 +156,12 @@ def run_pipeline(
 
             for post in new_posts:
                 _process_one_post(
-                    post, handle=handle, school=school, result=result, dry_run=dry_run
+                    post,
+                    handle=handle,
+                    school=school,
+                    result=result,
+                    dry_run=dry_run,
+                    allow_past_events=allow_past_events,
                 )
 
             handle_results.append(result)
@@ -175,16 +181,33 @@ def _group_by_handle(posts: list[dict], usernames: list[str]) -> dict[str, list[
 
     Instagram handles are case-insensitive — Apify sometimes returns
     ``ownerUsername`` in different casing than the requested handle (we
-    ask for ``uwteaclub``, get back ``UWTeaClub``). A case-sensitive
+    ask for ``uwteaorganization``, get back ``UWTeaOrganization``). A case-sensitive
     bucket would silently drop those posts and report ``posts_fetched=0``,
     making active accounts look dormant. Match casefold-on-both-sides.
-    Supports collab posts by falling back to matching against ``inputUrl``.
+    Supports collab posts by falling back to matching against ``inputUrl`` or co-authors.
     """
     lookup = {h.lower(): h for h in usernames}
     by_handle: dict[str, list[dict]] = {h: [] for h in usernames}
     for post in posts:
         owner = (post.get("ownerUsername") or post.get("username") or "").lower()
         canonical = lookup.get(owner)
+        if canonical is None:
+            # Check co-authors/collaborators (usually under coauthor_producers or coauthors)
+            coauthors = post.get("coauthor_producers") or post.get("coauthors") or []
+            if isinstance(coauthors, list):
+                for coauthor in coauthors:
+                    co_username = ""
+                    if isinstance(coauthor, dict):
+                        co_username = (
+                            coauthor.get("username") or coauthor.get("ownerUsername") or ""
+                        )
+                    elif isinstance(coauthor, str):
+                        co_username = coauthor
+
+                    co_username = co_username.lower()
+                    if co_username in lookup:
+                        canonical = lookup[co_username]
+                        break
         if canonical is None:
             input_url = (post.get("inputUrl") or "").lower()
             for handle in usernames:
@@ -234,6 +257,7 @@ def _process_one_post(
     school: str,
     result: HandleResult,
     dry_run: bool,
+    allow_past_events: bool = False,
 ) -> None:
     image_urls = _extract_image_urls(post)
     uploaded = upload_post_images(image_urls)
@@ -274,7 +298,9 @@ def _process_one_post(
             result.events_saved += 1
             continue
 
-        outcome = write_event(event, ig_handle=handle, source_url=source_url)
+        outcome = write_event(
+            event, ig_handle=handle, source_url=source_url, allow_past_events=allow_past_events
+        )
         if outcome == "inserted":
             result.events_saved += 1
         elif outcome == "updated":

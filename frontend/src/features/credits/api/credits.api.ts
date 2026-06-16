@@ -5,7 +5,7 @@
 
 import {
   fetchBalance,
-  addCreditsAPI as addCreditsAPIInternal,
+  addCreditsRepo as addCreditsAPIInternal,
   createPromotionAPI,
   fetchActivePromotedEventIds,
 } from "@/features/credits/api/creditsRepository";

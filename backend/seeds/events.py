@@ -24,108 +24,17 @@ def _to_iso(dt: datetime | None) -> str | None:
 now = datetime.now(timezone.utc)
 BASE = now + timedelta(days=10)
 ORGS = [
-    "UW Board Games Club",
-    "UW Computer Science Club",
+    "UW Board Games Organization",
+    "UW Computer Science Organization",
     "Pre-Pharmacy, UW",
     "UW Music Society",
     "UW Intramurals",
 ]
 # Use canonical categories (same 22 as frontend). Pick a subset for seed variety.
-CATEGORIES = ["Academics", "Games", "Career", "Culture", "Sports", "Technology", "Food"]
+CATEGORIES = ["Arts & Culture", "Business", "Games & Recreation", "Media & Web"]
 
 
-SEED_EVENTS = [
-    {
-        "title": "UWMUN Events",
-        "description": "UWMUN is back for the winter term!",
-        "location": "HH 138",
-        "occurrences": [
-            {
-                "dtstart_utc": _to_iso(now + timedelta(days=1, hours=2)),
-                "dtend_utc": _to_iso(now + timedelta(days=1, hours=4)),
-                "tz": "UTC",
-            }
-        ],
-        "registration": False,
-        "club_type": "WUSA",
-        "school": "University of Waterloo",
-        "organization": "UWMUN",
-        "ig_handle": "uwmun",
-        "display_handle": "uwmun",
-        "category": "Academics",
-        "source_image_url": _seed_image(1),
-    },
-    {
-        "title": "Board Game Night",
-        "description": "Join us for board games and snacks!",
-        "location": "SLC Great Hall",
-        "occurrences": [
-            {
-                "dtstart_utc": _to_iso(now + timedelta(days=2, hours=1)),
-                "dtend_utc": _to_iso(now + timedelta(days=2, hours=4)),
-                "tz": "UTC",
-            }
-        ],
-        "food": ["pizza", "chips"],
-        "price": 0,
-        "registration": False,
-        "club_type": "WUSA",
-        "school": "University of Waterloo",
-        "organization": "UW Board Games Club",
-        "display_handle": "uwboardgames",
-        "category": "Games",
-        "source_image_url": _seed_image(2),
-    },
-    {
-        "title": "Tech Career Fair",
-        "description": "Meet top tech employers recruiting UW students.",
-        "location": "DC 1351",
-        "occurrences": [
-            {
-                "dtstart_utc": _to_iso(now + timedelta(days=3, hours=3)),
-                "dtend_utc": _to_iso(now + timedelta(days=3, hours=7)),
-                "tz": "UTC",
-            }
-        ],
-        "registration": True,
-        "club_type": "University",
-        "school": "University of Waterloo",
-        "category": "Career",
-        "organization": "UW Career Centre",
-        "source_image_url": _seed_image(3),
-    },
-]
-
-for i in range(4, 31):
-    org = ORGS[(i - 4) % len(ORGS)]
-    cat = CATEGORIES[(i - 4) % len(CATEGORIES)]
-    start = BASE + timedelta(days=i - 4, hours=((i - 4) % 5) * 2)
-    end = start + timedelta(hours=2)
-    SEED_EVENTS.append(
-        {
-            "title": f"Seed Event {i:02d}: {cat}",
-            "description": f"A seeded {cat.lower()} event hosted by {org}.",
-            "location": ["SLC Great Hall", "DC 1351", "HH 138", "PAC Gym", "E7 Atrium"][
-                (i - 4) % 5
-            ],
-            "occurrences": [
-                {
-                    "dtstart_utc": _to_iso(start),
-                    "dtend_utc": _to_iso(end),
-                    "tz": "UTC",
-                }
-            ],
-            "registration": (i % 3 == 0),
-            "club_type": "WUSA" if "UW" in org else "University",
-            "school": "University of Waterloo",
-            "category": cat,
-            "organization": org,
-            "price": 0 if i % 4 else 5,
-            "food": ["pizza"] if i % 5 == 0 else [],
-            "source_image_url": _seed_image(i),
-            "display_handle": org.lower().replace(" ", "")[:24],
-        }
-    )
+SEED_EVENTS = []
 
 
 def seed():

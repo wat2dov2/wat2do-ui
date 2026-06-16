@@ -8,6 +8,7 @@ import {
 } from "@/shared/ui/field";
 import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
+import { useProfileCompleted } from "@/features/auth";
 import { JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
 
 // Lazy load Monaco Editor
@@ -15,6 +16,7 @@ const Editor = lazy(() => import("@monaco-editor/react"));
 
 export function EventFormJSON() {
   const { t } = useTranslation();
+  const profileCompleted = useProfileCompleted();
   const {
     jsonValue,
     jsonError,
@@ -37,10 +39,11 @@ export function EventFormJSON() {
           onAiGenerate={handleAiGenerate}
           error={jsonError}
           title={t("forms.aiEventGeneration")}
-          placeholder={t("forms.aiPromptPlaceholder")}
+          placeholder={!profileCompleted ? t("forms.aiPromptPlaceholderDisabled") : t("forms.aiPromptPlaceholder")}
           generatingText={t("common.generating")}
           className="space-y-2"
           titleClassName="text-sm"
+          disabled={!profileCompleted}
         />
       </Field>
 

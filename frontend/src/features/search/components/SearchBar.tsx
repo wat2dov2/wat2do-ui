@@ -1,7 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X } from "@/shared/ui/doodle-icons";
+import { Calendar, Grid3x3, Search, X } from "@/shared/ui/doodle-icons";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import type { ViewMode } from "@/shared/types";
 
 interface SearchBarProps {
@@ -56,18 +61,34 @@ export function SearchBar({
           className="w-fit"
         >
           <TabsList variant="default" className="h-8">
-            <TabsTrigger
-              value="grid"
-              className="text-[11px] font-medium px-3 py-1"
-            >
-              <span>{t("settings.appearance.grid")}</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="calendar"
-              className="text-[11px] font-medium px-3 py-1"
-            >
-              <span>{t("settings.appearance.calendar")}</span>
-            </TabsTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger
+                  value="grid"
+                  className="size-7 px-0 py-0"
+                  aria-label={t("settings.appearance.grid")}
+                >
+                  <Grid3x3 className="size-4" />
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("settings.appearance.grid")}</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger
+                  value="calendar"
+                  className="size-7 px-0 py-0"
+                  aria-label={t("settings.appearance.calendar")}
+                >
+                  <Calendar className="size-4" />
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("settings.appearance.calendar")}</p>
+              </TooltipContent>
+            </Tooltip>
           </TabsList>
         </Tabs>
       </div>

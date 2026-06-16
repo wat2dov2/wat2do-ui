@@ -37,7 +37,7 @@ import { RejectSubmissionDialog } from "@/features/admin/components/submissions/
 import { useAdminStore } from "@/features/admin/store/admin.store";
 import { useOrganizationNameLookup } from "@/features/organizations";
 import { useAdminSubmissionsFilters } from "@/features/admin/hooks/useAdminSubmissionsFilters";
-import { useAdminSubmissionsPagination } from "@/features/admin/hooks/useAdminSubmissionsPagination";
+import { usePagination } from "@/shared/hooks";
 import { useAdminSubmissionsActions } from "@/features/admin/hooks/useAdminSubmissionsActions";
 import {
   SUBMISSION_PENDING,
@@ -111,21 +111,23 @@ export function AdminEventsPage({
   const fetchSubmissions = useAdminStore((s) => s.fetchSubmissions);
   const allSubmissions = useAdminStore((s) => s.submissions);
 
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+
   useEffect(() => {
-    fetchSubmissions().catch((err) =>
+    fetchSubmissions(schoolFilter ?? undefined).catch((err) =>
       console.error("Failed to fetch submissions:", err),
     );
-  }, [fetchSubmissions]);
+  }, [fetchSubmissions, schoolFilter]);
 
   const pendingSubmissionsCount = useMemo(() => {
     return allSubmissions.filter((s) => s.status === SUBMISSION_PENDING).length;
   }, [allSubmissions]);
 
-  const { getClubName } = useOrganizationNameLookup();
-  const submissionFilters = useAdminSubmissionsFilters({ getClubName });
-  const submissionPagination = useAdminSubmissionsPagination({
+  const { getOrganizationName } = useOrganizationNameLookup();
+  const submissionFilters = useAdminSubmissionsFilters({ getOrganizationName });
+  const submissionPagination = usePagination({
+    items: submissionFilters.filteredSubmissions,
     itemsPerPage: ITEMS_PER_PAGE,
-    filteredSubmissions: submissionFilters.filteredSubmissions,
   });
   const submissionActions = useAdminSubmissionsActions({
     searchParams,
@@ -422,7 +424,7 @@ export function AdminEventsPage({
                 { label: t("common.actions"), align: "right" },
               ]}
             >
-              {submissionPagination.paginatedSubmissions.map((submission) => (
+              {submissionPagination.paginatedItems.map((submission) => (
                 <TableRow
                   key={submission.id}
                   id={`submission-${submission.id}`}
@@ -440,7 +442,7 @@ export function AdminEventsPage({
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {getClubName(submission.eventData.club_id)}
+                      {getOrganizationName(submission.eventData.organization_id)}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -511,7 +513,7 @@ export function AdminEventsPage({
 
           <SubmissionDetailsDialog
             submission={selectedSubmission}
-            clubName={getClubName(selectedSubmission?.eventData.club_id)}
+            organizationName={getOrganizationName(selectedSubmission?.eventData.organization_id)}
             isOpen={selectedSubmission !== null}
             onClose={() => {
               const newParams = new URLSearchParams(searchParams);

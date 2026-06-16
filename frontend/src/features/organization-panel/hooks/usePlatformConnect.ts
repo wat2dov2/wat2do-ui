@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { IntegrationServerOption, IntegrationChannelOption } from "@/features/organization-panel/api/integrations.api";
 
-export interface PlatformConnectState {
+interface PlatformConnectState {
   modalOpen: boolean;
   step: "connect" | "select";
   authorized: boolean;

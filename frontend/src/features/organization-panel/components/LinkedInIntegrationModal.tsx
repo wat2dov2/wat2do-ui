@@ -1,5 +1,4 @@
-import { PlatformConnectModal, type PlatformConnectConfig } from "./PlatformConnectModal";
-import type { IntegrationServerOption } from "@/features/organization-panel/api/integrations.api";
+import { PlatformConnectModal, type PlatformConnectConfig, type PlatformConnectModalProps } from "./PlatformConnectModal";
 
 const linkedInConfig: PlatformConnectConfig = {
   titleKey: "integrations.connectLinkedIn",
@@ -16,18 +15,6 @@ const linkedInConfig: PlatformConnectConfig = {
   noteKey: "integrations.linkedinAutoPublishNote",
 };
 
-interface LinkedInIntegrationModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  step: "connect" | "select";
-  authorized: boolean;
-  selectedPrimaryId: string;
-  servers: IntegrationServerOption[];
-  onAuthorize: () => void;
-  onSelectPrimary: (id: string) => void;
-  onActivate: () => void;
-}
-
-export function LinkedInIntegrationModal(props: LinkedInIntegrationModalProps) {
+export function LinkedInIntegrationModal(props: Omit<PlatformConnectModalProps, "config">) {
   return <PlatformConnectModal {...props} config={linkedInConfig} />;
 }

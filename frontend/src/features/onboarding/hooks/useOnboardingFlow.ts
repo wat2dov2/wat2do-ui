@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { isEventCategory } from "@/shared/data/eventCategories";
 
-export const ONBOARDING_TOTAL_STEPS = 6;
+const ONBOARDING_TOTAL_STEPS = 6;
 
 export const FACULTY_OPTIONS = [
   "Engineering",

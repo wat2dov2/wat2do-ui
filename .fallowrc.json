@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "frontend/e2e/**",
+    "frontend/src/shared/generated/**",
+    "frontend/src/shared/ui/doodle-icons.tsx",
+    "**/node_modules/**"
+  ],
+  "duplicates": {
+    "minOccurrences": 3,
+    "mode": "strict",
+    "threshold": 5
+  },
+  "health": {
+    "maxCyclomatic": 250,
+    "maxCognitive": 250,
+    "maxCrap": 2000,
+    "ignore": [
+      "**/scripts/**",
+      "**/*.mjs",
+      "**/*.spec.ts"
+    ]
+  },
+  "rules": {}
+}

@@ -367,8 +367,8 @@ def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
         "location": "SLC",
         "dtstart_utc": "2026-05-03T18:00:00+00:00",
         "source_image_url": "https://example.com/tea.jpg",
-        "category": "Food",
-        "organization": "Tea Club",
+        "category": "Arts & Culture",
+        "organization": "Tea Organization",
         "added_at": "2026-05-01T12:00:00+00:00",
     }
     sent = MagicMock()
@@ -431,8 +431,8 @@ def test_render_daily_new_events_html_escapes_event_text():
                 "title": "<script>alert(1)</script>",
                 "location": "SLC & DC",
                 "dtstart_utc": "2026-05-03T18:00:00+00:00",
-                "category": "Technology",
-                "organization": "Hack Club",
+                "category": "Media & Web",
+                "organization": "Hack Organization",
             }
         ],
         tz=ZoneInfo("America/Toronto"),

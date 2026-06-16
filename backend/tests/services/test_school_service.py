@@ -13,16 +13,14 @@ def test_search_schools_matches_domain_fragment(monkeypatch):
         school_service,
         "ALLOWED_EMAIL_DOMAINS",
         {
-            "uwaterloo.ca": "University of Waterloo",
-            "mit.edu": "Massachusetts Institute of Technology",
-            "nyu.edu": "New York University",
-            "columbia.edu": "Columbia University",
+            "uwaterloo.ca": "uwaterloo",
+            "mit.edu": "mit",
+            "nyu.edu": "nyu",
+            "columbia.edu": "columbia",
         },
     )
 
-    assert school_service.search_schools("mit.edu") == [
-        "Massachusetts Institute of Technology",
-    ]
+    assert school_service.search_schools("mit.edu") == ["mit"]
 
 
 def test_search_schools_returns_empty_list_for_blank_query(monkeypatch):
@@ -30,7 +28,7 @@ def test_search_schools_returns_empty_list_for_blank_query(monkeypatch):
     monkeypatch.setattr(
         school_service,
         "ALLOWED_EMAIL_DOMAINS",
-        {"uwaterloo.ca": "University of Waterloo"},
+        {"uwaterloo.ca": "uwaterloo"},
     )
 
     assert school_service.search_schools("   ") == []

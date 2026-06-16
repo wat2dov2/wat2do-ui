@@ -42,21 +42,4 @@ export class StorageService {
     }
   }
 
-  /**
-   * Check if key exists in localStorage
-   */
-  static hasItem(key: string): boolean {
-    return localStorage.getItem(key) !== null;
-  }
-
-  /**
-   * Clear all localStorage items
-   */
-  static clear(): void {
-    try {
-      localStorage.clear();
-    } catch (error) {
-      console.error("Failed to clear localStorage:", error);
-    }
-  }
 }

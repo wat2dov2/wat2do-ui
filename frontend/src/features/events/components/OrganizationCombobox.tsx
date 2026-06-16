@@ -35,7 +35,7 @@ export function OrganizationCombobox({
 
   const displayValue = useMemo(() => {
     const selected = value != null ? organizations.find((org) => org.id === value) : undefined;
-    return selected?.club_name ?? t("forms.selectOrganization");
+    return selected?.organization_name ?? t("forms.selectOrganization");
   }, [organizations, value, t]);
 
   return (
@@ -47,7 +47,7 @@ export function OrganizationCombobox({
       }}
       fetcher={fetcher}
       getKey={(org) => String(org.id)}
-      getLabel={(org) => org.club_name}
+      getLabel={(org) => org.organization_name}
       displayValue={displayValue}
       isPlaceholder={value == null}
       searchOnEmpty

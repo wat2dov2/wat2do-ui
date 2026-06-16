@@ -6,13 +6,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from schemas.user import UserResponse
 
 
-class ClubJoinRequestCreate(BaseModel):
+class OrganizationJoinRequestCreate(BaseModel):
     pitch: str = Field(..., min_length=10, max_length=1000)
 
 
-class ClubJoinRequestResponse(BaseModel):
+class OrganizationJoinRequestResponse(BaseModel):
     id: UUID
-    club_id: int
+    organization_id: int
     user_id: UUID
     pitch: str
     status: str
@@ -23,5 +23,5 @@ class ClubJoinRequestResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ClubJoinRequestUpdate(BaseModel):
+class OrganizationJoinRequestUpdate(BaseModel):
     status: str = Field(..., pattern="^(approved|rejected)$")

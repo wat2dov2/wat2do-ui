@@ -1,7 +1,4 @@
 import type { ReactNode } from "react";
-import { Calendar as CalendarIcon, ChevronDownIcon } from "@/shared/ui/doodle-icons";
-import { format } from "date-fns";
-import { useTranslation } from "react-i18next";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import {
@@ -11,12 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
-import { Calendar } from "@/shared/ui/calendar";
 import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import {
   Field,
@@ -54,11 +45,6 @@ interface FormSelectProps extends BaseFormFieldProps {
   placeholder?: string;
 }
 
-interface FormDatePickerProps extends BaseFormFieldProps {
-  value: Date | undefined;
-  onChange: (date: Date | undefined) => void;
-  placeholder?: string;
-}
 
 interface FormDateTimePickerProps extends BaseFormFieldProps {
   value: string;
@@ -211,70 +197,6 @@ export function FormSelect({
   );
 }
 
-/**
- * Reusable form date picker field with validation
- */
-export function FormDatePicker({
-  name,
-  label,
-  required = false,
-  error,
-  touched,
-  onBlur,
-  labelIcon,
-  value,
-  onChange,
-  placeholder,
-  className,
-}: FormDatePickerProps) {
-  const { t } = useTranslation();
-  const hasError = touched && error;
-  const id = `field-${name}`;
-
-  return (
-    <Field className={className}>
-      <FieldLabel
-        htmlFor={id}
-        className="text-sm font-medium text-foreground flex items-center gap-1.5"
-      >
-        {labelIcon || <CalendarIcon className="size-4" />}
-        {label}
-        {required && <span className="text-error">*</span>}
-      </FieldLabel>
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            id={id}
-            data-empty={!value}
-            data-elevation="control"
-            className={cn(
-              "flex w-full items-center justify-between gap-2 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1 text-base md:text-sm h-9 whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[empty=true]:text-muted-foreground [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:opacity-50",
-              hasError && "ring-2 ring-destructive/50 bg-destructive/10"
-            )}
-            onBlur={onBlur}
-          >
-            <span className="truncate">
-              {value ? format(value, "PPP") : (placeholder || t("forms.pickDate"))}
-            </span>
-            <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={value}
-            onSelect={onChange}
-            defaultMonth={value}
-          />
-        </PopoverContent>
-      </Popover>
-      {hasError && (
-        <FieldError className="text-xs">{error}</FieldError>
-      )}
-    </Field>
-  );
-}
 
 /**
  * Reusable form date-time picker field with validation.

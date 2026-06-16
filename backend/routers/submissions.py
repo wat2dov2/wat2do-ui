@@ -2,8 +2,9 @@ import logging
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_admin_user, get_current_user, get_db_user
+from core.auth import get_admin_user, get_optional_user, resolve_db_user
 from core.constants import (
+    MAX_SCHOOL_LENGTH,
     MAX_STATUS_FILTER_LENGTH,
     SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
     SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
@@ -25,29 +26,30 @@ _submission_create_limiter = RateLimiter(
 )
 
 
-def _submission_rate_key(auth_user: dict = Depends(get_current_user)) -> str:
-    return auth_user["id"]
-
-
 @router.post("/", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
 def create_submission(
     data: SubmissionCreate,
-    user: UserResponse = Depends(get_db_user),
-    _rl: None = Depends(_submission_create_limiter.dependency(key_func=_submission_rate_key)),
+    auth_user: dict | None = Depends(get_optional_user),
+    _rl: None = Depends(_submission_create_limiter.dependency()),
 ):
-    if user.school:
+    user: UserResponse | None = resolve_db_user(auth_user) if auth_user else None
+    if user and user.school:
         data.event_data = data.event_data.model_copy(update={"school": user.school})
-    return submission_service.create_submission(str(user.id), data.event_data)
+    return submission_service.create_submission(str(user.id) if user else None, data.event_data)
 
 
 @router.get("/", response_model=PaginatedResponse[SubmissionResponse])
 def list_submissions(
     submission_status: str | None = Query(default=None, max_length=MAX_STATUS_FILTER_LENGTH),
+    school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
     pagination: PaginationParams = Depends(),
     _: UserResponse = Depends(get_admin_user),
 ):
+    if school == "all":
+        school = None
     items, total = submission_service.get_submissions(
         status=submission_status,
+        school=school,
         offset=pagination.offset,
         limit=pagination.page_size,
     )

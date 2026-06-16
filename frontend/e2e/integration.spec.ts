@@ -314,7 +314,6 @@ test.describe("Auth Page", () => {
     await page.goto(`${BASE}/login`);
     await expect(page.locator("h1")).toContainText("Discover");
     await expect(page.locator('input[type="email"]')).toBeVisible();
-    await expect(page.locator('input[type="password"]')).toBeVisible();
     await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
     await expect(page.getByText(/already have an account/i)).toBeVisible();
   });
@@ -337,20 +336,16 @@ test.describe("Auth Page", () => {
 
     await expect(submit).toBeDisabled();
 
+    await page.locator('input[type="email"]').fill("not-valid-email");
+    await expect(submit).toBeDisabled();
+
     await page.locator('input[type="email"]').fill(TEST_EMAIL);
-    await expect(submit).toBeDisabled();
-
-    await page.locator('input[type="password"]').fill("short");
-    await expect(submit).toBeDisabled();
-
-    await page.locator('input[type="password"]').fill("testpass123");
     await expect(submit).toBeEnabled();
   });
 
   test("shows error on invalid signup attempt", async ({ page }) => {
     await page.goto(`${BASE}/login`);
     await page.locator('input[type="email"]').fill("bad@example.com");
-    await page.locator('input[type="password"]').fill("testpass123");
     await page.getByRole("button", { name: /create account/i }).click();
 
     await expect(page.locator(".text-destructive")).toBeVisible({ timeout: 10000 });

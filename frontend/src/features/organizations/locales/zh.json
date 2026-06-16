@@ -4,9 +4,8 @@
     "claimOwnershipDesc": "请求成为该组织的主要管理员和创建者：",
     "executiveRole": "您的执行职位",
     "executiveRolePlaceholder": "例如：主席、副主席、财务主管",
-    "proofLink": "验证证明链接",
-    "proofLinkPlaceholder": "例如：WUSA 注册链接或官方简历链接",
-    "proofDescription": "请提供证明链接，显示您的名字是该组织的执行人员。",
+    "proofImage": "验证证明图片",
+    "proofDescription": "请上传能证明您执行人员身份的图片（JPEG, PNG, WEBP）（例如：WUSA 注册文档、官方个人介绍截图）。",
     "submitClaim": "提交认领",
     "claimSubmitted": "认领提交成功",
     "claimSubmittedDesc": "您管理“{{name}}”的认领请求已提交进行核实。",
@@ -24,8 +23,11 @@
     "applyToJoin": "申请加入",
     "description": "探索滑铁卢大学的学生组织",
     "searchPlaceholder": "搜索组织...",
+    "clearSearch": "清除组织搜索",
     "activeFilters": "当前筛选条件",
     "organizations": "个组织",
+    "organizationLabel": "个组织",
+    "organizationLabel_other": "个组织",
     "noClubsFound": "未找到组织",
     "noClubsFoundDesc": "找不到符合您当前筛选条件的组织。请尝试调整搜索或清除某些筛选条件。",
     "viewClubPage": "查看组织页面",
@@ -39,8 +41,8 @@
     "editClubDescription": "更新下方的组织信息",
     "clubCreatedMessage": "组织“{{name}}”已成功创建！",
     "clubUpdatedMessage": "组织“{{name}}”已更新。",
-    "allClubs": "所有组织",
-    "followedClubs": "关注的组织",
+    "allClubs": "所有",
+    "followedClubs": "已关注",
     "signInToViewClubs": "登录以查看关注的组织",
     "signInToViewClubsDesc": "关注您感兴趣的组织并在一处查看它们。",
     "noFollowedClubs": "暂无关注的组织",
@@ -50,17 +52,6 @@
     "savedClubs": {
       "saveFailed": "无法关注此组织",
       "unsaveFailed": "无法取消关注此组织"
-    },
-    "categories": {
-      "Business and Entrepreneurial": "商业与创业",
-      "Charitable, Community Service & International Development": "慈善、社区服务与国际发展",
-      "Creative Arts, Dance and Music": "创意艺术、舞蹈与音乐",
-      "Environmental and Sustainability": "环境与可持续发展",
-      "Games, Recreational and Social": "游戏、娱乐与社交",
-      "Health Promotion": "健康促进",
-      "Media, Publications and Web Development": "媒体、出版与网页开发",
-      "Political and Social Awareness": "政治与社会意识",
-      "Religious and Spiritual": "宗教与灵性"
     }
   },
   "inviteLanding": {

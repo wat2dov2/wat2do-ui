@@ -1,13 +1,7 @@
-"""Organization category constants (WUSA directory taxonomy)."""
+"""Organization category constants."""
 
-ORGANIZATION_CATEGORIES = (
-    "Business and Entrepreneurial",
-    "Charitable, Community Service & International Development",
-    "Creative Arts, Dance and Music",
-    "Environmental and Sustainability",
-    "Games, Recreational and Social",
-    "Health Promotion",
-    "Media, Publications and Web Development",
-    "Political and Social Awareness",
-    "Religious and Spiritual",
-)
+from core.constants.events import EVENT_CATEGORIES
+
+ORGANIZATION_CATEGORIES = EVENT_CATEGORIES
+
+ORGANIZATION_CATEGORY_IMPORT_ALIASES: dict[str, str] = {}

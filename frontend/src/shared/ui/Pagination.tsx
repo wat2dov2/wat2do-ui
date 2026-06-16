@@ -15,6 +15,31 @@ interface PaginationProps {
   itemLabel: string;
   itemLabelPlural: string;
   onPageChange: (page: number) => void;
+  hideDetails?: boolean;
+}
+
+function getPageNumbers(currentPage: number, totalPages: number): (number | "...")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, "...", totalPages];
+  }
+
+  if (currentPage >= totalPages - 3) {
+    return [
+      1,
+      "...",
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  }
+
+  return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
 }
 
 export function Pagination({
@@ -25,6 +50,7 @@ export function Pagination({
   itemLabel,
   itemLabelPlural,
   onPageChange,
+  hideDetails,
 }: PaginationProps) {
   const { t } = useTranslation();
 
@@ -34,33 +60,36 @@ export function Pagination({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm text-muted-foreground">
-        {t("admin.showing")} {startItem} {t("admin.to")} {endItem}{" "}
-        {t("common.of")} {totalItems}{" "}
-        {totalItems === 1 ? itemLabel : itemLabelPlural}
-      </div>
-      <div className="flex items-center gap-2">
+    <div className={`flex items-center w-full ${hideDetails ? "justify-end" : "justify-between"}`}>
+      {!hideDetails && (
+        <div className="text-sm text-muted-foreground">
+          {t("admin.showing")} {startItem} {t("admin.to")} {endItem}{" "}
+          {t("common.of")} {totalItems}{" "}
+          {totalItems === 1 ? itemLabel : itemLabelPlural}
+        </div>
+      )}
+      <div className="flex items-center gap-1.5">
         <Button
           variant="outline"
           size="sm"
           onMouseDown={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
+          className="h-7 text-xs px-2 gap-1 rounded-lg"
         >
-          <ChevronLeft className="size-4" />
+          <ChevronLeft className="size-3.5" />
           {t("admin.previous")}
         </Button>
         <div className="flex items-center gap-1">
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum: number;
-            if (totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (currentPage <= 3) {
-              pageNum = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i;
-            } else {
-              pageNum = currentPage - 2 + i;
+          {getPageNumbers(currentPage, totalPages).map((pageNum, i) => {
+            if (pageNum === "...") {
+              return (
+                <span
+                  key={`ellipsis-${i}`}
+                  className="flex size-7 items-center justify-center text-xs text-muted-foreground select-none"
+                >
+                  ...
+                </span>
+              );
             }
             return (
               <Button
@@ -68,7 +97,7 @@ export function Pagination({
                 variant={currentPage === pageNum ? "default" : "outline"}
                 size="sm"
                 onMouseDown={() => onPageChange(pageNum)}
-                className="w-9"
+                className="w-7 h-7 text-xs p-0 rounded-lg"
               >
                 {pageNum}
               </Button>
@@ -80,9 +109,10 @@ export function Pagination({
           size="sm"
           onMouseDown={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
+          className="h-7 text-xs px-2 gap-1 rounded-lg"
         >
           {t("admin.next")}
-          <ChevronRight className="size-4" />
+          <ChevronRight className="size-3.5" />
         </Button>
       </div>
     </div>

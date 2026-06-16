@@ -86,11 +86,9 @@ export function getApiErrorMessage(
 let refreshPromise: Promise<boolean> | null = null;
 
 const AUTH_CREDENTIAL_PATHS = new Set([
-  "/auth/signup",
-  "/auth/login",
   "/auth/refresh",
   "/auth/logout",
-  "/auth/reset-password",
+  "/auth/verify-otp",
 ]);
 
 interface TokenRefreshResponse {

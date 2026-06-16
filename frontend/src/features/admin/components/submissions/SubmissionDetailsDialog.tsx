@@ -15,7 +15,7 @@ import { translateFood } from "@/shared/utils/foodTranslation";
 
 interface SubmissionDetailsDialogProps {
   submission: EventSubmission | null;
-  clubName: string;
+  organizationName: string;
   isOpen: boolean;
   onClose: () => void;
   onApprove: (submission: EventSubmission) => void | Promise<void>;
@@ -26,7 +26,7 @@ interface SubmissionDetailsDialogProps {
 
 export function SubmissionDetailsDialog({
   submission,
-  clubName,
+  organizationName,
   isOpen,
   onClose,
   onApprove,
@@ -50,7 +50,7 @@ export function SubmissionDetailsDialog({
 
         <div className="overflow-y-auto flex-1 min-h-0 px-6 pb-6 pt-2 space-y-4">
           <DetailRow label={t("events.eventTitle")} value={submission.eventData.title} />
-          <DetailRow label={t("events.organization")} value={clubName} />
+          <DetailRow label={t("events.organization")} value={organizationName} />
           <DetailRow
             label={t("forms.description")}
             value={submission.eventData.description || t("common.noDescription")}

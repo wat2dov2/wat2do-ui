@@ -25,10 +25,10 @@ export interface EventFormOccurrence {
 }
 
 // Event creation/edit form data (matches EventFormData from SubmitEventModal).
-// The owning club (club_id) is the single source of truth for the event's
-// organization/club_type/school — those are derived server-side, never entered.
+// The owning club (organization_id) is the single source of truth for the event's
+// organization/organization_type/school — those are derived server-side, never entered.
 export interface EventFormData {
-  club_id: number | null;
+  organization_id: number | null;
   title: string;
   description: string;
   occurrences: EventFormOccurrence[];
@@ -42,7 +42,7 @@ export interface EventFormData {
 // Form validation errors
 export interface ValidationErrors {
   title?: string;
-  club_id?: string;
+  organization_id?: string;
   occurrences?: string;
   location?: string;
 }

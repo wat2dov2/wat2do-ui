@@ -40,7 +40,7 @@
     "inviteAddManagerButton": "邀请 / 添加管理员",
     "currentlyAuthorizedManagers": "当前已授权的管理员列表 - ",
     "searchManagersPlaceholder": "按姓名或邮箱搜索管理员...",
-    "loadingClubMembers": "正在加载组织成员...",
+    "loadingOrganizationMembers": "正在加载组织成员...",
     "pendingInvitations": "待处理邀请 ({{count}})",
     "pendingInvitationsDesc": "已被邀请管理此组织但尚未注册或登录的用户。",
     "emailAddress": "电子邮箱地址",

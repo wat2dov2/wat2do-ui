@@ -1,4 +1,4 @@
-export type ManifestoPillar = {
+type ManifestoPillar = {
   id: string;
   title: string;
   body: string;

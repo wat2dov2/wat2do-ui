@@ -1,0 +1,117 @@
+-- Migration: rename_clubs_to_organizations
+-- Created: 2026-06-11
+
+BEGIN;
+
+-- 1. Rename Tables
+ALTER TABLE public.clubs RENAME TO organizations;
+ALTER TABLE public.club_integrations RENAME TO organization_integrations;
+ALTER TABLE public.club_members RENAME TO organization_members;
+ALTER TABLE public.user_saved_clubs RENAME TO user_saved_organizations;
+ALTER TABLE public.club_invitations RENAME TO organization_invitations;
+ALTER TABLE public.club_memberships RENAME TO organization_memberships;
+ALTER TABLE public.club_claims RENAME TO organization_claims;
+ALTER TABLE public.club_join_requests RENAME TO organization_join_requests;
+
+-- 2. Rename Sequence
+ALTER SEQUENCE public.clubs_id_seq RENAME TO organizations_id_seq;
+
+-- 3. Rename Columns
+ALTER TABLE public.organizations RENAME COLUMN club_name TO organization_name;
+ALTER TABLE public.organizations RENAME COLUMN club_page TO organization_page;
+ALTER TABLE public.organizations RENAME COLUMN club_type TO organization_type;
+
+ALTER TABLE public.organization_integrations RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.organization_members RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.user_saved_organizations RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.organization_invitations RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.organization_memberships RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.organization_claims RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.organization_join_requests RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.events RENAME COLUMN club_id TO organization_id;
+ALTER TABLE public.events RENAME COLUMN club_type TO organization_type;
+
+-- 4. Rename Constraints
+-- organizations
+ALTER TABLE public.organizations RENAME CONSTRAINT clubs_pkey TO organizations_pkey;
+ALTER TABLE public.organizations RENAME CONSTRAINT fk_clubs_created_by TO fk_organizations_created_by;
+
+-- organization_integrations
+ALTER TABLE public.organization_integrations RENAME CONSTRAINT club_integrations_pkey TO organization_integrations_pkey;
+ALTER TABLE public.organization_integrations RENAME CONSTRAINT club_integrations_club_id_platform_key TO organization_integrations_org_id_platform_key;
+ALTER TABLE public.organization_integrations RENAME CONSTRAINT club_integrations_club_id_fkey TO organization_integrations_organization_id_fkey;
+
+-- organization_members
+ALTER TABLE public.organization_members RENAME CONSTRAINT club_members_pkey TO organization_members_pkey;
+ALTER TABLE public.organization_members RENAME CONSTRAINT club_members_club_id_user_id_key TO organization_members_org_id_user_id_key;
+ALTER TABLE public.organization_members RENAME CONSTRAINT fk_club_members_club_id TO fk_organization_members_organization_id;
+ALTER TABLE public.organization_members RENAME CONSTRAINT fk_club_members_user_id TO fk_organization_members_user_id;
+
+-- user_saved_organizations
+ALTER TABLE public.user_saved_organizations RENAME CONSTRAINT user_saved_clubs_pkey TO user_saved_organizations_pkey;
+ALTER TABLE public.user_saved_organizations RENAME CONSTRAINT user_saved_clubs_user_id_club_id_key TO user_saved_organizations_user_id_org_id_key;
+ALTER TABLE public.user_saved_organizations RENAME CONSTRAINT fk_user_saved_clubs_club_id TO fk_user_saved_organizations_organization_id;
+ALTER TABLE public.user_saved_organizations RENAME CONSTRAINT fk_user_saved_clubs_user_id TO fk_user_saved_organizations_user_id;
+
+-- organization_invitations
+ALTER TABLE public.organization_invitations RENAME CONSTRAINT club_invitations_pkey TO organization_invitations_pkey;
+ALTER TABLE public.organization_invitations RENAME CONSTRAINT club_invitations_club_id_email_key TO organization_invitations_org_id_email_key;
+ALTER TABLE public.organization_invitations RENAME CONSTRAINT club_invitations_token_key TO organization_invitations_token_key;
+ALTER TABLE public.organization_invitations RENAME CONSTRAINT fk_club_invitations_club_id TO fk_organization_invitations_organization_id;
+ALTER TABLE public.organization_invitations RENAME CONSTRAINT fk_club_invitations_invited_by TO fk_organization_invitations_invited_by;
+ALTER TABLE public.organization_invitations RENAME CONSTRAINT chk_club_invitations_status TO chk_organization_invitations_status;
+
+-- organization_memberships
+ALTER TABLE public.organization_memberships RENAME CONSTRAINT club_memberships_pkey TO organization_memberships_pkey;
+ALTER TABLE public.organization_memberships RENAME CONSTRAINT club_memberships_club_id_fkey TO organization_memberships_organization_id_fkey;
+ALTER TABLE public.organization_memberships RENAME CONSTRAINT club_memberships_user_id_fkey TO organization_memberships_user_id_fkey;
+ALTER TABLE public.organization_memberships RENAME CONSTRAINT club_memberships_club_user_unique TO organization_memberships_org_user_unique;
+ALTER TABLE public.organization_memberships RENAME CONSTRAINT chk_club_memberships_status TO chk_organization_memberships_status;
+ALTER TABLE public.organization_memberships RENAME CONSTRAINT chk_club_memberships_role TO chk_organization_memberships_role;
+
+-- organization_claims
+ALTER TABLE public.organization_claims RENAME CONSTRAINT club_claims_pkey TO organization_claims_pkey;
+ALTER TABLE public.organization_claims RENAME CONSTRAINT club_claims_club_id_fkey TO organization_claims_organization_id_fkey;
+ALTER TABLE public.organization_claims RENAME CONSTRAINT club_claims_user_id_fkey TO organization_claims_user_id_fkey;
+ALTER TABLE public.organization_claims RENAME CONSTRAINT uq_club_claims_club_user TO uq_organization_claims_org_user;
+ALTER TABLE public.organization_claims RENAME CONSTRAINT chk_club_claims_status TO chk_organization_claims_status;
+
+-- organization_join_requests
+ALTER TABLE public.organization_join_requests RENAME CONSTRAINT club_join_requests_pkey TO organization_join_requests_pkey;
+ALTER TABLE public.organization_join_requests RENAME CONSTRAINT club_join_requests_club_id_fkey TO organization_join_requests_organization_id_fkey;
+ALTER TABLE public.organization_join_requests RENAME CONSTRAINT club_join_requests_user_id_fkey TO organization_join_requests_user_id_fkey;
+ALTER TABLE public.organization_join_requests RENAME CONSTRAINT uq_club_join_requests TO uq_organization_join_requests;
+ALTER TABLE public.organization_join_requests RENAME CONSTRAINT chk_club_join_requests_status TO chk_organization_join_requests_status;
+
+-- events
+ALTER TABLE public.events RENAME CONSTRAINT events_club_id_fkey TO events_organization_id_fkey;
+
+-- 5. Rename Indexes
+ALTER INDEX IF EXISTS idx_clubs_created_by RENAME TO idx_organizations_created_by;
+ALTER INDEX IF EXISTS idx_club_integrations_club_id RENAME TO idx_organization_integrations_organization_id;
+ALTER INDEX IF EXISTS idx_club_integrations_connected RENAME TO idx_organization_integrations_connected;
+ALTER INDEX IF EXISTS idx_club_integrations_platform RENAME TO idx_organization_integrations_platform;
+ALTER INDEX IF EXISTS idx_events_club_id RENAME TO idx_events_organization_id;
+
+ALTER INDEX IF EXISTS ix_club_members_club_id RENAME TO ix_organization_members_organization_id;
+ALTER INDEX IF EXISTS ix_club_members_user_id RENAME TO ix_organization_members_user_id;
+
+ALTER INDEX IF EXISTS ix_user_saved_clubs_user_id RENAME TO ix_user_saved_organizations_user_id;
+
+ALTER INDEX IF EXISTS ix_club_invitations_club_id RENAME TO ix_organization_invitations_organization_id;
+ALTER INDEX IF EXISTS ix_club_invitations_email RENAME TO ix_organization_invitations_email;
+ALTER INDEX IF EXISTS ix_club_invitations_token RENAME TO ix_organization_invitations_token;
+
+ALTER INDEX IF EXISTS idx_club_memberships_club_id RENAME TO idx_organization_memberships_organization_id;
+ALTER INDEX IF EXISTS idx_club_memberships_user_id RENAME TO idx_organization_memberships_user_id;
+ALTER INDEX IF EXISTS idx_club_memberships_status RENAME TO idx_organization_memberships_status;
+
+ALTER INDEX IF EXISTS ix_club_claims_club_id RENAME TO ix_organization_claims_organization_id;
+ALTER INDEX IF EXISTS ix_club_claims_user_id RENAME TO ix_organization_claims_user_id;
+ALTER INDEX IF EXISTS ix_club_claims_status RENAME TO ix_organization_claims_status;
+
+ALTER INDEX IF EXISTS ix_club_join_requests_club_id RENAME TO ix_organization_join_requests_organization_id;
+ALTER INDEX IF EXISTS ix_club_join_requests_user_id RENAME TO ix_organization_join_requests_user_id;
+ALTER INDEX IF EXISTS ix_club_join_requests_status RENAME TO ix_organization_join_requests_status;
+
+COMMIT;

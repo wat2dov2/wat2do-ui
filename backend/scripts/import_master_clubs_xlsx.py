@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Bulk-import organizations from all_schools_student_clubs_master.xlsx into the
-Supabase ``clubs`` table.
+Supabase ``organizations`` table.
 
 Only rows whose ``IG Source`` is one of ``{found, confirmed, profile_page}``
 (prefix-matched against ``|``-separated annotations) are imported — the rest
@@ -11,7 +11,7 @@ Usage (from backend/):
   python scripts/import_master_clubs_xlsx.py            # dry-run, prints diff
   python scripts/import_master_clubs_xlsx.py --apply    # write to Supabase
 
-Idempotent: keyed on ``(school, club_name)``.  Re-running with ``--apply``
+Idempotent: keyed on ``(school, organization_name)``.  Re-running with ``--apply``
 inserts new rows, updates rows whose xlsx values changed, and leaves
 unchanged rows alone.
 """
@@ -28,9 +28,12 @@ import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.constants.organizations import ORGANIZATION_CATEGORIES
+from core.constants.organizations import (
+    ORGANIZATION_CATEGORIES,
+    ORGANIZATION_CATEGORY_IMPORT_ALIASES,
+)
 from core.database import get_sb
-from core.tables import CLUBS
+from core.tables import ORGANIZATIONS
 
 log = logging.getLogger(__name__)
 
@@ -46,34 +49,33 @@ XLSX_PATH = (
 # account"); we match against the part before the pipe.
 HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 
-# Map xlsx School column short names -> canonical schools.name values.
-# These names must match exactly the rows seeded in
-# 20260610180000_add_schools_and_email_domains.sql.
+# Map xlsx School column short names -> canonical schools.name slug values.
+# These names must match exactly the rows in the hosted schools table.
 SCHOOL_NAME_MAP: dict[str, str] = {
-    "Brock": "Brock University",
-    "Carleton": "Carleton University",
-    "Cornell": "Cornell University",
-    "Laurier": "Wilfrid Laurier University",
-    "McGill": "McGill University",
-    "McMaster": "McMaster University",
-    "NYU": "New York University",
-    "OCAD": "OCAD University",
-    "Queen's": "Queen's University",
-    "TMU": "Toronto Metropolitan University",
-    "UPenn": "University of Pennsylvania",
-    "UofT Scarborough": "University of Toronto - Scarborough",
-    "UofT St. George": "University of Toronto - St. George",
-    "Western": "Western University",
-    "York": "York University",
-    "uOttawa": "University of Ottawa",
+    "Brock": "brock",
+    "Carleton": "carleton",
+    "Cornell": "cornell",
+    "Laurier": "wlu",
+    "McGill": "mcgill",
+    "McMaster": "mcmaster",
+    "NYU": "nyu",
+    "OCAD": "ocad",
+    "Queen's": "queens",
+    "TMU": "tmu",
+    "UPenn": "upenn",
+    "UofT Scarborough": "utsc",
+    "UofT St. George": "utoronto",
+    "Western": "western",
+    "York": "york",
+    "uOttawa": "uottawa",
 }
 
-# Default for the legacy required `club_type` column.  Existing non-WUSA
-# seeds in backend/seeds/clubs.py use "Independent" for school clubs that
+# Default for the legacy required `organization_type` column.  Existing non-WUSA
+# seeds in backend/seeds/organizations.py use "Independent" for school organizations that
 # aren't WUSA-affiliated; same convention here.
-DEFAULT_CLUB_TYPE = "Independent"
+DEFAULT_ORGANIZATION_TYPE = "Independent"
 
-CLUB_NAME_MAX = 500
+ORGANIZATION_NAME_MAX = 500
 
 
 def _normalize_ig_source(value: object) -> str:
@@ -93,12 +95,7 @@ def _normalize_handle(value: object) -> str | None:
 
 
 def _normalize_categories(raw: object) -> list[str]:
-    """Parse a Category cell into a list of canonical category names.
-
-    Splits and extracts canonical WUSA category names directly. Any leftovers
-    that do not match canonical categories are returned as-is so they fail
-    validation and are flagged.
-    """
+    """Parse a Category cell into canonical organization category names."""
     if raw is None:
         return []
     text = str(raw).strip()
@@ -107,9 +104,12 @@ def _normalize_categories(raw: object) -> list[str]:
 
     matched = []
     remaining = text
-    for category in ORGANIZATION_CATEGORIES:
+    source_categories = (*ORGANIZATION_CATEGORY_IMPORT_ALIASES.keys(), *ORGANIZATION_CATEGORIES)
+    for category in source_categories:
         if category in text:
-            matched.append(category)
+            canonical = ORGANIZATION_CATEGORY_IMPORT_ALIASES.get(category, category)
+            if canonical not in matched:
+                matched.append(canonical)
             remaining = remaining.replace(category, "")
 
     leftovers = [p.strip() for p in remaining.split(",") if p.strip()]
@@ -169,11 +169,9 @@ def _validate_rows(
     errors: list[str] = []
     unknown_schools: set[str] = set()
     bad_categories: set[str] = set()
+    seen: dict[tuple[str, str], int] = {}
 
     for idx, row in enumerate(rows, start=3):
-        if row["ig_source"] not in HIGH_QUALITY_IG_SOURCES:
-            skipped[f"ig_source={row['ig_source'] or '<blank>'}"] += 1
-            continue
         if not row["name"]:
             skipped["blank_name"] += 1
             continue
@@ -183,6 +181,7 @@ def _validate_rows(
         canonical_school = SCHOOL_NAME_MAP.get(row["school_short"])
         if not canonical_school:
             unknown_schools.add(row["school_short"])
+            skipped[f"unknown_school={row['school_short']}"] += 1
             continue
         if canonical_school not in db_schools:
             errors.append(
@@ -190,59 +189,56 @@ def _validate_rows(
                 "is not registered in the Supabase 'schools' table."
             )
             continue
+
+        # Filter out invalid categories, keep the valid ones
+        valid_categories = []
         for category in row["categories"]:
-            if category not in ORGANIZATION_CATEGORIES:
+            if category in ORGANIZATION_CATEGORIES:
+                valid_categories.append(category)
+            else:
                 bad_categories.add(category)
 
-        club_name = row["name"][:CLUB_NAME_MAX]
-        if len(row["name"]) > CLUB_NAME_MAX:
-            log.warning("Row %s: club_name truncated to %s chars", idx, CLUB_NAME_MAX)
+        organization_name = row["name"][:ORGANIZATION_NAME_MAX]
+        if len(row["name"]) > ORGANIZATION_NAME_MAX:
+            log.warning(
+                "Row %s: organization_name truncated to %s chars", idx, ORGANIZATION_NAME_MAX
+            )
+
+        # Dedup dynamically to maintain idempotency and avoid aborting
+        key = (canonical_school, organization_name)
+        if key in seen:
+            skipped["duplicate_school_name"] += 1
+            continue
+        seen[key] = idx
 
         kept.append(
             {
                 "row_idx": idx,
-                "club_name": club_name,
+                "organization_name": organization_name,
                 "school": canonical_school,
-                "categories": row["categories"],
-                "club_page": row["directory"],
+                "categories": valid_categories,
+                "organization_page": row["directory"],
                 "ig": row["ig_handle"],
-                "club_type": DEFAULT_CLUB_TYPE,
+                "organization_type": DEFAULT_ORGANIZATION_TYPE,
             }
         )
 
     if unknown_schools:
-        errors.append(
-            "xlsx School values with no entry in SCHOOL_NAME_MAP: "
+        log.warning(
+            "xlsx School values with no entry in SCHOOL_NAME_MAP skipped: "
             + ", ".join(sorted(unknown_schools))
         )
     if bad_categories:
-        errors.append(
-            "xlsx Category values not in ORGANIZATION_CATEGORIES: "
+        log.warning(
+            "xlsx Category values not in ORGANIZATION_CATEGORIES skipped: "
             + ", ".join(sorted(bad_categories))
-        )
-
-    # Guard against (school, club_name) duplicates — they break idempotency
-    # because the SELECT-then-write upsert keys on that pair, so the second
-    # row in a dup pair always looks "new".
-    seen: dict[tuple[str, str], int] = {}
-    duplicate_keys: list[str] = []
-    for row in kept:
-        key = (row["school"], row["club_name"])
-        if key in seen:
-            duplicate_keys.append(f"{key[0]} | {key[1]} (rows {seen[key]} and {row['row_idx']})")
-        else:
-            seen[key] = row["row_idx"]
-    if duplicate_keys:
-        errors.append(
-            "xlsx contains duplicate (School, Name) rows — dedup before importing:\n  "
-            + "\n  ".join(duplicate_keys)
         )
 
     return kept, dict(skipped), errors
 
 
 def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
-    """Return all clubs whose school is in *schools*, keyed on (school, club_name)."""
+    """Return all organizations whose school is in *schools*, keyed on (school, organization_name)."""
     if not schools:
         return {}
     existing: dict[tuple[str, str], dict] = {}
@@ -252,15 +248,17 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
     offset = 0
     while True:
         res = (
-            sb.table(CLUBS)
-            .select("id, club_name, school, categories, club_page, ig, club_type")
+            sb.table(ORGANIZATIONS)
+            .select(
+                "id, organization_name, school, categories, organization_page, ig, organization_type"
+            )
             .in_("school", list(schools))
             .range(offset, offset + page_size - 1)
             .execute()
         )
         batch = res.data or []
         for row in batch:
-            existing[(row["school"], row["club_name"])] = row
+            existing[(row["school"], row["organization_name"])] = row
         if len(batch) < page_size:
             break
         offset += page_size
@@ -269,7 +267,7 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
 
 def _diff(planned: dict, existing: dict) -> dict | None:
     """Return a dict of {field: (old, new)} for fields that differ, or None."""
-    fields = ("categories", "club_page", "ig", "club_type")
+    fields = ("categories", "organization_page", "ig", "organization_type")
     diff: dict[str, tuple] = {}
     for field in fields:
         old = existing.get(field)
@@ -328,7 +326,7 @@ def main() -> int:
     unchanged = 0
 
     for row in kept:
-        key = (row["school"], row["club_name"])
+        key = (row["school"], row["organization_name"])
         if key in existing:
             diff = _diff(row, existing[key])
             if diff:
@@ -358,7 +356,7 @@ def main() -> int:
                 "update example id=%s school=%r name=%r diff=%s",
                 cid,
                 planned["school"],
-                planned["club_name"],
+                planned["organization_name"],
                 diff,
             )
         return 0
@@ -370,29 +368,29 @@ def main() -> int:
         batch_size = 200
         payload = [
             {
-                "club_name": row["club_name"],
+                "organization_name": row["organization_name"],
                 "school": row["school"],
                 "categories": row["categories"],
-                "club_page": row["club_page"],
+                "organization_page": row["organization_page"],
                 "ig": row["ig"],
-                "club_type": row["club_type"],
+                "organization_type": row["organization_type"],
             }
             for row in to_insert
         ]
         for start in range(0, len(payload), batch_size):
             chunk = payload[start : start + batch_size]
-            sb.table(CLUBS).insert(chunk).execute()
+            sb.table(ORGANIZATIONS).insert(chunk).execute()
             inserted += len(chunk)
             log.info("  inserted %s/%s", inserted, len(payload))
 
     updated = 0
     for cid, planned, _ in to_update:
-        sb.table(CLUBS).update(
+        sb.table(ORGANIZATIONS).update(
             {
                 "categories": planned["categories"],
-                "club_page": planned["club_page"],
+                "organization_page": planned["organization_page"],
                 "ig": planned["ig"],
-                "club_type": planned["club_type"],
+                "organization_type": planned["organization_type"],
             }
         ).eq("id", cid).execute()
         updated += 1

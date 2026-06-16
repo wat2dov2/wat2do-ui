@@ -9,31 +9,35 @@ from fastapi.testclient import TestClient
 from core.constants import ROLE_ADMIN
 from core.rate_limit import qr_scan_rate_limiter
 from main import app
-from schemas.club import ClubResponse
+from schemas.organization import OrganizationResponse
 from schemas.qr_code import QrCodeRedirect, QrCodeResponse
 from schemas.user import UserResponse
-from services import club_service, qr_code_service
+from services import organization_service, qr_code_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
 @pytest.fixture(autouse=True)
-def mock_list_clubs(monkeypatch):
-    """By default, users own no clubs."""
+def mock_list_organizations(monkeypatch):
+    """By default, users own no organizations."""
     mock = MagicMock(return_value=[])
-    monkeypatch.setattr(club_service, "list_clubs_by_owner", mock)
+    monkeypatch.setattr(organization_service, "list_organizations_by_owner", mock)
     return mock
 
 
 @pytest.fixture
-def club_owner_client(authenticated_client, monkeypatch):
-    """Client authenticated as a standard user who owns a club."""
-    mock_club = ClubResponse(
+def organization_owner_client(authenticated_client, monkeypatch):
+    """Client authenticated as a standard user who owns a organization."""
+    mock_organization = OrganizationResponse(
         id=123,
-        club_name="Test Club",
-        club_type="tech",
+        organization_name="Test Organization",
+        organization_type="tech",
         created_by=FAKE_USER["id"],
     )
-    monkeypatch.setattr(club_service, "list_clubs_by_owner", MagicMock(return_value=[mock_club]))
+    monkeypatch.setattr(
+        organization_service,
+        "list_organizations_by_owner",
+        MagicMock(return_value=[mock_organization]),
+    )
     return authenticated_client
 
 
@@ -634,16 +638,16 @@ def test_qr_scan_rate_limit_allows_within_limit(client):
         qr_code_service.record_scan = original_record
 
 
-# ── Club Owner authorization and filter tests ──────────────────────────
+# ── Organization Owner authorization and filter tests ──────────────────────────
 
 
-def test_club_owner_can_list_own_qr_codes(club_owner_client, monkeypatch):
-    """Club owner can list their own QR codes, which applies created_by filter."""
+def test_organization_owner_can_list_own_qr_codes(organization_owner_client, monkeypatch):
+    """Organization owner can list their own QR codes, which applies created_by filter."""
     my_qr = _mock_qr(id="my-qr", created_by=FAKE_USER["id"])
     mock_list = MagicMock(return_value=([my_qr], 1))
     monkeypatch.setattr(qr_code_service, "list_qr_codes", mock_list)
 
-    resp = club_owner_client.get("/qr/")
+    resp = organization_owner_client.get("/qr/")
     assert resp.status_code == 200
     body = resp.json()
     assert len(body["items"]) == 1
@@ -653,25 +657,25 @@ def test_club_owner_can_list_own_qr_codes(club_owner_client, monkeypatch):
     assert kwargs["created_by"] == FAKE_USER["id"]
 
 
-def test_club_owner_can_list_own_scans(club_owner_client, monkeypatch):
-    """Club owner can list scans, which applies owned_by filter."""
+def test_organization_owner_can_list_own_scans(organization_owner_client, monkeypatch):
+    """Organization owner can list scans, which applies owned_by filter."""
     mock_list = MagicMock(return_value=([], 0))
     monkeypatch.setattr(qr_code_service, "list_scans", mock_list)
 
-    resp = club_owner_client.get("/qr/scans")
+    resp = organization_owner_client.get("/qr/scans")
     assert resp.status_code == 200
 
     _, kwargs = mock_list.call_args
     assert kwargs["owned_by"] == FAKE_USER["id"]
 
 
-def test_club_owner_can_create_poster(club_owner_client, monkeypatch):
-    """Club owner can create a QR code, which enforces created_by as their id."""
+def test_organization_owner_can_create_poster(organization_owner_client, monkeypatch):
+    """Organization owner can create a QR code, which enforces created_by as their id."""
     qr = _mock_qr(created_by=FAKE_USER["id"])
     mock_create = MagicMock(return_value=qr)
     monkeypatch.setattr(qr_code_service, "create_qr_code", mock_create)
 
-    resp = club_owner_client.post(
+    resp = organization_owner_client.post(
         "/qr/",
         json={
             "id": "new-qr",
@@ -684,14 +688,14 @@ def test_club_owner_can_create_poster(club_owner_client, monkeypatch):
     assert kwargs["created_by"] == FAKE_USER["id"]
 
 
-def test_club_owner_can_update_own_poster(club_owner_client, monkeypatch):
-    """Club owner can update a poster they created."""
+def test_organization_owner_can_update_own_poster(organization_owner_client, monkeypatch):
+    """Organization owner can update a poster they created."""
     existing = _mock_qr(id="my-qr", created_by=FAKE_USER["id"])
     updated = _mock_qr(id="my-qr", name="Updated", created_by=FAKE_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
     monkeypatch.setattr(qr_code_service, "update_qr_code", MagicMock(return_value=updated))
 
-    resp = club_owner_client.patch(
+    resp = organization_owner_client.patch(
         "/qr/my-qr",
         json={
             "id": "my-qr",
@@ -703,12 +707,12 @@ def test_club_owner_can_update_own_poster(club_owner_client, monkeypatch):
     assert resp.json()["name"] == "Updated"
 
 
-def test_club_owner_cannot_update_other_poster(club_owner_client, monkeypatch):
-    """Club owner cannot update a poster created by another user."""
+def test_organization_owner_cannot_update_other_poster(organization_owner_client, monkeypatch):
+    """Organization owner cannot update a poster created by another user."""
     existing = _mock_qr(id="other-qr", created_by=OTHER_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
 
-    resp = club_owner_client.patch(
+    resp = organization_owner_client.patch(
         "/qr/other-qr",
         json={
             "id": "other-qr",
@@ -719,20 +723,20 @@ def test_club_owner_cannot_update_other_poster(club_owner_client, monkeypatch):
     assert resp.status_code == 403
 
 
-def test_club_owner_can_delete_own_poster(club_owner_client, monkeypatch):
-    """Club owner can delete their own poster."""
+def test_organization_owner_can_delete_own_poster(organization_owner_client, monkeypatch):
+    """Organization owner can delete their own poster."""
     existing = _mock_qr(id="my-qr", created_by=FAKE_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
     monkeypatch.setattr(qr_code_service, "delete_qr_code", MagicMock())
 
-    resp = club_owner_client.delete("/qr/my-qr")
+    resp = organization_owner_client.delete("/qr/my-qr")
     assert resp.status_code == 204
 
 
-def test_club_owner_cannot_delete_other_poster(club_owner_client, monkeypatch):
-    """Club owner cannot delete a poster created by another user."""
+def test_organization_owner_cannot_delete_other_poster(organization_owner_client, monkeypatch):
+    """Organization owner cannot delete a poster created by another user."""
     existing = _mock_qr(id="other-qr", created_by=OTHER_USER["id"])
     monkeypatch.setattr(qr_code_service, "get_qr_code_by_id", MagicMock(return_value=existing))
 
-    resp = club_owner_client.delete("/qr/other-qr")
+    resp = organization_owner_client.delete("/qr/other-qr")
     assert resp.status_code == 403

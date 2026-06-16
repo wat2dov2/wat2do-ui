@@ -78,9 +78,9 @@ def test_extract_shortcode_tv_path():
 
 
 def test_extract_shortcode_profile_url_returns_none():
-    """A profile link (/uwteaclub) is NOT a post — returns None."""
-    assert _extract_shortcode("https://instagram.com/uwteaclub") is None
-    assert _extract_shortcode("https://instagram.com/uwteaclub/") is None
+    """A profile link (/uwteaorganization) is NOT a post — returns None."""
+    assert _extract_shortcode("https://instagram.com/uwteaorganization") is None
+    assert _extract_shortcode("https://instagram.com/uwteaorganization/") is None
 
 
 def test_extract_shortcode_unrelated_url_returns_none():
@@ -93,7 +93,7 @@ def test_extract_shortcode_unrelated_url_returns_none():
     # tolerates false positives because they only cause a real IG post
     # to be skipped, not duplicated. Confirm with a sentinel test that
     # the function doesn't raise on a non-instagram URL.
-    assert _extract_shortcode("https://example.com/uwteaclub") is None
+    assert _extract_shortcode("https://example.com/uwteaorganization") is None
 
 
 # ── find_match ────────────────────────────────────────────────────────
@@ -115,10 +115,10 @@ def test_find_match_returns_none_without_occurrences():
     assert result is None
 
 
-def test_find_match_same_club_update(fake_sb, patch_sb):
-    """Same IG handle + future event + similar title -> same_club match.
+def test_find_match_same_organization_update(fake_sb, patch_sb):
+    """Same IG handle + future event + similar title -> same_organization match.
 
-    The same-club query embeds event_dates rows in the events response, and
+    The same-organization query embeds event_dates rows in the events response, and
     the dedup helper checks the latest end across embedded occurrences.
     """
     patch_sb("services.scraper.dedup")
@@ -126,12 +126,12 @@ def test_find_match_same_club_update(fake_sb, patch_sb):
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     fake_sb.queue_responses(
         [
-            # Same-club lookup — events row with embedded event_dates list.
+            # Same-organization lookup — events row with embedded event_dates list.
             [
                 {
                     "id": 42,
                     "title": "Tea Tasting Night",
-                    "ig_handle": "uwteaclub",
+                    "ig_handle": "uwteaorganization",
                     "location": "SLC",
                     "description": "...",
                     "event_dates": [{"dtstart_utc": future, "dtend_utc": future}],
@@ -145,27 +145,27 @@ def test_find_match_same_club_update(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(future)],
-        ig_handle="uwteaclub",
+        ig_handle="uwteaorganization",
     )
     assert result is not None
-    assert result.kind == "same_club"
+    assert result.kind == "same_organization"
     assert result.event["id"] == 42
 
 
-def test_find_match_skips_past_same_club_events(fake_sb, patch_sb):
-    """Past same-club events are NOT updates — they're new occurrences of a recurring series."""
+def test_find_match_skips_past_same_organization_events(fake_sb, patch_sb):
+    """Past same-organization events are NOT updates — they're new occurrences of a recurring series."""
     patch_sb("services.scraper.dedup")
 
     past = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     fake_sb.queue_responses(
         [
-            # Same-club lookup returns past event only -> no match.
+            # Same-organization lookup returns past event only -> no match.
             [
                 {
                     "id": 99,
                     "title": "Tea Tasting Night",
-                    "ig_handle": "uwteaclub",
+                    "ig_handle": "uwteaorganization",
                     "location": "SLC",
                     "description": "",
                     "event_dates": [{"dtstart_utc": past, "dtend_utc": past}],
@@ -181,13 +181,13 @@ def test_find_match_skips_past_same_club_events(fake_sb, patch_sb):
         location="SLC",
         description="",
         occurrences=[_occ(future)],
-        ig_handle="uwteaclub",
+        ig_handle="uwteaorganization",
     )
     assert result is None
 
 
 def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
-    """Substring title match + similar location -> cross-club duplicate.
+    """Substring title match + similar location -> cross-organization duplicate.
 
     The same-day query hits the event_dates table first and embeds the parent
     ``events`` row.
@@ -197,7 +197,7 @@ def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
     future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
     fake_sb.queue_responses(
         [
-            # Same-club lookup returns nothing (different ig_handle in DB).
+            # Same-organization lookup returns nothing (different ig_handle in DB).
             [],
             # Same-day lookup: each row is one event_date with embedded events.
             [
@@ -206,7 +206,7 @@ def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
                     "events": {
                         "id": 17,
                         "title": "Movie Night",
-                        "ig_handle": "otherclub",
+                        "ig_handle": "otherorganization",
                         "location": "DC Library",
                         "description": "Free popcorn",
                     },
@@ -220,7 +220,7 @@ def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
         location="DC Library 1568",  # similar location
         description="popcorn provided",
         occurrences=[_occ(future)],
-        ig_handle="uwteaclub",
+        ig_handle="uwteaorganization",
     )
     assert result is not None
     assert result.kind == "duplicate"

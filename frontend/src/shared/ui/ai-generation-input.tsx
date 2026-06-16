@@ -17,6 +17,7 @@ interface AIGenerationInputProps {
   className?: string;
   titleClassName?: string;
   showTitle?: boolean;
+  disabled?: boolean;
 }
 
 export function AIGenerationInput({
@@ -32,6 +33,7 @@ export function AIGenerationInput({
   className = "mb-4 space-y-2",
   titleClassName,
   showTitle = true,
+  disabled = false,
 }: AIGenerationInputProps) {
   const { t } = useTranslation();
 
@@ -40,12 +42,14 @@ export function AIGenerationInput({
     ? (generatingText || t("common.generating"))
     : t("forms.aiPromptPlaceholder"));
 
+  const isInputDisabled = aiGenerating || disabled;
+
   return (
     <div className={className}>
       {showTitle && (
         <div className="flex items-center gap-2">
-          <Sparkles className="size-3.5 text-primary" />
-          <span className={cn("text-xs font-medium text-foreground", titleClassName)}>
+          <Sparkles className={cn("size-3.5", isInputDisabled ? "text-muted-foreground" : "text-primary")} />
+          <span className={cn("text-xs font-medium", isInputDisabled ? "text-muted-foreground" : "text-foreground", titleClassName)}>
             {displayTitle}
           </span>
         </div>
@@ -60,12 +64,12 @@ export function AIGenerationInput({
             if (e.key !== "Enter") return;
             e.preventDefault();
             e.stopPropagation();
-            if (aiPrompt.trim() && !aiGenerating) onAiGenerate();
+            if (aiPrompt.trim() && !aiGenerating && !disabled) onAiGenerate();
           }}
-          disabled={aiGenerating}
+          disabled={isInputDisabled}
           className="bg-secondary text-xs pr-8"
         />
-        {aiPrompt && !aiGenerating && (
+        {aiPrompt && !aiGenerating && !disabled && (
           <button
             type="button"
             onMouseDown={onAiPromptClear}

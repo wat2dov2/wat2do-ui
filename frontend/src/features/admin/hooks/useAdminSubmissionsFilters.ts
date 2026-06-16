@@ -3,11 +3,11 @@ import { useAdminStore } from "@/features/admin/store/admin.store";
 import type { SubmissionStatus } from "@/shared/types";
 
 interface UseAdminSubmissionsFiltersOptions {
-  getClubName: (clubId: number | null | undefined) => string;
+  getOrganizationName: (organizationId: number | null | undefined) => string;
 }
 
 export function useAdminSubmissionsFilters({
-  getClubName,
+  getOrganizationName,
 }: UseAdminSubmissionsFiltersOptions) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SubmissionStatus>("all");
@@ -25,7 +25,7 @@ export function useAdminSubmissionsFilters({
       filtered = filtered.filter(
         (s) =>
           s.eventData.title.toLowerCase().includes(query) ||
-          getClubName(s.eventData.club_id).toLowerCase().includes(query) ||
+          getOrganizationName(s.eventData.organization_id).toLowerCase().includes(query) ||
           s.submittedBy.toLowerCase().includes(query),
       );
     }
@@ -34,7 +34,7 @@ export function useAdminSubmissionsFilters({
       (a, b) =>
         new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
     );
-  }, [allSubmissions, statusFilter, searchQuery, getClubName]);
+  }, [allSubmissions, statusFilter, searchQuery, getOrganizationName]);
 
   return {
     searchQuery,

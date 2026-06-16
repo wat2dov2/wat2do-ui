@@ -18,7 +18,7 @@ import {
 } from "@/features/events/api/events.api";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { isApiError, getApiErrorMessage } from "@/shared/services/apiClient";
-import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
+import { DEFAULT_SCHOOL, getCurrentSchool, resolveSchool } from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
 import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/userRepository";
 
@@ -41,15 +41,19 @@ interface EventsState {
 
 /** Deduplicate concurrent fetches for the same school while allowing school switches. */
 const _fetchesBySchool = new Map<string, Promise<AppEvent[]>>();
+const _promotedFetchesBySchool = new Map<string, Promise<AppEvent[]>>();
 let _latestFetchId = 0;
+let _latestPromotedFetchId = 0;
+let _loadedEventsSchoolKey: string | null = null;
+let _loadedPromotedSchoolKey: string | null = null;
 
 function getInitialSchoolFilter(): string {
   if (typeof window !== "undefined") {
     const schoolParam = new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim();
-    if (schoolParam) return schoolParam;
+    if (schoolParam) return resolveSchool(schoolParam);
   }
 
-  return loadUserProfile()?.school?.trim() || DEFAULT_SCHOOL;
+  return resolveSchool(loadUserProfile()?.school || getCurrentSchool());
 }
 
 function getSchoolFetchKey(school: string | null): string {
@@ -68,8 +72,12 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     const school = get().schoolFilter;
     const schoolKey = getSchoolFetchKey(school);
     const fetchId = ++_latestFetchId;
+    const hasLoadedCurrentSchool = _loadedEventsSchoolKey === schoolKey;
 
-    set({ isLoading: true, error: null });
+    set({
+      isLoading: hasLoadedCurrentSchool ? get().isLoading : true,
+      error: null,
+    });
     get().fetchPromotedEvents();
 
     let fetchPromise = _fetchesBySchool.get(schoolKey);
@@ -86,6 +94,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     try {
       const events = await fetchPromise;
       if (!isCurrentFetch()) return;
+      _loadedEventsSchoolKey = schoolKey;
       set({ events, isLoading: false, error: null });
     } catch (err) {
       if (!isCurrentFetch()) return;
@@ -97,19 +106,41 @@ export const useEventsStore = create<EventsState>((set, get) => ({
 
   fetchPromotedEvents: async () => {
     const school = get().schoolFilter;
-    set({ isPromotedLoading: true });
+    const schoolKey = getSchoolFetchKey(school);
+    const fetchId = ++_latestPromotedFetchId;
+    const hasLoadedCurrentSchool = _loadedPromotedSchoolKey === schoolKey;
+
+    set({
+      isPromotedLoading: hasLoadedCurrentSchool ? get().isPromotedLoading : true,
+    });
+
+    let fetchPromise = _promotedFetchesBySchool.get(schoolKey);
+    if (!fetchPromise) {
+      fetchPromise = fetchPromotedEvents(school ?? undefined).finally(() => {
+        _promotedFetchesBySchool.delete(schoolKey);
+      });
+      _promotedFetchesBySchool.set(schoolKey, fetchPromise);
+    }
+
+    const isCurrentFetch = () =>
+      fetchId === _latestPromotedFetchId && getSchoolFetchKey(get().schoolFilter) === schoolKey;
+
     try {
-      const promotedEvents = await fetchPromotedEvents(school ?? undefined);
+      const promotedEvents = await fetchPromise;
+      if (!isCurrentFetch()) return;
+      _loadedPromotedSchoolKey = schoolKey;
       set({ promotedEvents, isPromotedLoading: false });
     } catch (err) {
+      if (!isCurrentFetch()) return;
       console.error("Failed to fetch promoted events:", err);
       set({ isPromotedLoading: false });
     }
   },
 
   setSchoolFilter: (school: string) => {
-    if (get().schoolFilter === school) return;
-    set({ schoolFilter: school });
+    const nextSchool = resolveSchool(school);
+    if (get().schoolFilter === nextSchool) return;
+    set({ schoolFilter: nextSchool });
     get().fetchEvents();
   },
 
@@ -156,15 +187,15 @@ function getAuthLoginSchool(event: globalThis.Event): string {
   if ("detail" in event) {
     const detail = (event as CustomEvent<{ school?: string }>).detail;
     const hintedSchool = detail?.school?.trim();
-    if (hintedSchool) return hintedSchool;
+    if (hintedSchool) return resolveSchool(hintedSchool);
   }
 
   if (typeof window !== "undefined") {
     const routeSchool = new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim();
-    if (routeSchool) return routeSchool;
+    if (routeSchool) return resolveSchool(routeSchool);
   }
 
-  return loadUserProfile()?.school?.trim() || DEFAULT_SCHOOL;
+  return resolveSchool(loadUserProfile()?.school || getCurrentSchool());
 }
 
 function syncSchoolFilterFromLogin(event: globalThis.Event): void {
@@ -180,7 +211,7 @@ function syncSchoolFilterFromProfile(): void {
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim()
       : "";
-  const nextSchool = routeSchool || loadUserProfile()?.school?.trim() || DEFAULT_SCHOOL;
+  const nextSchool = resolveSchool(routeSchool || loadUserProfile()?.school || getCurrentSchool());
   const currentSchool = useEventsStore.getState().schoolFilter;
   if (currentSchool !== nextSchool) {
     useEventsStore.getState().setSchoolFilter(nextSchool);

@@ -5,24 +5,25 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from core.auth import get_current_user, get_db_user, require_owner_or_admin
 from core.constants import (
     BUCKET_AVATARS,
-    BUCKET_CLUB_LOGOS,
+    BUCKET_CLAIM_PROOFS,
     BUCKET_EVENT_IMAGES,
+    BUCKET_ORGANIZATION_LOGOS,
     BUCKET_QR_ASSETS,
 )
-from core.errors import CLUB_NOT_FOUND, EVENT_NOT_FOUND
+from core.errors import EVENT_NOT_FOUND, ORGANIZATION_NOT_FOUND
 from core.exceptions import ValidationError, get_or_404
 from core.rate_limit import RateLimiter
-from schemas.club import ClubUpdate
 from schemas.event import EventUpdate
+from schemas.organization import OrganizationUpdate
 from schemas.upload import UploadResponse
 from schemas.user import UserUpdate
-from services import club_service, event_service, user_service
+from services import event_service, organization_service, user_service
 from services.storage_service import storage
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
 # Per-user rate limit: 30 uploads per hour.  Sized for normal usage
-# (a user editing multiple events / clubs in one session) while
+# (a user editing multiple events / organizations in one session) while
 # preventing storage-flooding attacks where a single account uploads
 # thousands of orphaned assets (audit U6 / U12).
 _upload_rate_limiter = RateLimiter(max_requests=30, window_seconds=3600)
@@ -155,21 +156,26 @@ async def upload_avatar(
     return {"url": url}
 
 
-@router.post("/club-logo/{club_id}", response_model=UploadResponse)
-async def upload_club_logo(
-    club_id: int,
+@router.post("/organization-logo/{organization_id}", response_model=UploadResponse)
+async def upload_organization_logo(
+    organization_id: int,
     file: UploadFile = File(...),
     db_user=Depends(get_db_user),
     _rl: None = Depends(_rate_limit_dep),
-    _cl: None = Depends(_enforce_content_length(BUCKET_CLUB_LOGOS)),
+    _cl: None = Depends(_enforce_content_length(BUCKET_ORGANIZATION_LOGOS)),
 ):
-    club = get_or_404(await asyncio.to_thread(club_service.get_club, club_id), CLUB_NOT_FOUND)
-    require_owner_or_admin(db_user, club.created_by)
+    organization = get_or_404(
+        await asyncio.to_thread(organization_service.get_organization, organization_id),
+        ORGANIZATION_NOT_FOUND,
+    )
+    require_owner_or_admin(db_user, organization.created_by)
     url = await _replace_image(
         file,
-        BUCKET_CLUB_LOGOS,
-        club.logo_url,
-        lambda u: club_service.update_club(club_id, ClubUpdate(logo_url=u)),
+        BUCKET_ORGANIZATION_LOGOS,
+        organization.logo_url,
+        lambda u: organization_service.update_organization(
+            organization_id, OrganizationUpdate(logo_url=u)
+        ),
     )
     return {"url": url}
 
@@ -189,6 +195,23 @@ async def upload_qr_asset(
     url = await asyncio.to_thread(
         storage.upload_file,
         BUCKET_QR_ASSETS,
+        data,
+        content_type,
+    )
+    return {"url": url}
+
+
+@router.post("/claim-proof", response_model=UploadResponse)
+async def upload_claim_proof(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+    _rl: None = Depends(_rate_limit_dep),
+    _cl: None = Depends(_enforce_content_length(BUCKET_CLAIM_PROOFS)),
+):
+    data, content_type = await _validated_upload(file, BUCKET_CLAIM_PROOFS)
+    url = await asyncio.to_thread(
+        storage.upload_file,
+        BUCKET_CLAIM_PROOFS,
         data,
         content_type,
     )

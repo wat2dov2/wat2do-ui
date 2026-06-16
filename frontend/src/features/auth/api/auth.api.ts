@@ -20,9 +20,8 @@ import {
 } from "@/features/auth/api/userRepository";
 import type {
   ApiTokenResponse,
-  ApiSignupResponse,
   ApiUserResponse,
-  ApiClubResponse,
+  ApiOrganizationResponse,
 } from "@/shared/generated";
 
 export type { UserProfile };
@@ -56,23 +55,9 @@ export function getUserProfile(): UserProfile | null {
   return loadUserProfile();
 }
 
-export function isProfileCompleted(): boolean {
-  return isAuthenticated();
-}
-
-export function getUserRole(): "user" | "admin" {
-  const profile = loadUserProfile();
-  return profile?.role ?? "user";
-}
-
 export function getUserId(): string | undefined {
   const profile = loadUserProfile();
   return profile?.id;
-}
-
-export function getUserHasClub(): boolean {
-  const profile = loadUserProfile();
-  return profile?.hasOrganization ?? false;
 }
 
 export function updateUserProfile(profile: UserProfile): void {
@@ -81,28 +66,29 @@ export function updateUserProfile(profile: UserProfile): void {
 
 // ── Async API calls ──────────────────────────────────────────────────
 
-export async function signupAPI(
+export async function sendOtpAPI(
   email: string,
-  password: string,
-  fullName?: string,
   token?: string,
-): Promise<{ userId: string; confirmationRequired: boolean; school: string }> {
-  const res = await api.post<ApiSignupResponse>("/auth/signup", {
+): Promise<void> {
+  await api.post("/auth/send-otp", {
     email,
-    password,
-    full_name: fullName ?? undefined,
     token: token ?? undefined,
   });
-  const school = (res as ApiSignupResponse & { school?: string | null }).school?.trim() || DEFAULT_SCHOOL;
-  if (res.access_token) {
-    saveAccessToken(res.access_token);
-    try {
-      await fetchProfileAPI();
-    } catch (err) {
-      console.error("Profile fetch during signup failed, continuing with fallback school:", err);
-    }
-  }
+}
+
+export async function verifyOtpAPI(
+  email: string,
+  token: string,
+): Promise<{ userId: string; school: string; onboardingRequired: boolean }> {
+  const res = await api.post<ApiTokenResponse & { onboarding_required?: boolean }>("/auth/verify-otp", {
+    email,
+    token,
+  });
+
+  saveAccessToken(res.access_token);
   saveUserEmail(email);
+  await fetchProfileAPI();
+  const school = res.school?.trim() || DEFAULT_SCHOOL;
 
   // Broadcast login so per-user stores (saved events, promotions) can
   // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
@@ -110,30 +96,9 @@ export async function signupAPI(
 
   return {
     userId: res.user_id,
-    confirmationRequired: res.confirmation_required,
     school,
+    onboardingRequired: !!res.onboarding_required,
   };
-}
-
-export async function loginAPI(
-  email: string,
-  password: string,
-): Promise<{ userId: string; school: string }> {
-  const res = await api.post<ApiTokenResponse>("/auth/login", {
-    email,
-    password,
-  });
-
-  saveAccessToken(res.access_token);
-  saveUserEmail(email);
-  await fetchProfileAPI();
-  const school = (res as ApiTokenResponse & { school?: string | null }).school?.trim() || DEFAULT_SCHOOL;
-
-  // Broadcast login so per-user stores (saved events, promotions) can
-  // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
-  dispatchAuthUserLogin(school);
-
-  return { userId: res.user_id, school };
 }
 
 export async function logoutAPI(): Promise<void> {
@@ -209,15 +174,15 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
     // Club fetch failures degrade gracefully to hasOrganization=false.
     const [data, clubs] = await Promise.all([
       api.get<ApiUserResponse>("/users/me"),
-      api.get<ApiClubResponse[]>("/clubs/mine").catch((err) => {
+      api.get<ApiOrganizationResponse[]>("/organizations/mine").catch((err) => {
         console.error("Failed to fetch user clubs, defaulting hasOrganization to false:", err);
-        return [] as ApiClubResponse[];
+        return [] as ApiOrganizationResponse[];
       }),
     ]);
 
     const cachedProfile = loadUserProfile();
     const associatedClub =
-      clubs.find((club) => club.id === cachedProfile?.clubId) ?? clubs[0] ?? null;
+      clubs.find((club) => club.id === cachedProfile?.organizationId) ?? clubs[0] ?? null;
     const profile: UserProfile = {
       id: data.id,
       faculty: data.faculty ?? "",
@@ -228,10 +193,10 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       hasOrganization: clubs.length > 0,
       clubs: clubs.map((club) => ({
         id: club.id,
-        club_name: club.club_name,
+        organization_name: club.organization_name,
       })),
-      clubId: associatedClub?.id ?? null,
-      clubName: associatedClub?.club_name ?? null,
+      organizationId: associatedClub?.id ?? null,
+      organizationName: associatedClub?.organization_name ?? null,
     };
     saveUserProfile(profile);
     if (data.email) saveUserEmail(data.email);
@@ -259,20 +224,5 @@ export async function updateProfileAPI(profile: UserProfile): Promise<void> {
   // auth-state-refresh event.
 }
 
-export async function resetPasswordAPI(
-  accessToken: string,
-  refreshToken: string,
-  newPassword: string,
-): Promise<void> {
-  const res = await api.post<ApiTokenResponse>("/auth/reset-password", {
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    new_password: newPassword,
-  });
 
-  saveAccessToken(res.access_token);
-  await fetchProfileAPI();
-  dispatchAuthUserLogin();
-}
 
-export { AUTH_STATE_REFRESH_EVENT } from "@/features/auth/api/userRepository";

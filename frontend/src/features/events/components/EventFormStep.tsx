@@ -16,6 +16,7 @@ import {
   FieldSeparator,
 } from "@/shared/ui/field";
 import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
+import { useProfileCompleted } from "@/features/auth";
 import { EventFormPreview } from "@/features/events/components/EventForm/EventForm/EventFormPreview";
 import { EventFormJSON } from "@/features/events/components/EventForm/EventFormJSON";
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
@@ -81,6 +82,7 @@ export function EventFormStep({
   isDarkMode,
 }: EventFormStepProps) {
   const { t } = useTranslation();
+  const profileCompleted = useProfileCompleted();
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
 
   const fetchOrganizations = useCallback(
@@ -90,9 +92,9 @@ export function EventFormStep({
   const { data: organizations } = useBackendQuery(fetchOrganizations, NO_ORGANIZATIONS, schoolFilter);
 
   const selectedOrganizationName = useMemo(() => {
-    const id = eventForm.formData.club_id;
-    return id != null ? organizations.find((org) => org.id === id)?.club_name ?? "" : "";
-  }, [organizations, eventForm.formData.club_id]);
+    const id = eventForm.formData.organization_id;
+    return id != null ? organizations.find((org) => org.id === id)?.organization_name ?? "" : "";
+  }, [organizations, eventForm.formData.organization_id]);
 
   const handleViewModeTabChange = useCallback(
     (value: string) => onViewModeChange(value as ViewMode),
@@ -188,10 +190,11 @@ export function EventFormStep({
                   onAiGenerate={eventFormAI.handleAiGenerate}
                   error={eventForm.jsonError}
                   title={t("forms.aiEventGeneration")}
-                  placeholder={t("forms.aiPromptPlaceholder")}
+                  placeholder={!profileCompleted ? t("forms.aiPromptPlaceholderDisabled") : t("forms.aiPromptPlaceholder")}
                   generatingText={t("common.generating")}
                   className="space-y-2"
                   titleClassName="text-sm"
+                  disabled={!profileCompleted}
                 />
               </Field>
               <FieldSeparator />

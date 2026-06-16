@@ -46,103 +46,6 @@ export function InfoRow({
 }
 
 /**
- * Info Grid - Two-column info layout
- */
-export function InfoGrid({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn("grid grid-cols-2 gap-4", className)}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-/**
- * Modal Image Container - Standardized image container
- */
-export function ModalImageContainer({
-  src,
-  alt,
-  fallback,
-  className,
-  size = "md",
-  ...props
-}: {
-  src?: string;
-  alt: string;
-  fallback?: React.ReactNode;
-  size?: "sm" | "md" | "lg";
-} & React.ComponentProps<"div">) {
-  const sizeClasses = {
-    sm: "w-32 h-32",
-    md: "w-64 h-64",
-    lg: "w-full h-64",
-  };
-
-  return (
-    <div
-      className={cn(
-        "rounded-lg overflow-hidden border border-border bg-linear-to-br from-primary/20 to-primary/5",
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    >
-      {src ? (
-        <img
-          src={src}
-          alt={alt}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        fallback || (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="size-16 text-muted-foreground/30" />
-          </div>
-        )
-      )}
-    </div>
-  );
-}
-
-/**
- * Status Badge - Common status badge pattern
- */
-export function StatusBadge({
-  isActive,
-  activeLabel,
-  inactiveLabel,
-  className,
-  ...props
-}: {
-  isActive: boolean;
-  activeLabel: string;
-  inactiveLabel: string;
-  className?: string;
-} & React.ComponentProps<"span">) {
-  return (
-    <span
-      className={cn(
-        "text-xs px-2 py-1 rounded-full",
-        isActive
-          ? "bg-success/20 text-success"
-          : "bg-secondary text-muted-foreground",
-        className
-      )}
-      {...props}
-    >
-      {isActive ? activeLabel : inactiveLabel}
-    </span>
-  );
-}
-
-/**
  * Modal Content Wrapper - Standardized content padding
  */
 export function ModalContentWrapper({
@@ -209,49 +112,6 @@ export function EmptyState({
 }
 
 /**
- * Modal Image Header - Standardized image header with gradient overlay
- */
-export function ModalImageHeader({
-  src,
-  alt,
-  fallback,
-  className,
-  height = "h-64",
-  ...props
-}: {
-  src?: string;
-  alt: string;
-  fallback?: React.ReactNode;
-  height?: string;
-  className?: string;
-} & React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "relative w-full overflow-hidden",
-        height,
-        className
-      )}
-      {...props}
-    >
-      {src ? (
-        <img
-          src={src}
-          alt={alt}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      ) : (
-        fallback || (
-          <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/80 flex items-center justify-center">
-            <div className="size-12 text-muted-foreground/40" />
-          </div>
-        )
-      )}
-    </div>
-  );
-}
-
-/**
  * Info Section - Standardized info section with border separator
  */
 export function InfoSection({
@@ -294,27 +154,6 @@ export function SectionTitle({
     >
       {children}
     </h3>
-  );
-}
-
-/**
- * Action Button Group - Standardized button group for modal actions
- */
-export function ActionButtonGroup({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "flex gap-2 justify-end mt-4",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
   );
 }
 
@@ -396,27 +235,6 @@ export function FoodTag({
     >
       {children}
     </span>
-  );
-}
-
-/**
- * Modal Stats Grid - Standardized stats grid layout
- */
-export function ModalStatsGrid({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "grid grid-cols-2 sm:grid-cols-4 gap-4",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
   );
 }
 

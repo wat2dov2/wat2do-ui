@@ -2,16 +2,18 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
-  Users,
-  Instagram,
-  MessageCircle,
-  Globe,
-  Tag,
-  Loader2,
+  AlertCircle,
   CheckCircle2,
-  XCircle,
+  ExternalLink,
   HelpCircle,
-} from "lucide-react";
+  Instagram,
+  Loader2,
+  MessageCircle,
+  Users,
+  Bookmark,
+  Shield,
+  UserPlus,
+} from "@/shared/ui/doodle-icons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { toast } from "@/shared/hooks/use-toast";
@@ -26,6 +28,9 @@ import {
   leaveOrganizationOrCancelRequest,
   type OrganizationMembership,
 } from "@/features/organization-panel/api/memberships.api";
+import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
+import { ClaimOrganizationModal } from "@/features/organizations/components/ClaimOrganizationModal";
+import { JoinOrganizationModal } from "@/features/organizations/components/JoinOrganizationModal";
 
 interface OrganizationDetailsModalProps {
   organization: Organization | null;
@@ -42,6 +47,14 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
   const [membership, setMembership] = useState<OrganizationMembership | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+
+  const toggleSave = useSavedOrganizationsStore((s) => s.toggleSaveOrganization);
+  const savedOrganizationIds = useSavedOrganizationsStore((s) => s.savedOrganizationIds);
+  const isSaved = organization ? savedOrganizationIds.includes(organization.id) : false;
+  const isUnowned = organization ? (organization.created_by === null || !organization.created_by) : false;
 
   // Fetch membership status
   useEffect(() => {
@@ -75,7 +88,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
     } catch (err) {
       console.error("Failed to join organization:", err);
       toast({
-        description: t("integrations.errors.connectFailed", { platform: organization.club_name }),
+        description: t("integrations.errors.connectFailed", { platform: organization.organization_name }),
         variant: "destructive",
       });
     } finally {
@@ -111,7 +124,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
   const renderMembershipSection = () => {
     if (!isAuthenticated) {
       return (
-        <Button onMouseDown={handleSignInRedirect} className="w-full font-semibold">
+        <Button onMouseDown={handleSignInRedirect} className="w-full font-medium">
           {t("organizationPanel.signInToJoin")}
         </Button>
       );
@@ -126,9 +139,21 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
       );
     }
 
+    if (isUnowned) {
+      return (
+        <Button
+          onMouseDown={() => setShowClaimModal(true)}
+          className="w-full font-medium"
+        >
+          <Shield className="size-4 mr-2" />
+          {t("organizations.claimOrganization")}
+        </Button>
+      );
+    }
+
     if (!membership) {
       return (
-        <Button onMouseDown={handleJoin} disabled={actionLoading} className="w-full font-semibold">
+        <Button onMouseDown={handleJoin} disabled={actionLoading} className="w-full font-medium">
           {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
           {t("organizationPanel.requestToJoin")}
         </Button>
@@ -146,7 +171,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
             variant="outline"
             onMouseDown={handleLeaveOrCancel}
             disabled={actionLoading}
-            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold"
+            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-medium"
           >
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
             {t("organizationPanel.cancelRequest")}
@@ -166,7 +191,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
             variant="outline"
             onMouseDown={handleLeaveOrCancel}
             disabled={actionLoading}
-            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold"
+            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-medium"
           >
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
             {t("organizationPanel.leaveClub")}
@@ -179,10 +204,10 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
       return (
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg text-sm">
-            <XCircle className="size-4 shrink-0" />
+            <AlertCircle className="size-4 shrink-0" />
             <span>{t("organizationPanel.requestDeclined")}</span>
           </div>
-          <Button onMouseDown={handleJoin} disabled={actionLoading} className="w-full font-semibold">
+          <Button onMouseDown={handleJoin} disabled={actionLoading} className="w-full font-medium">
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
             {t("organizationPanel.reapply")}
           </Button>
@@ -196,17 +221,17 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[480px] overflow-hidden p-6 bg-card border-border rounded-2xl shadow-xl">
-        <DialogHeader className="mb-4">
+        <DialogHeader>
           <div className="flex items-start gap-4">
-            <div className="size-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-inner">
-              <Users className="size-8 text-primary" />
+            <div className="size-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-inner">
+              <Users className="size-6 text-primary" />
             </div>
             <div className="space-y-1">
               <DialogTitle className="text-xl font-bold text-foreground leading-tight">
-                {organization.club_name}
+                {organization.organization_name}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
-                {organization.school}
+                {organization.organization_type}
               </DialogDescription>
             </div>
           </div>
@@ -214,20 +239,11 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
 
         {/* Organization Details Body */}
         <div className="space-y-5">
-          {/* Metadata Section */}
-          <div className="space-y-3">
-            {/* Organization Type */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Tag className="size-4 text-muted-foreground" />
-              <span>{organization.club_type}</span>
-            </div>
-
-            {/* Categories */}
-            <OrganizationCategoryBadges
-              categories={organization.categories}
-              badgeClassName="text-xs px-2.5"
-            />
-          </div>
+          {/* Categories */}
+          <OrganizationCategoryBadges
+            categories={organization.categories}
+            badgeClassName="text-xs px-2.5"
+          />
 
           {/* Social Links */}
           <div className="p-4 bg-secondary/30 border border-border rounded-xl space-y-3">
@@ -235,15 +251,15 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
               {t("organizationPanel.linksAndSocials")}
             </h4>
             <div className="grid grid-cols-1 gap-2">
-              {organization.club_page && (
+              {organization.organization_page && (
                 <a
-                  href={sanitizeHref(organization.club_page)}
+                  href={sanitizeHref(organization.organization_page)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
-                  <Globe className="size-4 text-muted-foreground" />
-                  <span className="truncate">{organization.club_page}</span>
+                  <ExternalLink className="size-4 text-muted-foreground" />
+                  <span className="truncate">{organization.organization_page}</span>
                 </a>
               )}
               {organization.ig && (
@@ -272,9 +288,56 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
           </div>
 
           {/* Action Row */}
-          <div className="pt-2 border-t border-border">{renderMembershipSection()}</div>
+          <div className="pt-5 border-t border-border flex flex-col gap-3">
+            <div className="flex gap-3">
+              {isAuthenticated && (
+                <Button
+                  type="button"
+                  variant={isSaved ? "secondary" : "outline"}
+                  size="icon"
+                  onMouseDown={() => toggleSave(organization.id)}
+                  className={`border-border/80 shrink-0 ${
+                    isSaved ? "border-primary/25 bg-primary/10 text-primary hover:bg-primary/15" : ""
+                  }`}
+                  title={isSaved ? t("organizations.saved") : t("organizations.save")}
+                >
+                  <Bookmark className={`size-4 ${isSaved ? "fill-current" : ""}`} />
+                </Button>
+              )}
+              <div className="flex-1">
+                {renderMembershipSection()}
+              </div>
+            </div>
+
+            {isAuthenticated && !isUnowned && (
+              <Button
+                variant="ghost"
+                onMouseDown={() => setShowJoinModal(true)}
+                className="w-full text-xs text-muted-foreground hover:text-primary font-medium h-8"
+              >
+                <UserPlus className="size-3.5 mr-1" />
+                {t("organizations.applyToJoin")}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
+
+      {showClaimModal && (
+        <ClaimOrganizationModal
+          isOpen={showClaimModal}
+          onClose={() => setShowClaimModal(false)}
+          organization={organization}
+        />
+      )}
+
+      {showJoinModal && (
+        <JoinOrganizationModal
+          isOpen={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          organization={organization}
+        />
+      )}
     </Dialog>
   );
 }

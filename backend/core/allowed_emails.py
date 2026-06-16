@@ -18,8 +18,8 @@ log = logging.getLogger(__name__)
 # 20260610180000 writes the same entries to ``school_email_domains`` so
 # the values match.
 FALLBACK_DOMAINS: dict[str, str] = {
-    "uwaterloo.ca": "University of Waterloo",
-    "edu.uwaterloo.ca": "University of Waterloo",
+    "uwaterloo.ca": "uwaterloo",
+    "edu.uwaterloo.ca": "uwaterloo",
 }
 
 # Dynamic mapping of domain -> school name.  Lazily populated on first
@@ -90,11 +90,7 @@ def load_allowed_domains() -> None:
         sb = get_sb()
 
         # 1. Load school metadata (timezone, aliases, semester_ends)
-        res_schools = (
-            sb.table(SCHOOLS)
-              .select("name, timezone, aliases, semester_ends")
-              .execute()
-        )
+        res_schools = sb.table(SCHOOLS).select("name, timezone, aliases, semester_ends").execute()
         for row in res_schools.data or []:
             school_name = row.get("name")
             if not school_name:
@@ -117,11 +113,7 @@ def load_allowed_domains() -> None:
                 SCHOOL_SEMESTER_ENDS[key_name] = (ends[0], ends[1], ends[2])
 
         # 2. Load email domains mapping
-        res_domains = (
-            sb.table(SCHOOL_EMAIL_DOMAINS)
-              .select("domain, schools(name)")
-              .execute()
-        )
+        res_domains = sb.table(SCHOOL_EMAIL_DOMAINS).select("domain, schools(name)").execute()
         for row in res_domains.data or []:
             domain = row.get("domain")
             school = (row.get("schools") or {}).get("name")

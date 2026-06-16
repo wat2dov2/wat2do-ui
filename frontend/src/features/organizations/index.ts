@@ -1,15 +1,7 @@
 /**
  * Organizations Feature
  * Main export point for organizations feature
- * 
- * Architecture:
- * - pages/ - Page components
- * - components/ - Feature-specific UI components
- * - api/ - API layer for data operations
  */
-
-// Pages
-export { OrganizationsPage } from "./pages/OrganizationsPage";
 
 // Components
 export { AddOrganizationModal } from "./components/AddOrganizationModal";
@@ -22,8 +14,6 @@ export {
   updateOrganizationAPI,
   deleteOrganizationAPI,
   filterOrganizations,
-  getOrganizationTypes,
-  loadOrganizationsData,
 } from "./api/organizations.api";
 
 // Hooks

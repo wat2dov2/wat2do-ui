@@ -4,7 +4,7 @@ Thresholds live in the SCRAPING_* constants in ``core/constants.py``.
 
 The detector exposes one public method, ``find_match``, returning either
 None or an existing-event row. Callers (event_writer) decide whether to
-treat the match as a same-club update vs. a cross-club duplicate.
+treat the match as a same-organization update vs. a cross-organization duplicate.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 from core.constants import (
     SCRAPING_DESCRIPTION_SIMILARITY_THRESHOLD,
     SCRAPING_LOCATION_SIMILARITY_THRESHOLD,
-    SCRAPING_SAME_CLUB_TITLE_THRESHOLD,
+    SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD,
     SCRAPING_TITLE_SIMILARITY_THRESHOLD,
 )
 from core.database import get_sb
@@ -60,9 +60,9 @@ class MatchResult:
     """Result of a dedup lookup.
 
     ``kind`` is one of:
-      * ``same_club`` — caller should UPDATE the existing event
+      * ``same_organization`` — caller should UPDATE the existing event
         (location/dates/etc) and refresh ``added_at``.
-      * ``duplicate`` — caller should SKIP the insert (some other club
+      * ``duplicate`` — caller should SKIP the insert (some other organization
         already has this event on the same day, or location-based match).
     """
 
@@ -84,7 +84,7 @@ def find_match(
     """Return a match for the given event, or None.
 
     Two-stage check:
-        1. Same-club update — any event from the same ``ig_handle`` whose
+        1. Same-organization update — any event from the same ``ig_handle`` whose
            latest occurrence is in the future and whose title is >0.8
            similar.
         2. Same-day duplicate — any event whose ``dtstart_utc`` falls on
@@ -100,12 +100,12 @@ def find_match(
     if target_start is None:
         return None
 
-    same_club = _check_same_club_update(
+    same_organization = _check_same_organization_update(
         ig_handle=ig_handle,
         candidate_title=title,
     )
-    if same_club is not None:
-        return MatchResult("same_club", same_club)
+    if same_organization is not None:
+        return MatchResult("same_organization", same_organization)
 
     same_day = _check_same_day_duplicate(
         target_start=target_start,
@@ -134,21 +134,21 @@ def _parse_iso8601_utc(value: str | None) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
-def _check_same_club_update(
+def _check_same_organization_update(
     *,
     ig_handle: str | None,
     candidate_title: str,
 ) -> dict | None:
-    """Return an existing event from the same club whose title is too similar.
+    """Return an existing event from the same organization whose title is too similar.
 
     The events row no longer carries dtstart_utc / dtend_utc — dates live
     in the event_dates table. We embed the event_dates rows for each
     candidate and check the latest end time to decide whether the event
     is still in flight (any future occurrence keeps it alive).
 
-    Paginated via ``fetch_all_pages`` — long-lived clubs can accumulate
+    Paginated via ``fetch_all_pages`` — long-lived organizations can accumulate
     >1000 events and PostgREST silently caps the result at 1000. Without
-    pagination, dedup against older same-club events would be invisible
+    pagination, dedup against older same-organization events would be invisible
     (and the row order without ``.order()`` is undefined).
     """
     if not ig_handle:
@@ -180,10 +180,10 @@ def _check_same_club_update(
 
         if (
             title_similarity(row.get("title") or "", candidate_title)
-            > SCRAPING_SAME_CLUB_TITLE_THRESHOLD
+            > SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD
         ):
             log.info(
-                "Same-club update candidate: %r matches existing event id=%s (%r)",
+                "Same-organization update candidate: %r matches existing event id=%s (%r)",
                 candidate_title,
                 row.get("id"),
                 row.get("title"),
@@ -336,7 +336,7 @@ def _extract_shortcode(source_url: str) -> str | None:
         https://www.instagram.com/p/AbCDeF1/                 -> "AbCDeF1"
         https://www.instagram.com/p/AbCDeF1/?utm_source=x    -> "AbCDeF1"
         https://instagram.com/reel/XYZ7/                     -> "XYZ7"
-        https://instagram.com/uwteaclub                      -> None
+        https://instagram.com/uwteaorganization                      -> None
     """
     if not source_url:
         return None
