@@ -33,3 +33,7 @@ verify-out/
 # Cursor
 .cursor/hooks/state/
 .fallow/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/

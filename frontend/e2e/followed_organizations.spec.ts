@@ -2,16 +2,15 @@ import { test, expect } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
 const BASE = "http://localhost:5173";
-const API = "http://localhost:8000";
 
 const TEST_EMAIL = "test@uwaterloo.ca";
 
 async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
-  // In-memory array to track mock saved club IDs across mock routes
+  // In-memory array to track mock saved organization IDs across mock routes
   let savedIds: number[] = [];
 
   // Mock auth refresh
-  await page.route(`${API}/auth/refresh`, async (route) => {
+  await page.route((url) => url.pathname.includes("/auth/refresh"), async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -25,7 +24,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock users/me
-  await page.route(`${API}/users/me`, async (route) => {
+  await page.route((url) => url.pathname.includes("/users/me"), async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -41,8 +40,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   });
 
-  // Mock clubs/mine (empty)
-  await page.route(`${API}/clubs/mine`, async (route) => {
+  // Mock organizations/mine (empty)
+  await page.route((url) => url.pathname === "/organizations/mine", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -50,41 +49,77 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   });
 
-  // Mock GET /clubs/ list
-  await page.route(new RegExp(`${API}/clubs/(\\?|$)`), async (route) => {
+  // Mock GET /organizations/ list
+  await page.route((url) => url.pathname === "/organizations" || url.pathname === "/organizations/", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: 1,
-          club_name: "UW Tech Club",
-          club_type: "Technology",
-          description: "A test club",
-          school: "University of Waterloo",
-        },
-        {
-          id: 2,
-          club_name: "UW Board Games Club",
-          club_type: "Social",
-          description: "Board games club",
-          school: "University of Waterloo",
-        }
-      ]),
+      body: JSON.stringify({
+        items: [
+          {
+            id: 1,
+            organization_name: "UW Tech Club",
+            organization_type: "Technology",
+            description: "A test club",
+            school: "University of Waterloo",
+            categories: ["Technology"],
+          },
+          {
+            id: 2,
+            organization_name: "UW Board Games Club",
+            organization_type: "Social",
+            description: "Board games club",
+            school: "University of Waterloo",
+            categories: ["Social"],
+          }
+        ],
+        total: 2,
+        page: 1,
+        page_size: 20,
+        total_pages: 1
+      }),
     });
   });
 
-  // Mock GET /saved-clubs/
-  await page.route(`${API}/saved-clubs/`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(savedIds),
-    });
+  // Mock GET/PUT/DELETE /saved-organizations/
+  await page.route((url) => url.pathname.includes("/saved-organizations"), async (route) => {
+    const method = route.request().method();
+    const pathname = new URL(route.request().url()).pathname;
+    const match = pathname.match(/\/saved-organizations\/(\d+)/);
+
+    if (match) {
+      const orgId = parseInt(match[1]);
+      if (method === "PUT") {
+        if (!savedIds.includes(orgId)) {
+          savedIds.push(orgId);
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "saved" }),
+        });
+      } else if (method === "DELETE") {
+        savedIds = savedIds.filter(id => id !== orgId);
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ status: "unsaved" }),
+        });
+      } else {
+        await route.continue();
+      }
+    } else {
+      // GET list
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(savedIds),
+      });
+    }
   });
 
   // Mock GET /credits/
-  await page.route(`${API}/credits/`, async (route) => {
+  await page.route((url) => url.pathname.includes("/credits"), async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -93,40 +128,12 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock GET /saved-events/
-  await page.route(`${API}/saved-events/`, async (route) => {
+  await page.route((url) => url.pathname.includes("/saved-events"), async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
     });
-  });
-
-  // Mock PUT / saved-clubs/club_id and DELETE /saved-clubs/club_id
-  await page.route(new RegExp(`${API}/saved-clubs/\\d+`), async (route) => {
-    const method = route.request().method();
-    const url = route.request().url();
-    const match = url.match(/\/saved-clubs\/(\d+)/);
-    const clubId = match ? parseInt(match[1]) : 0;
-
-    if (method === "PUT") {
-      if (!savedIds.includes(clubId)) {
-        savedIds.push(clubId);
-      }
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ status: "saved" }),
-      });
-    } else if (method === "DELETE") {
-      savedIds = savedIds.filter(id => id !== clubId);
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ status: "unsaved" }),
-      });
-    } else {
-      await route.continue();
-    }
   });
 
   // Seed localStorage hint
@@ -149,6 +156,7 @@ test.describe("Followed Organizations Flow", () => {
     // Assert that we are on the clubs page
     await expect(page.locator("#tab-all-clubs")).toBeVisible();
     await expect(page.locator("#tab-followed-clubs")).toBeVisible();
+    await expect(page.locator("#tab-claimed-clubs")).toBeVisible();
 
     // Click on Followed Clubs tab
     await page.locator("#tab-followed-clubs").click();
@@ -156,6 +164,23 @@ test.describe("Followed Organizations Flow", () => {
     // Assert that the Sign In CTA is displayed
     await expect(page.getByRole("heading", { name: "Sign in to view followed organizations" })).toBeVisible();
     await expect(page.locator("#followed-clubs-sign-in")).toBeVisible();
+  });
+
+  test("unauthenticated user sees Sign In CTA on claimed tab", async ({ page }) => {
+    await page.goto(`${BASE}/organizations`);
+    await page.waitForTimeout(1000);
+
+    // Assert that we are on the clubs page
+    await expect(page.locator("#tab-all-clubs")).toBeVisible();
+    await expect(page.locator("#tab-followed-clubs")).toBeVisible();
+    await expect(page.locator("#tab-claimed-clubs")).toBeVisible();
+
+    // Click on Claimed Clubs tab
+    await page.locator("#tab-claimed-clubs").click();
+
+    // Assert that the Sign In CTA is displayed
+    await expect(page.getByRole("heading", { name: "Sign in to view claimed organizations" })).toBeVisible();
+    await expect(page.locator("#claimed-clubs-sign-in")).toBeVisible();
   });
 
   test("authenticated user toggles club follow status", async ({ page }) => {
@@ -173,10 +198,16 @@ test.describe("Followed Organizations Flow", () => {
     // Switch back to All Clubs
     await page.locator("#tab-all-clubs").click();
 
-    // Find the first club follow button and click it
-    const firstFollowBtn = page.locator("[id^=follow-club-]").first();
+    // Open detail modal for first club
+    await page.getByText("UW Tech Club").click();
+
+    // Find follow button in details modal and click it
+    const firstFollowBtn = page.locator('button[title="Follow organization"]');
     await expect(firstFollowBtn).toBeVisible();
     await firstFollowBtn.click();
+
+    // Close the details modal
+    await page.keyboard.press("Escape");
 
     // Wait a brief moment for optimistic update/backend sync
     await page.waitForTimeout(500);
@@ -184,13 +215,17 @@ test.describe("Followed Organizations Flow", () => {
     // Switch to Followed Clubs tab, now the followed card should be there
     await page.locator("#tab-followed-clubs").click();
     await expect(page.getByText("No followed organizations")).not.toBeVisible();
-    
-    const displayClubsCount = await page.locator("article").count();
-    expect(displayClubsCount).toBe(1);
+    await expect(page.getByText("UW Tech Club")).toBeVisible();
 
     // Unfollow from the followed tab
-    const unfollowBtn = page.locator("[id^=follow-club-]").first();
+    await page.getByText("UW Tech Club").click();
+    
+    const unfollowBtn = page.locator('button[title="Followed organization"]');
+    await expect(unfollowBtn).toBeVisible();
     await unfollowBtn.click();
+
+    // Close the details modal
+    await page.keyboard.press("Escape");
 
     // Wait a brief moment
     await page.waitForTimeout(500);

@@ -105,7 +105,7 @@ function parseSchoolCandidateFromHostname(hostname: string): string | null {
   return candidate;
 }
 
-export function isKnownSchool(value: string | null | undefined): boolean {
+function isKnownSchool(value: string | null | undefined): boolean {
   return hasSchoolLabel(resolveSchool(value));
 }
 

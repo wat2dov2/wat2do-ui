@@ -1,7 +1,7 @@
 """School timezone, alias, and semester date constants.
 
-Waterloo is the only school with explicit special-case constants. All other
-schools fall back to neutral defaults in the shared school-context helpers.
+Waterloo is the only school with explicit fallback constants for offline/test
+boot. Production values are loaded from the ``schools`` table in Supabase.
 """
 
 FALLBACK_TIMEZONES: dict[str, str] = {

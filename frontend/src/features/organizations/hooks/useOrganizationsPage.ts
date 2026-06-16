@@ -3,7 +3,7 @@
  * Manages data loading and filtering for OrganizationsPage
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { getOrganizationCategories } from "@/shared/data/organizationCategories";
@@ -15,9 +15,10 @@ import { useOrganizationsList } from "@/features/organizations/hooks/useOrganiza
 const ITEMS_PER_PAGE = 20;
 
 export function useOrganizationsPage() {
-  const { isAuthenticated } = useAuthState();
+  const { isAuthenticated, clubs: claimedClubs } = useAuthState();
+  const claimedOrganizationIds = useMemo(() => claimedClubs.map((c) => c.id), [JSON.stringify(claimedClubs)]);
   const savedOrganizationIds = useSavedOrganizationsStore(useShallow((s) => s.savedOrganizationIds));
-  const [activeTab, setActiveTab] = useState<"all" | "followed">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "followed" | "claimed">("all");
   const [searchQuery, setSearchQueryState] = useState("");
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -40,7 +41,7 @@ export function useOrganizationsPage() {
     school: resolvedSchoolFilter,
     search: submittedSearchQuery,
     categories: selectedCategories,
-    ids: savedOrganizationIds,
+    ids: activeTab === "followed" ? savedOrganizationIds : (activeTab === "claimed" ? claimedOrganizationIds : undefined),
     isAuthenticated,
     activeTab,
   });
@@ -90,7 +91,7 @@ export function useOrganizationsPage() {
     itemsPerPage: ITEMS_PER_PAGE,
     refreshOrganizations,
     activeTab,
-    setActiveTab: (tab: "all" | "followed") => {
+    setActiveTab: (tab: "all" | "followed" | "claimed") => {
       setActiveTab(tab);
       setCurrentPage(1);
     },

@@ -29,8 +29,8 @@ def canonical_school_key(school: str | None) -> str:
 def resolve_school_timezone(school: str | None) -> str:
     """Return the IANA timezone for a school, falling back to UTC.
 
-    Waterloo is the only school with an explicit timezone mapping. All other
-    schools share the neutral UTC fallback.
+    School timezones are loaded from the ``schools`` table in Supabase (see
+    ``load_allowed_domains``). Unmapped schools fall back to UTC.
     """
     canonical = canonical_school_key(school)
     if not canonical:

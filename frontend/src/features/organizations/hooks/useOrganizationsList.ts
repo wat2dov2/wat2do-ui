@@ -10,7 +10,7 @@ interface UseOrganizationsListOptions {
   organizationType?: string;
   ids?: number[];
   isAuthenticated?: boolean;
-  activeTab?: "all" | "followed";
+  activeTab?: "all" | "followed" | "claimed";
 }
 
 /**
@@ -36,24 +36,66 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
   const [isLoading, setIsLoading] = useState(true);
   const lastFetchedOptionsRef = useRef<string>("");
 
-  const loadData = useCallback(async () => {
-    // Generate serialized options for deduplication
-    const queryParams = {
-      page: currentPage,
+  const categoriesStr = (categories || []).join(",");
+  const idsStr = (ids || []).join(",");
+
+  // Keep latest options in a ref for absolute stability of loadData callback
+  const latestOptionsRef = useRef({
+    currentPage,
+    limit,
+    school,
+    search,
+    categories,
+    organizationType,
+    ids,
+    isAuthenticated,
+    activeTab,
+  });
+
+  useEffect(() => {
+    latestOptionsRef.current = {
+      currentPage,
       limit,
-      school: school || "",
-      search: search || "",
-      categories: (categories || []).join(","),
-      organizationType: organizationType || "",
-      ...(activeTab === "followed" ? {
-        ids: (ids || []).join(","),
-        isAuthenticated: Boolean(isAuthenticated),
-      } : {}),
+      school,
+      search,
+      categories,
+      organizationType,
+      ids,
+      isAuthenticated,
       activeTab,
     };
+  });
 
-    // If followed tab but user not authenticated, don't query
-    if (activeTab === "followed" && !isAuthenticated) {
+  const loadData = useCallback(async () => {
+    const {
+      currentPage: latestPage,
+      limit: latestLimit,
+      school: latestSchool,
+      search: latestSearch,
+      categories: latestCategories,
+      organizationType: latestOrgType,
+      ids: latestIds,
+      isAuthenticated: latestAuth,
+      activeTab: latestTab,
+    } = latestOptionsRef.current;
+
+    // Generate serialized options for deduplication
+    const queryParams = {
+      page: latestPage,
+      limit: latestLimit,
+      school: latestSchool || "",
+      search: latestSearch || "",
+      categories: (latestCategories || []).join(","),
+      organizationType: latestOrgType || "",
+      ...((latestTab === "followed" || latestTab === "claimed") ? {
+        ids: (latestIds || []).join(","),
+        isAuthenticated: Boolean(latestAuth),
+      } : {}),
+      activeTab: latestTab,
+    };
+
+    // If followed or claimed tab but user not authenticated, don't query
+    if ((latestTab === "followed" || latestTab === "claimed") && !latestAuth) {
       setOrganizations([]);
       setTotalItems(0);
       setTotalPages(0);
@@ -70,13 +112,13 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
     setIsLoading(true);
     try {
       const result = await getOrganizationsPaginated({
-        page: currentPage,
-        limit,
-        school,
-        search,
-        categories,
-        organizationType,
-        ids: activeTab === "followed" ? ids : undefined,
+        page: latestPage,
+        limit: latestLimit,
+        school: latestSchool,
+        search: latestSearch,
+        categories: latestCategories,
+        organizationType: latestOrgType,
+        ids: (latestTab === "followed" || latestTab === "claimed") ? latestIds : undefined,
       });
       setOrganizations(result.items);
       setTotalItems(result.total);
@@ -86,21 +128,22 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    void loadData();
   }, [
     currentPage,
     limit,
     school,
     search,
-    categories,
+    categoriesStr,
     organizationType,
-    ids,
+    idsStr,
     isAuthenticated,
     activeTab,
+    loadData,
   ]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
 
   return {
     organizations,

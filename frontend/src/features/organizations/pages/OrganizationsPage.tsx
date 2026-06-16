@@ -66,7 +66,7 @@ export function OrganizationsPage() {
           {/* Tabs */}
           <Tabs
             value={activeTab}
-            onValueChange={(value) => setActiveTab(value as "all" | "followed")}
+            onValueChange={(value) => setActiveTab(value as "all" | "followed" | "claimed")}
             className="shrink-0"
           >
             <TabsList className="h-8">
@@ -75,10 +75,9 @@ export function OrganizationsPage() {
                   <TabsTrigger
                     value="all"
                     id="tab-all-clubs"
-                    className="h-7 gap-1.5 px-3 py-0 text-xs"
+                    className="h-7 px-3 py-0 text-xs"
                     aria-label={t("organizations.allClubs") || "All"}
                   >
-                    <Users className="size-4 shrink-0" />
                     <span>{t("organizations.allClubs") || "All"}</span>
                   </TabsTrigger>
                 </TooltipTrigger>
@@ -91,15 +90,29 @@ export function OrganizationsPage() {
                   <TabsTrigger
                     value="followed"
                     id="tab-followed-clubs"
-                    className="h-7 gap-1.5 px-3 py-0 text-xs"
+                    className="h-7 px-3 py-0 text-xs"
                     aria-label={t("organizations.followedClubs") || "Followed"}
                   >
-                    <Bookmark className="size-4 shrink-0" />
                     <span>{t("organizations.followedClubs") || "Followed"}</span>
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t("organizations.followedClubs") || "Followed"}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger
+                    value="claimed"
+                    id="tab-claimed-clubs"
+                    className="h-7 px-3 py-0 text-xs"
+                    aria-label={t("organizations.claimedClubs") || "Claimed"}
+                  >
+                    <span>{t("organizations.claimedClubs") || "Claimed"}</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("organizations.claimedClubs") || "Claimed"}</p>
                 </TooltipContent>
               </Tooltip>
             </TabsList>
@@ -126,7 +139,7 @@ export function OrganizationsPage() {
       </div>
 
       {/* Results Count and Pagination */}
-      {!(activeTab === "followed" && !authed) && (
+      {!((activeTab === "followed" || activeTab === "claimed") && !authed) && (
         <div className="flex items-center justify-between">
           <span className="font-bold text-base text-foreground inline-flex items-baseline gap-1">
             <NumberFlow value={totalItems} respectMotionPreference={false} />
@@ -150,19 +163,23 @@ export function OrganizationsPage() {
       {/* Results / Loading / State Display */}
       {isLoading ? (
         <LoadingPage />
-      ) : activeTab === "followed" && !authed ? (
+      ) : (activeTab === "followed" || activeTab === "claimed") && !authed ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl bg-card">
           <Bookmark className="size-10 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {t("organizations.signInToViewClubs") || "Sign in to view followed organizations"}
+            {activeTab === "followed"
+              ? (t("organizations.signInToViewClubs") || "Sign in to view followed organizations")
+              : (t("organizations.signInToViewClaimedClubs") || "Sign in to view claimed organizations")}
           </h3>
           <p className="text-sm text-muted-foreground text-center max-w-sm mb-6">
-            {t("organizations.signInToViewClubsDesc") || "Follow organizations you're interested in and view them all in one place."}
+            {activeTab === "followed"
+              ? (t("organizations.signInToViewClubsDesc") || "Follow organizations you're interested in and view them all in one place.")
+              : (t("organizations.signInToViewClaimedClubsDesc") || "Manage and view your claimed organizations all in one place.")}
           </p>
           <a
             href="/login"
             className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-xl text-sm hover:opacity-90 transition-opacity"
-            id="followed-clubs-sign-in"
+            id={activeTab === "followed" ? "followed-clubs-sign-in" : "claimed-clubs-sign-in"}
           >
             {t("events.signIn") || "Sign In"}
           </a>
@@ -254,15 +271,25 @@ export function OrganizationsPage() {
           <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
             {activeTab === "followed" ? (
               <Bookmark className="size-8 text-muted-foreground" />
+            ) : activeTab === "claimed" ? (
+              <Users className="size-8 text-muted-foreground" />
             ) : (
               <Search className="size-8 text-muted-foreground" />
             )}
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {activeTab === "followed" ? t("organizations.noFollowedClubs") : t("organizations.noClubsFound")}
+            {activeTab === "followed"
+              ? t("organizations.noFollowedClubs")
+              : activeTab === "claimed"
+                ? (t("organizations.noClaimedClubs") || "No claimed organizations")
+                : t("organizations.noClubsFound")}
           </h3>
           <p className="text-sm text-muted-foreground text-center max-w-md">
-            {activeTab === "followed" ? t("organizations.emptyClubsDesc") : t("organizations.noClubsFoundDesc")}
+            {activeTab === "followed"
+              ? t("organizations.emptyClubsDesc")
+              : activeTab === "claimed"
+                ? (t("organizations.emptyClaimedClubsDesc") || "You haven't claimed any organizations yet.")
+                : t("organizations.noClubsFoundDesc")}
           </p>
         </div>
       )}

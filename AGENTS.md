@@ -140,3 +140,8 @@ While implementing:
 - lint.
 
 Do not claim done until these pass (or you've reported exactly why one can't run).
+
+## Pushing to `main`
+
+Any agent landing work on `main` must follow [`PUSH_TO_MAIN.md`](PUSH_TO_MAIN.md)
+end-to-end before `git push`. That checklist mirrors CI/CD exactly.
