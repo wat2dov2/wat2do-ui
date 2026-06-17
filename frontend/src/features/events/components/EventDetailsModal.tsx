@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, type CSSProperties, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -30,6 +30,8 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import type { Event } from "@/shared/types";
 
 
+const DRAG_CLOSE_THRESHOLD_PX = 120;
+
 interface EventDetailsModalProps {
   event: Event | null;
   onClose: () => void;
@@ -53,6 +55,9 @@ export function EventDetailsModal({
   const [trackedPropEventId, setTrackedPropEventId] = useState<number | null>(
     event?.id ?? null,
   );
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragSessionRef = useRef<{ pointerId: number; startY: number } | null>(null);
   if ((event?.id ?? null) !== trackedPropEventId) {
     setTrackedPropEventId(event?.id ?? null);
     setOverrideEvent(null);
@@ -95,14 +100,67 @@ export function EventDetailsModal({
     document.querySelector("[data-slot='dialog-content']")?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const resetDrag = useCallback(() => {
+    dragSessionRef.current = null;
+    setIsDragging(false);
+    setDragOffsetY(0);
+  }, []);
+
+  const handleDragPointerDown = useCallback((pointerEvent: PointerEvent<HTMLDivElement>) => {
+    if (pointerEvent.button !== 0) return;
+    dragSessionRef.current = {
+      pointerId: pointerEvent.pointerId,
+      startY: pointerEvent.clientY,
+    };
+    setIsDragging(true);
+    setDragOffsetY(0);
+    pointerEvent.currentTarget.setPointerCapture(pointerEvent.pointerId);
+  }, []);
+
+  const handleDragPointerMove = useCallback((pointerEvent: PointerEvent<HTMLDivElement>) => {
+    const dragSession = dragSessionRef.current;
+    if (!dragSession || dragSession.pointerId !== pointerEvent.pointerId) return;
+    setDragOffsetY(Math.max(0, pointerEvent.clientY - dragSession.startY));
+  }, []);
+
+  const handleDragPointerEnd = useCallback((pointerEvent: PointerEvent<HTMLDivElement>) => {
+    const dragSession = dragSessionRef.current;
+    if (!dragSession || dragSession.pointerId !== pointerEvent.pointerId) return;
+
+    const offsetY = Math.max(0, pointerEvent.clientY - dragSession.startY);
+    pointerEvent.currentTarget.releasePointerCapture(pointerEvent.pointerId);
+    if (offsetY >= DRAG_CLOSE_THRESHOLD_PX) {
+      resetDrag();
+      onClose();
+      return;
+    }
+    resetDrag();
+  }, [onClose, resetDrag]);
+
+  const modalDragStyle = {
+    "--event-details-drag-y": `${dragOffsetY}px`,
+  } as CSSProperties;
+
   const modalState = useModalState({ onClose });
 
   return (
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-0 p-0">
+      <DialogContent
+        className={`max-w-2xl max-h-[90vh] overflow-y-auto border-0 p-0 [translate:-50%_calc(-50%+var(--event-details-drag-y,0px))] ${isDragging ? "transition-none" : "transition-[opacity,scale,translate] duration-100"}`}
+        style={modalDragStyle}
+      >
         {displayedEvent && (
           <>
-            <div className="relative w-full h-64 overflow-hidden">
+            <div
+              className="relative w-full h-64 touch-none select-none overflow-hidden cursor-grab active:cursor-grabbing"
+              data-event-details-drag-handle
+              onPointerDown={handleDragPointerDown}
+              onPointerMove={handleDragPointerMove}
+              onPointerUp={handleDragPointerEnd}
+              onPointerCancel={resetDrag}
+              onDragStart={(dragEvent) => dragEvent.preventDefault()}
+            >
+              <div className="absolute top-3 left-1/2 z-10 h-1.5 w-12 -translate-x-1/2 rounded-full bg-background/80 shadow-sm" />
               <LazyImage
                 src={displayedEvent.source_image_url ?? undefined}
                 alt={displayedEvent.title}
