@@ -313,32 +313,27 @@
   }
 }
 
-/* Viewport Scaling Styles */
-.viewport-scaled body {
-  overflow-x: hidden !important;
+/* Fluid Viewport Scaling */
+html {
+  font-size: clamp(5.2px, 1.63265vw, 16px);
 }
 
-.viewport-zoom #root {
-  zoom: var(--app-scale, 1) !important;
-  width: 980px !important;
-  min-width: 980px !important;
-  max-width: 980px !important;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.viewport-rem #root {
-  width: 61.25rem !important;
-  min-width: 61.25rem !important;
-  max-width: 61.25rem !important;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Keep TopNav in sync on rem-scaled viewports */
-.viewport-rem header.fixed {
-  width: 61.25rem !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  right: auto !important;
+@media (max-width: 979px) {
+  #root {
+    width: 61.25rem !important;
+    min-width: 61.25rem !important;
+    max-width: 61.25rem !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  body {
+    overflow-x: hidden !important;
+  }
+  /* Keep TopNav in sync on rem-scaled viewports */
+  header.fixed {
+    width: 61.25rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+  }
 }

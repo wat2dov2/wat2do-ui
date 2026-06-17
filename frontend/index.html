@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/wat2do-logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#3B82F6" />
     <meta
       name="description"
@@ -51,43 +51,6 @@
         if (isDark) {
           document.documentElement.classList.add('dark');
         }
-      })();
-    </script>
-    <script>
-      // Apply viewport scaling immediately before React loads.
-      (function() {
-        function adjustViewport() {
-          var targetWidth = 980;
-          var width = window.innerWidth || document.documentElement.clientWidth || screen.width;
-          var docEl = document.documentElement;
-          
-          if (width < targetWidth) {
-            var scale = width / targetWidth;
-            docEl.style.setProperty('--app-scale', scale);
-            docEl.classList.add('viewport-scaled');
-            
-            // Detect zoom support (Safari/Chrome/Edge)
-            var supportsZoom = 'zoom' in docEl.style || typeof docEl.style.zoom !== 'undefined';
-            if (supportsZoom) {
-              docEl.classList.add('viewport-zoom');
-              docEl.classList.remove('viewport-rem');
-              docEl.style.fontSize = '';
-            } else {
-              docEl.classList.add('viewport-rem');
-              docEl.classList.remove('viewport-zoom');
-              docEl.style.fontSize = (scale * 16) + 'px';
-            }
-          } else {
-            docEl.style.fontSize = '';
-            docEl.style.setProperty('--app-scale', '1');
-            docEl.classList.remove('viewport-scaled');
-            docEl.classList.remove('viewport-zoom');
-            docEl.classList.remove('viewport-rem');
-          }
-        }
-        adjustViewport();
-        window.addEventListener('resize', adjustViewport);
-        window.addEventListener('orientationchange', adjustViewport);
       })();
     </script>
   </head>
