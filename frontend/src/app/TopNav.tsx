@@ -80,7 +80,7 @@ export function TopNav() {
     <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-4 pr-4 border-b border-border bg-sidebar z-nav">
       <div className="flex items-center gap-2.5">
         <button
-          onMouseDown={handleLogoClick}
+          onClick={handleLogoClick}
           className="size-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
           aria-label={t("navigation.goToEvents")}
         >
@@ -99,7 +99,7 @@ export function TopNav() {
         {profileCompleted && isAdmin && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onMouseDown={handleAdminClick}>
+              <Button variant="secondary" size="sm" onClick={handleAdminClick}>
                 <Shield className="size-4" strokeWidth={2.5} />
                 {t("navigation.admin")}
               </Button>
@@ -152,7 +152,7 @@ export function TopNav() {
                   filteredOrganizations.map((org) => (
                     <button
                       key={org.id}
-                      onMouseDown={() => {
+                      onClick={() => {
                         handleOrganizationSelect(org);
                         setOrgMenuOpen(false);
                         setOrgSearch("");
@@ -181,8 +181,8 @@ export function TopNav() {
         )}
 
         {/* Language Selector */}
-        <LanguageSelector />
-
+        <LanguageSelector className="hidden sm:inline-flex min-w-9 px-1.5 sm:min-w-[100px] sm:p-2" />
+        
         {/* Dark Mode Toggle */}
         <AnimatedThemeToggler />
 
@@ -190,7 +190,7 @@ export function TopNav() {
         {profileCompleted ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onMouseDown={handleSignOut}>
+              <Button variant="secondary" size="sm" onClick={handleSignOut}>
                 <LogOut className="size-4" strokeWidth={2.5} />
                 {t("modals.signOut.logOut")}
               </Button>
@@ -203,7 +203,7 @@ export function TopNav() {
           <Tooltip>
             <TooltipTrigger asChild>
               <InteractiveHoverButton
-                onMouseDown={handleSignIn}
+                onClick={handleSignIn}
                 className="flex items-center gap-1.5 bg-primary border-primary text-primary-foreground text-sm px-6 py-1.5 min-w-[120px] justify-center"
                 hideDot
               >

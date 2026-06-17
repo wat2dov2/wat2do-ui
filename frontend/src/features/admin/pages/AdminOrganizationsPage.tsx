@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Users, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -75,6 +75,11 @@ export function AdminOrganizationsPage({
   } = useAdminOrganizationsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
   const [activeTab, setActiveTab] = useState<"organizations" | "claims">("organizations");
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleRowPointerDown = (e: React.PointerEvent) => {
+    pointerStartRef.current = { x: e.clientX, y: e.clientY };
+  };
   
   // Load claims from Zustand store
   const allClaims = useAdminStore((s) => s.claims);
@@ -340,7 +345,17 @@ export function AdminOrganizationsPage({
                 <TableRow
                   key={org.id}
                   className="cursor-pointer"
-                  onMouseDown={() => openEditModal(org)}
+                  onPointerDown={handleRowPointerDown}
+                  onClick={(e) => {
+                    const start = pointerStartRef.current;
+                    if (start) {
+                      const dx = e.clientX - start.x;
+                      const dy = e.clientY - start.y;
+                      const distance = Math.sqrt(dx * dx + dy * dy);
+                      if (distance > 10) return;
+                    }
+                    openEditModal(org);
+                  }}
                 >
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">
