@@ -77,8 +77,8 @@ export function TopNav() {
   }, [navigate]);
 
   return (
-    <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-4 pr-4 border-b border-border bg-sidebar z-nav">
-      <div className="flex items-center gap-2.5">
+    <header className="flex items-center justify-between gap-2 fixed top-0 left-0 right-0 h-12 px-3 sm:px-4 border-b border-border bg-sidebar z-nav">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <button
           onMouseDown={handleLogoClick}
           className="size-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
@@ -91,17 +91,22 @@ export function TopNav() {
           />
         </button>
         <span className="text-muted-foreground text-lg font-light">/</span>
-        <SchoolCombobox value={schoolFilter ?? ""} onChange={setSchoolFilter} isAdmin={isAdmin} />
+        <SchoolCombobox
+          value={schoolFilter ?? ""}
+          onChange={setSchoolFilter}
+          isAdmin={isAdmin}
+          triggerClassName="min-w-0 max-w-[112px] sm:max-w-[240px]"
+        />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {/* Admin Button – only visible to admins */}
         {profileCompleted && isAdmin && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="secondary" size="sm" onMouseDown={handleAdminClick}>
                 <Shield className="size-4" strokeWidth={2.5} />
-                {t("navigation.admin")}
+                <span className="hidden sm:inline">{t("navigation.admin")}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -115,7 +120,7 @@ export function TopNav() {
           <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
             <PopoverTrigger asChild>
               <button
-                className="flex text-white items-center gap-1 px-3 h-8 max-w-[240px] bg-transparent hover:bg-secondary rounded-xl transition-colors"
+                className="flex text-white items-center gap-1 px-2 sm:px-3 h-8 max-w-[96px] sm:max-w-[240px] bg-transparent hover:bg-secondary rounded-xl transition-colors"
                 aria-expanded={orgMenuOpen}
                 type="button"
               >
@@ -192,7 +197,7 @@ export function TopNav() {
             <TooltipTrigger asChild>
               <Button variant="secondary" size="sm" onMouseDown={handleSignOut}>
                 <LogOut className="size-4" strokeWidth={2.5} />
-                {t("modals.signOut.logOut")}
+                <span className="hidden sm:inline">{t("modals.signOut.logOut")}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -204,7 +209,7 @@ export function TopNav() {
             <TooltipTrigger asChild>
               <InteractiveHoverButton
                 onMouseDown={handleSignIn}
-                className="flex items-center gap-1.5 bg-primary border-primary text-primary-foreground text-sm px-6 py-1.5 min-w-[120px] justify-center"
+                className="flex items-center gap-1.5 bg-primary border-primary text-primary-foreground text-sm px-3 py-1.5 min-w-[76px] justify-center sm:px-6 sm:min-w-[120px]"
                 hideDot
               >
                 {t("events.signIn")}

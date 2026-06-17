@@ -60,7 +60,7 @@ export function Pagination({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className={`flex items-center w-full ${hideDetails ? "justify-end" : "justify-between"}`}>
+    <div className={`flex items-center ${hideDetails ? "w-auto justify-end" : "w-full justify-between"}`}>
       {!hideDetails && (
         <div className="text-sm text-muted-foreground">
           {t("admin.showing")} {startItem} {t("admin.to")} {endItem}{" "}
@@ -77,7 +77,7 @@ export function Pagination({
           className="h-7 text-xs px-2 gap-1 rounded-lg"
         >
           <ChevronLeft className="size-3.5" />
-          {t("admin.previous")}
+          <span className="hidden sm:inline">{t("admin.previous")}</span>
         </Button>
         <div className="flex items-center gap-1">
           {getPageNumbers(currentPage, totalPages).map((pageNum, i) => {
@@ -111,7 +111,7 @@ export function Pagination({
           disabled={currentPage === totalPages}
           className="h-7 text-xs px-2 gap-1 rounded-lg"
         >
-          {t("admin.next")}
+          <span className="hidden sm:inline">{t("admin.next")}</span>
           <ChevronRight className="size-3.5" />
         </Button>
       </div>
