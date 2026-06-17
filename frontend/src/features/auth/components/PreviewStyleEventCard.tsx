@@ -104,7 +104,7 @@ export function PreviewStyleEventCard({
 
       <div
         className={cn(
-          "event-card-waterpaint flex flex-col flex-1 min-h-[128px] border-l border-r border-b rounded-b-xl overflow-hidden",
+          "event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden",
           "rounded-tl-xl",
           catClasses.bg,
           catClasses.text,

@@ -1,6 +1,15 @@
 import { cn } from "@/shared/lib/utils";
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import type { MotionValue } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "motion/react";
 
 export interface FloatingDockItem {
   title: string;
@@ -27,6 +36,7 @@ const FloatingDockDesktop = ({
   items: FloatingDockItem[];
   className?: string;
 }) => {
+  const mouseX = useMotionValue(Infinity);
   return (
     <div className="relative mx-auto flex items-end">
       <div
@@ -36,48 +46,106 @@ const FloatingDockDesktop = ({
         }}
       />
       {/* 2D Icons Container */}
-      <div
+      <motion.div
+        onMouseMove={(e) => mouseX.set(e.pageX)}
+        onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
-          "flex h-[60px] items-end gap-3 px-4 pb-2.5 relative z-10 sm:gap-4 sm:px-6",
+          "flex h-[60px] items-end gap-4 px-6 pb-2.5 relative z-10",
           className,
         )}
       >
         {items.map((item) => (
-          <IconContainer key={item.title} item={item} />
+          <IconContainer mouseX={mouseX} key={item.title} item={item} />
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };
 
 function IconContainer({
+  mouseX,
   item,
 }: {
+  mouseX: MotionValue<number>;
   item: FloatingDockItem;
 }) {
   const { title, icon, href, onMouseDown, isActive } = item;
+  const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  const distance = useTransform(mouseX, (val) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+
+    return val - bounds.x - bounds.width / 2;
+  });
+
+  const widthTransform = useTransform(distance, [-150, 0, 150], [36, 74, 36]);
+  const heightTransform = useTransform(distance, [-150, 0, 150], [36, 74, 36]);
+
+  const widthTransformIcon = useTransform(distance, [-150, 0, 150], [18, 37, 18]);
+  const heightTransformIcon = useTransform(
+    distance,
+    [-150, 0, 150],
+    [18, 37, 18],
+  );
+
+  const width = useSpring(widthTransform, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
+  const height = useSpring(heightTransform, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
+
+  const widthIcon = useSpring(widthTransformIcon, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
+  const heightIcon = useSpring(heightTransformIcon, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
+
+  const [hovered, setHovered] = useState(false);
 
   const content = (
-    <span
+    <motion.div
       data-elevation="control"
+      ref={ref}
+      style={{ width, height }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={cn(
-        "group relative flex size-9 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 hover:-translate-y-1",
+        "relative flex aspect-square items-center justify-center rounded-full",
         isActive
           ? "bg-primary/20 border border-primary/30 backdrop-blur-md text-primary"
           : "bg-secondary/30 border border-foreground/10 backdrop-blur-md text-foreground shadow-sm",
       )}
     >
-      <span
-        className="pointer-events-none absolute -top-9 left-1/2 w-fit -translate-x-1/2 translate-y-1 rounded-md border border-border bg-popover px-2 py-0.5 text-xs whitespace-pre text-popover-foreground opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-y-0 group-hover:opacity-100"
-      >
-        {title}
-      </span>
-      <span
-        className="flex size-[18px] items-center justify-center [&_svg]:h-full [&_svg]:w-full"
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 2, x: "-50%" }}
+            className="absolute -top-9 left-1/2 w-fit rounded-md border border-border bg-popover px-2 py-0.5 text-xs whitespace-pre text-popover-foreground shadow-sm"
+          >
+            {title}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <motion.div
+        style={{ width: widthIcon, height: heightIcon }}
+        className="flex items-center justify-center [&_svg]:h-full [&_svg]:w-full"
       >
         {icon}
-      </span>
-    </span>
+      </motion.div>
+    </motion.div>
   );
 
   if (onMouseDown) {
@@ -90,7 +158,15 @@ function IconContainer({
 
   if (href) {
     return (
-      <Link to={href}>
+      <Link
+        to={href}
+        onMouseDown={(e) => {
+          if (e.button === 0) {
+            e.preventDefault();
+            navigate(href);
+          }
+        }}
+      >
         {content}
       </Link>
     );

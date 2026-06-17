@@ -158,7 +158,7 @@ export function EventFormFields() {
             rows={2}
           />
 
-          <FieldGroup className="grid grid-cols-1 sm:grid-cols-2">
+          <FieldGroup className="grid grid-cols-2">
             <FormSelect
               name="category"
               label={t("filters.category")}
