@@ -1,4 +1,5 @@
 import { ClickToComponent } from 'click-to-react-component';
+import { Analytics } from '@vercel/analytics/react';
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -34,6 +35,7 @@ function renderApp() {
         <BrowserRouter>
           {DevClickToComponent ? <DevClickToComponent /> : null}
           <App />
+          <Analytics />
         </BrowserRouter>
       </ErrorBoundary>
     </StrictMode>,
