@@ -51,7 +51,7 @@ export function OrganizationsPage() {
     <div className="-mt-4 space-y-4">
       {/* Search and filters stay pinned; -top-4 cancels AppLayout top padding when stuck. */}
       <div className="sticky -top-4 z-20 bg-background space-y-4 pt-4 pb-2 backdrop-blur-sm">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+        <div className="flex items-stretch gap-2">
           {/* Search Bar */}
           <SubmittedSearchInput
             value={searchQuery}
@@ -61,6 +61,7 @@ export function OrganizationsPage() {
             placeholder={t("organizations.searchPlaceholder")}
             submitLabel={t("common.search")}
             clearLabel={t("organizations.clearSearch")}
+            className="flex-1"
           />
 
           {/* Tabs */}
@@ -140,8 +141,8 @@ export function OrganizationsPage() {
 
       {/* Results Count and Pagination */}
       {!((activeTab === "followed" || activeTab === "claimed") && !authed) && (
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="font-bold text-base text-foreground inline-flex items-baseline gap-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-bold text-base text-foreground inline-flex min-w-0 shrink-0 items-baseline gap-1">
             <NumberFlow value={totalItems} respectMotionPreference={false} />
             <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>
           </span>
@@ -185,7 +186,7 @@ export function OrganizationsPage() {
           </a>
         </div>
       ) : organizations.length > 0 ? (
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
 
           <AdminTable
             headers={[

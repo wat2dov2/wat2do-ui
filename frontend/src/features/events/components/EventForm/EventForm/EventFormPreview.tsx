@@ -43,7 +43,7 @@ export function EventFormPreview() {
   );
 
   return (
-    <div className="w-80 border-l border-border p-6 overflow-y-auto min-h-0 space-y-4">
+    <div className="w-full border-t border-border p-4 overflow-y-auto min-h-0 space-y-4 sm:p-6 lg:w-80 lg:border-l lg:border-t-0">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-foreground">
           {t("forms.livePreview")}

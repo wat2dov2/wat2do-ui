@@ -138,12 +138,12 @@ export function EventFormStep({
 
   return (
     <EventFormProvider value={formContextValue}>
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden lg:flex-row">
         {/* Form Panel */}
-        <div className="flex-1 p-6 overflow-y-auto min-h-0">
+        <div className="flex-1 p-4 overflow-y-auto min-h-0 sm:p-6">
           {/* Header with Tabs */}
-          <div className="mb-7">
-            <div className="flex items-start justify-between gap-4">
+          <div className="mb-5 sm:mb-7">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
               <div className="min-w-0 flex-1">
                 <h2 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold text-foreground">
                   {isEditMode
@@ -200,7 +200,7 @@ export function EventFormStep({
               <FieldSeparator />
               <form>
                 <EventFormFields />
-                <Field orientation="horizontal" className="mt-6">
+                <Field orientation="responsive" className="mt-6">
                   <DialogClose asChild>
                     <Button variant="outline" type="button">
                       {t("common.cancel")}

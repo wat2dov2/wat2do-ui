@@ -95,7 +95,10 @@ export function TopNav() {
           value={schoolFilter ?? ""}
           onChange={setSchoolFilter}
           isAdmin={isAdmin}
-          triggerClassName="min-w-0 max-w-[112px] sm:max-w-[240px]"
+          triggerClassName={cn(
+            "min-w-0 sm:max-w-[240px]",
+            profileCompleted ? "max-w-[72px]" : "max-w-[112px]"
+          )}
         />
       </div>
 
@@ -186,7 +189,7 @@ export function TopNav() {
         )}
 
         {/* Language Selector */}
-        <LanguageSelector />
+        <LanguageSelector className="min-w-9 px-1.5 sm:min-w-[100px] sm:p-2" />
 
         {/* Dark Mode Toggle */}
         <AnimatedThemeToggler />

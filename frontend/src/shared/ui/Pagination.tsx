@@ -42,6 +42,18 @@ function getPageNumbers(currentPage: number, totalPages: number): (number | "...
   return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
 }
 
+function getCompactPageNumbers(currentPage: number, totalPages: number): (number | "...")[] {
+  if (totalPages <= 3) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  if (currentPage === 1 || currentPage === totalPages) {
+    return [1, "...", totalPages];
+  }
+
+  return [1, currentPage, totalPages];
+}
+
 export function Pagination({
   currentPage,
   totalPages,
@@ -58,6 +70,31 @@ export function Pagination({
 
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  const pageNumbers = getPageNumbers(currentPage, totalPages);
+  const compactPageNumbers = getCompactPageNumbers(currentPage, totalPages);
+  const renderPageNumbers = (numbers: (number | "...")[]) => numbers.map((pageNum, i) => {
+    if (pageNum === "...") {
+      return (
+        <span
+          key={`ellipsis-${i}`}
+          className="flex size-7 items-center justify-center text-xs text-muted-foreground select-none"
+        >
+          ...
+        </span>
+      );
+    }
+    return (
+      <Button
+        key={pageNum}
+        variant={currentPage === pageNum ? "default" : "outline"}
+        size="sm"
+        onMouseDown={() => onPageChange(pageNum)}
+        className="w-7 h-7 text-xs p-0 rounded-lg"
+      >
+        {pageNum}
+      </Button>
+    );
+  });
 
   return (
     <div className={`flex items-center ${hideDetails ? "w-auto justify-end" : "w-full justify-between"}`}>
@@ -79,30 +116,11 @@ export function Pagination({
           <ChevronLeft className="size-3.5" />
           <span className="hidden sm:inline">{t("admin.previous")}</span>
         </Button>
-        <div className="flex items-center gap-1">
-          {getPageNumbers(currentPage, totalPages).map((pageNum, i) => {
-            if (pageNum === "...") {
-              return (
-                <span
-                  key={`ellipsis-${i}`}
-                  className="flex size-7 items-center justify-center text-xs text-muted-foreground select-none"
-                >
-                  ...
-                </span>
-              );
-            }
-            return (
-              <Button
-                key={pageNum}
-                variant={currentPage === pageNum ? "default" : "outline"}
-                size="sm"
-                onMouseDown={() => onPageChange(pageNum)}
-                className="w-7 h-7 text-xs p-0 rounded-lg"
-              >
-                {pageNum}
-              </Button>
-            );
-          })}
+        <div className="flex items-center gap-1 sm:hidden">
+          {renderPageNumbers(compactPageNumbers)}
+        </div>
+        <div className="hidden items-center gap-1 sm:flex">
+          {renderPageNumbers(pageNumbers)}
         </div>
         <Button
           variant="outline"
