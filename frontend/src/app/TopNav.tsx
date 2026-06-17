@@ -42,11 +42,11 @@ export function TopNav() {
   );
 
   const handleLogoClick = useCallback(() => {
-    navigate(ROUTES.HOME);
+    setTimeout(() => navigate(ROUTES.HOME), 0);
   }, [navigate]);
 
   const handleAdminClick = useCallback(() => {
-    navigate(ROUTES.ADMIN);
+    setTimeout(() => navigate(ROUTES.ADMIN), 0);
   }, [navigate]);
 
   const handleOrganizationSelect = useCallback((org: NavOrganization) => {
@@ -58,29 +58,28 @@ export function TopNav() {
         organizationName: org.organization_name,
       });
     }
-    navigate(ROUTES.ORGANIZATION_PANEL);
+    setTimeout(() => navigate(ROUTES.ORGANIZATION_PANEL), 0);
   }, [navigate]);
 
   const handleSignOut = useCallback(async () => {
-    try {
-      await logoutAPI();
-    } catch (err) {
-      console.error("Logout API call failed, clearing local state anyway:", err);
-    }
-    // logoutAPI → clearAllAuthData fires AUTH_STATE_REFRESH_EVENT which the
-    // useAuthState snapshot subscribes to — the UI flips back to signed-out
-    // automatically. No manual setters needed.
+    setTimeout(async () => {
+      try {
+        await logoutAPI();
+      } catch (err) {
+        console.error("Logout API call failed, clearing local state anyway:", err);
+      }
+    }, 0);
   }, []);
 
   const handleSignIn = useCallback(() => {
-    navigate(ROUTES.LOGIN);
+    setTimeout(() => navigate(ROUTES.LOGIN), 0);
   }, [navigate]);
 
   return (
     <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-4 pr-4 border-b border-border bg-sidebar z-nav">
       <div className="flex items-center gap-2.5">
         <button
-          onClick={handleLogoClick}
+          onMouseDown={handleLogoClick}
           className="size-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
           aria-label={t("navigation.goToEvents")}
         >
@@ -99,7 +98,7 @@ export function TopNav() {
         {profileCompleted && isAdmin && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onClick={handleAdminClick}>
+              <Button variant="secondary" size="sm" onMouseDown={handleAdminClick}>
                 <Shield className="size-4" strokeWidth={2.5} />
                 {t("navigation.admin")}
               </Button>
@@ -152,7 +151,7 @@ export function TopNav() {
                   filteredOrganizations.map((org) => (
                     <button
                       key={org.id}
-                      onClick={() => {
+                      onMouseDown={() => {
                         handleOrganizationSelect(org);
                         setOrgMenuOpen(false);
                         setOrgSearch("");
@@ -190,7 +189,7 @@ export function TopNav() {
         {profileCompleted ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onClick={handleSignOut}>
+              <Button variant="secondary" size="sm" onMouseDown={handleSignOut}>
                 <LogOut className="size-4" strokeWidth={2.5} />
                 {t("modals.signOut.logOut")}
               </Button>
@@ -203,7 +202,7 @@ export function TopNav() {
           <Tooltip>
             <TooltipTrigger asChild>
               <InteractiveHoverButton
-                onClick={handleSignIn}
+                onMouseDown={handleSignIn}
                 className="flex items-center gap-1.5 bg-primary border-primary text-primary-foreground text-sm px-6 py-1.5 min-w-[120px] justify-center"
                 hideDot
               >

@@ -52,7 +52,7 @@ export function OrganizationsPage() {
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handleRowClick = (club: Organization, e: React.MouseEvent) => {
+  const handleRowPointerUp = (club: Organization, e: React.PointerEvent) => {
     const start = pointerStartRef.current;
     if (start) {
       const dx = e.clientX - start.x;
@@ -218,7 +218,7 @@ export function OrganizationsPage() {
                   key={club.id}
                   className="cursor-pointer"
                   onPointerDown={handleRowPointerDown}
-                  onClick={(event) => handleRowClick(club, event)}
+                  onPointerUp={(event) => handleRowPointerUp(club, event)}
                 >
                   {/* Name */}
                   <TableCell>

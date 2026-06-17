@@ -64,6 +64,19 @@ export function AdminEventsPage({
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
   };
 
+  const handleRowPointerUp = (idParamName: string, idValue: string, e: React.PointerEvent) => {
+    const start = pointerStartRef.current;
+    if (start) {
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance > 10) return;
+    }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set(idParamName, idValue);
+    setSearchParams(newParams);
+  };
+
   // Tab Setup
   const submissionIdParam = searchParams.get(QP.SUBMISSION_ID);
   const initialTab = (searchParams.get("tab") === "submissions" || submissionIdParam) ? "submissions" : "events";
@@ -266,18 +279,7 @@ export function AdminEventsPage({
                     id={`event-${event.id}`}
                     className={`cursor-pointer hover:bg-secondary/50 ${isHighlighted ? "bg-primary/10" : ""}`}
                     onPointerDown={handleRowPointerDown}
-                    onClick={(e) => {
-                      const start = pointerStartRef.current;
-                      if (start) {
-                        const dx = e.clientX - start.x;
-                        const dy = e.clientY - start.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > 10) return;
-                      }
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.set(QP.EVENT_ID, event.id.toString());
-                      setSearchParams(newParams);
-                    }}
+                    onPointerUp={(e) => handleRowPointerUp(QP.EVENT_ID, event.id.toString(), e)}
                   >
                     <TableCell>
                       <div className="font-medium text-sm text-foreground">
@@ -443,18 +445,7 @@ export function AdminEventsPage({
                   id={`submission-${submission.id}`}
                   className={`cursor-pointer hover:bg-secondary/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
                   onPointerDown={handleRowPointerDown}
-                  onClick={(e) => {
-                    const start = pointerStartRef.current;
-                    if (start) {
-                      const dx = e.clientX - start.x;
-                      const dy = e.clientY - start.y;
-                      const distance = Math.sqrt(dx * dx + dy * dy);
-                      if (distance > 10) return;
-                    }
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.set(QP.SUBMISSION_ID, submission.id);
-                    setSearchParams(newParams);
-                  }}
+                  onPointerUp={(e) => handleRowPointerUp(QP.SUBMISSION_ID, submission.id, e)}
                 >
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">

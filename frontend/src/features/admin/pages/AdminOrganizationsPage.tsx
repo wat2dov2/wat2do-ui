@@ -80,6 +80,17 @@ export function AdminOrganizationsPage({
   const handleRowPointerDown = (e: React.PointerEvent) => {
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
   };
+
+  const handleRowPointerUp = (org: Organization, e: React.PointerEvent) => {
+    const start = pointerStartRef.current;
+    if (start) {
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance > 10) return;
+    }
+    openEditModal(org);
+  };
   
   // Load claims from Zustand store
   const allClaims = useAdminStore((s) => s.claims);
@@ -346,16 +357,7 @@ export function AdminOrganizationsPage({
                   key={org.id}
                   className="cursor-pointer"
                   onPointerDown={handleRowPointerDown}
-                  onClick={(e) => {
-                    const start = pointerStartRef.current;
-                    if (start) {
-                      const dx = e.clientX - start.x;
-                      const dy = e.clientY - start.y;
-                      const distance = Math.sqrt(dx * dx + dy * dy);
-                      if (distance > 10) return;
-                    }
-                    openEditModal(org);
-                  }}
+                  onPointerUp={(e) => handleRowPointerUp(org, e)}
                 >
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">

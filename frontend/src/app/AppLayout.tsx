@@ -39,7 +39,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     {
       title: t("common.search"),
       icon: <Search className="size-4" />,
-      onClick: () => setShowCommandPalette(true),
+      onMouseDown: () => setShowCommandPalette(true),
     },
     {
       title: t("navigation.explore"),
@@ -52,7 +52,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {
             title: t("navigation.create"),
             icon: <Plus className="size-4" />,
-            onClick: () => setShowSubmitEvent(true),
+            onMouseDown: () => setShowSubmitEvent(true),
           },
         ]
       : []),
