@@ -6,7 +6,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
       data-slot="table-container"
-      className="relative max-w-full overflow-x-auto overscroll-x-contain after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-8 after:bg-gradient-to-l after:from-card after:to-transparent sm:after:hidden"
+      className="relative max-w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-8 after:bg-gradient-to-l after:from-card after:to-transparent sm:after:hidden"
     >
       <table
         data-slot="table"
