@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
-import { zhCN, enUS } from "date-fns/locale";
+import { zhCN } from "date-fns/locale/zh-CN";
+import { enUS } from "date-fns/locale/en-US";
 import { Utensils, Heart } from "@/shared/ui/doodle-icons";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
