@@ -32,7 +32,7 @@ export function LanguageSelector({ className }: LanguageSelectorProps) {
           <SelectValue>
             <span className="flex items-center gap-2 text-sm">
               <span>{currentLanguage.flag}</span>
-              <span>{currentLanguage.label}</span>
+              <span data-language-label>{currentLanguage.label}</span>
             </span>
           </SelectValue>
       </SelectTrigger>

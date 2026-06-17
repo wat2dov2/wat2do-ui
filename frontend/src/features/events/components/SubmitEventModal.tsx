@@ -190,7 +190,7 @@ function SubmitEventModalFormBody({
       <>
         <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
           <DialogContent
-            className="p-0 w-[calc(100vw-48px)] max-w-[900px] h-[calc(100vh-48px)] max-h-[750px] overflow-hidden flex flex-col outline-none focus:outline-none focus-visible:outline-none"
+            className="flex h-[calc(100dvh-24px)] w-[calc(100vw-16px)] max-w-[900px] flex-col overflow-hidden p-0 outline-none focus:outline-none focus-visible:outline-none sm:h-[calc(100vh-48px)] sm:w-[calc(100vw-48px)] sm:max-h-[750px]"
             showCloseButton={true}
             aria-describedby={undefined}
           >
@@ -274,7 +274,7 @@ function SubmitEventModalContent({
   if (isOpen && editEventId && loadEventForEdit && resolvedInitialData === undefined) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="p-0 w-[calc(100vw-48px)] max-w-[900px] max-h-[400px]" showCloseButton aria-describedby={undefined}>
+        <DialogContent className="w-[calc(100vw-16px)] max-w-[900px] p-0 sm:w-[calc(100vw-48px)] sm:max-h-[400px]" showCloseButton aria-describedby={undefined}>
           <div className="flex items-center justify-center py-16 text-muted-foreground">
             {t("common.loading")}
           </div>

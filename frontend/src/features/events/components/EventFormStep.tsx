@@ -138,14 +138,14 @@ export function EventFormStep({
 
   return (
     <EventFormProvider value={formContextValue}>
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Form Panel */}
-        <div className="flex-1 p-6 overflow-y-auto min-h-0">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Header with Tabs */}
-          <div className="mb-7">
-            <div className="flex items-start justify-between gap-4">
+          <div className="mb-5 sm:mb-7">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
               <div className="min-w-0 flex-1">
-                <h2 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold text-foreground">
+                <h2 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-8 text-lg font-semibold text-foreground sm:pr-0 sm:text-xl">
                   {isEditMode
                     ? t("events.updateEvent")
                     : canCreateEvents
@@ -159,16 +159,16 @@ export function EventFormStep({
                   onValueChange={handleViewModeTabChange}
                   className="w-fit"
                 >
-                  <TabsList variant="default" className="h-8">
+                  <TabsList variant="default" className="h-9 sm:h-8">
                     <TabsTrigger
                       value="visual"
-                      className="text-[11px] font-medium px-3 py-1"
+                      className="px-3 py-1 text-[11px] font-medium"
                     >
                       {t("settings.appearance.visual")}
                     </TabsTrigger>
                     <TabsTrigger
                       value="json"
-                      className="text-[11px] font-medium px-3 py-1"
+                      className="px-3 py-1 text-[11px] font-medium"
                     >
                       {t("settings.appearance.json")}
                     </TabsTrigger>
@@ -202,7 +202,7 @@ export function EventFormStep({
                 <EventFormFields />
                 <Field orientation="horizontal" className="mt-6">
                   <DialogClose asChild>
-                    <Button variant="outline" type="button">
+                    <Button variant="outline" type="button" className="min-h-11 sm:min-h-0">
                       {t("common.cancel")}
                     </Button>
                   </DialogClose>
@@ -212,6 +212,7 @@ export function EventFormStep({
                     disabled={!eventForm.isValid}
                     isLoading={isSubmitting}
                     loadingText={t("common.pleaseWait")}
+                    className="min-h-11 sm:min-h-0"
                   >
                     {isEditMode
                       ? t("events.updateEvent")
@@ -229,7 +230,7 @@ export function EventFormStep({
         </div>
 
         {/* Live Preview Panel */}
-        <EventFormPreview />
+        <EventFormPreview className="hidden lg:flex" />
       </div>
     </EventFormProvider>
   );

@@ -10,7 +10,13 @@ import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint"
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
-export function EventFormPreview() {
+import { cn } from "@/shared/lib/utils";
+
+interface EventFormPreviewProps {
+  className?: string;
+}
+
+export function EventFormPreview({ className }: EventFormPreviewProps) {
   const { t, i18n } = useTranslation();
   const { formData, selectedOrganizationName } = useEventFormContext();
   const categoryClasses = getCategoryClasses(formData.category);
@@ -43,7 +49,7 @@ export function EventFormPreview() {
   );
 
   return (
-    <div className="w-80 border-l border-border p-6 overflow-y-auto min-h-0 space-y-4">
+    <div className={cn("min-h-0 w-80 space-y-4 overflow-y-auto border-l border-border p-6", className)}>
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-foreground">
           {t("forms.livePreview")}

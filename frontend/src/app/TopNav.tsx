@@ -42,11 +42,11 @@ export function TopNav() {
   );
 
   const handleLogoClick = useCallback(() => {
-    setTimeout(() => navigate(ROUTES.HOME), 0);
+    navigate(ROUTES.HOME);
   }, [navigate]);
 
   const handleAdminClick = useCallback(() => {
-    setTimeout(() => navigate(ROUTES.ADMIN), 0);
+    navigate(ROUTES.ADMIN);
   }, [navigate]);
 
   const handleOrganizationSelect = useCallback((org: NavOrganization) => {
@@ -58,49 +58,60 @@ export function TopNav() {
         organizationName: org.organization_name,
       });
     }
-    setTimeout(() => navigate(ROUTES.ORGANIZATION_PANEL), 0);
+    navigate(ROUTES.ORGANIZATION_PANEL);
   }, [navigate]);
 
   const handleSignOut = useCallback(async () => {
-    setTimeout(async () => {
-      try {
-        await logoutAPI();
-      } catch (err) {
-        console.error("Logout API call failed, clearing local state anyway:", err);
-      }
-    }, 0);
+    try {
+      await logoutAPI();
+    } catch (err) {
+      console.error("Logout API call failed, clearing local state anyway:", err);
+    }
+    // logoutAPI → clearAllAuthData fires AUTH_STATE_REFRESH_EVENT which the
+    // useAuthState snapshot subscribes to — the UI flips back to signed-out
+    // automatically. No manual setters needed.
   }, []);
 
   const handleSignIn = useCallback(() => {
-    setTimeout(() => navigate(ROUTES.LOGIN), 0);
+    navigate(ROUTES.LOGIN);
   }, [navigate]);
 
   return (
-    <header className="flex items-center justify-between fixed top-0 left-0 right-0 h-12 pl-4 pr-4 border-b border-border bg-sidebar z-nav">
-      <div className="flex items-center gap-2.5">
+    <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-sidebar px-2 sm:gap-2 sm:px-4">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <button
           onMouseDown={handleLogoClick}
-          className="size-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-opacity hover:opacity-80"
           aria-label={t("navigation.goToEvents")}
         >
           <img
             alt={t("common.logo")}
-            className="w-full h-full object-cover rounded"
+            className="size-6 rounded object-cover"
             src={imgImage1}
           />
         </button>
-        <span className="text-muted-foreground text-lg font-light">/</span>
-        <SchoolCombobox value={schoolFilter ?? ""} onChange={setSchoolFilter} isAdmin={isAdmin} />
+        <span className="text-muted-foreground text-lg font-light max-[359px]:hidden">/</span>
+        <SchoolCombobox
+          value={schoolFilter ?? ""}
+          onChange={setSchoolFilter}
+          isAdmin={isAdmin}
+          triggerClassName="!h-11 max-w-[26vw] px-2 sm:!h-8 sm:max-w-none sm:px-3"
+        />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         {/* Admin Button – only visible to admins */}
         {profileCompleted && isAdmin && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onMouseDown={handleAdminClick}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onMouseDown={handleAdminClick}
+                className="size-11 px-0 sm:size-auto sm:px-3"
+              >
                 <Shield className="size-4" strokeWidth={2.5} />
-                {t("navigation.admin")}
+                <span className="hidden sm:inline">{t("navigation.admin")}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -114,7 +125,7 @@ export function TopNav() {
           <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
             <PopoverTrigger asChild>
               <button
-                className="flex text-white items-center gap-1 px-3 h-8 max-w-[240px] bg-transparent hover:bg-secondary rounded-xl transition-colors"
+                className="flex h-11 max-w-[24vw] items-center gap-1 rounded-xl bg-transparent px-2 text-white transition-colors hover:bg-secondary sm:h-8 sm:max-w-[180px] sm:px-3 md:max-w-[240px]"
                 aria-expanded={orgMenuOpen}
                 type="button"
               >
@@ -180,8 +191,8 @@ export function TopNav() {
         )}
 
         {/* Language Selector */}
-        <LanguageSelector className="hidden sm:inline-flex min-w-9 px-1.5 sm:min-w-[100px] sm:p-2" />
-        
+        <LanguageSelector className="!h-11 min-w-11 px-1.5 sm:!h-8 sm:min-w-[100px] sm:p-2 [&_[data-language-label]]:hidden sm:[&_[data-language-label]]:inline" />
+
         {/* Dark Mode Toggle */}
         <AnimatedThemeToggler />
 
@@ -189,9 +200,9 @@ export function TopNav() {
         {profileCompleted ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onMouseDown={handleSignOut}>
+              <Button variant="secondary" size="sm" onMouseDown={handleSignOut} className="size-11 px-0 sm:size-auto sm:px-3">
                 <LogOut className="size-4" strokeWidth={2.5} />
-                {t("modals.signOut.logOut")}
+                <span className="hidden sm:inline">{t("modals.signOut.logOut")}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -203,7 +214,7 @@ export function TopNav() {
             <TooltipTrigger asChild>
               <InteractiveHoverButton
                 onMouseDown={handleSignIn}
-                className="flex items-center gap-1.5 bg-primary border-primary text-primary-foreground text-sm px-6 py-1.5 min-w-[120px] justify-center"
+                className="flex min-h-11 items-center justify-center gap-1.5 border-primary bg-primary px-2 py-1.5 text-sm text-primary-foreground max-[359px]:max-w-16 sm:min-h-8 sm:min-w-[120px] sm:px-6"
                 hideDot
               >
                 {t("events.signIn")}

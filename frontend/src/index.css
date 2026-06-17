@@ -311,29 +311,6 @@
     position: relative;
     z-index: 1;
   }
-}
 
-/* Fluid Viewport Scaling */
-html {
-  font-size: clamp(5.2px, 1.63265vw, 16px);
-}
 
-@media (max-width: 979px) {
-  #root {
-    width: 61.25rem !important;
-    min-width: 61.25rem !important;
-    max-width: 61.25rem !important;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  body {
-    overflow-x: hidden !important;
-  }
-  /* Keep TopNav in sync on rem-scaled viewports */
-  header.fixed {
-    width: 61.25rem !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    right: auto !important;
-  }
 }

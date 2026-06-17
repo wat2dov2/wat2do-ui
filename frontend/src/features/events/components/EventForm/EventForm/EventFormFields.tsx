@@ -87,6 +87,7 @@ export function EventFormFields() {
                 variant="secondary"
                 size="sm"
                 onMouseDown={addOccurrence}
+                className="min-h-10"
               >
                 <Plus className="size-4" />
                 {t("forms.addDate")}
@@ -121,6 +122,7 @@ export function EventFormFields() {
                     onMouseDown={() => removeOccurrence(index)}
                     disabled={formData.occurrences.length === 1}
                     aria-label={t("forms.removeDate")}
+                    className="min-h-10 w-full sm:size-9"
                   >
                     <Trash2 className="size-4" />
                   </Button>
@@ -158,7 +160,7 @@ export function EventFormFields() {
             rows={2}
           />
 
-          <FieldGroup className="grid grid-cols-2">
+          <FieldGroup className="grid grid-cols-1 sm:grid-cols-2">
             <FormSelect
               name="category"
               label={t("filters.category")}

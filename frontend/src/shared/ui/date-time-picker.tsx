@@ -95,18 +95,20 @@ export function DateTimePicker({
           type="button"
           variant="secondary"
           className={cn(
-            "w-full justify-start border border-border px-3 text-left font-normal text-secondary-foreground hover:bg-muted/60 dark:hover:bg-muted/60",
+            "min-h-10 w-full min-w-0 justify-start border border-border px-3 text-left font-normal text-secondary-foreground hover:bg-muted/60 dark:hover:bg-muted/60",
             !date && "text-muted-foreground",
             hasError && "ring-2 ring-destructive/50 bg-destructive/10",
             className
           )}
           onBlur={onBlur}
         >
-          {date ? format(date, "MM/dd/yyyy hh:mm aa") : <span>{placeholder}</span>}
+          <span className="min-w-0 truncate">
+            {date ? format(date, "MM/dd/yyyy hh:mm aa") : placeholder}
+          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <div className="sm:flex">
+      <PopoverContent className="max-w-[calc(100vw-16px)] overflow-x-auto p-0" align="start">
+        <div className="w-max sm:flex">
           <Calendar
             mode="single"
             selected={date}
