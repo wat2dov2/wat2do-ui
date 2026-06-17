@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import NumberFlow from "@number-flow/react";
 import { Bookmark, Search, Users, Instagram, MessageCircle } from "@/shared/ui/doodle-icons";
@@ -46,22 +46,6 @@ export function OrganizationsPage() {
   } = useOrganizationsPage();
 
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
-
-  const handleRowPointerDown = (e: React.PointerEvent) => {
-    pointerStartRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleRowPointerUp = (club: Organization, e: React.PointerEvent) => {
-    const start = pointerStartRef.current;
-    if (start) {
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 10) return;
-    }
-    setSelectedOrganization(club);
-  };
 
   return (
     <div className="-mt-4 space-y-4">
@@ -152,29 +136,29 @@ export function OrganizationsPage() {
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Results Count and Pagination */}
-      {!((activeTab === "followed" || activeTab === "claimed") && !authed) && (
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:flex-wrap w-full">
-          <span className="font-bold text-base text-foreground inline-flex items-baseline gap-1">
-            <NumberFlow value={totalItems} respectMotionPreference={false} />
-            <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>
-          </span>
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              itemLabel={t("admin.club")}
-              itemLabelPlural={t("navigation.organizations")}
-              onPageChange={setCurrentPage}
-              hideDetails
-            />
-          )}
-        </div>
-      )}
+        {/* Results Count and Pagination */}
+        {!((activeTab === "followed" || activeTab === "claimed") && !authed) && (
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-base text-foreground inline-flex items-baseline gap-1">
+              <NumberFlow value={totalItems} respectMotionPreference={false} />
+              <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>
+            </span>
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                itemLabel={t("admin.club")}
+                itemLabelPlural={t("navigation.organizations")}
+                onPageChange={setCurrentPage}
+                hideDetails
+              />
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Results / Loading / State Display */}
       {isLoading ? (
@@ -206,10 +190,10 @@ export function OrganizationsPage() {
           <AdminTable
             headers={[
               { label: t("forms.organizationName") },
-              { label: t("forms.categories"), className: "hidden sm:table-cell" },
-              { label: t("forms.organizationType"), className: "hidden md:table-cell" },
-              { label: <span className="flex items-center gap-1.5"><Instagram className="size-3.5" />{t("admin.instagram")}</span>, className: "hidden sm:table-cell" },
-              { label: <span className="flex items-center gap-1.5"><MessageCircle className="size-3.5" />{t("admin.discord")}</span>, className: "hidden md:table-cell" },
+              { label: t("forms.categories") },
+              { label: t("forms.organizationType") },
+              { label: <span className="flex items-center gap-1.5"><Instagram className="size-3.5" />{t("admin.instagram")}</span> },
+              { label: <span className="flex items-center gap-1.5"><MessageCircle className="size-3.5" />{t("admin.discord")}</span> },
             ]}
           >
             {organizations.map((club) => {
@@ -217,8 +201,7 @@ export function OrganizationsPage() {
                 <TableRow
                   key={club.id}
                   className="cursor-pointer"
-                  onPointerDown={handleRowPointerDown}
-                  onPointerUp={(event) => handleRowPointerUp(club, event)}
+                  onMouseDown={() => setSelectedOrganization(club)}
                 >
                   {/* Name */}
                   <TableCell>
@@ -228,7 +211,7 @@ export function OrganizationsPage() {
                   </TableCell>
 
                   {/* Categories */}
-                  <TableCell className="hidden sm:table-cell">
+                  <TableCell>
                     <OrganizationCategoryBadges
                       categories={club.categories}
                       maxVisible={2}
@@ -237,20 +220,20 @@ export function OrganizationsPage() {
                   </TableCell>
 
                   {/* Type */}
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     <div className="text-sm text-muted-foreground">
                       {club.organization_type}
                     </div>
                   </TableCell>
 
                   {/* Instagram */}
-                  <TableCell className="hidden sm:table-cell">
+                  <TableCell>
                     {club.ig ? (
                       <a
                         href={`https://instagram.com/${club.ig}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className="inline-flex min-w-0 max-w-[150px] items-center gap-1 rounded-lg bg-secondary/60 px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                       >
                         <Instagram className="size-3.5 shrink-0" />
@@ -262,13 +245,13 @@ export function OrganizationsPage() {
                   </TableCell>
 
                   {/* Discord */}
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     {club.discord && sanitizeHref(club.discord) ? (
                       <a
                         href={sanitizeHref(club.discord)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-secondary/60 px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                       >
                         <MessageCircle className="size-3.5 shrink-0" />

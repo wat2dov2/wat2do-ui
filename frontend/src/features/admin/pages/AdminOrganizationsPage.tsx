@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Users, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -75,22 +75,6 @@ export function AdminOrganizationsPage({
   } = useAdminOrganizationsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
   const [activeTab, setActiveTab] = useState<"organizations" | "claims">("organizations");
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
-
-  const handleRowPointerDown = (e: React.PointerEvent) => {
-    pointerStartRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleRowPointerUp = (org: Organization, e: React.PointerEvent) => {
-    const start = pointerStartRef.current;
-    if (start) {
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 10) return;
-    }
-    openEditModal(org);
-  };
   
   // Load claims from Zustand store
   const allClaims = useAdminStore((s) => s.claims);
@@ -252,91 +236,145 @@ export function AdminOrganizationsPage({
         }
       />
 
-      {/* Tabs toggle */}
-      <div className="flex gap-2 border-b border-border pb-3">
-        <button
-          onMouseDown={() => setActiveTab("organizations")}
-          data-elevation="control"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-            activeTab === "organizations"
-              ? "bg-primary/80 text-primary-foreground font-semibold"
-              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
-          }`}
-        >
-          {t("admin.clubsList")}
-        </button>
-        <button
-          onMouseDown={() => setActiveTab("claims")}
-          data-elevation="control"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
-            activeTab === "claims"
-              ? "bg-primary/80 text-primary-foreground font-semibold"
-              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
-          }`}
-        >
-          {t("admin.claimRequests")}
-          {pendingClaimsCount > 0 && (
-            <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
-              {pendingClaimsCount}
-            </span>
-          )}
-        </button>
+      {/* Tabs, search, and results count stay pinned when scrolling (-top-4 cancels AppLayout top padding). */}
+      <div className="sticky -top-4 z-20 bg-background space-y-5 pt-4 pb-2 backdrop-blur-sm">
+        <div className="flex gap-2 border-b border-border pb-3">
+          <button
+            onMouseDown={() => setActiveTab("organizations")}
+            data-elevation="control"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+              activeTab === "organizations"
+                ? "bg-primary/80 text-primary-foreground font-semibold"
+                : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+            }`}
+          >
+            {t("admin.clubsList")}
+          </button>
+          <button
+            onMouseDown={() => setActiveTab("claims")}
+            data-elevation="control"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
+              activeTab === "claims"
+                ? "bg-primary/80 text-primary-foreground font-semibold"
+                : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+            }`}
+          >
+            {t("admin.claimRequests")}
+            {pendingClaimsCount > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
+                {pendingClaimsCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === "organizations" ? (
+          <>
+            <div className="flex gap-3">
+              <AdminSearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onSubmit={submitSearchQuery}
+                onClear={clearSearchQuery}
+                placeholder={t("organizations.searchPlaceholder")}
+                submitLabel={t("common.search")}
+                clearLabel={t("organizations.clearSearch")}
+              />
+              <Select
+                value={selectedOrganizationType || ALL_ORGANIZATION_TYPES_VALUE}
+                onValueChange={(value) =>
+                  setSelectedOrganizationType(value === ALL_ORGANIZATION_TYPES_VALUE ? "" : value)
+                }
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t("admin.allTypes")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_ORGANIZATION_TYPES_VALUE}>
+                    {t("admin.allTypes")}
+                  </SelectItem>
+                  {visibleOrganizationTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <AdminResultsCount
+              count={totalItems}
+              singularLabel={t("admin.club")}
+              pluralLabel={t("navigation.organizations")}
+            >
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  itemLabel={t("admin.club")}
+                  itemLabelPlural={t("navigation.organizations")}
+                  onPageChange={setCurrentPage}
+                  hideDetails
+                />
+              )}
+            </AdminResultsCount>
+          </>
+        ) : (
+          <>
+            <div className="flex gap-3">
+              <AdminSearchBar
+                value={claimSearchQuery}
+                onChange={(value) => {
+                  setClaimSearchQuery(value);
+                  claimsPagination.setCurrentPage(1);
+                }}
+                placeholder={t("admin.searchSubmissions") || "Search requests..."}
+              />
+              <Select
+                value={claimStatusFilter}
+                onValueChange={(value) => {
+                  setClaimStatusFilter(value as "all" | SubmissionStatus);
+                  claimsPagination.setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t("admin.allStatus")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("admin.allStatus")}</SelectItem>
+                  <SelectItem value="pending">{t("admin.pending")}</SelectItem>
+                  <SelectItem value="approved">{t("admin.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("admin.rejected")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <AdminResultsCount
+              count={filteredClaims.length}
+              singularLabel={t("admin.claimRequest") || "claim request"}
+              pluralLabel={t("admin.claimRequests") || "claim requests"}
+            >
+              {claimsPagination.totalPages > 1 && (
+                <Pagination
+                  currentPage={claimsPagination.currentPage}
+                  totalPages={claimsPagination.totalPages}
+                  totalItems={filteredClaims.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  itemLabel={t("admin.claimRequest") || "claim request"}
+                  itemLabelPlural={t("admin.claimRequests") || "claim requests"}
+                  onPageChange={claimsPagination.setCurrentPage}
+                  hideDetails
+                />
+              )}
+            </AdminResultsCount>
+          </>
+        )}
       </div>
 
       {activeTab === "organizations" ? (
         <>
-          {/* Search and Filters */}
-          <div className="flex gap-3">
-            <AdminSearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              onSubmit={submitSearchQuery}
-              onClear={clearSearchQuery}
-              placeholder={t("organizations.searchPlaceholder")}
-              submitLabel={t("common.search")}
-              clearLabel={t("organizations.clearSearch")}
-            />
-            <Select
-              value={selectedOrganizationType || ALL_ORGANIZATION_TYPES_VALUE}
-              onValueChange={(value) =>
-                setSelectedOrganizationType(value === ALL_ORGANIZATION_TYPES_VALUE ? "" : value)
-              }
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("admin.allTypes")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_ORGANIZATION_TYPES_VALUE}>
-                  {t("admin.allTypes")}
-                </SelectItem>
-                {visibleOrganizationTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <AdminResultsCount
-            count={totalItems}
-            singularLabel={t("admin.club")}
-            pluralLabel={t("navigation.organizations")}
-          >
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                itemsPerPage={ITEMS_PER_PAGE}
-                itemLabel={t("admin.club")}
-                itemLabelPlural={t("navigation.organizations")}
-                onPageChange={setCurrentPage}
-                hideDetails
-              />
-            )}
-          </AdminResultsCount>
-
           {/* Organizations Table */}
           {isLoading ? (
             <LoadingPage />
@@ -356,8 +394,7 @@ export function AdminOrganizationsPage({
                 <TableRow
                   key={org.id}
                   className="cursor-pointer"
-                  onPointerDown={handleRowPointerDown}
-                  onPointerUp={(e) => handleRowPointerUp(org, e)}
+                  onMouseDown={() => openEditModal(org)}
                 >
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">
@@ -435,54 +472,6 @@ export function AdminOrganizationsPage({
         </>
       ) : (
         <>
-          {/* Claim Requests Section Search and Filters */}
-          <div className="flex gap-3">
-            <AdminSearchBar
-              value={claimSearchQuery}
-              onChange={(value) => {
-                setClaimSearchQuery(value);
-                claimsPagination.setCurrentPage(1);
-              }}
-              placeholder={t("admin.searchSubmissions") || "Search requests..."}
-            />
-            <Select
-              value={claimStatusFilter}
-              onValueChange={(value) => {
-                setClaimStatusFilter(value as "all" | SubmissionStatus);
-                claimsPagination.setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t("admin.allStatus")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("admin.allStatus")}</SelectItem>
-                <SelectItem value="pending">{t("admin.pending")}</SelectItem>
-                <SelectItem value="approved">{t("admin.approved")}</SelectItem>
-                <SelectItem value="rejected">{t("admin.rejected")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <AdminResultsCount
-            count={filteredClaims.length}
-            singularLabel={t("admin.claimRequest") || "claim request"}
-            pluralLabel={t("admin.claimRequests") || "claim requests"}
-          >
-            {claimsPagination.totalPages > 1 && (
-              <Pagination
-                currentPage={claimsPagination.currentPage}
-                totalPages={claimsPagination.totalPages}
-                totalItems={filteredClaims.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-                itemLabel={t("admin.claimRequest") || "claim request"}
-                itemLabelPlural={t("admin.claimRequests") || "claim requests"}
-                onPageChange={claimsPagination.setCurrentPage}
-                hideDetails
-              />
-            )}
-          </AdminResultsCount>
-
           {loadingClaims ? (
             <LoadingPage />
           ) : filteredClaims.length > 0 ? (

@@ -60,7 +60,7 @@ export function Pagination({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className={`flex items-center w-full ${hideDetails ? "justify-end" : "justify-between"}`}>
+    <div className={`flex w-full flex-col gap-2 sm:flex-row sm:items-center ${hideDetails ? "sm:justify-end" : "sm:justify-between"}`}>
       {!hideDetails && (
         <div className="text-sm text-muted-foreground">
           {t("admin.showing")} {startItem} {t("admin.to")} {endItem}{" "}
@@ -68,7 +68,7 @@ export function Pagination({
           {totalItems === 1 ? itemLabel : itemLabelPlural}
         </div>
       )}
-      <div className="flex items-center gap-1.5">
+      <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1">
         <Button
           variant="outline"
           size="sm"

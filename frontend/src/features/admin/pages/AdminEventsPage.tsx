@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { Calendar, MapPin, Tag, AlertTriangle, Clock, User, FileText } from "@/shared/ui/doodle-icons";
@@ -58,24 +58,6 @@ export function AdminEventsPage({
 }: AdminEventsPageProps) {
   const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
-
-  const handleRowPointerDown = (e: React.PointerEvent) => {
-    pointerStartRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleRowPointerUp = (idParamName: string, idValue: string, e: React.PointerEvent) => {
-    const start = pointerStartRef.current;
-    if (start) {
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 10) return;
-    }
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set(idParamName, idValue);
-    setSearchParams(newParams);
-  };
 
   // Tab Setup
   const submissionIdParam = searchParams.get(QP.SUBMISSION_ID);
@@ -212,7 +194,7 @@ export function AdminEventsPage({
       {activeTab === "events" ? (
         <>
           {/* Search and Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex gap-3">
             <AdminSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
@@ -278,8 +260,11 @@ export function AdminEventsPage({
                     key={event.id}
                     id={`event-${event.id}`}
                     className={`cursor-pointer hover:bg-secondary/50 ${isHighlighted ? "bg-primary/10" : ""}`}
-                    onPointerDown={handleRowPointerDown}
-                    onPointerUp={(e) => handleRowPointerUp(QP.EVENT_ID, event.id.toString(), e)}
+                    onMouseDown={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.set(QP.EVENT_ID, event.id.toString());
+                      setSearchParams(newParams);
+                    }}
                   >
                     <TableCell>
                       <div className="font-medium text-sm text-foreground">
@@ -394,7 +379,7 @@ export function AdminEventsPage({
       ) : (
         <>
           {/* Submissions Section */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex gap-3">
             <AdminSearchBar
               value={submissionFilters.searchQuery}
               onChange={(value) => {
@@ -432,9 +417,9 @@ export function AdminEventsPage({
             <AdminTable
               headers={[
                 { label: t("events.eventTitle") },
-                { label: t("events.organization"), className: "hidden sm:table-cell" },
-                { label: <span className="flex items-center gap-1.5"><User className="size-3.5" />{t("admin.submittedBy")}</span>, className: "hidden md:table-cell" },
-                { label: <span className="flex items-center gap-1.5"><Clock className="size-3.5" />{t("admin.submittedAt")}</span>, className: "hidden sm:table-cell" },
+                { label: t("events.organization") },
+                { label: <span className="flex items-center gap-1.5"><User className="size-3.5" />{t("admin.submittedBy")}</span> },
+                { label: <span className="flex items-center gap-1.5"><Clock className="size-3.5" />{t("admin.submittedAt")}</span> },
                 { label: t("events.status") },
                 { label: t("common.actions"), align: "right" },
               ]}
@@ -444,25 +429,28 @@ export function AdminEventsPage({
                   key={submission.id}
                   id={`submission-${submission.id}`}
                   className={`cursor-pointer hover:bg-secondary/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
-                  onPointerDown={handleRowPointerDown}
-                  onPointerUp={(e) => handleRowPointerUp(QP.SUBMISSION_ID, submission.id, e)}
+                  onMouseDown={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.set(QP.SUBMISSION_ID, submission.id);
+                    setSearchParams(newParams);
+                  }}
                 >
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">
                       {submission.eventData.title}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
+                  <TableCell>
                     <div className="text-sm text-muted-foreground">
                       {getOrganizationName(submission.eventData.organization_id)}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     <span className="text-sm text-muted-foreground">
                       {submission.submittedBy}
                     </span>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
+                  <TableCell>
                     <span className="text-sm text-muted-foreground">
                       {fmtTime(submission.submittedAt)}
                     </span>
