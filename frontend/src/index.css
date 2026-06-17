@@ -311,6 +311,34 @@
     position: relative;
     z-index: 1;
   }
+}
 
+/* Viewport Scaling Styles */
+.viewport-scaled body {
+  overflow-x: hidden !important;
+}
 
+.viewport-zoom #root {
+  zoom: var(--app-scale, 1) !important;
+  width: 980px !important;
+  min-width: 980px !important;
+  max-width: 980px !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.viewport-rem #root {
+  width: 61.25rem !important;
+  min-width: 61.25rem !important;
+  max-width: 61.25rem !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Keep TopNav in sync on rem-scaled viewports */
+.viewport-rem header.fixed {
+  width: 61.25rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  right: auto !important;
 }
