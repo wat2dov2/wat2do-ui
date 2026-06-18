@@ -11,7 +11,7 @@ import type { FilterState, Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
-import { parseFilterQueryString } from "@/features/search";
+import { EMPTY_FILTER_STATE, parseFilterQueryString } from "@/features/search";
 
 interface UseAppNavigationOptions {
   events: Event[];
@@ -30,20 +30,19 @@ export function useAppNavigation({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Track if we've already processed initial URL params to avoid re-processing.
-  // Split by concern: filters/pageMode process once, but scroll-to-event must
-  // wait for the events array to be non-empty (cold-load race).
-  const hasProcessedInitialFilters = useRef(false);
+  // Track one-shot URL concerns. Filters themselves are intentionally parsed
+  // whenever the URL changes so back/forward/shared links hydrate state.
+  const hasProcessedInitialRouteMode = useRef(false);
+  const hasProcessedInitialSchool = useRef(false);
   const hasProcessedInitialScroll = useRef(false);
 
   useEffect(() => {
-    const eventId = searchParams.get(QP.EVENT_ID);
     const filtersParam = searchParams.get(QP.FILTERS);
     const schoolParam = searchParams.get(QP.SCHOOL);
     const pageModeParam = searchParams.get(QP.PAGE_MODE);
 
-    // Process filters + pageMode exactly once on initial mount.
-    if (!hasProcessedInitialFilters.current) {
+    // Process pageMode exactly once on initial mount.
+    if (!hasProcessedInitialRouteMode.current) {
       // Handle pageMode redirect
       if (pageModeParam) {
         if (pageModeParam === "marketing") {
@@ -51,31 +50,37 @@ export function useAppNavigation({
         } else if (pageModeParam === "events") {
           navigate(ROUTES.HOME, { replace: true });
         }
-        hasProcessedInitialFilters.current = true;
+        hasProcessedInitialRouteMode.current = true;
         hasProcessedInitialScroll.current = true;
         return;
       }
+      hasProcessedInitialRouteMode.current = true;
+    }
 
-      // Handle filters from URL only when explicitly present (e.g. shared link
-      // or QR redirect). Cap length to protect against oversized/attacker-
-      // controlled blobs.
+    if (!hasProcessedInitialSchool.current) {
       if (schoolParam?.trim()) {
         setSchoolFilter(schoolParam.trim());
       }
-      const MAX_FILTERS_PARAM_BYTES = 4096;
-      if (
-        filtersParam &&
-        filtersParam.length > 2 &&
-        filtersParam.length <= MAX_FILTERS_PARAM_BYTES
-      ) {
-        const parsed = parseFilterQueryString(`${QP.FILTERS}=${filtersParam}`);
-        if (parsed) {
-          setFilterStateFromURL(parsed);
-        }
-      }
-      hasProcessedInitialFilters.current = true;
+      hasProcessedInitialSchool.current = true;
     }
 
+    // Handle filters from URL on every URL change. Cap length to protect
+    // against oversized/attacker-controlled blobs.
+    const MAX_FILTERS_PARAM_BYTES = 4096;
+    if (
+      filtersParam &&
+      filtersParam.length > 2 &&
+      filtersParam.length <= MAX_FILTERS_PARAM_BYTES
+    ) {
+      const parsed = parseFilterQueryString(`${QP.FILTERS}=${filtersParam}`);
+      setFilterStateFromURL(parsed ?? EMPTY_FILTER_STATE);
+    } else {
+      setFilterStateFromURL(EMPTY_FILTER_STATE);
+    }
+  }, [searchParams, navigate, setFilterStateFromURL, setSchoolFilter]);
+
+  useEffect(() => {
+    const eventId = searchParams.get(QP.EVENT_ID);
     // Handle eventId scroll. Only mark processed once we've actually found the
     // event in the loaded events array (cold-load deep-link support).
     if (!hasProcessedInitialScroll.current && eventId) {
@@ -107,5 +112,5 @@ export function useAppNavigation({
     } else if (!eventId) {
       hasProcessedInitialScroll.current = true;
     }
-  }, [searchParams, navigate, setFilterStateFromURL, setSchoolFilter, events]);
+  }, [searchParams, events]);
 }

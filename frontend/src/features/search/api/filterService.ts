@@ -8,7 +8,10 @@ import i18n from "@/shared/lib/i18n";
  * Serializer/parser used by the JSON editor and URL hydration.
  */
 
-const EMPTY_FILTER_STATE: FilterState = {
+export const DEFAULT_FILTER_SORT_BY = "date";
+export const DEFAULT_FILTER_SORT_ORDER = "asc";
+
+export const EMPTY_FILTER_STATE: FilterState = {
   searchQuery: "",
   categories: [],
   locations: [],
@@ -17,6 +20,10 @@ const EMPTY_FILTER_STATE: FilterState = {
   priceRange: { min: "", max: "" },
   registration: false,
   organizations: [],
+  freeFood: false,
+  saved: false,
+  sortBy: DEFAULT_FILTER_SORT_BY,
+  sortOrder: DEFAULT_FILTER_SORT_ORDER,
 };
 
 /**
@@ -33,10 +40,18 @@ export interface SearchStoreFilterValues {
   priceRange: { min: string; max: string };
   registration: boolean;
   selectedOrganizations: string[];
+  freeFoodFilter: boolean;
+  savedFilter: boolean;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
 }
 
 type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
   organizations?: unknown;
+  freeFood?: unknown;
+  saved?: unknown;
+  sortBy?: unknown;
+  sortOrder?: unknown;
 };
 
 function stringArray(value: unknown): string[] {
@@ -50,6 +65,27 @@ function priceRangeFrom(value: unknown): FilterState["priceRange"] {
   return {
     min: priceRaw && typeof priceRaw.min === "string" ? priceRaw.min : "",
     max: priceRaw && typeof priceRaw.max === "string" ? priceRaw.max : "",
+  };
+}
+
+function sortOrderFrom(value: unknown): FilterState["sortOrder"] {
+  return value === "desc" ? "desc" : DEFAULT_FILTER_SORT_ORDER;
+}
+
+export function normalizeFilterState(filters: Partial<FilterState>): FilterState {
+  return {
+    searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
+    categories: stringArray(filters.categories),
+    locations: stringArray(filters.locations),
+    foods: stringArray(filters.foods),
+    days: stringArray(filters.days),
+    priceRange: priceRangeFrom(filters.priceRange),
+    registration: filters.registration === true,
+    organizations: stringArray(filters.organizations),
+    freeFood: filters.freeFood === true,
+    saved: filters.saved === true,
+    sortBy: typeof filters.sortBy === "string" && filters.sortBy ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
+    sortOrder: sortOrderFrom(filters.sortOrder),
   };
 }
 
@@ -74,6 +110,10 @@ export function storeStatesToFilterState(
     priceRange: values.priceRange,
     registration: values.registration,
     organizations: values.selectedOrganizations,
+    freeFood: values.freeFoodFilter,
+    saved: values.savedFilter,
+    sortBy: values.sortBy,
+    sortOrder: values.sortOrder,
   };
 }
 
@@ -83,7 +123,7 @@ export function storeStatesToFilterState(
 export function generatedFilterStateToFilterState(
   filters: GeneratedFilterStateInput,
 ): FilterState {
-  return {
+  return normalizeFilterState({
     searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
     categories: stringArray(filters.categories),
     locations: stringArray(filters.locations),
@@ -93,7 +133,32 @@ export function generatedFilterStateToFilterState(
     registration:
       typeof filters.registration === "boolean" ? filters.registration : false,
     organizations: stringArray(filters.organizations),
-  };
+    freeFood: filters.freeFood === true,
+    saved: filters.saved === true,
+    sortBy: typeof filters.sortBy === "string" ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
+    sortOrder: sortOrderFrom(filters.sortOrder),
+  });
+}
+
+function isDefaultPriceRange(priceRange: FilterState["priceRange"]): boolean {
+  return priceRange.min === "" && priceRange.max === "";
+}
+
+export function isEmptyFilterState(filters: FilterState): boolean {
+  return (
+    filters.searchQuery === "" &&
+    filters.categories.length === 0 &&
+    filters.locations.length === 0 &&
+    filters.foods.length === 0 &&
+    filters.days.length === 0 &&
+    isDefaultPriceRange(filters.priceRange) &&
+    !filters.registration &&
+    filters.organizations.length === 0 &&
+    !filters.freeFood &&
+    !filters.saved &&
+    filters.sortBy === DEFAULT_FILTER_SORT_BY &&
+    filters.sortOrder === DEFAULT_FILTER_SORT_ORDER
+  );
 }
 
 /**
@@ -142,4 +207,17 @@ export function parseFilterQueryString(
     console.error("Failed to parse filter query string:", err);
     return null;
   }
+}
+
+export function writeFiltersToSearchParams(
+  params: URLSearchParams,
+  filters: FilterState,
+): URLSearchParams {
+  const normalized = normalizeFilterState(filters);
+  if (isEmptyFilterState(normalized)) {
+    params.delete(QP.FILTERS);
+  } else {
+    params.set(QP.FILTERS, JSON.stringify(normalized));
+  }
+  return params;
 }

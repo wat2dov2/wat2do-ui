@@ -34,7 +34,7 @@ import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
-import { useSearchStore } from "@/features/search/store/search.store";
+import { useFilterUrlActions } from "@/features/search";
 
 const EventDetailsModal = lazy(() =>
   import("@/features/events/components/EventDetailsModal").then((module) => ({
@@ -124,12 +124,12 @@ export function EventCard({
   const cardDate = formatCardDate(event, i18n.language || 'en-US');
   const cardTime = formatCardTime(event);
 
-  const toggleFilter = useSearchStore((s) => s.toggleFilter);
+  const filterUrlActions = useFilterUrlActions();
 
   const handleCategoryClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    toggleFilter("selectedCategories", eventCategory);
+    filterUrlActions.toggleFilterValue("categories", eventCategory);
     if (window.location.pathname !== "/") {
       navigate("/");
     }
@@ -139,7 +139,7 @@ export function EventCard({
     e.stopPropagation();
     e.preventDefault();
     if (event.organization) {
-      toggleFilter("selectedOrganizations", event.organization);
+      filterUrlActions.toggleFilterValue("organizations", event.organization);
       if (window.location.pathname !== "/") {
         navigate("/");
       }

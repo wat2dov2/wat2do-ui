@@ -12,7 +12,11 @@ export interface FilterState {
   days: string[];
   priceRange: { min: string; max: string };
   registration: boolean;
-  organizations?: string[];
+  organizations: string[];
+  freeFood: boolean;
+  saved: boolean;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
 }
 
 export type FilterViewMode = "visual" | "json";

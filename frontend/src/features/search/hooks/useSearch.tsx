@@ -1,7 +1,6 @@
-import { useState, useMemo, useDeferredValue } from "react";
+import { useMemo, useDeferredValue } from "react";
 import { useTranslation } from "react-i18next";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
-import { useSearchStore } from "@/features/search/store/search.store";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
 import { getEventCategories } from "@/shared/data/eventCategories";
 import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
@@ -30,18 +29,8 @@ export function useSearch({
 
   const filterState = useFilterState(profileCompleted);
 
-  // Sort state (local to the page)
-  const [sortBy, setSortBy] = useState<string>("date");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-
-  // Saved filter lives in the search store (it's a filter value).
-  // Dropdown open/closed state is UI-only and lives in the modal store —
-  // read directly by the page container and command palette.
-  const savedFilter = useSearchStore((s) => s.savedFilter);
-  const setSavedFilter = useSearchStore((s) => s.setSavedFilter);
-
-  // clearAllFilters already wraps its set() in startTransition internally,
-  // so we pass the stable store ref directly — no wrapper needed.
+  // Clearing filters goes through the URL-backed action returned by
+  // useFilterState so the address bar and store stay in lockstep.
   const handleClearAllFilters = filterState.clearAllFilters;
 
   // Defer the text query so typing stays responsive while filterEvents runs
@@ -71,7 +60,7 @@ export function useSearch({
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
       searchQuery: deferredSearchQuery,
-      savedFilter,
+      savedFilter: filterState.savedFilter,
       freeFoodFilter: filterState.freeFoodFilter,
       selectedDays: filterState.selectedDays,
       priceRange: filterState.priceRange,
@@ -83,7 +72,7 @@ export function useSearch({
       savedEventIds,
       selectedOrganizations: filterState.selectedOrganizations,
     });
-    return sortEvents(filtered, { sortBy, sortOrder });
+    return sortEvents(filtered, { sortBy: filterState.sortBy, sortOrder: filterState.sortOrder });
   }, [
     events,
     deferredSearchQuery,
@@ -95,10 +84,10 @@ export function useSearch({
     filterState.selectedCategories,
     filterState.registration,
     profileCompleted,
-    savedFilter,
+    filterState.savedFilter,
     savedEventIds,
-    sortBy,
-    sortOrder,
+    filterState.sortBy,
+    filterState.sortOrder,
     filterState.selectedOrganizations,
   ]);
 
@@ -177,16 +166,6 @@ export function useSearch({
   return {
     // Filter state from useFilterState
     ...filterState,
-
-    // Sort state
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
-
-    // Saved filter
-    savedFilter,
-    setSavedFilter,
 
     // Pie menu items (data only; menu state lives inside VisualFilters)
     categoryPieItems,

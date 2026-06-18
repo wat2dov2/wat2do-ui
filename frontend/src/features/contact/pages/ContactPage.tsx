@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { useSearchStore } from "@/features/search/store/search.store";
+import {
+  EMPTY_FILTER_STATE,
+  writeFiltersToSearchParams,
+} from "@/features/search";
 import { ROUTES } from "@/shared/constants/routes";
 import { EXTERNAL_LINKS } from "@/shared/constants/links";
 import { useTranslation } from "react-i18next";
@@ -23,11 +26,16 @@ export function ContactPage() {
   const { t } = useTranslation();
 
   const handleSearchClick = (query: string, isClub: boolean = false) => {
-    // Clear all filters first, then set the query
-    const store = useSearchStore.getState();
-    store.clearAllFilters();
-    store.setSearchQuery(query);
-    navigate(isClub ? ROUTES.ORGANIZATIONS : ROUTES.HOME);
+    if (isClub) {
+      navigate(ROUTES.ORGANIZATIONS);
+      return;
+    }
+
+    const params = writeFiltersToSearchParams(
+      new URLSearchParams(),
+      { ...EMPTY_FILTER_STATE, searchQuery: query },
+    );
+    navigate({ pathname: ROUTES.HOME, search: params.toString() });
   };
 
   return (

@@ -36,7 +36,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { useUIStore } from "@/shared/store/ui.store";
-import { useSearchStore } from "@/features/search/store/search.store";
+import { useFilterUrlActions } from "@/features/search";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { submitEventForReview } from "@/shared/api/submissions.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
@@ -88,8 +88,7 @@ export function ModalContainer() {
   const storeAddCredits = useCreditsStore((s) => s.addCredits);
   const storePromoteEvent = useCreditsStore((s) => s.promoteEvent);
 
-  // ── Search store setter (stable ref) ─────────────────────────
-  const clearAllFilters = useSearchStore((s) => s.clearAllFilters);
+  const { clearAllFilters } = useFilterUrlActions();
 
   // ── Buy credits modal (local UI state) ───────────────────────
   const [showBuyCredits, setShowBuyCredits] = useState(false);

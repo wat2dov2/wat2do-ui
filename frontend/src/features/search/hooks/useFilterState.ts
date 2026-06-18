@@ -1,14 +1,93 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { useShallow } from "zustand/react/shallow";
 import {
   serializeFiltersToJSON,
   parseFiltersFromJSON,
   storeStatesToFilterState,
   generatedFilterStateToFilterState,
+  normalizeFilterState,
+  writeFiltersToSearchParams,
+  EMPTY_FILTER_STATE,
 } from "@/features/search/api/filterService";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
 import { useSearchStore } from "@/features/search/store/search.store";
+import type { FilterState } from "@/shared/types";
+
+type FilterStateUpdater = FilterState | ((current: FilterState) => FilterState);
+
+function useCurrentFilterState(): FilterState {
+  return useSearchStore(
+    useShallow((s) =>
+      storeStatesToFilterState({
+        searchQuery: s.searchQuery,
+        selectedCategories: s.selectedCategories,
+        selectedLocations: s.selectedLocations,
+        selectedFoods: s.selectedFoods,
+        selectedDays: s.selectedDays,
+        priceRange: s.priceRange,
+        registration: s.registration,
+        selectedOrganizations: s.selectedOrganizations,
+        freeFoodFilter: s.freeFoodFilter,
+        savedFilter: s.savedFilter,
+        sortBy: s.sortBy,
+        sortOrder: s.sortOrder,
+      }),
+    ),
+  );
+}
+
+export function useFilterUrlActions() {
+  const currentFilterState = useCurrentFilterState();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const setFilterState = useCallback(
+    (updater: FilterStateUpdater) => {
+      const nextFilters = normalizeFilterState(
+        typeof updater === "function" ? updater(currentFilterState) : updater,
+      );
+      const nextParams = new URLSearchParams(searchParams);
+      setSearchParams(writeFiltersToSearchParams(nextParams, nextFilters), {
+        replace: true,
+      });
+    },
+    [currentFilterState, searchParams, setSearchParams],
+  );
+
+  const updateFilterState = useCallback(
+    (patch: Partial<FilterState>) => {
+      setFilterState((current) => normalizeFilterState({ ...current, ...patch }));
+    },
+    [setFilterState],
+  );
+
+  const toggleFilterValue = useCallback(
+    (key: "categories" | "locations" | "foods" | "days" | "organizations", value: string) => {
+      setFilterState((current) => {
+        const currentValues = current[key];
+        return {
+          ...current,
+          [key]: currentValues.includes(value)
+            ? currentValues.filter((item) => item !== value)
+            : [...currentValues, value],
+        };
+      });
+    },
+    [setFilterState],
+  );
+
+  const clearAllFilters = useCallback(() => {
+    setFilterState(EMPTY_FILTER_STATE);
+  }, [setFilterState]);
+
+  return {
+    setFilterState,
+    updateFilterState,
+    toggleFilterValue,
+    clearAllFilters,
+  };
+}
 
 /**
  * Hook for managing filter state
@@ -21,10 +100,7 @@ import { useSearchStore } from "@/features/search/store/search.store";
 export function useFilterState(profileCompleted: boolean) {
   const { t } = useTranslation();
 
-  // ── Shared filter values + actions from store (single shallow subscription) ──
-  // Action refs are stable in Zustand (they never change identity), but bundling
-  // them into the same useShallow call keeps the hook body declarative and
-  // avoids a separate subscription per action.
+  // ── Shared filter values from the store (single shallow subscription) ──
   const {
     searchQuery,
     selectedCategories,
@@ -34,19 +110,10 @@ export function useFilterState(profileCompleted: boolean) {
     priceRange,
     registration,
     freeFoodFilter,
-    setSearchQuery,
-    setSelectedCategories,
-    setSelectedLocations,
-    setSelectedFoods,
-    setSelectedDays,
-    setSelectedOrganizations,
-    setPriceRange,
-    setRegistration,
-    setFreeFoodFilter,
-    toggleFilter,
-    clearAllFilters,
-    setFilterStateFromURL,
     selectedOrganizations,
+    savedFilter,
+    sortBy,
+    sortOrder,
   } = useSearchStore(
     useShallow((s) => ({
       searchQuery: s.searchQuery,
@@ -57,43 +124,90 @@ export function useFilterState(profileCompleted: boolean) {
       priceRange: s.priceRange,
       registration: s.registration,
       freeFoodFilter: s.freeFoodFilter,
-      setSearchQuery: s.setSearchQuery,
-      setSelectedCategories: s.setSelectedCategories,
-      setSelectedLocations: s.setSelectedLocations,
-      setSelectedFoods: s.setSelectedFoods,
-      setSelectedDays: s.setSelectedDays,
-      setSelectedOrganizations: s.setSelectedOrganizations,
-      setPriceRange: s.setPriceRange,
-      setRegistration: s.setRegistration,
-      setFreeFoodFilter: s.setFreeFoodFilter,
-      toggleFilter: s.toggleFilter,
-      clearAllFilters: s.clearAllFilters,
-      setFilterStateFromURL: s.setFilterStateFromURL,
       selectedOrganizations: s.selectedOrganizations,
+      savedFilter: s.savedFilter,
+      sortBy: s.sortBy,
+      sortOrder: s.sortOrder,
     })),
+  );
+  const {
+    setFilterState,
+    updateFilterState,
+    toggleFilterValue,
+    clearAllFilters,
+  } = useFilterUrlActions();
+
+  const setSearchQuery = useCallback(
+    (value: string) => updateFilterState({ searchQuery: value }),
+    [updateFilterState],
+  );
+  const setSelectedCategories = useCallback(
+    (value: string[]) => updateFilterState({ categories: value }),
+    [updateFilterState],
+  );
+  const setSelectedLocations = useCallback(
+    (value: string[]) => updateFilterState({ locations: value }),
+    [updateFilterState],
+  );
+  const setSelectedFoods = useCallback(
+    (value: string[]) => updateFilterState({ foods: value }),
+    [updateFilterState],
+  );
+  const setSelectedDays = useCallback(
+    (value: string[]) => updateFilterState({ days: value }),
+    [updateFilterState],
+  );
+  const setSelectedOrganizations = useCallback(
+    (value: string[]) => updateFilterState({ organizations: value }),
+    [updateFilterState],
+  );
+  const setPriceRange = useCallback(
+    (value: { min: string; max: string }) =>
+      updateFilterState({ priceRange: value }),
+    [updateFilterState],
+  );
+  const setRegistration = useCallback(
+    (value: boolean) => updateFilterState({ registration: value }),
+    [updateFilterState],
+  );
+  const setFreeFoodFilter = useCallback(
+    (value: boolean) => updateFilterState({ freeFood: value }),
+    [updateFilterState],
+  );
+  const setSavedFilter = useCallback(
+    (value: boolean) => updateFilterState({ saved: value }),
+    [updateFilterState],
+  );
+  const setSortBy = useCallback(
+    (value: string) => updateFilterState({ sortBy: value }),
+    [updateFilterState],
+  );
+  const setSortOrder = useCallback(
+    (value: "asc" | "desc") => updateFilterState({ sortOrder: value }),
+    [updateFilterState],
   );
 
   // Per-filter toggle adapters — stable refs derived from the single
-  // toggleFilter action so downstream props don't churn.
+  // URL action so downstream props don't churn.
   const toggleCategory = useCallback(
-    (cat: string) => toggleFilter("selectedCategories", cat),
-    [toggleFilter],
+    (cat: string) => toggleFilterValue("categories", cat),
+    [toggleFilterValue],
   );
   const toggleLocation = useCallback(
-    (loc: string) => toggleFilter("selectedLocations", loc),
-    [toggleFilter],
+    (loc: string) => toggleFilterValue("locations", loc),
+    [toggleFilterValue],
   );
   const toggleFood = useCallback(
-    (food: string) => toggleFilter("selectedFoods", food),
-    [toggleFilter],
+    (food: string) => toggleFilterValue("foods", food),
+    [toggleFilterValue],
   );
   const toggleDay = useCallback(
-    (day: string) => toggleFilter("selectedDays", day),
-    [toggleFilter],
+    (day: string) => toggleFilterValue("days", day),
+    [toggleFilterValue],
   );
   const toggleOrganization = useCallback(
-    (org: string) => toggleFilter("selectedOrganizations", org),
-    [toggleFilter],
+    (org: string) => toggleFilterValue("organizations", org),
+    [toggleFilterValue],
   );
 
   // Derived JSON value - no useEffect needed.
@@ -111,6 +225,10 @@ export function useFilterState(profileCompleted: boolean) {
           priceRange,
           registration,
           selectedOrganizations,
+          freeFoodFilter,
+          savedFilter,
+          sortBy,
+          sortOrder,
         }),
       ),
     [
@@ -122,6 +240,10 @@ export function useFilterState(profileCompleted: boolean) {
       priceRange,
       registration,
       selectedOrganizations,
+      freeFoodFilter,
+      savedFilter,
+      sortBy,
+      sortOrder,
     ],
   );
 
@@ -142,7 +264,7 @@ export function useFilterState(profileCompleted: boolean) {
       }
 
       setJsonError("");
-      setFilterStateFromURL({
+      setFilterState({
         searchQuery: filters.searchQuery || "",
         categories: filters.categories || [],
         locations: filters.locations || [],
@@ -151,9 +273,13 @@ export function useFilterState(profileCompleted: boolean) {
         priceRange: filters.priceRange || { min: "", max: "" },
         registration: filters.registration || false,
         organizations: filters.organizations || [],
+        freeFood: filters.freeFood || false,
+        saved: filters.saved || false,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
       });
     },
-    [setFilterStateFromURL],
+    [setFilterState],
   );
 
   // AI filter generation handler
@@ -213,6 +339,8 @@ export function useFilterState(profileCompleted: boolean) {
     // Quick filters (only the ones wired to UI)
     freeFoodFilter,
     setFreeFoodFilter,
+    savedFilter,
+    setSavedFilter,
 
     // Toggle functions
     toggleCategory,
@@ -234,5 +362,11 @@ export function useFilterState(profileCompleted: boolean) {
 
     // Utilities
     clearAllFilters,
+
+    // Sort
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
   };
 }

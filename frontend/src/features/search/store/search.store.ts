@@ -16,6 +16,11 @@
 import { startTransition } from "react";
 import { create } from "zustand";
 import type { FilterState } from "@/shared/types/filter.types";
+import {
+  DEFAULT_FILTER_SORT_BY,
+  DEFAULT_FILTER_SORT_ORDER,
+  normalizeFilterState,
+} from "@/features/search/api/filterService";
 
 interface FilterValues {
   searchQuery: string;
@@ -28,31 +33,11 @@ interface FilterValues {
   freeFoodFilter: boolean;
   savedFilter: boolean;
   selectedOrganizations: string[];
+  sortBy: string;
+  sortOrder: "asc" | "desc";
 }
 
-type FilterArrayKey =
-  | "selectedCategories"
-  | "selectedLocations"
-  | "selectedFoods"
-  | "selectedDays"
-  | "selectedOrganizations";
-
 interface SearchStoreState extends FilterValues {
-  // Setters
-  setSearchQuery: (value: string) => void;
-  setSelectedCategories: (value: string[]) => void;
-  setSelectedLocations: (value: string[]) => void;
-  setSelectedFoods: (value: string[]) => void;
-  setSelectedDays: (value: string[]) => void;
-  setSelectedOrganizations: (value: string[]) => void;
-  setPriceRange: (value: { min: string; max: string }) => void;
-  setRegistration: (value: boolean) => void;
-  setFreeFoodFilter: (value: boolean) => void;
-  setSavedFilter: (value: boolean) => void;
-
-  // Single toggle helper for all array-valued filters
-  toggleFilter: (key: FilterArrayKey, value: string) => void;
-
   // Bulk operations
   setFilterStateFromURL: (filters: FilterState) => void;
   clearAllFilters: () => void;
@@ -69,50 +54,33 @@ const emptyFilters: FilterValues = {
   freeFoodFilter: false,
   savedFilter: false,
   selectedOrganizations: [],
+  sortBy: DEFAULT_FILTER_SORT_BY,
+  sortOrder: DEFAULT_FILTER_SORT_ORDER,
 };
 
 export const useSearchStore = create<SearchStoreState>((set) => ({
   ...emptyFilters,
 
-  // ── Setters ─────────────────────────────────────────────────────
-  setSearchQuery: (value) => set({ searchQuery: value }),
-  setSelectedCategories: (value) => set({ selectedCategories: value }),
-  setSelectedLocations: (value) => set({ selectedLocations: value }),
-  setSelectedFoods: (value) => set({ selectedFoods: value }),
-  setSelectedDays: (value) => set({ selectedDays: value }),
-  setSelectedOrganizations: (value) => set({ selectedOrganizations: value }),
-  setPriceRange: (value) => set({ priceRange: value }),
-  setRegistration: (value) => set({ registration: value }),
-  setFreeFoodFilter: (value) => set({ freeFoodFilter: value }),
-  setSavedFilter: (value) => set({ savedFilter: value }),
-
-  // ── Toggles ─────────────────────────────────────────────────────
-  toggleFilter: (key, value) =>
-    set((s) => {
-      const current = s[key];
-      return {
-        [key]: current.includes(value)
-          ? current.filter((v) => v !== value)
-          : [...current, value],
-      } as Pick<SearchStoreState, FilterArrayKey>;
-    }),
-
   // ── Bulk ────────────────────────────────────────────────────────
   // Full overwrite: every field is named explicitly so callers get a
   // clean slate rather than a half-hydrated mix of URL + prior state.
-  setFilterStateFromURL: (filters) =>
+  setFilterStateFromURL: (filters) => {
+    const normalized = normalizeFilterState(filters);
     set({
-      searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
-      selectedCategories: Array.isArray(filters.categories) ? filters.categories : [],
-      selectedLocations: Array.isArray(filters.locations) ? filters.locations : [],
-      selectedFoods: Array.isArray(filters.foods) ? filters.foods : [],
-      selectedDays: Array.isArray(filters.days) ? filters.days : [],
-      selectedOrganizations: Array.isArray(filters.organizations) ? filters.organizations : [],
-      priceRange: filters.priceRange || { min: "", max: "" },
-      registration: filters.registration || false,
-      freeFoodFilter: false,
-      savedFilter: false,
-    }),
+      searchQuery: normalized.searchQuery,
+      selectedCategories: normalized.categories,
+      selectedLocations: normalized.locations,
+      selectedFoods: normalized.foods,
+      selectedDays: normalized.days,
+      selectedOrganizations: normalized.organizations,
+      priceRange: normalized.priceRange,
+      registration: normalized.registration,
+      freeFoodFilter: normalized.freeFood,
+      savedFilter: normalized.saved,
+      sortBy: normalized.sortBy,
+      sortOrder: normalized.sortOrder,
+    });
+  },
   // startTransition keeps the UI responsive when clearing — both
   // command-palette and dropdown paths share this one implementation.
   clearAllFilters: () => startTransition(() => set(emptyFilters)),

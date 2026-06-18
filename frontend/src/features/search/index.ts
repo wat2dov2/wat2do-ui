@@ -8,4 +8,9 @@ export { MoreFiltersButton } from "./components/MoreFiltersButton";
 export { QuickFilterChip } from "./components/QuickFilterChip";
 
 export { useSearch } from "./hooks/useSearch";
-export { parseFilterQueryString } from "./api/filterService";
+export { useFilterUrlActions } from "./hooks/useFilterState";
+export {
+  EMPTY_FILTER_STATE,
+  parseFilterQueryString,
+  writeFiltersToSearchParams,
+} from "./api/filterService";
