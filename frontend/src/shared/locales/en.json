@@ -85,6 +85,14 @@
     "contact": "Contact",
     "goToEvents": "Go to events"
   },
+  "submitChoice": {
+    "title": "What would you like to submit?",
+    "description": "Choose the kind of submission you want to start.",
+    "eventTitle": "Event",
+    "eventDescription": "Share a campus event with students.",
+    "organizationTitle": "Organization",
+    "organizationDescription": "Add an organization to the directory."
+  },
   "modals": {
     "welcome": {
       "title": "Welcome to wat2do",

@@ -25,7 +25,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuthState();
   const setShowCommandPalette = useUIStore((s) => s.setShowCommandPalette);
-  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
+  const setShowSubmitChoice = useUIStore((s) => s.setShowSubmitChoice);
 
   const isActive = (href?: string) => {
     if (!href) return false;
@@ -52,7 +52,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {
             title: t("navigation.create"),
             icon: <Plus className="size-4" />,
-            onMouseDown: () => setShowSubmitEvent(true),
+            onMouseDown: () => setShowSubmitChoice(true),
           },
         ]
       : []),

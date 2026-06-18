@@ -85,6 +85,14 @@
     "contact": "联系我们",
     "goToEvents": "前往活动"
   },
+  "submitChoice": {
+    "title": "您想提交什么？",
+    "description": "选择要开始的提交类型。",
+    "eventTitle": "活动",
+    "eventDescription": "向学生分享校园活动。",
+    "organizationTitle": "组织",
+    "organizationDescription": "将组织添加到目录。"
+  },
   "modals": {
     "welcome": {
       "title": "欢迎来到 wat2do",
