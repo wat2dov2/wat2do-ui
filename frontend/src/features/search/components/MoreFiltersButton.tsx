@@ -25,7 +25,7 @@ export function MoreFiltersButton({
       <PopoverTrigger asChild>
         <button
           data-elevation="control"
-          className={`flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
             open || filterCount > 0
               ? "bg-primary/80 text-primary-foreground"
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"

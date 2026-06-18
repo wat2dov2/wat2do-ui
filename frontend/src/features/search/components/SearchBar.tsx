@@ -39,7 +39,7 @@ export function SearchBar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={onSearchKeyDown}
-          className="flex h-11 w-full min-w-0 items-center rounded-xl bg-secondary py-2 pl-9 pr-3 text-base text-secondary-foreground shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 md:h-8 md:text-sm"
+          className="flex h-8 w-full min-w-0 items-center rounded-xl bg-secondary py-2 pl-9 pr-3 text-base text-secondary-foreground shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm"
         />
         {searchQuery && (
           <button
@@ -60,12 +60,12 @@ export function SearchBar({
           }}
           className="w-fit"
         >
-          <TabsList variant="default" className="h-12 md:h-8">
+          <TabsList variant="default" className="h-8">
             <Tooltip>
               <TooltipTrigger asChild>
                 <TabsTrigger
                   value="grid"
-                  className="size-11 px-0 py-0 md:size-7"
+                  className="size-7 px-0 py-0"
                   aria-label={t("settings.appearance.grid")}
                 >
                   <Grid3x3 className="size-4" />
@@ -79,7 +79,7 @@ export function SearchBar({
               <TooltipTrigger asChild>
                 <TabsTrigger
                   value="calendar"
-                  className="size-11 px-0 py-0 md:size-7"
+                  className="size-7 px-0 py-0"
                   aria-label={t("settings.appearance.calendar")}
                 >
                   <Calendar className="size-4" />
