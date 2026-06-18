@@ -1,7 +1,8 @@
 /**
  * Event category helpers backed by /meta/constants.
  *
- * Call after app init (main.tsx awaits loadAppConstants).
+ * Uses fallback constants immediately, then backend-hydrated constants once
+ * loadAppConstants() completes.
  */
 
 import { getAppConstants } from "@/shared/api/metaApi";

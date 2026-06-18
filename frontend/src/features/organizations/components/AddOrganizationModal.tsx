@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,7 @@ interface AddOrganizationModalProps {
   onClose: () => void;
   onSave: (organization: Organization) => void | Promise<void>;
   initialData?: Organization;
+  onBack?: () => void;
 }
 
 export function AddOrganizationModal({
@@ -62,6 +64,7 @@ export function AddOrganizationModal({
   onClose,
   onSave,
   initialData,
+  onBack,
 }: AddOrganizationModalProps) {
   const { t } = useTranslation();
   const isEditMode = !!initialData;
@@ -172,12 +175,27 @@ export function AddOrganizationModal({
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-          <DialogTitle>{isEditMode ? t("organizations.editClub") : t("organizations.addClub")}</DialogTitle>
-          <DialogDescription>
-            {isEditMode
-              ? t("organizations.editClubDescription")
-              : t("organizations.addClubDescription")}
-          </DialogDescription>
+          <div className="flex items-start gap-2 pr-8">
+            {onBack && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-sm"
+                onMouseDown={onBack}
+                aria-label={t("common.back")}
+              >
+                <ArrowLeft className="size-4" />
+              </Button>
+            )}
+            <div className="min-w-0">
+              <DialogTitle>{isEditMode ? t("organizations.editClub") : t("organizations.addClub")}</DialogTitle>
+              <DialogDescription>
+                {isEditMode
+                  ? t("organizations.editClubDescription")
+                  : t("organizations.addClubDescription")}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         <form className="overflow-y-auto flex-1 min-h-0 px-6 pb-6 pt-2">

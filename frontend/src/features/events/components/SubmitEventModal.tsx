@@ -27,6 +27,7 @@ interface SubmitEventModalProps {
   userCredits?: number;
   onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
+  onBack?: () => void;
   editEventId?: number;
   initialData?: EventFormData;
   /** When provided, modal will fetch event by id when opening for edit (ensures form is populated from server). */
@@ -43,6 +44,7 @@ interface SubmitEventModalFormBodyProps {
   userCredits: number;
   onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
+  onBack?: () => void;
   editEventId?: number;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
   isEditMode: boolean;
@@ -60,6 +62,7 @@ function SubmitEventModalFormBody({
   userCredits,
   onPromote,
   onBuyCredits,
+  onBack,
   editEventId,
   onUpdate,
   isEditMode,
@@ -213,6 +216,7 @@ function SubmitEventModalFormBody({
               eventForm={eventForm}
               eventFormAI={eventFormAI}
               isDarkMode={isDarkMode}
+              onBack={onBack}
             />
           </DialogContent>
         </Dialog>
@@ -231,6 +235,7 @@ interface SubmitEventModalContentProps {
   userCredits: number;
   onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
+  onBack?: () => void;
   editEventId?: number;
   initialData?: EventFormData;
   loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
@@ -246,6 +251,7 @@ function SubmitEventModalContent({
   userCredits,
   onPromote,
   onBuyCredits,
+  onBack,
   editEventId,
   initialData,
   loadEventForEdit,
@@ -301,6 +307,7 @@ function SubmitEventModalContent({
       userCredits={userCredits}
       onPromote={onPromote}
       onBuyCredits={onBuyCredits}
+      onBack={onBack}
       editEventId={editEventId}
       onUpdate={onUpdate}
       isEditMode={isEditMode}

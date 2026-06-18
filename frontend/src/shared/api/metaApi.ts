@@ -1,8 +1,9 @@
 /**
  * Fetches shared domain constants from the backend (/meta/constants).
  *
- * Called during app init (main.tsx) so categories, interest mappings,
- * and status enums hydrate from one backend source of truth before render.
+ * Loaded during app init (main.tsx) so categories, interest mappings,
+ * and status enums hydrate from one backend source of truth. The small
+ * fallback below keeps first paint from waiting on that network request.
  */
 
 import { api } from "@/shared/services/apiClient";
@@ -17,15 +18,31 @@ interface AppConstants {
 
 type AppConstantsPayload = Partial<Record<keyof AppConstants, unknown>>;
 
+const FALLBACK_CATEGORIES = [
+  "Arts & Culture",
+  "Business",
+  "Community Service",
+  "Environment",
+  "Games & Recreation",
+  "Health",
+  "Media & Web",
+  "Politics & Advocacy",
+  "Religion & Spirituality",
+];
+
+const FALLBACK_INTEREST_TO_CATEGORIES = Object.fromEntries(
+  FALLBACK_CATEGORIES.map((category) => [category, [category]]),
+);
+
 // ---------------------------------------------------------------------------
 // Module-level cache — written once by loadAppConstants(), read many times.
 // ---------------------------------------------------------------------------
 let cached: AppConstants = {
-  event_categories: [],
-  organization_categories: [],
-  interests: [],
-  interest_to_categories: {},
-  report_statuses: [],
+  event_categories: FALLBACK_CATEGORIES,
+  organization_categories: FALLBACK_CATEGORIES,
+  interests: FALLBACK_CATEGORIES,
+  interest_to_categories: FALLBACK_INTEREST_TO_CATEGORIES,
+  report_statuses: ["pending", "resolved", "dismissed"],
 };
 
 function toStringArray(value: unknown): string[] {

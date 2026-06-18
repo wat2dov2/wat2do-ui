@@ -4,6 +4,7 @@ import type { Organization } from "@/shared/types";
 import { getAllOrganizations } from "@/features/organizations";
 import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
 import { useEventsStore } from "@/features/events/store/events.store";
+import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import {
   DialogClose,
 } from "@/shared/ui/dialog";
@@ -68,6 +69,7 @@ interface EventFormStepProps {
     handleAiGenerate: () => Promise<void>;
   };
   isDarkMode: boolean;
+  onBack?: () => void;
 }
 
 export function EventFormStep({
@@ -80,6 +82,7 @@ export function EventFormStep({
   eventForm,
   eventFormAI,
   isDarkMode,
+  onBack,
 }: EventFormStepProps) {
   const { t } = useTranslation();
   const profileCompleted = useProfileCompleted();
@@ -144,7 +147,18 @@ export function EventFormStep({
           {/* Header with Tabs */}
           <div className="mb-5 sm:mb-7">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
-              <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                {onBack && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    onMouseDown={onBack}
+                    aria-label={t("common.back")}
+                  >
+                    <ArrowLeft className="size-4" />
+                  </Button>
+                )}
                 <h2 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-8 text-lg font-semibold text-foreground sm:pr-0 sm:text-xl">
                   {isEditMode
                     ? t("events.updateEvent")

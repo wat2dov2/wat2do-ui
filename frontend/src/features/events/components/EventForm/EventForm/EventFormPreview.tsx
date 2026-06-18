@@ -50,9 +50,12 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
 
   return (
     <div className={cn("min-h-0 w-80 space-y-4 overflow-y-auto border-l border-border p-6", className)}>
-      <div className="flex items-center gap-2">
+      <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-medium text-foreground">
           {t("forms.livePreview")}
+        </span>
+        <span className="text-right text-[10px] text-muted-foreground">
+          {t("events.previewDescription")}
         </span>
       </div>
 
@@ -116,10 +119,6 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
           />
         </div>
       </article>
-
-      <p className="text-[10px] text-muted-foreground text-center">
-        {t("events.previewDescription")}
-      </p>
     </div>
   );
 }

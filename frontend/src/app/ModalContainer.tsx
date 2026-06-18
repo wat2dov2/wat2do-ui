@@ -122,6 +122,16 @@ export function ModalContainer() {
     setShowAddOrganization(true);
   }, [setShowSubmitChoice]);
 
+  const handleBackToSubmitChoiceFromEvent = useCallback(() => {
+    setShowSubmitEvent(false);
+    setShowSubmitChoice(true);
+  }, [setShowSubmitChoice, setShowSubmitEvent]);
+
+  const handleBackToSubmitChoiceFromOrganization = useCallback(() => {
+    setShowAddOrganization(false);
+    setShowSubmitChoice(true);
+  }, [setShowSubmitChoice]);
+
   const handleSubmitOrganization = useCallback(async (organization: Organization) => {
     await createOrganizationAPI({
       organization_name: organization.organization_name,
@@ -180,13 +190,13 @@ export function ModalContainer() {
             <Button
               type="button"
               variant="outline"
-              className="h-auto flex-col items-start gap-3 p-4 text-left"
+              className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
               onMouseDown={handleChooseSubmitEvent}
             >
               <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
                 <Calendar className="size-5" />
               </span>
-              <span className="space-y-1">
+              <span className="min-w-0 space-y-1">
                 <span className="block font-medium text-foreground">{t("submitChoice.eventTitle")}</span>
                 <span className="block text-sm font-normal text-muted-foreground">
                   {t("submitChoice.eventDescription")}
@@ -197,13 +207,13 @@ export function ModalContainer() {
             <Button
               type="button"
               variant="outline"
-              className="h-auto flex-col items-start gap-3 p-4 text-left"
+              className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
               onMouseDown={handleChooseSubmitOrganization}
             >
               <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
                 <Building2 className="size-5" />
               </span>
-              <span className="space-y-1">
+              <span className="min-w-0 space-y-1">
                 <span className="block font-medium text-foreground">{t("submitChoice.organizationTitle")}</span>
                 <span className="block text-sm font-normal text-muted-foreground">
                   {t("submitChoice.organizationDescription")}
@@ -223,6 +233,7 @@ export function ModalContainer() {
           userCredits={userCredits}
           onPromote={profileCompleted && canCreateEvents ? promoteEvent : undefined}
           onBuyCredits={() => setShowBuyCredits(true)}
+          onBack={!editingEvent ? handleBackToSubmitChoiceFromEvent : undefined}
           editEventId={editingEvent?.id}
           initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
           loadEventForEdit={loadEventForEdit}
@@ -238,6 +249,7 @@ export function ModalContainer() {
           isOpen={showAddOrganization}
           onClose={() => setShowAddOrganization(false)}
           onSave={handleSubmitOrganization}
+          onBack={handleBackToSubmitChoiceFromOrganization}
         />
       </Suspense>
 

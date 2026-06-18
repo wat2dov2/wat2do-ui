@@ -49,8 +49,7 @@ export function OrganizationsPage() {
 
   return (
     <div className="-mt-4 space-y-4">
-      {/* Search and filters stay pinned; -top-4 cancels AppLayout top padding when stuck. */}
-      <div className="sticky -top-4 z-20 bg-background space-y-4 pt-4 pb-2 backdrop-blur-sm">
+      <div className="space-y-4 pb-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           {/* Search Bar */}
           <SubmittedSearchInput

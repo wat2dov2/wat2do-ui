@@ -17,9 +17,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
@@ -220,7 +217,7 @@ export function EventCard({
                   type="button"
                   aria-label={t("events.actions")}
                   {...badgeHoverProps}
-                  className="event-card-actions-trigger font-bold text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground flex items-center justify-center opacity-70 transition-[background-color,opacity] hover:bg-secondary hover:opacity-100 data-[state=open]:opacity-100"
+                  className="event-card-actions-trigger flex items-center justify-center rounded-full border border-foreground/20 bg-background/95 px-2 py-0.5 text-[10px] font-bold text-foreground opacity-90 shadow-sm transition-[background-color,opacity] hover:bg-background hover:opacity-100 data-[state=open]:opacity-100"
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
@@ -233,45 +230,6 @@ export function EventCard({
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setIsMenuOpen(false);
-                    setActiveDialog("share");
-                  }}
-                >
-                  <Share2 />
-                  {t("common.share")}
-                </DropdownMenuItem>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Download />
-                    <span>{t("common.addToCalendar")}</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent
-                    sideOffset={8}
-                    alignOffset={-4}
-                  >
-                    <DropdownMenuItem
-                      onSelect={() => {
-                        setIsMenuOpen(false);
-                        openGoogleCalendar(event);
-                      }}
-                    >
-                      <GoogleIcon className="size-3.5 shrink-0" />
-                      {t("events.calendar.googleCalendar")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => {
-                        setIsMenuOpen(false);
-                        downloadICS(event);
-                      }}
-                    >
-                      <AppleIcon className="size-3.5 shrink-0" />
-                      {t("events.calendar.iCal")}
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
                 <DropdownMenuItem
                   onSelect={(e) => {
                     e.preventDefault();
@@ -336,23 +294,65 @@ export function EventCard({
             badgeClassName={`border-current ${categoryClasses.text}`}
           />
 
-          {/* I'm Interested button */}
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              if (profileCompleted) toggleSaveEvent(event.id);
-            }}
-            disabled={!profileCompleted}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-t ${categoryClasses.border} ${
-              isSaved
-                ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
-                : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
-            } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
-          >
-            <Heart className={`w-4 h-4 ${isSaved ? "fill-error text-error" : ""}`} fill={isSaved ? "currentColor" : "none"} />
-            {isSaved ? t("common.saved") : t("common.imInterested")}
-          </button>
+          <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                if (profileCompleted) toggleSaveEvent(event.id);
+              }}
+              disabled={!profileCompleted}
+              className={`flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-medium transition-colors ${
+                isSaved
+                  ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
+                  : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
+              } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
+            >
+              <Heart className={`size-4 ${isSaved ? "fill-error text-error" : ""}`} fill={isSaved ? "currentColor" : "none"} />
+              <span className="truncate">{isSaved ? t("common.saved") : t("common.imInterested")}</span>
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setActiveDialog("share");
+              }}
+              className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+            >
+              <Share2 className="size-4" />
+              <span className="truncate">{t("common.share")}</span>
+            </button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+                >
+                  <Download className="size-4" />
+                  <span className="truncate">{t("common.export")}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-44"
+                align="end"
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
+                  <GoogleIcon className="size-3.5 shrink-0" />
+                  {t("events.calendar.googleCalendar")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => downloadICS(event)}>
+                  <AppleIcon className="size-3.5 shrink-0" />
+                  {t("events.calendar.iCal")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </article>
 

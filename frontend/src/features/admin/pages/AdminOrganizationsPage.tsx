@@ -236,8 +236,7 @@ export function AdminOrganizationsPage({
         }
       />
 
-      {/* Tabs, search, and results count stay pinned when scrolling (-top-4 cancels AppLayout top padding). */}
-      <div className="sticky -top-4 z-20 bg-background space-y-5 pt-4 pb-2 backdrop-blur-sm">
+      <div className="space-y-5 pb-2">
         <div className="flex gap-2 border-b border-border pb-3">
           <button
             onMouseDown={() => setActiveTab("organizations")}

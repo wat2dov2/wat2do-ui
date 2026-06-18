@@ -1,8 +1,8 @@
 /**
  * Available user interests.
  *
- * `getAvailableInterests()` returns the live list fetched from the
- * backend at app init via /meta/constants.
+ * `getAvailableInterests()` returns fallback constants immediately, then
+ * backend-hydrated constants once /meta/constants finishes loading.
  */
 
 import { getAppConstants } from "@/shared/api/metaApi";

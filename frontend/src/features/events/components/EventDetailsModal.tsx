@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo, useCallback, useRef, type CSSProperties, type PointerEvent } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef, type CSSProperties, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { ImageOff, ExternalLink } from "@/shared/ui/doodle-icons";
+import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
+import { ImageOff, ExternalLink, Heart, Share2, Download, Flag } from "@/shared/ui/doodle-icons";
+import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 // fallow-ignore-next-line circular-dependency
 import { EventCard } from "@/features/events/components/EventCard";
 import { translateCategory } from "@/shared/utils/event";
@@ -27,10 +36,23 @@ import {
 } from "@/shared/ui/modal-components";
 import { useModalState } from "@/shared/hooks/useModalState";
 import { useEventsStore } from "@/features/events/store/events.store";
+import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
 import type { Event } from "@/shared/types";
 
+const EventShareDialog = lazy(() =>
+  import("@/features/events/components/EventShareDialog").then((module) => ({
+    default: module.EventShareDialog,
+  })),
+);
+const EventReportDialog = lazy(() =>
+  import("@/features/events/components/EventReportDialog").then((module) => ({
+    default: module.EventReportDialog,
+  })),
+);
 
 const DRAG_CLOSE_THRESHOLD_PX = 120;
+type EventDetailsDialog = "share" | "report";
 
 interface EventDetailsModalProps {
   event: Event | null;
@@ -48,6 +70,9 @@ export function EventDetailsModal({
 }: EventDetailsModalProps) {
   const { t, i18n } = useTranslation();
   const storeEvents = useEventsStore((s) => s.events);
+  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
+  const profileCompleted = useProfileCompleted();
   // Local override allows clicking a "similar event" without remounting the
   // modal. We reset it whenever the prop event changes by tracking the prop
   // id during render (React's pattern for prop-derived resets).
@@ -57,6 +82,7 @@ export function EventDetailsModal({
   );
   const [dragOffsetY, setDragOffsetY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<EventDetailsDialog | null>(null);
   const dragSessionRef = useRef<{ pointerId: number; startY: number } | null>(null);
   if ((event?.id ?? null) !== trackedPropEventId) {
     setTrackedPropEventId(event?.id ?? null);
@@ -65,6 +91,7 @@ export function EventDetailsModal({
   const displayedEvent = overrideEvent ?? event;
 
   const isOpen = event !== null;
+  const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
@@ -178,8 +205,61 @@ export function EventDetailsModal({
 
             <ModalContentWrapper>
               <DialogHeader>
-                <DialogTitle>{displayedEvent.title}</DialogTitle>
-                <DialogDescription>{displayedEvent.organization}</DialogDescription>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <DialogTitle>{displayedEvent.title}</DialogTitle>
+                    <DialogDescription>{displayedEvent.organization}</DialogDescription>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-1.5 pr-8 sm:pr-0">
+                    <Button
+                      type="button"
+                      variant={isSaved ? "secondary" : "outline"}
+                      size="sm"
+                      disabled={!profileCompleted}
+                      onMouseDown={() => toggleSaveEvent(displayedEvent.id)}
+                      className={isSaved ? "border-error/20 bg-error/10 text-error hover:bg-error/15" : ""}
+                    >
+                      <Heart className={`size-4 ${isSaved ? "fill-current" : ""}`} />
+                      {isSaved ? t("common.saved") : t("common.imInterested")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={() => setActiveDialog("share")}
+                    >
+                      <Share2 className="size-4" />
+                      {t("common.share")}
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button type="button" variant="outline" size="sm">
+                          <Download className="size-4" />
+                          {t("common.export")}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-44" align="end">
+                        <DropdownMenuItem onSelect={() => openGoogleCalendar(displayedEvent)}>
+                          <GoogleIcon className="size-3.5 shrink-0" />
+                          {t("events.calendar.googleCalendar")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => downloadICS(displayedEvent)}>
+                          <AppleIcon className="size-3.5 shrink-0" />
+                          {t("events.calendar.iCal")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onMouseDown={() => setActiveDialog("report")}
+                    >
+                      <Flag className="size-4" />
+                      {t("common.report")}
+                    </Button>
+                  </div>
+                </div>
               </DialogHeader>
 
               <ModalSection>
@@ -273,6 +353,25 @@ export function EventDetailsModal({
           </>
         )}
       </DialogContent>
+      {displayedEvent && activeDialog === "share" && (
+        <Suspense fallback={null}>
+          <EventShareDialog
+            event={displayedEvent}
+            open
+            onOpenChange={(open) => setActiveDialog(open ? "share" : null)}
+          />
+        </Suspense>
+      )}
+      {displayedEvent && activeDialog === "report" && (
+        <Suspense fallback={null}>
+          <EventReportDialog
+            eventId={displayedEvent.id}
+            eventTitle={displayedEvent.title}
+            open
+            onOpenChange={(open) => setActiveDialog(open ? "report" : null)}
+          />
+        </Suspense>
+      )}
     </Dialog>
   );
 }

@@ -96,8 +96,7 @@ export function EventsPageContainer() {
         )}
       </div>
       <div className="-mt-4 space-y-2">
-        {/* Sticky toolbar hugs TopNav when scrolling (-top-4 cancels AppLayout top padding). */}
-        <div className="sticky -top-4 z-20 bg-background space-y-3 pt-4 pb-2 backdrop-blur-sm">
+        <div className="space-y-3 pb-2">
         <SearchBar
           searchQuery={filters.searchQuery}
           onSearchChange={(query) => {

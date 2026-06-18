@@ -1,6 +1,4 @@
-import { ClickToComponent } from 'click-to-react-component';
-import { Analytics } from '@vercel/analytics/react';
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
@@ -20,7 +18,18 @@ initClarity(import.meta.env.VITE_CLARITY_PROJECT_ID)
 // After a silent 401 token refresh, re-fetch /users/me so cached
 // role/hasOrganization stay in sync with the backend (AUTH-010). The main.tsx
 // bootstrap is the single place wiring this — no cycle with auth.api.ts.
-const DevClickToComponent = import.meta.env.DEV ? ClickToComponent : null;
+const DevClickToComponent = import.meta.env.DEV
+  ? lazy(() =>
+      import('click-to-react-component').then((module) => ({
+        default: module.ClickToComponent,
+      })),
+    )
+  : null;
+const Analytics = lazy(() =>
+  import('@vercel/analytics/react').then((module) => ({
+    default: module.Analytics,
+  })),
+);
 
 setOnAfterRefresh(() => {
   fetchProfileAPI().catch((err) =>
@@ -33,9 +42,15 @@ function renderApp() {
     <StrictMode>
       <ErrorBoundary>
         <BrowserRouter>
-          {DevClickToComponent ? <DevClickToComponent /> : null}
+          {DevClickToComponent ? (
+            <Suspense fallback={null}>
+              <DevClickToComponent />
+            </Suspense>
+          ) : null}
           <App />
-          <Analytics />
+          <Suspense fallback={null}>
+            <Analytics />
+          </Suspense>
         </BrowserRouter>
       </ErrorBoundary>
     </StrictMode>,
@@ -79,8 +94,8 @@ async function initApp() {
     console.error("Language initialization failed, falling back to English:", err);
   }
 
-  await bootstrapConstants();
   renderApp();
+  void bootstrapConstants();
   void bootstrapAuth();
 }
 
