@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useRecommendations } from "@/features/recommendations";
 import { useSearch } from "@/features/search";
@@ -40,16 +40,56 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     savedEventIds,
   });
 
+  // Keep a stable ref/state for the recommendations score map that we use for sorting.
+  // This prevents events from shifting order after they've loaded on the screen.
+  const [activeScoreMap, setActiveScoreMap] = useState<Map<number, number> | null>(null);
+  const isInitialLoad = useRef(true);
+
+  // Sync recommendations score map when they finish loading initially,
+  // or when user modifies filters (which represents a fresh search interaction).
+  const filterKey = JSON.stringify({
+    searchQuery: filters.searchQuery,
+    selectedCategories: filters.selectedCategories,
+    selectedLocations: filters.selectedLocations,
+    selectedFoods: filters.selectedFoods,
+    selectedDays: filters.selectedDays,
+    priceRange: filters.priceRange,
+    registration: filters.registration,
+    selectedOrganizations: filters.selectedOrganizations,
+    freeFoodFilter: filters.freeFoodFilter,
+    savedFilter: filters.savedFilter,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+  });
+
+  useEffect(() => {
+    if (recommendations.length > 0) {
+      const map = new Map(recommendations.map((r) => [r.event_id, r.score]));
+      Promise.resolve().then(() => {
+        setActiveScoreMap(map);
+      });
+      isInitialLoad.current = false;
+    }
+  }, [recommendations]);
+
+  useEffect(() => {
+    if (!isInitialLoad.current) {
+      const map = recommendations.length > 0
+        ? new Map(recommendations.map((r) => [r.event_id, r.score]))
+        : null;
+      Promise.resolve().then(() => {
+        setActiveScoreMap(map);
+      });
+    }
+  }, [filterKey, recommendations]);
+
   // Single authoritative ordering pipeline:
   //   1. Within each group, recommended events sort by score (desc).
   //   2. Otherwise preserve the original filtered order.
   // Dedupe happens here so the list consumer does not need to repeat it.
   const orderedEvents = useMemo(() => {
     const deduped = getUniqueEvents(filters.filteredEvents);
-    const scoreMap =
-      recommendations.length === 0
-        ? null
-        : new Map(recommendations.map((r) => [r.event_id, r.score]));
+    const scoreMap = activeScoreMap;
 
     // Attach a numeric priority tuple to each event, then stable-sort by it.
     // (-score, originalIndex) — lower is earlier.
@@ -66,7 +106,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     });
 
     return withRank.map((x) => x.event);
-  }, [filters.filteredEvents, recommendations]);
+  }, [filters.filteredEvents, activeScoreMap]);
 
   const handleDeleteEvent = useCallback(
     async (eventId: number) => {

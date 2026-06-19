@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { debounce } from "@/shared/utils/debounce";
 import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
@@ -23,6 +24,51 @@ function mapPieItems(items: Array<{ id: string; label: string; iconName: string 
     const Icon = PIE_ICON_MAP[item.iconName];
     return { id: item.id, label: item.label, icon: Icon ? <Icon className="size-4" /> : undefined };
   });
+}
+
+interface LocationFilterInputProps {
+  value: string;
+  onChange: (value: string[]) => void;
+  placeholder: string;
+}
+
+function LocationFilterInput({ value, onChange, placeholder }: LocationFilterInputProps) {
+  const [localValue, setLocalValue] = useState(value);
+
+  // Sync with external updates (like clear all filters)
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const debouncedChange = useMemo(
+    () =>
+      debounce((val: string) => {
+        onChange(val.trim() ? [val.trim()] : []);
+      }, 300),
+    [onChange]
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedChange.cancel?.();
+    };
+  }, [debouncedChange]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalValue(val);
+    debouncedChange(val);
+  };
+
+  return (
+    <input
+      type="text"
+      placeholder={placeholder}
+      value={localValue}
+      onChange={handleChange}
+      className="bg-secondary text-foreground text-xs px-3 py-2.5 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border placeholder:text-muted-foreground"
+    />
+  );
 }
 
 interface VisualFiltersProps {
@@ -172,16 +218,10 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
         }
         onClear={() => filters.setSelectedLocations([])}
       >
-        <input
-          type="text"
-          placeholder={t("forms.locationPlaceholder")}
+        <LocationFilterInput
           value={filters.selectedLocations[0] ?? ""}
-          onChange={(e) =>
-            filters.setSelectedLocations(
-              e.target.value.trim() ? [e.target.value.trim()] : [],
-            )
-          }
-          className="bg-secondary text-foreground text-xs px-3 py-2.5 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border placeholder:text-muted-foreground"
+          onChange={filters.setSelectedLocations}
+          placeholder={t("forms.locationPlaceholder")}
         />
       </FilterSection>
 

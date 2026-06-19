@@ -8,7 +8,6 @@ import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { m } from "framer-motion";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
-import { EVENTS_SCROLL_ROOT_SELECTOR } from "@/features/events/constants";
 
 interface EventListProps {
   events: Event[];
@@ -121,14 +120,12 @@ export function EventList({
     const loadMoreNode = loadMoreRef.current;
     if (!loadMoreNode) return;
 
-    const scrollRoot = document.querySelector(EVENTS_SCROLL_ROOT_SELECTOR);
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
         setRequestedVisibleCount((count) => Math.min(count + RENDER_CHUNK_SIZE, regularEvents.length));
       },
       {
-        root: scrollRoot,
         rootMargin: "800px 0px",
       },
     );
@@ -234,8 +231,6 @@ export function EventList({
                   className="min-w-0"
                   style={{
                     pointerEvents: "auto",
-                    contentVisibility: "auto",
-                    containIntrinsicSize: "auto 360px",
                   }}
                 >
                   <EventCard
@@ -285,8 +280,6 @@ export function EventList({
                     className="min-w-0"
                     style={{
                       pointerEvents: "auto",
-                      contentVisibility: "auto",
-                      containIntrinsicSize: "auto 360px",
                     }}
                   >
                     <EventCard

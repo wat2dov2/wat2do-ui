@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, Grid3x3, Search, X } from "@/shared/ui/doodle-icons";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
 import type { ViewMode } from "@/shared/types";
+import { debounce } from "@/shared/utils/debounce";
 
 interface SearchBarProps {
   searchQuery: string;
@@ -27,6 +28,45 @@ export function SearchBar({
   onSearchKeyDown,
 }: SearchBarProps) {
   const { t } = useTranslation();
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+
+  // Sync local state when external searchQuery prop changes
+  useEffect(() => {
+    setLocalQuery(searchQuery);
+  }, [searchQuery]);
+
+  // Debounce the onSearchChange callback to prevent URL updates on every keystroke
+  const debouncedSearchChange = useMemo(
+    () => debounce((val: string) => onSearchChange(val), 300),
+    [onSearchChange]
+  );
+
+  // Cancel any pending debounce calls on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSearchChange.cancel?.();
+    };
+  }, [debouncedSearchChange]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalQuery(val);
+    debouncedSearchChange(val);
+  };
+
+  const handleClear = () => {
+    setLocalQuery("");
+    debouncedSearchChange.cancel?.();
+    onSearchClear();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      debouncedSearchChange.cancel?.();
+      onSearchChange(localQuery);
+    }
+    onSearchKeyDown?.(e);
+  };
 
   return (
     <div className="flex gap-3 items-stretch">
@@ -36,14 +76,14 @@ export function SearchBar({
           type="text"
           data-elevation="control"
           placeholder={t("search.placeholder")}
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={onSearchKeyDown}
+          value={localQuery}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
           className="flex h-8 w-full min-w-0 items-center rounded-xl bg-secondary py-2 pl-9 pr-3 text-base text-secondary-foreground shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm"
         />
-        {searchQuery && (
+        {localQuery && (
           <button
-            onMouseDown={onSearchClear}
+            onMouseDown={handleClear}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="size-4" />
