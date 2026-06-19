@@ -82,7 +82,13 @@ export function AuthCallbackPage() {
             <p className="text-sm text-destructive text-center max-w-xs">{error}</p>
             <Button
               type="button"
-              onClick={() => navigate(ROUTES.LOGIN, { replace: true })}
+              onMouseDown={() => navigate(ROUTES.LOGIN, { replace: true })}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+
+                e.preventDefault();
+                navigate(ROUTES.LOGIN, { replace: true });
+              }}
               className="w-full mt-4"
             >
               {t("auth.backToLogin")}

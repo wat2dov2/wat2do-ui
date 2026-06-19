@@ -118,7 +118,13 @@ export function AuthEmailFormCard({
           <div className="flex flex-col items-center space-y-2 pt-2">
             <button
               type="button"
-              onClick={onResend}
+              onMouseDown={onResend}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+
+                e.preventDefault();
+                onResend();
+              }}
               disabled={isLoading}
               className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
             >

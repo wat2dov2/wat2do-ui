@@ -3,6 +3,8 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
+  type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from "react";
@@ -11,8 +13,8 @@ import { cn } from "@/shared/lib/utils";
 import { useEnterKeySubmit } from "@/shared/hooks";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
-  PopoverTrigger,
 } from "@/shared/ui/popover";
 
 export type SearchComboboxVariant = "nav" | "field";
@@ -53,7 +55,7 @@ const VARIANT_TRIGGER_STYLES: Record<SearchComboboxVariant, string> = {
 
 const VARIANT_CONTENT_STYLES: Record<SearchComboboxVariant, string> = {
   nav: "w-[280px]",
-  field: "w-[--radix-popover-trigger-width] min-w-[280px]",
+  field: "w-[var(--search-combobox-trigger-width)] min-w-[280px]",
 };
 
 /**
@@ -85,7 +87,8 @@ export function SearchCombobox<T>({
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const suppressTriggerClickRef = useRef(false);
+  const [triggerWidth, setTriggerWidth] = useState(280);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const fetchResults = useCallback(
     async (query: string) => {
@@ -196,26 +199,17 @@ export function SearchCombobox<T>({
     if (e.button !== 0) return;
 
     e.preventDefault();
-    suppressTriggerClickRef.current = true;
+    triggerRef.current?.focus();
+    setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
     handleOpenChange(!open);
-
-    const ownerWindow = e.currentTarget.ownerDocument.defaultView ?? window;
-    ownerWindow.addEventListener(
-      "mouseup",
-      () => {
-        ownerWindow.setTimeout(() => {
-          suppressTriggerClickRef.current = false;
-        }, 0);
-      },
-      { once: true },
-    );
   };
 
-  const handleTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {
-    if (!suppressTriggerClickRef.current) return;
+  const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "ArrowDown") return;
 
     e.preventDefault();
-    suppressTriggerClickRef.current = false;
+    setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
+    handleOpenChange(e.key === "ArrowDown" ? true : !open);
   };
 
   const hasQuery = search.trim().length > 0;
@@ -227,6 +221,9 @@ export function SearchCombobox<T>({
     VARIANT_CONTENT_STYLES[variant],
     contentClassName,
   );
+  const contentStyle = {
+    "--search-combobox-trigger-width": `${triggerWidth}px`,
+  } as CSSProperties;
 
   const labelNode = renderTriggerLabel ? (
     renderTriggerLabel(displayValue)
@@ -243,21 +240,22 @@ export function SearchCombobox<T>({
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
+      <PopoverAnchor asChild>
         <button
+          ref={triggerRef}
           id={id}
           type="button"
           className={triggerClasses}
           aria-expanded={open}
           aria-haspopup="listbox"
           onMouseDown={handleTriggerMouseDown}
-          onClick={handleTriggerClick}
+          onKeyDown={handleTriggerKeyDown}
         >
           {labelNode}
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
-      </PopoverTrigger>
-      <PopoverContent className={contentStyles} align={align}>
+      </PopoverAnchor>
+      <PopoverContent className={contentStyles} align={align} style={contentStyle}>
         <div className="flex items-center border-b border-border px-3">
           <Search className="size-4 text-muted-foreground shrink-0" />
           <input
