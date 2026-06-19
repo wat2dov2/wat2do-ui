@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect, useRef } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useRecommendations } from "@/features/recommendations";
 import { useSearch } from "@/features/search";
@@ -47,11 +47,6 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
 
   // Keep a stable ref/state for the recommendations score map that we use for sorting.
   // This prevents events from shifting order after they've loaded on the screen.
-  const [activeScoreMap, setActiveScoreMap] = useState<Map<number, number> | null>(null);
-  const isInitialLoad = useRef(true);
-
-  // Sync recommendations score map when they finish loading initially,
-  // or when user modifies filters (which represents a fresh search interaction).
   const filterKey = JSON.stringify({
     searchQuery: filters.searchQuery,
     selectedCategories: filters.selectedCategories,
@@ -67,26 +62,48 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     sortOrder: filters.sortOrder,
   });
 
+  // Track if events have been rendered to the user.
+  // If they have, we lock the recommendations sorting until the next filter interaction
+  // to prevent layout shifting/stuttering while browsing.
+  const [hasRenderedEvents, setHasRenderedEvents] = useState(false);
+
   useEffect(() => {
+    if (events.length > 0 && !isLoading) {
+      Promise.resolve().then(() => {
+        setHasRenderedEvents(true);
+      });
+    }
+  }, [events, isLoading]);
+
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  const [activeScoreMap, setActiveScoreMap] = useState<Map<number, number> | null>(() => {
     if (recommendations.length > 0) {
+      return new Map(recommendations.map((r) => [r.event_id, r.score]));
+    }
+    return null;
+  });
+
+  // Synchronous derived state adjustment during render (prevents flash on filter change)
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setHasRenderedEvents(false);
+    setActiveScoreMap(
+      recommendations.length > 0
+        ? new Map(recommendations.map((r) => [r.event_id, r.score]))
+        : null
+    );
+  }
+
+  // Update score map if recommendations load in background BEFORE events have loaded/rendered.
+  // If events have already rendered, ignore background updates to keep visual state stable.
+  useEffect(() => {
+    if (recommendations.length > 0 && !hasRenderedEvents) {
       const map = new Map(recommendations.map((r) => [r.event_id, r.score]));
       Promise.resolve().then(() => {
         setActiveScoreMap(map);
       });
-      isInitialLoad.current = false;
     }
-  }, [recommendations]);
-
-  useEffect(() => {
-    if (!isInitialLoad.current) {
-      const map = recommendations.length > 0
-        ? new Map(recommendations.map((r) => [r.event_id, r.score]))
-        : null;
-      Promise.resolve().then(() => {
-        setActiveScoreMap(map);
-      });
-    }
-  }, [filterKey, recommendations]);
+  }, [recommendations, hasRenderedEvents]);
 
   // Single authoritative ordering pipeline:
   //   1. Within each group, recommended events sort by score (desc).
