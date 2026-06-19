@@ -9,7 +9,7 @@ import {
   Instagram,
   Loader2,
   MessageCircle,
-  Users,
+  Building2,
   Bookmark,
   Shield,
   UserPlus,
@@ -224,7 +224,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
         <DialogHeader>
           <div className="flex items-start gap-4">
             <div className="size-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-inner">
-              <Users className="size-6 text-primary" />
+              <Building2 className="size-6 text-primary" />
             </div>
             <div className="space-y-1">
               <DialogTitle className="text-xl font-bold text-foreground leading-tight">

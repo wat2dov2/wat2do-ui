@@ -173,32 +173,33 @@ export function AddOrganizationModal({
   return (
     <>
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-          <div className="flex items-start gap-2 pr-8">
-            {onBack && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon-sm"
-                onMouseDown={onBack}
-                aria-label={t("common.back")}
-              >
-                <ArrowLeft className="size-4" />
-              </Button>
-            )}
-            <div className="min-w-0">
-              <DialogTitle>{isEditMode ? t("organizations.editClub") : t("organizations.addClub")}</DialogTitle>
-              <DialogDescription>
-                {isEditMode
-                  ? t("organizations.editClubDescription")
-                  : t("organizations.addClubDescription")}
-              </DialogDescription>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <form className="space-y-6">
+          <DialogHeader className="p-0 text-left">
+            <div className="flex items-start gap-2">
+              {onBack && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon-sm"
+                  onMouseDown={onBack}
+                  aria-label={t("common.back")}
+                >
+                  <ArrowLeft className="size-4" />
+                </Button>
+              )}
+              <div className="min-w-0">
+                <DialogTitle className="text-lg font-semibold text-foreground sm:text-xl leading-snug">
+                  {isEditMode ? t("organizations.editClub") : t("organizations.addClub")}
+                </DialogTitle>
+                {isEditMode && (
+                  <DialogDescription className="mt-1.5 text-sm text-muted-foreground">
+                    {t("organizations.editClubDescription")}
+                  </DialogDescription>
+                )}
+              </div>
             </div>
-          </div>
-        </DialogHeader>
-
-        <form className="overflow-y-auto flex-1 min-h-0 px-6 pb-6 pt-2">
+          </DialogHeader>
           <FieldGroup>
             <FieldSet>
               <FieldLegend>{t("forms.requiredInformation")}</FieldLegend>

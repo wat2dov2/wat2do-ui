@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode, Users } from "@/shared/ui/doodle-icons";
+import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode, Building2 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AdminCard } from "@/shared/ui/AdminCard";
@@ -75,7 +75,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
           onMouseDown={() => onNavigate("admin-events")}
         />
         <AdminCard
-          icon={Users}
+          icon={Building2}
           title={t("navigation.organizations")}
           description={t("admin.manageClubsDescAlt")}
           onMouseDown={() => onNavigate("admin-organizations")}

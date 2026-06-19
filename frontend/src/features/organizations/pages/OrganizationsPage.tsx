@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import NumberFlow from "@number-flow/react";
-import { Bookmark, Search, Users, Instagram, MessageCircle } from "@/shared/ui/doodle-icons";
+import { Bookmark, Search, Building2, Instagram, MessageCircle } from "@/shared/ui/doodle-icons";
 import { OrganizationDetailsModal } from "@/features/organizations/components/OrganizationDetailsModal";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -271,7 +271,7 @@ export function OrganizationsPage() {
             {activeTab === "followed" ? (
               <Bookmark className="size-8 text-muted-foreground" />
             ) : activeTab === "claimed" ? (
-              <Users className="size-8 text-muted-foreground" />
+              <Building2 className="size-8 text-muted-foreground" />
             ) : (
               <Search className="size-8 text-muted-foreground" />
             )}

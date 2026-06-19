@@ -50,12 +50,9 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
 
   return (
     <div className={cn("min-h-0 w-[22rem] shrink-0 flex-col overflow-y-auto border-l border-border bg-background/40 p-5", className)}>
-      <div className="mb-4 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+      <div className="mb-4">
         <span className="whitespace-nowrap text-sm font-semibold text-foreground">
           {t("forms.livePreview")}
-        </span>
-        <span className="text-right text-[11px] leading-snug text-muted-foreground">
-          {t("events.previewDescription")}
         </span>
       </div>
 

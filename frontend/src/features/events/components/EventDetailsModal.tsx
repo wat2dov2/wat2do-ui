@@ -215,9 +215,11 @@ export function EventDetailsModal({
                     <Button
                       type="button"
                       variant={isSaveActive ? "secondary" : "outline"}
-                      size="sm"
+                      size="icon-sm"
                       disabled={!profileCompleted}
                       onMouseDown={() => toggleSaveEvent(displayedEvent.id)}
+                      aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
+                      title={isSaveActive ? t("common.saved") : t("common.imInterested")}
                       className={
                         !profileCompleted
                           ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
@@ -227,22 +229,27 @@ export function EventDetailsModal({
                       }
                     >
                       <Heart className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
-                      {isSaveActive ? t("common.saved") : t("common.imInterested")}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="icon-sm"
                       onMouseDown={() => setActiveDialog("share")}
+                      aria-label={t("common.share")}
+                      title={t("common.share")}
                     >
                       <Share2 className="size-4" />
-                      {t("common.share")}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button type="button" variant="outline" size="sm">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label={t("common.export")}
+                          title={t("common.export")}
+                        >
                           <Download className="size-4" />
-                          {t("common.export")}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-44" align="end">
@@ -259,11 +266,12 @@ export function EventDetailsModal({
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="icon-sm"
                       onMouseDown={() => setActiveDialog("report")}
+                      aria-label={t("common.report")}
+                      title={t("common.report")}
                     >
                       <Flag className="size-4" />
-                      {t("common.report")}
                     </Button>
                   </div>
                 </div>

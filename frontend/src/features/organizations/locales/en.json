@@ -37,7 +37,6 @@
     "addClub": "Add Organization",
     "editClub": "Edit Organization",
     "updateClub": "Update Organization",
-    "addClubDescription": "Fill in the details to add a new organization",
     "editClubDescription": "Update the organization information below",
     "clubCreatedMessage": "Organization \"{{name}}\" has been created successfully!",
     "clubUpdatedMessage": "Organization \"{{name}}\" has been updated.",

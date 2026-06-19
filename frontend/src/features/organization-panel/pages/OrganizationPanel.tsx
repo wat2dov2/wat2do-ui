@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Megaphone, Link, Users } from "@/shared/ui/doodle-icons";
+import { Megaphone, Link, Users, Building2 } from "@/shared/ui/doodle-icons";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import { useBackendPosters } from "@/features/posters";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -17,7 +17,7 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Users className="size-6 text-primary" />
+          <Building2 className="size-6 text-primary" />
         </div>
         <div>
           <h1 className="text-2xl font-semibold text-foreground">{t("organizationPanel.title")}</h1>

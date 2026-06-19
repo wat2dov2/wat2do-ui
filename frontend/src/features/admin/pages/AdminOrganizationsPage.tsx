@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
+import { Building2, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -221,7 +221,7 @@ export function AdminOrganizationsPage({
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        icon={Users}
+        icon={Building2}
         title={t("admin.manageClubs")}
         description={t("admin.manageClubsDesc")}
         onBack={onBack}
@@ -461,7 +461,7 @@ export function AdminOrganizationsPage({
             </AdminTable>
           ) : (
             <AdminEmptyState
-              icon={Users}
+              icon={Building2}
               title={t("admin.noClubsFound")}
               description={t("admin.noClubsMatchFilters")}
             />
