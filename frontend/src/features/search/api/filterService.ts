@@ -144,7 +144,7 @@ function isDefaultPriceRange(priceRange: FilterState["priceRange"]): boolean {
   return priceRange.min === "" && priceRange.max === "";
 }
 
-export function isEmptyFilterState(filters: FilterState): boolean {
+function isEmptyFilterState(filters: FilterState): boolean {
   return (
     filters.searchQuery === "" &&
     filters.categories.length === 0 &&

@@ -19,33 +19,28 @@ import { PromotionSuccessScreen } from "@/features/events/components/EventForm/E
 import { EventFormProvider, type EventFormContextValue } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import type { EventFormData } from "@/shared/types";
 
-interface SubmitEventModalProps {
+interface SubmitEventModalSharedProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
   canCreateEvents: boolean;
-  userCredits?: number;
   onPromote?: (eventId: number) => Promise<boolean>;
   onBuyCredits?: () => void;
   onBack?: () => void;
   editEventId?: number;
+}
+
+interface SubmitEventModalProps extends SubmitEventModalSharedProps {
+  userCredits?: number;
   initialData?: EventFormData;
   /** When provided, modal will fetch event by id when opening for edit (ensures form is populated from server). */
   loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
 }
 
-interface SubmitEventModalFormBodyProps {
+interface SubmitEventModalFormBodyProps extends SubmitEventModalSharedProps {
   formInitialData: EventFormData | undefined;
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
-  canCreateEvents: boolean;
   userCredits: number;
-  onPromote?: (eventId: number) => Promise<boolean>;
-  onBuyCredits?: () => void;
-  onBack?: () => void;
-  editEventId?: number;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
   isEditMode: boolean;
 }
@@ -227,16 +222,8 @@ function SubmitEventModalFormBody({
   return stepRenderers[currentStep]();
 }
 
-interface SubmitEventModalContentProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
-  canCreateEvents: boolean;
+interface SubmitEventModalContentProps extends SubmitEventModalSharedProps {
   userCredits: number;
-  onPromote?: (eventId: number) => Promise<boolean>;
-  onBuyCredits?: () => void;
-  onBack?: () => void;
-  editEventId?: number;
   initialData?: EventFormData;
   loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
