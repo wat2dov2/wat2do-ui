@@ -1,0 +1,123 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "Onboarding progress",
+      "start": "Start",
+      "personalize": "Personalize",
+      "discover": "Discover",
+      "unlock": "Unlock"
+    },
+    "chrome": {
+      "demo": "Demo"
+    },
+    "actions": {
+      "continue": "Continue",
+      "back": "Back",
+      "showMyWeek": "Show my week",
+      "great": "Great",
+      "finish": "Finish",
+      "done": "Done",
+      "continueWithoutPicks": "Continue without picks",
+      "editPicks": "Edit picks",
+      "restartDemo": "Restart demo"
+    },
+    "source": {
+      "eyebrow": "Demo preview",
+      "title": "Welcome to Wat2Do",
+      "question": "Where did you hear about us?",
+      "groupLabel": "How did you hear about Wat2Do",
+      "previewLabel": "Preview - sample campus events"
+    },
+    "intent": {
+      "title": "What are you usually looking for?",
+      "description": "Pick a few. We will use this to shape your first feed.",
+      "groupLabel": "Campus interests",
+      "previewReady": "Starting to shape your feed",
+      "previewEmpty": "We will still find upcoming events across campus."
+    },
+    "availability": {
+      "title": "When are you usually free?",
+      "description": "This helps us find events you can actually make.",
+      "groupLabel": "Availability",
+      "socialTitle": "How do you usually go?",
+      "socialGroupLabel": "Social mode",
+      "weekPreviewTitle": "Your week at a glance",
+      "emptyWeek": "Select your free times to preview your week"
+    },
+    "eventMatch": {
+      "eyebrow": "Demo preview - sample events",
+      "title": "We found events you might actually go to",
+      "description": "Pick a few that catch your eye.",
+      "pickedStatus": "{{count}}/3 picked - need at least 2 to continue",
+      "reactionGroup": "Reaction for {{title}}",
+      "reactions": {
+        "interested": "Interested",
+        "maybe": "Maybe",
+        "notForMe": "Not for me"
+      }
+    },
+    "payoff": {
+      "title": "Nice. Your campus radar is ready.",
+      "matched": "You matched with {{count}} events this week.",
+      "strongestVibe": "Your strongest vibe: {{vibe}}.",
+      "bestNight": "Thursday evening looks like your best night out.",
+      "fallback": "Your first campus feed is ready."
+    },
+    "buildWeek": {
+      "title": "We built your first Wat2Do week",
+      "descriptionWithPicks": "Your saved events, matching clubs, and best nights out are ready.",
+      "descriptionWithoutPicks": "We made a starter feed instead. You can tune it as you browse.",
+      "tonight": "Tonight",
+      "tonightWithPick": "1 event worth checking out",
+      "tonightWithoutPick": "Check back soon",
+      "thisWeek": "This week",
+      "weekMatches": "{{count}} matches from clubs around Waterloo",
+      "clubsToFollow": "Clubs to follow",
+      "clubSuggestions": "3 suggestions",
+      "freeFoodAlerts": "Free food alerts",
+      "on": "On",
+      "off": "Off"
+    },
+    "proUnlock": {
+      "badge": "2-week Pro trial",
+      "title": "You have been upgraded to Wat2Do Pro",
+      "description": "Enjoy personalized campus discovery for 14 days. No payment needed.",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "Campus radar unlocked",
+      "visualDescription": "Personalized alerts, saved events, and your weekly plan - all in one place.",
+      "benefits": {
+        "save": "Save events",
+        "follow": "Follow clubs",
+        "alerts": "Get instant matching alerts",
+        "calendar": "Sync events to your calendar",
+        "food": "Get free food and RSVP reminders",
+        "profile": "Unlock your Campus Taste Profile"
+      }
+    },
+    "challenge": {
+      "title": "Keep Pro going by using Wat2Do this week",
+      "description": "Save 3 events this week to extend Pro by 7 days.",
+      "label": "Campus Explorer Challenge",
+      "progress": "{{count}} / {{total}} events saved",
+      "reward": "Reward: +7 days of Pro",
+      "progressAria": "Challenge progress",
+      "markedInterested": "{{count}} events marked as interested during onboarding",
+      "markedInterested_one": "{{count}} event marked as interested during onboarding",
+      "markedInterested_other": "{{count}} events marked as interested during onboarding"
+    },
+    "home": {
+      "badge": "Demo complete",
+      "title": "Hey there, here is what is worth checking out this week.",
+      "description": "This is a preview of your personalized home - no data was saved.",
+      "recommended": "Recommended for you",
+      "proTrialBadge": "Pro trial - 14 days",
+      "saved": "Saved this week",
+      "freeFood": "Free food near you",
+      "freeFoodPreview": "Pizza night at SLC Great Hall - Thu 6:00 PM",
+      "trialEnds": "Trial ends in 14 days",
+      "clubs": "Clubs you might like",
+      "clubsPreview": "EngSoc, CS Club, Velocity",
+      "remaining": "14 days remaining"
+    }
+  }
+}

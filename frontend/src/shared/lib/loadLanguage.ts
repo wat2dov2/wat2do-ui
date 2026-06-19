@@ -20,6 +20,7 @@ const localeLoaders: Record<
       credits,
       qrcode,
       settings,
+      onboardingDemo,
     ] = await Promise.all([
       import('@/shared/locales/en.json'),
       import('@/features/auth/locales/en.json'),
@@ -30,6 +31,7 @@ const localeLoaders: Record<
       import('@/features/credits/locales/en.json'),
       import('@/features/qrcode/locales/en.json'),
       import('@/features/settings/locales/en.json'),
+      import('@/features/onboarding-demo/locales/en.json'),
     ]);
     return {
       default: {
@@ -42,6 +44,7 @@ const localeLoaders: Record<
         ...credits.default,
         ...qrcode.default,
         ...settings.default,
+        ...onboardingDemo.default,
       },
     };
   },
@@ -56,6 +59,7 @@ const localeLoaders: Record<
       credits,
       qrcode,
       settings,
+      onboardingDemo,
     ] = await Promise.all([
       import('@/shared/locales/zh.json'),
       import('@/features/auth/locales/zh.json'),
@@ -66,6 +70,7 @@ const localeLoaders: Record<
       import('@/features/credits/locales/zh.json'),
       import('@/features/qrcode/locales/zh.json'),
       import('@/features/settings/locales/zh.json'),
+      import('@/features/onboarding-demo/locales/zh.json'),
     ]);
     return {
       default: {
@@ -78,6 +83,7 @@ const localeLoaders: Record<
         ...credits.default,
         ...qrcode.default,
         ...settings.default,
+        ...onboardingDemo.default,
       },
     };
   },

@@ -1,0 +1,123 @@
+{
+  "onboardingDemo": {
+    "progress": {
+      "label": "引导进度",
+      "start": "开始",
+      "personalize": "个性化",
+      "discover": "发现",
+      "unlock": "解锁"
+    },
+    "chrome": {
+      "demo": "演示"
+    },
+    "actions": {
+      "continue": "继续",
+      "back": "返回",
+      "showMyWeek": "查看我的一周",
+      "great": "太好了",
+      "finish": "完成",
+      "done": "完成",
+      "continueWithoutPicks": "不选择也继续",
+      "editPicks": "编辑选择",
+      "restartDemo": "重新开始演示"
+    },
+    "source": {
+      "eyebrow": "演示预览",
+      "title": "欢迎来到 Wat2Do",
+      "question": "你是在哪里听说我们的？",
+      "groupLabel": "你是如何听说 Wat2Do 的",
+      "previewLabel": "预览 - 校园活动样例"
+    },
+    "intent": {
+      "title": "你通常想找什么？",
+      "description": "选择几个。我们会用它们来生成你的第一个活动流。",
+      "groupLabel": "校园兴趣",
+      "previewReady": "正在塑造你的活动流",
+      "previewEmpty": "我们仍会帮你寻找校园里的最新活动。"
+    },
+    "availability": {
+      "title": "你通常什么时候有空？",
+      "description": "这能帮助我们找到你真的能参加的活动。",
+      "groupLabel": "空闲时间",
+      "socialTitle": "你通常怎么去活动？",
+      "socialGroupLabel": "社交方式",
+      "weekPreviewTitle": "你的一周概览",
+      "emptyWeek": "选择空闲时间来预览你的一周"
+    },
+    "eventMatch": {
+      "eyebrow": "演示预览 - 活动样例",
+      "title": "我们找到了一些你可能真的会去的活动",
+      "description": "选几个让你感兴趣的。",
+      "pickedStatus": "已选择 {{count}}/3 个 - 至少选择 2 个才能继续",
+      "reactionGroup": "{{title}} 的反馈",
+      "reactions": {
+        "interested": "感兴趣",
+        "maybe": "也许",
+        "notForMe": "不适合我"
+      }
+    },
+    "payoff": {
+      "title": "不错。你的校园雷达准备好了。",
+      "matched": "你本周匹配到了 {{count}} 个活动。",
+      "strongestVibe": "你最强的偏好是：{{vibe}}。",
+      "bestNight": "周四晚上看起来最适合你出门。",
+      "fallback": "你的第一个校园活动流准备好了。"
+    },
+    "buildWeek": {
+      "title": "我们为你安排好了第一个 Wat2Do 周计划",
+      "descriptionWithPicks": "你的已保存活动、匹配社团和最佳出门时间都准备好了。",
+      "descriptionWithoutPicks": "我们先为你生成了一个入门活动流。你可以边浏览边调整。",
+      "tonight": "今晚",
+      "tonightWithPick": "有 1 个值得看看活动",
+      "tonightWithoutPick": "稍后再来看看",
+      "thisWeek": "本周",
+      "weekMatches": "来自 Waterloo 社团的 {{count}} 个匹配活动",
+      "clubsToFollow": "推荐关注的社团",
+      "clubSuggestions": "3 个建议",
+      "freeFoodAlerts": "免费食物提醒",
+      "on": "开启",
+      "off": "关闭"
+    },
+    "proUnlock": {
+      "badge": "2 周 Pro 试用",
+      "title": "你已升级到 Wat2Do Pro",
+      "description": "享受 14 天个性化校园发现体验。无需付款。",
+      "brand": "Wat2Do Pro",
+      "visualTitle": "校园雷达已解锁",
+      "visualDescription": "个性化提醒、已保存活动和每周计划，全都在一个地方。",
+      "benefits": {
+        "save": "保存活动",
+        "follow": "关注社团",
+        "alerts": "获取即时匹配提醒",
+        "calendar": "同步活动到日历",
+        "food": "获取免费食物和 RSVP 提醒",
+        "profile": "解锁你的校园偏好画像"
+      }
+    },
+    "challenge": {
+      "title": "本周使用 Wat2Do，继续保留 Pro",
+      "description": "本周保存 3 个活动，即可延长 7 天 Pro。",
+      "label": "校园探索者挑战",
+      "progress": "{{count}} / {{total}} 个活动已保存",
+      "reward": "奖励：+7 天 Pro",
+      "progressAria": "挑战进度",
+      "markedInterested": "你在引导中标记了 {{count}} 个感兴趣活动",
+      "markedInterested_one": "你在引导中标记了 {{count}} 个感兴趣活动",
+      "markedInterested_other": "你在引导中标记了 {{count}} 个感兴趣活动"
+    },
+    "home": {
+      "badge": "演示完成",
+      "title": "你好，这是本周值得关注的活动。",
+      "description": "这是你的个性化首页预览 - 不会保存任何数据。",
+      "recommended": "为你推荐",
+      "proTrialBadge": "Pro 试用 - 14 天",
+      "saved": "本周已保存",
+      "freeFood": "你附近的免费食物",
+      "freeFoodPreview": "SLC Great Hall 披萨夜 - 周四 6:00 PM",
+      "trialEnds": "试用将在 14 天后结束",
+      "clubs": "你可能喜欢的社团",
+      "clubsPreview": "EngSoc、CS Club、Velocity",
+      "remaining": "剩余 14 天"
+    }
+  }
+}

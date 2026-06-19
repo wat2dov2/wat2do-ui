@@ -27,6 +27,7 @@ interface EventListProps {
 
 const INITIAL_RENDER_COUNT = 24;
 const RENDER_CHUNK_SIZE = 24;
+const EVENT_GRID_TEMPLATE_COLUMNS = "repeat(auto-fill, minmax(min(100%, 10rem), 1fr))";
 const EVENT_DATE_SECTIONS: Array<{
   category: EventDateCategory;
   labelKey: string;
@@ -145,7 +146,7 @@ export function EventList({
           <div
             className="grid gap-3"
             style={{
-              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
+              gridTemplateColumns: EVENT_GRID_TEMPLATE_COLUMNS,
             }}
           >
             {Array.from({ length: 12 }).map((_, i) => (
@@ -214,7 +215,7 @@ export function EventList({
           <div
             className="grid gap-3"
             style={{
-              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
+              gridTemplateColumns: EVENT_GRID_TEMPLATE_COLUMNS,
             }}
           >
             {promotedEvents.map((event, index) => {
@@ -263,7 +264,7 @@ export function EventList({
             <div
               className="grid gap-3"
               style={{
-                gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr))",
+                gridTemplateColumns: EVENT_GRID_TEMPLATE_COLUMNS,
               }}
             >
               {sectionEvents.map((event, index) => {

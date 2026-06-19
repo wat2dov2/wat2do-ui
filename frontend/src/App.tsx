@@ -57,6 +57,11 @@ const OnboardingPage = lazy(() =>
     default: module.OnboardingPage,
   }))
 );
+const OnboardingDemoPage = lazy(() =>
+  import("@/features/onboarding-demo/pages/OnboardingDemoPage").then((module) => ({
+    default: module.OnboardingDemoPage,
+  }))
+);
 const AuthCallbackPage = lazy(() =>
   import("@/features/auth/pages/AuthCallbackPage").then((module) => ({
     default: module.AuthCallbackPage,
@@ -150,7 +155,8 @@ function AppContent() {
   const isAuthFlowRoute =
     location.pathname === ROUTES.LOGIN ||
     location.pathname === ROUTES.AUTH_CALLBACK ||
-    location.pathname === ROUTES.ONBOARDING;
+    location.pathname === ROUTES.ONBOARDING ||
+    location.pathname === ROUTES.ONBOARDING_DEMO;
 
   const userEmail = useUserEmail();
 
@@ -199,6 +205,7 @@ function AppContent() {
       <Route path={ROUTES.LOGIN} element={<AuthEntryPage />} />
       <Route path={ROUTES.AUTH_CALLBACK} element={<AuthCallbackPage />} />
       <Route path={ROUTES.ONBOARDING} element={<OnboardingPage />} />
+      <Route path={ROUTES.ONBOARDING_DEMO} element={<OnboardingDemoPage />} />
       <Route
         path={ROUTES.HOME}
         element={<EventsPageContainer />}
