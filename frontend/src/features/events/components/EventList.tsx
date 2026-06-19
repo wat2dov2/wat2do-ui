@@ -8,6 +8,7 @@ import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { m } from "framer-motion";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
+import { EVENTS_SCROLL_ROOT_SELECTOR } from "@/features/events/constants";
 
 interface EventListProps {
   events: Event[];
@@ -119,7 +120,7 @@ export function EventList({
     const loadMoreNode = loadMoreRef.current;
     if (!loadMoreNode) return;
 
-    const scrollRoot = document.querySelector(".main-content-grid");
+    const scrollRoot = document.querySelector(EVENTS_SCROLL_ROOT_SELECTOR);
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
