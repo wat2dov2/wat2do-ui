@@ -40,6 +40,11 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     savedEventIds,
   });
 
+  // Trigger event fetch on mount of the events page (single fetch view architecture)
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
   // Keep a stable ref/state for the recommendations score map that we use for sorting.
   // This prevents events from shifting order after they've loaded on the screen.
   const [activeScoreMap, setActiveScoreMap] = useState<Map<number, number> | null>(null);

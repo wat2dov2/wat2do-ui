@@ -26,7 +26,6 @@ interface EventListProps {
 
 const INITIAL_RENDER_COUNT = 24;
 const RENDER_CHUNK_SIZE = 24;
-const EVENT_GRID_TEMPLATE_COLUMNS = "repeat(auto-fill, minmax(min(100%, 10rem), 1fr))";
 const EVENT_DATE_SECTIONS: Array<{
   category: EventDateCategory;
   labelKey: string;
@@ -140,12 +139,7 @@ export function EventList({
       <div className="space-y-5">
         <section className="space-y-2.5">
           <Skeleton className="h-5 w-28 rounded-lg" />
-          <div
-            className="grid gap-3"
-            style={{
-              gridTemplateColumns: EVENT_GRID_TEMPLATE_COLUMNS,
-            }}
-          >
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <EventCardSkeleton key={i} />
             ))}
@@ -209,12 +203,7 @@ export function EventList({
               colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
             />
           </h2>
-          <div
-            className="grid gap-3"
-            style={{
-              gridTemplateColumns: EVENT_GRID_TEMPLATE_COLUMNS,
-            }}
-          >
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {promotedEvents.map((event, index) => {
               const delay = index * 0.033;
               return (
@@ -256,12 +245,7 @@ export function EventList({
             <h2 className="text-base font-normal tracking-normal text-foreground">
               {t(labelKey)}
             </h2>
-            <div
-              className="grid gap-3"
-              style={{
-                gridTemplateColumns: EVENT_GRID_TEMPLATE_COLUMNS,
-              }}
-            >
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {sectionEvents.map((event, index) => {
                 // Find the event's flat index within the full visibleEvents array
                 const flatIndex = visibleEvents.findIndex((e) => e.id === event.id);

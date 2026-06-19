@@ -177,7 +177,6 @@ function AppContent() {
   // credits, promotions) also listen to "auth-user-login" events so a
   // post-mount login refetches without needing this useEffect to re-run.
   useEffect(() => {
-    useEventsStore.getState().fetchEvents();
     if (isAuthFlowRoute) return;
     useSavedEventsStore.getState().fetchSavedEvents();
     useSavedOrganizationsStore.getState().fetchSavedOrganizations();
