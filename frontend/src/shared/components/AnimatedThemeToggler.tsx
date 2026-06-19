@@ -83,7 +83,7 @@ export const AnimatedThemeToggler = ({
       ref={buttonRef}
       onMouseDown={toggleTheme}
       className={cn(
-        "flex size-11 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-secondary sm:size-8",
+        "flex size-8 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-secondary",
         className
       )}
       {...props}

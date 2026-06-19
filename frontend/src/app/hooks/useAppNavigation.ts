@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { FilterState, Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
@@ -27,6 +27,7 @@ export function useAppNavigation({
   setFilterStateFromURL,
   setSchoolFilter,
 }: UseAppNavigationOptions) {
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -72,12 +73,12 @@ export function useAppNavigation({
       filtersParam.length > 2 &&
       filtersParam.length <= MAX_FILTERS_PARAM_BYTES
     ) {
-      const parsed = parseFilterQueryString(`${QP.FILTERS}=${filtersParam}`);
+      const parsed = parseFilterQueryString(location.search);
       setFilterStateFromURL(parsed ?? EMPTY_FILTER_STATE);
     } else {
       setFilterStateFromURL(EMPTY_FILTER_STATE);
     }
-  }, [searchParams, navigate, setFilterStateFromURL, setSchoolFilter]);
+  }, [location.search, searchParams, navigate, setFilterStateFromURL, setSchoolFilter]);
 
   useEffect(() => {
     const eventId = searchParams.get(QP.EVENT_ID);

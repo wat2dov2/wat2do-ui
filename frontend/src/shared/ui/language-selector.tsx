@@ -24,7 +24,7 @@ export function LanguageSelector({ className }: LanguageSelectorProps) {
     <Select value={currentLanguageCode} onValueChange={changeLanguage}>
       <SelectTrigger
         className={cn(
-          "h-9 w-fit min-w-[100px] rounded-xl p-2 hover:bg-secondary/80 transition-colors",
+          "w-fit min-w-[100px] hover:bg-secondary/80 transition-colors",
           className
         )}
         size="sm"

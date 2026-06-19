@@ -48,7 +48,7 @@ const FloatingDockDesktop = ({
   }, []);
 
   return (
-    <div className="relative mx-auto flex w-full items-end justify-center">
+    <div className="relative mx-auto inline-flex w-fit max-w-full items-end justify-center">
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 h-9 origin-bottom rounded-md border border-foreground/10 bg-secondary/20 shadow-lg backdrop-blur-md"
         style={{

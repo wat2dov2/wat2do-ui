@@ -305,7 +305,7 @@ export function EventCard({
               disabled={!profileCompleted}
               className={`flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-medium transition-colors ${
                 !profileCompleted
-                  ? "cursor-not-allowed bg-background/25 text-muted-foreground opacity-55 saturate-0"
+                  ? `cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
                   : isSaveActive
                   ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
                   : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`

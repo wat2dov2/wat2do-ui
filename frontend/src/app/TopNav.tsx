@@ -16,7 +16,6 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
-import { Highlighter } from "@/shared/ui/highlighter";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
@@ -81,7 +80,7 @@ export function TopNav() {
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <button
           onMouseDown={handleLogoClick}
-          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-opacity hover:opacity-80"
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-opacity hover:opacity-80"
           aria-label={t("navigation.goToEvents")}
         >
           <img
@@ -95,7 +94,8 @@ export function TopNav() {
           value={schoolFilter ?? ""}
           onChange={setSchoolFilter}
           isAdmin={isAdmin}
-          triggerClassName="!h-11 max-w-[26vw] px-2 sm:!h-8 sm:max-w-none sm:px-3"
+          showHighlight={false}
+          triggerClassName="max-w-[26vw] px-2 sm:max-w-none sm:px-3"
         />
       </div>
 
@@ -108,7 +108,7 @@ export function TopNav() {
                 variant="secondary"
                 size="sm"
                 onMouseDown={handleAdminClick}
-                className="size-11 px-0 sm:size-auto sm:px-3"
+                className="size-8 px-0 sm:w-auto sm:px-3"
               >
                 <Shield className="size-4" strokeWidth={2.5} />
                 <span className="hidden sm:inline">{t("navigation.admin")}</span>
@@ -125,15 +125,11 @@ export function TopNav() {
           <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
             <PopoverTrigger asChild>
               <button
-                className="flex h-11 max-w-[24vw] items-center gap-1 rounded-xl bg-transparent px-2 text-white transition-colors hover:bg-secondary sm:h-8 sm:max-w-[180px] sm:px-3 md:max-w-[240px]"
+                className="flex h-8 max-w-[24vw] items-center gap-1 overflow-hidden rounded-xl bg-transparent px-2 text-sm text-foreground transition-colors hover:bg-secondary sm:max-w-[180px] sm:px-3 md:max-w-[240px]"
                 aria-expanded={orgMenuOpen}
                 type="button"
               >
-                <span className="truncate">
-                  <Highlighter action="highlight" color="var(--primary)">
-                    {activeOrganization.organization_name}
-                  </Highlighter>
-                </span>
+                <span className="truncate">{activeOrganization.organization_name}</span>
                 <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
               </button>
             </PopoverTrigger>
@@ -191,7 +187,7 @@ export function TopNav() {
         )}
 
         {/* Language Selector */}
-        <LanguageSelector className="!h-11 min-w-11 px-1.5 sm:!h-8 sm:min-w-[100px] sm:p-2 [&_[data-language-label]]:hidden sm:[&_[data-language-label]]:inline" />
+        <LanguageSelector className="min-w-8 px-2 sm:min-w-[100px] sm:px-3 [&_[data-language-label]]:hidden sm:[&_[data-language-label]]:inline" />
 
         {/* Dark Mode Toggle */}
         <AnimatedThemeToggler />
@@ -200,7 +196,7 @@ export function TopNav() {
         {profileCompleted ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="sm" onMouseDown={handleSignOut} className="size-11 px-0 sm:size-auto sm:px-3">
+              <Button variant="secondary" size="sm" onMouseDown={handleSignOut} className="size-8 px-0 sm:w-auto sm:px-3">
                 <LogOut className="size-4" strokeWidth={2.5} />
                 <span className="hidden sm:inline">{t("modals.signOut.logOut")}</span>
               </Button>
@@ -214,7 +210,7 @@ export function TopNav() {
             <TooltipTrigger asChild>
               <InteractiveHoverButton
                 onMouseDown={handleSignIn}
-                className="flex min-h-11 items-center justify-center gap-1.5 border-primary bg-primary px-2 py-1.5 text-sm text-primary-foreground max-[359px]:max-w-16 sm:min-h-8 sm:min-w-[120px] sm:px-6"
+                className="flex h-8 items-center justify-center gap-1.5 border-primary bg-primary px-3 text-sm text-primary-foreground max-[359px]:max-w-16 sm:min-w-[120px] sm:px-6"
                 hideDot
               >
                 {t("events.signIn")}

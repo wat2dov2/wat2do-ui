@@ -199,8 +199,7 @@ export function parseFilterQueryString(
     const filtersParam = params.get(QP.FILTERS);
     if (!filtersParam) return null;
 
-    const decoded = decodeURIComponent(filtersParam);
-    const { filters, error } = parseFiltersFromJSON(decoded);
+    const { filters, error } = parseFiltersFromJSON(filtersParam);
     if (error) return null;
     return filters;
   } catch (err) {

@@ -35,10 +35,10 @@ export function EventCardContent({
   badgeClassName = "border-muted-foreground text-muted-foreground",
 }: EventCardContentProps) {
   return (
-    <div className={`relative flex flex-col flex-1 px-4 pt-4 pb-3 ${className ?? ""}`}>
+    <div className={`relative flex flex-col flex-1 px-3 pt-4 pb-3 ${className ?? ""}`}>
       <LightRays />
       <div className="flex flex-col gap-3 h-full flex-1">
-        <h3 className={`font-semibold text-base leading-tight line-clamp-2 ${textClassName}`}>
+        <h3 className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
           {title}
         </h3>
 

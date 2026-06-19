@@ -48,9 +48,9 @@ export function OrganizationsPage() {
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
 
   return (
-    <div className="-mt-4 space-y-4">
-      <div className="space-y-4 pb-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+    <div className="-mt-2 space-y-4">
+      <div className="space-y-4 pt-4 pb-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
           {/* Search Bar */}
           <SubmittedSearchInput
             value={searchQuery}

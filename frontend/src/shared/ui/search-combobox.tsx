@@ -48,7 +48,7 @@ export interface SearchComboboxProps<T> {
 }
 
 const VARIANT_TRIGGER_STYLES: Record<SearchComboboxVariant, string> = {
-  nav: "flex text-white items-center gap-1 px-3 h-8 bg-transparent hover:bg-secondary rounded-xl transition-colors",
+  nav: "flex h-8 min-w-0 items-center gap-1 overflow-hidden rounded-xl bg-transparent px-3 text-sm text-foreground transition-colors hover:bg-secondary",
   field:
     "flex h-9 w-full items-center justify-between gap-2 rounded-xl border border-border bg-secondary px-3 py-1 text-left text-base md:text-sm text-foreground hover:bg-muted/60 shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
 };
