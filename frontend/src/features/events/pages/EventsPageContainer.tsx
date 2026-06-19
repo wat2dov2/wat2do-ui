@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale/zh-CN";
 import { enUS } from "date-fns/locale/en-US";
-import { Utensils, Heart } from "@/shared/ui/doodle-icons";
+import { ChevronUp, Utensils, Heart } from "@/shared/ui/doodle-icons";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Button } from "@/shared/ui/button";
 import { LightRays } from "@/registry/magicui/light-rays";
 import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
@@ -188,7 +189,48 @@ export function EventsPageContainer() {
           )}
         </main>
       </div>
+      <EventsBackToTopButton />
     </>
+  );
+}
+
+function EventsBackToTopButton() {
+  const { t } = useTranslation();
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const scrollRoot = document.querySelector<HTMLElement>(".main-content-grid");
+    if (!scrollRoot) return;
+
+    const syncVisibility = () => {
+      setIsVisible(scrollRoot.scrollTop > 400);
+    };
+
+    syncVisibility();
+    scrollRoot.addEventListener("scroll", syncVisibility, { passive: true });
+    return () => scrollRoot.removeEventListener("scroll", syncVisibility);
+  }, []);
+
+  const scrollToTop = () => {
+    const scrollRoot = document.querySelector<HTMLElement>(".main-content-grid");
+    scrollRoot?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <Button
+      type="button"
+      size="icon-lg"
+      variant="secondary"
+      aria-label={t("events.backToTop")}
+      onMouseDown={scrollToTop}
+      className={`fixed bottom-[4.75rem] right-4 z-40 rounded-full border border-border/80 bg-background/90 text-foreground shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-secondary sm:bottom-4 ${
+        isVisible
+          ? "pointer-events-auto translate-y-0 opacity-100"
+          : "pointer-events-none translate-y-3 opacity-0"
+      }`}
+    >
+      <ChevronUp className="size-5" />
+    </Button>
   );
 }
 

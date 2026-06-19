@@ -107,6 +107,7 @@ export function EventCard({
   // Show delete only if the user is an admin or the event owner.
   const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
   const canManageEvent = isAdmin || isOwner;
+  const isSaveActive = profileCompleted && isSaved;
   
   // Check if this event should be shown in modal based on URL
   const eventIdParam = searchParams.get(QP.EVENT_ID);
@@ -303,13 +304,15 @@ export function EventCard({
               }}
               disabled={!profileCompleted}
               className={`flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-medium transition-colors ${
-                isSaved
+                !profileCompleted
+                  ? "cursor-not-allowed bg-background/25 text-muted-foreground opacity-55 saturate-0"
+                  : isSaveActive
                   ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
                   : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
-              } ${!profileCompleted ? "cursor-not-allowed opacity-50" : ""}`}
+              }`}
             >
-              <Heart className={`size-4 ${isSaved ? "fill-error text-error" : ""}`} fill={isSaved ? "currentColor" : "none"} />
-              <span className="truncate">{isSaved ? t("common.saved") : t("common.imInterested")}</span>
+              <Heart className={`size-4 ${isSaveActive ? "fill-error text-error" : ""}`} fill={isSaveActive ? "currentColor" : "none"} />
+              <span className="truncate">{isSaveActive ? t("common.saved") : t("common.imInterested")}</span>
             </button>
 
             <button

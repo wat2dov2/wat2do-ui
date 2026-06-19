@@ -50,7 +50,7 @@ const FloatingDockDesktop = ({
   return (
     <div className="relative mx-auto flex w-full items-end justify-center">
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-1 h-9 origin-bottom rounded-md border border-foreground/10 bg-secondary/20 shadow-lg backdrop-blur-md"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-9 origin-bottom rounded-md border border-foreground/10 bg-secondary/20 shadow-lg backdrop-blur-md"
         style={{
           transform: `perspective(140px) rotateX(45deg) scaleX(${canMagnify ? 1.15 : 1})`,
         }}
@@ -60,7 +60,7 @@ const FloatingDockDesktop = ({
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
-          "relative z-10 flex h-[64px] max-w-full items-end justify-center gap-1.5 px-2 pb-2.5 sm:h-[60px] sm:gap-4 sm:px-6",
+          "relative z-10 flex h-[64px] max-w-full items-end justify-center gap-1.5 px-2 pb-0.5 sm:h-[60px] sm:gap-4 sm:px-6",
           className,
         )}
       >

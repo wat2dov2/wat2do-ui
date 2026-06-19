@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ImageOff } from "@/shared/ui/doodle-icons";
+import { Download, Heart, ImageOff, Share2 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
@@ -18,7 +18,7 @@ interface EventFormPreviewProps {
 
 export function EventFormPreview({ className }: EventFormPreviewProps) {
   const { t, i18n } = useTranslation();
-  const { formData, selectedOrganizationName } = useEventFormContext();
+  const { formData, imagePreview, selectedOrganizationName } = useEventFormContext();
   const categoryClasses = getCategoryClasses(formData.category);
 
   // Generate badges matching EventCard structure
@@ -49,25 +49,25 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
   );
 
   return (
-    <div className={cn("min-h-0 w-80 space-y-4 overflow-y-auto border-l border-border p-6", className)}>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-foreground">
+    <div className={cn("min-h-0 w-[22rem] shrink-0 flex-col overflow-y-auto border-l border-border bg-background/40 p-5", className)}>
+      <div className="mb-4 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+        <span className="whitespace-nowrap text-sm font-semibold text-foreground">
           {t("forms.livePreview")}
         </span>
-        <span className="text-right text-[10px] text-muted-foreground">
+        <span className="text-right text-[11px] leading-snug text-muted-foreground">
           {t("events.previewDescription")}
         </span>
       </div>
 
       {/* Preview Card - Matches EventCard styling exactly */}
       <article
-        className="rounded-xl overflow-hidden flex flex-col bg-card"
+        className="mx-auto flex w-full max-w-[18.5rem] flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/80"
       >
         {/* Event Image */}
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
           {/* Background - using LazyImage with fallback */}
           <LazyImage
-            src=""
+            src={imagePreview || undefined}
             alt={formData.title || t("events.eventTitle")}
             className="absolute inset-0 w-full h-full"
             fallback={
@@ -117,6 +117,21 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
             secondaryTextClassName={categoryClasses.text}
             badgeClassName={`border-current ${categoryClasses.text}`}
           />
+
+          <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
+            <div className={`flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-medium opacity-75 ${categoryClasses.text}`}>
+              <Heart className="size-4" />
+              <span className="truncate">{t("common.imInterested")}</span>
+            </div>
+            <div className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 ${categoryClasses.border} ${categoryClasses.text}`}>
+              <Share2 className="size-4" />
+              <span className="truncate">{t("common.share")}</span>
+            </div>
+            <div className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 ${categoryClasses.border} ${categoryClasses.text}`}>
+              <Download className="size-4" />
+              <span className="truncate">{t("common.export")}</span>
+            </div>
+          </div>
         </div>
       </article>
     </div>

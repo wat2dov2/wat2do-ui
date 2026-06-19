@@ -92,6 +92,7 @@ export function EventDetailsModal({
 
   const isOpen = event !== null;
   const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;
+  const isSaveActive = profileCompleted && isSaved;
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
@@ -213,14 +214,20 @@ export function EventDetailsModal({
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5 pr-8 sm:pr-0">
                     <Button
                       type="button"
-                      variant={isSaved ? "secondary" : "outline"}
+                      variant={isSaveActive ? "secondary" : "outline"}
                       size="sm"
                       disabled={!profileCompleted}
                       onMouseDown={() => toggleSaveEvent(displayedEvent.id)}
-                      className={isSaved ? "border-error/20 bg-error/10 text-error hover:bg-error/15" : ""}
+                      className={
+                        !profileCompleted
+                          ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
+                          : isSaveActive
+                            ? "border-error/20 bg-error/10 text-error hover:bg-error/15"
+                            : ""
+                      }
                     >
-                      <Heart className={`size-4 ${isSaved ? "fill-current" : ""}`} />
-                      {isSaved ? t("common.saved") : t("common.imInterested")}
+                      <Heart className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
+                      {isSaveActive ? t("common.saved") : t("common.imInterested")}
                     </Button>
                     <Button
                       type="button"
