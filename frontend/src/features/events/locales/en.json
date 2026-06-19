@@ -91,6 +91,8 @@
       }
     },
     "promoted": "PROMOTED",
+    "new": "NEW",
+    "saveRequiresLogin": "Sign in to save events",
     "deleteEventTitle": "Delete Event",
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
     "similarEvents": "Similar Events"

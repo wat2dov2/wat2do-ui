@@ -24,7 +24,6 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   const events = useEventsStore((s) => s.events);
   const promotedEvents = useEventsStore((s) => s.promotedEvents);
   const isLoading = useEventsStore((s) => s.isLoading);
-  const isPromotedLoading = useEventsStore((s) => s.isPromotedLoading);
   const error = useEventsStore((s) => s.error);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const fetchEvents = useEventsStore((s) => s.fetchEvents);
@@ -33,7 +32,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
 
   const { latest: latestAddedEvent } = useLatestAddedEvent(schoolFilter ?? undefined);
 
-  const { recommendations, isLoading: recsLoading } = useRecommendations();
+  const { recommendations } = useRecommendations();
 
   const filters = useSearch({
     events,
@@ -88,13 +87,11 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
 
   return {
     isLoading,
-    isPromotedLoading,
     error,
     fetchEvents,
     savedEventIds,
     promotedEvents,
     latestAddedEvent,
-    recsLoading,
     filters,
     orderedEvents,
     handleDeleteEvent,

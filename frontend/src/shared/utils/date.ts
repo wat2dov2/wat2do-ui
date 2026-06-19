@@ -38,6 +38,34 @@ export function getPrimaryOccurrence(event: { occurrences?: Occurrence[] }): Occ
   return sorted[0] || null;
 }
 
+export function isEventHappeningNow(
+  event: { occurrences?: Occurrence[] },
+  currentDate: Date = new Date()
+): boolean {
+  const primary = getPrimaryOccurrence(event);
+  if (!primary?.dtstart_utc || !primary.dtend_utc) return false;
+
+  const start = new Date(primary.dtstart_utc);
+  const end = new Date(primary.dtend_utc);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+
+  const now = currentDate.getTime();
+  return start.getTime() <= now && now <= end.getTime();
+}
+
+export function wasAddedWithinLast24Hours(
+  event: { added_at?: string | null },
+  currentDate: Date = new Date()
+): boolean {
+  if (!event.added_at) return false;
+
+  const addedAt = new Date(event.added_at);
+  if (Number.isNaN(addedAt.getTime())) return false;
+
+  const ageMs = currentDate.getTime() - addedAt.getTime();
+  return ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000;
+}
+
 /**
  * Format event date for card display (e.g., "Tuesday Jan 27")
  * Uses i18n locale for proper localization
@@ -175,4 +203,3 @@ export function formatOccurrence(
   }
   return `${datePrefix}, ${startStr}`;
 }
-

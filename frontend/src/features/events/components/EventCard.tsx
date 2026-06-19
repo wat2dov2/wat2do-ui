@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
+import { Badge } from "@/shared/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
@@ -28,7 +30,12 @@ import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthSt
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
 import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
-import { formatCardDate, formatCardTime } from "@/shared/utils/date";
+import {
+  formatCardDate,
+  formatCardTime,
+  isEventHappeningNow,
+  wasAddedWithinLast24Hours,
+} from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import type { Event } from "@/shared/types";
@@ -124,6 +131,8 @@ export function EventCard({
   // Format date and time using extracted utilities
   const cardDate = formatCardDate(event, i18n.language || 'en-US');
   const cardTime = formatCardTime(event);
+  const isLive = isEventHappeningNow(event);
+  const isNew = !isLive && wasAddedWithinLast24Hours(event);
 
   const filterUrlActions = useFilterUrlActions();
 
@@ -157,6 +166,27 @@ export function EventCard({
       navigate(`/?${newParams.toString()}`, { replace: false });
     }
   };
+
+  const saveButton = (
+    <button
+      type="button"
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        if (profileCompleted) toggleSaveEvent(event.id);
+      }}
+      disabled={!profileCompleted}
+      aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
+      className={`flex min-h-10 w-full items-center justify-center px-2 transition-colors ${
+        !profileCompleted
+          ? `pointer-events-none cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
+          : isSaveActive
+          ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
+          : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
+      }`}
+    >
+      <Heart className={`size-4 ${isSaveActive ? "fill-error text-error" : ""}`} fill={isSaveActive ? "currentColor" : "none"} />
+    </button>
+  );
 
   return (
     <>
@@ -210,8 +240,17 @@ export function EventCard({
             </button>
           </BadgeMask>
 
-          {/* Menu Badge - Top Right */}
-          <BadgeMask variant="top-right">
+          {/* Status Badge - Top Right */}
+          {(isLive || isNew) && (
+            <BadgeMask variant="top-right">
+              <Badge variant={isLive ? "live" : "new"} className="uppercase">
+                {isLive ? t("common.live") : t("events.new")}
+              </Badge>
+            </BadgeMask>
+          )}
+
+          {/* Menu Badge - Bottom Right */}
+          <BadgeMask variant="bottom-right">
             <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <button
@@ -296,24 +335,20 @@ export function EventCard({
           />
 
           <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                if (profileCompleted) toggleSaveEvent(event.id);
-              }}
-              disabled={!profileCompleted}
-              className={`flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-medium transition-colors ${
-                !profileCompleted
-                  ? `cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
-                  : isSaveActive
-                  ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
-                  : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
-              }`}
-            >
-              <Heart className={`size-4 ${isSaveActive ? "fill-error text-error" : ""}`} fill={isSaveActive ? "currentColor" : "none"} />
-              <span className="truncate">{isSaveActive ? t("common.saved") : t("common.imInterested")}</span>
-            </button>
+            {profileCompleted ? (
+              saveButton
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="block min-h-10 cursor-not-allowed" onMouseDown={(e) => e.stopPropagation()}>
+                    {saveButton}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("events.saveRequiresLogin")}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             <button
               type="button"
@@ -321,10 +356,10 @@ export function EventCard({
                 e.stopPropagation();
                 setActiveDialog("share");
               }}
-              className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+              aria-label={t("common.share")}
+              className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
             >
               <Share2 className="size-4" />
-              <span className="truncate">{t("common.share")}</span>
             </button>
 
             <DropdownMenu>
@@ -333,10 +368,10 @@ export function EventCard({
                   type="button"
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+                  aria-label={t("common.export")}
+                  className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
                 >
                   <Download className="size-4" />
-                  <span className="truncate">{t("common.export")}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent

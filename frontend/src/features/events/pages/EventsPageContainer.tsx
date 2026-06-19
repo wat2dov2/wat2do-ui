@@ -31,8 +31,6 @@ export function EventsPageContainer() {
 
   const {
     isLoading,
-    isPromotedLoading,
-    recsLoading,
     error,
     fetchEvents,
     savedEventIds,
@@ -43,7 +41,7 @@ export function EventsPageContainer() {
     handleDeleteEvent,
   } = useEventsPageData({ profileCompleted });
 
-  const isPageLoading = isLoading || isPromotedLoading || recsLoading;
+  const isPageLoading = isLoading;
 
   // Memoize view mode change handler to ensure stable reference
   const handleViewModeChange = useCallback((mode: ViewMode) => {
