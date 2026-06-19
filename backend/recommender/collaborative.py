@@ -28,11 +28,9 @@ log = logging.getLogger(__name__)
 _cf_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 
 
-def _build_cf_matrices() -> (
-    tuple[
-        dict[str, dict[int, float]], dict[str, float], dict[int, dict[str, float]], dict[int, float]
-    ]
-):
+def _build_cf_matrices() -> tuple[
+    dict[str, dict[int, float]], dict[str, float], dict[int, dict[str, float]], dict[int, float]
+]:
     """Build (user_vectors, user_magnitudes, item_vectors, item_magnitudes) from interaction matrix and saves."""
     matrix = get_interaction_matrix()
     saves = saved_event_service.get_all_user_saves()
@@ -79,11 +77,9 @@ def _build_cf_matrices() -> (
     return user_vectors, user_magnitudes, item_vectors, item_magnitudes
 
 
-def _get_cf_matrices() -> (
-    tuple[
-        dict[str, dict[int, float]], dict[str, float], dict[int, dict[str, float]], dict[int, float]
-    ]
-):
+def _get_cf_matrices() -> tuple[
+    dict[str, dict[int, float]], dict[str, float], dict[int, dict[str, float]], dict[int, float]
+]:
     """Return (user_vectors, user_magnitudes, item_vectors, item_magnitudes), rebuilding if the TTL has expired."""
     return _cf_cache.get_or_compute("cf_matrices", _build_cf_matrices)
 

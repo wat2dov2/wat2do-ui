@@ -216,9 +216,9 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
         if c[0][0] and "dtstart_utc" in c[0][0][0] and "event_id" in c[0][0][0]
     ]
     assert len(occurrence_inserts) == 1
-    assert (
-        len(occurrence_inserts[0][0][0]) == 3
-    ), "expected 3 event_dates rows for the 3-occurrence event"
+    assert len(occurrence_inserts[0][0][0]) == 3, (
+        "expected 3 event_dates rows for the 3-occurrence event"
+    )
 
 
 def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
