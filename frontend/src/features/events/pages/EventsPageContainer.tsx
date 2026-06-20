@@ -115,7 +115,7 @@ export function EventsPageContainer() {
   return (
     <>
       <div
-        className="pointer-events-none fixed left-0 right-2.5 top-0 z-[45] h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)]"
+        className="pointer-events-none fixed left-0 right-2.5 top-0 z-[45] hidden h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)] sm:block"
         aria-hidden="true"
       >
         {isDarkMode && (

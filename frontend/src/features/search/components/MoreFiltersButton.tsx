@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { SlidersHorizontal, X } from "@/shared/ui/doodle-icons";
-import { Popover, PopoverAnchor, PopoverContent } from "@/shared/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 
 interface MoreFiltersButtonProps {
   open: boolean;
@@ -22,22 +22,10 @@ export function MoreFiltersButton({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverAnchor asChild>
+      <PopoverTrigger asChild>
         <button
           type="button"
           data-elevation="control"
-          onMouseDown={(e) => {
-            if (e.button !== 0) return;
-
-            e.preventDefault();
-            onOpenChange(!open);
-          }}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter" && e.key !== " ") return;
-
-            e.preventDefault();
-            onOpenChange(!open);
-          }}
           className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
             open || filterCount > 0
               ? "bg-primary/80 text-primary-foreground"
@@ -69,7 +57,7 @@ export function MoreFiltersButton({
             </span>
           )}
         </button>
-      </PopoverAnchor>
+      </PopoverTrigger>
       <PopoverContent
         align="end"
         sideOffset={8}
