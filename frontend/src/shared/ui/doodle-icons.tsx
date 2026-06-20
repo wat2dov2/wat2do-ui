@@ -2,7 +2,7 @@ import React from "react";
 
 export type LucideIcon = React.ComponentType<React.SVGProps<SVGSVGElement> & { size?: number | string }>;
 
-export const Plus = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Plus = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -32,7 +32,7 @@ export const Plus = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const AlertCircle = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const AlertCircle = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -64,7 +64,7 @@ export const AlertCircle = React.forwardRef<SVGSVGElement, React.ComponentPropsW
   }
 );
 
-export const AlertTriangle = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const AlertTriangle = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -96,7 +96,7 @@ export const AlertTriangle = React.forwardRef<SVGSVGElement, React.ComponentProp
   }
 );
 
-export const ArrowLeft = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ArrowLeft = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -119,7 +119,7 @@ export const ArrowLeft = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const ArrowRight = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ArrowRight = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -142,7 +142,7 @@ export const ArrowRight = React.forwardRef<SVGSVGElement, React.ComponentPropsWi
   }
 );
 
-export const ArrowUpDown = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ArrowUpDown = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -165,7 +165,7 @@ export const ArrowUpDown = React.forwardRef<SVGSVGElement, React.ComponentPropsW
   }
 );
 
-export const AtSign = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const AtSign = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -195,7 +195,7 @@ export const AtSign = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Bell = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Bell = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -225,7 +225,7 @@ export const Bell = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const BookOpen = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const BookOpen = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -257,7 +257,7 @@ export const BookOpen = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
 );
 
 // fallow-ignore-next-line unused-export
-export const Bookmark = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Bookmark = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -288,7 +288,7 @@ export const Bookmark = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
 );
 
 // fallow-ignore-next-line unused-export
-export const Building2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Building2 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -318,7 +318,7 @@ export const Building2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const Calendar = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Calendar = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -353,7 +353,7 @@ export const Calendar = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const CalendarDays = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const CalendarDays = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -388,7 +388,7 @@ export const CalendarDays = React.forwardRef<SVGSVGElement, React.ComponentProps
   }
 );
 
-export const Camera = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Camera = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -418,7 +418,7 @@ export const Camera = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Check = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Check = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -441,7 +441,7 @@ export const Check = React.forwardRef<SVGSVGElement, React.ComponentPropsWithout
   }
 );
 
-export const CheckCircle = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const CheckCircle = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -465,7 +465,7 @@ export const CheckCircle = React.forwardRef<SVGSVGElement, React.ComponentPropsW
   }
 );
 
-export const CheckCircle2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const CheckCircle2 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -489,7 +489,7 @@ export const CheckCircle2 = React.forwardRef<SVGSVGElement, React.ComponentProps
   }
 );
 
-export const CheckIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const CheckIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -512,7 +512,7 @@ export const CheckIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const ChevronDown = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronDown = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -535,7 +535,7 @@ export const ChevronDown = React.forwardRef<SVGSVGElement, React.ComponentPropsW
   }
 );
 
-export const ChevronDownIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronDownIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -558,7 +558,7 @@ export const ChevronDownIcon = React.forwardRef<SVGSVGElement, React.ComponentPr
   }
 );
 
-export const ChevronLeft = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronLeft = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -581,7 +581,7 @@ export const ChevronLeft = React.forwardRef<SVGSVGElement, React.ComponentPropsW
   }
 );
 
-export const ChevronLeftIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronLeftIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -604,7 +604,7 @@ export const ChevronLeftIcon = React.forwardRef<SVGSVGElement, React.ComponentPr
   }
 );
 
-export const ChevronRight = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronRight = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -627,7 +627,7 @@ export const ChevronRight = React.forwardRef<SVGSVGElement, React.ComponentProps
   }
 );
 
-export const ChevronRightIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronRightIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -650,7 +650,7 @@ export const ChevronRightIcon = React.forwardRef<SVGSVGElement, React.ComponentP
   }
 );
 
-export const ChevronUp = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronUp = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -673,7 +673,7 @@ export const ChevronUp = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const ChevronUpIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronUpIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -696,7 +696,7 @@ export const ChevronUpIcon = React.forwardRef<SVGSVGElement, React.ComponentProp
   }
 );
 
-export const ChevronsUpDown = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ChevronsUpDown = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -719,7 +719,7 @@ export const ChevronsUpDown = React.forwardRef<SVGSVGElement, React.ComponentPro
   }
 );
 
-export const Circle = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Circle = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -749,7 +749,7 @@ export const Circle = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Clock = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Clock = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -780,7 +780,7 @@ export const Clock = React.forwardRef<SVGSVGElement, React.ComponentPropsWithout
   }
 );
 
-export const Coins = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Coins = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -811,7 +811,7 @@ export const Coins = React.forwardRef<SVGSVGElement, React.ComponentPropsWithout
   }
 );
 
-export const Compass = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Compass = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -841,7 +841,7 @@ export const Compass = React.forwardRef<SVGSVGElement, React.ComponentPropsWitho
   }
 );
 
-export const CreditCard = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const CreditCard = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -865,7 +865,7 @@ export const CreditCard = React.forwardRef<SVGSVGElement, React.ComponentPropsWi
   }
 );
 
-export const DollarSign = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const DollarSign = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -896,7 +896,7 @@ export const DollarSign = React.forwardRef<SVGSVGElement, React.ComponentPropsWi
   }
 );
 
-export const Download = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Download = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -928,7 +928,7 @@ export const Download = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
 );
 
 // fallow-ignore-next-line unused-export
-export const Edit = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Edit = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -958,7 +958,7 @@ export const Edit = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const ExternalLink = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ExternalLink = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -989,7 +989,7 @@ export const ExternalLink = React.forwardRef<SVGSVGElement, React.ComponentProps
   }
 );
 
-export const Eye = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Eye = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1020,7 +1020,7 @@ export const Eye = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRe
   }
 );
 
-export const EyeOff = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const EyeOff = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1052,7 +1052,7 @@ export const EyeOff = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Facebook = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Facebook = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1075,7 +1075,7 @@ export const Facebook = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const FileText = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const FileText = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1109,7 +1109,7 @@ export const FileText = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const Flag = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Flag = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1139,7 +1139,7 @@ export const Flag = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const GraduationCap = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const GraduationCap = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1173,7 +1173,7 @@ export const GraduationCap = React.forwardRef<SVGSVGElement, React.ComponentProp
   }
 );
 
-export const Grid3x3 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Grid3x3 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1203,7 +1203,7 @@ export const Grid3x3 = React.forwardRef<SVGSVGElement, React.ComponentPropsWitho
   }
 );
 
-export const Heart = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Heart = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, fill, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1240,7 +1240,7 @@ export const Heart = React.forwardRef<SVGSVGElement, React.ComponentPropsWithout
   }
 );
 
-export const HelpCircle = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const HelpCircle = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1271,7 +1271,7 @@ export const HelpCircle = React.forwardRef<SVGSVGElement, React.ComponentPropsWi
   }
 );
 
-export const ImageOff = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ImageOff = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1302,7 +1302,7 @@ export const ImageOff = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const ImagePlus = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ImagePlus = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1333,7 +1333,7 @@ export const ImagePlus = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const Instagram = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Instagram = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1365,7 +1365,7 @@ export const Instagram = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const Link = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Link = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1396,7 +1396,7 @@ export const Link = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const Linkedin = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Linkedin = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1429,7 +1429,7 @@ export const Linkedin = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const Loader2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Loader2 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1460,7 +1460,7 @@ export const Loader2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWitho
   }
 );
 
-export const LogIn = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const LogIn = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1491,7 +1491,7 @@ export const LogIn = React.forwardRef<SVGSVGElement, React.ComponentPropsWithout
   }
 );
 
-export const LogOut = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const LogOut = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1522,7 +1522,7 @@ export const LogOut = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Mail = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Mail = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1552,7 +1552,7 @@ export const Mail = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const MailOpen = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const MailOpen = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1582,7 +1582,7 @@ export const MailOpen = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const MapPin = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const MapPin = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1612,7 +1612,7 @@ export const MapPin = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Megaphone = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Megaphone = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1642,7 +1642,7 @@ export const Megaphone = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const MessageCircle = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const MessageCircle = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1675,7 +1675,7 @@ export const MessageCircle = React.forwardRef<SVGSVGElement, React.ComponentProp
   }
 );
 
-export const Moon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Moon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1705,7 +1705,7 @@ export const Moon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const MoreHorizontal = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const MoreHorizontal = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1737,7 +1737,7 @@ export const MoreHorizontal = React.forwardRef<SVGSVGElement, React.ComponentPro
   }
 );
 
-export const Palette = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Palette = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1767,7 +1767,7 @@ export const Palette = React.forwardRef<SVGSVGElement, React.ComponentPropsWitho
   }
 );
 
-export const QrCode = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const QrCode = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1808,7 +1808,7 @@ export const QrCode = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Search = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Search = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1838,7 +1838,7 @@ export const Search = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const SearchIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const SearchIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1868,7 +1868,7 @@ export const SearchIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWi
   }
 );
 
-export const Settings = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Settings = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1900,7 +1900,7 @@ export const Settings = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const Share2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Share2 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1930,7 +1930,7 @@ export const Share2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const Shield = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Shield = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1961,7 +1961,7 @@ export const Shield = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const ShieldAlert = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const ShieldAlert = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -1992,7 +1992,7 @@ export const ShieldAlert = React.forwardRef<SVGSVGElement, React.ComponentPropsW
   }
 );
 
-export const SlidersHorizontal = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const SlidersHorizontal = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2022,7 +2022,7 @@ export const SlidersHorizontal = React.forwardRef<SVGSVGElement, React.Component
   }
 );
 
-export const Sparkles = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Sparkles = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2055,7 +2055,7 @@ export const Sparkles = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const Sun = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Sun = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2093,7 +2093,7 @@ export const Sun = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRe
   }
 );
 
-export const Tag = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Tag = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2117,7 +2117,7 @@ export const Tag = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRe
   }
 );
 
-export const Trash2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Trash2 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2149,7 +2149,7 @@ export const Trash2 = React.forwardRef<SVGSVGElement, React.ComponentPropsWithou
   }
 );
 
-export const User = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const User = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2180,7 +2180,7 @@ export const User = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutR
   }
 );
 
-export const UserCheck = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const UserCheck = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2211,7 +2211,7 @@ export const UserCheck = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const UserMinus = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const UserMinus = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2243,7 +2243,7 @@ export const UserMinus = React.forwardRef<SVGSVGElement, React.ComponentPropsWit
   }
 );
 
-export const UserPlus = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const UserPlus = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2275,7 +2275,7 @@ export const UserPlus = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const Users = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Users = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2306,7 +2306,7 @@ export const Users = React.forwardRef<SVGSVGElement, React.ComponentPropsWithout
   }
 );
 
-export const Utensils = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Utensils = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2337,7 +2337,7 @@ export const Utensils = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const X = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const X = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2367,7 +2367,7 @@ export const X = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<
   }
 );
 
-export const XIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const XIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2398,7 +2398,7 @@ export const XIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithout
 );
 
 // fallow-ignore-next-line unused-export
-export const XasXIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const XasXIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";
@@ -2428,7 +2428,7 @@ export const XasXIcon = React.forwardRef<SVGSVGElement, React.ComponentPropsWith
   }
 );
 
-export const Zap = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+export const Zap = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
     const height = size || props.height || "24";

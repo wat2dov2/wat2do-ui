@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useMemo, useState } from "react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -48,21 +48,6 @@ const EventDetailsModal = lazy(() =>
     default: module.EventDetailsModal,
   })),
 );
-const DeleteEventDialog = lazy(() =>
-  import("@/features/events/components/DeleteEventDialog").then((module) => ({
-    default: module.DeleteEventDialog,
-  })),
-);
-const EventShareDialog = lazy(() =>
-  import("@/features/events/components/EventShareDialog").then((module) => ({
-    default: module.EventShareDialog,
-  })),
-);
-const EventReportDialog = lazy(() =>
-  import("@/features/events/components/EventReportDialog").then((module) => ({
-    default: module.EventReportDialog,
-  })),
-);
 
 interface EventCardProps {
   event: Event;
@@ -71,9 +56,10 @@ interface EventCardProps {
   disableModal?: boolean;
   /** Called when the user confirms deletion (shown only to owners/admins). */
   onDelete?: (eventId: number) => void;
+  onActionDialogOpen: (dialog: EventCardDialog, event: Event) => void;
 }
 
-type EventCardDialog = "delete" | "share" | "report";
+export type EventCardDialog = "delete" | "share" | "report";
 
 /**
  * Data flow:
@@ -84,23 +70,28 @@ type EventCardDialog = "delete" | "share" | "report";
  * 3. Narrow auth-slice hooks supply `isAdmin`, `profileCompleted`, and
  *    `getUserId()` the current user identity.
  */
-export function EventCard({
+function EventCardComponent({
   event,
   isSaved = false,
   onEventClick,
   disableModal,
   onDelete,
+  onActionDialogOpen,
 }: EventCardProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeDialog, setActiveDialog] = useState<EventCardDialog | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
 
-  const badgeHoverProps = {
-    onMouseEnter: () => setIsHoveringBadge(true),
-    onMouseLeave: () => setIsHoveringBadge(false),
-  };
+  const handleBadgeMouseEnter = useCallback(() => setIsHoveringBadge(true), []);
+  const handleBadgeMouseLeave = useCallback(() => setIsHoveringBadge(false), []);
+  const badgeHoverProps = useMemo(
+    () => ({
+      onMouseEnter: handleBadgeMouseEnter,
+      onMouseLeave: handleBadgeMouseLeave,
+    }),
+    [handleBadgeMouseEnter, handleBadgeMouseLeave],
+  );
 
   const { t, i18n } = useTranslation();
 
@@ -125,27 +116,33 @@ export function EventCard({
 
   // Use extracted hook for badges
   const badges = useEventBadges(event);
-  const eventCategory = getEventCategory(event);
-  const categoryClasses = getCategoryClasses(eventCategory);
+  const eventCategory = useMemo(() => getEventCategory(event), [event]);
+  const categoryClasses = useMemo(() => getCategoryClasses(eventCategory), [eventCategory]);
 
   // Format date and time using extracted utilities
-  const cardDate = formatCardDate(event, i18n.language || 'en-US');
-  const cardTime = formatCardTime(event);
-  const isLive = isEventHappeningNow(event);
-  const isNew = !isLive && wasAddedWithinLast24Hours(event);
+  const cardDate = useMemo(
+    () => formatCardDate(event, i18n.language || "en-US"),
+    [event, i18n.language],
+  );
+  const cardTime = useMemo(() => formatCardTime(event), [event]);
+  const isLive = useMemo(() => isEventHappeningNow(event), [event]);
+  const isNew = useMemo(
+    () => !isLive && wasAddedWithinLast24Hours(event),
+    [event, isLive],
+  );
 
   const filterUrlActions = useFilterUrlActions();
 
-  const handleCategoryClick = (e: React.MouseEvent) => {
+  const handleCategoryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     filterUrlActions.toggleFilterValue("categories", eventCategory);
     if (window.location.pathname !== "/") {
       navigate("/");
     }
-  };
+  }, [eventCategory, filterUrlActions, navigate]);
 
-  const handleOrganizationMouseDown = (e: React.MouseEvent) => {
+  const handleOrganizationMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (event.organization) {
@@ -154,9 +151,9 @@ export function EventCard({
         navigate("/");
       }
     }
-  };
+  }, [event.organization, filterUrlActions, navigate]);
 
-  const handleCardActivate = () => {
+  const handleCardActivate = useCallback(() => {
     tracker.track(event.id, "click");
     if (onEventClick) {
       onEventClick(event);
@@ -165,7 +162,15 @@ export function EventCard({
       newParams.set(QP.EVENT_ID, event.id.toString());
       navigate(`/?${newParams.toString()}`, { replace: false });
     }
-  };
+  }, [disableModal, event, navigate, onEventClick, searchParams]);
+
+  const handleActionDialogOpen = useCallback(
+    (dialog: EventCardDialog) => {
+      setIsMenuOpen(false);
+      onActionDialogOpen(dialog, event);
+    },
+    [event, onActionDialogOpen],
+  );
 
   const saveButton = (
     <button
@@ -260,6 +265,7 @@ export function EventCard({
                   className="event-card-actions-trigger flex items-center justify-center rounded-full border border-foreground/20 bg-background/95 px-2 py-0.5 text-[10px] font-bold text-foreground opacity-90 shadow-sm transition-[background-color,opacity] hover:bg-background hover:opacity-100 data-[state=open]:opacity-100"
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="size-3.5" />
                 </button>
@@ -267,28 +273,29 @@ export function EventCard({
               <DropdownMenuContent
                 className="w-48"
                 align="end"
+                side="top"
+                sideOffset={8}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
                 <DropdownMenuItem
                   onSelect={(e) => {
                     e.preventDefault();
-                    setIsMenuOpen(false);
-                    setActiveDialog("report");
+                    handleActionDialogOpen("report");
                   }}
                 >
                   <Flag />
                   {t("common.report")}
                 </DropdownMenuItem>
-                {canManageEvent && (
+                {canManageEvent && onDelete && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"
                       onSelect={(e) => {
                         e.preventDefault();
-                        setIsMenuOpen(false);
-                        setActiveDialog("delete");
+                        handleActionDialogOpen("delete");
                       }}
                     >
                       <Trash2 />
@@ -354,7 +361,7 @@ export function EventCard({
               type="button"
               onMouseDown={(e) => {
                 e.stopPropagation();
-                setActiveDialog("share");
+                handleActionDialogOpen("share");
               }}
               aria-label={t("common.share")}
               className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
@@ -408,37 +415,9 @@ export function EventCard({
         </Suspense>
       )}
 
-      {activeDialog === "delete" && (
-        <Suspense fallback={null}>
-          <DeleteEventDialog
-            open
-            onOpenChange={(open) => setActiveDialog(open ? "delete" : null)}
-            eventTitle={event.title}
-            onConfirm={() => onDelete?.(event.id)}
-          />
-        </Suspense>
-      )}
-
-      {activeDialog === "share" && (
-        <Suspense fallback={null}>
-          <EventShareDialog
-            event={event}
-            open
-            onOpenChange={(open) => setActiveDialog(open ? "share" : null)}
-          />
-        </Suspense>
-      )}
-
-      {activeDialog === "report" && (
-        <Suspense fallback={null}>
-          <EventReportDialog
-            eventId={event.id}
-            eventTitle={event.title}
-            open
-            onOpenChange={(open) => setActiveDialog(open ? "report" : null)}
-          />
-        </Suspense>
-      )}
     </>
   );
 }
+
+export const EventCard = memo(EventCardComponent);
+EventCard.displayName = "EventCard";

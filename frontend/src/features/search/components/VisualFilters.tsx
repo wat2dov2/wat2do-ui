@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { debounce } from "@/shared/utils/debounce";
 import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
@@ -40,24 +39,10 @@ function LocationFilterInput({ value, onChange, placeholder }: LocationFilterInp
     setLocalValue(value);
   }, [value]);
 
-  const debouncedChange = useMemo(
-    () =>
-      debounce((val: string) => {
-        onChange(val.trim() ? [val.trim()] : []);
-      }, 300),
-    [onChange]
-  );
-
-  useEffect(() => {
-    return () => {
-      debouncedChange.cancel?.();
-    };
-  }, [debouncedChange]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setLocalValue(val);
-    debouncedChange(val);
+    onChange(val.trim() ? [val.trim()] : []);
   };
 
   return (

@@ -269,42 +269,16 @@
   .event-card-waterpaint {
     position: relative;
     isolation: isolate;
-  }
-
-  .event-card-waterpaint::before {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: -24%;
-    z-index: 0;
-    background:
-      radial-gradient(ellipse at var(--waterpaint-color-1-x, 14%) var(--waterpaint-color-1-y, 16%), currentColor 0 9%, transparent 34%),
-      radial-gradient(ellipse at var(--waterpaint-color-2-x, 84%) var(--waterpaint-color-2-y, 10%), currentColor 0 8%, transparent 30%),
-      radial-gradient(ellipse at var(--waterpaint-color-3-x, 56%) var(--waterpaint-color-3-y, 64%), currentColor 0 12%, transparent 38%),
-      radial-gradient(ellipse at var(--waterpaint-color-4-x, 8%) var(--waterpaint-color-4-y, 94%), currentColor 0 7%, transparent 28%);
-    filter: blur(22px);
-    opacity: 0.11;
-    transform: rotate(var(--waterpaint-color-rotate, -4deg));
-  }
-
-  .event-card-waterpaint::after {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: -12%;
-    z-index: 0;
-    background:
-      radial-gradient(ellipse at var(--waterpaint-light-1-x, 22%) var(--waterpaint-light-1-y, 18%), var(--card) 0 7%, transparent 22%),
-      radial-gradient(ellipse at var(--waterpaint-light-2-x, 72%) var(--waterpaint-light-2-y, 22%), var(--card) 0 6%, transparent 20%),
-      radial-gradient(ellipse at var(--waterpaint-light-3-x, 38%) var(--waterpaint-light-3-y, 66%), var(--card) 0 9%, transparent 26%),
-      radial-gradient(ellipse at var(--waterpaint-light-4-x, 86%) var(--waterpaint-light-4-y, 86%), var(--card) 0 7%, transparent 24%);
-    filter: blur(16px);
-    opacity: 0.48;
-    transform: rotate(var(--waterpaint-light-rotate, 5deg));
-  }
-
-  .dark .event-card-waterpaint::after {
-    opacity: 0.15;
+    contain: paint;
+    background-image:
+      radial-gradient(ellipse at var(--waterpaint-color-1-x, 14%) var(--waterpaint-color-1-y, 16%), color-mix(in srgb, currentColor 11%, transparent) 0 9%, transparent 35%),
+      radial-gradient(ellipse at var(--waterpaint-color-2-x, 84%) var(--waterpaint-color-2-y, 10%), color-mix(in srgb, currentColor 10%, transparent) 0 8%, transparent 31%),
+      radial-gradient(ellipse at var(--waterpaint-color-3-x, 56%) var(--waterpaint-color-3-y, 64%), color-mix(in srgb, currentColor 12%, transparent) 0 12%, transparent 39%),
+      radial-gradient(ellipse at var(--waterpaint-color-4-x, 8%) var(--waterpaint-color-4-y, 94%), color-mix(in srgb, currentColor 9%, transparent) 0 7%, transparent 29%),
+      radial-gradient(ellipse at var(--waterpaint-light-1-x, 22%) var(--waterpaint-light-1-y, 18%), color-mix(in srgb, var(--card) 56%, transparent) 0 7%, transparent 23%),
+      radial-gradient(ellipse at var(--waterpaint-light-2-x, 72%) var(--waterpaint-light-2-y, 22%), color-mix(in srgb, var(--card) 50%, transparent) 0 6%, transparent 21%),
+      radial-gradient(ellipse at var(--waterpaint-light-3-x, 38%) var(--waterpaint-light-3-y, 66%), color-mix(in srgb, var(--card) 54%, transparent) 0 9%, transparent 27%),
+      radial-gradient(ellipse at var(--waterpaint-light-4-x, 86%) var(--waterpaint-light-4-y, 86%), color-mix(in srgb, var(--card) 48%, transparent) 0 7%, transparent 25%);
   }
 
   .event-card-waterpaint > * {

@@ -138,7 +138,7 @@ export function OrganizationsPage() {
 
         {/* Results Count and Pagination */}
         {!((activeTab === "followed" || activeTab === "claimed") && !authed) && (
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="font-bold text-base text-foreground inline-flex items-baseline gap-1">
               <NumberFlow value={totalItems} respectMotionPreference={false} />
               <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>

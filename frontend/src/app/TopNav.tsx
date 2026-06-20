@@ -94,7 +94,7 @@ export function TopNav() {
           value={schoolFilter ?? ""}
           onChange={setSchoolFilter}
           isAdmin={isAdmin}
-          triggerClassName="max-w-[26vw] px-2 sm:max-w-none sm:px-3"
+          triggerClassName="max-w-[26vw] pl-1 pr-2 sm:max-w-none sm:pl-1.5 sm:pr-3"
         />
       </div>
 

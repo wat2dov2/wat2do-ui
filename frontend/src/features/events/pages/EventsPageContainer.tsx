@@ -1,20 +1,49 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { formatDistanceToNow } from "date-fns";
-import { zhCN } from "date-fns/locale/zh-CN";
-import { enUS } from "date-fns/locale/en-US";
 import { Utensils, Heart } from "@/shared/ui/doodle-icons";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { LightRays } from "@/registry/magicui/light-rays";
-import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
+import { SearchBar, QuickFilterChip, MoreFiltersButton } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode } from "@/shared/hooks";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import type { ViewMode, QuickFilterConfig } from "@/shared/types";
+
+const FilterDropdown = lazy(() =>
+  import("@/features/search").then((module) => ({
+    default: module.FilterDropdown,
+  })),
+);
+
+function formatRelativeTimeFromNow(value: string, locale: string): string {
+  const date = new Date(value);
+  const timestamp = date.getTime();
+  if (Number.isNaN(timestamp)) return "";
+
+  const seconds = Math.round((timestamp - Date.now()) / 1000);
+  const absSeconds = Math.abs(seconds);
+  const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+    ["year", 31_536_000],
+    ["month", 2_592_000],
+    ["week", 604_800],
+    ["day", 86_400],
+    ["hour", 3_600],
+    ["minute", 60],
+    ["second", 1],
+  ];
+  const fallbackUnit: [Intl.RelativeTimeFormatUnit, number] = ["second", 1];
+  const [unit, unitSeconds] =
+    units.find(([, unitSeconds]) => absSeconds >= unitSeconds) ?? fallbackUnit;
+
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
+    Math.round(seconds / unitSeconds),
+    unit,
+  );
+}
 
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
@@ -145,12 +174,16 @@ export function EventsPageContainer() {
                 filterCount={filters.filterCount}
                 onClearFilters={filters.handleClearAllFilters}
               >
-                <FilterDropdown
-                  filterViewMode={filterViewMode}
-                  onFilterViewModeChange={setFilterViewMode}
-                  filters={filters}
-                  isDarkMode={isDarkMode}
-                />
+                {showFilterDropdown ? (
+                  <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+                    <FilterDropdown
+                      filterViewMode={filterViewMode}
+                      onFilterViewModeChange={setFilterViewMode}
+                      filters={filters}
+                      isDarkMode={isDarkMode}
+                    />
+                  </Suspense>
+                ) : null}
               </MoreFiltersButton>
             </div>
           </div>
@@ -198,9 +231,9 @@ interface LatestAddedButtonProps {
   onMouseDown: () => void;
 }
 
-// `formatDistanceToNow` reads the current time. We compute it inline (pure
-// render) and bump a `tick` counter once a minute so the relative-time label
-// stays fresh without setState-in-effect.
+// Relative time reads the current clock. We compute it inline (pure render)
+// and bump a `tick` counter once a minute so the label stays fresh without
+// setState-in-effect.
 function LatestAddedButton({ title, addedAt, onMouseDown }: LatestAddedButtonProps) {
   const { t, i18n } = useTranslation();
   const [, setTick] = useState(0);
@@ -210,8 +243,7 @@ function LatestAddedButton({ title, addedAt, onMouseDown }: LatestAddedButtonPro
     return () => clearInterval(id);
   }, []);
 
-  const locale = i18n.language.startsWith("zh") ? zhCN : enUS;
-  const timeAgo = formatDistanceToNow(new Date(addedAt), { addSuffix: true, locale });
+  const timeAgo = formatRelativeTimeFromNow(addedAt, i18n.language || "en-US");
   const label = t("events.latestAdded", { title, timeAgo });
   return (
     <button

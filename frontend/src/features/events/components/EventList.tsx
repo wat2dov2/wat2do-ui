@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
-import { EventCard } from "@/features/events/components/EventCard";
+import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
 import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
-import { m } from "framer-motion";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 
@@ -36,6 +35,27 @@ const EVENT_DATE_SECTIONS: Array<{
   { category: "later this month", labelKey: "events.dateSections.laterThisMonth" },
   { category: "later", labelKey: "events.dateSections.later" },
 ];
+
+const DeleteEventDialog = lazy(() =>
+  import("@/features/events/components/DeleteEventDialog").then((module) => ({
+    default: module.DeleteEventDialog,
+  })),
+);
+const EventShareDialog = lazy(() =>
+  import("@/features/events/components/EventShareDialog").then((module) => ({
+    default: module.EventShareDialog,
+  })),
+);
+const EventReportDialog = lazy(() =>
+  import("@/features/events/components/EventReportDialog").then((module) => ({
+    default: module.EventReportDialog,
+  })),
+);
+
+interface ActiveEventDialog {
+  type: EventCardDialog;
+  event: Event;
+}
 
 /**
  * Bucket events into the date sections, in section order.
@@ -83,6 +103,7 @@ export function EventList({
 }: EventListProps) {
   const { t } = useTranslation();
   const [requestedVisibleCount, setRequestedVisibleCount] = useState(INITIAL_RENDER_COUNT);
+  const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Wrap id arrays in Sets for O(1) membership lookups per card.
@@ -132,6 +153,52 @@ export function EventList({
     observer.observe(loadMoreNode);
     return () => observer.disconnect();
   }, [regularEvents.length, visibleCount]);
+
+  const handleActionDialogOpen = useCallback((type: EventCardDialog, event: Event) => {
+    setActiveDialog({ type, event });
+  }, []);
+
+  const handleActionDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setActiveDialog(null);
+    }
+  }, []);
+
+  const actionDialogs = activeDialog ? (
+    <>
+      {activeDialog.type === "delete" && (
+        <Suspense fallback={null}>
+          <DeleteEventDialog
+            open
+            onOpenChange={handleActionDialogOpenChange}
+            eventTitle={activeDialog.event.title}
+            onConfirm={() => onDelete?.(activeDialog.event.id)}
+          />
+        </Suspense>
+      )}
+
+      {activeDialog.type === "share" && (
+        <Suspense fallback={null}>
+          <EventShareDialog
+            event={activeDialog.event}
+            open
+            onOpenChange={handleActionDialogOpenChange}
+          />
+        </Suspense>
+      )}
+
+      {activeDialog.type === "report" && (
+        <Suspense fallback={null}>
+          <EventReportDialog
+            eventId={activeDialog.event.id}
+            eventTitle={activeDialog.event.title}
+            open
+            onOpenChange={handleActionDialogOpenChange}
+          />
+        </Suspense>
+      )}
+    </>
+  ) : null;
 
   // Early returns AFTER all hooks
   if (isLoading) {
@@ -189,38 +256,26 @@ export function EventList({
     );
   }
 
-  // Grid view with content-visibility for performance
   return (
-    <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
-      {/* Promoted Events Section */}
-      {promotedEvents && promotedEvents.length > 0 && (
-        <section className="space-y-2.5" aria-label={t("events.promotedEvents")}>
-          <h2 className="text-base font-normal tracking-normal text-foreground">
-            <DiaTextReveal
-              text={t("events.promotedEvents")}
-              className="text-base font-normal tracking-normal text-foreground"
-              textColor="var(--foreground)"
-              colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
-            />
-          </h2>
-          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {promotedEvents.map((event, index) => {
-              const delay = index * 0.033;
-              return (
-                <m.div
+    <>
+      <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
+        {/* Promoted Events Section */}
+        {promotedEvents && promotedEvents.length > 0 && (
+          <section className="space-y-2.5" aria-label={t("events.promotedEvents")}>
+            <h2 className="text-base font-normal tracking-normal text-foreground">
+              <DiaTextReveal
+                text={t("events.promotedEvents")}
+                className="text-base font-normal tracking-normal text-foreground"
+                textColor="var(--foreground)"
+                colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
+              />
+            </h2>
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {promotedEvents.map((event) => (
+                <div
                   key={event.id}
                   role="listitem"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.5,
-                    delay: delay,
-                    ease: [0.18, 0.39, 0.14, 0.9],
-                  }}
                   className="min-w-0"
-                  style={{
-                    pointerEvents: "auto",
-                  }}
                 >
                   <EventCard
                     event={event}
@@ -228,43 +283,29 @@ export function EventList({
                     onEventClick={onEventClick}
                     disableModal={disableModal}
                     onDelete={onDelete}
+                    onActionDialogOpen={handleActionDialogOpen}
                   />
-                </m.div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
-        const sectionEvents = groupedVisibleEvents[category];
-        if (sectionEvents.length === 0) return null;
+        {EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
+          const sectionEvents = groupedVisibleEvents[category];
+          if (sectionEvents.length === 0) return null;
 
-        return (
-          <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
-            <h2 className="text-base font-normal tracking-normal text-foreground">
-              {t(labelKey)}
-            </h2>
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {sectionEvents.map((event, index) => {
-                // Find the event's flat index within the full visibleEvents array
-                const flatIndex = visibleEvents.findIndex((e) => e.id === event.id);
-                const delay = ((flatIndex >= 0 ? flatIndex : index) % RENDER_CHUNK_SIZE) * 0.033;
-                return (
-                  <m.div
+          return (
+            <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
+              <h2 className="text-base font-normal tracking-normal text-foreground">
+                {t(labelKey)}
+              </h2>
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {sectionEvents.map((event) => (
+                  <div
                     key={event.id}
                     role="listitem"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.5,
-                      delay: delay,
-                      ease: [0.18, 0.39, 0.14, 0.9],
-                    }}
                     className="min-w-0"
-                    style={{
-                      pointerEvents: "auto",
-                    }}
                   >
                     <EventCard
                       event={event}
@@ -272,17 +313,19 @@ export function EventList({
                       onEventClick={onEventClick}
                       disableModal={disableModal}
                       onDelete={onDelete}
+                      onActionDialogOpen={handleActionDialogOpen}
                     />
-                  </m.div>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
-      {visibleCount < regularEvents.length && (
-        <div ref={loadMoreRef} aria-hidden="true" className="h-px" />
-      )}
-    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+        {visibleCount < regularEvents.length && (
+          <div ref={loadMoreRef} aria-hidden="true" className="h-px" />
+        )}
+      </div>
+      {actionDialogs}
+    </>
   );
 }

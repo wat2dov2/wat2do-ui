@@ -1,13 +1,15 @@
-import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef, type CSSProperties, type PointerEvent } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef, type PointerEvent } from "react";
+import { animate, m, useDragControls, useMotionValue, type PanInfo } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
-import { ImageOff, ExternalLink, Heart, Share2, Download, Flag } from "@/shared/ui/doodle-icons";
+import { ImageOff, ExternalLink, Heart, Share2, Download, Flag, X } from "@/shared/ui/doodle-icons";
 import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -21,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 // fallow-ignore-next-line circular-dependency
-import { EventCard } from "@/features/events/components/EventCard";
+import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
 import { translateCategory } from "@/shared/utils/event";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { LazyImage } from "@/shared/ui/lazy-image";
@@ -52,7 +54,12 @@ const EventReportDialog = lazy(() =>
 );
 
 const DRAG_CLOSE_THRESHOLD_PX = 120;
-type EventDetailsDialog = "share" | "report";
+type EventDetailsDialog = Exclude<EventCardDialog, "delete">;
+
+interface ActiveEventDetailsDialog {
+  type: EventDetailsDialog;
+  event: Event;
+}
 
 interface EventDetailsModalProps {
   event: Event | null;
@@ -80,10 +87,10 @@ export function EventDetailsModal({
   const [trackedPropEventId, setTrackedPropEventId] = useState<number | null>(
     event?.id ?? null,
   );
-  const [dragOffsetY, setDragOffsetY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [activeDialog, setActiveDialog] = useState<EventDetailsDialog | null>(null);
-  const dragSessionRef = useRef<{ pointerId: number; startY: number } | null>(null);
+  const [activeDialog, setActiveDialog] = useState<ActiveEventDetailsDialog | null>(null);
+  const dragControls = useDragControls();
+  const dragY = useMotionValue(0);
+  const contentRef = useRef<HTMLDivElement>(null);
   if ((event?.id ?? null) !== trackedPropEventId) {
     setTrackedPropEventId(event?.id ?? null);
     setOverrideEvent(null);
@@ -96,6 +103,12 @@ export function EventDetailsModal({
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
+  useEffect(() => {
+    if (isOpen) {
+      dragY.set(0);
+    }
+  }, [dragY, isOpen]);
+
   useEffect(() => {
     if (displayedEvent) {
       openTimeRef.current = Date.now();
@@ -125,67 +138,79 @@ export function EventDetailsModal({
 
   const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
     setOverrideEvent(clickedEvent);
-    document.querySelector("[data-slot='dialog-content']")?.scrollTo({ top: 0, behavior: "smooth" });
+    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const resetDrag = useCallback(() => {
-    dragSessionRef.current = null;
-    setIsDragging(false);
-    setDragOffsetY(0);
+  const handleDragPointerDown = useCallback(
+    (pointerEvent: PointerEvent<HTMLDivElement>) => {
+      if (pointerEvent.button !== 0) return;
+      dragControls.start(pointerEvent);
+    },
+    [dragControls],
+  );
+
+  const handleDragEnd = useCallback(
+    (_event: unknown, info: PanInfo) => {
+      const offsetY = Math.max(0, info.offset.y);
+      if (offsetY >= DRAG_CLOSE_THRESHOLD_PX || info.velocity.y > 700) {
+        onClose();
+        return;
+      }
+      void animate(dragY, 0, {
+        type: "spring",
+        stiffness: 520,
+        damping: 42,
+      });
+    },
+    [dragY, onClose],
+  );
+
+  const handleActionDialogOpen = useCallback((type: EventCardDialog, targetEvent: Event) => {
+    if (type === "delete") return;
+    setActiveDialog({ type, event: targetEvent });
   }, []);
 
-  const handleDragPointerDown = useCallback((pointerEvent: PointerEvent<HTMLDivElement>) => {
-    if (pointerEvent.button !== 0) return;
-    dragSessionRef.current = {
-      pointerId: pointerEvent.pointerId,
-      startY: pointerEvent.clientY,
-    };
-    setIsDragging(true);
-    setDragOffsetY(0);
-    pointerEvent.currentTarget.setPointerCapture(pointerEvent.pointerId);
-  }, []);
-
-  const handleDragPointerMove = useCallback((pointerEvent: PointerEvent<HTMLDivElement>) => {
-    const dragSession = dragSessionRef.current;
-    if (!dragSession || dragSession.pointerId !== pointerEvent.pointerId) return;
-    setDragOffsetY(Math.max(0, pointerEvent.clientY - dragSession.startY));
-  }, []);
-
-  const handleDragPointerEnd = useCallback((pointerEvent: PointerEvent<HTMLDivElement>) => {
-    const dragSession = dragSessionRef.current;
-    if (!dragSession || dragSession.pointerId !== pointerEvent.pointerId) return;
-
-    const offsetY = Math.max(0, pointerEvent.clientY - dragSession.startY);
-    pointerEvent.currentTarget.releasePointerCapture(pointerEvent.pointerId);
-    if (offsetY >= DRAG_CLOSE_THRESHOLD_PX) {
-      resetDrag();
-      onClose();
-      return;
+  const handleActionDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setActiveDialog(null);
     }
-    resetDrag();
-  }, [onClose, resetDrag]);
-
-  const modalDragStyle = {
-    "--event-details-drag-y": `${dragOffsetY}px`,
-  } as CSSProperties;
+  }, []);
 
   const modalState = useModalState({ onClose });
 
   return (
     <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
       <DialogContent
-        className={`max-w-2xl max-h-[90vh] overflow-y-auto border-0 p-0 [translate:-50%_calc(-50%+var(--event-details-drag-y,0px))] ${isDragging ? "transition-none" : "transition-[opacity,scale,translate] duration-100"}`}
-        style={modalDragStyle}
+        asChild
+        showCloseButton={false}
       >
+        <m.div
+          ref={contentRef}
+          className="max-w-2xl max-h-[90vh] overflow-y-auto border-0 p-0"
+          style={{ y: dragY }}
+          drag="y"
+          dragControls={dragControls}
+          dragListener={false}
+          dragConstraints={{ top: 0, bottom: 240 }}
+          dragElastic={{ top: 0, bottom: 0.22 }}
+          dragMomentum={false}
+          onDragEnd={handleDragEnd}
+        >
         {displayedEvent && (
           <>
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                aria-label={t("common.close")}
+              >
+                <X className="size-4" />
+              </button>
+            </DialogClose>
             <div
               className="relative w-full h-64 touch-none select-none overflow-hidden cursor-grab active:cursor-grabbing"
               data-event-details-drag-handle
               onPointerDown={handleDragPointerDown}
-              onPointerMove={handleDragPointerMove}
-              onPointerUp={handleDragPointerEnd}
-              onPointerCancel={resetDrag}
               onDragStart={(dragEvent) => dragEvent.preventDefault()}
             >
               <div className="absolute top-3 left-1/2 z-10 h-1.5 w-12 -translate-x-1/2 rounded-full bg-background/80 shadow-sm" />
@@ -205,13 +230,13 @@ export function EventDetailsModal({
             </div>
 
             <ModalContentWrapper>
-              <DialogHeader>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <DialogHeader className="text-left">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                   <div className="min-w-0">
-                    <DialogTitle>{displayedEvent.title}</DialogTitle>
+                    <DialogTitle className="leading-tight">{displayedEvent.title}</DialogTitle>
                     <DialogDescription>{displayedEvent.organization}</DialogDescription>
                   </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-1.5 pr-8 sm:pr-0">
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
                     <Button
                       type="button"
                       variant={isSaveActive ? "secondary" : "outline"}
@@ -234,7 +259,7 @@ export function EventDetailsModal({
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      onMouseDown={() => setActiveDialog("share")}
+                      onMouseDown={() => setActiveDialog({ type: "share", event: displayedEvent })}
                       aria-label={t("common.share")}
                       title={t("common.share")}
                     >
@@ -267,7 +292,7 @@ export function EventDetailsModal({
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      onMouseDown={() => setActiveDialog("report")}
+                      onMouseDown={() => setActiveDialog({ type: "report", event: displayedEvent })}
                       aria-label={t("common.report")}
                       title={t("common.report")}
                     >
@@ -358,6 +383,7 @@ export function EventDetailsModal({
                           event={similarEvent}
                           onEventClick={handleSimilarEventClick}
                           disableModal={true}
+                          onActionDialogOpen={handleActionDialogOpen}
                         />
                       ))}
                     </div>
@@ -367,23 +393,24 @@ export function EventDetailsModal({
             </ModalContentWrapper>
           </>
         )}
+        </m.div>
       </DialogContent>
-      {displayedEvent && activeDialog === "share" && (
+      {activeDialog?.type === "share" && (
         <Suspense fallback={null}>
           <EventShareDialog
-            event={displayedEvent}
+            event={activeDialog.event}
             open
-            onOpenChange={(open) => setActiveDialog(open ? "share" : null)}
+            onOpenChange={handleActionDialogOpenChange}
           />
         </Suspense>
       )}
-      {displayedEvent && activeDialog === "report" && (
+      {activeDialog?.type === "report" && (
         <Suspense fallback={null}>
           <EventReportDialog
-            eventId={displayedEvent.id}
-            eventTitle={displayedEvent.title}
+            eventId={activeDialog.event.id}
+            eventTitle={activeDialog.event.title}
             open
-            onOpenChange={(open) => setActiveDialog(open ? "report" : null)}
+            onOpenChange={handleActionDialogOpenChange}
           />
         </Suspense>
       )}

@@ -1,4 +1,4 @@
-import { useMemo, useDeferredValue } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useFilterState } from "@/features/search/hooks/useFilterState";
 import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api/searchService";
@@ -33,10 +33,6 @@ export function useSearch({
   // useFilterState so the address bar and store stay in lockstep.
   const handleClearAllFilters = filterState.clearAllFilters;
 
-  // Defer the text query so typing stays responsive while filterEvents runs
-  // on an interruptible boundary.
-  const deferredSearchQuery = useDeferredValue(filterState.searchQuery);
-
   const availableOrganizations = useMemo(() => {
     const orgs = new Set<string>();
     events.forEach((event) => {
@@ -59,7 +55,7 @@ export function useSearch({
   // Filter + sort events.
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
-      searchQuery: deferredSearchQuery,
+      searchQuery: filterState.searchQuery,
       savedFilter: filterState.savedFilter,
       freeFoodFilter: filterState.freeFoodFilter,
       selectedDays: filterState.selectedDays,
@@ -75,7 +71,7 @@ export function useSearch({
     return sortEvents(filtered, { sortBy: filterState.sortBy, sortOrder: filterState.sortOrder });
   }, [
     events,
-    deferredSearchQuery,
+    filterState.searchQuery,
     filterState.freeFoodFilter,
     filterState.selectedDays,
     filterState.priceRange,

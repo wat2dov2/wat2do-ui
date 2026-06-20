@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { LazyMotion, domAnimation } from "framer-motion";
+import { LazyMotion, domMax } from "framer-motion";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AppLayout } from "@/app/AppLayout";
@@ -118,7 +118,7 @@ export default function App() {
   // Full-page QR redirect: no app chrome, only loading then redirect
   if (isQRRedirectRoute) {
     return (
-      <LazyMotion features={domAnimation} strict>
+      <LazyMotion features={domMax} strict>
         <TooltipProvider delayDuration={0}>
           <QRRedirectPage />
         </TooltipProvider>
@@ -128,7 +128,7 @@ export default function App() {
 
   if (!hostnameSchoolStatus.isKnownSchool && hostnameSchoolStatus.candidate) {
     return (
-      <LazyMotion features={domAnimation} strict>
+      <LazyMotion features={domMax} strict>
         <TooltipProvider delayDuration={0}>
           <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />
         </TooltipProvider>
@@ -137,7 +137,7 @@ export default function App() {
   }
 
   return (
-    <LazyMotion features={domAnimation} strict>
+    <LazyMotion features={domMax} strict>
       <TooltipProvider delayDuration={0}>
         <CommandPaletteHotkeys />
         <AppContent />

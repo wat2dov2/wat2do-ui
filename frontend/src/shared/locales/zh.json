@@ -343,6 +343,7 @@
   },
   "search": {
     "placeholder": "搜索活动、组织、项目...",
+    "clear": "清除活动搜索",
     "ariaLabel": "活动列表"
   },
   "schools": {
