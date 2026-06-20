@@ -303,27 +303,47 @@ def test_update_event_enqueue_failure_does_not_break_update(authenticated_client
 
 def test_list_events_forwards_school_and_pagination(client, monkeypatch):
     """The router passes only school + pagination through to the service."""
-    mock_list = MagicMock(return_value=[])
+    mock_list = MagicMock(return_value=([], 0))
     monkeypatch.setattr(event_service, "list_events", mock_list)
 
     resp = client.get(
         "/events/",
-        params={"school": "University of Waterloo", "skip": 0, "limit": 50},
+        params={"school": "University of Waterloo", "page": 2, "page_size": 50},
     )
 
     assert resp.status_code == 200
+    assert resp.json() == {
+        "items": [],
+        "total": 0,
+        "page": 2,
+        "page_size": 50,
+        "total_pages": 0,
+    }
     mock_list.assert_called_once_with(
         school="University of Waterloo",
-        skip=0,
+        skip=50,
         limit=50,
         start_utc=None,
         end_utc=None,
+        search=None,
+        categories=None,
+        locations=None,
+        foods=None,
+        days=None,
+        min_price=None,
+        max_price=None,
+        registration=None,
+        organizations=None,
+        free_food=False,
+        ids=None,
+        sort_by="date",
+        sort_order="asc",
     )
 
 
 def test_list_events_forwards_date_window(client, monkeypatch):
     """The public browse route exposes an occurrence UTC window."""
-    mock_list = MagicMock(return_value=[])
+    mock_list = MagicMock(return_value=([], 0))
     monkeypatch.setattr(event_service, "list_events", mock_list)
 
     resp = client.get(
@@ -339,9 +359,71 @@ def test_list_events_forwards_date_window(client, monkeypatch):
     mock_list.assert_called_once_with(
         school="University of Waterloo",
         skip=0,
-        limit=100000,
+        limit=50,
         start_utc=datetime(1970, 1, 1, tzinfo=timezone.utc),
         end_utc=datetime(2026, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+        search=None,
+        categories=None,
+        locations=None,
+        foods=None,
+        days=None,
+        min_price=None,
+        max_price=None,
+        registration=None,
+        organizations=None,
+        free_food=False,
+        ids=None,
+        sort_by="date",
+        sort_order="asc",
+    )
+
+
+def test_list_events_forwards_filters_and_sort(client, monkeypatch):
+    mock_list = MagicMock(return_value=([], 0))
+    monkeypatch.setattr(event_service, "list_events", mock_list)
+
+    resp = client.get(
+        "/events/",
+        params=[
+            ("school", "University of Waterloo"),
+            ("search", "hack"),
+            ("categories", "Technology"),
+            ("categories", "Career"),
+            ("locations", "SLC"),
+            ("foods", "Pizza"),
+            ("days", "Friday"),
+            ("min_price", "0"),
+            ("max_price", "20"),
+            ("registration", "true"),
+            ("organizations", "UW Blueprint"),
+            ("free_food", "true"),
+            ("ids", "1"),
+            ("ids", "2"),
+            ("sort_by", "title"),
+            ("sort_order", "desc"),
+        ],
+    )
+
+    assert resp.status_code == 200
+    mock_list.assert_called_once_with(
+        school="University of Waterloo",
+        skip=0,
+        limit=50,
+        start_utc=None,
+        end_utc=None,
+        search="hack",
+        categories=["Technology", "Career"],
+        locations=["SLC"],
+        foods=["Pizza"],
+        days=["Friday"],
+        min_price=0,
+        max_price=20,
+        registration=True,
+        organizations=["UW Blueprint"],
+        free_food=True,
+        ids=[1, 2],
+        sort_by="title",
+        sort_order="desc",
     )
 
 
@@ -377,12 +459,12 @@ def test_get_event_public_hides_created_by(client, monkeypatch):
 def test_list_events_public_hides_created_by(client, monkeypatch):
     """GET /events/ must not include created_by in any item."""
     events = [_mock_event(created_by="secret-uid-1234")]
-    monkeypatch.setattr(event_service, "list_events", MagicMock(return_value=events))
+    monkeypatch.setattr(event_service, "list_events", MagicMock(return_value=(events, 1)))
 
     resp = client.get("/events/")
     assert resp.status_code == 200
     body = resp.json()
-    assert all("created_by" not in item for item in body)
+    assert all("created_by" not in item for item in body["items"])
 
 
 # ---------------------------------------------------------------------------

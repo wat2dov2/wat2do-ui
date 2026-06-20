@@ -10,7 +10,9 @@ import { create } from "zustand";
 import i18n from "@/shared/lib/i18n";
 import type { Event as AppEvent, EventFormData } from "@/shared/types";
 import {
-  fetchAllEvents,
+  type EventListQuery,
+  type PaginatedEventsResponse,
+  fetchEventsPage,
   fetchPromotedEvents,
   createEventAPI,
   updateEventAPI,
@@ -26,12 +28,19 @@ interface EventsState {
   events: AppEvent[];
   promotedEvents: AppEvent[];
   isLoading: boolean;
+  isLoadingMore: boolean;
   isPromotedLoading: boolean;
   error: string | null;
   schoolFilter: string | null;
+  eventsPage: number;
+  eventsPageSize: number;
+  totalEvents: number;
+  hasMoreEvents: boolean;
+  eventQuery: EventListQuery;
 
-  /** Fetch all events from backend for the current school filter. */
-  fetchEvents: () => Promise<void>;
+  /** Fetch the first page of events for the current school + filter query. */
+  fetchEvents: (query?: EventListQuery) => Promise<void>;
+  loadMoreEvents: () => Promise<void>;
   fetchPromotedEvents: () => Promise<void>;
   setSchoolFilter: (school: string) => void;
   addEvent: (data: EventFormData) => Promise<number>;
@@ -39,13 +48,15 @@ interface EventsState {
   deleteEvent: (eventId: number) => Promise<void>;
 }
 
-/** Deduplicate concurrent fetches for the same school while allowing school switches. */
-const _fetchesBySchool = new Map<string, Promise<AppEvent[]>>();
+/** Deduplicate concurrent fetches for the same school/filter/page query. */
+const _fetchesByQuery = new Map<string, Promise<PaginatedEventsResponse>>();
 const _promotedFetchesBySchool = new Map<string, Promise<AppEvent[]>>();
 let _latestFetchId = 0;
+let _latestLoadMoreFetchId = 0;
 let _latestPromotedFetchId = 0;
-let _loadedEventsSchoolKey: string | null = null;
+let _loadedEventsQueryKey: string | null = null;
 let _loadedPromotedSchoolKey: string | null = null;
+const EVENTS_PAGE_SIZE = 48;
 
 function getInitialSchoolFilter(): string {
   if (typeof window !== "undefined") {
@@ -60,47 +71,166 @@ function getSchoolFetchKey(school: string | null): string {
   return school ?? "__all__";
 }
 
+function normalizeEventQuery(query: EventListQuery | undefined): EventListQuery {
+  return {
+    search: query?.search?.trim() || undefined,
+    categories: query?.categories?.filter(Boolean) ?? [],
+    locations: query?.locations?.filter(Boolean) ?? [],
+    foods: query?.foods?.filter(Boolean) ?? [],
+    days: query?.days?.filter(Boolean) ?? [],
+    minPrice: query?.minPrice,
+    maxPrice: query?.maxPrice,
+    registration: query?.registration,
+    organizations: query?.organizations?.filter(Boolean) ?? [],
+    freeFood: query?.freeFood === true,
+    ids: query?.ids,
+    sortBy: query?.sortBy || "date",
+    sortOrder: query?.sortOrder === "desc" ? "desc" : "asc",
+  };
+}
+
+function buildRequestQuery(
+  school: string | null,
+  query: EventListQuery,
+  page: number,
+  pageSize: number,
+): EventListQuery {
+  return {
+    ...query,
+    school: school ?? undefined,
+    page,
+    pageSize,
+  };
+}
+
+function getEventsQueryKey(school: string | null, query: EventListQuery): string {
+  return JSON.stringify({
+    school: getSchoolFetchKey(school),
+    search: query.search ?? "",
+    categories: query.categories ?? [],
+    locations: query.locations ?? [],
+    foods: query.foods ?? [],
+    days: query.days ?? [],
+    minPrice: query.minPrice ?? null,
+    maxPrice: query.maxPrice ?? null,
+    registration: query.registration ?? null,
+    organizations: query.organizations ?? [],
+    freeFood: query.freeFood === true,
+    ids: query.ids ?? null,
+    sortBy: query.sortBy ?? "date",
+    sortOrder: query.sortOrder ?? "asc",
+  });
+}
+
+function hasMore(response: PaginatedEventsResponse): boolean {
+  return response.items.length > 0 && response.page < response.total_pages;
+}
+
 export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
   promotedEvents: [],
   isLoading: true,
+  isLoadingMore: false,
   isPromotedLoading: false,
   error: null,
   schoolFilter: getInitialSchoolFilter(),
+  eventsPage: 0,
+  eventsPageSize: EVENTS_PAGE_SIZE,
+  totalEvents: 0,
+  hasMoreEvents: false,
+  eventQuery: normalizeEventQuery(undefined),
 
-  fetchEvents: async () => {
+  fetchEvents: async (query) => {
     const school = get().schoolFilter;
-    const schoolKey = getSchoolFetchKey(school);
+    const eventQuery = normalizeEventQuery(query);
+    const queryKey = getEventsQueryKey(school, eventQuery);
     const fetchId = ++_latestFetchId;
-    const hasLoadedCurrentSchool = _loadedEventsSchoolKey === schoolKey;
+    const hasLoadedCurrentQuery = _loadedEventsQueryKey === queryKey;
 
     set({
-      isLoading: hasLoadedCurrentSchool ? get().isLoading : true,
+      eventQuery,
+      isLoading: hasLoadedCurrentQuery ? get().isLoading : true,
+      isLoadingMore: false,
       error: null,
     });
     get().fetchPromotedEvents();
 
-    let fetchPromise = _fetchesBySchool.get(schoolKey);
+    const request = buildRequestQuery(school, eventQuery, 1, get().eventsPageSize);
+    const requestKey = JSON.stringify(request);
+    let fetchPromise = _fetchesByQuery.get(requestKey);
     if (!fetchPromise) {
-      fetchPromise = fetchAllEvents(school ?? undefined).finally(() => {
-        _fetchesBySchool.delete(schoolKey);
+      fetchPromise = fetchEventsPage(request).finally(() => {
+        _fetchesByQuery.delete(requestKey);
       });
-      _fetchesBySchool.set(schoolKey, fetchPromise);
+      _fetchesByQuery.set(requestKey, fetchPromise);
     }
 
     const isCurrentFetch = () =>
-      fetchId === _latestFetchId && getSchoolFetchKey(get().schoolFilter) === schoolKey;
+      fetchId === _latestFetchId &&
+      getEventsQueryKey(get().schoolFilter, get().eventQuery) === queryKey;
 
     try {
-      const events = await fetchPromise;
+      const response = await fetchPromise;
       if (!isCurrentFetch()) return;
-      _loadedEventsSchoolKey = schoolKey;
-      set({ events, isLoading: false, error: null });
+      _loadedEventsQueryKey = queryKey;
+      set({
+        events: response.items,
+        eventsPage: response.page,
+        totalEvents: response.total,
+        hasMoreEvents: hasMore(response),
+        isLoading: false,
+        error: null,
+      });
     } catch (err) {
       if (!isCurrentFetch()) return;
       const message = getApiErrorMessage(err, i18n.t("events.loadFailed"));
       console.error("Failed to fetch events:", err);
-      set({ isLoading: false, error: message });
+      set({ isLoading: false, hasMoreEvents: false, error: message });
+    }
+  },
+
+  loadMoreEvents: async () => {
+    const state = get();
+    if (state.isLoading || state.isLoadingMore || !state.hasMoreEvents) return;
+
+    const school = state.schoolFilter;
+    const eventQuery = state.eventQuery;
+    const queryKey = getEventsQueryKey(school, eventQuery);
+    const fetchId = ++_latestLoadMoreFetchId;
+    const nextPage = state.eventsPage + 1;
+
+    set({ isLoadingMore: true, error: null });
+
+    const request = buildRequestQuery(school, eventQuery, nextPage, state.eventsPageSize);
+    const requestKey = JSON.stringify(request);
+    let fetchPromise = _fetchesByQuery.get(requestKey);
+    if (!fetchPromise) {
+      fetchPromise = fetchEventsPage(request).finally(() => {
+        _fetchesByQuery.delete(requestKey);
+      });
+      _fetchesByQuery.set(requestKey, fetchPromise);
+    }
+
+    const isCurrentFetch = () =>
+      fetchId === _latestLoadMoreFetchId &&
+      getEventsQueryKey(get().schoolFilter, get().eventQuery) === queryKey;
+
+    try {
+      const response = await fetchPromise;
+      if (!isCurrentFetch()) return;
+      set((current) => ({
+        events: getUniqueEvents([...current.events, ...response.items]),
+        eventsPage: response.page,
+        totalEvents: response.total,
+        hasMoreEvents: hasMore(response),
+        isLoadingMore: false,
+        error: null,
+      }));
+    } catch (err) {
+      if (!isCurrentFetch()) return;
+      const message = getApiErrorMessage(err, i18n.t("events.loadFailed"));
+      console.error("Failed to fetch more events:", err);
+      set({ isLoadingMore: false, error: message });
     }
   },
 
@@ -141,7 +271,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     const nextSchool = resolveSchool(school);
     if (get().schoolFilter === nextSchool) return;
     set({ schoolFilter: nextSchool });
-    get().fetchEvents();
+    get().fetchEvents(get().eventQuery);
   },
 
   addEvent: async (data) => {
@@ -174,7 +304,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       // longer exists or the caller can no longer touch it. Refetching
       // ensures UI matches the authoritative backend state.
       if (isApiError(err) && (err.status === 404 || err.status === 403)) {
-        await get().fetchEvents();
+        await get().fetchEvents(get().eventQuery);
       }
       // Re-throw so callers can surface the error (toast, etc.).
       throw err;

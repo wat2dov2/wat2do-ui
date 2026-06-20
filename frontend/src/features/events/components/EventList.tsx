@@ -21,10 +21,11 @@ interface EventListProps {
   hasActiveFilters?: boolean;
   savedEventIds: number[];
   isLoading?: boolean;
+  isLoadingMore?: boolean;
+  hasMoreEvents?: boolean;
+  onLoadMore?: () => void;
 }
 
-const INITIAL_RENDER_COUNT = 24;
-const RENDER_CHUNK_SIZE = 24;
 const EVENT_DATE_SECTIONS: Array<{
   category: EventDateCategory;
   labelKey: string;
@@ -100,9 +101,11 @@ export function EventList({
   hasActiveFilters = false,
   savedEventIds,
   isLoading = false,
+  isLoadingMore = false,
+  hasMoreEvents = false,
+  onLoadMore,
 }: EventListProps) {
   const { t } = useTranslation();
-  const [requestedVisibleCount, setRequestedVisibleCount] = useState(INITIAL_RENDER_COUNT);
   const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -118,32 +121,24 @@ export function EventList({
     return events.filter((e) => !promotedIds.has(e.id));
   }, [events, promotedEvents]);
 
-  const visibleCount = Math.min(
-    Math.max(requestedVisibleCount, INITIAL_RENDER_COUNT),
-    regularEvents.length,
-  );
   const sectionOrderedEvents = useMemo(() => {
     const groups = groupEventsByDateSection(regularEvents);
     return EVENT_DATE_SECTIONS.flatMap(({ category }) => groups[category]);
   }, [regularEvents]);
-  const visibleEvents = useMemo(
-    () => sectionOrderedEvents.slice(0, Math.min(visibleCount, sectionOrderedEvents.length)),
-    [sectionOrderedEvents, visibleCount],
-  );
   const groupedVisibleEvents = useMemo(
-    () => groupEventsByDateSection(visibleEvents),
-    [visibleEvents],
+    () => groupEventsByDateSection(sectionOrderedEvents),
+    [sectionOrderedEvents],
   );
 
   useEffect(() => {
-    if (visibleCount >= regularEvents.length) return;
+    if (!hasMoreEvents || isLoadingMore || !onLoadMore) return;
     const loadMoreNode = loadMoreRef.current;
     if (!loadMoreNode) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
-        setRequestedVisibleCount((count) => Math.min(count + RENDER_CHUNK_SIZE, regularEvents.length));
+        onLoadMore();
       },
       {
         rootMargin: "800px 0px",
@@ -152,7 +147,7 @@ export function EventList({
 
     observer.observe(loadMoreNode);
     return () => observer.disconnect();
-  }, [regularEvents.length, visibleCount]);
+  }, [hasMoreEvents, isLoadingMore, onLoadMore]);
 
   const handleActionDialogOpen = useCallback((type: EventCardDialog, event: Event) => {
     setActiveDialog({ type, event });
@@ -321,8 +316,18 @@ export function EventList({
             </section>
           );
         })}
-        {visibleCount < regularEvents.length && (
+        {hasMoreEvents && (
           <div ref={loadMoreRef} aria-hidden="true" className="h-px" />
+        )}
+        {isLoadingMore && (
+          <section className="space-y-2.5" aria-label={t("common.loading")}>
+            <Skeleton className="h-5 w-28 rounded-lg" />
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <EventCardSkeleton key={i} />
+              ))}
+            </div>
+          </section>
         )}
       </div>
       {actionDialogs}

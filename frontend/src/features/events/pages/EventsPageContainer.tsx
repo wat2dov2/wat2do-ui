@@ -60,8 +60,12 @@ export function EventsPageContainer() {
 
   const {
     isLoading,
+    isLoadingMore,
     error,
     fetchEvents,
+    loadMoreEvents,
+    totalEvents,
+    hasMoreEvents,
     savedEventIds,
     promotedEvents,
     latestAddedEvent,
@@ -141,7 +145,7 @@ export function EventsPageContainer() {
               {isPageLoading ? (
                 <Skeleton className="h-6 w-20 rounded-lg" />
               ) : (
-                <EventCount count={filters.filteredEvents.length} />
+                <EventCount count={totalEvents} />
               )}
               {isPageLoading ? (
                 <Skeleton className="h-4 w-48 rounded-lg self-center" />
@@ -216,6 +220,9 @@ export function EventsPageContainer() {
               }
               savedEventIds={savedEventIds}
               isLoading={isPageLoading}
+              isLoadingMore={isLoadingMore}
+              hasMoreEvents={hasMoreEvents}
+              onLoadMore={loadMoreEvents}
             />
           )}
         </main>

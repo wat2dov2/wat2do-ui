@@ -16,11 +16,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from core.constants import MAX_LIST_LIMIT
 from core.exceptions import NotFoundError
-from schemas.event import EventResponse
+from schemas.event import EventResponse, EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from schemas.organization import OrganizationResponse
-from services import event_service, organization_service
+from services import event_query, event_service, organization_service
 
 
 def _event(**overrides) -> EventResponse:
@@ -309,8 +310,9 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
         },
     )
 
-    results = event_service.list_events(school="University of Waterloo")
+    results, total = event_service.list_events(school="University of Waterloo")
     assert len(results) == 1
+    assert total == 1
     assert len(results[0].occurrences) == 3
     assert results[0].occurrences[0].dtstart_utc == future_1
 
@@ -327,7 +329,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
 
 
 def test_list_events_is_cached_until_invalidated(monkeypatch):
-    """list_events serves from cache; a write-path invalidation forces a reload."""
+    """Promoted-event lookup serves the all-upcoming source from cache."""
     event_service.invalidate_events_cache()
     calls = {"n": 0}
 
@@ -336,14 +338,179 @@ def test_list_events_is_cached_until_invalidated(monkeypatch):
         return []
 
     monkeypatch.setattr(event_service, "_load_upcoming_events", _fake_load)
+    monkeypatch.setattr(
+        "services.credit_service.get_active_promoted_event_ids",
+        MagicMock(return_value=[1]),
+    )
 
-    event_service.list_events(school="University of Waterloo")
-    event_service.list_events(school="University of Waterloo")
+    event_service.list_promoted_events(school="University of Waterloo")
+    event_service.list_promoted_events(school="University of Waterloo")
     assert calls["n"] == 1  # second call is a cache hit
 
     event_service.invalidate_events_cache()
-    event_service.list_events(school="University of Waterloo")
+    event_service.list_promoted_events(school="University of Waterloo")
     assert calls["n"] == 2  # reloaded after invalidation
+
+
+def test_list_events_pushes_filters_into_event_query(monkeypatch):
+    event_service.invalidate_events_cache()
+    mock_page = MagicMock(return_value=([], 0))
+    monkeypatch.setattr(event_service.event_query, "load_events_page", mock_page)
+
+    event_service.list_events(
+        school="University of Waterloo",
+        skip=50,
+        limit=25,
+        search="hack",
+        categories=["Technology"],
+        locations=["SLC"],
+        foods=["Pizza"],
+        days=["Friday"],
+        min_price=0,
+        max_price=20,
+        registration=True,
+        organizations=["UW Blueprint"],
+        free_food=True,
+        ids=[1, 2],
+        sort_by="title",
+        sort_order="desc",
+    )
+
+    _, kwargs = mock_page.call_args
+    assert kwargs["school"] == "University of Waterloo"
+    assert kwargs["offset"] == 50
+    assert kwargs["limit"] == 25
+    assert kwargs["cap"] == MAX_LIST_LIMIT
+    assert kwargs["search"] == "hack"
+    assert kwargs["categories"] == ["Technology"]
+    assert kwargs["locations"] == ["SLC"]
+    assert kwargs["foods"] == ["Pizza"]
+    assert kwargs["days"] == ["Friday"]
+    assert kwargs["min_price"] == 0
+    assert kwargs["max_price"] == 20
+    assert kwargs["registration"] is True
+    assert kwargs["organizations"] == ["UW Blueprint"]
+    assert kwargs["free_food"] is True
+    assert kwargs["ids"] == [1, 2]
+    assert kwargs["sort_by"] == "title"
+    assert kwargs["sort_order"] == "desc"
+
+
+def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_sb, patch_sb):
+    """The shared query helper filters server-side and hydrates only the page slice."""
+    from services import event_date_service
+
+    patch_sb("services.event_query")
+    fake_sb.set_response(
+        data=[
+            {
+                "event_id": 1,
+                "dtstart_utc": "2026-06-05T23:30:00+00:00",
+                "dtend_utc": None,
+                "tz": "America/Toronto",
+                "events": {
+                    "id": 1,
+                    "title": "Alpha Hack Night",
+                    "location": "SLC Great Hall",
+                    "organization": "UW Blueprint",
+                    "school": "University of Waterloo",
+                    "category": "Technology",
+                    "price": 0,
+                    "food": ["Pizza"],
+                    "registration": True,
+                    "added_at": "2026-05-01T12:00:00+00:00",
+                },
+            },
+            {
+                # UTC Saturday, but Friday in the event timezone. This matches
+                # the browser's old day filter intent instead of UTC weekday.
+                "event_id": 2,
+                "dtstart_utc": "2026-06-06T00:30:00+00:00",
+                "dtend_utc": None,
+                "tz": "America/Toronto",
+                "events": {
+                    "id": 2,
+                    "title": "Beta Hack Night",
+                    "location": "SLC Great Hall",
+                    "organization": "UW Blueprint",
+                    "school": "University of Waterloo",
+                    "category": "Technology",
+                    "price": 0,
+                    "food": ["Pizza"],
+                    "registration": True,
+                    "added_at": "2026-05-02T12:00:00+00:00",
+                },
+            },
+            {
+                "event_id": 3,
+                "dtstart_utc": "2026-06-06T19:00:00+00:00",
+                "dtend_utc": None,
+                "tz": "America/Toronto",
+                "events": {
+                    "id": 3,
+                    "title": "Library Talk",
+                    "location": "DC Library",
+                    "organization": "Library Organization",
+                    "school": "University of Waterloo",
+                    "category": "Academic",
+                    "price": 0,
+                    "food": [],
+                    "registration": False,
+                    "added_at": "2026-05-03T12:00:00+00:00",
+                },
+            },
+        ]
+    )
+    list_for_events = MagicMock(
+        return_value={
+            2: [
+                _occ_response(
+                    datetime(2026, 6, 6, 0, 30, tzinfo=timezone.utc),
+                    occ_id=22,
+                    event_id=2,
+                )
+            ]
+        }
+    )
+    monkeypatch.setattr(event_date_service, "list_for_events", list_for_events)
+
+    items, total = event_query.load_events_page(
+        start_utc=datetime(2026, 6, 1, tzinfo=timezone.utc),
+        end_utc=None,
+        school="University of Waterloo",
+        offset=1,
+        limit=1,
+        cap=10,
+        model=EventSummaryResponse,
+        search="hack",
+        categories=["Technology"],
+        locations=["SLC"],
+        foods=["Pizza"],
+        days=["Friday"],
+        min_price=0,
+        max_price=0,
+        registration=True,
+        organizations=["UW Blueprint"],
+        free_food=True,
+        sort_by="title",
+        sort_order="asc",
+    )
+
+    assert total == 2
+    assert [event.id for event in items] == [2]
+    assert items[0].occurrences[0].id == 22
+    list_for_events.assert_called_once_with([2])
+    fake_sb.eq.assert_any_call("events.school", "University of Waterloo")
+    fake_sb.in_.assert_any_call("events.category", ["Technology"])
+    fake_sb.in_.assert_any_call("events.organization", ["UW Blueprint"])
+    fake_sb.eq.assert_any_call("events.registration", True)
+    fake_sb.gte.assert_any_call("events.price", 0)
+    fake_sb.lte.assert_any_call("events.price", 0)
+    fake_sb.or_.assert_any_call(
+        'title.ilike."%hack%",location.ilike."%hack%",organization.ilike."%hack%"',
+        reference_table="events",
+    )
+    fake_sb.range.assert_any_call(0, 49)
 
 
 def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):
@@ -364,12 +531,12 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):
     fake_sb.eq.assert_any_call("school", "Massachusetts Institute of Technology")
 
 
-def _occ_response(dtstart, dtend=None, occ_id=1):
+def _occ_response(dtstart, dtend=None, occ_id=1, event_id=42):
     """Helper: build an OccurrenceResponse for the test above."""
     return OccurrenceResponse.model_validate(
         {
             "id": occ_id,
-            "event_id": 42,
+            "event_id": event_id,
             "dtstart_utc": dtstart,
             "dtend_utc": dtend,
             "duration": None,

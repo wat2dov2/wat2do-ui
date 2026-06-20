@@ -1,13 +1,21 @@
 /**
  * Event-related types
  *
- * `Event` is the generated backend `ApiEventResponse` shape intersected with
- * a handful of optional view-only fields populated on the frontend (isLive,
- * addedDate). Do NOT hand-write new API fields here — add them to
- * the backend Pydantic model and regenerate via `npm run generate-types`.
+ * `Event` is the generated backend event shape intersected with a handful of
+ * optional view-only fields populated on the frontend (isLive, addedDate). The
+ * public list returns `ApiEventSummaryResponse`; detail/edit flows return
+ * `ApiEventPublicResponse`/`ApiEventResponse`. Do NOT hand-write new API fields
+ * here — add them to the backend Pydantic model and regenerate via
+ * `npm run generate-types`.
  */
 
-import type { ApiEventResponse } from "@/shared/generated";
+import type {
+  ApiEventPublicResponse,
+  ApiEventResponse,
+  ApiEventSummaryResponse,
+} from "@/shared/generated";
+
+type EventApiShape = ApiEventResponse | ApiEventPublicResponse | ApiEventSummaryResponse;
 
 /** View-only fields computed from the API payload on the frontend. */
 interface EventViewOnlyFields {
@@ -15,9 +23,15 @@ interface EventViewOnlyFields {
   addedDate?: Date;
   /** Live/upcoming/past flag derived elsewhere. */
   isLive?: boolean;
+  /** Full-detail/admin-only fields are absent from list summaries. */
+  organization_id?: ApiEventResponse["organization_id"];
+  description?: ApiEventResponse["description"];
+  source_url?: ApiEventResponse["source_url"];
+  organization_type?: ApiEventResponse["organization_type"];
+  created_by?: ApiEventResponse["created_by"];
 }
 
-export type Event = ApiEventResponse & EventViewOnlyFields;
+export type Event = EventApiShape & EventViewOnlyFields;
 
 export interface EventFormOccurrence {
   dtstart_local: string;

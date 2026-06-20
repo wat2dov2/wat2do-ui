@@ -1256,6 +1256,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/uploads/claim-proof": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Claim Proof */
+        post: operations["upload_claim_proof_uploads_claim_proof_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/me": {
         parameters: {
             query?: never;
@@ -1481,6 +1498,11 @@ export interface components {
         };
         /** Body_upload_avatar_uploads_avatar_post */
         Body_upload_avatar_uploads_avatar_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_claim_proof_uploads_claim_proof_post */
+        Body_upload_claim_proof_uploads_claim_proof_post: {
             /** File */
             file: string;
         };
@@ -2361,6 +2383,32 @@ export interface components {
             logo_url?: string | null;
             /** School */
             school?: string | null;
+        };
+        /** PaginatedResponse[EventSummaryResponse] */
+        PaginatedResponse_EventSummaryResponse_: {
+            /** Items */
+            items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[OrganizationResponse] */
+        PaginatedResponse_OrganizationResponse_: {
+            /** Items */
+            items: components["schemas"]["OrganizationResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
         };
         /** PaginatedResponse[QrCodeResponse] */
         PaginatedResponse_QrCodeResponse_: {
@@ -3377,12 +3425,26 @@ export interface operations {
     list_events_events__get: {
         parameters: {
             query?: {
-                skip?: number;
-                limit?: number;
                 school?: string | null;
-                category?: string | null;
+                search?: string | null;
+                categories?: string[] | null;
+                locations?: string[] | null;
+                foods?: string[] | null;
+                days?: string[] | null;
+                min_price?: number | null;
+                max_price?: number | null;
+                registration?: boolean | null;
+                organizations?: string[] | null;
+                free_food?: boolean;
+                ids?: number[] | null;
+                sort_by?: "date" | "title" | "location" | "price";
+                sort_order?: "asc" | "desc";
                 start_utc?: string | null;
                 end_utc?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -3396,7 +3458,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EventSummaryResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_EventSummaryResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -3645,11 +3707,15 @@ export interface operations {
     list_organizations_organizations__get: {
         parameters: {
             query?: {
-                skip?: number;
-                limit?: number;
                 organization_type?: string | null;
                 school?: string | null;
                 search?: string | null;
+                categories?: string[] | null;
+                ids?: number[] | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -3663,7 +3729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OrganizationResponse"][];
+                    "application/json": components["schemas"]["PaginatedResponse_OrganizationResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -3785,6 +3851,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: string | null;
+                school?: string | null;
             };
             header?: never;
             path?: never;
@@ -4624,6 +4691,7 @@ export interface operations {
     list_qr_codes_qr__get: {
         parameters: {
             query?: {
+                school?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -5131,6 +5199,7 @@ export interface operations {
         parameters: {
             query?: {
                 submission_status?: string | null;
+                school?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -5403,6 +5472,39 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_qr_asset_uploads_qr_asset_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_claim_proof_uploads_claim_proof_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_claim_proof_uploads_claim_proof_post"];
             };
         };
         responses: {

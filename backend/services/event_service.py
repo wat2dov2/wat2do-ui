@@ -136,8 +136,8 @@ def _load_upcoming_events(school: str | None) -> list[EventSummaryResponse]:
 
     "Upcoming" for the public list means "starts today or later" in the
     school's local day; the rest (dedup, hydrate, cap) is the shared query in
-    ``event_query``. The client filters, sorts, and searches in memory over
-    this set, so there is no per-request filtering or pagination here.
+    ``event_query``. This all-upcoming loader is retained for promoted-event
+    filtering; the public browse route uses ``list_events`` for server paging.
     """
     return event_query.load_upcoming_events(
         since=_today_start_utc(school),
@@ -153,23 +153,47 @@ def list_events(
     limit: int = DEFAULT_LIST_LIMIT,
     start_utc: datetime | None = None,
     end_utc: datetime | None = None,
-) -> list[EventSummaryResponse]:
+    search: str | None = None,
+    categories: list[str] | None = None,
+    locations: list[str] | None = None,
+    foods: list[str] | None = None,
+    days: list[str] | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    registration: bool | None = None,
+    organizations: list[str] | None = None,
+    free_food: bool = False,
+    ids: list[int] | None = None,
+    sort_by: str = "date",
+    sort_order: str = "asc",
+) -> tuple[list[EventSummaryResponse], int]:
     """Public browse list for a school.
 
-    With no explicit date window this returns the cached upcoming event set.
-    Supplying either bound reads the requested occurrence window directly.
+    Returns a paged result plus total count. The default date lower bound is
+    the school's local start-of-today, matching the historical upcoming list.
     """
-    if start_utc is not None or end_utc is not None:
-        page = event_query.load_events_in_window(
-            start_utc=start_utc,
-            end_utc=end_utc,
-            school=school,
-            cap=MAX_LIST_LIMIT,
-            model=EventSummaryResponse,
-        )
-    else:
-        page = _events_cache.get_or_compute(school or "_all", lambda: _load_upcoming_events(school))
-    return page[skip : skip + limit]
+    return event_query.load_events_page(
+        start_utc=start_utc if start_utc is not None else _today_start_utc(school),
+        end_utc=end_utc,
+        school=school,
+        offset=skip,
+        limit=limit,
+        cap=MAX_LIST_LIMIT,
+        model=EventSummaryResponse,
+        search=search,
+        categories=categories,
+        locations=locations,
+        foods=foods,
+        days=days,
+        min_price=min_price,
+        max_price=max_price,
+        registration=registration,
+        organizations=organizations,
+        free_food=free_food,
+        ids=ids,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
 
 
 def list_promoted_events(school: str | None = None) -> list[EventSummaryResponse]:
@@ -179,7 +203,10 @@ def list_promoted_events(school: str | None = None) -> list[EventSummaryResponse
     active_ids = credit_service.get_active_promoted_event_ids()
     if not active_ids:
         return []
-    all_upcoming = list_events(school=school, limit=MAX_LIST_LIMIT)
+    all_upcoming = _events_cache.get_or_compute(
+        school or "_all",
+        lambda: _load_upcoming_events(school),
+    )
     return [e for e in all_upcoming if e.id in active_ids]
 
 

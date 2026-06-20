@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_authorized_resource, get_db_user, is_admin
 from core.constants import (
-    DEFAULT_LIST_LIMIT,
+    MAX_EVENT_PRICE,
     MAX_EVENT_SCHOOL_LENGTH,
-    MAX_LIST_LIMIT,
+    MAX_SEARCH_QUERY_LENGTH,
 )
 from core.errors import (
     EVENT_NOT_FOUND,
@@ -15,6 +16,7 @@ from core.errors import (
     ORGANIZATION_NOT_FOUND,
 )
 from core.exceptions import AuthorizationError, get_or_404
+from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from schemas.event import (
     EventCreate,
     EventPublicResponse,
@@ -30,6 +32,8 @@ from services.notifications import event_change
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
+EventSortBy = Literal["date", "title", "location", "price"]
+EventSortOrder = Literal["asc", "desc"]
 
 
 def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventResponse:
@@ -77,14 +81,25 @@ def list_promoted_events(
     return event_service.list_promoted_events(school=school)
 
 
-@router.get("/", response_model=list[EventSummaryResponse])
+@router.get("/", response_model=PaginatedResponse[EventSummaryResponse])
 def list_events(
-    skip: int = Query(default=0, ge=0),
-    limit: int = Query(default=DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
     school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
-    category: str | None = Query(default=None),
+    search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
+    categories: list[str] | None = Query(default=None),
+    locations: list[str] | None = Query(default=None),
+    foods: list[str] | None = Query(default=None),
+    days: list[str] | None = Query(default=None),
+    min_price: float | None = Query(default=None, ge=0, le=MAX_EVENT_PRICE),
+    max_price: float | None = Query(default=None, ge=0, le=MAX_EVENT_PRICE),
+    registration: bool | None = Query(default=None),
+    organizations: list[str] | None = Query(default=None),
+    free_food: bool = Query(default=False),
+    ids: list[int] | None = Query(default=None),
+    sort_by: EventSortBy = Query(default="date"),
+    sort_order: EventSortOrder = Query(default="asc"),
     start_utc: datetime | None = Query(default=None),
     end_utc: datetime | None = Query(default=None),
+    pagination: PaginationParams = Depends(),
 ):
     """Public browse list for a school.
 
@@ -95,16 +110,27 @@ def list_events(
     """
     if school == "all":
         school = None
-    events = event_service.list_events(
+    items, total = event_service.list_events(
         school=school,
-        skip=skip,
-        limit=limit,
+        skip=pagination.offset,
+        limit=pagination.page_size,
         start_utc=start_utc,
         end_utc=end_utc,
+        search=search,
+        categories=categories,
+        locations=locations,
+        foods=foods,
+        days=days,
+        min_price=min_price,
+        max_price=max_price,
+        registration=registration,
+        organizations=organizations,
+        free_food=free_food,
+        ids=ids,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
-    if category:
-        events = [e for e in events if e.category and e.category.lower() == category.lower()]
-    return events
+    return paginated_response(items, total, pagination)
 
 
 @router.get("/{event_id}", response_model=EventPublicResponse)
