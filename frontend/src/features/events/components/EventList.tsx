@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { m, useReducedMotion } from "framer-motion";
+import { m } from "framer-motion";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
@@ -8,6 +8,7 @@ import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/dat
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
+import { Spinner } from "@/shared/ui/spinner";
 
 interface EventListProps {
   events: Event[];
@@ -38,9 +39,7 @@ const EVENT_DATE_SECTIONS: Array<{
   { category: "later", labelKey: "events.dateSections.later" },
 ];
 
-const PRIORITY_EVENT_IMAGE_COUNT = 8;
-const EVENT_CARD_ANIMATION_STAGGER_MS = 35;
-const EVENT_CARD_ANIMATION_STAGGER_LIMIT = 12;
+const EVENT_CARD_ANIMATION_STAGGER_MS = 33;
 
 const DeleteEventDialog = lazy(() =>
   import("@/features/events/components/DeleteEventDialog").then((module) => ({
@@ -63,32 +62,32 @@ interface ActiveEventDialog {
   event: Event;
 }
 
+interface VisibleEventAnimationState {
+  eventIds: Set<number>;
+  animationIndexByEventId: Map<number, number>;
+}
+
 interface EventCardListItemProps {
   animationIndex: number;
-  shouldReduceMotion: boolean | null;
   children: ReactNode;
 }
 
 function EventCardListItem({
   animationIndex,
-  shouldReduceMotion,
   children,
 }: EventCardListItemProps) {
-  const reducedMotion = Boolean(shouldReduceMotion);
   return (
     <m.div
       role="listitem"
       className="min-w-0"
-      initial={reducedMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{
-        duration: reducedMotion ? 0 : 0.32,
-        ease: "easeOut",
-        delay: reducedMotion
-          ? 0
-          : Math.min(animationIndex, EVENT_CARD_ANIMATION_STAGGER_LIMIT) *
-            (EVENT_CARD_ANIMATION_STAGGER_MS / 1000),
+        duration: 0.5,
+        delay: animationIndex * (EVENT_CARD_ANIMATION_STAGGER_MS / 1000),
+        ease: [0.18, 0.39, 0.14, 0.9],
       }}
+      style={{ pointerEvents: "auto" }}
     >
       {children}
     </m.div>
@@ -120,6 +119,29 @@ function groupEventsByDateSection(events: Event[]): Record<EventDateCategory, Ev
   return groups;
 }
 
+function hasSameEventIds(events: Event[], eventIds: Set<number>): boolean {
+  return events.length === eventIds.size && events.every((event) => eventIds.has(event.id));
+}
+
+function getEventIds(events: Event[]): Set<number> {
+  return new Set(events.map((event) => event.id));
+}
+
+function getNewEventAnimationIndexById(
+  events: Event[],
+  previousEventIds: Set<number>,
+): Map<number, number> {
+  const animationIndexByEventId = new Map<number, number>();
+
+  events.forEach((event) => {
+    if (!previousEventIds.has(event.id)) {
+      animationIndexByEventId.set(event.id, animationIndexByEventId.size);
+    }
+  });
+
+  return animationIndexByEventId;
+}
+
 /**
  * Event list component.
  *
@@ -144,8 +166,13 @@ export function EventList({
 }: EventListProps) {
   const { t } = useTranslation();
   const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
+  const [visibleEventAnimation, setVisibleEventAnimation] = useState<VisibleEventAnimationState>(
+    () => ({
+      eventIds: new Set(),
+      animationIndexByEventId: new Map(),
+    }),
+  );
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
 
   // Wrap id arrays in Sets for O(1) membership lookups per card.
   const savedSet = useMemo(
@@ -167,36 +194,43 @@ export function EventList({
     () => groupEventsByDateSection(sectionOrderedEvents),
     [sectionOrderedEvents],
   );
-  const visibleEventMeta = useMemo(() => {
-    const visibleEvents = [...promotedEvents, ...sectionOrderedEvents];
-    return {
-      priorityEventIds: new Set(
-        visibleEvents.slice(0, PRIORITY_EVENT_IMAGE_COUNT).map((event) => event.id),
+  const visibleEvents = useMemo(
+    () => [...promotedEvents, ...sectionOrderedEvents],
+    [promotedEvents, sectionOrderedEvents],
+  );
+  if (!hasSameEventIds(visibleEvents, visibleEventAnimation.eventIds)) {
+    setVisibleEventAnimation({
+      eventIds: getEventIds(visibleEvents),
+      animationIndexByEventId: getNewEventAnimationIndexById(
+        visibleEvents,
+        visibleEventAnimation.eventIds,
       ),
-      animationIndexByEventId: new Map(
-        visibleEvents.map((event, index) => [event.id, index]),
-      ),
-    };
-  }, [promotedEvents, sectionOrderedEvents]);
-
+    });
+  }
   useEffect(() => {
-    if (!hasMoreEvents || isLoadingMore || !onLoadMore) return;
-    const loadMoreNode = loadMoreRef.current;
-    if (!loadMoreNode) return;
+    if (!onLoadMore || !hasMoreEvents || isLoadingMore) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        onLoadMore();
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting) {
+          onLoadMore();
+        }
       },
-      {
-        rootMargin: "800px 0px",
-      },
+      { threshold: 0.1 },
     );
 
-    observer.observe(loadMoreNode);
-    return () => observer.disconnect();
-  }, [hasMoreEvents, isLoadingMore, onLoadMore]);
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [onLoadMore, hasMoreEvents, isLoadingMore]);
 
   const handleActionDialogOpen = useCallback((type: EventCardDialog, event: Event) => {
     setActiveDialog({ type, event });
@@ -318,13 +352,11 @@ export function EventList({
               {promotedEvents.map((event) => (
                 <EventCardListItem
                   key={event.id}
-                  animationIndex={visibleEventMeta.animationIndexByEventId.get(event.id) ?? 0}
-                  shouldReduceMotion={shouldReduceMotion}
+                  animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
                 >
                   <EventCard
                     event={event}
                     isSaved={savedSet.has(event.id)}
-                    imagePriority={visibleEventMeta.priorityEventIds.has(event.id)}
                     onEventClick={onEventClick}
                     disableModal={disableModal}
                     onDelete={onDelete}
@@ -349,13 +381,11 @@ export function EventList({
                 {sectionEvents.map((event) => (
                   <EventCardListItem
                     key={event.id}
-                    animationIndex={visibleEventMeta.animationIndexByEventId.get(event.id) ?? 0}
-                    shouldReduceMotion={shouldReduceMotion}
+                    animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
                   >
                     <EventCard
                       event={event}
                       isSaved={savedSet.has(event.id)}
-                      imagePriority={visibleEventMeta.priorityEventIds.has(event.id)}
                       onEventClick={onEventClick}
                       disableModal={disableModal}
                       onDelete={onDelete}
@@ -368,17 +398,12 @@ export function EventList({
           );
         })}
         {hasMoreEvents && (
-          <div ref={loadMoreRef} aria-hidden="true" className="h-px" />
-        )}
-        {isLoadingMore && (
-          <section className="space-y-2.5" aria-label={t("common.loading")}>
-            <Skeleton className="h-5 w-28 rounded-lg" />
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <EventCardSkeleton key={i} />
-              ))}
+          <div ref={loadMoreRef} className="flex justify-center py-8">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Spinner className="size-5" />
+              <span>{t("common.loading")}</span>
             </div>
-          </section>
+          </div>
         )}
       </div>
       {actionDialogs}
