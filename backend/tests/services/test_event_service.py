@@ -52,6 +52,31 @@ def _occurrence(dtstart: datetime, dtend: datetime | None = None) -> OccurrenceR
     )
 
 
+def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatch):
+    """Hydration should not serialize occurrences only to parse them again."""
+    occurrence = _occurrence(datetime(2026, 6, 1, 18, tzinfo=timezone.utc))
+
+    def _fail_model_dump(self, *args, **kwargs):
+        raise AssertionError("hydrate_event should pass occurrence models through directly")
+
+    monkeypatch.setattr(OccurrenceResponse, "model_dump", _fail_model_dump)
+
+    event = event_query.hydrate_event(
+        {
+            "id": 42,
+            "title": "Fast Feed Night",
+            "location": "SLC",
+            "organization": "UW Blueprint",
+            "added_at": datetime(2026, 5, 30, tzinfo=timezone.utc),
+        },
+        [occurrence],
+        EventSummaryResponse,
+    )
+
+    assert event.id == 42
+    assert event.occurrences[0].dtstart_utc == occurrence.dtstart_utc
+
+
 # ---------------------------------------------------------------------------
 # _resolve_organization_fields — the single source for derived event display fields
 # ---------------------------------------------------------------------------
@@ -273,26 +298,33 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     patch_sb("services.event_query")  # the upcoming-events query now lives here
     event_service.invalidate_events_cache()  # isolate from other tests' cache
 
-    # One joined event_dates row per event; occurrences are batched separately.
-    fake_sb.queue_responses(
-        [
-            [
+    # The default feed first scans lightweight event IDs, then loads full rows
+    # only for the current page; occurrences are batched separately.
+    fake_sb.execute.side_effect = [
+        MagicMock(data=[], count=1),
+        MagicMock(
+            data=[
                 {
                     "event_id": 42,
                     "dtstart_utc": datetime(2026, 5, 15, tzinfo=timezone.utc).isoformat(),
-                    "dtend_utc": None,
-                    "tz": None,
-                    "events": {
-                        "id": 42,
-                        "title": "Tea Tasting Series",
-                        "location": "SLC",
-                        "organization": "UW Tea Organization",
-                        "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
-                    },
+                    "events": {"id": 42},
                 }
-            ]
-        ]
-    )
+            ],
+            count=0,
+        ),
+        MagicMock(
+            data=[
+                {
+                    "id": 42,
+                    "title": "Tea Tasting Series",
+                    "location": "SLC",
+                    "organization": "UW Tea Organization",
+                    "added_at": datetime(2026, 4, 15, tzinfo=timezone.utc).isoformat(),
+                }
+            ],
+            count=0,
+        ),
+    ]
 
     now = datetime.now(timezone.utc)
     future_1 = now + timedelta(days=2)
@@ -510,6 +542,92 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
         'title.ilike."%hack%",location.ilike."%hack%",organization.ilike."%hack%"',
         reference_table="events",
     )
+    fake_sb.range.assert_any_call(0, 49)
+
+
+def test_load_events_page_default_date_uses_lightweight_candidate_scan(
+    monkeypatch, fake_sb, patch_sb
+):
+    """The unfiltered root feed avoids embedding full event rows for every candidate."""
+    from services import event_date_service
+
+    patch_sb("services.event_query")
+    fake_sb.execute.side_effect = [
+        MagicMock(data=[], count=2),
+        MagicMock(
+            data=[
+                {
+                    "event_id": 1,
+                    "dtstart_utc": "2026-06-05T23:30:00+00:00",
+                    "events": {"id": 1},
+                },
+                {
+                    "event_id": 1,
+                    "dtstart_utc": "2026-06-06T23:30:00+00:00",
+                    "events": {"id": 1},
+                },
+                {
+                    "event_id": 2,
+                    "dtstart_utc": "2026-06-07T23:30:00+00:00",
+                    "events": {"id": 2},
+                },
+            ],
+            count=0,
+        ),
+        MagicMock(
+            data=[
+                {
+                    "id": 2,
+                    "title": "Beta Hack Night",
+                    "location": "SLC Great Hall",
+                    "organization": "UW Blueprint",
+                    "school": "University of Waterloo",
+                    "category": "Technology",
+                    "price": 0,
+                    "food": ["Pizza"],
+                    "registration": True,
+                    "source_image_url": "https://example.com/poster.webp",
+                    "added_at": "2026-05-02T12:00:00+00:00",
+                }
+            ],
+            count=0,
+        ),
+    ]
+    list_for_events = MagicMock(
+        return_value={
+            2: [
+                _occ_response(
+                    datetime(2026, 6, 7, 23, 30, tzinfo=timezone.utc),
+                    occ_id=22,
+                    event_id=2,
+                )
+            ]
+        }
+    )
+    monkeypatch.setattr(event_date_service, "list_for_events", list_for_events)
+
+    items, total = event_query.load_events_page(
+        start_utc=datetime(2026, 6, 1, tzinfo=timezone.utc),
+        end_utc=None,
+        school="University of Waterloo",
+        offset=1,
+        limit=1,
+        cap=10,
+        model=EventSummaryResponse,
+    )
+
+    assert total == 2
+    assert [event.id for event in items] == [2]
+    assert items[0].occurrences[0].id == 22
+    list_for_events.assert_called_once_with([2])
+    count_select = fake_sb.select.call_args_list[0].args[0]
+    first_page_select = fake_sb.select.call_args_list[1].args[0]
+    full_row_select = fake_sb.select.call_args_list[2].args[0]
+    assert count_select == "id,event_dates!inner(id)"
+    assert first_page_select == "event_id,dtstart_utc,events!inner(id)"
+    assert "source_image_url" not in first_page_select
+    assert "source_image_url" in full_row_select
+    fake_sb.in_.assert_called_once_with("id", [2])
     fake_sb.range.assert_any_call(0, 49)
 
 

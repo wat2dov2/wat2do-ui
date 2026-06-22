@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from core.database import get_sb
 from core.retry import supabase_retry
 from core.sanitize import sanitize_postgrest_value
-from core.tables import EVENT_DATES
+from core.tables import EVENT_DATES, EVENTS
 from schemas.event import EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service
@@ -35,6 +35,8 @@ T = TypeVar("T", bound=BaseModel)
 # Columns the summary response needs (everything except the occurrences we
 # hydrate separately). The full response model just selects everything.
 _SUMMARY_COLUMNS = ",".join(f for f in EventSummaryResponse.model_fields if f != "occurrences")
+_LIGHTWEIGHT_DATE_COLUMNS = "event_id,dtstart_utc,events!inner(id)"
+_LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
 
 @dataclass
@@ -51,9 +53,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     model — shared by the browse list, recommender candidates, and the calendar
     feed so the shape never drifts between them.
     """
-    return model.model_validate(
-        {**row, "occurrences": [o.model_dump(mode="json") for o in occurrences]}
-    )
+    return model.model_validate({**row, "occurrences": occurrences})
 
 
 @supabase_retry
@@ -142,6 +142,31 @@ def load_events_page(
     if ids is not None and not ids:
         return [], 0
 
+    if _can_use_lightweight_date_page(
+        search=search,
+        categories=categories,
+        locations=locations,
+        foods=foods,
+        days=days,
+        min_price=min_price,
+        max_price=max_price,
+        registration=registration,
+        organizations=organizations,
+        free_food=free_food,
+        ids=ids,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    ):
+        return _load_lightweight_date_page(
+            start_utc=start_utc,
+            end_utc=end_utc,
+            school=school,
+            offset=offset,
+            limit=limit,
+            cap=cap,
+            model=model,
+        )
+
     columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
     q = (
         get_sb()
@@ -196,6 +221,182 @@ def load_events_page(
     page_rows = [candidate.row for candidate in page_candidates]
     occ_by_event = event_date_service.list_for_events([row["id"] for row in page_rows])
     return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in page_rows], total
+
+
+def _can_use_lightweight_date_page(
+    *,
+    search: str | None,
+    categories: list[str] | None,
+    locations: list[str] | None,
+    foods: list[str] | None,
+    days: list[str] | None,
+    min_price: float | None,
+    max_price: float | None,
+    registration: bool | None,
+    organizations: list[str] | None,
+    free_food: bool,
+    ids: list[int] | None,
+    sort_by: str,
+    sort_order: str,
+) -> bool:
+    """True for the root-feed shape: date-ordered browsing with no card filters.
+
+    This keeps the common `/events/?page=1&page_size=48&sort_by=date` path from
+    embedding full event rows for every candidate just to dedupe and slice.
+    Filtered/sorted variants stay on the full candidate path because they need
+    event fields while deciding membership and order.
+    """
+
+    return (
+        not (search or "").strip()
+        and not categories
+        and not locations
+        and not foods
+        and not days
+        and min_price is None
+        and max_price is None
+        and registration is None
+        and not organizations
+        and not free_food
+        and ids is None
+        and sort_by == "date"
+        and sort_order == "asc"
+    )
+
+
+def _load_lightweight_date_page(
+    *,
+    start_utc: datetime | None,
+    end_utc: datetime | None,
+    school: str | None,
+    offset: int,
+    limit: int,
+    cap: int,
+    model: type[T],
+) -> tuple[list[T], int]:
+    """Load the default date-ordered page with minimal candidate payload.
+
+    We still compute the exact total so the public paginated response contract
+    stays unchanged, but the broad candidate scan carries only occurrence IDs
+    and parent event IDs. Full event rows and occurrences are fetched for the
+    sliced page only.
+    """
+
+    total = _count_lightweight_date_events(start_utc=start_utc, end_utc=end_utc, school=school)
+    page_ids = _load_lightweight_date_page_ids(
+        start_utc=start_utc,
+        end_utc=end_utc,
+        school=school,
+        offset=offset,
+        limit=limit,
+        cap=cap,
+        total=total,
+    )
+    if not page_ids:
+        return [], total
+
+    columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
+    event_rows = get_sb().table(EVENTS).select(columns).in_("id", page_ids).execute().data or []
+    row_by_id = {row.get("id"): row for row in event_rows}
+    page_rows = [row_by_id[event_id] for event_id in page_ids if event_id in row_by_id]
+    occ_by_event = event_date_service.list_for_events([row["id"] for row in page_rows])
+    return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in page_rows], total
+
+
+def _count_lightweight_date_events(
+    *,
+    start_utc: datetime | None,
+    end_utc: datetime | None,
+    school: str | None,
+) -> int:
+    """Exact top-level event count for the default date-ordered feed."""
+
+    embedded_occurrence = f"{EVENT_DATES}!inner(id)"
+    q = get_sb().table(EVENTS).select(f"id,{embedded_occurrence}", count="exact")
+    if start_utc is not None:
+        q = q.gte(f"{EVENT_DATES}.dtstart_utc", start_utc.isoformat())
+    if end_utc is not None:
+        q = q.lte(f"{EVENT_DATES}.dtstart_utc", end_utc.isoformat())
+    if school:
+        q = q.eq("school", school)
+    response = q.limit(0).execute()
+    return int(response.count or 0)
+
+
+def _load_lightweight_date_page_ids(
+    *,
+    start_utc: datetime | None,
+    end_utc: datetime | None,
+    school: str | None,
+    offset: int,
+    limit: int,
+    cap: int,
+    total: int,
+) -> list[int]:
+    """Load only enough ordered event IDs to cover the requested page."""
+
+    required_distinct = min(total, offset + limit)
+    if required_distinct <= offset:
+        return []
+
+    max_scan_rows = cap * 5
+    scan_start = 0
+    ordered_ids: list[int] = []
+    seen: set[int] = set()
+    while scan_start < max_scan_rows and len(ordered_ids) < required_distinct:
+        scan_end = min(scan_start + _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE, max_scan_rows) - 1
+        rows = _query_lightweight_date_rows(
+            start_utc=start_utc,
+            end_utc=end_utc,
+            school=school,
+            range_start=scan_start,
+            range_end=scan_end,
+        )
+        _append_deduped_event_ids(ordered_ids, seen, rows, cap)
+        if len(rows) < scan_end - scan_start + 1:
+            break
+        scan_start = scan_end + 1
+
+    return ordered_ids[offset : offset + limit]
+
+
+def _query_lightweight_date_rows(
+    *,
+    start_utc: datetime | None,
+    end_utc: datetime | None,
+    school: str | None,
+    range_start: int,
+    range_end: int,
+) -> list[dict]:
+    q = get_sb().table(EVENT_DATES).select(_LIGHTWEIGHT_DATE_COLUMNS)
+    if start_utc is not None:
+        q = q.gte("dtstart_utc", start_utc.isoformat())
+    if end_utc is not None:
+        q = q.lte("dtstart_utc", end_utc.isoformat())
+    if school:
+        q = q.eq("events.school", school)
+    return q.order("dtstart_utc", desc=False).range(range_start, range_end).execute().data or []
+
+
+def _append_deduped_event_ids(
+    ordered_ids: list[int],
+    seen: set[int],
+    rows: list[dict],
+    cap: int,
+) -> None:
+    """Append unseen event IDs from occurrence rows, preserving first occurrence order."""
+
+    for row in rows:
+        event_id = row.get("event_id")
+        if event_id is None:
+            event_row = row.get("events") or {}
+            event_id = event_row.get("id")
+        if event_id is None or event_id in seen:
+            continue
+        seen.add(event_id)
+        ordered_ids.append(event_id)
+        if len(ordered_ids) >= cap:
+            break
 
 
 def _dedup_keeping_earliest(rows: list[dict], cap: int) -> list[dict]:

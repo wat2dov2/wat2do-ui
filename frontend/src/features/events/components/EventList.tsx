@@ -1,4 +1,5 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { m, useReducedMotion } from "framer-motion";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
@@ -37,6 +38,10 @@ const EVENT_DATE_SECTIONS: Array<{
   { category: "later", labelKey: "events.dateSections.later" },
 ];
 
+const PRIORITY_EVENT_IMAGE_COUNT = 8;
+const EVENT_CARD_ANIMATION_STAGGER_MS = 35;
+const EVENT_CARD_ANIMATION_STAGGER_LIMIT = 12;
+
 const DeleteEventDialog = lazy(() =>
   import("@/features/events/components/DeleteEventDialog").then((module) => ({
     default: module.DeleteEventDialog,
@@ -56,6 +61,38 @@ const EventReportDialog = lazy(() =>
 interface ActiveEventDialog {
   type: EventCardDialog;
   event: Event;
+}
+
+interface EventCardListItemProps {
+  animationIndex: number;
+  shouldReduceMotion: boolean | null;
+  children: ReactNode;
+}
+
+function EventCardListItem({
+  animationIndex,
+  shouldReduceMotion,
+  children,
+}: EventCardListItemProps) {
+  const reducedMotion = Boolean(shouldReduceMotion);
+  return (
+    <m.div
+      role="listitem"
+      className="min-w-0"
+      initial={reducedMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: reducedMotion ? 0 : 0.32,
+        ease: "easeOut",
+        delay: reducedMotion
+          ? 0
+          : Math.min(animationIndex, EVENT_CARD_ANIMATION_STAGGER_LIMIT) *
+            (EVENT_CARD_ANIMATION_STAGGER_MS / 1000),
+      }}
+    >
+      {children}
+    </m.div>
+  );
 }
 
 /**
@@ -108,6 +145,7 @@ export function EventList({
   const { t } = useTranslation();
   const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   // Wrap id arrays in Sets for O(1) membership lookups per card.
   const savedSet = useMemo(
@@ -129,6 +167,17 @@ export function EventList({
     () => groupEventsByDateSection(sectionOrderedEvents),
     [sectionOrderedEvents],
   );
+  const visibleEventMeta = useMemo(() => {
+    const visibleEvents = [...promotedEvents, ...sectionOrderedEvents];
+    return {
+      priorityEventIds: new Set(
+        visibleEvents.slice(0, PRIORITY_EVENT_IMAGE_COUNT).map((event) => event.id),
+      ),
+      animationIndexByEventId: new Map(
+        visibleEvents.map((event, index) => [event.id, index]),
+      ),
+    };
+  }, [promotedEvents, sectionOrderedEvents]);
 
   useEffect(() => {
     if (!hasMoreEvents || isLoadingMore || !onLoadMore) return;
@@ -267,20 +316,21 @@ export function EventList({
             </h2>
             <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {promotedEvents.map((event) => (
-                <div
+                <EventCardListItem
                   key={event.id}
-                  role="listitem"
-                  className="min-w-0"
+                  animationIndex={visibleEventMeta.animationIndexByEventId.get(event.id) ?? 0}
+                  shouldReduceMotion={shouldReduceMotion}
                 >
                   <EventCard
                     event={event}
                     isSaved={savedSet.has(event.id)}
+                    imagePriority={visibleEventMeta.priorityEventIds.has(event.id)}
                     onEventClick={onEventClick}
                     disableModal={disableModal}
                     onDelete={onDelete}
                     onActionDialogOpen={handleActionDialogOpen}
                   />
-                </div>
+                </EventCardListItem>
               ))}
             </div>
           </section>
@@ -297,20 +347,21 @@ export function EventList({
               </h2>
               <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {sectionEvents.map((event) => (
-                  <div
+                  <EventCardListItem
                     key={event.id}
-                    role="listitem"
-                    className="min-w-0"
+                    animationIndex={visibleEventMeta.animationIndexByEventId.get(event.id) ?? 0}
+                    shouldReduceMotion={shouldReduceMotion}
                   >
                     <EventCard
                       event={event}
                       isSaved={savedSet.has(event.id)}
+                      imagePriority={visibleEventMeta.priorityEventIds.has(event.id)}
                       onEventClick={onEventClick}
                       disableModal={disableModal}
                       onDelete={onDelete}
                       onActionDialogOpen={handleActionDialogOpen}
                     />
-                  </div>
+                  </EventCardListItem>
                 ))}
               </div>
             </section>

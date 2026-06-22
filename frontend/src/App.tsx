@@ -13,6 +13,7 @@ import { ModalContainer } from "@/app/ModalContainer";
 import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { Toaster } from "@/shared/ui/toaster";
+import { EventsPageContainer } from "@/features/events/pages/EventsPageContainer";
 
 import { ProtectedRoute } from "@/app/ProtectedRoute";
 import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
@@ -22,11 +23,6 @@ import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 
 // Lazy load pages for code splitting
-const EventsPageContainer = lazy(() =>
-  import("@/features/events/pages/EventsPageContainer").then((module) => ({
-    default: module.EventsPageContainer,
-  }))
-);
 const ContactPage = lazy(() =>
   import("@/features/contact/pages/ContactPage").then((module) => ({
     default: module.ContactPage,

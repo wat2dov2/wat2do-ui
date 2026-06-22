@@ -52,6 +52,7 @@ const EventDetailsModal = lazy(() =>
 interface EventCardProps {
   event: Event;
   isSaved?: boolean;
+  imagePriority?: boolean;
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
   /** Called when the user confirms deletion (shown only to owners/admins). */
@@ -73,6 +74,7 @@ export type EventCardDialog = "delete" | "share" | "report";
 function EventCardComponent({
   event,
   isSaved = false,
+  imagePriority = false,
   onEventClick,
   disableModal,
   onDelete,
@@ -219,6 +221,8 @@ function EventCardComponent({
           <LazyImage
             src={event.source_image_url ?? undefined}
             alt={event.title}
+            loading={imagePriority ? "eager" : "lazy"}
+            fetchPriority={imagePriority ? "high" : "auto"}
             className="absolute inset-0 w-full h-full"
             fallback={
               <div
