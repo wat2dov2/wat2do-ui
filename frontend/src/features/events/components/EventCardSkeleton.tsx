@@ -13,8 +13,8 @@ export function EventCardSkeleton() {
       </div>
 
       {/* Bottom section matching EventCard styling */}
-      <div className="flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden border-border/50 p-4 pb-3 bg-card gap-3">
-        <div className="flex flex-col gap-3 h-full flex-1">
+      <div className="flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden border-border/50 p-3 pb-2.5 bg-card gap-2.5 sm:p-4 sm:pb-3 sm:gap-3">
+        <div className="flex flex-col gap-2.5 h-full flex-1 sm:gap-3">
           {/* Title skeleton */}
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-3/4 rounded-lg" />

@@ -1,5 +1,4 @@
 import { lazy, memo, Suspense, useCallback, useMemo, useState } from "react";
-import { Menu as MenuIcon } from "lucide-react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -371,7 +370,7 @@ function EventCardComponent({
                   aria-label={t("common.actions")}
                   className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
                 >
-                  <MenuIcon className="size-4" strokeWidth={2.25} />
+                  <MoreHorizontal className="size-4" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent

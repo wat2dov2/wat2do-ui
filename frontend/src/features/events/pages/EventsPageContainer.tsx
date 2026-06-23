@@ -127,7 +127,7 @@ export function EventsPageContainer() {
           />
         )}
       </div>
-      <div className="space-y-2">
+      <div className="-mx-2 space-y-2 sm:mx-0">
         <div className="space-y-3 pb-2">
           <SearchBar
             searchQuery={filters.searchQuery}
