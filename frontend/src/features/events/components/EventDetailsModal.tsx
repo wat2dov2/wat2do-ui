@@ -186,7 +186,7 @@ export function EventDetailsModal({
       >
         <m.div
           ref={contentRef}
-          className="w-[calc(100vw-32px)] max-w-2xl max-h-[90vh] overflow-y-auto border-0 p-0 sm:w-[calc(100vw-48px)]"
+          className="w-[calc(100vw-32px)] max-w-md max-h-[90vh] overflow-y-auto border-0 p-0 sm:w-[calc(100vw-48px)]"
           style={{ y: dragY }}
           drag="y"
           dragControls={dragControls}
