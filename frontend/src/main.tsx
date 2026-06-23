@@ -12,8 +12,10 @@ import { fetchProfileAPI, initializeAuth } from '@/features/auth/api/auth.api'
 import { setOnAfterRefresh } from '@/shared/services/apiClient'
 import { loadAppConstants } from '@/shared/api/metaApi'
 import { initClarity } from '@/shared/lib/clarity'
+import { initGoogleAnalytics } from '@/shared/lib/googleAnalytics'
 
 initClarity(import.meta.env.VITE_CLARITY_PROJECT_ID)
+initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID)
 
 // After a silent 401 token refresh, re-fetch /users/me so cached
 // role/hasOrganization stay in sync with the backend (AUTH-010). The main.tsx
