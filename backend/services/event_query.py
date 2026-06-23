@@ -241,7 +241,7 @@ def _can_use_lightweight_date_page(
 ) -> bool:
     """True for the root-feed shape: date-ordered browsing with no card filters.
 
-    This keeps the common `/events/?page=1&page_size=48&sort_by=date` path from
+    This keeps the common `/events/?page=1&page_size=20&sort_by=date` path from
     embedding full event rows for every candidate just to dedupe and slice.
     Filtered/sorted variants stay on the full candidate path because they need
     event fields while deciding membership and order.

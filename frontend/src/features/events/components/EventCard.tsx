@@ -1,8 +1,10 @@
 import { lazy, memo, Suspense, useCallback, useMemo, useState } from "react";
+import { Menu as MenuIcon } from "lucide-react";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
+  ChevronRight,
   Download,
   Heart,
   ImageOff,
@@ -18,6 +20,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
@@ -254,58 +259,46 @@ function EventCardComponent({
             </BadgeMask>
           )}
 
-          {/* Menu Badge - Bottom Right */}
-          <BadgeMask variant="bottom-right">
-            <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={t("events.actions")}
-                  {...badgeHoverProps}
-                  className="event-card-actions-trigger flex items-center justify-center rounded-full border border-foreground/20 bg-background/95 px-2 py-0.5 text-[10px] font-bold text-foreground opacity-90 shadow-sm transition-[background-color,opacity] hover:bg-background hover:opacity-100 data-[state=open]:opacity-100"
+          {/* Manager Menu Badge - Bottom Right */}
+          {canManageEvent && onDelete && (
+            <BadgeMask variant="bottom-right">
+              <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={t("events.actions")}
+                    {...badgeHoverProps}
+                    className="event-card-actions-trigger flex items-center justify-center rounded-full border border-foreground/20 bg-background/95 px-2 py-0.5 text-[10px] font-bold text-foreground opacity-90 shadow-sm transition-[background-color,opacity] hover:bg-background hover:opacity-100 data-[state=open]:opacity-100"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className="size-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48"
+                  align="end"
+                  side="top"
+                  sideOffset={8}
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <MoreHorizontal className="size-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48"
-                align="end"
-                side="top"
-                sideOffset={8}
-                onMouseDown={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    handleActionDialogOpen("report");
-                  }}
-                >
-                  <Flag />
-                  {t("common.report")}
-                </DropdownMenuItem>
-                {canManageEvent && onDelete && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        handleActionDialogOpen("delete");
-                      }}
-                    >
-                      <Trash2 />
-                      {t("common.delete")}
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </BadgeMask>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      handleActionDialogOpen("delete");
+                    }}
+                  >
+                    <Trash2 />
+                    {t("common.delete")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </BadgeMask>
+          )}
 
           {/* Club/Organization Badge - Bottom Left */}
           {event.organization && (
@@ -375,26 +368,44 @@ function EventCardComponent({
                   type="button"
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  aria-label={t("common.export")}
+                  aria-label={t("common.actions")}
                   className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
                 >
-                  <Download className="size-4" />
+                  <MenuIcon className="size-4" strokeWidth={2.25} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-44"
+                className="w-48"
                 align="end"
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
-                  <GoogleIcon className="size-3.5 shrink-0" />
-                  {t("events.calendar.googleCalendar")}
+                <DropdownMenuItem onSelect={() => handleActionDialogOpen("report")}>
+                  <Flag />
+                  {t("common.report")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => downloadICS(event)}>
-                  <AppleIcon className="size-3.5 shrink-0" />
-                  {t("events.calendar.iCal")}
-                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Download />
+                    {t("common.download")}
+                    <ChevronRight className="ml-auto" />
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent
+                    className="w-44"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
+                      <GoogleIcon className="size-3.5 shrink-0" />
+                      {t("events.calendar.googleCalendar")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => downloadICS(event)}>
+                      <AppleIcon className="size-3.5 shrink-0" />
+                      {t("events.calendar.iCal")}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

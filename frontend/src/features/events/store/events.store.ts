@@ -56,7 +56,7 @@ let _latestLoadMoreFetchId = 0;
 let _latestPromotedFetchId = 0;
 let _loadedEventsQueryKey: string | null = null;
 let _loadedPromotedSchoolKey: string | null = null;
-const EVENTS_PAGE_SIZE = 48;
+const EVENTS_PAGE_SIZE = 20;
 
 function getInitialSchoolFilter(): string {
   if (typeof window !== "undefined") {
