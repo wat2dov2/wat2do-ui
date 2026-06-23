@@ -39,7 +39,7 @@ const EVENT_DATE_SECTIONS: Array<{
   { category: "later", labelKey: "events.dateSections.later" },
 ];
 
-const EVENT_CARD_ANIMATION_STAGGER_MS = 33;
+const EVENT_CARD_ANIMATION_STAGGER_MS = 50;
 
 const DeleteEventDialog = lazy(() =>
   import("@/features/events/components/DeleteEventDialog").then((module) => ({
