@@ -1,7 +1,6 @@
 {
   "events": {
     "eventTitle": "Event Title",
-    "actions": "Event actions",
     "loadFailed": "Failed to load events. Please try again.",
     "deleteFailed": "Failed to delete event. Please try again.",
     "submitFailed": "Failed to submit event. Please try again.",

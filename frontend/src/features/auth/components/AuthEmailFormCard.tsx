@@ -62,7 +62,7 @@ export function AuthEmailFormCard({
 
           <LoadingButton
             type="button"
-            onMouseDown={onContinue}
+            onClick={onContinue}
             disabled={!canContinue}
             isLoading={isLoading}
             loadingText={t("common.pleaseWait")}
@@ -98,15 +98,13 @@ export function AuthEmailFormCard({
             </div>
           </div>
 
-
-
           {error && (
             <p className="text-sm text-destructive text-center">{error}</p>
           )}
 
           <LoadingButton
             type="button"
-            onMouseDown={onContinue}
+            onClick={onContinue}
             disabled={!canContinue}
             isLoading={isLoading}
             loadingText={t("common.pleaseWait")}
@@ -118,7 +116,7 @@ export function AuthEmailFormCard({
           <div className="flex flex-col items-center space-y-2 pt-2">
             <button
               type="button"
-              onMouseDown={onResend}
+              onClick={onResend}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" && e.key !== " ") return;
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
@@ -43,6 +43,7 @@ export function useAuthEntryFlow({
   const [emailSent, setEmailSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const authRequestInFlightRef = useRef(false);
 
   const isEmailValid = useMemo(
     () => EMAIL_PATTERN.test(email.trim()),
@@ -65,8 +66,9 @@ export function useAuthEntryFlow({
   }, []);
 
   const handleResend = useCallback(async () => {
-    if (isLoading) return;
+    if (isLoading || authRequestInFlightRef.current) return;
     const trimmed = email.trim();
+    authRequestInFlightRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -80,14 +82,16 @@ export function useAuthEntryFlow({
         setError(t("auth.genericError"));
       }
     } finally {
+      authRequestInFlightRef.current = false;
       setIsLoading(false);
     }
   }, [email, tokenParam, isLoading, t]);
 
   const handleContinue = useCallback(async () => {
-    if (!isFormValid || isLoading) return;
+    if (!isFormValid || isLoading || authRequestInFlightRef.current) return;
 
     const trimmed = email.trim();
+    authRequestInFlightRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -111,6 +115,7 @@ export function useAuthEntryFlow({
         setError(t("auth.genericError"));
       }
     } finally {
+      authRequestInFlightRef.current = false;
       setIsLoading(false);
     }
   }, [isFormValid, isLoading, email, emailSent, otpToken, onContinueToOnboarding, onContinueToHome, t, tokenParam]);

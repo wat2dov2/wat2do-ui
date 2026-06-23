@@ -1,4 +1,5 @@
-import { lazy, memo, Suspense, useCallback, useMemo, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
+import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -65,77 +66,396 @@ interface EventCardProps {
 
 export type EventCardDialog = "delete" | "share" | "report";
 
-/**
- * Data flow:
- * 1. Explicit props (onEventClick, disableModal, onDelete) come from the
- *    page-level container (EventsPageContainer) via EventList.
- * 2. Stores supply global data:
- *    - `useSavedEventsStore` for the save/unsave action.
- * 3. Narrow auth-slice hooks supply `isAdmin`, `profileCompleted`, and
- *    `getUserId()` the current user identity.
- */
-function EventCardComponent({
+type CategoryClasses = ReturnType<typeof getCategoryClasses>;
+
+interface EventImageBadgesProps {
+  event: Event;
+  eventCategory: string;
+  categoryClasses: CategoryClasses;
+  isLive: boolean;
+  isNew: boolean;
+  badgeHoverProps: {
+    onMouseEnter: () => void;
+    onMouseLeave: () => void;
+  };
+  onCategoryClick: (e: React.MouseEvent) => void;
+  onOrganizationMouseDown: (e: React.MouseEvent) => void;
+  t: TFunction;
+}
+
+function EventImageBadges({
   event,
-  isSaved = false,
-  onEventClick,
-  disableModal,
-  onDelete,
+  eventCategory,
+  categoryClasses,
+  isLive,
+  isNew,
+  badgeHoverProps,
+  onCategoryClick,
+  onOrganizationMouseDown,
+  t,
+}: EventImageBadgesProps) {
+  return (
+    <>
+      <BadgeMask variant="top-left">
+        <button
+          type="button"
+          onMouseDown={onCategoryClick}
+          {...badgeHoverProps}
+          className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
+        >
+          {translateCategory(eventCategory, t)}
+        </button>
+      </BadgeMask>
+
+      {(isLive || isNew) && (
+        <BadgeMask variant="top-right">
+          <Badge variant={isLive ? "live" : "new"} className="uppercase">
+            {isLive ? t("common.live") : t("events.new")}
+          </Badge>
+        </BadgeMask>
+      )}
+
+      {event.organization && (
+        <BadgeMask variant="bottom-left">
+          <button
+            type="button"
+            onMouseDown={onOrganizationMouseDown}
+            {...badgeHoverProps}
+            className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+          >
+            <span className="font-bold truncate max-w-[128px]">
+              {event.organization}
+            </span>
+          </button>
+        </BadgeMask>
+      )}
+    </>
+  );
+}
+
+interface EventFooterActionsProps {
+  event: Event;
+  saveButton: ReactNode;
+  profileCompleted: boolean;
+  categoryClasses: CategoryClasses;
+  canDelete: boolean;
+  onShare: (e: React.MouseEvent) => void;
+  onActionDialogOpen: (dialog: EventCardDialog) => void;
+  t: TFunction;
+}
+
+function EventFooterActions({
+  event,
+  saveButton,
+  profileCompleted,
+  categoryClasses,
+  canDelete,
+  onShare,
   onActionDialogOpen,
-}: EventCardProps) {
+  t,
+}: EventFooterActionsProps) {
+  return (
+    <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
+      {profileCompleted ? (
+        saveButton
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="block min-h-10 cursor-not-allowed" onMouseDown={(e) => e.stopPropagation()}>
+              {saveButton}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t("events.saveRequiresLogin")}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      <button
+        type="button"
+        onMouseDown={onShare}
+        aria-label={t("common.share")}
+        className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+      >
+        <Share2 className="size-4" />
+      </button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={t("common.actions")}
+            className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          >
+            <MoreHorizontal className="size-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="w-48"
+          align="end"
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <DropdownMenuItem onSelect={() => onActionDialogOpen("report")}>
+            <Flag />
+            {t("common.report")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Download />
+              {t("common.download")}
+              <ChevronRight className="ml-auto" />
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent
+              className="w-44"
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
+                <GoogleIcon className="size-3.5 shrink-0" />
+                {t("events.calendar.googleCalendar")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => downloadICS(event)}>
+                <AppleIcon className="size-3.5 shrink-0" />
+                {t("events.calendar.iCal")}
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={(e) => {
+                  e.preventDefault();
+                  onActionDialogOpen("delete");
+                }}
+              >
+                <Trash2 />
+                {t("common.delete")}
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+interface SaveEventButtonProps {
+  eventId: number;
+  profileCompleted: boolean;
+  isSaveActive: boolean;
+  categoryClasses: CategoryClasses;
+  onToggleSaveEvent: (eventId: number) => void;
+  t: TFunction;
+}
+
+function SaveEventButton({
+  eventId,
+  profileCompleted,
+  isSaveActive,
+  categoryClasses,
+  onToggleSaveEvent,
+  t,
+}: SaveEventButtonProps) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        if (profileCompleted) onToggleSaveEvent(eventId);
+      }}
+      disabled={!profileCompleted}
+      aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
+      className={`flex min-h-10 w-full items-center justify-center px-2 transition-colors ${
+        !profileCompleted
+          ? `pointer-events-none cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
+          : isSaveActive
+          ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
+          : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
+      }`}
+    >
+      <Heart
+        className={`size-4 ${isSaveActive ? "fill-error text-error" : ""}`}
+        fill={isSaveActive ? "currentColor" : "none"}
+      />
+    </button>
+  );
+}
+
+interface EventCardImageProps {
+  event: Event;
+  eventCategory: string;
+  categoryClasses: CategoryClasses;
+  isLive: boolean;
+  isNew: boolean;
+  badgeHoverProps: EventImageBadgesProps["badgeHoverProps"];
+  onCategoryClick: EventImageBadgesProps["onCategoryClick"];
+  onOrganizationMouseDown: EventImageBadgesProps["onOrganizationMouseDown"];
+  t: TFunction;
+}
+
+function EventCardImage({
+  event,
+  eventCategory,
+  categoryClasses,
+  isLive,
+  isNew,
+  badgeHoverProps,
+  onCategoryClick,
+  onOrganizationMouseDown,
+  t,
+}: EventCardImageProps) {
+  return (
+    <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
+      <LazyImage
+        src={event.source_image_url ?? undefined}
+        alt={event.title}
+        className="absolute inset-0 w-full h-full"
+        fallback={
+          <div
+            className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}
+          >
+            <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
+          </div>
+        }
+        placeholder={
+          <div
+            className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`}
+          />
+        }
+      />
+      <EventImageBadges
+        event={event}
+        eventCategory={eventCategory}
+        categoryClasses={categoryClasses}
+        isLive={isLive}
+        isNew={isNew}
+        badgeHoverProps={badgeHoverProps}
+        onCategoryClick={onCategoryClick}
+        onOrganizationMouseDown={onOrganizationMouseDown}
+        t={t}
+      />
+    </div>
+  );
+}
+
+interface EventCardBodyProps {
+  event: Event;
+  date: string;
+  time: string;
+  badges: ReturnType<typeof useEventBadges>;
+  profileCompleted: boolean;
+  isSaveActive: boolean;
+  categoryClasses: CategoryClasses;
+  canDelete: boolean;
+  onToggleSaveEvent: (eventId: number) => void;
+  onShare: (e: React.MouseEvent) => void;
+  onActionDialogOpen: (dialog: EventCardDialog) => void;
+  t: TFunction;
+}
+
+function EventCardBody({
+  event,
+  date,
+  time,
+  badges,
+  profileCompleted,
+  isSaveActive,
+  categoryClasses,
+  canDelete,
+  onToggleSaveEvent,
+  onShare,
+  onActionDialogOpen,
+  t,
+}: EventCardBodyProps) {
+  const saveButton = (
+    <SaveEventButton
+      eventId={event.id}
+      profileCompleted={profileCompleted}
+      isSaveActive={isSaveActive}
+      categoryClasses={categoryClasses}
+      onToggleSaveEvent={onToggleSaveEvent}
+      t={t}
+    />
+  );
+
+  return (
+    <div
+      className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+      style={getEventCardWaterpaintStyle(event.id)}
+    >
+      <EventCardContent
+        title={event.title}
+        date={date}
+        time={time}
+        location={event.location}
+        badges={badges}
+        textClassName={categoryClasses.text}
+        secondaryTextClassName={categoryClasses.text}
+        badgeClassName={`border-current ${categoryClasses.text}`}
+      />
+
+      <EventFooterActions
+        event={event}
+        saveButton={saveButton}
+        profileCompleted={profileCompleted}
+        categoryClasses={categoryClasses}
+        canDelete={canDelete}
+        onShare={onShare}
+        onActionDialogOpen={onActionDialogOpen}
+        t={t}
+      />
+    </div>
+  );
+}
+
+interface EventDetailsModalMountProps {
+  event: Event;
+  open: boolean;
+  onClose: () => void;
+}
+
+function EventDetailsModalMount({
+  event,
+  open,
+  onClose,
+}: EventDetailsModalMountProps) {
+  if (!open) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <EventDetailsModal
+        event={event}
+        onClose={onClose}
+      />
+    </Suspense>
+  );
+}
+
+interface UseEventCardNavigationOptions {
+  event: Event;
+  eventCategory: string;
+  disableModal?: boolean;
+  onEventClick?: (event: Event) => void;
+}
+
+function useEventCardNavigation({
+  event,
+  eventCategory,
+  disableModal,
+  onEventClick,
+}: UseEventCardNavigationOptions) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isHoveringBadge, setIsHoveringBadge] = useState(false);
+  const filterUrlActions = useFilterUrlActions();
 
-  const handleBadgeMouseEnter = useCallback(() => setIsHoveringBadge(true), []);
-  const handleBadgeMouseLeave = useCallback(() => setIsHoveringBadge(false), []);
-  const badgeHoverProps = useMemo(
-    () => ({
-      onMouseEnter: handleBadgeMouseEnter,
-      onMouseLeave: handleBadgeMouseLeave,
-    }),
-    [handleBadgeMouseEnter, handleBadgeMouseLeave],
-  );
-
-  const { t, i18n } = useTranslation();
-
-  const profileCompleted = useProfileCompleted();
-  const isAdmin = useIsAdmin();
-  const currentUserId = getUserId();
-
-  // Mutations go through stores directly.
-  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
-
-  // Show delete only if the user is an admin or the event owner.
-  const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
-  const canManageEvent = isAdmin || isOwner;
-  const isSaveActive = profileCompleted && isSaved;
-  
-  // Check if this event should be shown in modal based on URL
   const eventIdParam = searchParams.get(QP.EVENT_ID);
   const showDetailsModal = !disableModal && eventIdParam === event.id.toString();
-
-  // Track card visibility (view impression)
-  const cardRef = useViewTracking(event.id);
-
-  // Use extracted hook for badges
-  const badges = useEventBadges(event);
-  const eventCategory = useMemo(() => getEventCategory(event), [event]);
-  const categoryClasses = useMemo(() => getCategoryClasses(eventCategory), [eventCategory]);
-
-  // Format date and time using extracted utilities
-  const cardDate = useMemo(
-    () => formatCardDate(event, i18n.language || "en-US"),
-    [event, i18n.language],
-  );
-  const cardTime = useMemo(() => formatCardTime(event), [event]);
-  const isLive = useMemo(() => isEventHappeningNow(event), [event]);
-  const isNew = useMemo(
-    () => !isLive && wasAddedWithinLast24Hours(event),
-    [event, isLive],
-  );
-
-  const filterUrlActions = useFilterUrlActions();
 
   const handleCategoryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -168,34 +488,108 @@ function EventCardComponent({
     }
   }, [disableModal, event, navigate, onEventClick, searchParams]);
 
+  const handleDetailsModalClose = useCallback(() => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete(QP.EVENT_ID);
+    navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
+  }, [navigate, searchParams]);
+
+  return {
+    handleCategoryClick,
+    handleOrganizationMouseDown,
+    handleCardActivate,
+    handleDetailsModalClose,
+    showDetailsModal,
+  };
+}
+
+/**
+ * Data flow:
+ * 1. Explicit props (onEventClick, disableModal, onDelete) come from the
+ *    page-level container (EventsPageContainer) via EventList.
+ * 2. Stores supply global data:
+ *    - `useSavedEventsStore` for the save/unsave action.
+ * 3. Narrow auth-slice hooks supply `isAdmin`, `profileCompleted`, and
+ *    `getUserId()` the current user identity.
+ */
+function EventCardComponent({
+  event,
+  isSaved = false,
+  onEventClick,
+  disableModal,
+  onDelete,
+  onActionDialogOpen,
+}: EventCardProps) {
+  const [isHoveringBadge, setIsHoveringBadge] = useState(false);
+
+  const handleBadgeMouseEnter = useCallback(() => setIsHoveringBadge(true), []);
+  const handleBadgeMouseLeave = useCallback(() => setIsHoveringBadge(false), []);
+  const badgeHoverProps = useMemo(
+    () => ({
+      onMouseEnter: handleBadgeMouseEnter,
+      onMouseLeave: handleBadgeMouseLeave,
+    }),
+    [handleBadgeMouseEnter, handleBadgeMouseLeave],
+  );
+
+  const { t, i18n } = useTranslation();
+
+  const profileCompleted = useProfileCompleted();
+  const isAdmin = useIsAdmin();
+  const currentUserId = getUserId();
+
+  // Mutations go through stores directly.
+  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
+
+  // Show delete only if the user is an admin or the event owner.
+  const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
+  const canManageEvent = isAdmin || isOwner;
+  const isSaveActive = profileCompleted && isSaved;
+  
+  // Track card visibility (view impression)
+  const cardRef = useViewTracking(event.id);
+
+  // Use extracted hook for badges
+  const badges = useEventBadges(event);
+  const eventCategory = useMemo(() => getEventCategory(event), [event]);
+  const categoryClasses = useMemo(() => getCategoryClasses(eventCategory), [eventCategory]);
+
+  // Format date and time using extracted utilities
+  const cardDate = useMemo(
+    () => formatCardDate(event, i18n.language || "en-US"),
+    [event, i18n.language],
+  );
+  const cardTime = useMemo(() => formatCardTime(event), [event]);
+  const isLive = useMemo(() => isEventHappeningNow(event), [event]);
+  const isNew = useMemo(
+    () => !isLive && wasAddedWithinLast24Hours(event),
+    [event, isLive],
+  );
+
+  const {
+    handleCategoryClick,
+    handleOrganizationMouseDown,
+    handleCardActivate,
+    handleDetailsModalClose,
+    showDetailsModal,
+  } = useEventCardNavigation({
+    event,
+    eventCategory,
+    disableModal,
+    onEventClick,
+  });
+
   const handleActionDialogOpen = useCallback(
     (dialog: EventCardDialog) => {
-      setIsMenuOpen(false);
       onActionDialogOpen(dialog, event);
     },
     [event, onActionDialogOpen],
   );
 
-  const saveButton = (
-    <button
-      type="button"
-      onMouseDown={(e) => {
-        e.stopPropagation();
-        if (profileCompleted) toggleSaveEvent(event.id);
-      }}
-      disabled={!profileCompleted}
-      aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
-      className={`flex min-h-10 w-full items-center justify-center px-2 transition-colors ${
-        !profileCompleted
-          ? `pointer-events-none cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
-          : isSaveActive
-          ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
-          : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
-      }`}
-    >
-      <Heart className={`size-4 ${isSaveActive ? "fill-error text-error" : ""}`} fill={isSaveActive ? "currentColor" : "none"} />
-    </button>
-  );
+  const handleShareMouseDown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleActionDialogOpen("share");
+  }, [handleActionDialogOpen]);
 
   return (
     <>
@@ -217,214 +611,39 @@ function EventCardComponent({
           isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
         }`}
       >
-        {/* Event Image */}
-        <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-          {/* Background - lazy loaded image with fallback */}
-          <LazyImage
-            src={event.source_image_url ?? undefined}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full"
-            fallback={
-              <div
-                className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}
-              >
-                <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
-              </div>
-            }
-            placeholder={
-              <div
-                className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`}
-              />
-            }
-          />
-          {/* Category Badge - Top Left (Pastel styling) */}
-          <BadgeMask variant="top-left">
-            <button
-              type="button"
-              onMouseDown={handleCategoryClick}
-              {...badgeHoverProps}
-              className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
-            >
-              {translateCategory(eventCategory, t)}
-            </button>
-          </BadgeMask>
+        <EventCardImage
+          event={event}
+          eventCategory={eventCategory}
+          categoryClasses={categoryClasses}
+          isLive={isLive}
+          isNew={isNew}
+          badgeHoverProps={badgeHoverProps}
+          onCategoryClick={handleCategoryClick}
+          onOrganizationMouseDown={handleOrganizationMouseDown}
+          t={t}
+        />
 
-          {/* Status Badge - Top Right */}
-          {(isLive || isNew) && (
-            <BadgeMask variant="top-right">
-              <Badge variant={isLive ? "live" : "new"} className="uppercase">
-                {isLive ? t("common.live") : t("events.new")}
-              </Badge>
-            </BadgeMask>
-          )}
-
-          {/* Manager Menu Badge - Bottom Right */}
-          {canManageEvent && onDelete && (
-            <BadgeMask variant="bottom-right">
-              <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label={t("events.actions")}
-                    {...badgeHoverProps}
-                    className="event-card-actions-trigger flex items-center justify-center rounded-full border border-foreground/20 bg-background/95 px-2 py-0.5 text-[10px] font-bold text-foreground opacity-90 shadow-sm transition-[background-color,opacity] hover:bg-background hover:opacity-100 data-[state=open]:opacity-100"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreHorizontal className="size-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-48"
-                  align="end"
-                  side="top"
-                  sideOffset={8}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      handleActionDialogOpen("delete");
-                    }}
-                  >
-                    <Trash2 />
-                    {t("common.delete")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </BadgeMask>
-          )}
-
-          {/* Club/Organization Badge - Bottom Left */}
-          {event.organization && (
-            <BadgeMask variant="bottom-left">
-              <button
-                type="button"
-                onMouseDown={handleOrganizationMouseDown}
-                {...badgeHoverProps}
-                className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
-              >
-                <span className="font-bold truncate max-w-[128px]">
-                  {event.organization}
-                </span>
-              </button>
-            </BadgeMask>
-          )}
-        </div>
-
-        {/* Bottom section: bordered on left/right/bottom, wrapping content + interest button */}
-        <div
-          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
-          style={getEventCardWaterpaintStyle(event.id)}
-        >
-          {/* Event Content */}
-          <EventCardContent
-            title={event.title}
-            date={cardDate}
-            time={cardTime}
-            location={event.location}
-            badges={badges}
-            textClassName={categoryClasses.text}
-            secondaryTextClassName={categoryClasses.text}
-            badgeClassName={`border-current ${categoryClasses.text}`}
-          />
-
-          <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
-            {profileCompleted ? (
-              saveButton
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="block min-h-10 cursor-not-allowed" onMouseDown={(e) => e.stopPropagation()}>
-                    {saveButton}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("events.saveRequiresLogin")}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleActionDialogOpen("share");
-              }}
-              aria-label={t("common.share")}
-              className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
-            >
-              <Share2 className="size-4" />
-            </button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  aria-label={t("common.actions")}
-                  className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
-                >
-                  <MoreHorizontal className="size-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48"
-                align="end"
-                onMouseDown={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <DropdownMenuItem onSelect={() => handleActionDialogOpen("report")}>
-                  <Flag />
-                  {t("common.report")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Download />
-                    {t("common.download")}
-                    <ChevronRight className="ml-auto" />
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent
-                    className="w-44"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
-                      <GoogleIcon className="size-3.5 shrink-0" />
-                      {t("events.calendar.googleCalendar")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => downloadICS(event)}>
-                      <AppleIcon className="size-3.5 shrink-0" />
-                      {t("events.calendar.iCal")}
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+        <EventCardBody
+          event={event}
+          date={cardDate}
+          time={cardTime}
+          badges={badges}
+          profileCompleted={profileCompleted}
+          isSaveActive={isSaveActive}
+          categoryClasses={categoryClasses}
+          canDelete={canManageEvent && Boolean(onDelete)}
+          onToggleSaveEvent={toggleSaveEvent}
+          onShare={handleShareMouseDown}
+          onActionDialogOpen={handleActionDialogOpen}
+          t={t}
+        />
       </article>
 
-      {/* Event Details Modal */}
-      {showDetailsModal && (
-        <Suspense fallback={null}>
-          <EventDetailsModal
-            event={event}
-            onClose={() => {
-              const newParams = new URLSearchParams(searchParams);
-              newParams.delete(QP.EVENT_ID);
-              navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
-            }}
-          />
-        </Suspense>
-      )}
-
+      <EventDetailsModalMount
+        event={event}
+        open={showDetailsModal}
+        onClose={handleDetailsModalClose}
+      />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import React from "react";
 
-type BadgeMaskVariant = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+type BadgeMaskVariant = "top-left" | "top-right" | "bottom-left";
 
 interface BadgeMaskProps {
   variant: BadgeMaskVariant;
@@ -23,12 +23,6 @@ const EventBadgeMaskTopRight = ({ className }: { className?: string }) => (
 const EventBadgeMaskBottomLeft = ({ className }: { className?: string }) => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M0 0C0 35.35 28.65 64 64 64H0V0Z" fill="currentColor"/>
-  </svg>
-);
-
-const EventBadgeMaskBottomRight = ({ className }: { className?: string }) => (
-  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M64 0C64 35.35 35.35 64 0 64H64V0Z" fill="currentColor"/>
   </svg>
 );
 
@@ -64,18 +58,7 @@ export function BadgeMask({ variant, children }: BadgeMaskProps) {
           </div>
         </div>
       );
-    case "bottom-right":
-      return (
-        <div className="absolute bottom-0 right-0 flex flex-col">
-          <EventBadgeMaskBottomRight className="size-2 ml-auto text-background" />
-          <div className="flex">
-            <EventBadgeMaskBottomRight className="size-2 mt-auto text-background" />
-            <div className="pt-1 pl-1 bg-background rounded-tl-xl">{children}</div>
-          </div>
-        </div>
-      );
     default:
       return null;
   }
 }
-
