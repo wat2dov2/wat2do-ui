@@ -119,13 +119,13 @@ export function OrganizationsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-2">
+        <div className="no-visible-scrollbar flex flex-nowrap gap-2 overflow-x-auto pb-1">
           {/* Category Chips */}
           {allCategories.map((category) => (
             <button
               key={category}
               onMouseDown={() => toggleCategory(category)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                 selectedCategories.includes(category)
                   ? "bg-primary/80 text-primary-foreground"
                   : "bg-secondary text-muted-foreground"
@@ -201,11 +201,11 @@ export function OrganizationsPage() {
                 <TableRow
                   key={club.id}
                   className="cursor-pointer"
-                  onMouseDown={() => setSelectedOrganization(club)}
+                  onClick={() => setSelectedOrganization(club)}
                 >
                   {/* Name */}
                   <TableCell>
-                    <div className="font-semibold text-sm text-foreground">
+                    <div className="text-sm text-foreground">
                       {club.organization_name}
                     </div>
                   </TableCell>
@@ -233,7 +233,7 @@ export function OrganizationsPage() {
                         href={`https://instagram.com/${club.ig}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex min-w-0 max-w-[150px] items-center gap-1 rounded-lg bg-secondary/60 px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                       >
                         <Instagram className="size-3.5 shrink-0" />
@@ -251,7 +251,7 @@ export function OrganizationsPage() {
                         href={sanitizeHref(club.discord)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-secondary/60 px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                       >
                         <MessageCircle className="size-3.5 shrink-0" />

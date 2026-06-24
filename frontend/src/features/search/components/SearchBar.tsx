@@ -54,7 +54,6 @@ export function SearchBar({
         placeholder={t("search.placeholder")}
         submitLabel={t("common.search")}
         clearLabel={t("search.clear")}
-        className="h-10 flex-1"
         onKeyDown={onSearchKeyDown}
       />
 

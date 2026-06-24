@@ -33,7 +33,7 @@ export function SubmittedSearchInput({
   return (
     <div
       className={cn(
-        "relative h-8 min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
+        "relative h-10 min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
         className,
       )}
       data-elevation="control"
@@ -47,7 +47,7 @@ export function SubmittedSearchInput({
           handleEnterSubmit(event);
           onKeyDown?.(event);
         }}
-        className="flex h-full w-full min-w-0 items-center rounded-none bg-transparent py-2 pl-3 pr-20 text-base text-secondary-foreground outline-none placeholder:text-muted-foreground md:text-sm"
+        className="flex h-full w-full min-w-0 items-center rounded-none bg-transparent py-2 pl-3 pr-20 text-base text-secondary-foreground outline-none placeholder:text-muted-foreground"
       />
       {value && (
         <button

@@ -183,10 +183,11 @@ export function EventDetailsModal({
       <DialogContent
         asChild
         showCloseButton={false}
+        className="w-[calc(100vw-16px)] max-w-3xl overflow-hidden p-0 sm:w-[calc(100vw-48px)]"
       >
         <m.div
           ref={contentRef}
-          className="w-[calc(100vw-32px)] max-w-md max-h-[90vh] overflow-y-auto border-0 p-0 sm:w-[calc(100vw-48px)]"
+          className="max-h-[90dvh] overflow-y-auto border-0 p-0"
           style={{ y: dragY }}
           drag="y"
           dragControls={dragControls}
@@ -208,7 +209,7 @@ export function EventDetailsModal({
               </button>
             </DialogClose>
             <div
-              className="relative w-full h-64 touch-none select-none overflow-hidden cursor-grab active:cursor-grabbing"
+              className="relative h-64 w-full touch-none select-none overflow-hidden cursor-grab active:cursor-grabbing sm:h-80"
               data-event-details-drag-handle
               onPointerDown={handleDragPointerDown}
               onDragStart={(dragEvent) => dragEvent.preventDefault()}
@@ -229,7 +230,7 @@ export function EventDetailsModal({
               />
             </div>
 
-            <ModalContentWrapper>
+            <ModalContentWrapper className="space-y-4 px-4 py-4 sm:px-5 sm:py-5">
               <DialogHeader className="text-left">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                   <div className="min-w-0">
@@ -302,7 +303,7 @@ export function EventDetailsModal({
                 </div>
               </DialogHeader>
 
-              <ModalSection>
+              <ModalSection className="space-y-3">
                 <InfoRow
                   label={t("forms.description")}
                   value={displayedEvent.description || t("common.noDescription")}
@@ -328,7 +329,7 @@ export function EventDetailsModal({
                 <InfoRow
                   label={t("forms.occurrences")}
                   value={
-                    <div className="flex flex-wrap gap-2 mt-1.5">
+                    <div className="mt-1 flex flex-wrap gap-1.5">
                       {displayedEvent.occurrences?.map((occ) => (
                         <span
                           key={occ.id || `${occ.dtstart_utc}-${occ.dtend_utc}`}
@@ -374,9 +375,9 @@ export function EventDetailsModal({
                 />
 
                 {!hideSimilarEvents && similarEvents.length > 0 && (
-                  <InfoSection>
-                    <SectionTitle>{t("events.similarEvents")}</SectionTitle>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InfoSection className="mt-3 space-y-3 pt-3">
+                    <SectionTitle className="mb-3">{t("events.similarEvents")}</SectionTitle>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {similarEvents.map((similarEvent) => (
                         <EventCard
                           key={similarEvent.id}
