@@ -80,12 +80,12 @@ export function TopNav() {
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <button
           onMouseDown={handleLogoClick}
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-opacity hover:opacity-80"
+          className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
           aria-label={t("navigation.goToEvents")}
         >
           <img
             alt={t("common.logo")}
-            className="size-6 rounded object-cover"
+            className="h-6 w-[34px] object-contain"
             src={imgImage1}
           />
         </button>

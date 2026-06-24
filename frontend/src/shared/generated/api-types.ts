@@ -421,7 +421,7 @@ export interface paths {
          *
          *     Anonymous requests (no auth at all) are still allowed for basic
          *     view/impression tracking, but without a ``user_id`` they cannot influence
-         *     personalised recommendations or collaborative filtering scores.
+         *     authenticated analytics or personalization signals.
          *     Anonymous requests are IP-rate-limited to prevent abuse.
          */
         post: operations["record_interactions_interactions_batch_post"];
@@ -1382,26 +1382,6 @@ export interface paths {
          *     ``admin``, refuse the demotion when it would leave zero admins.
          */
         patch: operations["update_user_role_users__user_id__role_patch"];
-        trace?: never;
-    };
-    "/recommendations/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Recommendations
-         * @description Get event recommendations. Personalized if logged in, popular otherwise.
-         */
-        get: operations["get_recommendations_recommendations__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/health": {
@@ -2633,15 +2613,6 @@ export interface components {
             conversion_actions: unknown[];
             /** User Agent */
             user_agent: string | null;
-        };
-        /** RecommendationItem */
-        RecommendationItem: {
-            /** Event Id */
-            event_id: number;
-            /** Score */
-            score: number;
-            /** Reason */
-            reason: string;
         };
         /**
          * RecordInteractionsResponse
@@ -5728,37 +5699,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_recommendations_recommendations__get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecommendationItem"][];
                 };
             };
             /** @description Validation Error */

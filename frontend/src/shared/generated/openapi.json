@@ -1233,7 +1233,7 @@
           "interactions"
         ],
         "summary": "Record Interactions",
-        "description": "Record a batch of user-event interactions.\n\nAuth is via the standard ``Authorization: Bearer <token>`` header.\nThe frontend uses ``fetch()`` with ``keepalive: true`` (instead of\n``sendBeacon``) so it can set this header even during page unload.\n\nWhen a user is authenticated:\n- Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.\n- Duplicate interactions are deduplicated within a sliding time window.\n\nWhen ``user_id`` is present in the payload it MUST match the authenticated\nuser \u2014 submitting interactions on behalf of another user is rejected.\n\nAnonymous requests (no auth at all) are still allowed for basic\nview/impression tracking, but without a ``user_id`` they cannot influence\npersonalised recommendations or collaborative filtering scores.\nAnonymous requests are IP-rate-limited to prevent abuse.",
+        "description": "Record a batch of user-event interactions.\n\nAuth is via the standard ``Authorization: Bearer <token>`` header.\nThe frontend uses ``fetch()`` with ``keepalive: true`` (instead of\n``sendBeacon``) so it can set this header even during page unload.\n\nWhen a user is authenticated:\n- Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.\n- Duplicate interactions are deduplicated within a sliding time window.\n\nWhen ``user_id`` is present in the payload it MUST match the authenticated\nuser \u2014 submitting interactions on behalf of another user is rejected.\n\nAnonymous requests (no auth at all) are still allowed for basic\nview/impression tracking, but without a ``user_id`` they cannot influence\nauthenticated analytics or personalization signals.\nAnonymous requests are IP-rate-limited to prevent abuse.",
         "operationId": "record_interactions_interactions_batch_post",
         "requestBody": {
           "content": {
@@ -4897,61 +4897,6 @@
         }
       }
     },
-    "/recommendations/": {
-      "get": {
-        "tags": [
-          "recommendations"
-        ],
-        "summary": "Get Recommendations",
-        "description": "Get event recommendations. Personalized if logged in, popular otherwise.",
-        "operationId": "get_recommendations_recommendations__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 50,
-              "minimum": 1,
-              "default": 20,
-              "title": "Limit"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RecommendationItem"
-                  },
-                  "title": "Response Get Recommendations Recommendations  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -8139,29 +8084,6 @@
         ],
         "title": "QrCodeScanResponse",
         "description": "Single scan for dashboard."
-      },
-      "RecommendationItem": {
-        "properties": {
-          "event_id": {
-            "type": "integer",
-            "title": "Event Id"
-          },
-          "score": {
-            "type": "number",
-            "title": "Score"
-          },
-          "reason": {
-            "type": "string",
-            "title": "Reason"
-          }
-        },
-        "type": "object",
-        "required": [
-          "event_id",
-          "score",
-          "reason"
-        ],
-        "title": "RecommendationItem"
       },
       "RecordInteractionsResponse": {
         "properties": {

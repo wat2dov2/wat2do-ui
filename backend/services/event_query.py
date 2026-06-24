@@ -35,7 +35,7 @@ T = TypeVar("T", bound=BaseModel)
 # Columns the summary response needs (everything except the occurrences we
 # hydrate separately). The full response model just selects everything.
 _SUMMARY_COLUMNS = ",".join(f for f in EventSummaryResponse.model_fields if f != "occurrences")
-_LIGHTWEIGHT_DATE_COLUMNS = "event_id,dtstart_utc,events!inner(id)"
+_LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
 
@@ -44,6 +44,17 @@ class _EventCandidate:
     row: dict
     earliest_dtstart: datetime | None
     weekdays: set[str] = field(default_factory=set)
+
+
+def _order_event_date_rows(query):
+    """Apply the canonical event-date feed order.
+
+    ``dtstart_utc`` is the user-visible ordering key. ``event_id`` and the
+    event-date row ``id`` make ties deterministic for offset pagination.
+    """
+    return (
+        query.order("dtstart_utc", desc=False).order("event_id", desc=False).order("id", desc=False)
+    )
 
 
 def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[T]) -> T:
@@ -101,7 +112,7 @@ def load_events_in_window(
         q = q.lte("dtstart_utc", end_utc.isoformat())
     if school:
         q = q.eq("events.school", school)
-    rows = q.order("dtstart_utc", desc=False).range(0, cap * 5 - 1).execute().data or []
+    rows = _order_event_date_rows(q).range(0, cap * 5 - 1).execute().data or []
 
     events = _dedup_keeping_earliest(rows, cap)
     occ_by_event = event_date_service.list_for_events([row["id"] for row in events])
@@ -206,7 +217,7 @@ def load_events_page(
             reference_table="events",
         )
 
-    rows = q.order("dtstart_utc", desc=False).range(0, cap * 5 - 1).execute().data or []
+    rows = _order_event_date_rows(q).range(0, cap * 5 - 1).execute().data or []
     candidates = _filter_candidates(
         _dedup_candidates_keeping_earliest(rows, cap),
         search=search_term or None,
@@ -375,7 +386,7 @@ def _query_lightweight_date_rows(
         q = q.lte("dtstart_utc", end_utc.isoformat())
     if school:
         q = q.eq("events.school", school)
-    return q.order("dtstart_utc", desc=False).range(range_start, range_end).execute().data or []
+    return _order_event_date_rows(q).range(range_start, range_end).execute().data or []
 
 
 def _append_deduped_event_ids(

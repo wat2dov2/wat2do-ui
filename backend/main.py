@@ -64,11 +64,6 @@ for _mod_info in sorted(pkgutil.iter_modules(routers_package.__path__), key=lamb
 
 log.info("Registered %d routers: %s", len(_registered), ", ".join(_registered))
 
-# Register recommender router explicitly (moved to recommender/ folder)
-from recommender.router import router as recommender_router
-
-app.include_router(recommender_router)
-
 
 @app.get("/health")
 async def health():

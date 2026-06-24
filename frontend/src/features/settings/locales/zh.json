@@ -12,7 +12,7 @@
       "description": "管理您的个人信息详情和偏好",
       "status": "个人资料状态",
       "statusComplete": "您的个人资料已设置完毕",
-      "statusIncomplete": "完善您的个人资料以获取个性化推荐",
+      "statusIncomplete": "完善您的个人资料以保存校园活动偏好",
       "email": "电子邮箱",
       "editProfile": "编辑个人资料",
       "completeProfile": "完善个人资料",

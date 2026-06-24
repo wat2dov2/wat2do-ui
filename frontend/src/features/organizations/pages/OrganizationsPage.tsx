@@ -153,6 +153,7 @@ export function OrganizationsPage() {
                 itemLabelPlural={t("navigation.organizations")}
                 onPageChange={setCurrentPage}
                 hideDetails
+                hideNavigationLabels
               />
             )}
           </div>

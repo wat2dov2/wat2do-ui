@@ -12,7 +12,7 @@
       "description": "Manage your profile details and preferences",
       "status": "Profile Status",
       "statusComplete": "Your profile is set up and complete",
-      "statusIncomplete": "Complete your profile to get personalized event recommendations",
+      "statusIncomplete": "Complete your profile to save your campus event preferences",
       "email": "Email",
       "editProfile": "Edit Profile",
       "completeProfile": "Complete Profile",

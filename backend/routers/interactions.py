@@ -42,7 +42,7 @@ def record_interactions(
 
     Anonymous requests (no auth at all) are still allowed for basic
     view/impression tracking, but without a ``user_id`` they cannot influence
-    personalised recommendations or collaborative filtering scores.
+    authenticated analytics or personalization signals.
     Anonymous requests are IP-rate-limited to prevent abuse.
     """
     # ── Resolve user identity ─────────────────────────────────────────

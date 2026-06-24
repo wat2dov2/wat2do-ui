@@ -85,7 +85,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <TopNav />
 
       <div
-        className="main-content-grid mt-12 flex-1 overflow-auto p-4 pb-28"
+        className="main-content-grid mt-12 flex-1 overflow-auto p-4 pb-44 sm:pb-28"
         style={{
           minHeight: "calc(100vh - 48px)",
         }}
@@ -94,7 +94,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       {/* Floating Dock — bottom center */}
-      <div className="fixed bottom-2 left-1/2 z-50 w-fit max-w-[calc(100vw-16px)] -translate-x-1/2">
+      <div className="fixed bottom-[4.75rem] left-1/2 z-50 w-fit max-w-[calc(100vw-16px)] -translate-x-1/2 sm:bottom-2">
         <FloatingDock items={dockItems} />
       </div>
     </div>

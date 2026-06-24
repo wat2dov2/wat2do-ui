@@ -54,7 +54,7 @@ export function SearchBar({
         placeholder={t("search.placeholder")}
         submitLabel={t("common.search")}
         clearLabel={t("search.clear")}
-        className="flex-1"
+        className="h-10 flex-1"
         onKeyDown={onSearchKeyDown}
       />
 
@@ -67,15 +67,15 @@ export function SearchBar({
           }}
           className="w-fit"
         >
-          <TabsList variant="default" className="h-8">
+          <TabsList variant="default" className="h-10">
             <Tooltip>
               <TooltipTrigger asChild>
                 <TabsTrigger
                   value="grid"
-                  className="size-7 px-0 py-0"
+                  className="size-9 px-0 py-0"
                   aria-label={t("settings.appearance.grid")}
                 >
-                  <Grid3x3 className="size-4" />
+                  <Grid3x3 className="size-5" />
                 </TabsTrigger>
               </TooltipTrigger>
               <TooltipContent>
@@ -86,10 +86,10 @@ export function SearchBar({
               <TooltipTrigger asChild>
                 <TabsTrigger
                   value="calendar"
-                  className="size-7 px-0 py-0"
+                  className="size-9 px-0 py-0"
                   aria-label={t("settings.appearance.calendar")}
                 >
-                  <Calendar className="size-4" />
+                  <Calendar className="size-5" />
                 </TabsTrigger>
               </TooltipTrigger>
               <TooltipContent>

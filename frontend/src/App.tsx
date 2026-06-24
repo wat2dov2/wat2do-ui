@@ -54,7 +54,7 @@ const OnboardingPage = lazy(() =>
   }))
 );
 const OnboardingDemoPage = lazy(() =>
-  import("@/features/onboarding-demo/pages/OnboardingDemoPage").then((module) => ({
+  import("@/features/onboarding-demo").then((module) => ({
     default: module.OnboardingDemoPage,
   }))
 );

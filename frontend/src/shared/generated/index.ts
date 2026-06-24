@@ -67,9 +67,6 @@ export type ApiQrCodeScanResponse = components["schemas"]["QrCodeScanResponse"];
 // export type ApiPaginatedQrCodeResponse = components["schemas"]["PaginatedResponse_QrCodeResponse_"];
 // export type ApiPaginatedQrCodeScanResponse = components["schemas"]["PaginatedResponse_QrCodeScanResponse_"];
 
-// ── Recommendations ─────────────────────────────────────────────────
-export type ApiRecommendationItem = components["schemas"]["RecommendationItem"];
-
 // ── AI ──────────────────────────────────────────────────────────────
 export type ApiFilterStateResponse = components["schemas"]["FilterStateResponse"];
 export type ApiEventFormDataResponse = components["schemas"]["EventFormDataResponse"];

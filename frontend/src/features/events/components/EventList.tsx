@@ -145,9 +145,9 @@ function getNewEventAnimationIndexById(
 /**
  * Event list component.
  *
- * Promoted/recommended ordering happens upstream in `useEventsPageData.orderedEvents`.
- * This component groups by date section afterward, so date sections outrank
- * the global promoted/recommended order.
+ * Feed ordering happens upstream in `useEventsPageData.orderedEvents`. This
+ * component groups by date section afterward while preserving order within
+ * each section.
  */
 export function EventList({
   events,

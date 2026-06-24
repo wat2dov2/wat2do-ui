@@ -33,7 +33,7 @@ export function EventsBackToTopButton() {
       variant="default"
       aria-label={t("events.backToTop")}
       onMouseDown={scrollToTop}
-      className={`fixed bottom-[4.75rem] right-4 z-40 rounded-full shadow-lg transition-all duration-200 sm:bottom-4 ${
+      className={`fixed bottom-36 right-4 z-40 rounded-full shadow-lg transition-all duration-200 sm:bottom-4 ${
         isVisible
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none translate-y-3 opacity-0"

@@ -16,6 +16,7 @@ interface PaginationProps {
   itemLabelPlural: string;
   onPageChange: (page: number) => void;
   hideDetails?: boolean;
+  hideNavigationLabels?: boolean;
 }
 
 function getPageNumbers(currentPage: number, totalPages: number): (number | "...")[] {
@@ -51,6 +52,7 @@ export function Pagination({
   itemLabelPlural,
   onPageChange,
   hideDetails,
+  hideNavigationLabels,
 }: PaginationProps) {
   const { t } = useTranslation();
 
@@ -72,12 +74,13 @@ export function Pagination({
         <Button
           variant="outline"
           size="sm"
+          aria-label={t("admin.previous")}
           onMouseDown={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="h-7 text-xs px-2 gap-1 rounded-lg"
+          className={`h-7 text-xs rounded-lg ${hideNavigationLabels ? "w-7 p-0" : "px-2 gap-1"}`}
         >
           <ChevronLeft className="size-3.5" />
-          {t("admin.previous")}
+          {!hideNavigationLabels && t("admin.previous")}
         </Button>
         <div className="flex items-center gap-1">
           {getPageNumbers(currentPage, totalPages).map((pageNum, i) => {
@@ -107,11 +110,12 @@ export function Pagination({
         <Button
           variant="outline"
           size="sm"
+          aria-label={t("admin.next")}
           onMouseDown={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="h-7 text-xs px-2 gap-1 rounded-lg"
+          className={`h-7 text-xs rounded-lg ${hideNavigationLabels ? "w-7 p-0" : "px-2 gap-1"}`}
         >
-          {t("admin.next")}
+          {!hideNavigationLabels && t("admin.next")}
           <ChevronRight className="size-3.5" />
         </Button>
       </div>

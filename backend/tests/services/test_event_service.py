@@ -624,10 +624,16 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
     first_page_select = fake_sb.select.call_args_list[1].args[0]
     full_row_select = fake_sb.select.call_args_list[2].args[0]
     assert count_select == "id,event_dates!inner(id)"
-    assert first_page_select == "event_id,dtstart_utc,events!inner(id)"
+    assert first_page_select == "id,event_id,dtstart_utc,events!inner(id)"
     assert "source_image_url" not in first_page_select
     assert "source_image_url" in full_row_select
     fake_sb.in_.assert_called_once_with("id", [2])
+    order_calls = [(call.args[0], call.kwargs.get("desc")) for call in fake_sb.order.call_args_list]
+    assert order_calls[:3] == [
+        ("dtstart_utc", False),
+        ("event_id", False),
+        ("id", False),
+    ]
     fake_sb.range.assert_any_call(0, 49)
 
 
