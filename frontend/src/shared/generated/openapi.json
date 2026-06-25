@@ -939,7 +939,8 @@
                 "date",
                 "title",
                 "location",
-                "price"
+                "price",
+                "added_at"
               ],
               "type": "string",
               "default": "date",
@@ -1213,6 +1214,53 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/email-notification": {
+      "post": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Send Event Email Notification",
+        "operationId": "send_event_email_notification_events__event_id__email_notification_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventEmailNotificationResponse"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -5364,6 +5412,20 @@
         ],
         "title": "EventCreate"
       },
+      "EventEmailNotificationResponse": {
+        "properties": {
+          "sent": {
+            "type": "boolean",
+            "title": "Sent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sent"
+        ],
+        "title": "EventEmailNotificationResponse",
+        "description": "Response for sending the current user an event email."
+      },
       "EventFormDataResponse": {
         "properties": {
           "title": {
@@ -5591,6 +5653,11 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
+          },
+          "click_count": {
+            "type": "integer",
+            "title": "Click Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -5764,6 +5831,11 @@
             "format": "date-time",
             "title": "Added At"
           },
+          "click_count": {
+            "type": "integer",
+            "title": "Click Count",
+            "default": 0
+          },
           "created_by": {
             "anyOf": [
               {
@@ -5902,6 +5974,11 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
+          },
+          "click_count": {
+            "type": "integer",
+            "title": "Click Count",
+            "default": 0
           }
         },
         "type": "object",

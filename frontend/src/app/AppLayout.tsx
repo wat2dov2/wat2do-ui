@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import {
-  Search,
   Mail,
   Settings,
   Compass,
@@ -24,7 +23,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuthState();
-  const setShowCommandPalette = useUIStore((s) => s.setShowCommandPalette);
   const setShowSubmitChoice = useUIStore((s) => s.setShowSubmitChoice);
 
   const isActive = (href?: string) => {
@@ -36,11 +34,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isOrganizationPanel = pathname.startsWith(ROUTES.ORGANIZATION_PANEL);
 
   const dockItems: FloatingDockItem[] = [
-    {
-      title: t("common.search"),
-      icon: <Search className="size-4" />,
-      onMouseDown: () => setShowCommandPalette(true),
-    },
     {
       title: t("navigation.explore"),
       icon: <Compass className="size-4" />,
@@ -85,7 +78,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <TopNav />
 
       <div
-        className="main-content-grid mt-12 flex-1 overflow-auto p-4 pb-44 sm:pb-28"
+        className="main-content-grid mt-12 flex-1 overflow-auto p-4 pb-28 sm:pb-24"
         style={{
           minHeight: "calc(100vh - 48px)",
         }}
@@ -94,7 +87,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       {/* Floating Dock — bottom center */}
-      <div className="fixed bottom-[4.75rem] left-1/2 z-50 w-fit max-w-[calc(100vw-16px)] -translate-x-1/2 sm:bottom-2">
+      <div className="fixed bottom-4 left-1/2 z-50 w-fit max-w-[calc(100vw-16px)] -translate-x-1/2">
         <FloatingDock items={dockItems} />
       </div>
     </div>

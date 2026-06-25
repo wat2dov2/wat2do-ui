@@ -44,7 +44,9 @@
     "noEventsFoundDesc": "找不到符合您当前筛选条件的活动。请尝试调整搜索或清除某些筛选条件。",
     "noEventsScheduled": "暂无活动安排",
     "noEventsScheduledDesc": "当前没有任何活动安排，请稍后再来看看！",
-    "latestAdded": "{{timeAgo}}添加了 {{title}}",
+    "newlyAdded": "最新添加",
+    "clickCount": "{{count}} 次点击",
+    "clickCount_other": "{{count}} 次点击",
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",
     "mapViewComingSoon": "地图视图即将推出...",
@@ -72,6 +74,13 @@
     "calendar": {
       "googleCalendar": "谷歌日历",
       "iCal": "iCal"
+    },
+    "notifications": {
+      "label": "通知",
+      "email": "电子邮件",
+      "emailSentTitle": "邮件已发送",
+      "emailSentDescription": "我们已向您发送“{{title}}”的邮件。",
+      "emailFailed": "无法发送邮件通知"
     },
     "shareDialog": {
       "description": "通过社交媒体分享此活动或复制链接。",

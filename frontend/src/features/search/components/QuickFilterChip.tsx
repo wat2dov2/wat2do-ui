@@ -13,7 +13,7 @@ export function QuickFilterChip({ icon, label, active, onMouseDown, badge }: Qui
     <button
       onMouseDown={onMouseDown}
       data-elevation="control"
-      className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+      className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
         active
           ? "bg-primary/80 text-primary-foreground"
           : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"

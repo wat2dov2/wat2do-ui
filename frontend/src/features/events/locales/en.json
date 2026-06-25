@@ -44,7 +44,9 @@
     "noEventsFoundDesc": "Couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.",
     "noEventsScheduled": "No events scheduled",
     "noEventsScheduledDesc": "No events are currently scheduled. Check back later!",
-    "latestAdded": "{{title}} added {{timeAgo}}",
+    "newlyAdded": "Newly Added",
+    "clickCount": "{{count}} click",
+    "clickCount_other": "{{count}} clicks",
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",
@@ -72,6 +74,13 @@
     "calendar": {
       "googleCalendar": "Google Calendar",
       "iCal": "iCal"
+    },
+    "notifications": {
+      "label": "Notifications",
+      "email": "Email",
+      "emailSentTitle": "Email sent",
+      "emailSentDescription": "We emailed you about \"{{title}}\".",
+      "emailFailed": "Could not send email notification"
     },
     "shareDialog": {
       "description": "Share this event via social media or copy the link.",

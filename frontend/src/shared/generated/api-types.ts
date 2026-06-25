@@ -395,6 +395,23 @@ export interface paths {
         patch: operations["update_event_events__event_id__patch"];
         trace?: never;
     };
+    "/events/{event_id}/email-notification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Event Email Notification */
+        post: operations["send_event_email_notification_events__event_id__email_notification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interactions/batch": {
         parameters: {
             query?: never;
@@ -1569,6 +1586,14 @@ export interface components {
             /** Ig Handle */
             ig_handle?: string | null;
         };
+        /**
+         * EventEmailNotificationResponse
+         * @description Response for sending the current user an event email.
+         */
+        EventEmailNotificationResponse: {
+            /** Sent */
+            sent: boolean;
+        };
         /** EventFormDataResponse */
         EventFormDataResponse: {
             /**
@@ -1666,6 +1691,11 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /**
+             * Click Count
+             * @default 0
+             */
+            click_count: number;
         };
         /**
          * EventResponse
@@ -1720,6 +1750,11 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /**
+             * Click Count
+             * @default 0
+             */
+            click_count: number;
             /** Created By */
             created_by?: string | null;
         };
@@ -1766,6 +1801,11 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /**
+             * Click Count
+             * @default 0
+             */
+            click_count: number;
         };
         /** EventUpdate */
         EventUpdate: {
@@ -3408,7 +3448,7 @@ export interface operations {
                 organizations?: string[] | null;
                 free_food?: boolean;
                 ids?: number[] | null;
-                sort_by?: "date" | "title" | "location" | "price";
+                sort_by?: "date" | "title" | "location" | "price" | "added_at";
                 sort_order?: "asc" | "desc";
                 start_utc?: string | null;
                 end_utc?: string | null;
@@ -3558,6 +3598,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_event_email_notification_events__event_id__email_notification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventEmailNotificationResponse"];
                 };
             };
             /** @description Validation Error */

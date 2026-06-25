@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from "react";
+import { lazy, Suspense, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Utensils, Heart } from "@/shared/ui/doodle-icons";
+import { Heart, Sparkles, Tag, Utensils } from "@/shared/ui/doodle-icons";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
@@ -18,32 +18,6 @@ const FilterDropdown = lazy(() =>
     default: module.FilterDropdown,
   })),
 );
-
-function formatRelativeTimeFromNow(value: string, locale: string): string {
-  const date = new Date(value);
-  const timestamp = date.getTime();
-  if (Number.isNaN(timestamp)) return "";
-
-  const seconds = Math.round((timestamp - Date.now()) / 1000);
-  const absSeconds = Math.abs(seconds);
-  const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
-    ["year", 31_536_000],
-    ["month", 2_592_000],
-    ["week", 604_800],
-    ["day", 86_400],
-    ["hour", 3_600],
-    ["minute", 60],
-    ["second", 1],
-  ];
-  const fallbackUnit: [Intl.RelativeTimeFormatUnit, number] = ["second", 1];
-  const [unit, unitSeconds] =
-    units.find(([, unitSeconds]) => absSeconds >= unitSeconds) ?? fallbackUnit;
-
-  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
-    Math.round(seconds / unitSeconds),
-    unit,
-  );
-}
 
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
@@ -68,7 +42,6 @@ export function EventsPageContainer() {
     hasMoreEvents,
     savedEventIds,
     promotedEvents,
-    latestAddedEvent,
     filters,
     orderedEvents,
     handleDeleteEvent,
@@ -81,6 +54,16 @@ export function EventsPageContainer() {
     setViewMode(mode);
   }, [setViewMode]);
 
+  const isNewlyAddedActive =
+    filters.sortBy === "added_at" && filters.sortOrder === "desc";
+  const handleNewlyAddedToggle = useCallback(() => {
+    if (isNewlyAddedActive) {
+      filters.setSort("date", "asc");
+      return;
+    }
+    filters.setSort("added_at", "desc");
+  }, [filters, isNewlyAddedActive]);
+
   // Build filter config array. `filters` is the aggregate returned by
   // useSearch; React Compiler infers it as a single dep rather than the
   // narrow property list, so depend on the whole object for consistency
@@ -88,6 +71,22 @@ export function EventsPageContainer() {
   const filterConfigs: QuickFilterConfig[] = useMemo(
     () =>
       [
+        {
+          id: "saved",
+          icon: <Heart className="size-3.5" fill={filters.savedFilter ? "currentColor" : "none"} />,
+          labelKey: "filters.saved",
+          active: filters.savedFilter,
+          onMouseDown: () => filters.setSavedFilter(!filters.savedFilter),
+          badge: savedEventIds.length > 0 ? savedEventIds.length : undefined,
+          visible: profileCompleted,
+        },
+        {
+          id: "newlyAdded",
+          icon: <Sparkles className="size-3.5" />,
+          labelKey: "events.newlyAdded",
+          active: isNewlyAddedActive,
+          onMouseDown: handleNewlyAddedToggle,
+        },
         {
           id: "freeFood",
           icon: <Utensils className="size-3.5" />,
@@ -99,17 +98,8 @@ export function EventsPageContainer() {
               ? filters.freeFoodEventsCount
               : undefined,
         },
-        {
-          id: "saved",
-          icon: <Heart className="size-3.5" fill={filters.savedFilter ? "currentColor" : "none"} />,
-          labelKey: "filters.saved",
-          active: filters.savedFilter,
-          onMouseDown: () => filters.setSavedFilter(!filters.savedFilter),
-          badge: savedEventIds.length > 0 ? savedEventIds.length : undefined,
-          visible: profileCompleted,
-        },
       ].filter((config) => config.visible !== false),
-    [filters, profileCompleted, savedEventIds.length]
+    [filters, handleNewlyAddedToggle, isNewlyAddedActive, profileCompleted, savedEventIds.length]
   );
 
   return (
@@ -140,38 +130,43 @@ export function EventsPageContainer() {
           />
 
           {/* Filters - show even while loading but with skeletons inside */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-baseline gap-3">
+          <div className="flex items-center gap-2">
+            <div className="no-visible-scrollbar flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-1">
               {isPageLoading ? (
-                <Skeleton className="h-6 w-20 rounded-lg" />
+                <>
+                  <Skeleton className="h-7 w-20 shrink-0 rounded-xl" />
+                  <Skeleton className="h-7 w-24 shrink-0 rounded-xl" />
+                  <Skeleton className="h-7 w-24 shrink-0 rounded-xl" />
+                  <Skeleton className="h-7 w-28 shrink-0 rounded-xl" />
+                </>
               ) : (
-                <EventCount count={totalEvents} />
+                <>
+                  <div className="shrink-0">
+                    <EventCount count={totalEvents} />
+                  </div>
+                  {filterConfigs.map((config) => (
+                    <QuickFilterChip
+                      key={config.id}
+                      icon={config.icon}
+                      label={t(config.labelKey)}
+                      active={config.active}
+                      onMouseDown={config.onMouseDown}
+                      badge={config.badge}
+                    />
+                  ))}
+                  {filters.categoryPieItems.map((category) => (
+                    <QuickFilterChip
+                      key={category.id}
+                      icon={<Tag className="size-3.5" />}
+                      label={category.label}
+                      active={filters.selectedCategories.includes(category.id)}
+                      onMouseDown={() => filters.toggleCategory(category.id)}
+                    />
+                  ))}
+                </>
               )}
-              {isPageLoading ? (
-                <Skeleton className="h-4 w-48 rounded-lg self-center" />
-              ) : latestAddedEvent ? (
-                <LatestAddedButton
-                  title={latestAddedEvent.title}
-                  addedAt={latestAddedEvent.added_at}
-                  onMouseDown={() => filters.setSearchQuery(latestAddedEvent.title)}
-                />
-              ) : null}
             </div>
-            <div className="relative flex flex-wrap items-center gap-2">
-              {filterConfigs.flatMap((config) =>
-                config.visible === false
-                  ? []
-                  : [
-                      <QuickFilterChip
-                        key={config.id}
-                        icon={config.icon}
-                        label={t(config.labelKey)}
-                        active={config.active}
-                        onMouseDown={config.onMouseDown}
-                        badge={config.badge}
-                      />,
-                    ],
-              )}
+            <div className="relative shrink-0 pb-1">
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}
@@ -216,50 +211,21 @@ export function EventsPageContainer() {
                 filters.filterCount > 0 ||
                 filters.searchQuery !== "" ||
                 filters.freeFoodFilter ||
-                filters.savedFilter
+                filters.savedFilter ||
+                filters.sortBy !== "date" ||
+                filters.sortOrder !== "asc"
               }
               savedEventIds={savedEventIds}
               isLoading={isPageLoading}
               isLoadingMore={isLoadingMore}
               hasMoreEvents={hasMoreEvents}
               onLoadMore={loadMoreEvents}
+              groupByDateSections={filters.sortBy === "date" && filters.sortOrder === "asc"}
             />
           )}
         </main>
       </div>
       <EventsBackToTopButton />
     </>
-  );
-}
-
-interface LatestAddedButtonProps {
-  title: string;
-  addedAt: string;
-  onMouseDown: () => void;
-}
-
-// Relative time reads the current clock. We compute it inline (pure render)
-// and bump a `tick` counter once a minute so the label stays fresh without
-// setState-in-effect.
-function LatestAddedButton({ title, addedAt, onMouseDown }: LatestAddedButtonProps) {
-  const { t, i18n } = useTranslation();
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((c) => c + 1), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const timeAgo = formatRelativeTimeFromNow(addedAt, i18n.language || "en-US");
-  const label = t("events.latestAdded", { title, timeAgo });
-  return (
-    <button
-      type="button"
-      onMouseDown={onMouseDown}
-      className="relative -top-px text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
-      aria-label={label}
-    >
-      {label}
-    </button>
   );
 }

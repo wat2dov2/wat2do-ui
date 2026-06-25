@@ -221,6 +221,7 @@ class EventSummaryResponse(BaseModel):
     ig_handle: str | None = None
     school: str | None = None
     added_at: datetime
+    click_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -254,6 +255,7 @@ class EventResponse(BaseModel):
     organization: str | None = None
     ig_handle: str | None = None
     added_at: datetime
+    click_count: int = 0
     created_by: str | None = None
 
     model_config = {"from_attributes": True}
@@ -282,5 +284,12 @@ class EventPublicResponse(BaseModel):
     organization: str | None = None
     ig_handle: str | None = None
     added_at: datetime
+    click_count: int = 0
 
     model_config = {"from_attributes": True}
+
+
+class EventEmailNotificationResponse(BaseModel):
+    """Response for sending the current user an event email."""
+
+    sent: bool

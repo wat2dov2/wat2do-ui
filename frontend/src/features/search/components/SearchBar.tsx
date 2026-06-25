@@ -45,7 +45,7 @@ export function SearchBar({
   };
 
   return (
-    <div className="flex gap-3 items-stretch">
+    <div className="flex items-stretch gap-3">
       <SubmittedSearchInput
         value={localQuery}
         onChange={setLocalQuery}
@@ -66,12 +66,12 @@ export function SearchBar({
           }}
           className="w-fit"
         >
-          <TabsList variant="default" className="h-10">
+          <TabsList variant="default" className="h-11 gap-1 bg-transparent p-0 shadow-none">
             <Tooltip>
               <TooltipTrigger asChild>
                 <TabsTrigger
                   value="grid"
-                  className="size-9 px-0 py-0"
+                  className="size-10 rounded-xl px-0 py-0 text-muted-foreground data-[state=active]:bg-secondary data-[state=active]:text-foreground"
                   aria-label={t("settings.appearance.grid")}
                 >
                   <Grid3x3 className="size-5" />
@@ -85,7 +85,7 @@ export function SearchBar({
               <TooltipTrigger asChild>
                 <TabsTrigger
                   value="calendar"
-                  className="size-9 px-0 py-0"
+                  className="size-10 rounded-xl px-0 py-0 text-muted-foreground data-[state=active]:bg-secondary data-[state=active]:text-foreground"
                   aria-label={t("settings.appearance.calendar")}
                 >
                   <Calendar className="size-5" />

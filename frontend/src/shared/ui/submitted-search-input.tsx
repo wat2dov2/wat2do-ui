@@ -33,7 +33,7 @@ export function SubmittedSearchInput({
   return (
     <div
       className={cn(
-        "relative h-10 min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
+        "relative h-11 min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
         className,
       )}
       data-elevation="control"

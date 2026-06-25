@@ -2,10 +2,11 @@ import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef, type
 import { animate, m, useDragControls, useMotionValue, type PanInfo } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
+import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
-import { ImageOff, ExternalLink, Heart, Share2, Download, Flag, X } from "@/shared/ui/doodle-icons";
+import { Bell, ImageOff, ExternalLink, Heart, Mail, MoreHorizontal, Share2, Flag, X } from "@/shared/ui/doodle-icons";
 import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import {
   Dialog,
@@ -40,6 +41,8 @@ import { useModalState } from "@/shared/hooks/useModalState";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { sendEventEmailNotification } from "@/features/events/api/events.api";
+import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -176,6 +179,28 @@ export function EventDetailsModal({
     }
   }, []);
 
+  const handleEmailNotification = useCallback(async () => {
+    if (!displayedEvent) return;
+    try {
+      const sent = await sendEventEmailNotification(displayedEvent.id);
+      if (!sent) {
+        throw new Error(t("events.notifications.emailFailed"));
+      }
+      toast({
+        title: t("events.notifications.emailSentTitle"),
+        description: t("events.notifications.emailSentDescription", {
+          title: displayedEvent.title,
+        }),
+      });
+    } catch (err) {
+      toast({
+        title: t("events.notifications.emailFailed"),
+        description: getApiErrorMessage(err, t("events.notifications.emailFailed")),
+        variant: "destructive",
+      });
+    }
+  }, [displayedEvent, t]);
+
   const modalState = useModalState({ onClose });
 
   return (
@@ -183,7 +208,7 @@ export function EventDetailsModal({
       <DialogContent
         asChild
         showCloseButton={false}
-        className="w-[calc(100vw-16px)] max-w-3xl overflow-hidden p-0 sm:w-[calc(100vw-48px)]"
+        className="w-[calc(100vw-16px)] max-w-4xl overflow-hidden p-0 sm:w-[calc(100vw-48px)]"
       >
         <m.div
           ref={contentRef}
@@ -230,7 +255,7 @@ export function EventDetailsModal({
               />
             </div>
 
-            <ModalContentWrapper className="space-y-4 px-4 py-4 sm:px-5 sm:py-5">
+            <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
               <DialogHeader className="text-left">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                   <div className="min-w-0">
@@ -256,29 +281,44 @@ export function EventDetailsModal({
                     >
                       <Heart className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
                     </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-sm"
-                      onMouseDown={() => setActiveDialog({ type: "share", event: displayedEvent })}
-                      aria-label={t("common.share")}
-                      title={t("common.share")}
-                    >
-                      <Share2 className="size-4" />
-                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           type="button"
                           variant="outline"
                           size="icon-sm"
-                          aria-label={t("common.export")}
-                          title={t("common.export")}
+                          aria-label={t("events.notifications.label")}
+                          title={t("events.notifications.label")}
                         >
-                          <Download className="size-4" />
+                          <Bell className="size-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-44" align="end">
+                        <DropdownMenuItem onSelect={() => handleEmailNotification()}>
+                          <Mail className="size-3.5 shrink-0" />
+                          {t("events.notifications.email")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label={t("common.actions")}
+                          title={t("common.actions")}
+                        >
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-44" align="end">
+                        <DropdownMenuItem
+                          onSelect={() => setActiveDialog({ type: "share", event: displayedEvent })}
+                        >
+                          <Share2 className="size-3.5 shrink-0" />
+                          {t("common.share")}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => openGoogleCalendar(displayedEvent)}>
                           <GoogleIcon className="size-3.5 shrink-0" />
                           {t("events.calendar.googleCalendar")}
@@ -287,18 +327,14 @@ export function EventDetailsModal({
                           <AppleIcon className="size-3.5 shrink-0" />
                           {t("events.calendar.iCal")}
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => setActiveDialog({ type: "report", event: displayedEvent })}
+                        >
+                          <Flag className="size-3.5 shrink-0" />
+                          {t("common.report")}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-sm"
-                      onMouseDown={() => setActiveDialog({ type: "report", event: displayedEvent })}
-                      aria-label={t("common.report")}
-                      title={t("common.report")}
-                    >
-                      <Flag className="size-4" />
-                    </Button>
                   </div>
                 </div>
               </DialogHeader>

@@ -17,6 +17,7 @@ interface EventCardContentProps {
   time?: string;
   location?: string;
   badges?: readonly CardBadge[];
+  clickLabel?: string;
   className?: string;
   textClassName?: string;
   secondaryTextClassName?: string;
@@ -29,6 +30,7 @@ export function EventCardContent({
   time,
   location,
   badges = EMPTY_BADGES,
+  clickLabel,
   className,
   textClassName = "text-foreground",
   secondaryTextClassName = "text-muted-foreground",
@@ -58,8 +60,13 @@ export function EventCardContent({
             )}
           </div>
 
-          {badges.length > 0 && (
+          {(clickLabel || badges.length > 0) && (
             <div className="flex flex-col gap-1.5 items-end shrink-0">
+              {clickLabel && (
+                <span className={`text-[9px] font-medium whitespace-nowrap ${badgeClassName}`}>
+                  {clickLabel}
+                </span>
+              )}
               {badges.map((badge) => (
                 <span
                   key={badge.text}

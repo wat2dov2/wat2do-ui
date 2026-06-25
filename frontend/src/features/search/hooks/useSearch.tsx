@@ -155,6 +155,7 @@ export function useSearch({
       { id: "title", label: t("filters.title"), iconName: "Tag" as const },
       { id: "location", label: t("filters.location"), iconName: "MapPin" as const },
       { id: "price", label: t("filters.price"), iconName: "ArrowUpDown" as const },
+      { id: "added_at", label: t("events.newlyAdded"), iconName: "Sparkles" as const },
     ],
     [t],
   );

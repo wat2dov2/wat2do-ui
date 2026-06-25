@@ -5,6 +5,7 @@ from core.constants import ROLE_ADMIN
 from schemas.event import EventResponse
 from schemas.organization import OrganizationResponse
 from services import event_service, organization_service
+from services.notifications import event_email
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
@@ -49,6 +50,11 @@ def test_create_event_requires_auth(client):
 
 def test_delete_event_requires_auth(client):
     response = client.delete("/events/1")
+    assert response.status_code == 401
+
+
+def test_event_email_notification_requires_auth(client):
+    response = client.post("/events/1/email-notification")
     assert response.status_code == 401
 
 
@@ -235,6 +241,23 @@ def test_delete_event_owner_allowed(authenticated_client, monkeypatch):
     assert resp.status_code == 204
 
 
+def test_send_event_email_notification_uses_current_user(authenticated_client, monkeypatch):
+    event = _mock_event(created_by=FAKE_USER["id"])
+    mock_get_event = MagicMock(return_value=event)
+    mock_send = MagicMock(return_value=True)
+    monkeypatch.setattr(event_service, "get_event", mock_get_event)
+    monkeypatch.setattr(event_email, "send_event_email_notification", mock_send)
+
+    resp = authenticated_client.post("/events/1/email-notification")
+
+    assert resp.status_code == 200
+    assert resp.json() == {"sent": True}
+    mock_get_event.assert_called_once_with(1)
+    _, kwargs = mock_send.call_args
+    assert kwargs["event"] == event
+    assert kwargs["user"].email == FAKE_USER["email"]
+
+
 # ---------------------------------------------------------------------------
 # event_change hook — router wires the notification fanout on material diff
 # ---------------------------------------------------------------------------
@@ -399,7 +422,7 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
             ("free_food", "true"),
             ("ids", "1"),
             ("ids", "2"),
-            ("sort_by", "title"),
+            ("sort_by", "added_at"),
             ("sort_order", "desc"),
         ],
     )
@@ -422,7 +445,7 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
         organizations=["UW Blueprint"],
         free_food=True,
         ids=[1, 2],
-        sort_by="title",
+        sort_by="added_at",
         sort_order="desc",
     )
 

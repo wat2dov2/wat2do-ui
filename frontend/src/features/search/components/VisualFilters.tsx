@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown } from "@/shared/ui/doodle-icons";
+import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown, Sparkles } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
 import { translateCategory } from "@/shared/utils/event";
@@ -16,6 +16,7 @@ const PIE_ICON_MAP: Record<string, LucideIcon> = {
   Calendar,
   CalendarDays,
   ArrowUpDown,
+  Sparkles,
 };
 
 function mapPieItems(items: Array<{ id: string; label: string; iconName: string }>) {
@@ -113,6 +114,12 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
   const sortPieItemsWithIcons = useMemo(
     () => mapPieItems(filters.sortPieItems),
     [filters.sortPieItems],
+  );
+  const selectedSortLabel = useMemo(
+    () =>
+      filters.sortPieItems.find((item) => item.id === filters.sortBy)?.label ??
+      t(`filters.${filters.sortBy}`),
+    [filters.sortBy, filters.sortPieItems, t],
   );
 
   const handleSelectOrganization = useCallback(
@@ -408,7 +415,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
               className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
             >
               <span>
-                {t(`filters.${filters.sortBy}`)} (
+                {selectedSortLabel} (
                 {filters.sortOrder === "asc" ? t("filters.asc") : t("filters.desc")})
               </span>
               <ArrowUpDown className="size-4 text-muted-foreground" />

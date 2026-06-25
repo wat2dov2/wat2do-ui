@@ -116,7 +116,8 @@ def get_event(event_id: int) -> EventResponse | None:
     if not r.data or len(r.data) == 0:
         return None
     occurrences = event_date_service.list_for_event(event_id)
-    return event_query.hydrate_event(r.data[0], occurrences, EventResponse)
+    event_row = event_query.with_click_counts([r.data[0]])[0]
+    return event_query.hydrate_event(event_row, occurrences, EventResponse)
 
 
 def _today_start_utc(school: str | None) -> datetime:

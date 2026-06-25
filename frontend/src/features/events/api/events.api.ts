@@ -96,23 +96,6 @@ export async function fetchPromotedEvents(school?: string): Promise<Event[]> {
   return apiEvents;
 }
 
-/** Response from GET /events/latest-added */
-export interface LatestAddedEvent {
-  title: string;
-  added_at: string;
-}
-
-/**
- * Fetch the most recently added event (for "X added 22 minutes ago" text).
- */
-export async function fetchLatestAddedEvent(school?: string): Promise<LatestAddedEvent | null> {
-  const params = new URLSearchParams();
-  if (school) params.set("school", school);
-  const qs = params.toString();
-  const data = await api.get<LatestAddedEvent | null>(`/events/latest-added${qs ? `?${qs}` : ""}`);
-  return data;
-}
-
 /**
  * Fetch a single event by ID from the backend API (full details for edit form).
  */
@@ -159,4 +142,9 @@ export async function unsaveEventFromBackend(eventId: number): Promise<void> {
 
 export async function reportEventToBackend(eventId: number, reason: string): Promise<void> {
   await api.post("/reports/", { event_id: eventId, reason });
+}
+
+export async function sendEventEmailNotification(eventId: number): Promise<boolean> {
+  const response = await api.post<{ sent: boolean }>(`/events/${eventId}/email-notification`);
+  return response.sent;
 }

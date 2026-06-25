@@ -142,6 +142,7 @@
     "title": "Title",
     "location": "Location",
     "price": "Price",
+    "added_at": "Newly Added",
     "category": "Category",
     "food": "Food",
     "addedSince": "Added since",

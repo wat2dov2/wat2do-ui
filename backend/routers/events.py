@@ -19,6 +19,7 @@ from core.exceptions import AuthorizationError, get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from schemas.event import (
     EventCreate,
+    EventEmailNotificationResponse,
     EventPublicResponse,
     EventResponse,
     EventSummaryResponse,
@@ -27,12 +28,12 @@ from schemas.event import (
 )
 from schemas.user import UserResponse
 from services import event_service, organization_service
-from services.notifications import event_change
+from services.notifications import event_change, event_email
 
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
-EventSortBy = Literal["date", "title", "location", "price"]
+EventSortBy = Literal["date", "title", "location", "price", "added_at"]
 EventSortOrder = Literal["asc", "desc"]
 
 
@@ -140,6 +141,17 @@ def get_event(event_id: int):
     full shape through their dashboards via the dedicated service call.
     """
     return get_or_404(event_service.get_event(event_id), EVENT_NOT_FOUND)
+
+
+@router.post("/{event_id}/email-notification", response_model=EventEmailNotificationResponse)
+def send_event_email_notification(
+    event_id: int,
+    db_user: UserResponse = Depends(get_db_user),
+):
+    event = get_or_404(event_service.get_event(event_id), EVENT_NOT_FOUND)
+    return EventEmailNotificationResponse(
+        sent=event_email.send_event_email_notification(event=event, user=db_user)
+    )
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)

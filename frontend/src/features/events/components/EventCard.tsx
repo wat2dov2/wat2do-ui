@@ -4,10 +4,10 @@ import { tracker } from "@/shared/services/trackingService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronRight,
-  Download,
+  Bell,
   Heart,
   ImageOff,
+  Mail,
   MoreHorizontal,
   Share2,
   Flag,
@@ -20,9 +20,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
@@ -47,6 +44,9 @@ import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { useFilterUrlActions } from "@/features/search";
+import { sendEventEmailNotification } from "@/features/events/api/events.api";
+import { toast } from "@/shared/hooks/use-toast";
+import { getApiErrorMessage } from "@/shared/services/apiClient";
 
 const EventDetailsModal = lazy(() =>
   import("@/features/events/components/EventDetailsModal").then((module) => ({
@@ -139,7 +139,7 @@ interface EventFooterActionsProps {
   profileCompleted: boolean;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
-  onShare: (e: React.MouseEvent) => void;
+  onEmailNotification: () => void;
   onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
 }
@@ -150,7 +150,7 @@ function EventFooterActions({
   profileCompleted,
   categoryClasses,
   canDelete,
-  onShare,
+  onEmailNotification,
   onActionDialogOpen,
   t,
 }: EventFooterActionsProps) {
@@ -171,14 +171,30 @@ function EventFooterActions({
         </Tooltip>
       )}
 
-      <button
-        type="button"
-        onMouseDown={onShare}
-        aria-label={t("common.share")}
-        className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
-      >
-        <Share2 className="size-4" />
-      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={t("events.notifications.label")}
+            className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          >
+            <Bell className="size-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="w-44"
+          align="end"
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <DropdownMenuItem onSelect={() => onEmailNotification()}>
+            <Mail />
+            {t("events.notifications.email")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -198,32 +214,23 @@ function EventFooterActions({
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
+          <DropdownMenuItem onSelect={() => onActionDialogOpen("share")}>
+            <Share2 />
+            {t("common.share")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
+            <GoogleIcon className="size-3.5 shrink-0" />
+            {t("events.calendar.googleCalendar")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => downloadICS(event)}>
+            <AppleIcon className="size-3.5 shrink-0" />
+            {t("events.calendar.iCal")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => onActionDialogOpen("report")}>
             <Flag />
             {t("common.report")}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Download />
-              {t("common.download")}
-              <ChevronRight className="ml-auto" />
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent
-              className="w-44"
-              onMouseDown={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
-                <GoogleIcon className="size-3.5 shrink-0" />
-                {t("events.calendar.googleCalendar")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => downloadICS(event)}>
-                <AppleIcon className="size-3.5 shrink-0" />
-                {t("events.calendar.iCal")}
-              </DropdownMenuItem>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
           {canDelete && (
             <>
               <DropdownMenuSeparator />
@@ -354,7 +361,7 @@ interface EventCardBodyProps {
   categoryClasses: CategoryClasses;
   canDelete: boolean;
   onToggleSaveEvent: (eventId: number) => void;
-  onShare: (e: React.MouseEvent) => void;
+  onEmailNotification: () => void;
   onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
 }
@@ -369,7 +376,7 @@ function EventCardBody({
   categoryClasses,
   canDelete,
   onToggleSaveEvent,
-  onShare,
+  onEmailNotification,
   onActionDialogOpen,
   t,
 }: EventCardBodyProps) {
@@ -395,6 +402,7 @@ function EventCardBody({
         time={time}
         location={event.location}
         badges={badges}
+        clickLabel={t("events.clickCount", { count: event.click_count ?? 0 })}
         textClassName={categoryClasses.text}
         secondaryTextClassName={categoryClasses.text}
         badgeClassName={`border-current ${categoryClasses.text}`}
@@ -406,7 +414,7 @@ function EventCardBody({
         profileCompleted={profileCompleted}
         categoryClasses={categoryClasses}
         canDelete={canDelete}
-        onShare={onShare}
+        onEmailNotification={onEmailNotification}
         onActionDialogOpen={onActionDialogOpen}
         t={t}
       />
@@ -586,10 +594,24 @@ function EventCardComponent({
     [event, onActionDialogOpen],
   );
 
-  const handleShareMouseDown = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    handleActionDialogOpen("share");
-  }, [handleActionDialogOpen]);
+  const handleEmailNotification = useCallback(async () => {
+    try {
+      const sent = await sendEventEmailNotification(event.id);
+      if (!sent) {
+        throw new Error(t("events.notifications.emailFailed"));
+      }
+      toast({
+        title: t("events.notifications.emailSentTitle"),
+        description: t("events.notifications.emailSentDescription", { title: event.title }),
+      });
+    } catch (err) {
+      toast({
+        title: t("events.notifications.emailFailed"),
+        description: getApiErrorMessage(err, t("events.notifications.emailFailed")),
+        variant: "destructive",
+      });
+    }
+  }, [event.id, event.title, t]);
 
   return (
     <>
@@ -633,7 +655,7 @@ function EventCardComponent({
           categoryClasses={categoryClasses}
           canDelete={canManageEvent && Boolean(onDelete)}
           onToggleSaveEvent={toggleSaveEvent}
-          onShare={handleShareMouseDown}
+          onEmailNotification={handleEmailNotification}
           onActionDialogOpen={handleActionDialogOpen}
           t={t}
         />

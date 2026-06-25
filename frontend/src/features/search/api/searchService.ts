@@ -161,6 +161,14 @@ export function sortEvents(
       case "price":
         comparison = (a.price || 0) - (b.price || 0);
         break;
+      case "added_at": {
+        const dateA = new Date(a.added_at).getTime();
+        const dateB = new Date(b.added_at).getTime();
+        comparison =
+          (Number.isNaN(dateA) ? 0 : dateA) -
+          (Number.isNaN(dateB) ? 0 : dateB);
+        break;
+      }
       default:
         return 0;
     }

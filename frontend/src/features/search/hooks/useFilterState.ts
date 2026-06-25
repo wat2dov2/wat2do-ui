@@ -186,6 +186,11 @@ export function useFilterState(profileCompleted: boolean) {
     (value: "asc" | "desc") => updateFilterState({ sortOrder: value }),
     [updateFilterState],
   );
+  const setSort = useCallback(
+    (sortBy: string, sortOrder: "asc" | "desc") =>
+      updateFilterState({ sortBy, sortOrder }),
+    [updateFilterState],
+  );
 
   // Per-filter toggle adapters — stable refs derived from the single
   // URL action so downstream props don't churn.
@@ -368,5 +373,6 @@ export function useFilterState(profileCompleted: boolean) {
     setSortBy,
     sortOrder,
     setSortOrder,
+    setSort,
   };
 }

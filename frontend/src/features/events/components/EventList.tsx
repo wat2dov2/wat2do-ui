@@ -26,6 +26,7 @@ interface EventListProps {
   isLoadingMore?: boolean;
   hasMoreEvents?: boolean;
   onLoadMore?: () => void;
+  groupByDateSections?: boolean;
 }
 
 const EVENT_DATE_SECTIONS: Array<{
@@ -163,6 +164,7 @@ export function EventList({
   isLoadingMore = false,
   hasMoreEvents = false,
   onLoadMore,
+  groupByDateSections = true,
 }: EventListProps) {
   const { t } = useTranslation();
   const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
@@ -187,9 +189,12 @@ export function EventList({
   }, [events, promotedEvents]);
 
   const sectionOrderedEvents = useMemo(() => {
+    if (!groupByDateSections) {
+      return regularEvents;
+    }
     const groups = groupEventsByDateSection(regularEvents);
     return EVENT_DATE_SECTIONS.flatMap(({ category }) => groups[category]);
-  }, [regularEvents]);
+  }, [groupByDateSections, regularEvents]);
   const groupedVisibleEvents = useMemo(
     () => groupEventsByDateSection(sectionOrderedEvents),
     [sectionOrderedEvents],
@@ -368,35 +373,57 @@ export function EventList({
           </section>
         )}
 
-        {EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
-          const sectionEvents = groupedVisibleEvents[category];
-          if (sectionEvents.length === 0) return null;
+        {groupByDateSections ? (
+          EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
+            const sectionEvents = groupedVisibleEvents[category];
+            if (sectionEvents.length === 0) return null;
 
-          return (
-            <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
-              <h2 className="text-base font-normal tracking-normal text-foreground">
-                {t(labelKey)}
-              </h2>
-              <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {sectionEvents.map((event) => (
-                  <EventCardListItem
-                    key={event.id}
-                    animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
-                  >
-                    <EventCard
-                      event={event}
-                      isSaved={savedSet.has(event.id)}
-                      onEventClick={onEventClick}
-                      disableModal={disableModal}
-                      onDelete={onDelete}
-                      onActionDialogOpen={handleActionDialogOpen}
-                    />
-                  </EventCardListItem>
-                ))}
-              </div>
-            </section>
-          );
-        })}
+            return (
+              <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
+                <h2 className="text-base font-normal tracking-normal text-foreground">
+                  {t(labelKey)}
+                </h2>
+                <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                  {sectionEvents.map((event) => (
+                    <EventCardListItem
+                      key={event.id}
+                      animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
+                    >
+                      <EventCard
+                        event={event}
+                        isSaved={savedSet.has(event.id)}
+                        onEventClick={onEventClick}
+                        disableModal={disableModal}
+                        onDelete={onDelete}
+                        onActionDialogOpen={handleActionDialogOpen}
+                      />
+                    </EventCardListItem>
+                  ))}
+                </div>
+              </section>
+            );
+          })
+        ) : (
+          <section className="space-y-2.5" aria-label={t("events.upcoming")}>
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {sectionOrderedEvents.map((event) => (
+                <EventCardListItem
+                  key={event.id}
+                  animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
+                >
+                  <EventCard
+                    event={event}
+                    isSaved={savedSet.has(event.id)}
+                    onEventClick={onEventClick}
+                    disableModal={disableModal}
+                    onDelete={onDelete}
+                    onActionDialogOpen={handleActionDialogOpen}
+                  />
+                </EventCardListItem>
+              ))}
+            </div>
+          </section>
+        )}
         {hasMoreEvents && (
           <div ref={loadMoreRef} className="flex justify-center py-8">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

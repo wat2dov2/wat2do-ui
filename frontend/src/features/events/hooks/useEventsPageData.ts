@@ -1,7 +1,6 @@
 import { useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearch } from "@/features/search";
-import { useLatestAddedEvent } from "@/features/events/hooks/useLatestAddedEvent";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { toast } from "@/shared/hooks/use-toast";
@@ -26,15 +25,12 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   const isLoading = useEventsStore((s) => s.isLoading);
   const isLoadingMore = useEventsStore((s) => s.isLoadingMore);
   const error = useEventsStore((s) => s.error);
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const totalEvents = useEventsStore((s) => s.totalEvents);
   const hasMoreEvents = useEventsStore((s) => s.hasMoreEvents);
   const fetchEvents = useEventsStore((s) => s.fetchEvents);
   const loadMoreEvents = useEventsStore((s) => s.loadMoreEvents);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
-
-  const { latest: latestAddedEvent } = useLatestAddedEvent(schoolFilter ?? undefined);
 
   const filters = useSearch({
     events,
@@ -119,7 +115,6 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     hasMoreEvents,
     savedEventIds,
     promotedEvents,
-    latestAddedEvent,
     filters,
     orderedEvents,
     handleDeleteEvent,
