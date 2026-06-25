@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, Grid3x3 } from "@/shared/ui/doodle-icons";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/shared/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import type { ViewMode } from "@/shared/types";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 
@@ -44,6 +44,12 @@ export function SearchBar({
     onSearchChange(localQuery.trim());
   };
 
+  const ActiveViewIcon = viewMode === "calendar" ? Calendar : Grid3x3;
+  const activeViewLabel =
+    viewMode === "calendar"
+      ? t("settings.appearance.calendar")
+      : t("settings.appearance.grid");
+
   return (
     <div className="flex items-stretch gap-3">
       <SubmittedSearchInput
@@ -57,46 +63,31 @@ export function SearchBar({
         onKeyDown={onSearchKeyDown}
       />
 
-      {/* View Mode Toggle */}
+      {/* View Mode Dropdown */}
       <div className="shrink-0">
-        <Tabs
-          value={viewMode}
-          onValueChange={(value) => {
-            onViewModeChange(value as ViewMode);
-          }}
-          className="w-fit"
-        >
-          <TabsList variant="default" className="h-11 gap-1 bg-transparent p-0 shadow-none">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <TabsTrigger
-                  value="grid"
-                  className="size-10 rounded-xl px-0 py-0 text-muted-foreground data-[state=active]:bg-secondary data-[state=active]:text-foreground"
-                  aria-label={t("settings.appearance.grid")}
-                >
-                  <Grid3x3 className="size-5" />
-                </TabsTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t("settings.appearance.grid")}</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <TabsTrigger
-                  value="calendar"
-                  className="size-10 rounded-xl px-0 py-0 text-muted-foreground data-[state=active]:bg-secondary data-[state=active]:text-foreground"
-                  aria-label={t("settings.appearance.calendar")}
-                >
-                  <Calendar className="size-5" />
-                </TabsTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t("settings.appearance.calendar")}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TabsList>
-        </Tabs>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              data-elevation="control"
+              className="flex size-11 items-center justify-center rounded-xl bg-transparent text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label={activeViewLabel}
+              title={activeViewLabel}
+            >
+              <ActiveViewIcon className="size-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onSelect={() => onViewModeChange("grid")}>
+              <Grid3x3 className="size-3.5" />
+              {t("settings.appearance.grid")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onViewModeChange("calendar")}>
+              <Calendar className="size-3.5" />
+              {t("settings.appearance.calendar")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

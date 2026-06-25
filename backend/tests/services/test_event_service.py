@@ -77,6 +77,13 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
     assert event.occurrences[0].dtstart_utc == occurrence.dtstart_utc
 
 
+def test_summary_columns_exclude_computed_response_fields():
+    """Computed API fields must not be requested as physical events columns."""
+
+    assert "occurrences" not in event_query._SUMMARY_COLUMNS
+    assert "click_count" not in event_query._SUMMARY_COLUMNS
+
+
 # ---------------------------------------------------------------------------
 # _resolve_organization_fields — the single source for derived event display fields
 # ---------------------------------------------------------------------------

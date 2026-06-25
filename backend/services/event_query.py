@@ -32,9 +32,12 @@ log = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
-# Columns the summary response needs (everything except the occurrences we
-# hydrate separately). The full response model just selects everything.
-_SUMMARY_COLUMNS = ",".join(f for f in EventSummaryResponse.model_fields if f != "occurrences")
+# Columns the summary response needs from the events table. Computed fields are
+# filled after fetch and must not be sent to PostgREST as real column names.
+_SUMMARY_COMPUTED_FIELDS = {"occurrences", "click_count"}
+_SUMMARY_COLUMNS = ",".join(
+    f for f in EventSummaryResponse.model_fields if f not in _SUMMARY_COMPUTED_FIELDS
+)
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
