@@ -129,45 +129,31 @@ export function EventsPageContainer() {
             onViewModeChange={handleViewModeChange}
           />
 
-          {/* Filters - show even while loading but with skeletons inside */}
+          {/* Filters stay visible while event cards load. */}
           <div className="flex items-center gap-2">
             <div className="shrink-0 pb-1">
-              {isPageLoading ? (
-                <Skeleton className="h-7 w-20 rounded-xl" />
-              ) : (
-                <EventCount count={totalEvents} />
-              )}
+              <EventCount count={totalEvents} />
             </div>
             <div className="no-visible-scrollbar flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-              {isPageLoading ? (
-                <>
-                  <Skeleton className="h-7 w-24 shrink-0 rounded-xl" />
-                  <Skeleton className="h-7 w-24 shrink-0 rounded-xl" />
-                  <Skeleton className="h-7 w-28 shrink-0 rounded-xl" />
-                </>
-              ) : (
-                <>
-                  {filterConfigs.map((config) => (
-                    <QuickFilterChip
-                      key={config.id}
-                      icon={config.icon}
-                      label={t(config.labelKey)}
-                      active={config.active}
-                      onMouseDown={config.onMouseDown}
-                      badge={config.badge}
-                    />
-                  ))}
-                  {filters.categoryPieItems.map((category) => (
-                    <QuickFilterChip
-                      key={category.id}
-                      icon={<Tag className="size-3.5" />}
-                      label={category.label}
-                      active={filters.selectedCategories.includes(category.id)}
-                      onMouseDown={() => filters.toggleCategory(category.id)}
-                    />
-                  ))}
-                </>
-              )}
+              {filterConfigs.map((config) => (
+                <QuickFilterChip
+                  key={config.id}
+                  icon={config.icon}
+                  label={t(config.labelKey)}
+                  active={config.active}
+                  onMouseDown={config.onMouseDown}
+                  badge={config.badge}
+                />
+              ))}
+              {filters.categoryPieItems.map((category) => (
+                <QuickFilterChip
+                  key={category.id}
+                  icon={<Tag className="size-3.5" />}
+                  label={category.label}
+                  active={filters.selectedCategories.includes(category.id)}
+                  onMouseDown={() => filters.toggleCategory(category.id)}
+                />
+              ))}
             </div>
             <div className="relative shrink-0 pb-1">
               <MoreFiltersButton

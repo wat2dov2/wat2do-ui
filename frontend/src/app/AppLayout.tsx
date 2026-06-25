@@ -6,7 +6,7 @@ import {
   Settings,
   Compass,
   Plus,
-  Building2,
+  OrganizationChart,
 } from "@/shared/ui/doodle-icons";
 import { TopNav } from "@/app/TopNav";
 import { FloatingDock } from "@/shared/ui/floating-dock";
@@ -51,7 +51,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       : []),
     {
       title: t("navigation.organizations"),
-      icon: <Building2 className="size-4" />,
+      icon: <OrganizationChart className="size-4" />,
       href: ROUTES.ORGANIZATIONS,
       isActive: isActive(ROUTES.ORGANIZATIONS),
     },

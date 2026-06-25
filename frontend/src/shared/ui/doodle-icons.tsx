@@ -318,6 +318,37 @@ export const Building2 = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.C
   }
 );
 
+export const OrganizationChart = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+  ({ size, className, ...props }, ref) => {
+    const width = size || props.width || "24";
+    const height = size || props.height || "24";
+    return (
+      <svg
+        ref={ref}
+        width={width}
+        height={height}
+        viewBox="0 0 128 128"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+        {...props}
+      >
+        <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="9">
+          <path d="M64 10.5C49.8 10.5 38.5 21.7 38.5 35.5C38.5 49.2 49.8 60.1 64 60.1C78.3 60.1 89.5 49.2 89.5 35.5C89.5 21.7 78.3 10.5 64 10.5Z" />
+          <path d="M64 60.5V79.2" />
+          <path d="M24.5 79.2H103.5" />
+          <path d="M24.5 79.2V91.5" />
+          <path d="M64 79.2V91.5" />
+          <path d="M103.5 79.2V91.5" />
+          <path d="M12 91.5H37.2V117.5H12V91.5Z" />
+          <path d="M51.4 91.5H76.6V117.5H51.4V91.5Z" />
+          <path d="M90.8 91.5H116V117.5H90.8V91.5Z" />
+        </g>
+      </svg>
+    );
+  }
+);
+
 export const Calendar = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
   ({ size, className, ...props }, ref) => {
     const width = size || props.width || "24";
