@@ -65,12 +65,12 @@ export function SearchBar({
       />
 
       {/* Date preset dropdown */}
-      <div className="shrink-0">
+      <div className="flex shrink-0 self-stretch">
         <Select
           value={datePreset}
           onValueChange={(value) => onDatePresetChange(value as DatePreset)}
         >
-          <SelectTrigger className="h-11 min-w-[7.5rem]">
+          <SelectTrigger className="h-full min-w-[7.5rem] data-[size=default]:h-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">

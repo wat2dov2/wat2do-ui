@@ -186,7 +186,7 @@ export function TopNav() {
         )}
 
         {/* Language Selector */}
-        <LanguageSelector className="min-w-8 px-2 sm:min-w-[100px] sm:px-3 [&_[data-language-label]]:hidden sm:[&_[data-language-label]]:inline" />
+        <LanguageSelector className="min-w-0 px-2" />
 
         {/* Dark Mode Toggle */}
         <AnimatedThemeToggler />

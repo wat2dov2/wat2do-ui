@@ -238,7 +238,7 @@ export function EventsPageContainer() {
               </div>
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-1 right-0 top-0 z-20 w-16 bg-gradient-to-l from-background via-background/95 to-transparent drop-shadow-[-18px_0_16px_rgba(15,23,42,0.24)] dark:drop-shadow-[-18px_0_18px_rgba(0,0,0,0.6)]"
+                className="pointer-events-none absolute bottom-1 right-0 top-0 z-20 w-16 bg-gradient-to-l from-background via-background/95 to-transparent"
                 style={{ opacity: showFilterScrollFade ? 1 : 0 }}
               />
             </div>
