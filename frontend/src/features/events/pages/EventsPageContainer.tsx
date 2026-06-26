@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useCallback } from "react";
+import { lazy, Suspense, useMemo, useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Heart, Sparkles, Utensils } from "@/shared/ui/doodle-icons";
 import { EventList } from "../components/EventList";
@@ -19,6 +19,8 @@ const FilterDropdown = lazy(() =>
   })),
 );
 
+const FILTER_SCROLL_END_TOLERANCE_PX = 8;
+
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
   const setViewMode = useUIStore((s) => s.setViewMode);
@@ -31,6 +33,9 @@ export function EventsPageContainer() {
   const { isDarkMode } = useDarkMode();
   const profileCompleted = useProfileCompleted();
   const { t } = useTranslation();
+  const filterScrollRef = useRef<HTMLDivElement>(null);
+  const filterScrollEndRef = useRef<HTMLSpanElement>(null);
+  const [showFilterScrollFade, setShowFilterScrollFade] = useState(false);
 
   const {
     isLoading,
@@ -48,6 +53,23 @@ export function EventsPageContainer() {
   } = useEventsPageData({ profileCompleted });
 
   const isPageLoading = isLoading;
+
+  const syncFilterScrollFade = useCallback(() => {
+    const scrollEl = filterScrollRef.current;
+    if (!scrollEl) return;
+
+    const overflowDistance = scrollEl.scrollWidth - scrollEl.clientWidth;
+    const distanceFromEnd =
+      overflowDistance - scrollEl.scrollLeft;
+    setShowFilterScrollFade(
+      overflowDistance > FILTER_SCROLL_END_TOLERANCE_PX &&
+        distanceFromEnd > FILTER_SCROLL_END_TOLERANCE_PX,
+    );
+  }, []);
+
+  const syncFilterScrollFadeAfterWheel = useCallback(() => {
+    window.setTimeout(syncFilterScrollFade, 0);
+  }, [syncFilterScrollFade]);
 
   // Memoize view mode change handler to ensure stable reference
   const handleViewModeChange = useCallback((mode: ViewMode) => {
@@ -102,6 +124,53 @@ export function EventsPageContainer() {
     [filters, handleNewlyAddedToggle, isNewlyAddedActive, profileCompleted, savedEventIds.length]
   );
 
+  useLayoutEffect(() => {
+    const scrollEl = filterScrollRef.current;
+    const scrollEndEl = filterScrollEndRef.current;
+    if (!scrollEl) return;
+
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(syncFilterScrollFade);
+    const intersectionObserver =
+      typeof IntersectionObserver === "undefined" || !scrollEndEl
+        ? null
+        : new IntersectionObserver(
+            ([entry]) => {
+              const overflowDistance = scrollEl.scrollWidth - scrollEl.clientWidth;
+              setShowFilterScrollFade(
+                overflowDistance > FILTER_SCROLL_END_TOLERANCE_PX &&
+                  !entry.isIntersecting,
+              );
+            },
+            {
+              root: scrollEl,
+              rootMargin: `0px ${FILTER_SCROLL_END_TOLERANCE_PX}px 0px 0px`,
+              threshold: 1,
+            },
+          );
+
+    const initialSyncId = window.setTimeout(syncFilterScrollFade, 0);
+    scrollEl.addEventListener("scroll", syncFilterScrollFade, { passive: true });
+    scrollEl.addEventListener("scrollend", syncFilterScrollFade);
+    window.addEventListener("resize", syncFilterScrollFade);
+    resizeObserver?.observe(scrollEl);
+    Array.from(scrollEl.children).forEach((child) => resizeObserver?.observe(child));
+    if (scrollEndEl) {
+      intersectionObserver?.observe(scrollEndEl);
+    }
+
+    return () => {
+      window.clearTimeout(initialSyncId);
+      scrollEl.removeEventListener("scroll", syncFilterScrollFade);
+      scrollEl.removeEventListener("scrollend", syncFilterScrollFade);
+      window.removeEventListener("resize", syncFilterScrollFade);
+      resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
+    };
+  }, [syncFilterScrollFade, filterConfigs.length, filters.categoryPieItems.length]);
+
   return (
     <>
       <div
@@ -134,26 +203,44 @@ export function EventsPageContainer() {
             <div className="shrink-0 pb-1">
               <EventCount count={totalEvents} />
             </div>
-            <div className="no-visible-scrollbar flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-              {filterConfigs.map((config) => (
-                <QuickFilterChip
-                  key={config.id}
-                  icon={config.icon}
-                  label={t(config.labelKey)}
-                  active={config.active}
-                  onMouseDown={config.onMouseDown}
-                  badge={config.badge}
+            <div className="relative min-w-0 flex-1">
+              <div
+                ref={filterScrollRef}
+                onScroll={syncFilterScrollFade}
+                onWheel={syncFilterScrollFadeAfterWheel}
+                onTouchEnd={syncFilterScrollFade}
+                className="no-visible-scrollbar flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1"
+              >
+                {filterConfigs.map((config) => (
+                  <QuickFilterChip
+                    key={config.id}
+                    icon={config.icon}
+                    label={t(config.labelKey)}
+                    active={config.active}
+                    onMouseDown={config.onMouseDown}
+                    badge={config.badge}
+                  />
+                ))}
+                {filters.categoryPieItems.map((category) => (
+                  <QuickFilterChip
+                    key={category.id}
+                    icon={null}
+                    label={category.label}
+                    active={filters.selectedCategories.includes(category.id)}
+                    onMouseDown={() => filters.toggleCategory(category.id)}
+                  />
+                ))}
+                <span
+                  ref={filterScrollEndRef}
+                  aria-hidden="true"
+                  className="h-px w-px shrink-0"
                 />
-              ))}
-              {filters.categoryPieItems.map((category) => (
-                <QuickFilterChip
-                  key={category.id}
-                  icon={null}
-                  label={category.label}
-                  active={filters.selectedCategories.includes(category.id)}
-                  onMouseDown={() => filters.toggleCategory(category.id)}
-                />
-              ))}
+              </div>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-1 right-0 top-0 z-20 w-16 bg-gradient-to-l from-background via-background/95 to-transparent drop-shadow-[-18px_0_16px_rgba(15,23,42,0.24)] dark:drop-shadow-[-18px_0_18px_rgba(0,0,0,0.6)]"
+                style={{ opacity: showFilterScrollFade ? 1 : 0 }}
+              />
             </div>
             <div className="relative shrink-0 pb-1">
               <MoreFiltersButton

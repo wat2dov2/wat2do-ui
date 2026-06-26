@@ -1,7 +1,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { SlidersHorizontal, X } from "@/shared/ui/doodle-icons";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/shared/ui/drawer";
 
 interface MoreFiltersButtonProps {
   open: boolean;
@@ -21,8 +28,8 @@ export function MoreFiltersButton({
   const { t } = useTranslation();
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerTrigger asChild>
         <button
           type="button"
           data-elevation="control"
@@ -40,6 +47,11 @@ export function MoreFiltersButton({
               tabIndex={0}
               aria-label={t("common.clearFilters", "Clear filters")}
               onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 onClearFilters?.();
               }}
@@ -57,14 +69,16 @@ export function MoreFiltersButton({
             </span>
           )}
         </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        sideOffset={8}
-        className="w-[300px] max-h-[calc(100vh-200px)] overflow-y-auto p-4"
-      >
-        {children}
-      </PopoverContent>
-    </Popover>
+      </DrawerTrigger>
+      <DrawerContent className="mx-auto max-h-[85dvh] w-[calc(100vw-16px)] max-w-md overflow-hidden p-0">
+        <DrawerHeader className="sr-only">
+          <DrawerTitle>{t("common.moreFilters")}</DrawerTitle>
+          <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
+        </DrawerHeader>
+        <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto p-4">
+          {children}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

@@ -204,6 +204,7 @@
   [data-slot="popover-content"],
   [data-slot="dropdown-menu-content"],
   [data-slot="dialog-content"],
+  [data-slot="drawer-content"],
   [data-slot="tooltip-content"],
   [data-radix-popper-content-wrapper] > * {
     box-shadow: var(--app-shadow-floating) !important;

@@ -10,8 +10,8 @@ export interface Language {
 }
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇨🇦' },
-  { code: 'zh', label: '简体中文', flag: '🇨🇳' },
+  { code: 'en', label: 'EN', flag: '🇨🇦' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
 ] as const satisfies readonly Language[];
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]["code"];

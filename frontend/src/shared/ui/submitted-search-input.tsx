@@ -47,7 +47,10 @@ export function SubmittedSearchInput({
           handleEnterSubmit(event);
           onKeyDown?.(event);
         }}
-        className="flex h-full w-full min-w-0 items-center rounded-none bg-transparent py-2 pl-3 pr-20 text-base text-secondary-foreground outline-none placeholder:text-muted-foreground"
+        className={cn(
+          "flex h-full w-full min-w-0 items-center rounded-none bg-transparent py-2 pl-2 text-base text-secondary-foreground outline-none placeholder:text-muted-foreground",
+          value ? "pr-[5.5rem]" : "pr-14",
+        )}
       />
       {value && (
         <button

@@ -101,6 +101,10 @@ export function useSearch({
         priceRange: filterState.priceRange,
         registration: filterState.registration,
         selectedOrganizations: filterState.selectedOrganizations,
+        freeFoodFilter: filterState.freeFoodFilter,
+        savedFilter: filterState.savedFilter,
+        sortBy: filterState.sortBy,
+        sortOrder: filterState.sortOrder,
       }),
     [
       filterState.selectedCategories,
@@ -111,6 +115,10 @@ export function useSearch({
       filterState.priceRange,
       filterState.registration,
       filterState.selectedOrganizations,
+      filterState.freeFoodFilter,
+      filterState.savedFilter,
+      filterState.sortBy,
+      filterState.sortOrder,
     ],
   );
 

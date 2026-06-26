@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar, CalendarDays, Clock, Sun } from "@/shared/ui/doodle-icons";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 import type { DatePreset } from "@/shared/types";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 
@@ -45,13 +45,11 @@ export function SearchBar({
   };
 
   const datePresetOptions = [
-    { value: "upcoming" as const, label: t("events.upcoming"), icon: CalendarDays },
-    { value: "today" as const, label: t("events.dateSections.today"), icon: Calendar },
-    { value: "tomorrow" as const, label: t("events.dateSections.tomorrow"), icon: Clock },
-    { value: "weekend" as const, label: t("events.weekend"), icon: Sun },
+    { value: "upcoming" as const, label: t("events.upcoming") },
+    { value: "today" as const, label: t("events.dateSections.today") },
+    { value: "tomorrow" as const, label: t("events.dateSections.tomorrow") },
+    { value: "weekend" as const, label: t("events.weekend") },
   ];
-  const activeDatePreset = datePresetOptions.find((option) => option.value === datePreset) ?? datePresetOptions[0]!;
-  const ActiveDateIcon = activeDatePreset.icon;
 
   return (
     <div className="flex items-stretch gap-3">
@@ -68,34 +66,21 @@ export function SearchBar({
 
       {/* Date preset dropdown */}
       <div className="shrink-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              data-elevation="control"
-              className="flex size-11 items-center justify-center rounded-xl bg-transparent text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              aria-label={activeDatePreset.label}
-              title={activeDatePreset.label}
-            >
-              <ActiveDateIcon className="size-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            {datePresetOptions.map((option) => {
-              const PresetIcon = option.icon;
-
-              return (
-                <DropdownMenuItem
-                  key={option.value}
-                  onSelect={() => onDatePresetChange(option.value)}
-                >
-                  <PresetIcon className="size-3.5" />
-                  {option.label}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Select
+          value={datePreset}
+          onValueChange={(value) => onDatePresetChange(value as DatePreset)}
+        >
+          <SelectTrigger className="h-11 min-w-[7.5rem]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {datePresetOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

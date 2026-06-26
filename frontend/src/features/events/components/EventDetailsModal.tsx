@@ -1,5 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef, type PointerEvent } from "react";
-import { animate, m, useDragControls, useMotionValue, type PanInfo } from "framer-motion";
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
@@ -9,13 +8,13 @@ import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import { Bell, ImageOff, ExternalLink, Heart, Mail, MoreHorizontal, Share2, Flag, X } from "@/shared/ui/doodle-icons";
 import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import {
   DropdownMenu,
@@ -56,7 +55,6 @@ const EventReportDialog = lazy(() =>
   })),
 );
 
-const DRAG_CLOSE_THRESHOLD_PX = 120;
 type EventDetailsDialog = Exclude<EventCardDialog, "delete">;
 
 interface ActiveEventDetailsDialog {
@@ -91,8 +89,6 @@ export function EventDetailsModal({
     event?.id ?? null,
   );
   const [activeDialog, setActiveDialog] = useState<ActiveEventDetailsDialog | null>(null);
-  const dragControls = useDragControls();
-  const dragY = useMotionValue(0);
   const contentRef = useRef<HTMLDivElement>(null);
   if ((event?.id ?? null) !== trackedPropEventId) {
     setTrackedPropEventId(event?.id ?? null);
@@ -106,12 +102,6 @@ export function EventDetailsModal({
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
-  useEffect(() => {
-    if (isOpen) {
-      dragY.set(0);
-    }
-  }, [dragY, isOpen]);
-
   useEffect(() => {
     if (displayedEvent) {
       openTimeRef.current = Date.now();
@@ -143,30 +133,6 @@ export function EventDetailsModal({
     setOverrideEvent(clickedEvent);
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
-
-  const handleDragPointerDown = useCallback(
-    (pointerEvent: PointerEvent<HTMLDivElement>) => {
-      if (pointerEvent.button !== 0) return;
-      dragControls.start(pointerEvent);
-    },
-    [dragControls],
-  );
-
-  const handleDragEnd = useCallback(
-    (_event: unknown, info: PanInfo) => {
-      const offsetY = Math.max(0, info.offset.y);
-      if (offsetY >= DRAG_CLOSE_THRESHOLD_PX || info.velocity.y > 700) {
-        onClose();
-        return;
-      }
-      void animate(dragY, 0, {
-        type: "spring",
-        stiffness: 520,
-        damping: 42,
-      });
-    },
-    [dragY, onClose],
-  );
 
   const handleActionDialogOpen = useCallback((type: EventCardDialog, targetEvent: Event) => {
     if (type === "delete") return;
@@ -204,27 +170,15 @@ export function EventDetailsModal({
   const modalState = useModalState({ onClose });
 
   return (
-    <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DialogContent
-        asChild
-        showCloseButton={false}
-        className="w-[calc(100vw-16px)] max-w-4xl overflow-hidden p-0 sm:w-[calc(100vw-48px)]"
-      >
-        <m.div
+    <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
+      <DrawerContent className="relative mx-auto max-h-[92dvh] w-[calc(100vw-16px)] max-w-4xl overflow-hidden p-0 sm:w-[calc(100vw-48px)] [&_[data-slot=drawer-handle]]:hidden">
+        <div
           ref={contentRef}
-          className="max-h-[90dvh] overflow-y-auto border-0 p-0"
-          style={{ y: dragY }}
-          drag="y"
-          dragControls={dragControls}
-          dragListener={false}
-          dragConstraints={{ top: 0, bottom: 240 }}
-          dragElastic={{ top: 0, bottom: 0.22 }}
-          dragMomentum={false}
-          onDragEnd={handleDragEnd}
+          className="max-h-[92dvh] overflow-y-auto border-0 p-0"
         >
         {displayedEvent && (
           <>
-            <DialogClose asChild>
+            <DrawerClose asChild>
               <button
                 type="button"
                 className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -232,11 +186,9 @@ export function EventDetailsModal({
               >
                 <X className="size-4" />
               </button>
-            </DialogClose>
+            </DrawerClose>
             <div
-              className="relative h-64 w-full touch-none select-none overflow-hidden cursor-grab active:cursor-grabbing sm:h-80"
-              data-event-details-drag-handle
-              onPointerDown={handleDragPointerDown}
+              className="relative h-64 w-full select-none overflow-hidden sm:h-80"
               onDragStart={(dragEvent) => dragEvent.preventDefault()}
             >
               <div className="absolute top-3 left-1/2 z-10 h-1.5 w-12 -translate-x-1/2 rounded-full bg-background/80 shadow-sm" />
@@ -256,11 +208,11 @@ export function EventDetailsModal({
             </div>
 
             <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
-              <DialogHeader className="text-left">
+              <DrawerHeader className="p-0 text-left">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                   <div className="min-w-0">
-                    <DialogTitle className="leading-tight">{displayedEvent.title}</DialogTitle>
-                    <DialogDescription>{displayedEvent.organization}</DialogDescription>
+                    <DrawerTitle className="leading-tight">{displayedEvent.title}</DrawerTitle>
+                    <DrawerDescription>{displayedEvent.organization}</DrawerDescription>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
                     <Button
@@ -337,7 +289,7 @@ export function EventDetailsModal({
                     </DropdownMenu>
                   </div>
                 </div>
-              </DialogHeader>
+              </DrawerHeader>
 
               <ModalSection className="space-y-3">
                 <InfoRow
@@ -430,8 +382,8 @@ export function EventDetailsModal({
             </ModalContentWrapper>
           </>
         )}
-        </m.div>
-      </DialogContent>
+        </div>
+      </DrawerContent>
       {activeDialog?.type === "share" && (
         <Suspense fallback={null}>
           <EventShareDialog
@@ -451,6 +403,6 @@ export function EventDetailsModal({
           />
         </Suspense>
       )}
-    </Dialog>
+    </Drawer>
   );
 }
