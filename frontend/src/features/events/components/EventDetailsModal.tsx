@@ -250,6 +250,14 @@ export function EventDetailsModal({
                           <Mail className="size-3.5 shrink-0" />
                           {t("events.notifications.email")}
                         </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => openGoogleCalendar(displayedEvent)}>
+                          <GoogleIcon className="size-3.5 shrink-0" />
+                          {t("events.calendar.googleCalendar")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => downloadICS(displayedEvent)}>
+                          <AppleIcon className="size-3.5 shrink-0" />
+                          {t("events.calendar.iCal")}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                     <DropdownMenu>
@@ -270,14 +278,6 @@ export function EventDetailsModal({
                         >
                           <Share2 className="size-3.5 shrink-0" />
                           {t("common.share")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => openGoogleCalendar(displayedEvent)}>
-                          <GoogleIcon className="size-3.5 shrink-0" />
-                          {t("events.calendar.googleCalendar")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => downloadICS(displayedEvent)}>
-                          <AppleIcon className="size-3.5 shrink-0" />
-                          {t("events.calendar.iCal")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={() => setActiveDialog({ type: "report", event: displayedEvent })}

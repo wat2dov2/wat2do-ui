@@ -193,6 +193,14 @@ function EventFooterActions({
             <Mail />
             {t("events.notifications.email")}
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
+            <GoogleIcon className="size-3.5 shrink-0" />
+            {t("events.calendar.googleCalendar")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => downloadICS(event)}>
+            <AppleIcon className="size-3.5 shrink-0" />
+            {t("events.calendar.iCal")}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -217,14 +225,6 @@ function EventFooterActions({
           <DropdownMenuItem onSelect={() => onActionDialogOpen("share")}>
             <Share2 />
             {t("common.share")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
-            <GoogleIcon className="size-3.5 shrink-0" />
-            {t("events.calendar.googleCalendar")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => downloadICS(event)}>
-            <AppleIcon className="size-3.5 shrink-0" />
-            {t("events.calendar.iCal")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => onActionDialogOpen("report")}>
