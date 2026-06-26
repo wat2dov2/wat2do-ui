@@ -14,3 +14,4 @@ export * from "./useTypewriter";
 export * from "./useBackendQuery";
 export * from "./usePagination";
 export * from "./useEnterKeySubmit";
+export * from "./useHorizontalScrollFade";

@@ -49,18 +49,12 @@ const FloatingDockDesktop = ({
 
   return (
     <div className="relative mx-auto inline-flex w-fit max-w-full items-end justify-center">
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-9 origin-bottom rounded-md border border-foreground/10 bg-secondary/20 shadow-lg backdrop-blur-md"
-        style={{
-          transform: `perspective(140px) rotateX(45deg) scaleX(${canMagnify ? 1.15 : 1})`,
-        }}
-      />
       {/* 2D Icons Container */}
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
-          "relative z-10 flex h-[64px] max-w-full items-end justify-center gap-4 px-2 pb-0.5 sm:h-[60px] sm:px-6",
+          "relative z-10 flex h-[64px] max-w-full items-end justify-center gap-4 px-2 pb-0 sm:h-[60px] sm:px-6",
           className,
         )}
       >
@@ -128,7 +122,6 @@ function IconContainer({
 
   const content = (
     <motion.div
-      data-elevation="control"
       ref={ref}
       style={canMagnify ? { width, height } : undefined}
       onMouseEnter={() => {
@@ -140,8 +133,8 @@ function IconContainer({
       className={cn(
         "relative flex size-11 aspect-square items-center justify-center rounded-full sm:size-9",
         isActive
-          ? "bg-primary/20 border border-primary/30 backdrop-blur-md text-primary"
-          : "bg-secondary/30 border border-foreground/10 backdrop-blur-md text-foreground shadow-sm",
+          ? "border border-white bg-primary text-white"
+          : "border border-transparent bg-transparent text-foreground/80 hover:text-foreground",
       )}
     >
       <AnimatePresence>

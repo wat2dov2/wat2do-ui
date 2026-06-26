@@ -40,7 +40,7 @@ export function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[800px] mx-auto px-6 py-12 md:py-20 pb-32 space-y-16">
+      <div className="max-w-[800px] mx-auto px-0 py-12 sm:px-6 md:py-20 pb-32 space-y-16">
         
         {/* HERO SECTION */}
         <motion.div

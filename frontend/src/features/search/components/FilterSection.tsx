@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronUp, ChevronDown, X } from "@/shared/ui/doodle-icons";
+import { X } from "@/shared/ui/doodle-icons";
 import {
   Tooltip,
   TooltipTrigger,
@@ -64,11 +64,6 @@ export const FilterSection = React.memo(function FilterSection({
             </span>
           )}
         </div>
-        {expanded ? (
-          <ChevronUp className="size-4 transition-colors text-muted-foreground" />
-        ) : (
-          <ChevronDown className="size-4 transition-colors text-muted-foreground" />
-        )}
       </button>
       {expanded && <div className="animate-in fade-in duration-200 px-4 pb-3">{children}</div>}
     </div>

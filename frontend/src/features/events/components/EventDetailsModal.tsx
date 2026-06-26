@@ -171,7 +171,7 @@ export function EventDetailsModal({
 
   return (
     <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DrawerContent className="relative mx-auto max-h-[92dvh] w-[calc(100vw-16px)] max-w-4xl overflow-hidden p-0 sm:w-[calc(100vw-48px)] [&_[data-slot=drawer-handle]]:hidden">
+      <DrawerContent className="mx-auto max-h-[92dvh] w-[calc(100vw-16px)] max-w-4xl overflow-hidden p-0 sm:w-[calc(100vw-48px)] [&_[data-slot=drawer-handle]]:hidden">
         <div
           ref={contentRef}
           className="max-h-[92dvh] overflow-y-auto border-0 p-0"

@@ -23,6 +23,7 @@ export function LanguageSelector({ className }: LanguageSelectorProps) {
   return (
     <Select value={currentLanguageCode} onValueChange={changeLanguage}>
       <SelectTrigger
+        showIcon={false}
         className={cn(
           "w-fit min-w-0 hover:bg-secondary/80 transition-colors",
           className
@@ -30,19 +31,13 @@ export function LanguageSelector({ className }: LanguageSelectorProps) {
         size="sm"
       >
           <SelectValue>
-            <span className="flex items-center gap-2 text-sm">
-              <span>{currentLanguage.flag}</span>
-              <span data-language-label>{currentLanguage.label}</span>
-            </span>
+            <span data-language-label className="text-sm">{currentLanguage.label}</span>
           </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {SUPPORTED_LANGUAGES.map((lang) => (
           <SelectItem key={lang.code} value={lang.code}>
-            <span className="flex items-center gap-2">
-              <span>{lang.flag}</span>
-              <span>{lang.label}</span>
-            </span>
+            {lang.label}
           </SelectItem>
         ))}
       </SelectContent>

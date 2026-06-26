@@ -3,11 +3,28 @@ import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@/shared/ui/doodle-icons"
 
 import { cn } from "@/shared/lib/utils"
+import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure"
 
 function Select({
+  open,
+  defaultOpen,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+  const [exclusiveOpen, setExclusiveOpen] = useExclusiveDisclosure({
+    open,
+    defaultOpen,
+    onOpenChange,
+  })
+
+  return (
+    <SelectPrimitive.Root
+      data-slot="select"
+      open={exclusiveOpen}
+      onOpenChange={setExclusiveOpen}
+      {...props}
+    />
+  )
 }
 
 
@@ -20,10 +37,12 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  showIcon = true,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default"
+  showIcon?: boolean
 }) {
   return (
     <SelectPrimitive.Trigger
@@ -37,9 +56,11 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-4 opacity-50" />
-      </SelectPrimitive.Icon>
+      {showIcon && (
+        <SelectPrimitive.Icon asChild>
+          <ChevronDownIcon className="size-4 opacity-50" />
+        </SelectPrimitive.Icon>
+      )}
     </SelectPrimitive.Trigger>
   )
 }

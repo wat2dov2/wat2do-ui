@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { SlidersHorizontal, X } from "@/shared/ui/doodle-icons";
+import { X } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -39,7 +39,6 @@ export function MoreFiltersButton({
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
         >
-          <SlidersHorizontal className="size-3.5" />
           {t("common.moreFilters")}
           {filterCount > 0 && (
             <span

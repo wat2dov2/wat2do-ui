@@ -2,11 +2,28 @@ import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
 import { cn } from "@/shared/lib/utils";
+import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure";
 
 function DropdownMenu({
+  open,
+  defaultOpen,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  const [exclusiveOpen, setExclusiveOpen] = useExclusiveDisclosure({
+    open,
+    defaultOpen,
+    onOpenChange,
+  });
+
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      open={exclusiveOpen}
+      onOpenChange={setExclusiveOpen}
+      {...props}
+    />
+  );
 }
 
 function DropdownMenuSub({

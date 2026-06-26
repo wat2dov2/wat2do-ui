@@ -48,8 +48,8 @@ export function SubmittedSearchInput({
           onKeyDown?.(event);
         }}
         className={cn(
-          "flex h-full w-full min-w-0 items-center rounded-none bg-transparent px-2 py-2 text-base text-secondary-foreground outline-none placeholder:text-muted-foreground",
-          value ? "pr-20" : "pr-12",
+          "block h-full w-full min-w-0 rounded-none bg-transparent px-2 py-2 text-base leading-7 text-secondary-foreground outline-none placeholder:text-muted-foreground",
+          value ? "pr-[5.25rem]" : "pr-[3.25rem]",
         )}
       />
       {value && (
@@ -59,7 +59,7 @@ export function SubmittedSearchInput({
             event.preventDefault();
             onClear();
           }}
-          className="absolute right-10 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+          className="absolute right-11 top-0 flex h-full w-8 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
           aria-label={clearLabel}
         >
           <X className="size-4" />
@@ -71,7 +71,7 @@ export function SubmittedSearchInput({
           event.preventDefault();
           onSubmit();
         }}
-        className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg bg-muted/70 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border/60 bg-muted/70 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         aria-label={submitLabel}
       >
         <Search className="size-4" />

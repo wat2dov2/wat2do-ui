@@ -7,20 +7,21 @@ import {
   Building2,
   Instagram,
   MessageCircle,
-  OrganizationChart,
 } from "@/shared/ui/doodle-icons";
 import { OrganizationDetailsModal } from "@/features/organizations/components/OrganizationDetailsModal";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 import { QuickFilterChip } from "@/features/search";
 import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganizationsPage";
 import { translateCategory } from "@/shared/utils/event";
 import { useAuthState } from "@/features/auth";
+import { useHorizontalScrollFade } from "@/shared/hooks";
 import type { Organization } from "@/shared/types";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { TableCell, TableRow } from "@/shared/ui/table";
@@ -29,6 +30,7 @@ import { sanitizeHref } from "@/shared/utils/url";
 import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 
+type OrganizationScope = "all" | "followed" | "claimed";
 
 export function OrganizationsPage() {
   const { t } = useTranslation();
@@ -56,12 +58,20 @@ export function OrganizationsPage() {
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const shouldShowOrganizationMeta = !((activeTab === "followed" || activeTab === "claimed") && !authed);
   const tabOptions = [
-    { value: "all" as const, label: t("organizations.allClubs"), icon: Building2 },
-    { value: "followed" as const, label: t("organizations.followedClubs"), icon: Bookmark },
-    { value: "claimed" as const, label: t("organizations.claimedClubs"), icon: OrganizationChart },
-  ];
+    { value: "all" as const, label: t("organizations.allClubs") },
+    { value: "followed" as const, label: t("organizations.followedClubs") },
+    { value: "claimed" as const, label: t("organizations.claimedClubs") },
+  ] satisfies Array<{ value: OrganizationScope; label: string }>;
   const activeTabOption = tabOptions.find((option) => option.value === activeTab) ?? tabOptions[0]!;
-  const ActiveTabIcon = activeTabOption.icon;
+  const {
+    scrollRef: categoryScrollRef,
+    scrollEndRef: categoryScrollEndRef,
+    showScrollFade: showCategoryScrollFade,
+    syncScrollFade: syncCategoryScrollFade,
+    syncScrollFadeAfterWheel: syncCategoryScrollFadeAfterWheel,
+  } = useHorizontalScrollFade<HTMLDivElement>({
+    refreshKey: allCategories.length,
+  });
 
   return (
     <div className="space-y-2">
@@ -79,35 +89,26 @@ export function OrganizationsPage() {
           />
 
           {/* Organization scope dropdown */}
-          <div className="shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  data-elevation="control"
-                  className="flex size-11 items-center justify-center rounded-xl bg-transparent text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                  aria-label={activeTabOption.label}
-                  title={activeTabOption.label}
-                >
-                  <ActiveTabIcon className="size-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                {tabOptions.map((option) => {
-                  const TabIcon = option.icon;
-
-                  return (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onSelect={() => setActiveTab(option.value)}
-                    >
-                      <TabIcon className="size-3.5" />
-                      {option.label}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex shrink-0 self-stretch">
+            <Select
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as OrganizationScope)}
+            >
+              <SelectTrigger
+                showIcon={false}
+                className="h-full min-w-[7.5rem] data-[size=default]:h-full"
+                aria-label={activeTabOption.label}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {tabOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -123,16 +124,34 @@ export function OrganizationsPage() {
           )}
 
           {/* Category Chips */}
-          <div className="no-visible-scrollbar flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-            {allCategories.map((category) => (
-              <QuickFilterChip
-                key={category}
-                icon={null}
-                label={translateCategory(category, t)}
-                active={selectedCategories.includes(category)}
-                onMouseDown={() => toggleCategory(category)}
+          <div className="relative min-w-0 flex-1">
+            <div
+              ref={categoryScrollRef}
+              onScroll={syncCategoryScrollFade}
+              onWheel={syncCategoryScrollFadeAfterWheel}
+              onTouchEnd={syncCategoryScrollFade}
+              className="no-visible-scrollbar flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1"
+            >
+              {allCategories.map((category) => (
+                <QuickFilterChip
+                  key={category}
+                  icon={null}
+                  label={translateCategory(category, t)}
+                  active={selectedCategories.includes(category)}
+                  onMouseDown={() => toggleCategory(category)}
+                />
+              ))}
+              <span
+                ref={categoryScrollEndRef}
+                aria-hidden="true"
+                className="h-px w-px shrink-0"
               />
-            ))}
+            </div>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-px bottom-1 top-0 z-20 w-8 bg-gradient-to-l from-background via-background/95 to-transparent transition-opacity duration-150"
+              style={{ opacity: showCategoryScrollFade ? 1 : 0 }}
+            />
           </div>
         </div>
 
