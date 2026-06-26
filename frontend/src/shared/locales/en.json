@@ -343,7 +343,7 @@
     }
   },
   "search": {
-    "placeholder": "Search events, organizations, activities...",
+    "placeholder": "Search events",
     "clear": "Clear event search",
     "ariaLabel": "Events list"
   },
