@@ -70,7 +70,7 @@ export function SearchBar({
           value={datePreset}
           onValueChange={(value) => onDatePresetChange(value as DatePreset)}
         >
-          <SelectTrigger showIcon={false} className="h-full min-w-[7.5rem] data-[size=default]:h-full">
+          <SelectTrigger showIcon={false} className="h-full data-[size=default]:h-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">

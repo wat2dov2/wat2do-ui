@@ -96,7 +96,7 @@ export function OrganizationsPage() {
             >
               <SelectTrigger
                 showIcon={false}
-                className="h-full min-w-[7.5rem] data-[size=default]:h-full"
+                className="h-full data-[size=default]:h-full"
                 aria-label={activeTabOption.label}
               >
                 <SelectValue />
