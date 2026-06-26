@@ -17,6 +17,7 @@ import { startTransition } from "react";
 import { create } from "zustand";
 import type { FilterState } from "@/shared/types/filter.types";
 import {
+  DEFAULT_DATE_PRESET,
   DEFAULT_FILTER_SORT_BY,
   DEFAULT_FILTER_SORT_ORDER,
   normalizeFilterState,
@@ -28,6 +29,7 @@ interface FilterValues {
   selectedLocations: string[];
   selectedFoods: string[];
   selectedDays: string[];
+  datePreset: FilterState["datePreset"];
   priceRange: { min: string; max: string };
   registration: boolean;
   freeFoodFilter: boolean;
@@ -49,6 +51,7 @@ const emptyFilters: FilterValues = {
   selectedLocations: [],
   selectedFoods: [],
   selectedDays: [],
+  datePreset: DEFAULT_DATE_PRESET,
   priceRange: { min: "", max: "" },
   registration: false,
   freeFoodFilter: false,
@@ -72,6 +75,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       selectedLocations: normalized.locations,
       selectedFoods: normalized.foods,
       selectedDays: normalized.days,
+      datePreset: normalized.datePreset,
       selectedOrganizations: normalized.organizations,
       priceRange: normalized.priceRange,
       registration: normalized.registration,

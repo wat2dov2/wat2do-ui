@@ -3,6 +3,8 @@
  * Consolidates date formatting and parsing functions
  */
 
+import type { DatePreset } from "@/shared/types/filter.types";
+
 export type EventDateCategory =
   | "today"
   | "tomorrow"
@@ -19,8 +21,60 @@ export interface Occurrence {
 const toMidnight = (date: Date): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
+const addDays = (date: Date, days: number): Date =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+
 const sameDay = (firstDate: Date, secondDate: Date): boolean =>
   firstDate.toDateString() === secondDate.toDateString();
+
+export interface DatePresetWindow {
+  start: Date;
+  end: Date;
+}
+
+function inclusiveWindow(start: Date, exclusiveEnd: Date): DatePresetWindow {
+  return {
+    start,
+    end: new Date(exclusiveEnd.getTime() - 1),
+  };
+}
+
+export function getDatePresetWindow(
+  preset: DatePreset,
+  currentDate: Date = new Date()
+): DatePresetWindow | null {
+  if (preset === "upcoming") return null;
+
+  const todayStart = toMidnight(currentDate);
+  if (preset === "today") {
+    return inclusiveWindow(todayStart, addDays(todayStart, 1));
+  }
+  if (preset === "tomorrow") {
+    const tomorrowStart = addDays(todayStart, 1);
+    return inclusiveWindow(tomorrowStart, addDays(tomorrowStart, 1));
+  }
+
+  const day = todayStart.getDay();
+  const daysUntilSaturday = day === 0 ? -1 : (6 - day + 7) % 7;
+  const saturdayStart = addDays(todayStart, daysUntilSaturday);
+  const weekendStart = saturdayStart < todayStart ? todayStart : saturdayStart;
+  return inclusiveWindow(weekendStart, addDays(saturdayStart, 2));
+}
+
+export function isEventInDatePreset(
+  event: { occurrences?: Occurrence[] },
+  preset: DatePreset,
+  currentDate: Date = new Date()
+): boolean {
+  const window = getDatePresetWindow(preset, currentDate);
+  if (!window) return true;
+
+  return (event.occurrences ?? []).some((occurrence) => {
+    const start = new Date(occurrence.dtstart_utc);
+    if (Number.isNaN(start.getTime())) return false;
+    return start >= window.start && start <= window.end;
+  });
+}
 
 /**
  * Resolve the primary occurrence from an event's occurrences list.

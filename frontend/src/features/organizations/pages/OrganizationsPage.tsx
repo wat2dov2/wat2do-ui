@@ -1,15 +1,23 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import NumberFlow from "@number-flow/react";
-import { Bookmark, Search, Building2, Instagram, MessageCircle } from "@/shared/ui/doodle-icons";
+import {
+  Bookmark,
+  Search,
+  Building2,
+  Instagram,
+  MessageCircle,
+  OrganizationChart,
+} from "@/shared/ui/doodle-icons";
 import { OrganizationDetailsModal } from "@/features/organizations/components/OrganizationDetailsModal";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/shared/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+import { QuickFilterChip } from "@/features/search";
 import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganizationsPage";
 import { translateCategory } from "@/shared/utils/event";
 import { useAuthState } from "@/features/auth";
@@ -46,11 +54,19 @@ export function OrganizationsPage() {
   } = useOrganizationsPage();
 
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const shouldShowOrganizationMeta = !((activeTab === "followed" || activeTab === "claimed") && !authed);
+  const tabOptions = [
+    { value: "all" as const, label: t("organizations.allClubs"), icon: Building2 },
+    { value: "followed" as const, label: t("organizations.followedClubs"), icon: Bookmark },
+    { value: "claimed" as const, label: t("organizations.claimedClubs"), icon: OrganizationChart },
+  ];
+  const activeTabOption = tabOptions.find((option) => option.value === activeTab) ?? tabOptions[0]!;
+  const ActiveTabIcon = activeTabOption.icon;
 
   return (
     <div className="space-y-2">
-      <div className="space-y-4 pb-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+      <div className="space-y-3 pb-2">
+        <div className="flex items-stretch gap-3">
           {/* Search Bar */}
           <SubmittedSearchInput
             value={searchQuery}
@@ -62,101 +78,77 @@ export function OrganizationsPage() {
             clearLabel={t("organizations.clearSearch")}
           />
 
-          {/* Tabs */}
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as "all" | "followed" | "claimed")}
-            className="shrink-0"
-          >
-            <TabsList className="h-8">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger
-                    value="all"
-                    id="tab-all-clubs"
-                    className="h-7 px-3 py-0 text-xs"
-                    aria-label={t("organizations.allClubs") || "All"}
-                  >
-                    <span>{t("organizations.allClubs") || "All"}</span>
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("organizations.allClubs") || "All"}</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger
-                    value="followed"
-                    id="tab-followed-clubs"
-                    className="h-7 px-3 py-0 text-xs"
-                    aria-label={t("organizations.followedClubs") || "Followed"}
-                  >
-                    <span>{t("organizations.followedClubs") || "Followed"}</span>
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("organizations.followedClubs") || "Followed"}</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger
-                    value="claimed"
-                    id="tab-claimed-clubs"
-                    className="h-7 px-3 py-0 text-xs"
-                    aria-label={t("organizations.claimedClubs") || "Claimed"}
-                  >
-                    <span>{t("organizations.claimedClubs") || "Claimed"}</span>
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("organizations.claimedClubs") || "Claimed"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TabsList>
-          </Tabs>
+          {/* Organization scope dropdown */}
+          <div className="shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  data-elevation="control"
+                  className="flex size-11 items-center justify-center rounded-xl bg-transparent text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  aria-label={activeTabOption.label}
+                  title={activeTabOption.label}
+                >
+                  <ActiveTabIcon className="size-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {tabOptions.map((option) => {
+                  const TabIcon = option.icon;
+
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onSelect={() => setActiveTab(option.value)}
+                    >
+                      <TabIcon className="size-3.5" />
+                      {option.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="no-visible-scrollbar flex flex-nowrap gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2">
+          {shouldShowOrganizationMeta && (
+            <div className="shrink-0 pb-1">
+              <span className="inline-flex items-baseline gap-1 text-base font-bold text-foreground">
+                <NumberFlow value={totalItems} respectMotionPreference={false} />
+                <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>
+              </span>
+            </div>
+          )}
+
           {/* Category Chips */}
-          {allCategories.map((category) => (
-            <button
-              key={category}
-              onMouseDown={() => toggleCategory(category)}
-              className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                selectedCategories.includes(category)
-                  ? "bg-primary/80 text-primary-foreground"
-                  : "bg-secondary text-muted-foreground"
-              }`}
-            >
-              {translateCategory(category, t)}
-            </button>
-          ))}
+          <div className="no-visible-scrollbar flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+            {allCategories.map((category) => (
+              <QuickFilterChip
+                key={category}
+                icon={null}
+                label={translateCategory(category, t)}
+                active={selectedCategories.includes(category)}
+                onMouseDown={() => toggleCategory(category)}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Results Count and Pagination */}
-        {!((activeTab === "followed" || activeTab === "claimed") && !authed) && (
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <span className="font-bold text-base text-foreground inline-flex items-baseline gap-1">
-              <NumberFlow value={totalItems} respectMotionPreference={false} />
-              <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>
-            </span>
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                itemLabel={t("admin.club")}
-                itemLabelPlural={t("navigation.organizations")}
-                onPageChange={setCurrentPage}
-                hideDetails
-                hideNavigationLabels
-              />
-            )}
-          </div>
+        {/* Pagination */}
+        {shouldShowOrganizationMeta && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            itemLabel={t("admin.club")}
+            itemLabelPlural={t("navigation.organizations")}
+            onPageChange={setCurrentPage}
+            hideDetails
+            hideNavigationLabels
+          />
         )}
       </div>
 

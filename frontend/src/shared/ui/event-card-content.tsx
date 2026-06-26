@@ -40,9 +40,16 @@ export function EventCardContent({
     <div className={`relative flex flex-col flex-1 px-2.5 pt-3 pb-2.5 sm:px-3 sm:pt-4 sm:pb-3 ${className ?? ""}`}>
       <LightRays />
       <div className="flex flex-col gap-3 h-full flex-1">
-        <h3 className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
-          {title}
-        </h3>
+        <div className="flex items-start gap-2">
+          <h3 className={`min-w-0 flex-1 font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
+            {title}
+          </h3>
+          {clickLabel && (
+            <span className={`mt-0.5 shrink-0 text-[9px] font-medium whitespace-nowrap ${badgeClassName}`}>
+              {clickLabel}
+            </span>
+          )}
+        </div>
 
         {/* Info + Badges - pinned to bottom */}
         <div className="flex items-end justify-between gap-3 mt-auto min-w-0">
@@ -60,13 +67,8 @@ export function EventCardContent({
             )}
           </div>
 
-          {(clickLabel || badges.length > 0) && (
+          {badges.length > 0 && (
             <div className="flex flex-col gap-1.5 items-end shrink-0">
-              {clickLabel && (
-                <span className={`text-[9px] font-medium whitespace-nowrap ${badgeClassName}`}>
-                  {clickLabel}
-                </span>
-              )}
               {badges.map((badge) => (
                 <span
                   key={badge.text}

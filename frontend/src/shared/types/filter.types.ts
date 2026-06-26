@@ -10,6 +10,7 @@ export interface FilterState {
   locations: string[];
   foods: string[];
   days: string[];
+  datePreset: DatePreset;
   priceRange: { min: string; max: string };
   registration: boolean;
   organizations: string[];
@@ -19,6 +20,7 @@ export interface FilterState {
   sortOrder: "asc" | "desc";
 }
 
+export type DatePreset = "upcoming" | "today" | "tomorrow" | "weekend";
 export type FilterViewMode = "visual" | "json";
 
 export interface QuickFilterConfig {

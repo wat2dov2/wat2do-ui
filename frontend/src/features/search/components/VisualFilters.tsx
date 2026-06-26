@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown, Sparkles } from "@/shared/ui/doodle-icons";
+import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown, Sparkles, Grid3x3 } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
 import { translateCategory } from "@/shared/utils/event";
@@ -8,6 +8,7 @@ import { PieMenu } from "@/shared/ui/pie-menu";
 import { Switch } from "@/shared/ui/switch";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
+import type { ViewMode } from "@/shared/types";
 
 const PIE_ICON_MAP: Record<string, LucideIcon> = {
   Tag,
@@ -87,9 +88,11 @@ interface VisualFiltersProps {
     toggleOrganization: (org: string) => void;
     availableOrganizations: string[];
   };
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
-export function VisualFilters({ filters }: VisualFiltersProps) {
+export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFiltersProps) {
   const { t } = useTranslation();
 
   // Pie-menu UI state lives here, alongside the components that render the menus.
@@ -121,6 +124,13 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
       t(`filters.${filters.sortBy}`),
     [filters.sortBy, filters.sortPieItems, t],
   );
+  const viewModeOptions = useMemo(
+    () => [
+      { id: "grid" as const, label: t("settings.appearance.grid"), icon: Grid3x3 },
+      { id: "calendar" as const, label: t("settings.appearance.calendar"), icon: Calendar },
+    ],
+    [t],
+  );
 
   const handleSelectOrganization = useCallback(
     (org: string) => {
@@ -144,6 +154,7 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
 
   // Manage expanded sections state locally (UI state, not business logic)
   const [expandedSections, setExpandedSections] = useState({
+    viewMode: false,
     category: true,
     location: false,
     priceRange: false,
@@ -160,6 +171,42 @@ export function VisualFilters({ filters }: VisualFiltersProps) {
 
   return (
     <div className="-space-y-px">
+      {/* View Mode */}
+      <FilterSection
+        title={t("common.view")}
+        expanded={expandedSections.viewMode}
+        onToggle={() => toggleSection("viewMode")}
+        indicator={
+          viewMode === "calendar"
+            ? t("settings.appearance.calendar")
+            : undefined
+        }
+        onClear={() => onViewModeChange("grid")}
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {viewModeOptions.map((option) => {
+            const ViewIcon = option.icon;
+            const active = viewMode === option.id;
+
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onMouseDown={() => onViewModeChange(option.id)}
+                className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition-colors ${
+                  active
+                    ? "bg-primary/80 text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:bg-muted/60"
+                }`}
+              >
+                <ViewIcon className="size-3.5" />
+                <span>{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </FilterSection>
+
       {/* Category Filter */}
       <FilterSection
         title={t("filters.category")}

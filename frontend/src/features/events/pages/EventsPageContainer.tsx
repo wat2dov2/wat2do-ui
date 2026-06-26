@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Heart, Sparkles, Tag, Utensils } from "@/shared/ui/doodle-icons";
+import { Heart, Sparkles, Utensils } from "@/shared/ui/doodle-icons";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
@@ -125,8 +125,8 @@ export function EventsPageContainer() {
               filters.setSearchQuery(query);
             }}
             onSearchClear={() => filters.setSearchQuery("")}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
+            datePreset={filters.datePreset}
+            onDatePresetChange={filters.setDatePreset}
           />
 
           {/* Filters stay visible while event cards load. */}
@@ -148,7 +148,7 @@ export function EventsPageContainer() {
               {filters.categoryPieItems.map((category) => (
                 <QuickFilterChip
                   key={category.id}
-                  icon={<Tag className="size-3.5" />}
+                  icon={null}
                   label={category.label}
                   active={filters.selectedCategories.includes(category.id)}
                   onMouseDown={() => filters.toggleCategory(category.id)}
@@ -167,6 +167,8 @@ export function EventsPageContainer() {
                     <FilterDropdown
                       filterViewMode={filterViewMode}
                       onFilterViewModeChange={setFilterViewMode}
+                      viewMode={viewMode}
+                      onViewModeChange={handleViewModeChange}
                       filters={filters}
                       isDarkMode={isDarkMode}
                     />
@@ -201,6 +203,7 @@ export function EventsPageContainer() {
                 filters.searchQuery !== "" ||
                 filters.freeFoodFilter ||
                 filters.savedFilter ||
+                filters.datePreset !== "upcoming" ||
                 filters.sortBy !== "date" ||
                 filters.sortOrder !== "asc"
               }

@@ -1,5 +1,5 @@
-import type { Event } from "@/shared/types";
-import { getPrimaryOccurrence } from "@/shared/utils/date";
+import type { DatePreset, Event } from "@/shared/types";
+import { getPrimaryOccurrence, isEventInDatePreset } from "@/shared/utils/date";
 import { getEventCategory } from "@/shared/utils/event";
 
 /**
@@ -15,6 +15,7 @@ export interface SearchFilters {
   savedFilter: boolean;
   freeFoodFilter: boolean;
   selectedDays: string[];
+  datePreset: DatePreset;
   priceRange: { min: string; max: string };
   selectedLocations: string[];
   selectedFoods: string[];
@@ -70,7 +71,10 @@ export function filterEvents(
       return false;
     }
 
-
+    // Date preset filter
+    if (!isEventInDatePreset(event, filters.datePreset)) {
+      return false;
+    }
 
     // Price range — only applies when the freeFood quick filter is off.
     if (!filters.freeFoodFilter) {

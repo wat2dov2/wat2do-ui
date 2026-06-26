@@ -86,6 +86,8 @@ function normalizeEventQuery(query: EventListQuery | undefined): EventListQuery 
     ids: query?.ids,
     sortBy: query?.sortBy || "date",
     sortOrder: query?.sortOrder === "desc" ? "desc" : "asc",
+    startUtc: query?.startUtc,
+    endUtc: query?.endUtc,
   };
 }
 
@@ -119,6 +121,8 @@ function getEventsQueryKey(school: string | null, query: EventListQuery): string
     ids: query.ids ?? null,
     sortBy: query.sortBy ?? "date",
     sortOrder: query.sortOrder ?? "asc",
+    startUtc: query.startUtc ?? null,
+    endUtc: query.endUtc ?? null,
   });
 }
 

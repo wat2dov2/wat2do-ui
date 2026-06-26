@@ -30,6 +30,8 @@ export interface EventListQuery {
   ids?: number[];
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  startUtc?: string;
+  endUtc?: string;
 }
 
 export type PaginatedEventsResponse = Omit<ApiPaginatedEventSummaryResponse, "items"> & {
@@ -75,6 +77,8 @@ export async function fetchEventsPage(query: EventListQuery = {}): Promise<Pagin
   appendValues(params, "ids", query.ids);
   if (query.sortBy) params.set("sort_by", query.sortBy);
   if (query.sortOrder) params.set("sort_order", query.sortOrder);
+  if (query.startUtc) params.set("start_utc", query.startUtc);
+  if (query.endUtc) params.set("end_utc", query.endUtc);
 
   const response = await api.get<ApiPaginatedEventSummaryResponse>(`/events/?${params.toString()}`);
   return {

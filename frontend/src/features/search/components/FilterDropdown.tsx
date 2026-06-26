@@ -4,7 +4,7 @@ import { AIGenerationInput } from "@/shared/ui/ai-generation-input";
 import { VisualFilters } from "@/features/search/components/VisualFilters";
 import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor";
 import { useProfileCompleted } from "@/features/auth";
-import type { FilterViewMode } from "@/shared/types";
+import type { FilterViewMode, ViewMode } from "@/shared/types";
 
 interface PieMenuItem {
   id: string;
@@ -61,6 +61,8 @@ interface FilterDropdownFilters {
 interface FilterDropdownProps {
   filterViewMode: FilterViewMode;
   onFilterViewModeChange: (mode: FilterViewMode) => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
   filters: FilterDropdownFilters;
   isDarkMode: boolean;
 }
@@ -68,6 +70,8 @@ interface FilterDropdownProps {
 export function FilterDropdown({
   filterViewMode,
   onFilterViewModeChange,
+  viewMode,
+  onViewModeChange,
   filters,
   isDarkMode,
 }: FilterDropdownProps) {
@@ -118,7 +122,11 @@ export function FilterDropdown({
       />
 
       {filterViewMode === "visual" ? (
-        <VisualFilters filters={filters} />
+        <VisualFilters
+          filters={filters}
+          viewMode={viewMode}
+          onViewModeChange={onViewModeChange}
+        />
       ) : (
         <JSONFilterEditor
           jsonValue={filters.jsonValue}
