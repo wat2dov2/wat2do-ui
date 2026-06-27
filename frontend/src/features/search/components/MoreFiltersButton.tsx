@@ -39,7 +39,7 @@ export function MoreFiltersButton({
               : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
           }`}
         >
-          {t("common.moreFilters")}
+          {t("common.advancedFilters")}
           {filterCount > 0 && (
             <span
               role="button"
@@ -71,7 +71,7 @@ export function MoreFiltersButton({
       </DrawerTrigger>
       <DrawerContent className="max-h-[85dvh] overflow-hidden p-0">
         <DrawerHeader className="sr-only">
-          <DrawerTitle>{t("common.moreFilters")}</DrawerTitle>
+          <DrawerTitle>{t("common.advancedFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
         </DrawerHeader>
         <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto p-4">

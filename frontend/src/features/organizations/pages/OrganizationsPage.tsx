@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import NumberFlow from "@number-flow/react";
 import {
@@ -56,12 +56,20 @@ export function OrganizationsPage() {
 
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const shouldShowOrganizationMeta = !((activeTab === "followed" || activeTab === "claimed") && !authed);
+  const shouldShowScopeDropdown = authed;
   const tabOptions = [
     { value: "all" as const, label: t("organizations.allClubs") },
     { value: "followed" as const, label: t("organizations.followedClubs") },
     { value: "claimed" as const, label: t("organizations.claimedClubs") },
   ] satisfies Array<{ value: OrganizationScope; label: string }>;
   const activeTabOption = tabOptions.find((option) => option.value === activeTab) ?? tabOptions[0]!;
+
+  useEffect(() => {
+    if (!authed && activeTab !== "all") {
+      setActiveTab("all");
+    }
+  }, [activeTab, authed, setActiveTab]);
+
   const {
     scrollRef: categoryScrollRef,
     scrollEndRef: categoryScrollEndRef,
@@ -94,28 +102,29 @@ export function OrganizationsPage() {
             clearLabel={t("organizations.clearSearch")}
           />
 
-          {/* Organization scope dropdown */}
-          <div className="flex shrink-0 self-stretch">
-            <Select
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as OrganizationScope)}
-            >
-              <SelectTrigger
-                showIcon={false}
-                className="h-full data-[size=default]:h-full"
-                aria-label={activeTabOption.label}
+          {shouldShowScopeDropdown && (
+            <div className="flex shrink-0 self-stretch">
+              <Select
+                value={activeTab}
+                onValueChange={(value) => setActiveTab(value as OrganizationScope)}
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {tabOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                <SelectTrigger
+                  showIcon={false}
+                  className="h-full data-[size=default]:h-full"
+                  aria-label={activeTabOption.label}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {tabOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Filters */}

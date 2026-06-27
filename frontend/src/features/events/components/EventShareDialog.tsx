@@ -6,13 +6,15 @@ import {
   Linkedin,
   Mail,
   MessageCircle,
+  X,
 } from "@/shared/ui/doodle-icons";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { toast } from "@/shared/hooks/use-toast";
 import { tracker } from "@/shared/services/trackingService";
@@ -130,57 +132,65 @@ export function EventShareDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="w-[calc(100vw-32px)] max-w-sm rounded-2xl p-6"
-        showCloseButton
-      >
-        <DialogTitle className="text-lg font-bold">
-          {t("common.share")}
-        </DialogTitle>
-        <DialogDescription className="sr-only">
-          {t("events.shareDialog.description")}
-        </DialogDescription>
-
-        <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-secondary/50 p-1.5 pl-3">
-          <span className="flex-1 truncate text-sm text-muted-foreground">
-            {shareUrl}
-          </span>
-          <Button
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="overflow-hidden p-0">
+        <DrawerClose asChild>
+          <button
             type="button"
-            onMouseDown={handleCopy}
-            size="sm"
-            className="shrink-0 gap-1.5 rounded-lg px-3 text-xs"
+            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label={t("common.close")}
           >
-            {copied && <Check className="size-3.5" />}
-            {t("events.shareDialog.copy")}
-          </Button>
-        </div>
+            <X className="size-4" />
+          </button>
+        </DrawerClose>
+        <div className="mx-auto w-full max-w-sm p-4">
+          <DrawerTitle className="pr-10 text-lg font-bold">
+            {t("common.share")}
+          </DrawerTitle>
+          <DrawerDescription className="sr-only">
+            {t("events.shareDialog.description")}
+          </DrawerDescription>
 
-        <div className="mt-2 grid grid-cols-5 gap-1">
-          {CHANNELS.map(({ id, labelKey, Icon, bgClass }) => {
-            const label = t(labelKey);
-            return (
-              <button
-                key={id}
-                type="button"
-                onMouseDown={() => handleShare(id)}
-                className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary"
-                aria-label={t("events.shareDialog.shareOn", { channel: label })}
-              >
-                <span
-                  className={`flex h-11 w-11 items-center justify-center rounded-full text-white ${bgClass}`}
+          <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-secondary/50 p-1.5 pl-3">
+            <span className="flex-1 truncate text-sm text-muted-foreground">
+              {shareUrl}
+            </span>
+            <Button
+              type="button"
+              onMouseDown={handleCopy}
+              size="sm"
+              className="shrink-0 gap-1.5 rounded-lg px-3 text-xs"
+            >
+              {copied && <Check className="size-3.5" />}
+              {t("events.shareDialog.copy")}
+            </Button>
+          </div>
+
+          <div className="mt-2 grid grid-cols-5 gap-1">
+            {CHANNELS.map(({ id, labelKey, Icon, bgClass }) => {
+              const label = t(labelKey);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onMouseDown={() => handleShare(id)}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary"
+                  aria-label={t("events.shareDialog.shareOn", { channel: label })}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={2} />
-                </span>
-                <span className="text-[11px] font-medium text-foreground">
-                  {label}
-                </span>
-              </button>
-            );
-          })}
+                  <span
+                    className={`flex h-11 w-11 items-center justify-center rounded-full text-white ${bgClass}`}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={2} />
+                  </span>
+                  <span className="text-[11px] font-medium text-foreground">
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

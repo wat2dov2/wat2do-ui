@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { CheckCircle2 } from "@/shared/ui/doodle-icons";
+import { CheckCircle2, X } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Textarea } from "@/shared/ui/textarea";
@@ -40,15 +41,15 @@ export function EventReportDialog({
     try {
       await reportEventToBackend(eventId, trimmedReason);
       toast({
-        title: "Report Submitted",
-        description: t("events.reportDialog.submittedTitle"),
+        title: t("events.reportDialog.submittedTitle"),
+        description: t("events.reportDialog.submittedDescription", { title: eventTitle }),
         variant: "success",
       });
       setIsSubmitted(true);
     } catch (err) {
       console.error("Failed to report event:", err);
       toast({
-        title: "Submission Failed",
+        title: t("events.reportDialog.submitFailed"),
         description: t("events.reportDialog.submitFailed"),
         variant: "destructive",
       });
@@ -58,67 +59,79 @@ export function EventReportDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => !isSubmitting && onOpenChange(nextOpen)}>
-      <DialogContent className="max-w-md">
-        {isSubmitted ? (
-          <>
-            <DialogHeader>
-              <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <CheckCircle2 className="size-5" />
+    <Drawer open={open} onOpenChange={(nextOpen) => !isSubmitting && onOpenChange(nextOpen)}>
+      <DrawerContent className="overflow-hidden p-0">
+        <DrawerClose asChild>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-40"
+            aria-label={t("common.close")}
+          >
+            <X className="size-4" />
+          </button>
+        </DrawerClose>
+        <div className="mx-auto w-full max-w-md space-y-4 p-4">
+          {isSubmitted ? (
+            <>
+              <DrawerHeader className="items-start p-0 pr-10 text-left">
+                <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <CheckCircle2 className="size-5" />
+                </div>
+                <DrawerTitle>{t("events.reportDialog.submittedTitle")}</DrawerTitle>
+                <DrawerDescription>
+                  {t("events.reportDialog.submittedDescription", { title: eventTitle })}
+                </DrawerDescription>
+              </DrawerHeader>
+
+              <div className="flex justify-end">
+                <Button type="button" onMouseDown={() => onOpenChange(false)}>
+                  {t("common.done")}
+                </Button>
               </div>
-              <DialogTitle>{t("events.reportDialog.submittedTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("events.reportDialog.submittedDescription", { title: eventTitle })}
-              </DialogDescription>
-            </DialogHeader>
+            </>
+          ) : (
+            <>
+              <DrawerHeader className="p-0 pr-10 text-left">
+                <DrawerTitle>{t("events.reportDialog.title")}</DrawerTitle>
+                <DrawerDescription>
+                  {t("events.reportDialog.description", { title: eventTitle })}
+                </DrawerDescription>
+              </DrawerHeader>
 
-            <div className="flex justify-end">
-              <Button type="button" onMouseDown={() => onOpenChange(false)}>
-                {t("common.done")}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle>{t("events.reportDialog.title")}</DialogTitle>
-              <DialogDescription>
-                {t("events.reportDialog.description", { title: eventTitle })}
-              </DialogDescription>
-            </DialogHeader>
-
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={t("events.reportDialog.placeholder")}
-              maxLength={500}
-              className="min-h-28"
-              disabled={isSubmitting}
-              autoFocus
-            />
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onMouseDown={() => onOpenChange(false)}
+              <Textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={t("events.reportDialog.placeholder")}
+                maxLength={500}
+                className="min-h-28"
                 disabled={isSubmitting}
-              >
-                {t("common.cancel")}
-              </Button>
-              <LoadingButton
-                type="button"
-                onMouseDown={handleSubmit}
-                disabled={!trimmedReason}
-                isLoading={isSubmitting}
-                loadingText={t("common.submitting")}
-              >
-                {t("events.reportDialog.submit")}
-              </LoadingButton>
-            </div>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+                autoFocus
+              />
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onMouseDown={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <LoadingButton
+                  type="button"
+                  onMouseDown={handleSubmit}
+                  disabled={!trimmedReason}
+                  isLoading={isSubmitting}
+                  loadingText={t("common.submitting")}
+                >
+                  {t("events.reportDialog.submit")}
+                </LoadingButton>
+              </div>
+            </>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

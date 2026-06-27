@@ -182,7 +182,7 @@ export function AddOrganizationModal({
             <X className="size-4" />
           </button>
         </DrawerClose>
-        <div className="max-h-[96dvh] overflow-y-auto p-4 sm:p-6">
+        <div className="max-h-[92dvh] overflow-y-auto p-4 sm:p-6">
           <form className="space-y-6">
             <DrawerHeader className="p-0 pr-11 text-left">
               <div className="flex items-start gap-2">
@@ -210,77 +210,76 @@ export function AddOrganizationModal({
               </div>
             </DrawerHeader>
             <FieldGroup>
-            <FieldSet>
-              <FieldLegend>{t("forms.requiredInformation")}</FieldLegend>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
-                    {t("forms.organizationName")} <span className="text-error">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="club-name"
-                    type="text"
-                    value={form.formData.organization_name}
-                    onChange={(e) => form.updateField("organization_name", e.target.value)}
-                    onBlur={() => form.handleBlur("organization_name")}
-                    placeholder={t("forms.organizationNamePlaceholder")}
-                    className={form.errors.organization_name ? "border-error" : ""}
-                  />
-                  {form.errors.organization_name && (
-                    <FieldError className="text-xs">{form.errors.organization_name}</FieldError>
-                  )}
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="club-school" className="text-sm font-medium text-foreground">
-                    {t("schools.school")} <span className="text-error">*</span>
-                  </FieldLabel>
-                  <SchoolCombobox
-                    id="club-school"
-                    value={form.formData.school || ""}
-                    onChange={(value) => form.updateField("school", value)}
-                    variant="field"
-                    placeholder={t("schools.selectSchool")}
-                  />
-                  {form.errors.school && (
-                    <FieldError className="text-xs">{form.errors.school}</FieldError>
-                  )}
-                </Field>
-
-                <Field>
-                  <FieldLabel className="text-sm font-medium text-foreground">
-                    {t("forms.categories")} <span className="text-error">*</span>
-                  </FieldLabel>
-                  <MultiSelect
-                    options={getOrganizationCategories()}
-                    selected={form.formData.categories}
-                    onToggle={toggleCategory}
-                    className="justify-start"
-                    getLabel={(category) => translateCategory(category, t)}
-                  />
-                  {form.touched.categories && form.errors.categories && (
-                    <FieldError className="text-xs">{form.errors.categories}</FieldError>
-                  )}
-                </Field>
-                {!isEditMode && (
+              <FieldSet>
+                <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="owner-user-id" className="text-sm font-medium text-foreground">
-                      {t("forms.ownerUserId")}
+                    <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
+                      {t("forms.organizationName")} <span className="text-error">*</span>
                     </FieldLabel>
                     <Input
-                      id="owner-user-id"
+                      id="club-name"
                       type="text"
-                      value={form.formData.owner_user_id}
-                      onChange={(e) => form.updateField("owner_user_id", e.target.value)}
-                      placeholder={t("forms.ownerUserIdPlaceholder")}
+                      value={form.formData.organization_name}
+                      onChange={(e) => form.updateField("organization_name", e.target.value)}
+                      onBlur={() => form.handleBlur("organization_name")}
+                      placeholder={t("forms.organizationNamePlaceholder")}
+                      className={form.errors.organization_name ? "border-error" : ""}
                     />
-                    <FieldDescription>
-                      {t("forms.ownerUserIdDescription")}
-                    </FieldDescription>
+                    {form.errors.organization_name && (
+                      <FieldError className="text-xs">{form.errors.organization_name}</FieldError>
+                    )}
                   </Field>
-                )}
-              </FieldGroup>
-            </FieldSet>
+
+                  <Field>
+                    <FieldLabel htmlFor="club-school" className="text-sm font-medium text-foreground">
+                      {t("schools.school")} <span className="text-error">*</span>
+                    </FieldLabel>
+                    <SchoolCombobox
+                      id="club-school"
+                      value={form.formData.school || ""}
+                      onChange={(value) => form.updateField("school", value)}
+                      variant="field"
+                      placeholder={t("schools.selectSchool")}
+                    />
+                    {form.errors.school && (
+                      <FieldError className="text-xs">{form.errors.school}</FieldError>
+                    )}
+                  </Field>
+
+                  <Field>
+                    <FieldLabel className="text-sm font-medium text-foreground">
+                      {t("forms.categories")} <span className="text-error">*</span>
+                    </FieldLabel>
+                    <MultiSelect
+                      options={getOrganizationCategories()}
+                      selected={form.formData.categories}
+                      onToggle={toggleCategory}
+                      className="justify-start"
+                      getLabel={(category) => translateCategory(category, t)}
+                    />
+                    {form.touched.categories && form.errors.categories && (
+                      <FieldError className="text-xs">{form.errors.categories}</FieldError>
+                    )}
+                  </Field>
+                  {!isEditMode && (
+                    <Field>
+                      <FieldLabel htmlFor="owner-user-id" className="text-sm font-medium text-foreground">
+                        {t("forms.ownerUserId")}
+                      </FieldLabel>
+                      <Input
+                        id="owner-user-id"
+                        type="text"
+                        value={form.formData.owner_user_id}
+                        onChange={(e) => form.updateField("owner_user_id", e.target.value)}
+                        placeholder={t("forms.ownerUserIdPlaceholder")}
+                      />
+                      <FieldDescription>
+                        {t("forms.ownerUserIdDescription")}
+                      </FieldDescription>
+                    </Field>
+                  )}
+                </FieldGroup>
+              </FieldSet>
 
             <FieldSeparator />
 
@@ -372,18 +371,18 @@ export function AddOrganizationModal({
           </form>
 
           <DrawerFooter className="sr-only">
-          <DrawerClose asChild>
-            <Button variant="outline">
-              {t("common.cancel")}
-            </Button>
-          </DrawerClose>
-          <LoadingButton
-            onMouseDown={handleSubmit}
-            isLoading={isSubmitting}
-            loadingText={t("common.pleaseWait") || "Please wait..."}
-          >
-            {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
-          </LoadingButton>
+            <DrawerClose asChild>
+              <Button variant="outline">
+                {t("common.cancel")}
+              </Button>
+            </DrawerClose>
+            <LoadingButton
+              onMouseDown={handleSubmit}
+              isLoading={isSubmitting}
+              loadingText={t("common.pleaseWait") || "Please wait..."}
+            >
+              {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
+            </LoadingButton>
           </DrawerFooter>
         </div>
       </DrawerContent>

@@ -174,7 +174,7 @@ export function EventDetailsModal({
       <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
         <div
           ref={contentRef}
-          className="max-h-[96dvh] overflow-y-auto border-0 p-0"
+          className="max-h-[92dvh] overflow-y-auto border-0 p-0"
         >
         {displayedEvent && (
           <>
@@ -208,8 +208,8 @@ export function EventDetailsModal({
             </div>
 
             <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
-              <DrawerHeader className="p-0 text-center">
-                <div className="mb-3 flex items-center justify-end gap-1.5">
+              <DrawerHeader className="relative min-h-9 p-0 text-center">
+                <div className="absolute right-0 top-0 z-10 flex items-center justify-end gap-1.5">
                   <Button
                     type="button"
                     variant={isSaveActive ? "secondary" : "outline"}
@@ -283,7 +283,7 @@ export function EventDetailsModal({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <div className="mx-auto max-w-2xl text-center">
+                <div className="mx-auto max-w-2xl px-16 text-center sm:px-28">
                   <DrawerTitle className="leading-tight">{displayedEvent.title}</DrawerTitle>
                   <DrawerDescription>{displayedEvent.organization}</DrawerDescription>
                 </div>

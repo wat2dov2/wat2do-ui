@@ -190,13 +190,13 @@ function SubmitEventModalFormBody({
       <>
         <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
           <DrawerContent
-            className="flex h-[96dvh] overflow-hidden p-0 outline-none focus:outline-none focus-visible:outline-none [&_[data-slot=drawer-handle]]:hidden"
+            className="flex h-[92dvh] overflow-hidden p-0 outline-none focus:outline-none focus-visible:outline-none"
             aria-describedby={undefined}
           >
             <DrawerClose asChild>
               <button
                 type="button"
-                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 aria-label={t("common.close")}
               >
                 <X className="size-4" />
@@ -281,7 +281,7 @@ function SubmitEventModalContent({
           <DrawerClose asChild>
             <button
               type="button"
-              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               aria-label={t("common.close")}
             >
               <X className="size-4" />
