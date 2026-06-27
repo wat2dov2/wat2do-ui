@@ -48,8 +48,8 @@ export function SubmittedSearchInput({
           onKeyDown?.(event);
         }}
         className={cn(
-          "block h-full w-full min-w-0 rounded-none bg-transparent px-2 py-2 text-base leading-7 text-secondary-foreground outline-none placeholder:text-muted-foreground",
-          value ? "pr-[5.25rem]" : "pr-[3.25rem]",
+          "block h-full w-full min-w-0 rounded-none bg-transparent px-3 py-2 text-base leading-7 text-secondary-foreground outline-none placeholder:text-muted-foreground",
+          value ? "pr-[5.5rem]" : "pr-14",
         )}
       />
       {value && (
@@ -71,7 +71,7 @@ export function SubmittedSearchInput({
           event.preventDefault();
           onSubmit();
         }}
-        className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border/60 bg-muted/70 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border/60 bg-secondary text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/60"
         aria-label={submitLabel}
       >
         <Search className="size-4" />

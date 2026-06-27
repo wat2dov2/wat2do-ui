@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown, Sparkles, Grid3x3 } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
@@ -152,30 +152,11 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
     [filters.availableOrganizations],
   );
 
-  // Manage expanded sections state locally (UI state, not business logic)
-  const [expandedSections, setExpandedSections] = useState({
-    viewMode: false,
-    category: true,
-    location: false,
-    priceRange: false,
-    food: false,
-    dayOfWeek: false,
-    registration: false,
-    sort: false,
-    organization: false,
-  });
-
-  const toggleSection = useCallback((section: keyof typeof expandedSections) => {
-    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  }, []);
-
   return (
     <div className="-space-y-px">
       {/* View Mode */}
       <FilterSection
         title={t("common.view")}
-        expanded={expandedSections.viewMode}
-        onToggle={() => toggleSection("viewMode")}
         indicator={
           viewMode === "calendar"
             ? t("settings.appearance.calendar")
@@ -210,8 +191,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Category Filter */}
       <FilterSection
         title={t("filters.category")}
-        expanded={expandedSections.category}
-        onToggle={() => toggleSection("category")}
         indicator={
           filters.selectedCategories.length > 0
             ? `${filters.selectedCategories.length}`
@@ -250,8 +229,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Location Filter (free-text: filter events by location substring) */}
       <FilterSection
         title={t("filters.location")}
-        expanded={expandedSections.location}
-        onToggle={() => toggleSection("location")}
         indicator={
           (filters.selectedLocations[0]?.trim() ?? "") ? "1" : undefined
         }
@@ -267,8 +244,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Food Filter */}
       <FilterSection
         title={t("filters.food")}
-        expanded={expandedSections.food}
-        onToggle={() => toggleSection("food")}
         indicator={
           filters.selectedFoods.length > 0
             ? `${filters.selectedFoods.length}`
@@ -310,8 +285,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Day of Week Filter */}
       <FilterSection
         title={t("filters.dayOfWeek")}
-        expanded={expandedSections.dayOfWeek}
-        onToggle={() => toggleSection("dayOfWeek")}
         indicator={
           filters.selectedDays.length > 0
             ? `${filters.selectedDays.length}`
@@ -354,8 +327,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Organization Filter */}
       <FilterSection
         title={t("filters.organization", "Organization")}
-        expanded={expandedSections.organization}
-        onToggle={() => toggleSection("organization")}
         indicator={
           filters.selectedOrganizations.length > 0
             ? `${filters.selectedOrganizations.length}`
@@ -390,8 +361,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Price Range Filter */}
       <FilterSection
         title={t("filters.priceRange")}
-        expanded={expandedSections.priceRange}
-        onToggle={() => toggleSection("priceRange")}
         indicator={
           filters.priceRange.min || filters.priceRange.max ? "1" : undefined
         }
@@ -431,8 +400,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Requires Registration Filter */}
       <FilterSection
         title={t("filters.registration")}
-        expanded={expandedSections.registration}
-        onToggle={() => toggleSection("registration")}
         indicator={filters.registration ? "1" : undefined}
         onClear={() => filters.setRegistration(false)}
       >
@@ -452,8 +419,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       {/* Sort Filter */}
       <FilterSection
         title={t("filters.sort")}
-        expanded={expandedSections.sort}
-        onToggle={() => toggleSection("sort")}
       >
         <div className="space-y-2">
           <div className="relative">

@@ -8,8 +8,6 @@ import {
 
 interface FilterSectionProps {
   title: string;
-  expanded: boolean;
-  onToggle: () => void;
   children: React.ReactNode;
   indicator?: string;
   onClear?: () => void;
@@ -17,19 +15,14 @@ interface FilterSectionProps {
 
 export const FilterSection = React.memo(function FilterSection({
   title,
-  expanded,
-  onToggle,
   children,
   indicator,
   onClear,
 }: FilterSectionProps) {
 
   return (
-    <div className={`space-y-2 relative -mx-4 ${expanded ? "border-y border-border" : ""}`}>
-      <button
-        onMouseDown={onToggle}
-        className="flex items-center justify-between w-full group hover:opacity-80 transition-opacity py-3 px-4"
-      >
+    <div className="space-y-2 relative -mx-2 border-y border-border sm:-mx-4">
+      <div className="flex items-center justify-between w-full px-2 py-3 sm:px-4">
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -47,6 +40,7 @@ export const FilterSection = React.memo(function FilterSection({
               tabIndex={0}
               aria-label={`Clear ${title}`}
               onMouseDown={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 onClear?.();
               }}
@@ -64,8 +58,8 @@ export const FilterSection = React.memo(function FilterSection({
             </span>
           )}
         </div>
-      </button>
-      {expanded && <div className="animate-in fade-in duration-200 px-4 pb-3">{children}</div>}
+      </div>
+      <div className="px-2 pb-3 sm:px-4">{children}</div>
     </div>
   );
 });

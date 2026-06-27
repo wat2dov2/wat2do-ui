@@ -171,10 +171,10 @@ export function EventDetailsModal({
 
   return (
     <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DrawerContent className="mx-auto max-h-[92dvh] w-[calc(100vw-16px)] max-w-4xl overflow-hidden p-0 sm:w-[calc(100vw-48px)] [&_[data-slot=drawer-handle]]:hidden">
+      <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
         <div
           ref={contentRef}
-          className="max-h-[92dvh] overflow-y-auto border-0 p-0"
+          className="max-h-[96dvh] overflow-y-auto border-0 p-0"
         >
         {displayedEvent && (
           <>
@@ -207,7 +207,7 @@ export function EventDetailsModal({
               />
             </div>
 
-            <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
+            <ModalContentWrapper className="space-y-4 px-2 py-3 sm:px-5 sm:py-4">
               <DrawerHeader className="p-0 text-left">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                   <div className="min-w-0">

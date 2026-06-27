@@ -22,19 +22,20 @@
 import { useCallback, useState, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Building2, Calendar, Heart, LogIn } from "@/shared/ui/doodle-icons";
+import { Building2, Calendar, Heart, LogIn, X } from "@/shared/ui/doodle-icons";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { CommandPalette } from "@/shared/components/CommandPalette";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { CommandItem } from "@/shared/ui/command";
 import { Button } from "@/shared/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useFilterUrlActions } from "@/features/search";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
@@ -176,52 +177,63 @@ export function ModalContainer() {
 
   return (
     <>
-      <Dialog open={showSubmitChoice} onOpenChange={setShowSubmitChoice}>
-        <DialogContent className="max-w-md" aria-describedby="submit-choice-description">
-          <DialogHeader>
-            <DialogTitle>{t("submitChoice.title")}</DialogTitle>
-            <DialogDescription id="submit-choice-description">
-              {t("submitChoice.description")}
-            </DialogDescription>
-          </DialogHeader>
+      <Drawer open={showSubmitChoice} onOpenChange={setShowSubmitChoice}>
+        <DrawerContent className="overflow-hidden p-0" aria-describedby="submit-choice-description">
+          <div className="max-h-[96dvh] overflow-y-auto px-2 py-3 sm:px-4 sm:py-4">
+            <DrawerClose asChild>
+              <button
+                type="button"
+                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                aria-label={t("common.close")}
+              >
+                <X className="size-4" />
+              </button>
+            </DrawerClose>
+            <DrawerHeader className="p-0 pr-11 text-left">
+              <DrawerTitle>{t("submitChoice.title")}</DrawerTitle>
+              <DrawerDescription id="submit-choice-description">
+                {t("submitChoice.description")}
+              </DrawerDescription>
+            </DrawerHeader>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
-              onMouseDown={handleChooseSubmitEvent}
-            >
-              <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <Calendar className="size-5" />
-              </span>
-              <span className="min-w-0 space-y-1">
-                <span className="block font-medium text-foreground">{t("submitChoice.eventTitle")}</span>
-                <span className="block text-sm font-normal text-muted-foreground">
-                  {t("submitChoice.eventDescription")}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
+                onMouseDown={handleChooseSubmitEvent}
+              >
+                <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Calendar className="size-5" />
                 </span>
-              </span>
-            </Button>
+                <span className="min-w-0 space-y-1">
+                  <span className="block font-medium text-foreground">{t("submitChoice.eventTitle")}</span>
+                  <span className="block text-sm font-normal text-muted-foreground">
+                    {t("submitChoice.eventDescription")}
+                  </span>
+                </span>
+              </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
-              onMouseDown={handleChooseSubmitOrganization}
-            >
-              <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <Building2 className="size-5" />
-              </span>
-              <span className="min-w-0 space-y-1">
-                <span className="block font-medium text-foreground">{t("submitChoice.organizationTitle")}</span>
-                <span className="block text-sm font-normal text-muted-foreground">
-                  {t("submitChoice.organizationDescription")}
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
+                onMouseDown={handleChooseSubmitOrganization}
+              >
+                <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Building2 className="size-5" />
                 </span>
-              </span>
-            </Button>
+                <span className="min-w-0 space-y-1">
+                  <span className="block font-medium text-foreground">{t("submitChoice.organizationTitle")}</span>
+                  <span className="block text-sm font-normal text-muted-foreground">
+                    {t("submitChoice.organizationDescription")}
+                  </span>
+                </span>
+              </Button>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
       <Suspense fallback={null}>
         <SubmitEventModal

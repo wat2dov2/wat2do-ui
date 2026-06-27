@@ -101,17 +101,53 @@ function DropdownMenuSubContent({
 function DropdownMenuItem({
   className,
   inset,
+  onMouseDown,
+  onSelect,
   variant = "default",
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean;
   variant?: "default" | "destructive";
 }) {
+  const handledMouseSelectRef = React.useRef(false);
+  const preventedMouseSelectRef = React.useRef(false);
+
+  const handleMouseDown = React.useCallback(
+    (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
+      onMouseDown?.(event);
+      if (event.defaultPrevented || event.button !== 0 || !onSelect) return;
+
+      const selectEvent = new Event("select", { cancelable: true });
+      onSelect(selectEvent);
+      handledMouseSelectRef.current = true;
+      preventedMouseSelectRef.current = selectEvent.defaultPrevented;
+    },
+    [onMouseDown, onSelect],
+  );
+
+  const handleSelect = React.useCallback(
+    (event: Event) => {
+      if (handledMouseSelectRef.current) {
+        handledMouseSelectRef.current = false;
+        if (preventedMouseSelectRef.current) {
+          event.preventDefault();
+          preventedMouseSelectRef.current = false;
+        }
+        return;
+      }
+
+      onSelect?.(event);
+    },
+    [onSelect],
+  );
+
   return (
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
+      onMouseDown={handleMouseDown}
+      onSelect={handleSelect}
       className={cn(
         "focus:bg-secondary focus:text-foreground data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error relative flex cursor-default select-none items-center gap-2 rounded-lg px-2 py-1.5 text-xs outline-hidden transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-[inset=true]:pl-8 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0",
         className,

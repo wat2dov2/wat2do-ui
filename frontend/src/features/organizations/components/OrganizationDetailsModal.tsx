@@ -13,8 +13,16 @@ import {
   Bookmark,
   Shield,
   UserPlus,
+  X,
 } from "@/shared/ui/doodle-icons";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { toast } from "@/shared/hooks/use-toast";
 import { useAuthState } from "@/features/auth";
@@ -219,109 +227,120 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px] overflow-hidden p-6 bg-card border-border rounded-2xl shadow-xl">
-        <DialogHeader>
-          <div className="flex items-start gap-4">
-            <div className="size-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-inner">
-              <Building2 className="size-6 text-primary" />
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="overflow-hidden p-0">
+        <div className="max-h-[96dvh] overflow-y-auto px-2 py-3 sm:px-4 sm:py-4">
+          <DrawerClose asChild>
+            <button
+              type="button"
+              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              aria-label={t("common.close")}
+            >
+              <X className="size-4" />
+            </button>
+          </DrawerClose>
+          <DrawerHeader className="p-0 pr-11 text-left">
+            <div className="flex items-start gap-4">
+              <div className="size-12 shrink-0 rounded-xl border border-primary/20 bg-primary/10 flex items-center justify-center shadow-inner">
+                <Building2 className="size-6 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <DrawerTitle className="text-xl font-bold text-foreground leading-tight">
+                  {organization.organization_name}
+                </DrawerTitle>
+                <DrawerDescription className="text-sm text-muted-foreground">
+                  {organization.organization_type}
+                </DrawerDescription>
+              </div>
             </div>
-            <div className="space-y-1">
-              <DialogTitle className="text-xl font-bold text-foreground leading-tight">
-                {organization.organization_name}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">
-                {organization.organization_type}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+          </DrawerHeader>
 
-        {/* Organization Details Body */}
-        <div className="space-y-5">
-          {/* Categories */}
-          <OrganizationCategoryBadges
-            categories={organization.categories}
-            badgeClassName="text-xs px-2.5"
-          />
+          {/* Organization Details Body */}
+          <div className="mt-5 space-y-5">
+            {/* Categories */}
+            <OrganizationCategoryBadges
+              categories={organization.categories}
+              badgeClassName="text-xs px-2.5"
+            />
 
-          {/* Social Links */}
-          <div className="p-4 bg-secondary/30 border border-border rounded-xl space-y-3">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t("organizationPanel.linksAndSocials")}
-            </h4>
-            <div className="grid grid-cols-1 gap-2">
-              {organization.organization_page && (
-                <a
-                  href={sanitizeHref(organization.organization_page)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
-                >
-                  <ExternalLink className="size-4 text-muted-foreground" />
-                  <span className="truncate">{organization.organization_page}</span>
-                </a>
-              )}
-              {organization.ig && (
-                <a
-                  href={`https://instagram.com/${organization.ig}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
-                >
-                  <Instagram className="size-4 text-muted-foreground" />
-                  <span>@{organization.ig}</span>
-                </a>
-              )}
-              {organization.discord && sanitizeHref(organization.discord) && (
-                <a
-                  href={sanitizeHref(organization.discord)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
-                >
-                  <MessageCircle className="size-4 text-muted-foreground" />
-                  <span>{t("organizationPanel.joinDiscord")}</span>
-                </a>
-              )}
-            </div>
-          </div>
-
-          {/* Action Row */}
-          <div className="pt-5 border-t border-border flex flex-col gap-3">
-            <div className="flex gap-3">
-              {isAuthenticated && (
-                <Button
-                  type="button"
-                  variant={isSaved ? "secondary" : "outline"}
-                  size="icon"
-                  onMouseDown={() => toggleSave(organization.id)}
-                  className={`border-border/80 shrink-0 ${
-                    isSaved ? "border-primary/25 bg-primary/10 text-primary hover:bg-primary/15" : ""
-                  }`}
-                  title={isSaved ? t("organizations.saved") : t("organizations.save")}
-                >
-                  <Bookmark className={`size-4 ${isSaved ? "fill-current" : ""}`} />
-                </Button>
-              )}
-              <div className="flex-1">
-                {renderMembershipSection()}
+            {/* Social Links */}
+            <div className="p-4 bg-secondary/30 border border-border rounded-xl space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {t("organizationPanel.linksAndSocials")}
+              </h4>
+              <div className="grid grid-cols-1 gap-2">
+                {organization.organization_page && (
+                  <a
+                    href={sanitizeHref(organization.organization_page)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
+                  >
+                    <ExternalLink className="size-4 text-muted-foreground" />
+                    <span className="truncate">{organization.organization_page}</span>
+                  </a>
+                )}
+                {organization.ig && (
+                  <a
+                    href={`https://instagram.com/${organization.ig}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
+                  >
+                    <Instagram className="size-4 text-muted-foreground" />
+                    <span>@{organization.ig}</span>
+                  </a>
+                )}
+                {organization.discord && sanitizeHref(organization.discord) && (
+                  <a
+                    href={sanitizeHref(organization.discord)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
+                  >
+                    <MessageCircle className="size-4 text-muted-foreground" />
+                    <span>{t("organizationPanel.joinDiscord")}</span>
+                  </a>
+                )}
               </div>
             </div>
 
-            {isAuthenticated && !isUnowned && (
-              <Button
-                variant="ghost"
-                onMouseDown={() => setShowJoinModal(true)}
-                className="w-full text-xs text-muted-foreground hover:text-primary font-medium h-8"
-              >
-                <UserPlus className="size-3.5 mr-1" />
-                {t("organizations.applyToJoin")}
-              </Button>
-            )}
+            {/* Action Row */}
+            <div className="pt-5 border-t border-border flex flex-col gap-3">
+              <div className="flex gap-3">
+                {isAuthenticated && (
+                  <Button
+                    type="button"
+                    variant={isSaved ? "secondary" : "outline"}
+                    size="icon"
+                    onMouseDown={() => toggleSave(organization.id)}
+                    className={`border-border/80 shrink-0 ${
+                      isSaved ? "border-primary/25 bg-primary/10 text-primary hover:bg-primary/15" : ""
+                    }`}
+                    title={isSaved ? t("organizations.saved") : t("organizations.save")}
+                  >
+                    <Bookmark className={`size-4 ${isSaved ? "fill-current" : ""}`} />
+                  </Button>
+                )}
+                <div className="flex-1">
+                  {renderMembershipSection()}
+                </div>
+              </div>
+
+              {isAuthenticated && !isUnowned && (
+                <Button
+                  variant="ghost"
+                  onMouseDown={() => setShowJoinModal(true)}
+                  className="w-full text-xs text-muted-foreground hover:text-primary font-medium h-8"
+                >
+                  <UserPlus className="size-3.5 mr-1" />
+                  {t("organizations.applyToJoin")}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </DialogContent>
+      </DrawerContent>
 
       {showClaimModal && (
         <ClaimOrganizationModal
@@ -338,6 +357,6 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
           organization={organization}
         />
       )}
-    </Dialog>
+    </Drawer>
   );
 }

@@ -69,12 +69,12 @@ export function MoreFiltersButton({
           )}
         </button>
       </DrawerTrigger>
-      <DrawerContent className="mx-auto max-h-[85dvh] w-[calc(100vw-16px)] max-w-md overflow-hidden p-0">
+      <DrawerContent className="max-h-[85dvh] overflow-hidden p-0">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{t("common.moreFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
         </DrawerHeader>
-        <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto p-4">
+        <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto px-2 py-3 sm:p-4">
           {children}
         </div>
       </DrawerContent>

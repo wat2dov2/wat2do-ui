@@ -1,6 +1,5 @@
 import { lazy, Suspense, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Heart, Sparkles, Utensils } from "@/shared/ui/doodle-icons";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
@@ -73,7 +72,7 @@ export function EventsPageContainer() {
       [
         {
           id: "saved",
-          icon: <Heart className="size-3.5" fill={filters.savedFilter ? "currentColor" : "none"} />,
+          icon: null,
           labelKey: "filters.saved",
           active: filters.savedFilter,
           onMouseDown: () => filters.setSavedFilter(!filters.savedFilter),
@@ -82,14 +81,14 @@ export function EventsPageContainer() {
         },
         {
           id: "newlyAdded",
-          icon: <Sparkles className="size-3.5" />,
+          icon: null,
           labelKey: "events.newlyAdded",
           active: isNewlyAddedActive,
           onMouseDown: handleNewlyAddedToggle,
         },
         {
           id: "freeFood",
-          icon: <Utensils className="size-3.5" />,
+          icon: null,
           labelKey: "common.freeFood",
           active: filters.freeFoodFilter,
           onMouseDown: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
