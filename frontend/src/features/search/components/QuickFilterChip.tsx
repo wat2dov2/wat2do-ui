@@ -5,10 +5,9 @@ interface QuickFilterChipProps {
   label: string;
   active: boolean;
   onMouseDown: () => void;
-  badge?: number;
 }
 
-export function QuickFilterChip({ icon, label, active, onMouseDown, badge }: QuickFilterChipProps) {
+export function QuickFilterChip({ icon, label, active, onMouseDown }: QuickFilterChipProps) {
   return (
     <button
       onMouseDown={onMouseDown}
@@ -21,11 +20,6 @@ export function QuickFilterChip({ icon, label, active, onMouseDown, badge }: Qui
     >
       {icon}
       <span>{label}</span>
-      {badge !== undefined && badge > 0 && (
-        <span className="bg-foreground/30 text-primary-foreground px-1.5 py-0.5 rounded-full text-[10px]">
-          {badge}
-        </span>
-      )}
     </button>
   );
 }

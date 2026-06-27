@@ -9,7 +9,6 @@ import {
   Instagram,
   Loader2,
   MessageCircle,
-  Building2,
   Bookmark,
   Shield,
   UserPlus,
@@ -229,7 +228,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="overflow-hidden p-0">
-        <div className="max-h-[96dvh] overflow-y-auto px-2 py-3 sm:px-4 sm:py-4">
+        <div className="max-h-[96dvh] overflow-y-auto p-4">
           <DrawerClose asChild>
             <button
               type="button"
@@ -240,10 +239,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
             </button>
           </DrawerClose>
           <DrawerHeader className="p-0 pr-11 text-left">
-            <div className="flex items-start gap-4">
-              <div className="size-12 shrink-0 rounded-xl border border-primary/20 bg-primary/10 flex items-center justify-center shadow-inner">
-                <Building2 className="size-6 text-primary" />
-              </div>
+            <div className="space-y-3">
               <div className="space-y-1">
                 <DrawerTitle className="text-xl font-bold text-foreground leading-tight">
                   {organization.organization_name}
@@ -252,17 +248,15 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
                   {organization.organization_type}
                 </DrawerDescription>
               </div>
+              <OrganizationCategoryBadges
+                categories={organization.categories}
+                badgeClassName="text-xs px-2.5"
+              />
             </div>
           </DrawerHeader>
 
           {/* Organization Details Body */}
           <div className="mt-5 space-y-5">
-            {/* Categories */}
-            <OrganizationCategoryBadges
-              categories={organization.categories}
-              badgeClassName="text-xs px-2.5"
-            />
-
             {/* Social Links */}
             <div className="p-4 bg-secondary/30 border border-border rounded-xl space-y-3">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

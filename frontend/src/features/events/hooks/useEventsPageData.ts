@@ -5,7 +5,6 @@ import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
-import { getDatePresetWindow } from "@/shared/utils/date";
 import { getUniqueEvents } from "@/shared/utils/event";
 import type { EventListQuery } from "@/features/events/api/events.api";
 
@@ -42,7 +41,6 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   const eventQuery = useMemo<EventListQuery>(() => {
     const minPrice = parsePrice(filters.priceRange.min);
     const maxPrice = parsePrice(filters.priceRange.max);
-    const dateWindow = getDatePresetWindow(filters.datePreset);
     return {
       search: filters.searchQuery || undefined,
       categories: filters.selectedCategories,
@@ -57,8 +55,6 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
       ids: filters.savedFilter ? savedEventIds : undefined,
       sortBy: filters.sortBy,
       sortOrder: filters.sortOrder,
-      startUtc: dateWindow?.start.toISOString(),
-      endUtc: dateWindow?.end.toISOString(),
     };
   }, [
     filters.searchQuery,
@@ -66,7 +62,6 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     filters.selectedLocations,
     filters.selectedFoods,
     filters.selectedDays,
-    filters.datePreset,
     filters.priceRange.min,
     filters.priceRange.max,
     filters.registration,

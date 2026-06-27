@@ -310,12 +310,7 @@ export function AdminOrganizationsPage({
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
-                  totalItems={totalItems}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  itemLabel={t("admin.club")}
-                  itemLabelPlural={t("navigation.organizations")}
                   onPageChange={setCurrentPage}
-                  hideDetails
                 />
               )}
             </AdminResultsCount>
@@ -359,12 +354,7 @@ export function AdminOrganizationsPage({
                 <Pagination
                   currentPage={claimsPagination.currentPage}
                   totalPages={claimsPagination.totalPages}
-                  totalItems={filteredClaims.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  itemLabel={t("admin.claimRequest") || "claim request"}
-                  itemLabelPlural={t("admin.claimRequests") || "claim requests"}
                   onPageChange={claimsPagination.setCurrentPage}
-                  hideDetails
                 />
               )}
             </AdminResultsCount>

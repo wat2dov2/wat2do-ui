@@ -26,7 +26,6 @@ function useCurrentFilterState(): FilterState {
         selectedLocations: s.selectedLocations,
         selectedFoods: s.selectedFoods,
         selectedDays: s.selectedDays,
-        datePreset: s.datePreset,
         priceRange: s.priceRange,
         registration: s.registration,
         selectedOrganizations: s.selectedOrganizations,
@@ -108,7 +107,6 @@ export function useFilterState(profileCompleted: boolean) {
     selectedLocations,
     selectedFoods,
     selectedDays,
-    datePreset,
     priceRange,
     registration,
     freeFoodFilter,
@@ -123,7 +121,6 @@ export function useFilterState(profileCompleted: boolean) {
       selectedLocations: s.selectedLocations,
       selectedFoods: s.selectedFoods,
       selectedDays: s.selectedDays,
-      datePreset: s.datePreset,
       priceRange: s.priceRange,
       registration: s.registration,
       freeFoodFilter: s.freeFoodFilter,
@@ -158,10 +155,6 @@ export function useFilterState(profileCompleted: boolean) {
   );
   const setSelectedDays = useCallback(
     (value: string[]) => updateFilterState({ days: value }),
-    [updateFilterState],
-  );
-  const setDatePreset = useCallback(
-    (value: FilterState["datePreset"]) => updateFilterState({ datePreset: value }),
     [updateFilterState],
   );
   const setSelectedOrganizations = useCallback(
@@ -234,7 +227,6 @@ export function useFilterState(profileCompleted: boolean) {
           selectedLocations,
           selectedFoods,
           selectedDays,
-          datePreset,
           priceRange,
           registration,
           selectedOrganizations,
@@ -250,7 +242,6 @@ export function useFilterState(profileCompleted: boolean) {
       selectedLocations,
       selectedFoods,
       selectedDays,
-      datePreset,
       priceRange,
       registration,
       selectedOrganizations,
@@ -284,7 +275,6 @@ export function useFilterState(profileCompleted: boolean) {
         locations: filters.locations || [],
         foods: filters.foods || [],
         days: filters.days || [],
-        datePreset: filters.datePreset,
         priceRange: filters.priceRange || { min: "", max: "" },
         registration: filters.registration || false,
         organizations: filters.organizations || [],
@@ -344,8 +334,6 @@ export function useFilterState(profileCompleted: boolean) {
     setSelectedFoods,
     selectedDays,
     setSelectedDays,
-    datePreset,
-    setDatePreset,
     priceRange,
     setPriceRange,
     registration,

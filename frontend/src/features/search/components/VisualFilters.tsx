@@ -403,11 +403,9 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         indicator={filters.registration ? "1" : undefined}
         onClear={() => filters.setRegistration(false)}
       >
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-foreground">
-            {t("filters.registration")}
-          </span>
+        <div className="flex justify-start">
           <Switch
+            aria-label={t("filters.registration")}
             checked={filters.registration}
             onCheckedChange={(checked) =>
               filters.setRegistration(!!checked)

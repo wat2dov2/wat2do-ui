@@ -1,5 +1,5 @@
-import type { DatePreset, Event } from "@/shared/types";
-import { getPrimaryOccurrence, isEventInDatePreset } from "@/shared/utils/date";
+import type { Event } from "@/shared/types";
+import { getPrimaryOccurrence } from "@/shared/utils/date";
 import { getEventCategory } from "@/shared/utils/event";
 
 /**
@@ -15,7 +15,6 @@ export interface SearchFilters {
   savedFilter: boolean;
   freeFoodFilter: boolean;
   selectedDays: string[];
-  datePreset: DatePreset;
   priceRange: { min: string; max: string };
   selectedLocations: string[];
   selectedFoods: string[];
@@ -68,11 +67,6 @@ export function filterEvents(
 
     // Day-of-week filter
     if (filters.selectedDays.length > 0 && !filters.selectedDays.includes(dayOfWeek)) {
-      return false;
-    }
-
-    // Date preset filter
-    if (!isEventInDatePreset(event, filters.datePreset)) {
       return false;
     }
 

@@ -76,7 +76,6 @@ export function EventsPageContainer() {
           labelKey: "filters.saved",
           active: filters.savedFilter,
           onMouseDown: () => filters.setSavedFilter(!filters.savedFilter),
-          badge: savedEventIds.length > 0 ? savedEventIds.length : undefined,
           visible: profileCompleted,
         },
         {
@@ -92,13 +91,9 @@ export function EventsPageContainer() {
           labelKey: "common.freeFood",
           active: filters.freeFoodFilter,
           onMouseDown: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
-          badge:
-            filters.freeFoodEventsCount > 0
-              ? filters.freeFoodEventsCount
-              : undefined,
         },
       ].filter((config) => config.visible !== false),
-    [filters, handleNewlyAddedToggle, isNewlyAddedActive, profileCompleted, savedEventIds.length]
+    [filters, handleNewlyAddedToggle, isNewlyAddedActive, profileCompleted]
   );
 
   const {
@@ -128,21 +123,17 @@ export function EventsPageContainer() {
       </div>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">
+          <EventCount count={totalEvents} />
           <SearchBar
             searchQuery={filters.searchQuery}
             onSearchChange={(query) => {
               filters.setSearchQuery(query);
             }}
             onSearchClear={() => filters.setSearchQuery("")}
-            datePreset={filters.datePreset}
-            onDatePresetChange={filters.setDatePreset}
           />
 
           {/* Filters stay visible while event cards load. */}
           <div className="flex items-center gap-2">
-            <div className="shrink-0 pb-1">
-              <EventCount count={totalEvents} />
-            </div>
             <div className="relative min-w-0 flex-1">
               <div
                 ref={filterScrollRef}
@@ -158,7 +149,6 @@ export function EventsPageContainer() {
                     label={t(config.labelKey)}
                     active={config.active}
                     onMouseDown={config.onMouseDown}
-                    badge={config.badge}
                   />
                 ))}
                 {filters.categoryPieItems.map((category) => (
@@ -230,7 +220,6 @@ export function EventsPageContainer() {
                 filters.searchQuery !== "" ||
                 filters.freeFoodFilter ||
                 filters.savedFilter ||
-                filters.datePreset !== "upcoming" ||
                 filters.sortBy !== "date" ||
                 filters.sortOrder !== "asc"
               }

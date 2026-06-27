@@ -207,87 +207,85 @@ export function EventDetailsModal({
               />
             </div>
 
-            <ModalContentWrapper className="space-y-4 px-2 py-3 sm:px-5 sm:py-4">
-              <DrawerHeader className="p-0 text-left">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                  <div className="min-w-0">
-                    <DrawerTitle className="leading-tight">{displayedEvent.title}</DrawerTitle>
-                    <DrawerDescription>{displayedEvent.organization}</DrawerDescription>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-                    <Button
-                      type="button"
-                      variant={isSaveActive ? "secondary" : "outline"}
-                      size="icon-sm"
-                      disabled={!profileCompleted}
-                      onMouseDown={() => toggleSaveEvent(displayedEvent.id)}
-                      aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
-                      title={isSaveActive ? t("common.saved") : t("common.imInterested")}
-                      className={
-                        !profileCompleted
-                          ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
-                          : isSaveActive
-                            ? "border-error/20 bg-error/10 text-error hover:bg-error/15"
-                            : ""
-                      }
-                    >
-                      <Heart className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-sm"
-                          aria-label={t("events.notifications.label")}
-                          title={t("events.notifications.label")}
-                        >
-                          <Bell className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-44" align="end">
-                        <DropdownMenuItem onSelect={() => handleEmailNotification()}>
-                          <Mail className="size-3.5 shrink-0" />
-                          {t("events.notifications.email")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => openGoogleCalendar(displayedEvent)}>
-                          <GoogleIcon className="size-3.5 shrink-0" />
-                          {t("events.calendar.googleCalendar")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => downloadICS(displayedEvent)}>
-                          <AppleIcon className="size-3.5 shrink-0" />
-                          {t("events.calendar.iCal")}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-sm"
-                          aria-label={t("common.actions")}
-                          title={t("common.actions")}
-                        >
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-44" align="end">
-                        <DropdownMenuItem
-                          onSelect={() => setActiveDialog({ type: "share", event: displayedEvent })}
-                        >
-                          <Share2 className="size-3.5 shrink-0" />
-                          {t("common.share")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => setActiveDialog({ type: "report", event: displayedEvent })}
-                        >
-                          <Flag className="size-3.5 shrink-0" />
-                          {t("common.report")}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+            <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
+              <DrawerHeader className="p-0 text-center">
+                <div className="mb-3 flex items-center justify-end gap-1.5">
+                  <Button
+                    type="button"
+                    variant={isSaveActive ? "secondary" : "outline"}
+                    size="icon-sm"
+                    disabled={!profileCompleted}
+                    onMouseDown={() => toggleSaveEvent(displayedEvent.id)}
+                    aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
+                    title={isSaveActive ? t("common.saved") : t("common.imInterested")}
+                    className={
+                      !profileCompleted
+                        ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
+                        : isSaveActive
+                          ? "border-error/20 bg-error/10 text-error hover:bg-error/15"
+                          : ""
+                    }
+                  >
+                    <Heart className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={t("events.notifications.label")}
+                        title={t("events.notifications.label")}
+                      >
+                        <Bell className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-44" align="end">
+                      <DropdownMenuItem onSelect={() => handleEmailNotification()}>
+                        <Mail className="size-3.5 shrink-0" />
+                        {t("events.notifications.email")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => openGoogleCalendar(displayedEvent)}>
+                        <GoogleIcon className="size-3.5 shrink-0" />
+                        {t("events.calendar.googleCalendar")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => downloadICS(displayedEvent)}>
+                        <AppleIcon className="size-3.5 shrink-0" />
+                        {t("events.calendar.iCal")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={t("common.actions")}
+                        title={t("common.actions")}
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-44" align="end">
+                      <DropdownMenuItem
+                        onSelect={() => setActiveDialog({ type: "share", event: displayedEvent })}
+                      >
+                        <Share2 className="size-3.5 shrink-0" />
+                        {t("common.share")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => setActiveDialog({ type: "report", event: displayedEvent })}
+                      >
+                        <Flag className="size-3.5 shrink-0" />
+                        {t("common.report")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="mx-auto max-w-2xl text-center">
+                  <DrawerTitle className="leading-tight">{displayedEvent.title}</DrawerTitle>
+                  <DrawerDescription>{displayedEvent.organization}</DrawerDescription>
                 </div>
               </DrawerHeader>
 
@@ -365,7 +363,7 @@ export function EventDetailsModal({
                 {!hideSimilarEvents && similarEvents.length > 0 && (
                   <InfoSection className="mt-3 space-y-3 pt-3">
                     <SectionTitle className="mb-3">{t("events.similarEvents")}</SectionTitle>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-3">
                       {similarEvents.map((similarEvent) => (
                         <EventCard
                           key={similarEvent.id}

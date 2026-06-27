@@ -74,7 +74,7 @@ export function MoreFiltersButton({
           <DrawerTitle>{t("common.moreFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
         </DrawerHeader>
-        <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto px-2 py-3 sm:p-4">
+        <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto p-4">
           {children}
         </div>
       </DrawerContent>

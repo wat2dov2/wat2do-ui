@@ -91,7 +91,6 @@ export function useOrganizationsPage() {
     setCurrentPage,
     totalPages,
     totalItems,
-    itemsPerPage: ITEMS_PER_PAGE,
     refreshOrganizations,
     activeTab,
     setActiveTab: (tab: "all" | "followed" | "claimed") => {

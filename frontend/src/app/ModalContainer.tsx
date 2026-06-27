@@ -179,7 +179,7 @@ export function ModalContainer() {
     <>
       <Drawer open={showSubmitChoice} onOpenChange={setShowSubmitChoice}>
         <DrawerContent className="overflow-hidden p-0" aria-describedby="submit-choice-description">
-          <div className="max-h-[96dvh] overflow-y-auto px-2 py-3 sm:px-4 sm:py-4">
+          <div className="max-h-[96dvh] overflow-y-auto p-4">
             <DrawerClose asChild>
               <button
                 type="button"

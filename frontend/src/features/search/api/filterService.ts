@@ -10,7 +10,6 @@ import i18n from "@/shared/lib/i18n";
 
 export const DEFAULT_FILTER_SORT_BY = "date";
 export const DEFAULT_FILTER_SORT_ORDER = "asc";
-export const DEFAULT_DATE_PRESET = "upcoming";
 
 export const EMPTY_FILTER_STATE: FilterState = {
   searchQuery: "",
@@ -18,7 +17,6 @@ export const EMPTY_FILTER_STATE: FilterState = {
   locations: [],
   foods: [],
   days: [],
-  datePreset: DEFAULT_DATE_PRESET,
   priceRange: { min: "", max: "" },
   registration: false,
   organizations: [],
@@ -39,7 +37,6 @@ export interface SearchStoreFilterValues {
   selectedLocations: string[];
   selectedFoods: string[];
   selectedDays: string[];
-  datePreset: FilterState["datePreset"];
   priceRange: { min: string; max: string };
   registration: boolean;
   selectedOrganizations: string[];
@@ -55,7 +52,6 @@ type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
   saved?: unknown;
   sortBy?: unknown;
   sortOrder?: unknown;
-  datePreset?: unknown;
 };
 
 function stringArray(value: unknown): string[] {
@@ -76,12 +72,6 @@ function sortOrderFrom(value: unknown): FilterState["sortOrder"] {
   return value === "desc" ? "desc" : DEFAULT_FILTER_SORT_ORDER;
 }
 
-function datePresetFrom(value: unknown): FilterState["datePreset"] {
-  return value === "today" || value === "tomorrow" || value === "weekend"
-    ? value
-    : DEFAULT_DATE_PRESET;
-}
-
 export function normalizeFilterState(filters: Partial<FilterState>): FilterState {
   return {
     searchQuery: typeof filters.searchQuery === "string" ? filters.searchQuery : "",
@@ -89,7 +79,6 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
-    datePreset: datePresetFrom(filters.datePreset),
     priceRange: priceRangeFrom(filters.priceRange),
     registration: filters.registration === true,
     organizations: stringArray(filters.organizations),
@@ -118,7 +107,6 @@ export function storeStatesToFilterState(
     locations: values.selectedLocations,
     foods: values.selectedFoods,
     days: values.selectedDays,
-    datePreset: values.datePreset,
     priceRange: values.priceRange,
     registration: values.registration,
     organizations: values.selectedOrganizations,
@@ -141,7 +129,6 @@ export function generatedFilterStateToFilterState(
     locations: stringArray(filters.locations),
     foods: stringArray(filters.foods),
     days: stringArray(filters.days),
-    datePreset: datePresetFrom(filters.datePreset),
     priceRange: priceRangeFrom(filters.priceRange),
     registration:
       typeof filters.registration === "boolean" ? filters.registration : false,
@@ -164,7 +151,6 @@ function isEmptyFilterState(filters: FilterState): boolean {
     filters.locations.length === 0 &&
     filters.foods.length === 0 &&
     filters.days.length === 0 &&
-    filters.datePreset === DEFAULT_DATE_PRESET &&
     isDefaultPriceRange(filters.priceRange) &&
     !filters.registration &&
     filters.organizations.length === 0 &&

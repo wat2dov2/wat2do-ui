@@ -10,7 +10,6 @@ export interface FilterState {
   locations: string[];
   foods: string[];
   days: string[];
-  datePreset: DatePreset;
   priceRange: { min: string; max: string };
   registration: boolean;
   organizations: string[];
@@ -20,7 +19,6 @@ export interface FilterState {
   sortOrder: "asc" | "desc";
 }
 
-export type DatePreset = "upcoming" | "today" | "tomorrow" | "weekend";
 export type FilterViewMode = "visual" | "json";
 
 export interface QuickFilterConfig {
@@ -29,6 +27,5 @@ export interface QuickFilterConfig {
   labelKey: string; // i18n key
   active: boolean;
   onMouseDown: () => void;
-  badge?: number;
   visible?: boolean; // for conditional rendering (e.g., profileCompleted)
 }

@@ -21,8 +21,8 @@ export const FilterSection = React.memo(function FilterSection({
 }: FilterSectionProps) {
 
   return (
-    <div className="space-y-2 relative -mx-2 border-y border-border sm:-mx-4">
-      <div className="flex items-center justify-between w-full px-2 py-3 sm:px-4">
+    <div className="space-y-2 relative -mx-4 border-y border-border">
+      <div className="flex items-center justify-between w-full px-4 py-3">
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -59,7 +59,7 @@ export const FilterSection = React.memo(function FilterSection({
           )}
         </div>
       </div>
-      <div className="px-2 pb-3 sm:px-4">{children}</div>
+      <div className="px-4 pb-3">{children}</div>
     </div>
   );
 });

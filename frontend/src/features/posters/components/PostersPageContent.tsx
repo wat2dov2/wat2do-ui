@@ -270,10 +270,6 @@ export function PostersPageContent({
               <Pagination
                 currentPage={scansPagination.currentPage}
                 totalPages={scansPagination.totalPages}
-                totalItems={sortedScans.length}
-                itemsPerPage={SCANS_PER_PAGE}
-                itemLabel={t("admin.scan")}
-                itemLabelPlural={t("admin.scans")}
                 onPageChange={scansPagination.setCurrentPage}
               />
             )}

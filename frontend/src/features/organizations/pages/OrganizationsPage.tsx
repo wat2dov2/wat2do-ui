@@ -50,7 +50,6 @@ export function OrganizationsPage() {
     setCurrentPage,
     totalPages,
     totalItems,
-    itemsPerPage,
     activeTab,
     setActiveTab,
   } = useOrganizationsPage();
@@ -76,6 +75,13 @@ export function OrganizationsPage() {
   return (
     <div className="space-y-2">
       <div className="space-y-3 pb-2">
+        {shouldShowOrganizationMeta && (
+          <span className="inline-flex items-baseline gap-2 text-2xl font-bold leading-none text-foreground sm:text-3xl">
+            <NumberFlow value={totalItems} respectMotionPreference={false} />
+            <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>
+          </span>
+        )}
+
         <div className="flex items-stretch gap-3">
           {/* Search Bar */}
           <SubmittedSearchInput
@@ -114,15 +120,6 @@ export function OrganizationsPage() {
 
         {/* Filters */}
         <div className="flex items-center gap-2">
-          {shouldShowOrganizationMeta && (
-            <div className="shrink-0 pb-1">
-              <span className="inline-flex items-baseline gap-1 text-base font-bold text-foreground">
-                <NumberFlow value={totalItems} respectMotionPreference={false} />
-                <span>{totalItems === 1 ? t("organizations.organizationLabel") : t("organizations.organizationLabel_other")}</span>
-              </span>
-            </div>
-          )}
-
           {/* Category Chips */}
           <div className="relative min-w-0 flex-1">
             <div
@@ -160,13 +157,7 @@ export function OrganizationsPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            itemLabel={t("admin.club")}
-            itemLabelPlural={t("navigation.organizations")}
             onPageChange={setCurrentPage}
-            hideDetails
-            hideNavigationLabels
           />
         )}
       </div>

@@ -283,7 +283,7 @@
   }
 
   .dark .event-card-waterpaint {
-    --event-card-waterpaint-surface: color-mix(in srgb, var(--card) 90%, var(--foreground));
+    --event-card-waterpaint-surface: rgb(0 0 0 / 36%);
   }
 
   .event-card-waterpaint > * {

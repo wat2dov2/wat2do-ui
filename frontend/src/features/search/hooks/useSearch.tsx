@@ -44,14 +44,6 @@ export function useSearch({
     return Array.from(orgs).sort();
   }, [events]);
 
-  const freeFoodEventsCount = useMemo(
-    () =>
-      events.filter(
-        (event) => (event.food ?? []).length > 0 && (event.price ?? 0) === 0,
-      ).length,
-    [events],
-  );
-
   // Filter + sort events.
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
@@ -59,7 +51,6 @@ export function useSearch({
       savedFilter: filterState.savedFilter,
       freeFoodFilter: filterState.freeFoodFilter,
       selectedDays: filterState.selectedDays,
-      datePreset: filterState.datePreset,
       priceRange: filterState.priceRange,
       selectedLocations: filterState.selectedLocations,
       selectedFoods: filterState.selectedFoods,
@@ -75,7 +66,6 @@ export function useSearch({
     filterState.searchQuery,
     filterState.freeFoodFilter,
     filterState.selectedDays,
-    filterState.datePreset,
     filterState.priceRange,
     filterState.selectedLocations,
     filterState.selectedFoods,
@@ -97,7 +87,6 @@ export function useSearch({
         selectedLocations: filterState.selectedLocations,
         selectedFoods: filterState.selectedFoods,
         selectedDays: filterState.selectedDays,
-        datePreset: filterState.datePreset,
         priceRange: filterState.priceRange,
         registration: filterState.registration,
         selectedOrganizations: filterState.selectedOrganizations,
@@ -111,7 +100,6 @@ export function useSearch({
       filterState.selectedLocations,
       filterState.selectedFoods,
       filterState.selectedDays,
-      filterState.datePreset,
       filterState.priceRange,
       filterState.registration,
       filterState.selectedOrganizations,
@@ -187,9 +175,6 @@ export function useSearch({
 
     // Filter count
     filterCount,
-
-    // Quick filter counts
-    freeFoodEventsCount,
 
     // Clear all filters
     handleClearAllFilters,

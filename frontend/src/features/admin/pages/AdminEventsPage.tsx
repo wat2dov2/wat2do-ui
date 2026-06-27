@@ -355,10 +355,6 @@ export function AdminEventsPage({
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredEvents.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              itemLabel={t("common.event")}
-              itemLabelPlural={t("common.events")}
               onPageChange={setCurrentPage}
             />
           )}
@@ -503,10 +499,6 @@ export function AdminEventsPage({
             <Pagination
               currentPage={submissionPagination.currentPage}
               totalPages={submissionPagination.totalPages}
-              totalItems={submissionFilters.filteredSubmissions.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              itemLabel={t("admin.submission")}
-              itemLabelPlural={t("admin.submissions")}
               onPageChange={submissionPagination.setCurrentPage}
             />
           )}
