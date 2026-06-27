@@ -1,15 +1,15 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "@/shared/ui/doodle-icons";
+import { ArrowLeft, X } from "@/shared/ui/doodle-icons";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
@@ -171,36 +171,45 @@ export function AddOrganizationModal({
   };
 
   return (
-    <>
-    <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
-        <form className="space-y-6">
-          <DialogHeader className="p-0 text-left">
-            <div className="flex items-start gap-2">
-              {onBack && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon-sm"
-                  onMouseDown={onBack}
-                  aria-label={t("common.back")}
-                >
-                  <ArrowLeft className="size-4" />
-                </Button>
-              )}
-              <div className="min-w-0">
-                <DialogTitle className="text-lg font-semibold text-foreground sm:text-xl leading-snug">
-                  {isEditMode ? t("organizations.editClub") : t("organizations.addClub")}
-                </DialogTitle>
-                {isEditMode && (
-                  <DialogDescription className="mt-1.5 text-sm text-muted-foreground">
-                    {t("organizations.editClubDescription")}
-                  </DialogDescription>
+    <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
+      <DrawerContent className="overflow-hidden p-0" aria-describedby={undefined}>
+        <DrawerClose asChild>
+          <button
+            type="button"
+            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label={t("common.close")}
+          >
+            <X className="size-4" />
+          </button>
+        </DrawerClose>
+        <div className="max-h-[96dvh] overflow-y-auto p-4 sm:p-6">
+          <form className="space-y-6">
+            <DrawerHeader className="p-0 pr-11 text-left">
+              <div className="flex items-start gap-2">
+                {onBack && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    onMouseDown={onBack}
+                    aria-label={t("common.back")}
+                  >
+                    <ArrowLeft className="size-4" />
+                  </Button>
                 )}
+                <div className="min-w-0">
+                  <DrawerTitle className="text-lg font-semibold text-foreground sm:text-xl leading-snug">
+                    {isEditMode ? t("organizations.editClub") : t("organizations.addClub")}
+                  </DrawerTitle>
+                  {isEditMode && (
+                    <DrawerDescription className="mt-1.5 text-sm text-muted-foreground">
+                      {t("organizations.editClubDescription")}
+                    </DrawerDescription>
+                  )}
+                </div>
               </div>
-            </div>
-          </DialogHeader>
-          <FieldGroup>
+            </DrawerHeader>
+            <FieldGroup>
             <FieldSet>
               <FieldLegend>{t("forms.requiredInformation")}</FieldLegend>
               <FieldGroup>
@@ -278,57 +287,56 @@ export function AddOrganizationModal({
             <FieldSet>
               <FieldLegend>{t("forms.optionalDetails")}</FieldLegend>
               <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="club-type" className="text-sm font-medium text-foreground">
+                    {t("forms.organizationType")}
+                  </FieldLabel>
+                  <Select
+                    value={form.formData.organization_type}
+                    onValueChange={(value) => form.updateField("organization_type", value)}
+                  >
+                    <SelectTrigger id="club-type" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="WUSA">{t("forms.wusa")}</SelectItem>
+                      <SelectItem value="Independent">{t("forms.independent")}</SelectItem>
+                      <SelectItem value="Other">{t("forms.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
 
-          <Field>
-            <FieldLabel htmlFor="club-type" className="text-sm font-medium text-foreground">
-              {t("forms.organizationType")}
-            </FieldLabel>
-            <Select
-              value={form.formData.organization_type}
-              onValueChange={(value) => form.updateField("organization_type", value)}
-            >
-              <SelectTrigger id="club-type" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="WUSA">{t("forms.wusa")}</SelectItem>
-                <SelectItem value="Independent">{t("forms.independent")}</SelectItem>
-                <SelectItem value="Other">{t("forms.other")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
+                <Field>
+                  <FieldLabel htmlFor="club-page" className="text-sm font-medium text-foreground">
+                    {t("forms.organizationPageUrl")}
+                  </FieldLabel>
+                  <Input
+                    id="club-page"
+                    type="text"
+                    value={form.formData.organization_page}
+                    onChange={(e) => form.updateField("organization_page", e.target.value)}
+                    placeholder={t("forms.organizationPageUrlPlaceholder")}
+                  />
+                </Field>
 
-          <Field>
-            <FieldLabel htmlFor="club-page" className="text-sm font-medium text-foreground">
-              {t("forms.organizationPageUrl")}
-            </FieldLabel>
-              <Input
-                id="club-page"
-                type="text"
-                value={form.formData.organization_page}
-                onChange={(e) => form.updateField("organization_page", e.target.value)}
-                placeholder={t("forms.organizationPageUrlPlaceholder")}
-              />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="instagram-handle" className="text-sm font-medium text-foreground">
-              {t("forms.instagramHandle")}
-            </FieldLabel>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                @
-              </span>
-              <Input
-                id="instagram-handle"
-                type="text"
-                value={form.formData.ig}
-                onChange={(e) => form.updateField("ig", e.target.value)}
-                placeholder={t("modals.signIn.username")}
-                className="pl-7"
-              />
-            </div>
-          </Field>
+                <Field>
+                  <FieldLabel htmlFor="instagram-handle" className="text-sm font-medium text-foreground">
+                    {t("forms.instagramHandle")}
+                  </FieldLabel>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      @
+                    </span>
+                    <Input
+                      id="instagram-handle"
+                      type="text"
+                      value={form.formData.ig}
+                      onChange={(e) => form.updateField("ig", e.target.value)}
+                      placeholder={t("modals.signIn.username")}
+                      className="pl-7"
+                    />
+                  </div>
+                </Field>
 
                 <Field>
                   <FieldLabel htmlFor="discord-link" className="text-sm font-medium text-foreground">
@@ -346,11 +354,11 @@ export function AddOrganizationModal({
             </FieldSet>
 
             <Field orientation="horizontal">
-              <DialogClose asChild>
+              <DrawerClose asChild>
                 <Button variant="outline" type="button">
                   {t("common.cancel")}
                 </Button>
-              </DialogClose>
+              </DrawerClose>
               <LoadingButton
                 type="button"
                 onMouseDown={handleSubmit}
@@ -360,15 +368,15 @@ export function AddOrganizationModal({
                 {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
               </LoadingButton>
             </Field>
-          </FieldGroup>
-        </form>
+            </FieldGroup>
+          </form>
 
-        <DialogFooter className="sr-only">
-          <DialogClose asChild>
+          <DrawerFooter className="sr-only">
+          <DrawerClose asChild>
             <Button variant="outline">
               {t("common.cancel")}
             </Button>
-          </DialogClose>
+          </DrawerClose>
           <LoadingButton
             onMouseDown={handleSubmit}
             isLoading={isSubmitting}
@@ -376,9 +384,9 @@ export function AddOrganizationModal({
           >
             {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
           </LoadingButton>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-    </>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

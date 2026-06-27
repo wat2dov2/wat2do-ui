@@ -3,10 +3,10 @@ import { Check, Sparkles, Megaphone } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
@@ -59,16 +59,16 @@ export function EventSuccessScreen({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md" showCloseButton={false}>
-        <DialogTitle className="sr-only">
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="p-4">
+        <DrawerTitle className="sr-only">
           {isSubmissionOnly
             ? t("events.submissionReceivedTitle")
             : isEditMode
               ? t("events.eventUpdatedTitle")
               : t("events.eventCreatedTitle")}
-        </DialogTitle>
-        <div className="flex flex-col items-center text-center py-4 gap-y-4">
+        </DrawerTitle>
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-y-4 py-4 text-center">
           <div className="relative">
             <div className="size-16 rounded-full bg-success flex items-center justify-center">
               <Check className="size-8 text-white" strokeWidth={3} />
@@ -123,7 +123,7 @@ export function EventSuccessScreen({
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

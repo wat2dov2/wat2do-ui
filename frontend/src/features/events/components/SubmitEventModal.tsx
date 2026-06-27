@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
+import { X } from "@/shared/ui/doodle-icons";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
 import { useEventFormAI } from "@/features/events/hooks/useEventFormAI";
 import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromotion";
@@ -33,7 +35,7 @@ interface SubmitEventModalSharedProps {
 interface SubmitEventModalProps extends SubmitEventModalSharedProps {
   userCredits?: number;
   initialData?: EventFormData;
-  /** When provided, modal will fetch event by id when opening for edit (ensures form is populated from server). */
+  /** When provided, fetches event by id when opening for edit so the form is populated from the server. */
   loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
 }
@@ -140,8 +142,8 @@ function SubmitEventModalFormBody({
   ]);
 
   // Step dispatcher: determine which step to render based on state
-  type ModalStep = "promotion-success" | "promotion-upsell" | "submit-success" | "form";
-  const currentStep: ModalStep = eventFormPromotion.promotionSuccess
+  type SubmitEventStep = "promotion-success" | "promotion-upsell" | "submit-success" | "form";
+  const currentStep: SubmitEventStep = eventFormPromotion.promotionSuccess
     ? "promotion-success"
     : eventFormPromotion.showPromotion
       ? "promotion-upsell"
@@ -149,7 +151,7 @@ function SubmitEventModalFormBody({
         ? "submit-success"
         : "form";
 
-  const stepRenderers: Record<ModalStep, () => React.ReactElement> = {
+  const stepRenderers: Record<SubmitEventStep, () => React.ReactElement> = {
     "promotion-success": () => (
       <EventFormProvider value={{ formData: eventForm.formData } as unknown as EventFormContextValue}>
         <PromotionSuccessScreen
@@ -186,21 +188,29 @@ function SubmitEventModalFormBody({
     ),
     "form": () => (
       <>
-        <Dialog open={isOpen} onOpenChange={modalState.handleOpenChange}>
-          <DialogContent
-            className="flex h-[calc(100dvh-24px)] w-[calc(100vw-16px)] max-w-[900px] flex-col overflow-hidden p-0 outline-none focus:outline-none focus-visible:outline-none sm:h-[calc(100vh-48px)] sm:w-[calc(100vw-48px)] sm:max-h-[750px]"
-            showCloseButton={true}
+        <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
+          <DrawerContent
+            className="flex h-[96dvh] overflow-hidden p-0 outline-none focus:outline-none focus-visible:outline-none [&_[data-slot=drawer-handle]]:hidden"
             aria-describedby={undefined}
           >
-            <DialogHeader className="sr-only">
-              <DialogTitle>
+            <DrawerClose asChild>
+              <button
+                type="button"
+                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                aria-label={t("common.close")}
+              >
+                <X className="size-4" />
+              </button>
+            </DrawerClose>
+            <DrawerHeader className="sr-only">
+              <DrawerTitle>
                 {isEditMode
                   ? t("events.updateEvent")
                   : canCreateEvents
                     ? t("events.createEvent")
                     : t("events.submitEventForReview")}
-              </DialogTitle>
-            </DialogHeader>
+              </DrawerTitle>
+            </DrawerHeader>
             <EventFormStep
               isEditMode={isEditMode}
               canCreateEvents={canCreateEvents}
@@ -213,8 +223,8 @@ function SubmitEventModalFormBody({
               isDarkMode={isDarkMode}
               onBack={onBack}
             />
-          </DialogContent>
-        </Dialog>
+          </DrawerContent>
+        </Drawer>
       </>
     ),
   };
@@ -266,13 +276,22 @@ function SubmitEventModalContent({
 
   if (isOpen && editEventId && loadEventForEdit && resolvedInitialData === undefined) {
     return (
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="w-[calc(100vw-16px)] max-w-[900px] p-0 sm:w-[calc(100vw-48px)] sm:max-h-[400px]" showCloseButton aria-describedby={undefined}>
+      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DrawerContent className="overflow-hidden p-0" aria-describedby={undefined}>
+          <DrawerClose asChild>
+            <button
+              type="button"
+              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              aria-label={t("common.close")}
+            >
+              <X className="size-4" />
+            </button>
+          </DrawerClose>
           <div className="flex items-center justify-center py-16 text-muted-foreground">
             {t("common.loading")}
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
     );
   }
 

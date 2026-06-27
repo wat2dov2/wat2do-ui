@@ -2,10 +2,10 @@ import { Check } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from "@/shared/ui/drawer";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 
 interface PromotionSuccessScreenProps {
@@ -20,10 +20,10 @@ export function PromotionSuccessScreen({
   const { t } = useTranslation();
   const { formData } = useEventFormContext();
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md" showCloseButton={false}>
-        <DialogTitle className="sr-only">{t("events.eventPromoted")}</DialogTitle>
-        <div className="flex flex-col items-center text-center py-6 gap-y-4">
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="p-4">
+        <DrawerTitle className="sr-only">{t("events.eventPromoted")}</DrawerTitle>
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-y-4 py-6 text-center">
           <div className="size-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
             <Check className="size-8 text-white" strokeWidth={3} />
           </div>
@@ -39,7 +39,7 @@ export function PromotionSuccessScreen({
             {t("common.done")}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

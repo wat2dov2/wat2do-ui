@@ -22,7 +22,7 @@
 import { useCallback, useState, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Building2, Calendar, Heart, LogIn, X } from "@/shared/ui/doodle-icons";
+import { Calendar, Heart, LogIn, OrganizationChart, X } from "@/shared/ui/doodle-icons";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { CommandPalette } from "@/shared/components/CommandPalette";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
@@ -189,7 +189,7 @@ export function ModalContainer() {
                 <X className="size-4" />
               </button>
             </DrawerClose>
-            <DrawerHeader className="p-0 pr-11 text-left">
+            <DrawerHeader className="p-0 text-center">
               <DrawerTitle>{t("submitChoice.title")}</DrawerTitle>
               <DrawerDescription id="submit-choice-description">
                 {t("submitChoice.description")}
@@ -221,7 +221,7 @@ export function ModalContainer() {
                 onMouseDown={handleChooseSubmitOrganization}
               >
                 <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <Building2 className="size-5" />
+                  <OrganizationChart className="size-5" />
                 </span>
                 <span className="min-w-0 space-y-1">
                   <span className="block font-medium text-foreground">{t("submitChoice.organizationTitle")}</span>

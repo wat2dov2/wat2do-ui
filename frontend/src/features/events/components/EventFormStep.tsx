@@ -5,9 +5,7 @@ import { getAllOrganizations } from "@/features/organizations";
 import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
-import {
-  DialogClose,
-} from "@/shared/ui/dialog";
+import { DrawerClose } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -215,11 +213,11 @@ export function EventFormStep({
               <form>
                 <EventFormFields />
                 <Field orientation="horizontal" className="mt-6">
-                  <DialogClose asChild>
+                  <DrawerClose asChild>
                     <Button variant="outline" type="button" className="min-h-11 sm:min-h-0">
                       {t("common.cancel")}
                     </Button>
-                  </DialogClose>
+                  </DrawerClose>
                   <LoadingButton
                     type="button"
                     onMouseDown={onSubmit}
