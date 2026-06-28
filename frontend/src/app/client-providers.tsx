@@ -12,6 +12,9 @@ import { initClarity } from "@/shared/lib/clarity";
 import { initGoogleAnalytics } from "@/shared/lib/googleAnalytics";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
 import { TooltipProvider } from "@/shared/ui/tooltip";
+import { installBundledLocales } from "@/app/localeResources";
+
+installBundledLocales();
 
 const Analytics = lazy(() =>
   import("@vercel/analytics/react").then((module) => ({
@@ -70,7 +73,7 @@ export function useAppReady() {
 }
 
 export function ClientProviders({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => i18n.hasResourceBundle("en", "translation"));
 
   useEffect(() => {
     let cancelled = false;

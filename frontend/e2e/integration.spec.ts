@@ -749,6 +749,14 @@ test.describe("Navigation", () => {
     expect(rootHtml.includes("next-devtools")).toBe(schoolHtml.includes("next-devtools"));
   });
 
+  test("events page first paint uses app chrome, not an empty shell", async ({ page }) => {
+    await page.goto(BASE, { waitUntil: "domcontentloaded" });
+
+    await expect(page.locator("#server-event-feed")).toHaveCount(0);
+    await expect(page.getByRole("status")).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("Loading");
+  });
+
   test("no console errors on events page", async ({ page }) => {
     const errors: string[] = [];
     page.on("console", (msg) => {

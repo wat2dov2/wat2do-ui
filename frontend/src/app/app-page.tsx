@@ -46,7 +46,7 @@ export function AppPage({
   skipSchoolCheck = false,
 }: AppPageProps) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingPage className="min-h-dvh" />}>
       <AppPageContent
         authFlow={authFlow}
         chrome={chrome}
