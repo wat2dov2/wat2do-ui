@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 import type { Organization } from "@/shared/types";
 import { getAllOrganizations, getOrganizationTypes } from "@/features/organizations/api/organizations.api";
 import { useEventsStore } from "@/features/events";
-import { useBackendQuery } from "@/shared/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useOrganizationsList } from "@/features/organizations/hooks/useOrganizationsList";
 
 interface UseAdminOrganizationsPageOptions {
@@ -51,11 +51,11 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     return getOrganizationTypes(allOrgs);
   }, [schoolFilter]);
 
-  const { data: organizationTypes } = useBackendQuery(
-    fetchTypes,
-    [],
-    `${schoolFilter ?? ""}-${refreshCounter}`
-  );
+  const { data: organizationTypes = [] } = useQuery({
+    queryKey: ["admin-organization-types", schoolFilter, refreshCounter],
+    queryFn: fetchTypes,
+    initialData: [],
+  });
 
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);

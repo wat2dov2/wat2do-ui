@@ -55,13 +55,14 @@ export function EventsPageContainer() {
     setViewMode(mode);
   }, [setViewMode]);
 
-  const isNewlyAddedActive =
-    filters.sortBy === "added_at" && filters.sortOrder === "desc";
+  const isNewlyAddedActive = filters.addedWithin24h;
   const handleNewlyAddedToggle = useCallback(() => {
     if (isNewlyAddedActive) {
+      filters.setAddedWithin24h(false);
       filters.setSort("date", "asc");
       return;
     }
+    filters.setAddedWithin24h(true);
     filters.setSort("added_at", "desc");
   }, [filters, isNewlyAddedActive]);
 

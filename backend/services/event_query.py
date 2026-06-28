@@ -14,7 +14,7 @@ the response model.
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -200,6 +200,7 @@ def load_events_page(
     ids: list[int] | None = None,
     sort_by: str = "date",
     sort_order: str = "asc",
+    added_within_24h: bool = False,
 ) -> tuple[list[T], int]:
     """Filtered, paged event list.
 
@@ -225,6 +226,7 @@ def load_events_page(
         ids=ids,
         sort_by=sort_by,
         sort_order=sort_order,
+        added_within_24h=added_within_24h,
     ):
         return _load_lightweight_date_page(
             start_utc=start_utc,
@@ -248,6 +250,9 @@ def load_events_page(
         q = q.lte("dtstart_utc", end_utc.isoformat())
     if school:
         q = q.eq("events.school", school)
+    if added_within_24h:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        q = q.gte("events.added_at", cutoff)
     if ids is not None:
         q = q.in_("events.id", ids)
     if categories:
@@ -307,6 +312,7 @@ def _can_use_lightweight_date_page(
     ids: list[int] | None,
     sort_by: str,
     sort_order: str,
+    added_within_24h: bool,
 ) -> bool:
     """True for the root-feed shape: date-ordered browsing with no card filters.
 
@@ -317,7 +323,8 @@ def _can_use_lightweight_date_page(
     """
 
     return (
-        not (search or "").strip()
+        not added_within_24h
+        and not (search or "").strip()
         and not categories
         and not locations
         and not foods

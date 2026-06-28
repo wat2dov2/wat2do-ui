@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Organization } from "@/shared/types";
 import { getAllOrganizations } from "@/features/organizations";
-import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
+import { useQuery } from "@tanstack/react-query";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import { DrawerClose } from "@/shared/ui/drawer";
@@ -90,7 +90,11 @@ export function EventFormStep({
     () => getAllOrganizations(schoolFilter ?? undefined),
     [schoolFilter],
   );
-  const { data: organizations } = useBackendQuery(fetchOrganizations, NO_ORGANIZATIONS, schoolFilter);
+  const { data: organizations = NO_ORGANIZATIONS } = useQuery({
+    queryKey: ["organizations", schoolFilter],
+    queryFn: fetchOrganizations,
+    initialData: NO_ORGANIZATIONS,
+  });
 
   const selectedOrganizationName = useMemo(() => {
     const id = eventForm.formData.organization_id;

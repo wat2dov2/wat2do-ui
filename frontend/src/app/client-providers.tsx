@@ -13,6 +13,7 @@ import { initGoogleAnalytics } from "@/shared/lib/googleAnalytics";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { installBundledLocales } from "@/app/localeResources";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 installBundledLocales();
 
@@ -74,6 +75,29 @@ export function useAppReady() {
 
 export function ClientProviders({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(() => i18n.hasResourceBundle("en", "translation"));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+            staleTime: 1000 * 60 * 5, // 5 minutes default cache TTL
+          },
+        },
+      }),
+  );
+
+  useEffect(() => {
+    const handleAuth = () => {
+      queryClient.clear();
+    };
+    window.addEventListener("auth-user-login", handleAuth);
+    window.addEventListener("auth-user-logout", handleAuth);
+    return () => {
+      window.removeEventListener("auth-user-login", handleAuth);
+      window.removeEventListener("auth-user-logout", handleAuth);
+    };
+  }, [queryClient]);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,24 +138,26 @@ export function ClientProviders({ children }: { children: ReactNode }) {
   }, [ready]);
 
   return (
-    <ErrorBoundary>
-      <LazyMotion features={domMax} strict>
-        <TooltipProvider delayDuration={0}>
-          <AppReadyContext.Provider value={ready}>
-            {DevClickToComponent ? (
-              <Suspense fallback={null}>
-                <DevClickToComponent />
-              </Suspense>
-            ) : null}
-            {children}
-            {shouldRenderVercelAnalytics() ? (
-              <Suspense fallback={null}>
-                <Analytics />
-              </Suspense>
-            ) : null}
-          </AppReadyContext.Provider>
-        </TooltipProvider>
-      </LazyMotion>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        <LazyMotion features={domMax} strict>
+          <TooltipProvider delayDuration={0}>
+            <AppReadyContext.Provider value={ready}>
+              {DevClickToComponent ? (
+                <Suspense fallback={null}>
+                  <DevClickToComponent />
+                </Suspense>
+              ) : null}
+              {children}
+              {shouldRenderVercelAnalytics() ? (
+                <Suspense fallback={null}>
+                  <Analytics />
+                </Suspense>
+              ) : null}
+            </AppReadyContext.Provider>
+          </TooltipProvider>
+        </LazyMotion>
+      </ErrorBoundary>
+    </QueryClientProvider>
   );
 }

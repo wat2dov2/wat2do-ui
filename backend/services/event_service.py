@@ -208,6 +208,7 @@ def list_events(
     ids: list[int] | None = None,
     sort_by: str = "date",
     sort_order: str = "asc",
+    added_within_24h: bool = False,
 ) -> tuple[list[EventSummaryResponse], int]:
     """Public browse list for a school.
 
@@ -235,6 +236,7 @@ def list_events(
         ids=ids,
         sort_by=sort_by,
         sort_order=sort_order,
+        added_within_24h=added_within_24h,
     )
 
 

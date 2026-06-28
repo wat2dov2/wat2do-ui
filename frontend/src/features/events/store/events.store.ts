@@ -50,6 +50,7 @@ interface EventsState {
   addEvent: (data: EventFormData) => Promise<number>;
   updateEvent: (eventId: number, data: EventFormData) => Promise<void>;
   deleteEvent: (eventId: number) => Promise<void>;
+  incrementClickCount: (eventId: number) => void;
 }
 
 /** Deduplicate concurrent fetches for the same school/filter/page query. */
@@ -189,7 +190,6 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     if (_skipNextEventsFetchQueryKey === queryKey) {
       _skipNextEventsFetchQueryKey = null;
       set({ isLoading: false, isLoadingMore: false, error: null });
-      return;
     }
 
     const request = buildRequestQuery(school, eventQuery, 1, get().eventsPageSize);
@@ -353,6 +353,17 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       // Re-throw so callers can surface the error (toast, etc.).
       throw err;
     }
+  },
+
+  incrementClickCount: (eventId) => {
+    set((state) => ({
+      events: state.events.map((e) =>
+        e.id === eventId ? { ...e, click_count: (e.click_count ?? 0) + 1 } : e
+      ),
+      promotedEvents: state.promotedEvents.map((e) =>
+        e.id === eventId ? { ...e, click_count: (e.click_count ?? 0) + 1 } : e
+      ),
+    }));
   },
 }));
 

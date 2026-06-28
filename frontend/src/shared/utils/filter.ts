@@ -20,6 +20,7 @@ export function getFilterCounts(filters: {
   savedFilter: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
+  addedWithin24h?: boolean;
 }): number {
   const hasActiveSort = filters.sortBy !== "date" || filters.sortOrder !== "asc";
 
@@ -33,6 +34,7 @@ export function getFilterCounts(filters: {
     (filters.selectedOrganizations?.length ?? 0) +
     (filters.freeFoodFilter ? 1 : 0) +
     (filters.savedFilter ? 1 : 0) +
+    (filters.addedWithin24h ? 1 : 0) +
     (hasActiveSort ? 1 : 0)
   );
 }

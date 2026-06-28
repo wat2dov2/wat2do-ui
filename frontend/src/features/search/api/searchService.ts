@@ -23,6 +23,7 @@ export interface SearchFilters {
   profileCompleted: boolean;
   savedEventIds: number[];
   selectedOrganizations: string[];
+  addedWithin24h: boolean;
 }
 
 export interface SortOptions {
@@ -63,6 +64,15 @@ export function filterEvents(
     // Free-food quick filter
     if (filters.freeFoodFilter && (food.length === 0 || price > 0)) {
       return false;
+    }
+
+    // Added within 24 hours quick filter
+    if (filters.addedWithin24h) {
+      const addedTime = new Date(event.added_at).getTime();
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      if (addedTime < cutoff) {
+        return false;
+      }
     }
 
     // Day-of-week filter

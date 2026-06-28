@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import type { Organization } from "@/shared/types";
 import { getAllOrganizations } from "@/features/organizations/api/organizations.api";
-import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
+import { useQuery } from "@tanstack/react-query";
 
 const NO_ORGANIZATIONS: Organization[] = [];
 
@@ -11,7 +11,11 @@ const NO_ORGANIZATIONS: Organization[] = [];
  * name of an event/submission that only carries a organization_id.
  */
 export function useOrganizationNameLookup() {
-  const { data: organizations } = useBackendQuery(getAllOrganizations, NO_ORGANIZATIONS);
+  const { data: organizations = NO_ORGANIZATIONS } = useQuery({
+    queryKey: ["organizations-all"],
+    queryFn: () => getAllOrganizations(),
+    initialData: NO_ORGANIZATIONS,
+  });
 
   const namesById = useMemo(() => {
     const map = new Map<number, string>();

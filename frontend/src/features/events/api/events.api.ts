@@ -33,6 +33,7 @@ export interface EventListQuery {
   sortOrder?: "asc" | "desc";
   startUtc?: string;
   endUtc?: string;
+  addedWithin24h?: boolean;
 }
 
 export type LatestAddedEvent = NonNullable<ApiEventFeedResponse["latest_added_event"]> | null;
@@ -78,6 +79,7 @@ export async function fetchEventsPage(query: EventListQuery = {}): Promise<Pagin
   if (query.registration !== undefined) params.set("registration", String(query.registration));
   appendValues(params, "organizations", query.organizations);
   if (query.freeFood) params.set("free_food", "true");
+  if (query.addedWithin24h) params.set("added_within_24h", "true");
   appendValues(params, "ids", query.ids);
   if (query.sortBy) params.set("sort_by", query.sortBy);
   if (query.sortOrder) params.set("sort_order", query.sortOrder);

@@ -6,6 +6,9 @@ import { loadTheme, saveTheme } from "@/shared/services/preferencesStorage";
  */
 export function useDarkMode() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
     const saved = loadTheme();
     if (saved !== null) {
       return saved === "dark";
@@ -16,13 +19,28 @@ export function useDarkMode() {
 
   // Apply dark mode class to document (initial load only)
   useEffect(() => {
-    if (isDarkMode) {
+    const saved = loadTheme();
+    const shouldBeDark = saved !== null
+      ? saved === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    if (shouldBeDark) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-    saveTheme(isDarkMode ? "dark" : "light");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    saveTheme(shouldBeDark ? "dark" : "light");
+    requestAnimationFrame(() => {
+      setIsDarkMode(shouldBeDark);
+    });
+
+    // Remove no-transitions class after mount so transitions work for manual toggling
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove("no-transitions");
+      });
+    });
+    return () => cancelAnimationFrame(raf);
   }, []); // Only run on mount
 
   // Sync isDarkMode state when theme changes externally

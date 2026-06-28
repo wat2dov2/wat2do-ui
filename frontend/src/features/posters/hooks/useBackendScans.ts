@@ -3,7 +3,7 @@ import {
   normalizeBackendScan,
 } from "@/features/posters/api/scans.api";
 import type { QRCodeScan } from "@/features/posters/types";
-import { useBackendQuery } from "@/shared/hooks/useBackendQuery";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Fetches scans from the backend so that scans from any device (e.g. phone)
@@ -14,11 +14,11 @@ export function useBackendScans(refreshKey?: number): {
   loading: boolean;
   error: Error | null;
 } {
-  const { data: scans, loading, error } = useBackendQuery(
-    () => getScansFromBackend().then((raw) => raw.map(normalizeBackendScan)),
-    [] as QRCodeScan[],
-    refreshKey,
-  );
+  const { data: scans = [], isLoading, error } = useQuery({
+    queryKey: ["scans", refreshKey],
+    queryFn: () => getScansFromBackend().then((raw) => raw.map(normalizeBackendScan)),
+    initialData: [] as QRCodeScan[],
+  });
 
-  return { scans, loading, error };
+  return { scans, loading: isLoading, error: error instanceof Error ? error : error ? new Error(String(error)) : null };
 }

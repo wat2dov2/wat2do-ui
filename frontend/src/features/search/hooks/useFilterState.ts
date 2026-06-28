@@ -33,6 +33,7 @@ function useCurrentFilterState(): FilterState {
         savedFilter: s.savedFilter,
         sortBy: s.sortBy,
         sortOrder: s.sortOrder,
+        addedWithin24h: s.addedWithin24h,
       }),
     ),
   );
@@ -114,6 +115,7 @@ export function useFilterState(profileCompleted: boolean) {
     savedFilter,
     sortBy,
     sortOrder,
+    addedWithin24h,
   } = useSearchStore(
     useShallow((s) => ({
       searchQuery: s.searchQuery,
@@ -128,6 +130,7 @@ export function useFilterState(profileCompleted: boolean) {
       savedFilter: s.savedFilter,
       sortBy: s.sortBy,
       sortOrder: s.sortOrder,
+      addedWithin24h: s.addedWithin24h,
     })),
   );
   const {
@@ -176,6 +179,10 @@ export function useFilterState(profileCompleted: boolean) {
   );
   const setSavedFilter = useCallback(
     (value: boolean) => updateFilterState({ saved: value }),
+    [updateFilterState],
+  );
+  const setAddedWithin24h = useCallback(
+    (value: boolean) => updateFilterState({ addedWithin24h: value }),
     [updateFilterState],
   );
   const setSortBy = useCallback(
@@ -234,6 +241,7 @@ export function useFilterState(profileCompleted: boolean) {
           savedFilter,
           sortBy,
           sortOrder,
+          addedWithin24h,
         }),
       ),
     [
@@ -249,6 +257,7 @@ export function useFilterState(profileCompleted: boolean) {
       savedFilter,
       sortBy,
       sortOrder,
+      addedWithin24h,
     ],
   );
 
@@ -282,6 +291,7 @@ export function useFilterState(profileCompleted: boolean) {
         saved: filters.saved || false,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
+        addedWithin24h: filters.addedWithin24h || false,
       });
     },
     [setFilterState],
@@ -346,6 +356,8 @@ export function useFilterState(profileCompleted: boolean) {
     setFreeFoodFilter,
     savedFilter,
     setSavedFilter,
+    addedWithin24h,
+    setAddedWithin24h,
 
     // Toggle functions
     toggleCategory,

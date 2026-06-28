@@ -24,6 +24,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   saved: false,
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
+  addedWithin24h: false,
 };
 
 /**
@@ -44,6 +45,7 @@ export interface SearchStoreFilterValues {
   savedFilter: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
+  addedWithin24h: boolean;
 }
 
 type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
@@ -52,6 +54,7 @@ type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
   saved?: unknown;
   sortBy?: unknown;
   sortOrder?: unknown;
+  addedWithin24h?: unknown;
 };
 
 function stringArray(value: unknown): string[] {
@@ -86,6 +89,7 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
     saved: filters.saved === true,
     sortBy: typeof filters.sortBy === "string" && filters.sortBy ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
+    addedWithin24h: filters.addedWithin24h === true,
   };
 }
 
@@ -114,6 +118,7 @@ export function storeStatesToFilterState(
     saved: values.savedFilter,
     sortBy: values.sortBy,
     sortOrder: values.sortOrder,
+    addedWithin24h: values.addedWithin24h,
   };
 }
 
@@ -137,6 +142,7 @@ export function generatedFilterStateToFilterState(
     saved: filters.saved === true,
     sortBy: typeof filters.sortBy === "string" ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
+    addedWithin24h: filters.addedWithin24h === true,
   });
 }
 
@@ -156,6 +162,7 @@ function isEmptyFilterState(filters: FilterState): boolean {
     filters.organizations.length === 0 &&
     !filters.freeFood &&
     !filters.saved &&
+    !filters.addedWithin24h &&
     filters.sortBy === DEFAULT_FILTER_SORT_BY &&
     filters.sortOrder === DEFAULT_FILTER_SORT_ORDER
   );

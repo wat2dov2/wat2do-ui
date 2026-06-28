@@ -17,6 +17,7 @@ export interface FilterState {
   saved: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
+  addedWithin24h: boolean;
 }
 
 export type FilterViewMode = "visual" | "json";

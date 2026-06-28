@@ -341,6 +341,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         ids=None,
         sort_by="date",
         sort_order="asc",
+        added_within_24h=False,
     )
     mock_latest.assert_called_once_with("University of Waterloo")
 
@@ -381,6 +382,7 @@ def test_list_events_forwards_date_window(client, monkeypatch):
         ids=None,
         sort_by="date",
         sort_order="asc",
+        added_within_24h=False,
     )
     mock_latest.assert_called_once_with("University of Waterloo")
 
@@ -433,6 +435,46 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
         ids=[1, 2],
         sort_by="added_at",
         sort_order="desc",
+        added_within_24h=False,
+    )
+    mock_latest.assert_called_once_with("University of Waterloo")
+
+
+def test_list_events_forwards_added_within_24h(client, monkeypatch):
+    mock_list = MagicMock(return_value=([], 0))
+    mock_latest = MagicMock(return_value=None)
+    monkeypatch.setattr(event_service, "list_events", mock_list)
+    monkeypatch.setattr(event_service, "get_latest_added_event", mock_latest)
+
+    resp = client.get(
+        "/events/",
+        params={
+            "school": "University of Waterloo",
+            "added_within_24h": "true",
+        },
+    )
+
+    assert resp.status_code == 200
+    mock_list.assert_called_once_with(
+        school="University of Waterloo",
+        skip=0,
+        limit=50,
+        start_utc=None,
+        end_utc=None,
+        search=None,
+        categories=None,
+        locations=None,
+        foods=None,
+        days=None,
+        min_price=None,
+        max_price=None,
+        registration=None,
+        organizations=None,
+        free_food=False,
+        ids=None,
+        sort_by="date",
+        sort_order="asc",
+        added_within_24h=True,
     )
     mock_latest.assert_called_once_with("University of Waterloo")
 

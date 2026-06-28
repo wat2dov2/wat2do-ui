@@ -59,6 +59,7 @@ export function useSearch({
       profileCompleted,
       savedEventIds,
       selectedOrganizations: filterState.selectedOrganizations,
+      addedWithin24h: filterState.addedWithin24h,
     });
     return sortEvents(filtered, { sortBy: filterState.sortBy, sortOrder: filterState.sortOrder });
   }, [
@@ -77,6 +78,7 @@ export function useSearch({
     filterState.sortBy,
     filterState.sortOrder,
     filterState.selectedOrganizations,
+    filterState.addedWithin24h,
   ]);
 
   // Calculate filter count
@@ -94,6 +96,7 @@ export function useSearch({
         savedFilter: filterState.savedFilter,
         sortBy: filterState.sortBy,
         sortOrder: filterState.sortOrder,
+        addedWithin24h: filterState.addedWithin24h,
       }),
     [
       filterState.selectedCategories,
@@ -107,6 +110,7 @@ export function useSearch({
       filterState.savedFilter,
       filterState.sortBy,
       filterState.sortOrder,
+      filterState.addedWithin24h,
     ],
   );
 

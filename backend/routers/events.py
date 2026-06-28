@@ -84,6 +84,7 @@ def list_events(
     registration: bool | None = Query(default=None),
     organizations: list[str] | None = Query(default=None),
     free_food: bool = Query(default=False),
+    added_within_24h: bool = Query(default=False),
     ids: list[int] | None = Query(default=None),
     sort_by: EventSortBy = Query(default="date"),
     sort_order: EventSortOrder = Query(default="asc"),
@@ -119,6 +120,7 @@ def list_events(
         ids=ids,
         sort_by=sort_by,
         sort_order=sort_order,
+        added_within_24h=added_within_24h,
     )
     return {
         **paginated_response(items, total, pagination),
