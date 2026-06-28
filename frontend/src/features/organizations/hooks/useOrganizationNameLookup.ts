@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import type { Organization } from "@/shared/types";
 import { getAllOrganizations } from "@/features/organizations/api/organizations.api";
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 const NO_ORGANIZATIONS: Organization[] = [];
 
@@ -12,9 +13,9 @@ const NO_ORGANIZATIONS: Organization[] = [];
  */
 export function useOrganizationNameLookup() {
   const { data: organizations = NO_ORGANIZATIONS } = useQuery({
-    queryKey: ["organizations-all"],
+    queryKey: queryKeys.organizations.allForSchool(null),
     queryFn: () => getAllOrganizations(),
-    initialData: NO_ORGANIZATIONS,
+    placeholderData: NO_ORGANIZATIONS,
   });
 
   const namesById = useMemo(() => {

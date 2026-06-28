@@ -73,6 +73,16 @@ interface EventCardListItemProps {
   children: ReactNode;
 }
 
+interface EventCardsGridProps {
+  events: Event[];
+  savedEventIds: Set<number>;
+  animationIndexByEventId: Map<number, number>;
+  onEventClick?: (event: Event) => void;
+  disableModal?: boolean;
+  onDelete?: (eventId: number) => void;
+  onActionDialogOpen: (type: EventCardDialog, event: Event) => void;
+}
+
 function EventCardListItem({
   animationIndex,
   children,
@@ -92,6 +102,36 @@ function EventCardListItem({
     >
       {children}
     </m.div>
+  );
+}
+
+function EventCardsGrid({
+  events,
+  savedEventIds,
+  animationIndexByEventId,
+  onEventClick,
+  disableModal,
+  onDelete,
+  onActionDialogOpen,
+}: EventCardsGridProps) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      {events.map((event) => (
+        <EventCardListItem
+          key={event.id}
+          animationIndex={animationIndexByEventId.get(event.id) ?? 0}
+        >
+          <EventCard
+            event={event}
+            isSaved={savedEventIds.has(event.id)}
+            onEventClick={onEventClick}
+            disableModal={disableModal}
+            onDelete={onDelete}
+            onActionDialogOpen={onActionDialogOpen}
+          />
+        </EventCardListItem>
+      ))}
+    </div>
   );
 }
 
@@ -353,23 +393,15 @@ export function EventList({
                 colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
               />
             </h2>
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {promotedEvents.map((event) => (
-                <EventCardListItem
-                  key={event.id}
-                  animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
-                >
-                  <EventCard
-                    event={event}
-                    isSaved={savedSet.has(event.id)}
-                    onEventClick={onEventClick}
-                    disableModal={disableModal}
-                    onDelete={onDelete}
-                    onActionDialogOpen={handleActionDialogOpen}
-                  />
-                </EventCardListItem>
-              ))}
-            </div>
+            <EventCardsGrid
+              events={promotedEvents}
+              savedEventIds={savedSet}
+              animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
+              onEventClick={onEventClick}
+              disableModal={disableModal}
+              onDelete={onDelete}
+              onActionDialogOpen={handleActionDialogOpen}
+            />
           </section>
         )}
 
@@ -383,45 +415,29 @@ export function EventList({
                 <h2 className="text-base font-normal tracking-normal text-foreground">
                   {t(labelKey)}
                 </h2>
-                <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                  {sectionEvents.map((event) => (
-                    <EventCardListItem
-                      key={event.id}
-                      animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
-                    >
-                      <EventCard
-                        event={event}
-                        isSaved={savedSet.has(event.id)}
-                        onEventClick={onEventClick}
-                        disableModal={disableModal}
-                        onDelete={onDelete}
-                        onActionDialogOpen={handleActionDialogOpen}
-                      />
-                    </EventCardListItem>
-                  ))}
-                </div>
+                <EventCardsGrid
+                  events={sectionEvents}
+                  savedEventIds={savedSet}
+                  animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
+                  onEventClick={onEventClick}
+                  disableModal={disableModal}
+                  onDelete={onDelete}
+                  onActionDialogOpen={handleActionDialogOpen}
+                />
               </section>
             );
           })
         ) : (
           <section className="space-y-2.5" aria-label={t("events.upcoming")}>
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {sectionOrderedEvents.map((event) => (
-                <EventCardListItem
-                  key={event.id}
-                  animationIndex={visibleEventAnimation.animationIndexByEventId.get(event.id) ?? 0}
-                >
-                  <EventCard
-                    event={event}
-                    isSaved={savedSet.has(event.id)}
-                    onEventClick={onEventClick}
-                    disableModal={disableModal}
-                    onDelete={onDelete}
-                    onActionDialogOpen={handleActionDialogOpen}
-                  />
-                </EventCardListItem>
-              ))}
-            </div>
+            <EventCardsGrid
+              events={sectionOrderedEvents}
+              savedEventIds={savedSet}
+              animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
+              onEventClick={onEventClick}
+              disableModal={disableModal}
+              onDelete={onDelete}
+              onActionDialogOpen={handleActionDialogOpen}
+            />
           </section>
         )}
         {hasMoreEvents && (

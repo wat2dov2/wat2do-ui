@@ -7,6 +7,12 @@ import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { getUniqueEvents } from "@/shared/utils/event";
 import type { EventListQuery } from "@/features/events/api/events.api";
+import {
+  eventsFeedHasMore,
+  flattenEventsFeedPages,
+  useEventsFeed,
+  usePromotedEvents,
+} from "@/features/events/hooks/useEventsFeed";
 
 interface UseEventsPageDataOptions {
   profileCompleted: boolean;
@@ -14,12 +20,15 @@ interface UseEventsPageDataOptions {
 
 /**
  * Hook that aggregates all data orchestration for the EventsPageContainer:
- * events store, saved events, promotions, search/filters, and derived
+ * events feed queries, saved events, promotions, search/filters, and derived
  * ordered events.
  */
 export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions) {
   const { t } = useTranslation();
-  // Read from stores (single source of truth -- no duplicate fetches)
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const deleteEvent = useEventsStore((s) => s.deleteEvent);
+  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+
   const events = useEventsStore((s) => s.events);
   const promotedEvents = useEventsStore((s) => s.promotedEvents);
   const latestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
@@ -28,10 +37,6 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   const error = useEventsStore((s) => s.error);
   const totalEvents = useEventsStore((s) => s.totalEvents);
   const hasMoreEvents = useEventsStore((s) => s.hasMoreEvents);
-  const fetchEvents = useEventsStore((s) => s.fetchEvents);
-  const loadMoreEvents = useEventsStore((s) => s.loadMoreEvents);
-  const deleteEvent = useEventsStore((s) => s.deleteEvent);
-  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
 
   const filters = useSearch({
     events,
@@ -56,6 +61,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
       ids: filters.savedFilter ? savedEventIds : undefined,
       sortBy: filters.sortBy,
       sortOrder: filters.sortOrder,
+      addedWithin24h: filters.addedWithin24h || undefined,
     };
   }, [
     filters.searchQuery,
@@ -71,20 +77,62 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     filters.savedFilter,
     filters.sortBy,
     filters.sortOrder,
+    filters.addedWithin24h,
     savedEventIds,
   ]);
 
-  // Trigger event fetch on mount of the events page (single fetch view architecture)
-  const refreshEvents = useCallback(() => {
-    void fetchEvents(eventQuery);
-  }, [eventQuery, fetchEvents]);
+  const feedQuery = useEventsFeed(schoolFilter, eventQuery);
+  const promotedQuery = usePromotedEvents(schoolFilter);
+
+  const flattenedFeed = useMemo(
+    () => flattenEventsFeedPages(feedQuery.data?.pages),
+    [feedQuery.data?.pages],
+  );
 
   useEffect(() => {
-    void fetchEvents(eventQuery);
-  }, [eventQuery, fetchEvents]);
+    const feedError = feedQuery.error
+      ? getApiErrorMessage(feedQuery.error, t("events.loadFailed"))
+      : null;
 
-  // The backend owns feed ordering. Preserve that API order exactly so
-  // infinite-scroll appends cannot make already-rendered cards jump around.
+    useEventsStore.setState({
+      events: flattenedFeed?.items ?? [],
+      latestAddedEvent: flattenedFeed?.latest_added_event ?? null,
+      isLoading: feedQuery.isLoading,
+      isLoadingMore: feedQuery.isFetchingNextPage,
+      error: feedError,
+      eventsPage: flattenedFeed?.page ?? 0,
+      eventsPageSize: flattenedFeed?.page_size ?? useEventsStore.getState().eventsPageSize,
+      totalEvents: flattenedFeed?.total ?? 0,
+      hasMoreEvents: eventsFeedHasMore(feedQuery.data?.pages),
+      eventQuery,
+    });
+  }, [
+    eventQuery,
+    feedQuery.data?.pages,
+    feedQuery.error,
+    feedQuery.isFetchingNextPage,
+    feedQuery.isLoading,
+    flattenedFeed,
+    t,
+  ]);
+
+  useEffect(() => {
+    useEventsStore.setState({
+      promotedEvents: promotedQuery.data ?? [],
+      isPromotedLoading: promotedQuery.isLoading,
+    });
+  }, [promotedQuery.data, promotedQuery.isLoading]);
+
+  const refreshEvents = useCallback(() => {
+    void feedQuery.refetch();
+    void promotedQuery.refetch();
+  }, [feedQuery, promotedQuery]);
+
+  const loadMoreEvents = useCallback(() => {
+    if (!feedQuery.hasNextPage || feedQuery.isFetchingNextPage) return;
+    void feedQuery.fetchNextPage();
+  }, [feedQuery]);
+
   const orderedEvents = useMemo(() => {
     return getUniqueEvents(events);
   }, [events]);
@@ -103,14 +151,14 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
         });
       }
     },
-    [deleteEvent, t]
+    [deleteEvent, t],
   );
 
   return {
     isLoading,
     isLoadingMore,
     error,
-    fetchEvents: refreshEvents,
+    refreshEvents,
     loadMoreEvents,
     totalEvents,
     hasMoreEvents,

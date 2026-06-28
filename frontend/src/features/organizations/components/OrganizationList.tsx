@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Search } from "@/shared/ui/doodle-icons";
 import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { OrganizationCard } from "@/features/organizations/components/OrganizationCard";
@@ -118,21 +117,5 @@ export function OrganizationListEmptyState({
       <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
       <p className="text-sm text-muted-foreground text-center max-w-md">{description}</p>
     </div>
-  );
-}
-
-export function OrganizationListSearchEmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <OrganizationListEmptyState
-      title={title}
-      description={description}
-      icon={<Search className="size-8 text-muted-foreground" />}
-    />
   );
 }

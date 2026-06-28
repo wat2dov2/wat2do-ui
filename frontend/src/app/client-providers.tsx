@@ -13,7 +13,9 @@ import { initGoogleAnalytics } from "@/shared/lib/googleAnalytics";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { installBundledLocales } from "@/app/localeResources";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { getQueryClient } from "@/shared/lib/queryClient";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 installBundledLocales();
 
@@ -75,27 +77,20 @@ export function useAppReady() {
 
 export function ClientProviders({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(() => i18n.hasResourceBundle("en", "translation"));
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            refetchOnWindowFocus: false,
-            staleTime: 1000 * 60 * 5, // 5 minutes default cache TTL
-          },
-        },
-      }),
-  );
+  const [queryClient] = useState(() => getQueryClient());
 
   useEffect(() => {
-    const handleAuth = () => {
-      queryClient.clear();
+    const handleLogin = () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.user.all });
     };
-    window.addEventListener("auth-user-login", handleAuth);
-    window.addEventListener("auth-user-logout", handleAuth);
+    const handleLogout = () => {
+      queryClient.removeQueries({ queryKey: queryKeys.user.all });
+    };
+    window.addEventListener("auth-user-login", handleLogin);
+    window.addEventListener("auth-user-logout", handleLogout);
     return () => {
-      window.removeEventListener("auth-user-login", handleAuth);
-      window.removeEventListener("auth-user-logout", handleAuth);
+      window.removeEventListener("auth-user-login", handleLogin);
+      window.removeEventListener("auth-user-logout", handleLogout);
     };
   }, [queryClient]);
 

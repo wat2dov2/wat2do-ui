@@ -144,6 +144,26 @@ component, migration utility, type, or test fixture:
 Do not create new folders, libraries, abstractions, or naming schemes unless the
 repo already uses that pattern or the human explicitly approves it.
 
+## Frontend cleanup mandate
+
+Frontend cleanup means reducing concepts, not moving mess.
+Every touched frontend path must end with fewer responsibilities, fewer public exports, fewer hidden side effects, or a clearly documented reason it cannot yet be simplified.
+
+When cleaning frontend code:
+- Keep `src/app` route files as thin routing shells that delegate to `src/app/client-routes.tsx`, `src/app/routes/*`, or feature page containers.
+- Keep feature page containers as orchestration only: load data, call hooks, choose layout, and pass named props.
+- Keep React components presentation-first: render UI, delegate state transitions to colocated hooks or reducers, and delegate domain work to feature API/query helpers.
+- Treat TanStack Query as the source of truth for server state and use `src/shared/lib/queryClient.ts` plus `src/shared/lib/queryKeys.ts` for cache ownership.
+- Do not mirror server state into Zustand or React context unless a consumer truly needs a client snapshot.
+- When a client snapshot is needed, name it as a snapshot and keep writes routed through the query cache or feature API.
+- Keep stores for client state, optimistic UI glue, auth/session broadcasts, or persisted preferences only.
+- Do not create new fetching hooks, cache keys, browser-storage helpers, or state stores until you have searched for the existing equivalent and either reused it or deleted the duplicate path.
+- Keep feature public surfaces small: cross-feature imports should use the feature `index.ts` only for intentional public API, and internal imports should stay inside the owning feature.
+- Prefer deleting stale exports, props, wrapper components, unused locale keys, and duplicate helpers over adding new layers.
+- Split large hooks/components only along real responsibility boundaries: data fetching, URL state, derived view model, form state, and presentational UI.
+- Do not perform cosmetic file shuffling or rename churn unless it removes an implementation path or makes ownership unambiguous.
+- Before ending any frontend cleanup, search for old imports and dead exports, run the frontend checks, and report anything still duplicated.
+
 ---
 
 ## Required workflow for every non-trivial task

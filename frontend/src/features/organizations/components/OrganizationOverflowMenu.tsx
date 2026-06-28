@@ -22,13 +22,6 @@ export function OrganizationOverflowMenu({
   stopPropagation = false,
 }: OrganizationOverflowMenuProps) {
   const { t } = useTranslation();
-  const propagationHandlers = stopPropagation
-    ? {
-        onMouseDown: (event: React.MouseEvent) => event.stopPropagation(),
-        onPointerDown: (event: React.PointerEvent) => event.stopPropagation(),
-      }
-    : {};
-
   const discordHref = organization.discord ? sanitizeHref(organization.discord) : null;
   const instagramHref = organization.ig ? `https://instagram.com/${organization.ig}` : null;
 
@@ -63,7 +56,7 @@ export function OrganizationOverflowMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent className="w-44" align="end" {...propagationHandlers}>
+      <DropdownMenuContent className="w-44" align="end" stopPropagation={stopPropagation}>
         {items.map(({ key, href, label, icon: Icon }) => (
           <DropdownMenuItem
             key={key}

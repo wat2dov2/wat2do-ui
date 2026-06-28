@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Organization } from "@/shared/types";
 import { getOrganizationsPaginated } from "@/features/organizations/api/organizations.api";
+import { queryKeys } from "@/shared/lib/queryKeys";
+import { stableOrganizationsFilters } from "@/features/organizations/lib/organizationsQuery";
 
 type OrganizationsListMode = "paginated" | "infinite";
 
@@ -28,20 +31,8 @@ function getUniqueOrganizations(organizations: Organization[]): Organization[] {
   });
 }
 
-function buildQueryKey(options: {
-  page: number;
-  limit: number;
-  school?: string;
-  search?: string;
-  categories?: string[];
-  organizationType?: string;
-  ids?: number[];
-  isAuthenticated?: boolean;
-  activeTab?: "all" | "followed" | "claimed";
-  isSavedLoaded?: boolean;
-}): string {
+function useOrganizationsListFilters(options: UseOrganizationsListOptions) {
   const {
-    page,
     limit,
     school,
     search,
@@ -53,92 +44,8 @@ function buildQueryKey(options: {
     isSavedLoaded = true,
   } = options;
 
-  return JSON.stringify({
-    page,
-    limit,
-    school: school || "",
-    search: search || "",
-    categories: (categories || []).join(","),
-    organizationType: organizationType || "",
-    ...((activeTab === "followed" || activeTab === "claimed")
-      ? {
-          ids: (ids || []).join(","),
-          isAuthenticated: Boolean(isAuthenticated),
-          isSavedLoaded: Boolean(isSavedLoaded),
-        }
-      : {}),
-    activeTab,
-  });
-}
-
-/**
- * useOrganizationsList Hook
- * Centralized hook to manage fetching paginated organizations with deduplication.
- */
-export function useOrganizationsList(options: UseOrganizationsListOptions) {
-  const {
-    limit,
-    mode = "paginated",
-    school,
-    search,
-    categories,
-    organizationType,
-    ids,
-    isAuthenticated,
-    activeTab = "all",
-    isSavedLoaded = true,
-  } = options;
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
-  const lastFetchedQueryKeyRef = useRef<string>("");
-  const latestFetchIdRef = useRef(0);
-
-  const categoriesStr = (categories || []).join(",");
-  const idsStr = (ids || []).join(",");
-
-  const filterKey = useMemo(
-    () =>
-      JSON.stringify({
-        limit,
-        school: school || "",
-        search: search || "",
-        categories: categoriesStr,
-        organizationType: organizationType || "",
-        ids: idsStr,
-        isAuthenticated: Boolean(isAuthenticated),
-        activeTab,
-        isSavedLoaded: Boolean(isSavedLoaded),
-      }),
-    [
-      limit,
-      school,
-      search,
-      categoriesStr,
-      organizationType,
-      idsStr,
-      isAuthenticated,
-      activeTab,
-      isSavedLoaded,
-    ],
-  );
-
-  useEffect(() => {
-    setCurrentPage(1);
-    setOrganizations([]);
-    setHasMore(false);
-    lastFetchedQueryKeyRef.current = "";
-  }, [filterKey]);
-
-  const loadData = useCallback(async () => {
-    const fetchId = ++latestFetchIdRef.current;
-    const queryKey = buildQueryKey({
-      page: currentPage,
+  return useMemo(
+    () => ({
       limit,
       school,
       search,
@@ -148,126 +55,153 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
       isAuthenticated,
       activeTab,
       isSavedLoaded,
-    });
+    }),
+    [
+      limit,
+      school,
+      search,
+      categories,
+      organizationType,
+      ids,
+      isAuthenticated,
+      activeTab,
+      isSavedLoaded,
+    ],
+  );
+}
 
-    if ((activeTab === "followed" || activeTab === "claimed") && !isAuthenticated) {
-      setOrganizations([]);
-      setTotalItems(0);
-      setTotalPages(0);
-      setHasMore(false);
-      setIsLoading(false);
-      setIsLoadingMore(false);
-      lastFetchedQueryKeyRef.current = queryKey;
-      return;
-    }
+function isOrganizationsListEnabled(
+  filters: ReturnType<typeof useOrganizationsListFilters>,
+): boolean {
+  const { activeTab, isAuthenticated, isSavedLoaded, ids } = filters;
 
-    if (activeTab === "followed" && !isSavedLoaded) {
-      setIsLoading(true);
-      setIsLoadingMore(false);
-      return;
-    }
+  if ((activeTab === "followed" || activeTab === "claimed") && !isAuthenticated) {
+    return false;
+  }
 
-    if (
-      (activeTab === "followed" || activeTab === "claimed") &&
-      (!ids || ids.length === 0)
-    ) {
-      setOrganizations([]);
-      setTotalItems(0);
-      setTotalPages(0);
-      setHasMore(false);
-      setIsLoading(false);
-      setIsLoadingMore(false);
-      lastFetchedQueryKeyRef.current = queryKey;
-      return;
-    }
+  if (activeTab === "followed" && !isSavedLoaded) {
+    return false;
+  }
 
-    if (lastFetchedQueryKeyRef.current === queryKey) {
-      return;
-    }
-    lastFetchedQueryKeyRef.current = queryKey;
+  if ((activeTab === "followed" || activeTab === "claimed") && (!ids || ids.length === 0)) {
+    return false;
+  }
 
-    const isLoadMore = mode === "infinite" && currentPage > 1;
-    if (isLoadMore) {
-      setIsLoadingMore(true);
-    } else {
-      setIsLoading(true);
-    }
+  return true;
+}
 
-    try {
-      const result = await getOrganizationsPaginated({
+/**
+ * useOrganizationsList Hook
+ * Centralized hook to manage fetching paginated organizations with TanStack Query caching.
+ */
+export function useOrganizationsList(options: UseOrganizationsListOptions) {
+  const { mode = "paginated", limit } = options;
+  const queryClient = useQueryClient();
+  const filters = useOrganizationsListFilters(options);
+  const enabled = isOrganizationsListEnabled(filters);
+  const stableFilters = useMemo(() => stableOrganizationsFilters(filters), [filters]);
+  const listQueryKey = useMemo(
+    () => queryKeys.organizations.list(stableFilters),
+    [stableFilters],
+  );
+  const listQueryKeyString = JSON.stringify(listQueryKey);
+  const [pageState, setPageState] = useState({ key: "", page: 1 });
+  const currentPage = pageState.key === listQueryKeyString ? pageState.page : 1;
+  const setCurrentPage = useCallback((page: number) => {
+    setPageState({ key: listQueryKeyString, page });
+  }, [listQueryKeyString]);
+
+  const infiniteQuery = useInfiniteQuery({
+    queryKey: listQueryKey,
+    queryFn: ({ pageParam }) =>
+      getOrganizationsPaginated({
+        page: pageParam,
+        limit,
+        school: filters.school,
+        search: filters.search,
+        categories: filters.categories,
+        organizationType: filters.organizationType,
+        ids:
+          filters.activeTab === "followed" || filters.activeTab === "claimed"
+            ? filters.ids
+            : undefined,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
+    enabled: enabled && mode === "infinite",
+  });
+
+  const pageQuery = useQuery({
+    queryKey: [...listQueryKey, "page", currentPage],
+    queryFn: () =>
+      getOrganizationsPaginated({
         page: currentPage,
         limit,
-        school,
-        search,
-        categories,
-        organizationType,
-        ids: activeTab === "followed" || activeTab === "claimed" ? ids : undefined,
-      });
+        school: filters.school,
+        search: filters.search,
+        categories: filters.categories,
+        organizationType: filters.organizationType,
+        ids:
+          filters.activeTab === "followed" || filters.activeTab === "claimed"
+            ? filters.ids
+            : undefined,
+      }),
+    enabled: enabled && mode === "paginated",
+  });
 
-      if (fetchId !== latestFetchIdRef.current) {
-        return;
-      }
+  const refresh = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: listQueryKey });
+  }, [listQueryKey, queryClient]);
 
-      setTotalItems(result.total);
-      setTotalPages(result.total_pages);
-      setHasMore(result.page < result.total_pages);
-      setOrganizations((current) =>
-        mode === "infinite" && currentPage > 1
-          ? getUniqueOrganizations([...current, ...result.items])
-          : result.items,
-      );
-    } catch (error) {
-      if (fetchId !== latestFetchIdRef.current) {
-        return;
-      }
-      console.error("Failed to load organizations data:", error);
-      if (mode === "infinite" && currentPage > 1) {
-        setHasMore(false);
-      }
-    } finally {
-      if (fetchId === latestFetchIdRef.current) {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
-    }
-  }, [
-    activeTab,
-    categories,
-    currentPage,
-    ids,
-    isAuthenticated,
-    isSavedLoaded,
-    limit,
-    mode,
-    organizationType,
-    school,
-    search,
-  ]);
+  if (!enabled) {
+    return {
+      organizations: [] as Organization[],
+      totalItems: 0,
+      totalPages: 0,
+      isLoading: filters.activeTab === "followed" && !filters.isSavedLoaded,
+      isLoadingMore: false,
+      hasMore: false,
+      currentPage: 1,
+      setCurrentPage,
+      loadMore: () => undefined,
+      refresh,
+    };
+  }
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  if (mode === "infinite") {
+    const pages = infiniteQuery.data?.pages ?? [];
+    const lastPage = pages[pages.length - 1];
 
-  const loadMore = useCallback(() => {
-    if (mode !== "infinite" || isLoading || isLoadingMore || !hasMore) {
-      return;
-    }
-    setCurrentPage((page) => page + 1);
-  }, [hasMore, isLoading, isLoadingMore, mode]);
+    return {
+      organizations: getUniqueOrganizations(pages.flatMap((page) => page.items)),
+      totalItems: lastPage?.total ?? 0,
+      totalPages: lastPage?.total_pages ?? 0,
+      isLoading: infiniteQuery.isLoading,
+      isLoadingMore: infiniteQuery.isFetchingNextPage,
+      hasMore: infiniteQuery.hasNextPage ?? false,
+      currentPage: lastPage?.page ?? 1,
+      setCurrentPage,
+      loadMore: () => {
+        if (!infiniteQuery.hasNextPage || infiniteQuery.isFetchingNextPage) return;
+        void infiniteQuery.fetchNextPage();
+      },
+      refresh,
+    };
+  }
+
+  const pageData = pageQuery.data;
 
   return {
-    organizations,
-    totalItems,
-    totalPages,
-    isLoading,
-    isLoadingMore,
-    hasMore,
+    organizations: pageData?.items ?? [],
+    totalItems: pageData?.total ?? 0,
+    totalPages: pageData?.total_pages ?? 0,
+    isLoading: pageQuery.isLoading,
+    isLoadingMore: false,
+    hasMore: false,
     currentPage,
     setCurrentPage,
-    loadMore,
-    refresh: () => {
-      lastFetchedQueryKeyRef.current = "";
-      void loadData();
-    },
+    loadMore: () => undefined,
+    refresh,
   };
 }

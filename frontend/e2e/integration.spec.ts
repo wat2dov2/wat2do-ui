@@ -754,7 +754,7 @@ test.describe("Navigation", () => {
 
     await expect(page.locator("#server-event-feed")).toHaveCount(0);
     await expect(page.getByRole("status")).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Loading");
+    await expect(page.getByRole("status")).toHaveAccessibleName(/Loading/i);
   });
 
   test("no console errors on events page", async ({ page }) => {

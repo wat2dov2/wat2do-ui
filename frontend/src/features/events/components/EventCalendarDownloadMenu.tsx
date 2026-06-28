@@ -24,17 +24,11 @@ export function EventCalendarDownloadMenu({
   stopPropagation = false,
 }: EventCalendarDownloadMenuProps) {
   const { t } = useTranslation();
-  const propagationHandlers = stopPropagation
-    ? {
-        onMouseDown: (event: React.MouseEvent) => event.stopPropagation(),
-        onPointerDown: (event: React.PointerEvent) => event.stopPropagation(),
-      }
-    : {};
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent className={contentClassName} align="end" {...propagationHandlers}>
+      <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
         <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
           <GoogleIcon className="size-3.5 shrink-0" />
           {t("events.calendar.googleCalendar")}

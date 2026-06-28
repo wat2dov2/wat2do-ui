@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Organization } from "@/shared/types";
 import { getAllOrganizations } from "@/features/organizations";
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import { DrawerClose } from "@/shared/ui/drawer";
@@ -91,9 +92,9 @@ export function EventFormStep({
     [schoolFilter],
   );
   const { data: organizations = NO_ORGANIZATIONS } = useQuery({
-    queryKey: ["organizations", schoolFilter],
+    queryKey: queryKeys.organizations.allForSchool(schoolFilter),
     queryFn: fetchOrganizations,
-    initialData: NO_ORGANIZATIONS,
+    placeholderData: NO_ORGANIZATIONS,
   });
 
   const selectedOrganizationName = useMemo(() => {

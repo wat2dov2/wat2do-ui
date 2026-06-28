@@ -9,6 +9,8 @@ import {
   normalizeFilterState,
   writeFiltersToSearchParams,
   EMPTY_FILTER_STATE,
+  DEFAULT_FILTER_SORT_BY,
+  DEFAULT_FILTER_SORT_ORDER,
 } from "@/features/search/api/filterService";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
@@ -17,43 +19,25 @@ import type { FilterState } from "@/shared/types";
 
 type FilterStateUpdater = FilterState | ((current: FilterState) => FilterState);
 
-function useCurrentFilterState(): FilterState {
-  return useSearchStore(
-    useShallow((s) =>
-      storeStatesToFilterState({
-        searchQuery: s.searchQuery,
-        selectedCategories: s.selectedCategories,
-        selectedLocations: s.selectedLocations,
-        selectedFoods: s.selectedFoods,
-        selectedDays: s.selectedDays,
-        priceRange: s.priceRange,
-        registration: s.registration,
-        selectedOrganizations: s.selectedOrganizations,
-        freeFoodFilter: s.freeFoodFilter,
-        savedFilter: s.savedFilter,
-        sortBy: s.sortBy,
-        sortOrder: s.sortOrder,
-        addedWithin24h: s.addedWithin24h,
-      }),
-    ),
-  );
+function readCurrentFilterState(): FilterState {
+  return storeStatesToFilterState(useSearchStore.getState());
 }
 
 export function useFilterUrlActions() {
-  const currentFilterState = useCurrentFilterState();
   const [searchParams, setSearchParams] = useMutableSearchParams();
 
   const setFilterState = useCallback(
     (updater: FilterStateUpdater) => {
       const nextFilters = normalizeFilterState(
-        typeof updater === "function" ? updater(currentFilterState) : updater,
+        typeof updater === "function" ? updater(readCurrentFilterState()) : updater,
       );
+      useSearchStore.getState().setFilterStateFromURL(nextFilters);
       const nextParams = new URLSearchParams(searchParams.toString());
       setSearchParams(writeFiltersToSearchParams(nextParams, nextFilters), {
         replace: true,
       });
     },
-    [currentFilterState, searchParams, setSearchParams],
+    [searchParams, setSearchParams],
   );
 
   const updateFilterState = useCallback(
@@ -198,6 +182,25 @@ export function useFilterState(profileCompleted: boolean) {
       updateFilterState({ sortBy, sortOrder }),
     [updateFilterState],
   );
+  const toggleAddedWithin24h = useCallback(() => {
+    setFilterState((current) => {
+      if (current.addedWithin24h) {
+        return normalizeFilterState({
+          ...current,
+          addedWithin24h: false,
+          sortBy: DEFAULT_FILTER_SORT_BY,
+          sortOrder: DEFAULT_FILTER_SORT_ORDER,
+        });
+      }
+
+      return normalizeFilterState({
+        ...current,
+        addedWithin24h: true,
+        sortBy: "added_at",
+        sortOrder: "desc",
+      });
+    });
+  }, [setFilterState]);
 
   // Per-filter toggle adapters — stable refs derived from the single
   // URL action so downstream props don't churn.
@@ -358,6 +361,7 @@ export function useFilterState(profileCompleted: boolean) {
     setSavedFilter,
     addedWithin24h,
     setAddedWithin24h,
+    toggleAddedWithin24h,
 
     // Toggle functions
     toggleCategory,

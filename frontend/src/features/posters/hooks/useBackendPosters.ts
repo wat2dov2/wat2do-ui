@@ -1,6 +1,7 @@
 import { listPostersFromBackend } from "@/features/posters/api/posters.api";
 import type { QRCode } from "@/features/posters/types";
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { useEventsStore } from "@/features/events";
 import { useCallback } from "react";
 
@@ -16,9 +17,9 @@ export function useBackendPosters(refreshKey?: number): {
   const fetchFn = useCallback(() => listPostersFromBackend(schoolFilter ?? undefined), [schoolFilter]);
 
   const { data: posters = [], isLoading, error } = useQuery({
-    queryKey: ["posters", schoolFilter, refreshKey],
+    queryKey: queryKeys.posters.list(schoolFilter, refreshKey),
     queryFn: fetchFn,
-    initialData: [] as QRCode[],
+    placeholderData: [] as QRCode[],
   });
 
   return { posters, loading: isLoading, error: error instanceof Error ? error : error ? new Error(String(error)) : null };

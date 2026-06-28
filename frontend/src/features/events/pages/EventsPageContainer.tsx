@@ -36,7 +36,7 @@ export function EventsPageContainer() {
     isLoading,
     isLoadingMore,
     error,
-    fetchEvents,
+    refreshEvents,
     loadMoreEvents,
     totalEvents,
     hasMoreEvents,
@@ -57,14 +57,8 @@ export function EventsPageContainer() {
 
   const isNewlyAddedActive = filters.addedWithin24h;
   const handleNewlyAddedToggle = useCallback(() => {
-    if (isNewlyAddedActive) {
-      filters.setAddedWithin24h(false);
-      filters.setSort("date", "asc");
-      return;
-    }
-    filters.setAddedWithin24h(true);
-    filters.setSort("added_at", "desc");
-  }, [filters, isNewlyAddedActive]);
+    filters.toggleAddedWithin24h();
+  }, [filters]);
 
   // Build filter config array. `filters` is the aggregate returned by
   // useSearch; React Compiler infers it as a single dep rather than the
@@ -201,7 +195,7 @@ export function EventsPageContainer() {
               <p className="text-destructive text-sm text-center max-w-md">{error}</p>
               <button
                 type="button"
-                onMouseDown={() => fetchEvents()}
+                onMouseDown={() => refreshEvents()}
                 className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 {t("common.tryAgain")}
@@ -219,6 +213,7 @@ export function EventsPageContainer() {
                 filters.searchQuery !== "" ||
                 filters.freeFoodFilter ||
                 filters.savedFilter ||
+                filters.addedWithin24h ||
                 filters.sortBy !== "date" ||
                 filters.sortOrder !== "asc"
               }

@@ -1,30 +1,31 @@
 /**
  * Events Store (Zustand)
  *
- * Single source of truth for all events data. State lives outside React,
- * so every component that imports this store reads the same data — no
- * duplicate fetches, no divergent state.
+ * Client state for the events feature: school filter, feed snapshot for
+ * cross-route consumers, and mutations. Server state is cached in TanStack Query
+ * via useEventsFeed / usePromotedEvents.
  */
 
 import { create } from "zustand";
-import i18n from "@/shared/lib/i18n";
+import type { InfiniteData } from "@tanstack/react-query";
 import type { Event as AppEvent, EventFormData } from "@/shared/types";
 import {
   type EventListQuery,
   type LatestAddedEvent,
   type PaginatedEventsResponse,
-  fetchEventsPage,
-  fetchPromotedEvents,
   createEventAPI,
   updateEventAPI,
   deleteEventAPI,
 } from "@/features/events/api/events.api";
 import { EVENTS_PAGE_SIZE } from "@/features/events/constants";
+import { getSchoolFetchKey, normalizeEventQuery } from "@/features/events/lib/eventsQuery";
 import { getUniqueEvents } from "@/shared/utils/event";
-import { isApiError, getApiErrorMessage } from "@/shared/services/apiClient";
+import { isApiError } from "@/shared/services/apiClient";
 import { DEFAULT_SCHOOL, getCurrentSchool, resolveSchool } from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
 import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/userRepository";
+import { getQueryClient } from "@/shared/lib/queryClient";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 interface EventsState {
   events: AppEvent[];
@@ -41,27 +42,13 @@ interface EventsState {
   hasMoreEvents: boolean;
   eventQuery: EventListQuery;
 
-  /** Fetch the first page of events for the current school + filter query. */
   hydrateInitialFeed: (feed: PaginatedEventsResponse, school: string | null) => void;
-  fetchEvents: (query?: EventListQuery) => Promise<void>;
-  loadMoreEvents: () => Promise<void>;
-  fetchPromotedEvents: () => Promise<void>;
   setSchoolFilter: (school: string) => void;
   addEvent: (data: EventFormData) => Promise<number>;
   updateEvent: (eventId: number, data: EventFormData) => Promise<void>;
   deleteEvent: (eventId: number) => Promise<void>;
   incrementClickCount: (eventId: number) => void;
 }
-
-/** Deduplicate concurrent fetches for the same school/filter/page query. */
-const _fetchesByQuery = new Map<string, Promise<PaginatedEventsResponse>>();
-const _promotedFetchesBySchool = new Map<string, Promise<AppEvent[]>>();
-let _latestFetchId = 0;
-let _latestLoadMoreFetchId = 0;
-let _latestPromotedFetchId = 0;
-let _loadedEventsQueryKey: string | null = null;
-let _loadedPromotedSchoolKey: string | null = null;
-let _skipNextEventsFetchQueryKey: string | null = null;
 
 function getInitialSchoolFilter(): string {
   if (typeof window !== "undefined") {
@@ -72,67 +59,29 @@ function getInitialSchoolFilter(): string {
   return resolveSchool(loadUserProfile()?.school || getCurrentSchool());
 }
 
-function getSchoolFetchKey(school: string | null): string {
-  return school ?? "__all__";
+function getCurrentFeedQueryKey(state: EventsState) {
+  return queryKeys.events.feed(getSchoolFetchKey(state.schoolFilter), state.eventQuery);
 }
 
-function normalizeEventQuery(query: EventListQuery | undefined): EventListQuery {
-  return {
-    search: query?.search?.trim() || undefined,
-    categories: query?.categories?.filter(Boolean) ?? [],
-    locations: query?.locations?.filter(Boolean) ?? [],
-    foods: query?.foods?.filter(Boolean) ?? [],
-    days: query?.days?.filter(Boolean) ?? [],
-    minPrice: query?.minPrice,
-    maxPrice: query?.maxPrice,
-    registration: query?.registration,
-    organizations: query?.organizations?.filter(Boolean) ?? [],
-    freeFood: query?.freeFood === true,
-    ids: query?.ids,
-    sortBy: query?.sortBy || "date",
-    sortOrder: query?.sortOrder === "desc" ? "desc" : "asc",
-    startUtc: query?.startUtc,
-    endUtc: query?.endUtc,
-  };
-}
+function patchFeedCache(
+  updater: (pages: PaginatedEventsResponse[]) => PaginatedEventsResponse[],
+): void {
+  const state = useEventsStore.getState();
+  const queryClient = getQueryClient();
+  const queryKey = getCurrentFeedQueryKey(state);
 
-function buildRequestQuery(
-  school: string | null,
-  query: EventListQuery,
-  page: number,
-  pageSize: number,
-): EventListQuery {
-  return {
-    ...query,
-    school: school ?? undefined,
-    page,
-    pageSize,
-  };
-}
-
-function getEventsQueryKey(school: string | null, query: EventListQuery): string {
-  return JSON.stringify({
-    school: getSchoolFetchKey(school),
-    search: query.search ?? "",
-    categories: query.categories ?? [],
-    locations: query.locations ?? [],
-    foods: query.foods ?? [],
-    days: query.days ?? [],
-    minPrice: query.minPrice ?? null,
-    maxPrice: query.maxPrice ?? null,
-    registration: query.registration ?? null,
-    organizations: query.organizations ?? [],
-    freeFood: query.freeFood === true,
-    ids: query.ids ?? null,
-    sortBy: query.sortBy ?? "date",
-    sortOrder: query.sortOrder ?? "asc",
-    startUtc: query.startUtc ?? null,
-    endUtc: query.endUtc ?? null,
+  queryClient.setQueryData<InfiniteData<PaginatedEventsResponse>>(queryKey, (current) => {
+    if (!current) return current;
+    const nextPages = updater(current.pages);
+    return { ...current, pages: nextPages };
   });
 }
 
-function hasMore(response: PaginatedEventsResponse): boolean {
-  return response.items.length > 0 && response.page < response.total_pages;
+async function invalidateCurrentFeed(): Promise<void> {
+  const state = useEventsStore.getState();
+  await getQueryClient().invalidateQueries({
+    queryKey: getCurrentFeedQueryKey(state),
+  });
 }
 
 export const useEventsStore = create<EventsState>((set, get) => ({
@@ -153,9 +102,12 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   hydrateInitialFeed: (feed, school) => {
     const nextSchool = school ? resolveSchool(school) : get().schoolFilter;
     const eventQuery = normalizeEventQuery(undefined);
-    const queryKey = getEventsQueryKey(nextSchool, eventQuery);
-    _loadedEventsQueryKey = queryKey;
-    _skipNextEventsFetchQueryKey = queryKey;
+    const queryKey = queryKeys.events.feed(getSchoolFetchKey(nextSchool), eventQuery);
+
+    getQueryClient().setQueryData<InfiniteData<PaginatedEventsResponse>>(queryKey, {
+      pages: [feed],
+      pageParams: [1],
+    });
 
     set({
       events: feed.items,
@@ -167,154 +119,45 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       eventsPage: feed.page,
       eventsPageSize: feed.page_size,
       totalEvents: feed.total,
-      hasMoreEvents: hasMore(feed),
+      hasMoreEvents: feed.page < feed.total_pages,
       eventQuery,
     });
-  },
-
-  fetchEvents: async (query) => {
-    const school = get().schoolFilter;
-    const eventQuery = normalizeEventQuery(query);
-    const queryKey = getEventsQueryKey(school, eventQuery);
-    const fetchId = ++_latestFetchId;
-    const hasLoadedCurrentQuery = _loadedEventsQueryKey === queryKey;
-
-    set({
-      eventQuery,
-      isLoading: hasLoadedCurrentQuery ? get().isLoading : true,
-      isLoadingMore: false,
-      error: null,
-    });
-    get().fetchPromotedEvents();
-
-    if (_skipNextEventsFetchQueryKey === queryKey) {
-      _skipNextEventsFetchQueryKey = null;
-      set({ isLoading: false, isLoadingMore: false, error: null });
-    }
-
-    const request = buildRequestQuery(school, eventQuery, 1, get().eventsPageSize);
-    const requestKey = JSON.stringify(request);
-    let fetchPromise = _fetchesByQuery.get(requestKey);
-    if (!fetchPromise) {
-      fetchPromise = fetchEventsPage(request).finally(() => {
-        _fetchesByQuery.delete(requestKey);
-      });
-      _fetchesByQuery.set(requestKey, fetchPromise);
-    }
-
-    const isCurrentFetch = () =>
-      fetchId === _latestFetchId &&
-      getEventsQueryKey(get().schoolFilter, get().eventQuery) === queryKey;
-
-    try {
-      const response = await fetchPromise;
-      if (!isCurrentFetch()) return;
-      _loadedEventsQueryKey = queryKey;
-      set({
-        events: response.items,
-        latestAddedEvent: response.latest_added_event ?? null,
-        eventsPage: response.page,
-        totalEvents: response.total,
-        hasMoreEvents: hasMore(response),
-        isLoading: false,
-        error: null,
-      });
-    } catch (err) {
-      if (!isCurrentFetch()) return;
-      const message = getApiErrorMessage(err, i18n.t("events.loadFailed"));
-      console.error("Failed to fetch events:", err);
-      set({ isLoading: false, hasMoreEvents: false, error: message });
-    }
-  },
-
-  loadMoreEvents: async () => {
-    const state = get();
-    if (state.isLoading || state.isLoadingMore || !state.hasMoreEvents) return;
-
-    const school = state.schoolFilter;
-    const eventQuery = state.eventQuery;
-    const queryKey = getEventsQueryKey(school, eventQuery);
-    const fetchId = ++_latestLoadMoreFetchId;
-    const nextPage = state.eventsPage + 1;
-
-    set({ isLoadingMore: true, error: null });
-
-    const request = buildRequestQuery(school, eventQuery, nextPage, state.eventsPageSize);
-    const requestKey = JSON.stringify(request);
-    let fetchPromise = _fetchesByQuery.get(requestKey);
-    if (!fetchPromise) {
-      fetchPromise = fetchEventsPage(request).finally(() => {
-        _fetchesByQuery.delete(requestKey);
-      });
-      _fetchesByQuery.set(requestKey, fetchPromise);
-    }
-
-    const isCurrentFetch = () =>
-      fetchId === _latestLoadMoreFetchId &&
-      getEventsQueryKey(get().schoolFilter, get().eventQuery) === queryKey;
-
-    try {
-      const response = await fetchPromise;
-      if (!isCurrentFetch()) return;
-      set((current) => ({
-        events: getUniqueEvents([...current.events, ...response.items]),
-        latestAddedEvent: response.latest_added_event ?? null,
-        eventsPage: response.page,
-        totalEvents: response.total,
-        hasMoreEvents: hasMore(response),
-        isLoadingMore: false,
-        error: null,
-      }));
-    } catch (err) {
-      if (!isCurrentFetch()) return;
-      const message = getApiErrorMessage(err, i18n.t("events.loadFailed"));
-      console.error("Failed to fetch more events:", err);
-      set({ isLoadingMore: false, error: message });
-    }
-  },
-
-  fetchPromotedEvents: async () => {
-    const school = get().schoolFilter;
-    const schoolKey = getSchoolFetchKey(school);
-    const fetchId = ++_latestPromotedFetchId;
-    const hasLoadedCurrentSchool = _loadedPromotedSchoolKey === schoolKey;
-
-    set({
-      isPromotedLoading: hasLoadedCurrentSchool ? get().isPromotedLoading : true,
-    });
-
-    let fetchPromise = _promotedFetchesBySchool.get(schoolKey);
-    if (!fetchPromise) {
-      fetchPromise = fetchPromotedEvents(school ?? undefined).finally(() => {
-        _promotedFetchesBySchool.delete(schoolKey);
-      });
-      _promotedFetchesBySchool.set(schoolKey, fetchPromise);
-    }
-
-    const isCurrentFetch = () =>
-      fetchId === _latestPromotedFetchId && getSchoolFetchKey(get().schoolFilter) === schoolKey;
-
-    try {
-      const promotedEvents = await fetchPromise;
-      if (!isCurrentFetch()) return;
-      _loadedPromotedSchoolKey = schoolKey;
-      set({ promotedEvents, isPromotedLoading: false });
-    } catch (err) {
-      if (!isCurrentFetch()) return;
-      console.error("Failed to fetch promoted events:", err);
-      set({ isPromotedLoading: false });
-    }
   },
 
   setSchoolFilter: (school: string) => {
     const nextSchool = resolveSchool(school);
     if (get().schoolFilter === nextSchool) return;
     set({ schoolFilter: nextSchool });
-    get().fetchEvents(get().eventQuery);
   },
 
   addEvent: async (data) => {
     const created = await createEventAPI(data);
+    patchFeedCache((pages) => {
+      if (pages.length === 0) {
+        return [
+          {
+            items: [created],
+            total: 1,
+            page: 1,
+            page_size: EVENTS_PAGE_SIZE,
+            total_pages: 1,
+            latest_added_event: { title: created.title, added_at: created.added_at },
+          },
+        ];
+      }
+
+      const [firstPage, ...rest] = pages;
+      return [
+        {
+          ...firstPage,
+          items: getUniqueEvents([created, ...firstPage.items]),
+          total: firstPage.total + 1,
+          latest_added_event: { title: created.title, added_at: created.added_at },
+        },
+        ...rest,
+      ];
+    });
+
     set((state) => ({
       events: getUniqueEvents([created, ...state.events]),
       latestAddedEvent: { title: created.title, added_at: created.added_at },
@@ -323,12 +166,17 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   },
 
   updateEvent: async (eventId, data) => {
-    // Always call the backend — don't silently no-op when the id isn't in
-    // the local list. The backend is the source of truth; if the event was
-    // deleted elsewhere, the PATCH will surface the error to the caller.
     const updated = await updateEventAPI(eventId, data);
+
+    patchFeedCache((pages) =>
+      pages.map((page) => ({
+        ...page,
+        items: page.items.map((event) => (event.id === eventId ? updated : event)),
+      })),
+    );
+
     set((state) => ({
-      events: state.events.map((e) => (e.id === eventId ? updated : e)),
+      events: state.events.map((event) => (event.id === eventId ? updated : event)),
       latestAddedEvent:
         state.latestAddedEvent?.added_at === updated.added_at
           ? { title: updated.title, added_at: updated.added_at }
@@ -339,36 +187,40 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   deleteEvent: async (eventId) => {
     try {
       await deleteEventAPI(eventId);
+
+      patchFeedCache((pages) =>
+        pages.map((page) => ({
+          ...page,
+          items: page.items.filter((event) => event.id !== eventId),
+          total: Math.max(0, page.total - 1),
+        })),
+      );
+
       set((state) => ({
-        events: state.events.filter((e) => e.id !== eventId),
+        events: state.events.filter((event) => event.id !== eventId),
       }));
     } catch (err) {
       console.error("Failed to delete event:", err);
-      // Sync local state with backend when 404/403: the event either no
-      // longer exists or the caller can no longer touch it. Refetching
-      // ensures UI matches the authoritative backend state.
       if (isApiError(err) && (err.status === 404 || err.status === 403)) {
-        await get().fetchEvents(get().eventQuery);
+        await invalidateCurrentFeed();
       }
-      // Re-throw so callers can surface the error (toast, etc.).
       throw err;
     }
   },
 
   incrementClickCount: (eventId) => {
     set((state) => ({
-      events: state.events.map((e) =>
-        e.id === eventId ? { ...e, click_count: (e.click_count ?? 0) + 1 } : e
+      events: state.events.map((event) =>
+        event.id === eventId ? { ...event, click_count: (event.click_count ?? 0) + 1 } : event,
       ),
-      promotedEvents: state.promotedEvents.map((e) =>
-        e.id === eventId ? { ...e, click_count: (e.click_count ?? 0) + 1 } : e
+      promotedEvents: state.promotedEvents.map((event) =>
+        event.id === eventId ? { ...event, click_count: (event.click_count ?? 0) + 1 } : event,
       ),
     }));
   },
 }));
 
 function getAuthLoginSchool(event: globalThis.Event): string {
-  // `Event` here is the browser event type, not the app's event data model.
   if ("detail" in event) {
     const detail = (event as CustomEvent<{ school?: string }>).detail;
     const hintedSchool = detail?.school?.trim();

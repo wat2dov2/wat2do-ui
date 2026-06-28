@@ -8,6 +8,7 @@ import type { Organization } from "@/shared/types";
 import { getAllOrganizations, getOrganizationTypes } from "@/features/organizations/api/organizations.api";
 import { useEventsStore } from "@/features/events";
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { useOrganizationsList } from "@/features/organizations/hooks/useOrganizationsList";
 
 interface UseAdminOrganizationsPageOptions {
@@ -52,9 +53,9 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
   }, [schoolFilter]);
 
   const { data: organizationTypes = [] } = useQuery({
-    queryKey: ["admin-organization-types", schoolFilter, refreshCounter],
+    queryKey: queryKeys.organizations.adminTypes(schoolFilter, refreshCounter),
     queryFn: fetchTypes,
-    initialData: [],
+    placeholderData: [],
   });
 
   const setSearchQuery = useCallback((query: string) => {

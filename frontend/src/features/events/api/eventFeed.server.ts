@@ -4,7 +4,7 @@ import { resolveSchool } from "@/shared/constants/schools";
 
 const PRODUCTION_API_BASE_URL = "https://wat2do-api-production.up.railway.app";
 
-export const EVENT_FEED_REVALIDATE_SECONDS = 3600;
+const EVENT_FEED_REVALIDATE_SECONDS = 3600;
 
 function getServerApiBaseUrl(): string {
   const configuredBackendApiUrl = process.env.BACKEND_API_URL?.trim();

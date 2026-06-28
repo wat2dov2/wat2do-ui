@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 
-export type EventOverflowAction = "share" | "report" | "delete";
+type EventOverflowAction = "share" | "report" | "delete";
 
 interface EventOverflowMenuProps {
   children: ReactElement;
@@ -26,17 +26,11 @@ export function EventOverflowMenu({
   stopPropagation = false,
 }: EventOverflowMenuProps) {
   const { t } = useTranslation();
-  const propagationHandlers = stopPropagation
-    ? {
-        onMouseDown: (event: React.MouseEvent) => event.stopPropagation(),
-        onPointerDown: (event: React.PointerEvent) => event.stopPropagation(),
-      }
-    : {};
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent className={contentClassName} align="end" {...propagationHandlers}>
+      <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
         <DropdownMenuItem onSelect={() => onAction("share")}>
           <Share2 className="size-3.5 shrink-0" />
           {t("common.share")}
