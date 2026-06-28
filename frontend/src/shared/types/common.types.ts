@@ -17,4 +17,7 @@ export interface Organization {
   created_by?: string | null;
   owner_email?: string | null;
   school: string;
+  event_count?: number;
+  latest_event_title?: string | null;
+  latest_event_added_at?: string | null;
 }

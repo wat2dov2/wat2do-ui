@@ -5,9 +5,9 @@ import {
   Facebook,
   Linkedin,
   Mail,
-  MessageCircle,
   X,
 } from "@/shared/ui/doodle-icons";
+import { DiscordIcon } from "@/shared/ui/platform-icons";
 import {
   Drawer,
   DrawerClose,
@@ -41,7 +41,7 @@ const CHANNELS: ShareChannel[] = [
   { id: "facebook", labelKey: "events.shareDialog.channels.facebook", Icon: Facebook, bgClass: "bg-[#1877F2]" },
   { id: "linkedin", labelKey: "events.shareDialog.channels.linkedin", Icon: Linkedin, bgClass: "bg-[#0A66C2]" },
   { id: "x", labelKey: "events.shareDialog.channels.x", Icon: XLogo, bgClass: "bg-black" },
-  { id: "discord", labelKey: "events.shareDialog.channels.discord", Icon: MessageCircle, bgClass: "bg-[#5865F2]" },
+  { id: "discord", labelKey: "events.shareDialog.channels.discord", Icon: DiscordIcon, bgClass: "bg-[#5865F2]" },
   { id: "email", labelKey: "events.shareDialog.channels.email", Icon: Mail, bgClass: "bg-zinc-600" },
 ];
 

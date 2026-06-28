@@ -1,15 +1,15 @@
 import { cn } from "@/shared/lib/utils";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import type { MotionValue } from "motion/react";
+import Link from "next/link";
 import {
   AnimatePresence,
-  motion,
+  m,
+  type MotionValue,
   useMotionValue,
   useSpring,
   useTransform,
-} from "motion/react";
+} from "framer-motion";
 
 export interface FloatingDockItem {
   title: string;
@@ -50,7 +50,7 @@ const FloatingDockDesktop = ({
   return (
     <div className="relative mx-auto inline-flex w-fit max-w-full items-end justify-center">
       {/* 2D Icons Container */}
-      <motion.div
+      <m.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
@@ -61,7 +61,7 @@ const FloatingDockDesktop = ({
         {items.map((item) => (
           <IconContainer mouseX={mouseX} canMagnify={canMagnify} key={item.title} item={item} />
         ))}
-      </motion.div>
+      </m.div>
     </div>
   );
 };
@@ -77,7 +77,6 @@ function IconContainer({
 }) {
   const { title, icon, href, onMouseDown, isActive } = item;
   const ref = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   const distance = useTransform(mouseX, (val) => {
     if (!canMagnify) return Infinity;
@@ -121,7 +120,7 @@ function IconContainer({
   const [hovered, setHovered] = useState(false);
 
   const content = (
-    <motion.div
+    <m.div
       ref={ref}
       style={canMagnify ? { width, height } : undefined}
       onMouseEnter={() => {
@@ -139,23 +138,23 @@ function IconContainer({
     >
       <AnimatePresence>
         {hovered && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 2, x: "-50%" }}
             className="absolute -top-9 left-1/2 w-fit rounded-md border border-border bg-popover px-2 py-0.5 text-xs whitespace-pre text-popover-foreground shadow-sm"
           >
             {title}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
-      <motion.div
+      <m.div
         style={canMagnify ? { width: widthIcon, height: heightIcon } : undefined}
         className="flex size-[18px] items-center justify-center [&_svg]:h-full [&_svg]:w-full"
       >
         {icon}
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 
   if (onMouseDown) {
@@ -168,15 +167,7 @@ function IconContainer({
 
   if (href) {
     return (
-      <Link
-        to={href}
-        onMouseDown={(e) => {
-          if (e.button === 0) {
-            e.preventDefault();
-            navigate(href);
-          }
-        }}
-      >
+      <Link href={href}>
         {content}
       </Link>
     );

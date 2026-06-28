@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, Plus, Instagram, MessageCircle, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
+import { Building2, Plus, Instagram, Discord, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -375,7 +375,7 @@ export function AdminOrganizationsPage({
                 { label: t("forms.organizationType") },
                 { label: t("forms.ownerEmail") },
                 { label: <span className="flex items-center gap-1.5"><Instagram className="size-3.5" />{t("admin.instagram")}</span> },
-                { label: <span className="flex items-center gap-1.5"><MessageCircle className="size-3.5" />{t("admin.discord")}</span> },
+                { label: <span className="flex items-center gap-1.5"><Discord className="size-3.5" />{t("admin.discord")}</span> },
                 { label: t("common.actions"), align: "right" },
               ]}
             >

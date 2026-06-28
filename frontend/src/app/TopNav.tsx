@@ -3,8 +3,8 @@
  */
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { Check, ChevronsUpDown, LogOut, Search, Shield } from "@/shared/ui/doodle-icons";
 import {
   Tooltip,
@@ -31,7 +31,7 @@ export function TopNav() {
   const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
   const { profileCompleted, isAdmin, clubs, organizationId } = useAuthState();
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [orgMenuOpen, setOrgMenuOpen] = useState(false);
   const [orgSearch, setOrgSearch] = useState("");
   const activeOrganization = clubs.find((club) => club.id === organizationId) ?? clubs[0];
@@ -41,12 +41,12 @@ export function TopNav() {
   );
 
   const handleLogoClick = useCallback(() => {
-    navigate(ROUTES.HOME);
-  }, [navigate]);
+    router.push(ROUTES.HOME);
+  }, [router]);
 
   const handleAdminClick = useCallback(() => {
-    navigate(ROUTES.ADMIN);
-  }, [navigate]);
+    router.push(ROUTES.ADMIN);
+  }, [router]);
 
   const handleOrganizationSelect = useCallback((org: NavOrganization) => {
     const profile = getUserProfile();
@@ -57,8 +57,8 @@ export function TopNav() {
         organizationName: org.organization_name,
       });
     }
-    navigate(ROUTES.ORGANIZATION_PANEL);
-  }, [navigate]);
+    router.push(ROUTES.ORGANIZATION_PANEL);
+  }, [router]);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -72,8 +72,8 @@ export function TopNav() {
   }, []);
 
   const handleSignIn = useCallback(() => {
-    navigate(ROUTES.LOGIN);
-  }, [navigate]);
+    router.push(ROUTES.LOGIN);
+  }, [router]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-sidebar px-2 sm:gap-2 sm:px-4">
@@ -86,7 +86,7 @@ export function TopNav() {
           <img
             alt={t("common.logo")}
             className="h-6 w-[34px] object-contain"
-            src={imgImage1}
+            src={imgImage1.src}
           />
         </button>
         <span className="text-muted-foreground text-lg font-light max-[359px]:hidden">/</span>

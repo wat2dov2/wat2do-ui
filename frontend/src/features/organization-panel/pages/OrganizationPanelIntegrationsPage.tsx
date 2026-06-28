@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Link, MessageCircle } from "@/shared/ui/doodle-icons";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Link, MessageCircle, Discord } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
-import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
-import { DiscordIcon, InstagramIcon, SlackIcon, TelegramIcon, LinkedInIcon, FacebookIcon } from "@/shared/ui/platform-icons";
+import { InstagramIcon, SlackIcon, TelegramIcon, LinkedInIcon, FacebookIcon } from "@/shared/ui/platform-icons";
 import { useIntegrations } from "@/features/organization-panel/hooks/useIntegrations";
 import { IntegrationCard } from "@/features/organization-panel/components/IntegrationCard";
 import { DiscordConnectSection } from "@/features/organization-panel/components/DiscordConnectSection";
@@ -16,7 +16,7 @@ import { FacebookIntegrationModal } from "@/features/organization-panel/componen
 
 export function OrganizationPanelIntegrationsPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const integrations = useIntegrations();
 
   const actionDisabled = integrations.loading || integrations.saving || !integrations.selectedClubId;
@@ -28,7 +28,7 @@ export function OrganizationPanelIntegrationsPage() {
         <Button
           variant="secondary"
           size="icon"
-          onMouseDown={() => navigate(ROUTES.ORGANIZATION_PANEL)}
+          onMouseDown={() => router.push(ROUTES.ORGANIZATION_PANEL)}
           className="shrink-0"
         >
           <ArrowLeft className="size-5" />
@@ -63,7 +63,7 @@ export function OrganizationPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("discord")}
           platform="discord"
-          icon={<DiscordIcon className="size-6 text-primary" />}
+          icon={<Discord className="size-6 text-primary" />}
           iconBgClassName="bg-primary/15"
           titleKey="organizationPanel.discord"
           descriptionKey="integrations.discordScrapeDesc"

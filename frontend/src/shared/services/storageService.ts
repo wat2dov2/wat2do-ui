@@ -8,8 +8,12 @@ export class StorageService {
    * Get item from localStorage with type safety
    */
   static getItem<T>(key: string, defaultValue: T): T {
+    if (typeof document === "undefined") {
+      return defaultValue;
+    }
+
     try {
-      const item = localStorage.getItem(key);
+      const item = window.localStorage.getItem(key);
       if (item === null) {
         return defaultValue;
       }
@@ -24,8 +28,12 @@ export class StorageService {
    * Set item in localStorage
    */
   static setItem<T>(key: string, value: T): void {
+    if (typeof document === "undefined") {
+      return;
+    }
+
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      window.localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
       console.error(`Failed to write localStorage key "${key}":`, error);
     }
@@ -35,8 +43,12 @@ export class StorageService {
    * Remove item from localStorage
    */
   static removeItem(key: string): void {
+    if (typeof document === "undefined") {
+      return;
+    }
+
     try {
-      localStorage.removeItem(key);
+      window.localStorage.removeItem(key);
     } catch (error) {
       console.error(`Failed to remove localStorage key "${key}":`, error);
     }

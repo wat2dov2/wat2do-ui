@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
@@ -8,7 +8,7 @@ import {
   HelpCircle,
   Instagram,
   Loader2,
-  MessageCircle,
+  Discord,
   Bookmark,
   Shield,
   UserPlus,
@@ -48,7 +48,7 @@ interface OrganizationDetailsModalProps {
 
 export function OrganizationDetailsModal({ organization, isOpen, onClose, onStatusChange }: OrganizationDetailsModalProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { isAuthenticated } = useAuthState();
 
   const [membership, setMembership] = useState<OrganizationMembership | null>(null);
@@ -124,7 +124,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
 
   const handleSignInRedirect = () => {
     onClose();
-    navigate(ROUTES.LOGIN);
+    router.push(ROUTES.LOGIN);
   };
 
   // Compute membership UI states
@@ -292,7 +292,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                   >
-                    <MessageCircle className="size-4 text-muted-foreground" />
+                    <Discord className="size-4 text-muted-foreground" />
                     <span>{t("organizationPanel.joinDiscord")}</span>
                   </a>
                 )}

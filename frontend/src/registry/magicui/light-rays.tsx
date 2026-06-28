@@ -1,5 +1,5 @@
 import { useMemo, type CSSProperties, type HTMLAttributes, type Ref } from "react"
-import { motion } from "motion/react"
+import { m } from "framer-motion"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -59,7 +59,7 @@ const Ray = ({
   intensity,
 }: LightRay) => {
   return (
-    <motion.div
+    <m.div
       className="pointer-events-none absolute -top-[12%] left-[var(--ray-left)] h-[var(--light-rays-length)] w-[var(--ray-width)] origin-top -translate-x-1/2 rounded-full bg-linear-to-b from-[color-mix(in_srgb,var(--light-rays-color)_70%,transparent)] to-transparent opacity-0 blur-[var(--light-rays-blur)]"
       style={
         {

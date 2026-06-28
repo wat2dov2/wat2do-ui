@@ -38,8 +38,7 @@
     "noUpcomingEvents": "暂无即将到来的活动",
     "upcomingEventCount": "个即将到来的活动",
     "upcomingEventCount_other": "个即将到来的活动",
-    "lastAddedSummary": "{{count}} 个活动最后添加于 {{time}} 前",
-    "lastAddedSummary_other": "{{count}} 个活动最后添加于 {{time}} 前",
+    "latestAddedEvent": "{{title}} 添加于 {{time}}",
     "thisWeek": "本周",
     "discoverEvents": "发现活动",
     "viewMore": "查看更多",
@@ -78,13 +77,6 @@
     "calendar": {
       "googleCalendar": "谷歌日历",
       "iCal": "iCal"
-    },
-    "notifications": {
-      "label": "通知",
-      "email": "电子邮件",
-      "emailSentTitle": "邮件已发送",
-      "emailSentDescription": "我们已向您发送“{{title}}”的邮件。",
-      "emailFailed": "无法发送邮件通知"
     },
     "shareDialog": {
       "description": "通过社交媒体分享此活动或复制链接。",

@@ -1,5 +1,5 @@
 export function initClarity(projectId: string | undefined) {
-  if (!projectId || import.meta.env.DEV) return;
+  if (!projectId || process.env.NODE_ENV === "development") return;
   if (typeof window === "undefined") return;
   if ((window as unknown as { clarity?: unknown }).clarity) return;
 

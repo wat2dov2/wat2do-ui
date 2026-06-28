@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { FilterState, Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
@@ -27,9 +27,9 @@ export function useAppNavigation({
   setFilterStateFromURL,
   setSchoolFilter,
 }: UseAppNavigationOptions) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
 
   // Track one-shot URL concerns. Filters themselves are intentionally parsed
   // whenever the URL changes so back/forward/shared links hydrate state.
@@ -47,9 +47,9 @@ export function useAppNavigation({
       // Handle pageMode redirect
       if (pageModeParam) {
         if (pageModeParam === "marketing") {
-          navigate(ROUTES.MARKETING, { replace: true });
+          router.replace(ROUTES.MARKETING);
         } else if (pageModeParam === "events") {
-          navigate(ROUTES.HOME, { replace: true });
+          router.replace(ROUTES.HOME);
         }
         hasProcessedInitialRouteMode.current = true;
         hasProcessedInitialScroll.current = true;
@@ -73,12 +73,12 @@ export function useAppNavigation({
       filtersParam.length > 2 &&
       filtersParam.length <= MAX_FILTERS_PARAM_BYTES
     ) {
-      const parsed = parseFilterQueryString(location.search);
+      const parsed = parseFilterQueryString(search ? `?${search}` : "");
       setFilterStateFromURL(parsed ?? EMPTY_FILTER_STATE);
     } else {
       setFilterStateFromURL(EMPTY_FILTER_STATE);
     }
-  }, [location.search, searchParams, navigate, setFilterStateFromURL, setSchoolFilter]);
+  }, [router, search, searchParams, setFilterStateFromURL, setSchoolFilter]);
 
   useEffect(() => {
     const eventId = searchParams.get(QP.EVENT_ID);

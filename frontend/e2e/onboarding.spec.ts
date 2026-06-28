@@ -1,9 +1,17 @@
 import { test, expect } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
-const BASE = "http://localhost:5173";
-const API = "http://localhost:8000";
+const BASE = "http://127.0.0.1:3000";
 const TEST_EMAIL = "test-onboarding@uwaterloo.ca";
+
+function apiPath(url: URL): string | null {
+  if (!url.pathname.startsWith("/api/")) {
+    return null;
+  }
+
+  const path = url.pathname.startsWith("/api/") ? url.pathname.slice(4) : url.pathname;
+  return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
+}
 
 async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
   await page.addInitScript(({ key, email }) => {
@@ -23,7 +31,7 @@ test.describe("Onboarding Wizard E2E Flow", () => {
     });
 
     // Set up API mocks before navigation, targeting only the backend port (8000)
-    await page.route(`${API}/auth/refresh`, async (route) => {
+    await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -36,7 +44,23 @@ test.describe("Onboarding Wizard E2E Flow", () => {
       });
     });
 
-    await page.route(`${API}/users/me`, async (route) => {
+    await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          event_categories: ["Career", "Technology"],
+          organization_categories: ["Technology"],
+          interests: ["Technology"],
+          interest_to_categories: {
+            Technology: ["Technology"],
+          },
+          report_statuses: ["pending", "resolved", "dismissed"],
+        }),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/users/me", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -52,7 +76,7 @@ test.describe("Onboarding Wizard E2E Flow", () => {
       });
     });
 
-    await page.route(`${API}/clubs/mine`, async (route) => {
+    await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -60,7 +84,31 @@ test.describe("Onboarding Wizard E2E Flow", () => {
       });
     });
 
-    await page.route(`${API}/users/me/profile`, async (route) => {
+    await page.route(url => apiPath(url) === "/saved-events", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/credits", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ balance: 0 }),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/users/me/profile", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -68,29 +116,55 @@ test.describe("Onboarding Wizard E2E Flow", () => {
       });
     });
 
-    await page.route(`${API}/events*`, async (route) => {
+    await page.route(url => apiPath(url)?.startsWith("/events/promoted") === true, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          {
-            id: 1,
-            title: "Mock Event 1",
-            location: "MC 2012",
-            price: 0,
-            food: "Pizza",
-            registration: false,
-            category: "Technology",
-            organization: "Tech Club",
-            school: "University of Waterloo",
-            added_at: new Date().toISOString(),
-            status: "CONFIRMED",
-          },
-        ]),
+        body: JSON.stringify([]),
       });
     });
 
-    await page.route(`${API}/promotions/active-ids`, async (route) => {
+    await page.route(url => apiPath(url) === "/events", async (route) => {
+      if (apiPath(new URL(route.request().url())).startsWith("/events/promoted")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [
+            {
+              id: 1,
+              title: "Mock Event 1",
+              location: "MC 2012",
+              price: 0,
+              food: ["Pizza"],
+              registration: false,
+              category: "Technology",
+              organization: "Tech Club",
+              school: "University of Waterloo",
+              added_at: new Date().toISOString(),
+              status: "CONFIRMED",
+            },
+          ],
+          total: 1,
+          page: 1,
+          page_size: 50,
+          total_pages: 1,
+          latest_added_event: {
+            title: "Mock Event 1",
+            added_at: new Date().toISOString(),
+          },
+        }),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/promotions/active-ids", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",

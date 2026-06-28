@@ -3,7 +3,7 @@
  *
  * Owns the global modal subscriptions and rendering. Isolating the
  * modal-store subscriptions here prevents modal toggles from
- * re-rendering the Routes subtree in AppContent.
+ * re-rendering route page content.
  *
  * Subscribes to:
  *   - showSubmitChoice / setShowSubmitChoice
@@ -20,8 +20,8 @@
  */
 
 import { useCallback, useState, lazy, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { Calendar, Heart, LogIn, OrganizationChart, X } from "@/shared/ui/doodle-icons";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { CommandPalette } from "@/shared/components/CommandPalette";
@@ -65,11 +65,11 @@ const AddOrganizationModal = lazy(() =>
 
 export function ModalContainer() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { profileCompleted, isAdmin, hasOrganization } = useAuthState();
   const canCreateEvents = hasOrganization || isAdmin;
 
-  // ── UI-store subscriptions (isolated from AppContent) ─────
+  // ── UI-store subscriptions (isolated from route pages) ─────
   const showSubmitChoice = useUIStore((s) => s.showSubmitChoice);
   const setShowSubmitChoice = useUIStore((s) => s.setShowSubmitChoice);
   const showSubmitEvent = useUIStore((s) => s.showSubmitEvent);
@@ -157,8 +157,8 @@ export function ModalContainer() {
   );
 
   const handleOpenOnboardingRoute = useCallback(() => {
-    navigate(ROUTES.ONBOARDING);
-  }, [navigate]);
+    router.push(ROUTES.ONBOARDING);
+  }, [router]);
 
   const handleSubmitEvent = useCallback(
     async (eventData: EventFormData) => {

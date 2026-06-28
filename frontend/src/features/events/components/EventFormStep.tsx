@@ -141,11 +141,11 @@ export function EventFormStep({
     <EventFormProvider value={formContextValue}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Form Panel */}
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-3">
           {/* Header with Tabs */}
           <div className="mb-5 sm:mb-7">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex min-h-9 min-w-0 flex-1 items-center gap-2 pr-10 sm:pr-0">
                 {onBack && (
                   <Button
                     type="button"
@@ -157,7 +157,7 @@ export function EventFormStep({
                     <ArrowLeft className="size-4" />
                   </Button>
                 )}
-                <h2 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-8 text-lg font-semibold text-foreground sm:pr-0 sm:text-xl">
+                <h2 className="min-w-0 text-lg font-semibold leading-none text-foreground sm:text-xl">
                   {isEditMode
                     ? t("events.updateEvent")
                     : canCreateEvents
@@ -214,7 +214,7 @@ export function EventFormStep({
                 <EventFormFields />
                 <Field orientation="horizontal" className="mt-6">
                   <DrawerClose asChild>
-                    <Button variant="outline" type="button" className="min-h-11 sm:min-h-0">
+                    <Button variant="outline" type="button">
                       {t("common.cancel")}
                     </Button>
                   </DrawerClose>
@@ -224,7 +224,6 @@ export function EventFormStep({
                     disabled={!eventForm.isValid}
                     isLoading={isSubmitting}
                     loadingText={t("common.pleaseWait")}
-                    className="min-h-11 sm:min-h-0"
                   >
                     {isEditMode
                       ? t("events.updateEvent")

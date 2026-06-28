@@ -1,8 +1,8 @@
 /**
  * Centralized route path definitions.
  *
- * Every client-side route string used in navigate(), <Route path=>, <Navigate to=>,
- * or pathname comparisons should reference this object instead of using a raw string.
+ * Every client-side route string used in router navigation or pathname
+ * comparisons should reference this object instead of using a raw string.
  *
  * Sub-route maps (ADMIN_ROUTE_MAP, ORGANIZATION_PANEL_ROUTE_MAP) are also derived from these
  * constants so there is a single source of truth.
@@ -21,7 +21,7 @@ export const ROUTES = {
   ORGANIZATIONS: "/organizations",
   SETTINGS: "/settings",
   MARKETING: "/marketing",
-  INVITE: "/invite/:token",
+  INVITE: "/invite",
 
 
   // Admin

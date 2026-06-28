@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   Search,
   SlidersHorizontal,
@@ -47,7 +47,7 @@ export function CommandPalette({
   profileLabel,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const setViewMode = useUIStore((s) => s.setViewMode);
   const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
@@ -152,7 +152,7 @@ export function CommandPalette({
         <CommandGroup heading={t("commands.personalSettings")}>
           <CommandItem
             onSelect={() => {
-              navigate(settingsTabPath(SETTINGS_TABS.PROFILE));
+              router.push(settingsTabPath(SETTINGS_TABS.PROFILE));
               onOpenChange(false);
             }}
           >
@@ -161,7 +161,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate(settingsTabPath(SETTINGS_TABS.NOTIFICATIONS));
+              router.push(settingsTabPath(SETTINGS_TABS.NOTIFICATIONS));
               onOpenChange(false);
             }}
           >
@@ -170,7 +170,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate(settingsTabPath(SETTINGS_TABS.APPEARANCE));
+              router.push(settingsTabPath(SETTINGS_TABS.APPEARANCE));
               onOpenChange(false);
             }}
           >
@@ -179,7 +179,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate(settingsTabPath(SETTINGS_TABS.PRIVACY));
+              router.push(settingsTabPath(SETTINGS_TABS.PRIVACY));
               onOpenChange(false);
             }}
           >
@@ -188,7 +188,7 @@ export function CommandPalette({
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              navigate(ROUTES.CONTACT);
+              router.push(ROUTES.CONTACT);
               onOpenChange(false);
             }}
           >

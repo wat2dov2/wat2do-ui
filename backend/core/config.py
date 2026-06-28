@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Default origins allowed in local development only.
 _DEV_ORIGINS = [
-    "http://localhost:5173",
     "http://localhost:3000",
 ]
 
@@ -67,7 +66,10 @@ class Settings(BaseSettings):
     email_provider: str = ""
     email_provider_api_key: str = ""
     email_from: str = "wat2do <notifications@wat2do.app>"
-    frontend_url: str = "http://localhost:5173"
+    frontend_url: str = "http://localhost:3000"
+    event_feed_revalidation_url: str = ""
+    event_feed_revalidation_secret: str = ""
+    event_feed_revalidation_timeout: float = 3.0
 
     @model_validator(mode="after")
     def validate_database_region(self) -> "Settings":

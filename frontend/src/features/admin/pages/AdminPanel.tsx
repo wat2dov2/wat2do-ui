@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode, Building2 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -35,7 +35,7 @@ const activityQueryParamMap: Record<ActivityType, string> = {
 
 export function AdminPanel({ onNavigate }: AdminPanelProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { recentActivities, recentActivityLoading } = useAdminPanel();
 
   // Pre-map activity data to display objects so the JSX doesn't traverse nested structures
@@ -48,7 +48,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
     const route = activityRouteMap[display.type];
     const param = activityQueryParamMap[display.type];
     const tabParam = display.type === "submission" ? "&tab=submissions" : "";
-    navigate(`${route}?${param}=${display.id}${tabParam}`);
+    router.push(`${route}?${param}=${display.id}${tabParam}`);
   };
 
   return (

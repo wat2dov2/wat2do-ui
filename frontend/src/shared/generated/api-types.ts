@@ -305,26 +305,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/events/latest-added": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Latest Added
-         * @description Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'.
-         */
-        get: operations["get_latest_added_events_latest_added_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/events/promoted": {
         parameters: {
             query?: never;
@@ -393,23 +373,6 @@ export interface paths {
         head?: never;
         /** Update Event */
         patch: operations["update_event_events__event_id__patch"];
-        trace?: never;
-    };
-    "/events/{event_id}/email-notification": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send Event Email Notification */
-        post: operations["send_event_email_notification_events__event_id__email_notification_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/interactions/batch": {
@@ -1587,12 +1550,21 @@ export interface components {
             ig_handle?: string | null;
         };
         /**
-         * EventEmailNotificationResponse
-         * @description Response for sending the current user an event email.
+         * EventFeedResponse
+         * @description Public school feed response with catalog-freshness metadata.
          */
-        EventEmailNotificationResponse: {
-            /** Sent */
-            sent: boolean;
+        EventFeedResponse: {
+            /** Items */
+            items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+            latest_added_event?: components["schemas"]["LatestEventResponse"] | null;
         };
         /** EventFormDataResponse */
         EventFormDataResponse: {
@@ -2384,6 +2356,15 @@ export interface components {
             school?: string | null;
             /** Owner Email */
             owner_email?: string | null;
+            /**
+             * Event Count
+             * @default 0
+             */
+            event_count: number;
+            /** Latest Event Title */
+            latest_event_title?: string | null;
+            /** Latest Event Added At */
+            latest_event_added_at?: string | null;
         };
         /** OrganizationUpdate */
         OrganizationUpdate: {
@@ -2403,19 +2384,6 @@ export interface components {
             logo_url?: string | null;
             /** School */
             school?: string | null;
-        };
-        /** PaginatedResponse[EventSummaryResponse] */
-        PaginatedResponse_EventSummaryResponse_: {
-            /** Items */
-            items: components["schemas"]["EventSummaryResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
         };
         /** PaginatedResponse[OrganizationResponse] */
         PaginatedResponse_OrganizationResponse_: {
@@ -3371,37 +3339,6 @@ export interface operations {
             };
         };
     };
-    get_latest_added_events_latest_added_get: {
-        parameters: {
-            query?: {
-                school?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LatestEventResponse"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_promoted_events_events_promoted_get: {
         parameters: {
             query?: {
@@ -3469,7 +3406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponse_EventSummaryResponse_"];
+                    "application/json": components["schemas"]["EventFeedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3598,37 +3535,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    send_event_email_notification_events__event_id__email_notification_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventEmailNotificationResponse"];
                 };
             };
             /** @description Validation Error */

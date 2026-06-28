@@ -8,7 +8,6 @@
 import { Suspense, useMemo } from "react";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
 import { Megaphone, ArrowLeft, MapPin } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/spinner";
@@ -38,6 +37,7 @@ import type { Event } from "@/shared/types";
 import type { QRCode, QRCodeScan } from "@/features/posters/types";
 import { POSTER_MAP_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
+import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 
 type TimeFilter = "today" | "yesterday" | "last7days" | "last30days" | "alltime";
 
@@ -86,7 +86,7 @@ export function PostersPageContent({
   AssetWizardComponent,
 }: PostersPageContentProps) {
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useMutableSearchParams();
   const SCANS_PER_PAGE = 14;
 
   const { scans: backendScans, loading: scansLoading } = useBackendScans();
@@ -125,7 +125,7 @@ export function PostersPageContent({
   const formatScanTimestamp = (timestamp: string) => formatRelativeTimeCompact(timestamp, t);
 
   const handleViewDetails = (qrCode: QRCode) => {
-    const newParams = new URLSearchParams(searchParams);
+    const newParams = new URLSearchParams(searchParams.toString());
     newParams.set(QP.QR_CODE_ID, qrCode.id);
     setSearchParams(newParams);
   };
@@ -287,7 +287,7 @@ export function PostersPageContent({
         <DetailsModalComponent
           isOpen={showDetailsModal}
           onClose={() => {
-            const newParams = new URLSearchParams(searchParams);
+            const newParams = new URLSearchParams(searchParams.toString());
             newParams.delete(QP.QR_CODE_ID);
             setSearchParams(newParams);
           }}

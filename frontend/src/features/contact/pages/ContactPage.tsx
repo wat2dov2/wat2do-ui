@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { m } from "framer-motion";
 import {
   EMPTY_FILTER_STATE,
   writeFiltersToSearchParams,
@@ -22,12 +22,12 @@ const CornerMask = ({ className }: { className?: string }) => (
 );
 
 export function ContactPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
 
   const handleSearchClick = (query: string, isClub: boolean = false) => {
     if (isClub) {
-      navigate(ROUTES.ORGANIZATIONS);
+      router.push(ROUTES.ORGANIZATIONS);
       return;
     }
 
@@ -35,7 +35,7 @@ export function ContactPage() {
       new URLSearchParams(),
       { ...EMPTY_FILTER_STATE, searchQuery: query },
     );
-    navigate({ pathname: ROUTES.HOME, search: params.toString() });
+    router.push(params.toString() ? `${ROUTES.HOME}?${params.toString()}` : ROUTES.HOME);
   };
 
   return (
@@ -43,14 +43,14 @@ export function ContactPage() {
       <div className="max-w-[800px] mx-auto px-0 py-12 sm:px-6 md:py-20 pb-32 space-y-16">
         
         {/* HERO SECTION */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="relative w-full h-[280px] sm:h-[360px] md:h-[440px] rounded-3xl overflow-hidden bg-muted"
         >
           <img
-            src={imgMeetHero}
+            src={imgMeetHero.src}
             alt={t("contact.heroAlt")}
             className="w-full h-full object-cover select-none pointer-events-none"
           />
@@ -80,10 +80,10 @@ export function ContactPage() {
               <CornerMask className="absolute left-full bottom-0 size-4 md:size-6 text-background pointer-events-none" />
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* CONTENT UNDER HERO SECTION */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
@@ -182,7 +182,7 @@ export function ContactPage() {
             </p>
             <div className="flex justify-start pt-2">
               <img
-                src={imgSlefLogo}
+                src={imgSlefLogo.src}
                 alt={t("contact.funding.logoAlt")}
                 className="h-28 sm:h-32 object-contain select-none"
               />
@@ -316,19 +316,19 @@ export function ContactPage() {
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 pt-6">
             <button
-              onMouseDown={() => navigate(ROUTES.HOME)}
+              onMouseDown={() => router.push(ROUTES.HOME)}
               className="px-5 py-2.5 bg-background border border-border text-foreground hover:bg-muted font-semibold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
             >
               {t("contact.actions.browse")}
             </button>
             <button
-              onMouseDown={() => navigate(ROUTES.ORGANIZATIONS)}
+              onMouseDown={() => router.push(ROUTES.ORGANIZATIONS)}
               className="px-5 py-2.5 bg-background border border-border text-foreground hover:bg-muted font-semibold text-sm rounded-xl shadow-xs transition-all cursor-pointer"
             >
               {t("contact.actions.explore")}
             </button>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Footer */}
         <footer className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">

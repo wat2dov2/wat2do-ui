@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 import type { Organization } from "@/shared/types";
 import { isApiError } from "@/shared/services/apiClient";
@@ -94,7 +94,7 @@ export function mapResponseToIntegration(
  */
 export function useIntegrationData() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const activeOrganizationId = useAuthState().organizationId;
 
   // Core data
@@ -113,12 +113,12 @@ export function useIntegrationData() {
   const redirectIfUnauthorized = useCallback(
     (err: unknown): boolean => {
       if (isApiError(err) && err.status === 401) {
-        navigate(ROUTES.LOGIN, { replace: true });
+        router.replace(ROUTES.LOGIN);
         return true;
       }
       return false;
     },
-    [navigate]
+    [router]
   );
 
   // --- Boot data (organizations + platform options) ---

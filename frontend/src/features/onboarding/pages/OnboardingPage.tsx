@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { createSearchParams, useLocation, useNavigate } from "react-router-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
@@ -73,19 +73,16 @@ function OnboardingEmailOptInStep({
 }
 
 export function OnboardingPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const { persistProfile } = useUpdateProfile();
 
-  // Signup flow hands the school over via router state so we can greet the
-  // user by their institution on step 3 instead of the generic fallback.
-  // Depend on the whole router `location` (a new object per navigation) rather
-  // than `location.state` (a property read on a mutable-looking object).
+  // Signup flow hands the school over via the URL so a refresh preserves the
+  // institution-specific onboarding greeting.
   const initialSchool = useMemo(() => {
-    const state = location.state as { school?: string } | null;
-    return state?.school ?? "";
-  }, [location]);
+    return searchParams.get(QP.SCHOOL) ?? "";
+  }, [searchParams]);
 
   const handleComplete = useCallback(
     (data: {
@@ -119,12 +116,9 @@ export function OnboardingPage() {
         );
       }
 
-      navigate({
-        pathname: ROUTES.HOME,
-        search: `?${createSearchParams({ [QP.SCHOOL]: data.school })}`,
-      });
+      router.push(`${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: data.school })}`);
     },
-    [navigate, persistProfile]
+    [router, persistProfile]
   );
 
   const flow = useOnboardingFlow({ onComplete: handleComplete, initialSchool });

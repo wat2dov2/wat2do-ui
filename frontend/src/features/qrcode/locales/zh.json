@@ -38,7 +38,7 @@
     "posterFallbackName": "海报 {{id}}",
     "dragPlacementAriaLabel": "拖动以移动二维码位置",
     "mapboxTokenMissingTitle": "Mapbox 令牌未配置",
-    "mapboxTokenMissingDescription": "请在您的环境变量中设置 VITE_MAPBOX_TOKEN",
+    "mapboxTokenMissingDescription": "请在您的环境变量中设置 NEXT_PUBLIC_MAPBOX_TOKEN",
     "posterCount": "{{count}} 张海报",
     "posterCount_other": "{{count}} 张海报",
     "scanCount": "{{count}} 次扫码",

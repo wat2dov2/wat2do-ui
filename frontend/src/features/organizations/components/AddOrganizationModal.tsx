@@ -182,10 +182,12 @@ export function AddOrganizationModal({
             <X className="size-4" />
           </button>
         </DrawerClose>
-        <div className="max-h-[92dvh] overflow-y-auto p-4 sm:p-6">
+        <div className="max-h-[92dvh] overflow-y-auto px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-3">
           <form className="space-y-6">
             <DrawerHeader className="p-0 pr-11 text-left">
-              <div className="flex items-start gap-2">
+              <div
+                className={`flex min-h-9 gap-2 ${isEditMode ? "items-start" : "items-center"}`}
+              >
                 {onBack && (
                   <Button
                     type="button"
@@ -198,7 +200,7 @@ export function AddOrganizationModal({
                   </Button>
                 )}
                 <div className="min-w-0">
-                  <DrawerTitle className="text-lg font-semibold text-foreground sm:text-xl leading-snug">
+                  <DrawerTitle className="text-lg font-semibold leading-none text-foreground sm:text-xl">
                     {isEditMode ? t("organizations.editClub") : t("organizations.addClub")}
                   </DrawerTitle>
                   {isEditMode && (

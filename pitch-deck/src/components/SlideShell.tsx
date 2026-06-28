@@ -139,7 +139,7 @@ export const SlideShell: React.FC<SlideShellProps> = ({
             minHeight: 0,
             display: "flex",
             flexDirection: "column",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             marginTop: 4,
             overflow: "hidden",
           }}

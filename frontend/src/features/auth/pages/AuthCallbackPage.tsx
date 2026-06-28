@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, createSearchParams } from "react-router-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { verifyOtpAPI } from "@/features/auth/api/auth.api";
 import { ROUTES } from "@/shared/constants/routes";
@@ -11,8 +11,8 @@ import { Button } from "@/shared/ui/button";
 
 export function AuthCallbackPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,16 +38,12 @@ export function AuthCallbackPage() {
         const school = result.school || DEFAULT_SCHOOL;
 
         if (result.onboardingRequired) {
-          navigate(ROUTES.ONBOARDING, { replace: true, state: { school } });
+          router.replace(`${ROUTES.ONBOARDING}?${new URLSearchParams({ [QP.SCHOOL]: school })}`);
         } else {
-          navigate(
+          router.replace(
             school
-              ? {
-                  pathname: ROUTES.HOME,
-                  search: `?${createSearchParams({ [QP.SCHOOL]: school })}`,
-                }
+              ? `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: school })}`
               : ROUTES.HOME,
-            { replace: true }
           );
         }
       } catch (err) {
@@ -64,7 +60,7 @@ export function AuthCallbackPage() {
     return () => {
       active = false;
     };
-  }, [token, email, navigate, t]);
+  }, [token, email, router, t]);
 
   return (
     <AuthPageLayout
@@ -82,12 +78,12 @@ export function AuthCallbackPage() {
             <p className="text-sm text-destructive text-center max-w-xs">{error}</p>
             <Button
               type="button"
-              onMouseDown={() => navigate(ROUTES.LOGIN, { replace: true })}
+              onMouseDown={() => router.replace(ROUTES.LOGIN)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" && e.key !== " ") return;
 
                 e.preventDefault();
-                navigate(ROUTES.LOGIN, { replace: true });
+                router.replace(ROUTES.LOGIN);
               }}
               className="w-full mt-4"
             >

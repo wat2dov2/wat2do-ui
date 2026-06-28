@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
 import { useShallow } from "zustand/react/shallow";
 import {
   serializeFiltersToJSON,
@@ -12,6 +11,7 @@ import {
   EMPTY_FILTER_STATE,
 } from "@/features/search/api/filterService";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
+import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { useSearchStore } from "@/features/search/store/search.store";
 import type { FilterState } from "@/shared/types";
 
@@ -40,14 +40,14 @@ function useCurrentFilterState(): FilterState {
 
 export function useFilterUrlActions() {
   const currentFilterState = useCurrentFilterState();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useMutableSearchParams();
 
   const setFilterState = useCallback(
     (updater: FilterStateUpdater) => {
       const nextFilters = normalizeFilterState(
         typeof updater === "function" ? updater(currentFilterState) : updater,
       );
-      const nextParams = new URLSearchParams(searchParams);
+      const nextParams = new URLSearchParams(searchParams.toString());
       setSearchParams(writeFiltersToSearchParams(nextParams, nextFilters), {
         replace: true,
       });
@@ -93,7 +93,7 @@ export function useFilterUrlActions() {
  * Hook for managing filter state
  *
  * Backed by the shared Zustand search store so that every call site
- * (AppContent, EventsPageContainer, CommandPalette) reads and writes
+ * (App Router pages, EventsPageContainer, CommandPalette) reads and writes
  * the same filter values. Derived/UI-only state (JSON editor, AI
  * prompt) stays local to this hook.
  */

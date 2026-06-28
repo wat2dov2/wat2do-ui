@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "next/navigation";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { sendOtpAPI, verifyOtpAPI } from "@/features/auth/api/auth.api";
@@ -34,7 +34,7 @@ export function useAuthEntryFlow({
   onContinueToHome,
 }: UseAuthEntryFlowOptions) {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const tokenParam = searchParams.get("token");
   const emailParam = searchParams.get("email");
 

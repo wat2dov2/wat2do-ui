@@ -13,6 +13,16 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ViewMode, FilterViewMode, Event } from "@/shared/types";
 
+const noopStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
+
+function getPreferenceStorage() {
+  return typeof document === "undefined" ? noopStorage : window.localStorage;
+}
+
 interface UIState {
   // Preferences (persisted)
   viewMode: ViewMode;
@@ -62,7 +72,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: "wat2do-app-prefs",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(getPreferenceStorage),
       version: 1,
       // Only persist view preferences
       partialize: (state) => ({

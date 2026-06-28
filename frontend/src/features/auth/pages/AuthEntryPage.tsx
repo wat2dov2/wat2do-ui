@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createSearchParams, useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
@@ -9,26 +9,23 @@ import { useAuthEntryFlow } from "@/features/auth/hooks/useAuthEntryFlow";
 import { useAuthState } from "@/features/auth";
 
 export function AuthEntryPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthState();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(ROUTES.HOME, { replace: true });
+      router.replace(ROUTES.HOME);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, router]);
 
   const authEntry = useAuthEntryFlow({
     onContinueToOnboarding: (initialSchool) =>
-      navigate(ROUTES.ONBOARDING, { state: { school: initialSchool } }),
+      router.push(`${ROUTES.ONBOARDING}?${new URLSearchParams({ [QP.SCHOOL]: initialSchool })}`),
     onContinueToHome: (initialSchool) =>
-      navigate(
+      router.push(
         initialSchool
-          ? {
-              pathname: ROUTES.HOME,
-              search: `?${createSearchParams({ [QP.SCHOOL]: initialSchool })}`,
-            }
+          ? `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: initialSchool })}`
           : ROUTES.HOME,
       ),
   });

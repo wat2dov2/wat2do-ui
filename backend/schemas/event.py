@@ -17,6 +17,7 @@ from core.constants import (
     MAX_EVENT_TITLE_LENGTH,
     MAX_URL_LENGTH,
 )
+from core.pagination import PaginatedResponse
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse
 
 _log = logging.getLogger(__name__)
@@ -226,6 +227,12 @@ class EventSummaryResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EventFeedResponse(PaginatedResponse[EventSummaryResponse]):
+    """Public school feed response with catalog-freshness metadata."""
+
+    latest_added_event: LatestEventResponse | None = None
+
+
 class EventResponse(BaseModel):
     """Full event payload returned from GET /events/{id} and used internally
     for ownership checks.
@@ -287,9 +294,3 @@ class EventPublicResponse(BaseModel):
     click_count: int = 0
 
     model_config = {"from_attributes": True}
-
-
-class EventEmailNotificationResponse(BaseModel):
-    """Response for sending the current user an event email."""
-
-    sent: bool

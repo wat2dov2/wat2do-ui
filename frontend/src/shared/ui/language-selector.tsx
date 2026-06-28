@@ -30,9 +30,14 @@ export function LanguageSelector({ className }: LanguageSelectorProps) {
         )}
         size="sm"
       >
-          <SelectValue>
-            <span data-language-label className="text-sm">{currentLanguage.label}</span>
-          </SelectValue>
+        <SelectValue>
+          <span data-language-label className="text-sm sm:hidden">
+            {currentLanguage.shortLabel}
+          </span>
+          <span data-language-label className="hidden text-sm sm:inline">
+            {currentLanguage.label}
+          </span>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {SUPPORTED_LANGUAGES.map((lang) => (

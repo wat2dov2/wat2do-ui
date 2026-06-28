@@ -2,7 +2,7 @@
  * Search / Filter Store (Zustand)
  *
  * Single source of truth for filter state. Replaces the per-component
- * useReducer so that AppContent (URL hydration, command palette) and
+ * useReducer so that App Router pages (URL hydration, command palette) and
  * EventsPageContainer (filter UI, event list) share one state.
  *
  * Only filter *values* live here. Derived data (filtered event list,

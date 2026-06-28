@@ -6,11 +6,12 @@
 export interface Language {
   code: string;
   label: string;
+  shortLabel: string;
 }
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'EN' },
-  { code: 'zh', label: '中文' },
+  { code: 'en', label: 'English', shortLabel: 'EN' },
+  { code: 'zh', label: '中文', shortLabel: '中' },
 ] as const satisfies readonly Language[];
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]["code"];

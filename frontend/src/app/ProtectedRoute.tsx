@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   fetchProfileAPI,
   getLastProfileFetchAt,
@@ -24,6 +24,7 @@ interface ProtectedRouteProps {
 const ADMIN_ROLE_FRESHNESS_TTL_MS = 5 * 60 * 1000;
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const router = useRouter();
   // Subscribe to the same reactive auth snapshot the rest of the app reads
   // so role demotion / logout / silent-refresh updates propagate to both the
   // route gate and the TopNav button in a single render tick.
@@ -57,24 +58,22 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     };
   }, [needsFreshRole]);
 
-  if (!authed) {
-    if (userEmail !== null) {
-      return <LoadingPage />;
+  const redirectTarget = !authed && userEmail === null
+    ? ROUTES.LOGIN
+    : requiredRole === ROLE_ADMIN && role !== "admin"
+      ? ROUTES.HOME
+      : requiredRole === ROLE_ORGANIZATION && !hasOrganization && role !== "admin"
+        ? ROUTES.HOME
+        : null;
+
+  useEffect(() => {
+    if (redirectTarget) {
+      router.replace(redirectTarget);
     }
-    return <Navigate to={ROUTES.LOGIN} replace />;
-  }
+  }, [redirectTarget, router]);
 
-  // Block admin UI until we have a fresh /users/me result within TTL.
-  if (needsFreshRole && refreshing) {
+  if (redirectTarget || !authed || (needsFreshRole && refreshing)) {
     return <LoadingPage />;
-  }
-
-  if (requiredRole === ROLE_ADMIN && role !== "admin") {
-    return <Navigate to={ROUTES.HOME} replace />;
-  }
-
-  if (requiredRole === ROLE_ORGANIZATION && !hasOrganization && role !== "admin") {
-    return <Navigate to={ROUTES.HOME} replace />;
   }
 
   return <>{children}</>;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import {
@@ -34,10 +34,10 @@ function getGeolocation(): Promise<{ latitude: number; longitude: number }> {
  * Returns only the loading message for the page to render.
  */
 export function useQRRedirect(): { message: string } {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const { t } = useTranslation();
-  const qrCodeId = location.pathname.replace(/^\/qr\//, "").split("/")[0] || null;
+  const qrCodeId = pathname.replace(/^\/qr\//, "").split("/")[0] || null;
   const [message, setMessage] = useState<string>(() => t("common.loading") || "Loading...");
 
   // Hold `t` in a ref so i18n rehydration doesn't re-run the effect and
@@ -50,7 +50,7 @@ export function useQRRedirect(): { message: string } {
 
   useEffect(() => {
     if (!qrCodeId) {
-      navigate(ROUTES.HOME, { replace: true });
+      router.replace(ROUTES.HOME);
       return;
     }
 
@@ -63,7 +63,7 @@ export function useQRRedirect(): { message: string } {
       .then((result) => {
         if (cancelled) return;
         if (result === null) {
-          navigate(ROUTES.HOME, { replace: true });
+          router.replace(ROUTES.HOME);
           return;
         }
         if ("requires_location" in result && result.requires_location) {
@@ -75,7 +75,7 @@ export function useQRRedirect(): { message: string } {
               })
               .catch((err) => {
                 console.error("QR redirect failed:", err);
-                if (!cancelled) navigate(ROUTES.HOME, { replace: true });
+                if (!cancelled) router.replace(ROUTES.HOME);
               })
           );
           return;
@@ -89,12 +89,12 @@ export function useQRRedirect(): { message: string } {
       })
       .catch((err) => {
         console.error("QR redirect failed:", err);
-        if (!cancelled) navigate(ROUTES.HOME, { replace: true });
+        if (!cancelled) router.replace(ROUTES.HOME);
       });
     return () => {
       cancelled = true;
     };
-  }, [qrCodeId, navigate]);
+  }, [qrCodeId, router]);
 
   return { message };
 }

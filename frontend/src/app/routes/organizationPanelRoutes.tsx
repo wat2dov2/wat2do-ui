@@ -8,7 +8,7 @@
 
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { ROUTES, ORGANIZATION_PANEL_ROUTE_MAP, type OrganizationPanelRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
@@ -30,13 +30,13 @@ const OrganizationPanelMembersPage = lazy(() =>
  * Organization panel navigation handler
  */
 function useOrganizationPanelNavigation() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return useCallback(
     (page: OrganizationPanelRouteKey) => {
-      navigate(ORGANIZATION_PANEL_ROUTE_MAP[page]);
+      router.push(ORGANIZATION_PANEL_ROUTE_MAP[page]);
     },
-    [navigate]
+    [router]
   );
 }
 
@@ -66,9 +66,9 @@ export function OrganizationPanelRoute() {
  * Organization Panel Posters Route Component
  */
 export function OrganizationPanelPostersRoute() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
-  const onBack = useCallback(() => navigate(ROUTES.ORGANIZATION_PANEL), [navigate]);
+  const onBack = useCallback(() => router.push(ROUTES.ORGANIZATION_PANEL), [router]);
 
   return (
     <OrganizationPanelSuspense>

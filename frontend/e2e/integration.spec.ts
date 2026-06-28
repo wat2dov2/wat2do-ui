@@ -1,11 +1,60 @@
 import { test, expect } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
-const BASE = "http://localhost:5173";
+const BASE = "http://127.0.0.1:3000";
 const API = "http://localhost:8000";
+const APP_API = `${BASE}/api`;
 
 /** Shared test identity used across auth-seeded tests. */
 const TEST_EMAIL = "test@uwaterloo.ca";
+
+const MOCK_ORGANIZATIONS = [
+  {
+    id: 1,
+    organization_name: "UW Tech Club",
+    organization_type: "Technology",
+    organization_page: "https://example.com/tech",
+    description: "A test organization",
+    school: "University of Waterloo",
+    categories: ["Technology"],
+    event_count: 1,
+    latest_event_title: "Tech Career Fair",
+    latest_event_added_at: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    organization_name: "UW Board Games Club",
+    organization_type: "Social",
+    organization_page: "https://example.com/board-games",
+    description: "Board games organization",
+    school: "University of Waterloo",
+    categories: ["Social"],
+    event_count: 1,
+    latest_event_title: "Board Game Night",
+    latest_event_added_at: new Date().toISOString(),
+  },
+  {
+    id: 3,
+    organization_name: "UW Computer Science Club",
+    organization_type: "Technology",
+    organization_page: "https://csclub.uwaterloo.ca",
+    description: "Computer science organization",
+    school: "University of Waterloo",
+    categories: ["Technology"],
+    event_count: 0,
+    latest_event_title: null,
+    latest_event_added_at: null,
+  },
+];
+
+function apiPath(url: URL): string | null {
+  if (!url.pathname.startsWith("/api/")) {
+    return null;
+  }
+
+  const path = url.pathname.slice("/api".length);
+  return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
+}
 
 test.beforeEach(async ({ page }) => {
   page.on("response", (response) => {
@@ -17,18 +66,140 @@ test.beforeEach(async ({ page }) => {
   });
 
   // Prevent CORS errors on active-ids by mocking it globally for all browser routes
-  await page.route(new RegExp(`${API}/promotions/active-ids`), async (route) => {
+  await page.route(url => apiPath(url) === "/promotions/active-ids", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
     });
   });
+
+  await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        event_categories: ["Career", "Technology"],
+        organization_categories: ["Technology", "Social"],
+        interests: ["Career", "Technology"],
+        interest_to_categories: {
+          Career: ["Career"],
+          Technology: ["Technology"],
+        },
+        report_statuses: ["pending", "resolved", "dismissed"],
+      }),
+    });
+  });
+
+  await page.route(url => apiPath(url) === "/saved-events", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([]),
+    });
+  });
+
+  await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([]),
+    });
+  });
+
+  await page.route(url => apiPath(url) === "/credits", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ balance: 0 }),
+    });
+  });
+
+  await page.route(url => apiPath(url)?.startsWith("/events/promoted") === true, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([]),
+    });
+  });
+
+  await page.route(url => apiPath(url) === "/events", async (route) => {
+    if (apiPath(new URL(route.request().url()))?.startsWith("/events/promoted") === true) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+      return;
+    }
+
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [
+          {
+            id: 1,
+            title: "Tech Career Fair",
+            location: "SLC",
+            occurrences: [{ id: 1, event_id: 1, dtstart_utc: startsAt, dtend_utc: null }],
+            price: 0,
+            food: [],
+            registration: false,
+            source_image_url: null,
+            category: "Career",
+            organization: "UW Tech Club",
+            school: "University of Waterloo",
+            added_at: now.toISOString(),
+            click_count: 0,
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 20,
+        total_pages: 1,
+        latest_added_event: {
+          title: "Tech Career Fair",
+          added_at: now.toISOString(),
+        },
+      }),
+    });
+  });
+
+  await page.route(url => apiPath(url) === "/organizations", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const search = requestUrl.searchParams.get("search")?.toLowerCase() ?? "";
+    const ids = requestUrl.searchParams.getAll("ids").map(Number);
+    let items = MOCK_ORGANIZATIONS;
+
+    if (search) {
+      items = items.filter((organization) =>
+        organization.organization_name.toLowerCase().includes(search)
+      );
+    }
+    if (ids.length > 0) {
+      items = items.filter((organization) => ids.includes(organization.id));
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items,
+        total: items.length,
+        page: 1,
+        page_size: 20,
+        total_pages: 1,
+      }),
+    });
+  });
 });
 
 async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]) {
   // Mock auth refresh
-  await page.route(`${API}/auth/refresh`, async (route) => {
+  await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -42,7 +213,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock users/me
-  await page.route(`${API}/users/me`, async (route) => {
+  await page.route(url => apiPath(url) === "/users/me", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -58,58 +229,19 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   });
 
-  // Mock clubs/mine
-  await page.route(`${API}/clubs/mine`, async (route) => {
+  // Mock organizations/mine
+  await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: 1,
-          club_name: "UW Tech Club",
-          club_type: "Technology",
-          description: "A test club",
-          school: "University of Waterloo",
-        }
-      ]),
-    });
-  });
-
-  // Mock GET /clubs/ list
-  await page.route(new RegExp(`${API}/clubs/(\\?|$)`), async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: 1,
-          club_name: "UW Tech Club",
-          club_type: "Technology",
-          description: "A test club",
-          school: "University of Waterloo",
-        },
-        {
-          id: 2,
-          club_name: "UW Board Games Club",
-          club_type: "Social",
-          description: "Board games club",
-          school: "University of Waterloo",
-        },
-        {
-          id: 3,
-          club_name: "UW Computer Science Club",
-          club_type: "Technology",
-          description: "Computer science club",
-          school: "University of Waterloo",
-        }
-      ]),
+      body: JSON.stringify([MOCK_ORGANIZATIONS[0]]),
     });
   });
 
   // Mock integrations endpoints
   const platforms = ["whatsapp", "discord", "slack", "telegram", "linkedin", "facebook", "instagram"];
   for (const p of platforms) {
-    await page.route(new RegExp(`${API}/clubs/\\d+/integrations/${p}`), async (route) => {
+    await page.route(url => apiPath(url)?.match(new RegExp(`^/organizations/\\d+/integrations/${p}$`)) != null, async (route) => {
       const method = route.request().method();
       if (method === "GET") {
         await route.fulfill({
@@ -151,7 +283,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
       }
     });
 
-    await page.route(`${API}/clubs/integrations/${p}/options`, async (route) => {
+    await page.route(url => apiPath(url) === `/organizations/integrations/${p}/options`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -163,8 +295,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   }
 
-  // Mock saved clubs
-  await page.route(`${API}/saved-clubs/`, async (route) => {
+  // Mock saved organizations
+  await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -173,7 +305,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock credits
-  await page.route(`${API}/credits/`, async (route) => {
+  await page.route(url => apiPath(url) === "/credits", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -182,7 +314,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock saved events
-  await page.route(`${API}/saved-events/`, async (route) => {
+  await page.route(url => apiPath(url) === "/saved-events", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -191,7 +323,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock active promotions IDs
-  await page.route(`${API}/promotions/active-ids`, async (route) => {
+  await page.route(url => apiPath(url) === "/promotions/active-ids", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -206,15 +338,15 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     isFirstYear: false,
     school: "University of Waterloo",
     role: "admin",
-    hasClub: true,
+    hasOrganization: true,
     clubs: [
       {
         id: 1,
-        club_name: "UW Tech Club",
+        organization_name: "UW Tech Club",
       }
     ],
-    clubId: 1,
-    clubName: "UW Tech Club",
+    organizationId: 1,
+    organizationName: "UW Tech Club",
   };
 
   await page.addInitScript(({ keyEmail, email, keyProfile, profileObj }) => {
@@ -274,7 +406,7 @@ async function seedQrData(
     : [];
 
   // Mock API endpoints for QR code posters and scans
-  await page.route(new RegExp(`${API}/qr/\\?`), async (route) => {
+  await page.route(new RegExp(`${APP_API}/qr/\\?`), async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -286,7 +418,7 @@ async function seedQrData(
     });
   });
 
-  await page.route(new RegExp(`${API}/qr/scans`), async (route) => {
+  await page.route(new RegExp(`${APP_API}/qr/scans`), async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -314,25 +446,31 @@ test.describe("Auth Page", () => {
     await page.goto(`${BASE}/login`);
     await expect(page.locator("h1")).toContainText("Discover");
     await expect(page.locator('input[type="email"]')).toBeVisible();
-    await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
-    await expect(page.getByText(/already have an account/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /continue/i })).toBeVisible();
+    await expect(page.getByText(/platform terms/i)).toBeVisible();
   });
 
-  test("toggles between signup and login modes", async ({ page }) => {
+  test("continues from email to verification code entry", async ({ page }) => {
+    await page.route(url => apiPath(url) === "/auth/send-otp", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "sent" }),
+      });
+    });
+
     await page.goto(`${BASE}/login`);
-    await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
+    await page.locator('input[type="email"]').fill(TEST_EMAIL);
+    await page.getByRole("button", { name: /continue/i }).click();
 
-    await page.getByRole("button", { name: /sign in$/i }).click();
-    await expect(page.getByRole("button", { name: /^sign in$/i })).toBeVisible();
-    await expect(page.getByText(/don't have an account/i)).toBeVisible();
-
-    await page.getByRole("button", { name: /create one/i }).click();
-    await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
+    await expect(page.getByText(/6-digit login code/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /verify code/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /resend code/i })).toBeVisible();
   });
 
   test("submit button is disabled until form is valid", async ({ page }) => {
     await page.goto(`${BASE}/login`);
-    const submit = page.getByRole("button", { name: /create account/i });
+    const submit = page.getByRole("button", { name: /continue/i });
 
     await expect(submit).toBeDisabled();
 
@@ -344,11 +482,19 @@ test.describe("Auth Page", () => {
   });
 
   test("shows error on invalid signup attempt", async ({ page }) => {
+    await page.route(url => apiPath(url) === "/auth/send-otp", async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Use a supported school email" }),
+      });
+    });
+
     await page.goto(`${BASE}/login`);
     await page.locator('input[type="email"]').fill("bad@example.com");
-    await page.getByRole("button", { name: /create account/i }).click();
+    await page.getByRole("button", { name: /continue/i }).click();
 
-    await expect(page.locator(".text-destructive")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Use a supported school email")).toBeVisible({ timeout: 10000 });
   });
 });
 
@@ -374,9 +520,9 @@ test.describe("Posters & QR Analytics", () => {
   });
 });
 
-// ── Workflow 8: Club Integrations ──────────────────────────────────────
+// ── Workflow 8: Organization Integrations ─────────────────────────────
 
-test.describe("Club Integrations", () => {
+test.describe("Organization Integrations", () => {
   test("can connect WhatsApp integration end to end", async ({ page }) => {
     await seedAuthenticatedSession(page);
     await page.goto(`${BASE}/organization-panel/integrations`);
@@ -445,7 +591,9 @@ test.describe("Events Page", () => {
   test("backend API returns events", async ({ request }) => {
     const res = await request.get(`${API}/events/`);
     expect(res.status()).toBe(200);
-    const events = await res.json();
+    const feed = await res.json();
+    const events = feed.items;
+    expect(feed).toHaveProperty("latest_added_event");
     expect(events.length).toBeGreaterThan(0);
     expect(events[0]).toHaveProperty("title");
     expect(events[0]).toHaveProperty("location");
@@ -454,7 +602,8 @@ test.describe("Events Page", () => {
 
   test("backend events match expected seed data", async ({ request }) => {
     const res = await request.get(`${API}/events/`);
-    const events = await res.json();
+    const feed = await res.json();
+    const events = feed.items;
     const titles = events.map((e: { title: string }) => e.title);
     expect(titles).toContain("Tech Career Fair");
     expect(titles).toContain("Board Game Night");
@@ -464,20 +613,22 @@ test.describe("Events Page", () => {
   test("event search filter works on API", async ({ request }) => {
     const res = await request.get(`${API}/events/?search=career`);
     expect(res.status()).toBe(200);
-    const events = await res.json();
+    const feed = await res.json();
+    const events = feed.items;
     expect(events.length).toBeGreaterThanOrEqual(1);
     expect(events.map((e: { title: string }) => e.title)).toContain("Tech Career Fair");
   });
 
   test("event category filter works on API", async ({ request }) => {
-    const res = await request.get(`${API}/events/?category=Career`);
+    const res = await request.get(`${API}/events/?categories=Career`);
     expect(res.status()).toBe(200);
-    const events = await res.json();
+    const feed = await res.json();
+    const events = feed.items;
     expect(events.every((e: { category: string }) => e.category === "Career")).toBeTruthy();
   });
 });
 
-// ── Workflow 3: Clubs Page ────────────────────────────────────────────
+// ── Workflow 3: Organizations Page ────────────────────────────────────
 
 test.describe("Organizations Page", () => {
   test("loads and displays organizations", async ({ page }) => {
@@ -490,29 +641,34 @@ test.describe("Organizations Page", () => {
     await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });
   });
 
-  test("backend API returns clubs", async ({ request }) => {
-    const res = await request.get(`${API}/clubs/`);
+  test("backend API returns organizations", async ({ request }) => {
+    const res = await request.get(`${API}/organizations/`);
     expect(res.status()).toBe(200);
-    const clubs = await res.json();
-    expect(clubs.length).toBeGreaterThan(0);
-    expect(clubs[0]).toHaveProperty("club_name");
-    expect(clubs[0]).toHaveProperty("club_type");
+    const organizations = await res.json();
+    expect(organizations.items.length).toBeGreaterThan(0);
+    expect(organizations.items[0]).toHaveProperty("organization_name");
+    expect(organizations.items[0]).toHaveProperty("organization_type");
   });
 
-  test("backend clubs match expected seed data", async ({ request }) => {
-    const res = await request.get(`${API}/clubs/`);
-    const clubs = await res.json();
-    const names = clubs.map((c: { club_name: string }) => c.club_name);
-    expect(names).toContain("UW Board Games Club");
-    expect(names).toContain("UW Computer Science Club");
+  test("backend organizations match paginated contract", async ({ request }) => {
+    const res = await request.get(`${API}/organizations/`);
+    const organizations = await res.json();
+    expect(organizations.total).toBeGreaterThanOrEqual(organizations.items.length);
+    expect(
+      organizations.items.every(
+        (organization: { organization_name?: string; organization_type?: string }) =>
+          typeof organization.organization_name === "string" &&
+          typeof organization.organization_type === "string",
+      ),
+    ).toBeTruthy();
   });
 
-  test("club search filter works on API", async ({ request }) => {
-    const res = await request.get(`${API}/clubs/?search=computer`);
+  test("organization search filter works on API", async ({ request }) => {
+    const res = await request.get(`${API}/organizations/?search=computer`);
     expect(res.status()).toBe(200);
-    const clubs = await res.json();
-    expect(clubs.length).toBeGreaterThanOrEqual(1);
-    expect(clubs.map((c: { club_name: string }) => c.club_name)).toContain("UW Computer Science Club");
+    const organizations = await res.json();
+    expect(organizations.items.length).toBeGreaterThanOrEqual(1);
+    expect(organizations.items.map((c: { organization_name: string }) => c.organization_name)).toContain("UW Computer Science Club");
   });
 });
 
@@ -540,9 +696,9 @@ test.describe("Auth-protected API endpoints", () => {
     expect([401, 403]).toContain(res.status());
   });
 
-  test("POST /clubs/ requires authentication", async ({ request }) => {
-    const res = await request.post(`${API}/clubs/`, {
-      data: { club_name: "Test", club_type: "Test" },
+  test("POST /organizations/ requires authentication", async ({ request }) => {
+    const res = await request.post(`${API}/organizations/`, {
+      data: { organization_name: "Test", organization_type: "Test", categories: ["Technology"] },
     });
     expect([401, 403]).toContain(res.status());
   });
@@ -564,11 +720,25 @@ test.describe("Auth-protected API endpoints", () => {
 
 test.describe("Navigation", () => {
   test("main pages load without errors", async ({ page }) => {
-    const routes = ["/", "/login", "/onboarding", "/organizations", "/about", "/settings"];
+    const routes = ["/", "/school/uwaterloo", "/login", "/onboarding", "/organizations", "/contact", "/settings"];
     for (const route of routes) {
       const res = await page.goto(`${BASE}${route}`);
       expect(res?.status()).toBe(200);
     }
+  });
+
+  test("root rewrite serves the same runtime as direct school route", async ({ request }) => {
+    const rootResponse = await request.get(`${BASE}/`);
+    const schoolResponse = await request.get(`${BASE}/school/uwaterloo`);
+    const rootHtml = await rootResponse.text();
+    const schoolHtml = await schoolResponse.text();
+
+    expect(rootResponse.status()).toBe(200);
+    expect(schoolResponse.status()).toBe(200);
+    expect(rootHtml).toContain("server-event-feed");
+    expect(schoolHtml).toContain("server-event-feed");
+    expect(rootHtml.includes("hmr-client")).toBe(schoolHtml.includes("hmr-client"));
+    expect(rootHtml.includes("next-devtools")).toBe(schoolHtml.includes("next-devtools"));
   });
 
   test("no console errors on events page", async ({ page }) => {

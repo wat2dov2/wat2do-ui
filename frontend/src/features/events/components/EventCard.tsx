@@ -1,35 +1,24 @@
 import { lazy, memo, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
-  Bell,
+  Download,
   Heart,
   ImageOff,
-  Mail,
   MoreHorizontal,
-  Share2,
-  Flag,
-  Trash2,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
+import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
+import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
-import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
 import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import {
@@ -44,9 +33,6 @@ import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { useFilterUrlActions } from "@/features/search";
-import { sendEventEmailNotification } from "@/features/events/api/events.api";
-import { toast } from "@/shared/hooks/use-toast";
-import { getApiErrorMessage } from "@/shared/services/apiClient";
 
 const EventDetailsModal = lazy(() =>
   import("@/features/events/components/EventDetailsModal").then((module) => ({
@@ -139,7 +125,6 @@ interface EventFooterActionsProps {
   profileCompleted: boolean;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
-  onEmailNotification: () => void;
   onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
 }
@@ -150,7 +135,6 @@ function EventFooterActions({
   profileCompleted,
   categoryClasses,
   canDelete,
-  onEmailNotification,
   onActionDialogOpen,
   t,
 }: EventFooterActionsProps) {
@@ -171,83 +155,33 @@ function EventFooterActions({
         </Tooltip>
       )}
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            aria-label={t("events.notifications.label")}
-            className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
-          >
-            <Bell className="size-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="w-44"
-          align="end"
+      <EventCalendarDownloadMenu event={event} stopPropagation>
+        <button
+          type="button"
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
+          aria-label={t("common.download")}
+          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
-          <DropdownMenuItem onSelect={() => onEmailNotification()}>
-            <Mail />
-            {t("events.notifications.email")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
-            <GoogleIcon className="size-3.5 shrink-0" />
-            {t("events.calendar.googleCalendar")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => downloadICS(event)}>
-            <AppleIcon className="size-3.5 shrink-0" />
-            {t("events.calendar.iCal")}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <Download className="size-4" />
+        </button>
+      </EventCalendarDownloadMenu>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            aria-label={t("common.actions")}
-            className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
-          >
-            <MoreHorizontal className="size-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="w-48"
-          align="end"
+      <EventOverflowMenu
+        canDelete={canDelete}
+        onAction={onActionDialogOpen}
+        stopPropagation
+      >
+        <button
+          type="button"
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
+          aria-label={t("common.actions")}
+          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
-          <DropdownMenuItem onSelect={() => onActionDialogOpen("share")}>
-            <Share2 />
-            {t("common.share")}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => onActionDialogOpen("report")}>
-            <Flag />
-            {t("common.report")}
-          </DropdownMenuItem>
-          {canDelete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onActionDialogOpen("delete");
-                }}
-              >
-                <Trash2 />
-                {t("common.delete")}
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <MoreHorizontal className="size-4" />
+        </button>
+      </EventOverflowMenu>
     </div>
   );
 }
@@ -361,7 +295,6 @@ interface EventCardBodyProps {
   categoryClasses: CategoryClasses;
   canDelete: boolean;
   onToggleSaveEvent: (eventId: number) => void;
-  onEmailNotification: () => void;
   onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
 }
@@ -376,7 +309,6 @@ function EventCardBody({
   categoryClasses,
   canDelete,
   onToggleSaveEvent,
-  onEmailNotification,
   onActionDialogOpen,
   t,
 }: EventCardBodyProps) {
@@ -414,7 +346,6 @@ function EventCardBody({
         profileCompleted={profileCompleted}
         categoryClasses={categoryClasses}
         canDelete={canDelete}
-        onEmailNotification={onEmailNotification}
         onActionDialogOpen={onActionDialogOpen}
         t={t}
       />
@@ -458,8 +389,9 @@ function useEventCardNavigation({
   disableModal,
   onEventClick,
 }: UseEventCardNavigationOptions) {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const filterUrlActions = useFilterUrlActions();
 
   const eventIdParam = searchParams.get(QP.EVENT_ID);
@@ -469,38 +401,38 @@ function useEventCardNavigation({
     e.stopPropagation();
     e.preventDefault();
     filterUrlActions.toggleFilterValue("categories", eventCategory);
-    if (window.location.pathname !== "/") {
-      navigate("/");
+    if (pathname !== "/") {
+      router.push("/");
     }
-  }, [eventCategory, filterUrlActions, navigate]);
+  }, [eventCategory, filterUrlActions, pathname, router]);
 
   const handleOrganizationMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (event.organization) {
       filterUrlActions.toggleFilterValue("organizations", event.organization);
-      if (window.location.pathname !== "/") {
-        navigate("/");
+      if (pathname !== "/") {
+        router.push("/");
       }
     }
-  }, [event.organization, filterUrlActions, navigate]);
+  }, [event.organization, filterUrlActions, pathname, router]);
 
   const handleCardActivate = useCallback(() => {
     tracker.track(event.id, "click");
     if (onEventClick) {
       onEventClick(event);
     } else if (!disableModal) {
-      const newParams = new URLSearchParams(searchParams);
+      const newParams = new URLSearchParams(searchParams.toString());
       newParams.set(QP.EVENT_ID, event.id.toString());
-      navigate(`/?${newParams.toString()}`, { replace: false });
+      router.push(`/?${newParams.toString()}`);
     }
-  }, [disableModal, event, navigate, onEventClick, searchParams]);
+  }, [disableModal, event, onEventClick, router, searchParams]);
 
   const handleDetailsModalClose = useCallback(() => {
-    const newParams = new URLSearchParams(searchParams);
+    const newParams = new URLSearchParams(searchParams.toString());
     newParams.delete(QP.EVENT_ID);
-    navigate(newParams.toString() ? `/?${newParams.toString()}` : "/", { replace: false });
-  }, [navigate, searchParams]);
+    router.push(newParams.toString() ? `/?${newParams.toString()}` : "/");
+  }, [router, searchParams]);
 
   return {
     handleCategoryClick,
@@ -594,25 +526,6 @@ function EventCardComponent({
     [event, onActionDialogOpen],
   );
 
-  const handleEmailNotification = useCallback(async () => {
-    try {
-      const sent = await sendEventEmailNotification(event.id);
-      if (!sent) {
-        throw new Error(t("events.notifications.emailFailed"));
-      }
-      toast({
-        title: t("events.notifications.emailSentTitle"),
-        description: t("events.notifications.emailSentDescription", { title: event.title }),
-      });
-    } catch (err) {
-      toast({
-        title: t("events.notifications.emailFailed"),
-        description: getApiErrorMessage(err, t("events.notifications.emailFailed")),
-        variant: "destructive",
-      });
-    }
-  }, [event.id, event.title, t]);
-
   return (
     <>
       <article
@@ -655,7 +568,6 @@ function EventCardComponent({
           categoryClasses={categoryClasses}
           canDelete={canManageEvent && Boolean(onDelete)}
           onToggleSaveEvent={toggleSaveEvent}
-          onEmailNotification={handleEmailNotification}
           onActionDialogOpen={handleActionDialogOpen}
           t={t}
         />

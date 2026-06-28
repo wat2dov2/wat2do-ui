@@ -1,5 +1,5 @@
 export function initGoogleAnalytics(measurementId: string | undefined) {
-  if (!measurementId || import.meta.env.DEV) return;
+  if (!measurementId || process.env.NODE_ENV === "development") return;
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if ((window as unknown as { gtag?: unknown }).gtag) return;
 

@@ -38,8 +38,7 @@
     "noUpcomingEvents": "No upcoming events",
     "upcomingEventCount": "upcoming event",
     "upcomingEventCount_other": "upcoming events",
-    "lastAddedSummary": "{{count}} event last added {{time}} ago",
-    "lastAddedSummary_other": "{{count}} events last added {{time}} ago",
+    "latestAddedEvent": "{{title}} added {{time}}",
     "thisWeek": "This Week",
     "discoverEvents": "Discover Events",
     "viewMore": "View More",
@@ -78,13 +77,6 @@
     "calendar": {
       "googleCalendar": "Google Calendar",
       "iCal": "iCal"
-    },
-    "notifications": {
-      "label": "Notifications",
-      "email": "Email",
-      "emailSentTitle": "Email sent",
-      "emailSentDescription": "We emailed you about \"{{title}}\".",
-      "emailFailed": "Could not send email notification"
     },
     "shareDialog": {
       "description": "Share this event via social media or copy the link.",

@@ -1,5 +1,5 @@
 import { lazy, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useEventsStore } from "@/features/events";
 import { useUserEmail } from "@/features/auth";
 import { ROUTES } from "@/shared/constants/routes";
@@ -16,8 +16,8 @@ const QRScanMap = lazy(() =>
 export function AdminPostersPage() {
   const events = useEventsStore((s) => s.events);
   const userEmail = useUserEmail();
-  const navigate = useNavigate();
-  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
+  const router = useRouter();
+  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
 
   return (
     <PostersPageContent

@@ -11,6 +11,7 @@ import i18n from "@/shared/lib/i18n";
 import type { Event as AppEvent, EventFormData } from "@/shared/types";
 import {
   type EventListQuery,
+  type LatestAddedEvent,
   type PaginatedEventsResponse,
   fetchEventsPage,
   fetchPromotedEvents,
@@ -18,6 +19,7 @@ import {
   updateEventAPI,
   deleteEventAPI,
 } from "@/features/events/api/events.api";
+import { EVENTS_PAGE_SIZE } from "@/features/events/constants";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { isApiError, getApiErrorMessage } from "@/shared/services/apiClient";
 import { DEFAULT_SCHOOL, getCurrentSchool, resolveSchool } from "@/shared/constants/schools";
@@ -27,6 +29,7 @@ import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/u
 interface EventsState {
   events: AppEvent[];
   promotedEvents: AppEvent[];
+  latestAddedEvent: LatestAddedEvent;
   isLoading: boolean;
   isLoadingMore: boolean;
   isPromotedLoading: boolean;
@@ -39,6 +42,7 @@ interface EventsState {
   eventQuery: EventListQuery;
 
   /** Fetch the first page of events for the current school + filter query. */
+  hydrateInitialFeed: (feed: PaginatedEventsResponse, school: string | null) => void;
   fetchEvents: (query?: EventListQuery) => Promise<void>;
   loadMoreEvents: () => Promise<void>;
   fetchPromotedEvents: () => Promise<void>;
@@ -56,7 +60,7 @@ let _latestLoadMoreFetchId = 0;
 let _latestPromotedFetchId = 0;
 let _loadedEventsQueryKey: string | null = null;
 let _loadedPromotedSchoolKey: string | null = null;
-const EVENTS_PAGE_SIZE = 20;
+let _skipNextEventsFetchQueryKey: string | null = null;
 
 function getInitialSchoolFilter(): string {
   if (typeof window !== "undefined") {
@@ -133,6 +137,7 @@ function hasMore(response: PaginatedEventsResponse): boolean {
 export const useEventsStore = create<EventsState>((set, get) => ({
   events: [],
   promotedEvents: [],
+  latestAddedEvent: null,
   isLoading: true,
   isLoadingMore: false,
   isPromotedLoading: false,
@@ -143,6 +148,28 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   totalEvents: 0,
   hasMoreEvents: false,
   eventQuery: normalizeEventQuery(undefined),
+
+  hydrateInitialFeed: (feed, school) => {
+    const nextSchool = school ? resolveSchool(school) : get().schoolFilter;
+    const eventQuery = normalizeEventQuery(undefined);
+    const queryKey = getEventsQueryKey(nextSchool, eventQuery);
+    _loadedEventsQueryKey = queryKey;
+    _skipNextEventsFetchQueryKey = queryKey;
+
+    set({
+      events: feed.items,
+      latestAddedEvent: feed.latest_added_event ?? null,
+      isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      schoolFilter: nextSchool,
+      eventsPage: feed.page,
+      eventsPageSize: feed.page_size,
+      totalEvents: feed.total,
+      hasMoreEvents: hasMore(feed),
+      eventQuery,
+    });
+  },
 
   fetchEvents: async (query) => {
     const school = get().schoolFilter;
@@ -158,6 +185,12 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       error: null,
     });
     get().fetchPromotedEvents();
+
+    if (_skipNextEventsFetchQueryKey === queryKey) {
+      _skipNextEventsFetchQueryKey = null;
+      set({ isLoading: false, isLoadingMore: false, error: null });
+      return;
+    }
 
     const request = buildRequestQuery(school, eventQuery, 1, get().eventsPageSize);
     const requestKey = JSON.stringify(request);
@@ -179,6 +212,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       _loadedEventsQueryKey = queryKey;
       set({
         events: response.items,
+        latestAddedEvent: response.latest_added_event ?? null,
         eventsPage: response.page,
         totalEvents: response.total,
         hasMoreEvents: hasMore(response),
@@ -224,6 +258,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       if (!isCurrentFetch()) return;
       set((current) => ({
         events: getUniqueEvents([...current.events, ...response.items]),
+        latestAddedEvent: response.latest_added_event ?? null,
         eventsPage: response.page,
         totalEvents: response.total,
         hasMoreEvents: hasMore(response),
@@ -282,6 +317,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     const created = await createEventAPI(data);
     set((state) => ({
       events: getUniqueEvents([created, ...state.events]),
+      latestAddedEvent: { title: created.title, added_at: created.added_at },
     }));
     return created.id;
   },
@@ -293,6 +329,10 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     const updated = await updateEventAPI(eventId, data);
     set((state) => ({
       events: state.events.map((e) => (e.id === eventId ? updated : e)),
+      latestAddedEvent:
+        state.latestAddedEvent?.added_at === updated.added_at
+          ? { title: updated.title, added_at: updated.added_at }
+          : state.latestAddedEvent,
     }));
   },
 

@@ -8,7 +8,7 @@
 
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { ROUTES, ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
@@ -32,13 +32,13 @@ const AdminPostersPage = lazy(() =>
  * Admin panel navigation handler
  */
 function useAdminNavigation() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return useCallback(
     (page: AdminRouteKey) => {
-      navigate(ADMIN_ROUTE_MAP[page]);
+      router.push(ADMIN_ROUTE_MAP[page]);
     },
-    [navigate]
+    [router]
   );
 }
 
@@ -68,8 +68,8 @@ export function AdminPanelRoute() {
  * Admin Events Route Component
  */
 export function AdminEventsRoute() {
-  const navigate = useNavigate();
-  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
+  const router = useRouter();
+  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
 
   return (
     <AdminSuspense>
@@ -84,8 +84,8 @@ export function AdminEventsRoute() {
  * Admin Organizations Route Component
  */
 export function AdminOrganizationsRoute() {
-  const navigate = useNavigate();
-  const onBack = useCallback(() => navigate(ROUTES.ADMIN), [navigate]);
+  const router = useRouter();
+  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
 
   return (
     <AdminSuspense>

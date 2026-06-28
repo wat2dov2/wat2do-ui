@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Users,
@@ -13,7 +14,6 @@ import {
   MailOpen,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
-import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/constants/routes";
 import { useAuthState } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
@@ -64,7 +64,7 @@ function RosterTableHeader({ columns }: RosterTableHeaderProps) {
 
 export function OrganizationPanelMembersPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { organizationId } = useAuthState();
 
   // Navigation tabs
@@ -393,7 +393,7 @@ export function OrganizationPanelMembersPage() {
         <Button
           variant="secondary"
           size="icon"
-          onMouseDown={() => navigate(ROUTES.ORGANIZATION_PANEL)}
+          onMouseDown={() => router.push(ROUTES.ORGANIZATION_PANEL)}
           className="shrink-0"
         >
           <ArrowLeft className="size-5" />

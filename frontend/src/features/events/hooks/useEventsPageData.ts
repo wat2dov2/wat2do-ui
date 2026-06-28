@@ -22,6 +22,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
   // Read from stores (single source of truth -- no duplicate fetches)
   const events = useEventsStore((s) => s.events);
   const promotedEvents = useEventsStore((s) => s.promotedEvents);
+  const latestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
   const isLoading = useEventsStore((s) => s.isLoading);
   const isLoadingMore = useEventsStore((s) => s.isLoadingMore);
   const error = useEventsStore((s) => s.error);
@@ -114,6 +115,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     totalEvents,
     hasMoreEvents,
     savedEventIds,
+    latestAddedEvent,
     promotedEvents,
     filters,
     orderedEvents,

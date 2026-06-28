@@ -597,65 +597,6 @@
         }
       }
     },
-    "/events/latest-added": {
-      "get": {
-        "tags": [
-          "events"
-        ],
-        "summary": "Get Latest Added",
-        "description": "Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'.",
-        "operationId": "get_latest_added_events_latest_added_get",
-        "parameters": [
-          {
-            "name": "school",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "School"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/LatestEventResponse"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get Latest Added Events Latest Added Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/events/promoted": {
       "get": {
         "tags": [
@@ -1030,7 +971,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_EventSummaryResponse_"
+                  "$ref": "#/components/schemas/EventFeedResponse"
                 }
               }
             }
@@ -1214,53 +1155,6 @@
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/events/{event_id}/email-notification": {
-      "post": {
-        "tags": [
-          "events"
-        ],
-        "summary": "Send Event Email Notification",
-        "operationId": "send_event_email_notification_events__event_id__email_notification_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "event_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Event Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventEmailNotificationResponse"
-                }
-              }
-            }
           },
           "422": {
             "description": "Validation Error",
@@ -5412,19 +5306,52 @@
         ],
         "title": "EventCreate"
       },
-      "EventEmailNotificationResponse": {
+      "EventFeedResponse": {
         "properties": {
-          "sent": {
-            "type": "boolean",
-            "title": "Sent"
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EventSummaryResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          },
+          "latest_added_event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatestEventResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "required": [
-          "sent"
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
         ],
-        "title": "EventEmailNotificationResponse",
-        "description": "Response for sending the current user an event email."
+        "title": "EventFeedResponse",
+        "description": "Public school feed response with catalog-freshness metadata."
       },
       "EventFormDataResponse": {
         "properties": {
@@ -7416,6 +7343,34 @@
               }
             ],
             "title": "Owner Email"
+          },
+          "event_count": {
+            "type": "integer",
+            "title": "Event Count",
+            "default": 0
+          },
+          "latest_event_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Event Title"
+          },
+          "latest_event_added_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Event Added At"
           }
         },
         "type": "object",
@@ -7533,42 +7488,6 @@
         "additionalProperties": false,
         "type": "object",
         "title": "OrganizationUpdate"
-      },
-      "PaginatedResponse_EventSummaryResponse_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/EventSummaryResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "page_size": {
-            "type": "integer",
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "type": "integer",
-            "title": "Total Pages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size",
-          "total_pages"
-        ],
-        "title": "PaginatedResponse[EventSummaryResponse]"
       },
       "PaginatedResponse_OrganizationResponse_": {
         "properties": {

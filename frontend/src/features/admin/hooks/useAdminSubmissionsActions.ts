@@ -4,10 +4,8 @@ import type { EventSubmission } from "@/shared/types";
 import { QP } from "@/shared/constants/queryParams";
 
 interface UseAdminSubmissionsActionsOptions {
-  searchParams: URLSearchParams;
-  setSearchParams: (
-    params: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
-  ) => void;
+  searchParams: { toString: () => string };
+  setSearchParams: (params: URLSearchParams) => void;
 }
 
 export function useAdminSubmissionsActions({
@@ -27,7 +25,7 @@ export function useAdminSubmissionsActions({
         console.error("Failed to approve submission:", err);
         return;
       }
-      const newParams = new URLSearchParams(searchParams);
+      const newParams = new URLSearchParams(searchParams.toString());
       newParams.delete(QP.SUBMISSION_ID);
       setSearchParams(newParams);
     },
@@ -52,7 +50,7 @@ export function useAdminSubmissionsActions({
       setRejectSubmissionId(null);
       setRejectionReason("");
       if (submissionIdParam === rejectedId) {
-        const newParams = new URLSearchParams(searchParams);
+        const newParams = new URLSearchParams(searchParams.toString());
         newParams.delete(QP.SUBMISSION_ID);
         setSearchParams(newParams);
       }

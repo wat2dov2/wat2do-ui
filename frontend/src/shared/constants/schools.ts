@@ -26,6 +26,10 @@ const SCHOOL_LABELS: Record<string, string> = {
   berkeley: "UC Berkeley",
 };
 
+export const SCHOOL_SLUGS = Object.keys(SCHOOL_LABELS).filter(
+  (school) => school !== "all",
+);
+
 const SCHOOL_ALIASES: Record<string, string> = {
   "old-uw": DEFAULT_SCHOOL,
   "old-waterloo": DEFAULT_SCHOOL,
@@ -105,7 +109,7 @@ function parseSchoolCandidateFromHostname(hostname: string): string | null {
   return candidate;
 }
 
-function isKnownSchool(value: string | null | undefined): boolean {
+export function isKnownSchool(value: string | null | undefined): boolean {
   return hasSchoolLabel(resolveSchool(value));
 }
 

@@ -16,19 +16,18 @@ from core.errors import (
     ORGANIZATION_NOT_FOUND,
 )
 from core.exceptions import AuthorizationError, get_or_404
-from core.pagination import PaginatedResponse, PaginationParams, paginated_response
+from core.pagination import PaginationParams, paginated_response
 from schemas.event import (
     EventCreate,
-    EventEmailNotificationResponse,
+    EventFeedResponse,
     EventPublicResponse,
     EventResponse,
     EventSummaryResponse,
     EventUpdate,
-    LatestEventResponse,
 )
 from schemas.user import UserResponse
 from services import event_service, organization_service
-from services.notifications import event_change, event_email
+from services.notifications import event_change
 
 log = logging.getLogger(__name__)
 
@@ -62,16 +61,6 @@ def _authorize_event_organization(organization_id: int, db_user: UserResponse) -
             raise AuthorizationError(ORGANIZATION_EVENT_CREATION_REQUIRED)
 
 
-@router.get("/latest-added", response_model=LatestEventResponse | None)
-def get_latest_added(
-    school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
-):
-    """Return the most recently added event (title + added_at) for UI text like 'X added 22 minutes ago'."""
-    if school == "all":
-        school = None
-    return event_service.get_latest_added_event(school)
-
-
 @router.get("/promoted", response_model=list[EventSummaryResponse])
 def list_promoted_events(
     school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
@@ -82,7 +71,7 @@ def list_promoted_events(
     return event_service.list_promoted_events(school=school)
 
 
-@router.get("/", response_model=PaginatedResponse[EventSummaryResponse])
+@router.get("/", response_model=EventFeedResponse)
 def list_events(
     school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
     search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
@@ -131,7 +120,10 @@ def list_events(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    return paginated_response(items, total, pagination)
+    return {
+        **paginated_response(items, total, pagination),
+        "latest_added_event": event_service.get_latest_added_event(school),
+    }
 
 
 @router.get("/{event_id}", response_model=EventPublicResponse)
@@ -141,17 +133,6 @@ def get_event(event_id: int):
     full shape through their dashboards via the dedicated service call.
     """
     return get_or_404(event_service.get_event(event_id), EVENT_NOT_FOUND)
-
-
-@router.post("/{event_id}/email-notification", response_model=EventEmailNotificationResponse)
-def send_event_email_notification(
-    event_id: int,
-    db_user: UserResponse = Depends(get_db_user),
-):
-    event = get_or_404(event_service.get_event(event_id), EVENT_NOT_FOUND)
-    return EventEmailNotificationResponse(
-        sent=event_email.send_event_email_notification(event=event, user=db_user)
-    )
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)

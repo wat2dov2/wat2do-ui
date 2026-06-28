@@ -681,6 +681,38 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):
     fake_sb.eq.assert_any_call("school", "Massachusetts Institute of Technology")
 
 
+def test_get_organization_event_stats_aggregates_latest_and_count(fake_sb, patch_sb):
+    patch_sb("services.event_service")
+    fake_sb.set_response(
+        data=[
+            {
+                "organization_id": 1,
+                "title": "Newest Event",
+                "added_at": "2026-05-03T12:00:00+00:00",
+            },
+            {
+                "organization_id": 1,
+                "title": "Older Event",
+                "added_at": "2026-05-01T12:00:00+00:00",
+            },
+            {
+                "organization_id": 2,
+                "title": "Only Event",
+                "added_at": "2026-05-02T12:00:00+00:00",
+            },
+        ]
+    )
+
+    stats = event_service.get_organization_event_stats([1, 2, 99])
+
+    assert stats[1].event_count == 2
+    assert stats[1].latest_event_title == "Newest Event"
+    assert stats[2].event_count == 1
+    assert stats[2].latest_event_title == "Only Event"
+    assert stats[99].event_count == 0
+    assert stats[99].latest_event_title is None
+
+
 def _occ_response(dtstart, dtend=None, occ_id=1, event_id=42):
     """Helper: build an OccurrenceResponse for the test above."""
     return OccurrenceResponse.model_validate(

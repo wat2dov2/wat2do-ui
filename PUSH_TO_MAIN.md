@@ -64,7 +64,7 @@ Run **all four** commands. Each must exit 0:
 npm run lint
 npm run audit:i18n
 npm run type-check
-VITE_API_URL=/api npm run build
+NEXT_PUBLIC_API_URL=/api npm run build
 ```
 
 ---
@@ -118,7 +118,7 @@ cd frontend && \
   npm run lint && \
   npm run audit:i18n && \
   npm run type-check && \
-  VITE_API_URL=/api npm run build
+  NEXT_PUBLIC_API_URL=/api npm run build
 ```
 
 ---

@@ -24,6 +24,9 @@ function normalizeOrganization(raw: ApiOrganizationResponse): Organization {
     logo_url: raw.logo_url ?? null,
     created_by: raw.created_by ?? null,
     school: raw.school ?? "",
+    event_count: raw.event_count ?? 0,
+    latest_event_title: raw.latest_event_title ?? null,
+    latest_event_added_at: raw.latest_event_added_at ?? null,
   };
 }
 

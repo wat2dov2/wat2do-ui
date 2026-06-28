@@ -19,10 +19,13 @@
 }
 
 html,
-body,
-#root {
+body {
   height: 100%;
   margin: 0;
+}
+
+.deck-root {
+  min-height: 100vh;
 }
 
 body {

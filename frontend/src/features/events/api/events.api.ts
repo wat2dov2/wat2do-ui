@@ -5,13 +5,14 @@
 
 import type { Event, EventFormData } from "@/shared/types";
 import type {
+  ApiEventFeedResponse,
   ApiEventPublicResponse,
   ApiEventResponse,
   ApiEventSummaryResponse,
-  ApiPaginatedEventSummaryResponse,
 } from "@/shared/generated";
 import { buildEventPayload } from "@/shared/api/eventPayload";
 import { api } from "@/shared/services/apiClient";
+import { EVENTS_PAGE_SIZE } from "@/features/events/constants";
 
 export interface EventListQuery {
   school?: string;
@@ -34,7 +35,9 @@ export interface EventListQuery {
   endUtc?: string;
 }
 
-export type PaginatedEventsResponse = Omit<ApiPaginatedEventSummaryResponse, "items"> & {
+export type LatestAddedEvent = NonNullable<ApiEventFeedResponse["latest_added_event"]> | null;
+
+export type PaginatedEventsResponse = Omit<ApiEventFeedResponse, "items"> & {
   items: Event[];
 };
 
@@ -57,12 +60,13 @@ export async function fetchEventsPage(query: EventListQuery = {}): Promise<Pagin
       page: query.page ?? 1,
       page_size: query.pageSize ?? 50,
       total_pages: 0,
+      latest_added_event: null,
     };
   }
 
   const params = new URLSearchParams();
   params.set("page", String(query.page ?? 1));
-  params.set("page_size", String(query.pageSize ?? 50));
+  params.set("page_size", String(query.pageSize ?? EVENTS_PAGE_SIZE));
   if (query.school) params.set("school", query.school);
   if (query.search) params.set("search", query.search);
   appendValues(params, "categories", query.categories);
@@ -80,7 +84,7 @@ export async function fetchEventsPage(query: EventListQuery = {}): Promise<Pagin
   if (query.startUtc) params.set("start_utc", query.startUtc);
   if (query.endUtc) params.set("end_utc", query.endUtc);
 
-  const response = await api.get<ApiPaginatedEventSummaryResponse>(`/events/?${params.toString()}`);
+  const response = await api.get<ApiEventFeedResponse>(`/events/?${params.toString()}`);
   return {
     ...response,
     items: response.items,
@@ -146,9 +150,4 @@ export async function unsaveEventFromBackend(eventId: number): Promise<void> {
 
 export async function reportEventToBackend(eventId: number, reason: string): Promise<void> {
   await api.post("/reports/", { event_id: eventId, reason });
-}
-
-export async function sendEventEmailNotification(eventId: number): Promise<boolean> {
-  const response = await api.post<{ sent: boolean }>(`/events/${eventId}/email-notification`);
-  return response.sent;
 }

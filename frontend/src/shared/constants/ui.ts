@@ -11,6 +11,10 @@
  */
 export const EVENT_CARD_IMAGE_HEIGHT = 176;
 
+/** Standard responsive grid for event and organization card lists. */
+export const CARD_GRID_CLASS =
+  "grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
+
 /** Font size (px) for Monaco JSON editors across the app. */
 export const JSON_EDITOR_FONT_SIZE = 12;
 

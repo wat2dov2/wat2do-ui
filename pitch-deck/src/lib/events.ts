@@ -1,7 +1,7 @@
 import type { EventImage } from "./types";
 
 const EVENTS_API =
-  import.meta.env.VITE_EVENTS_API_URL ?? "/api/events/?limit=60";
+  process.env.NEXT_PUBLIC_EVENTS_API_URL ?? "/api/events/?limit=60";
 
 interface ApiEvent {
   id: number;

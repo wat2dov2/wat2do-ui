@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
 import { Calendar, MapPin, Tag, AlertTriangle, Clock, User, FileText } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
@@ -46,6 +45,7 @@ import {
 } from "@/shared/constants/statuses";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
+import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
 
@@ -57,7 +57,7 @@ export function AdminEventsPage({
   onBack,
 }: AdminEventsPageProps) {
   const { t, i18n } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useMutableSearchParams();
 
   // Tab Setup
   const submissionIdParam = searchParams.get(QP.SUBMISSION_ID);
@@ -261,7 +261,7 @@ export function AdminEventsPage({
                     id={`event-${event.id}`}
                     className={`cursor-pointer hover:bg-secondary/50 ${isHighlighted ? "bg-primary/10" : ""}`}
                     onMouseDown={() => {
-                      const newParams = new URLSearchParams(searchParams);
+                      const newParams = new URLSearchParams(searchParams.toString());
                       newParams.set(QP.EVENT_ID, event.id.toString());
                       setSearchParams(newParams);
                     }}
@@ -343,7 +343,7 @@ export function AdminEventsPage({
           <EventDetailsModal
             event={selectedEvent}
             onClose={() => {
-              const newParams = new URLSearchParams(searchParams);
+              const newParams = new URLSearchParams(searchParams.toString());
               newParams.delete(QP.EVENT_ID);
               setSearchParams(newParams);
             }}
@@ -426,7 +426,7 @@ export function AdminEventsPage({
                   id={`submission-${submission.id}`}
                   className={`cursor-pointer hover:bg-secondary/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
                   onMouseDown={() => {
-                    const newParams = new URLSearchParams(searchParams);
+                    const newParams = new URLSearchParams(searchParams.toString());
                     newParams.set(QP.SUBMISSION_ID, submission.id);
                     setSearchParams(newParams);
                   }}
@@ -508,7 +508,7 @@ export function AdminEventsPage({
             organizationName={getOrganizationName(selectedSubmission?.eventData.organization_id)}
             isOpen={selectedSubmission !== null}
             onClose={() => {
-              const newParams = new URLSearchParams(searchParams);
+              const newParams = new URLSearchParams(searchParams.toString());
               newParams.delete(QP.SUBMISSION_ID);
               setSearchParams(newParams);
             }}

@@ -13,7 +13,7 @@ interface QRScanMapProps {
   onMarkerClick?: (qrCodeId: string) => void;
 }
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? "";
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
 // Color scale based on scan count
 // Industry standard: Green (low) -> Yellow (medium) -> Red (high)

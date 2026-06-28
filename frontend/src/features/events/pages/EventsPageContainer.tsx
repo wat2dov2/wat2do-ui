@@ -9,6 +9,7 @@ import { SearchBar, QuickFilterChip, MoreFiltersButton } from "@/features/search
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
+import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import type { ViewMode, QuickFilterConfig } from "@/shared/types";
 
@@ -40,6 +41,7 @@ export function EventsPageContainer() {
     totalEvents,
     hasMoreEvents,
     savedEventIds,
+    latestAddedEvent,
     promotedEvents,
     filters,
     orderedEvents,
@@ -123,7 +125,7 @@ export function EventsPageContainer() {
       </div>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">
-          <EventCount count={totalEvents} />
+          <EventCount count={totalEvents} latestAddedEvent={latestAddedEvent} />
           <SearchBar
             searchQuery={filters.searchQuery}
             onSearchChange={(query) => {
@@ -166,11 +168,7 @@ export function EventsPageContainer() {
                   className="h-px w-px shrink-0"
                 />
               </div>
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -right-px bottom-1 top-0 z-20 w-8 bg-gradient-to-l from-background via-background/95 to-transparent transition-opacity duration-150"
-                style={{ opacity: showFilterScrollFade ? 1 : 0 }}
-              />
+              <HorizontalScrollFadeEdge visible={showFilterScrollFade} />
             </div>
             <div className="relative shrink-0 pb-1">
               <MoreFiltersButton

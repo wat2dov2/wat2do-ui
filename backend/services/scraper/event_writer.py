@@ -27,6 +27,7 @@ from core.tables import EVENTS, ORGANIZATIONS
 from schemas.event import normalize_category
 from schemas.event_date import OccurrenceCreate
 from services import event_date_service
+from services.event_feed_revalidation import event_feed_revalidation_service
 from services.scraper.dedup import find_match
 
 log = logging.getLogger(__name__)
@@ -136,6 +137,7 @@ def write_event(
         )
         get_sb().table(EVENTS).update(event_row).eq("id", existing_id).execute()
         event_date_service.replace_occurrences(existing_id, future_occurrences)
+        event_feed_revalidation_service.revalidate_school(event_row.get("school"))
         return "updated"
 
     inserted = get_sb().table(EVENTS).insert(event_row).execute()
@@ -159,6 +161,7 @@ def write_event(
         len(future_occurrences),
         title,
     )
+    event_feed_revalidation_service.revalidate_school(event_row.get("school"))
     return "inserted"
 
 

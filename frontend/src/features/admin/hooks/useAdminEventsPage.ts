@@ -4,7 +4,6 @@
  */
 
 import { useMemo, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import {
   filterAdminEvents,
   getEventCategories,
@@ -14,6 +13,7 @@ import type { Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { usePagination } from "@/shared/hooks";
+import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 
 interface UseAdminEventsPageOptions {
   events: Event[];
@@ -29,7 +29,7 @@ export function useAdminEventsPage({
   const [showReportedOnly, setShowReportedOnly] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useMutableSearchParams();
   const reportedEventIds = useAdminStore((s) => s.reportedEventIds);
   const fetchReportedEventIds = useAdminStore((s) => s.fetchReportedEventIds);
 

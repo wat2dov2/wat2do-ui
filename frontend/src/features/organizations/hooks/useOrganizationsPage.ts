@@ -33,12 +33,13 @@ export function useOrganizationsPage() {
   const {
     organizations,
     totalItems,
-    totalPages,
     isLoading,
-    currentPage,
-    setCurrentPage,
+    isLoadingMore,
+    hasMore,
+    loadMore,
     refresh: refreshOrganizations,
   } = useOrganizationsList({
+    mode: "infinite",
     limit: ITEMS_PER_PAGE,
     school: resolvedSchoolFilter,
     search: submittedSearchQuery,
@@ -55,14 +56,12 @@ export function useOrganizationsPage() {
 
   const submitSearchQuery = useCallback(() => {
     setSubmittedSearchQuery(searchQuery.trim());
-    setCurrentPage(1);
-  }, [searchQuery, setCurrentPage]);
+  }, [searchQuery]);
 
   const clearSearchQuery = useCallback(() => {
     setSearchQueryState("");
     setSubmittedSearchQuery("");
-    setCurrentPage(1);
-  }, [setCurrentPage]);
+  }, []);
 
   const toggleCategory = useCallback((category: string) => {
     setSelectedCategories((prev) =>
@@ -70,8 +69,7 @@ export function useOrganizationsPage() {
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
-    setCurrentPage(1);
-  }, [setCurrentPage]);
+  }, []);
 
   return {
     searchQuery,
@@ -81,21 +79,19 @@ export function useOrganizationsPage() {
     selectedCategories,
     setSelectedCategories: (cats: string[]) => {
       setSelectedCategories(cats);
-      setCurrentPage(1);
     },
     organizations,
     allCategories,
     isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
     toggleCategory,
-    currentPage,
-    setCurrentPage,
-    totalPages,
     totalItems,
     refreshOrganizations,
     activeTab,
     setActiveTab: (tab: "all" | "followed" | "claimed") => {
       setActiveTab(tab);
-      setCurrentPage(1);
     },
   };
 }

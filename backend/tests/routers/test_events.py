@@ -2,10 +2,9 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 from core.constants import ROLE_ADMIN
-from schemas.event import EventResponse
+from schemas.event import EventResponse, LatestEventResponse
 from schemas.organization import OrganizationResponse
 from services import event_service, organization_service
-from services.notifications import event_email
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
 
 
@@ -50,11 +49,6 @@ def test_create_event_requires_auth(client):
 
 def test_delete_event_requires_auth(client):
     response = client.delete("/events/1")
-    assert response.status_code == 401
-
-
-def test_event_email_notification_requires_auth(client):
-    response = client.post("/events/1/email-notification")
     assert response.status_code == 401
 
 
@@ -241,23 +235,6 @@ def test_delete_event_owner_allowed(authenticated_client, monkeypatch):
     assert resp.status_code == 204
 
 
-def test_send_event_email_notification_uses_current_user(authenticated_client, monkeypatch):
-    event = _mock_event(created_by=FAKE_USER["id"])
-    mock_get_event = MagicMock(return_value=event)
-    mock_send = MagicMock(return_value=True)
-    monkeypatch.setattr(event_service, "get_event", mock_get_event)
-    monkeypatch.setattr(event_email, "send_event_email_notification", mock_send)
-
-    resp = authenticated_client.post("/events/1/email-notification")
-
-    assert resp.status_code == 200
-    assert resp.json() == {"sent": True}
-    mock_get_event.assert_called_once_with(1)
-    _, kwargs = mock_send.call_args
-    assert kwargs["event"] == event
-    assert kwargs["user"].email == FAKE_USER["email"]
-
-
 # ---------------------------------------------------------------------------
 # event_change hook — router wires the notification fanout on material diff
 # ---------------------------------------------------------------------------
@@ -327,7 +304,9 @@ def test_update_event_enqueue_failure_does_not_break_update(authenticated_client
 def test_list_events_forwards_school_and_pagination(client, monkeypatch):
     """The router passes only school + pagination through to the service."""
     mock_list = MagicMock(return_value=([], 0))
+    mock_latest = MagicMock(return_value=None)
     monkeypatch.setattr(event_service, "list_events", mock_list)
+    monkeypatch.setattr(event_service, "get_latest_added_event", mock_latest)
 
     resp = client.get(
         "/events/",
@@ -341,6 +320,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         "page": 2,
         "page_size": 50,
         "total_pages": 0,
+        "latest_added_event": None,
     }
     mock_list.assert_called_once_with(
         school="University of Waterloo",
@@ -362,12 +342,15 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         sort_by="date",
         sort_order="asc",
     )
+    mock_latest.assert_called_once_with("University of Waterloo")
 
 
 def test_list_events_forwards_date_window(client, monkeypatch):
     """The public browse route exposes an occurrence UTC window."""
     mock_list = MagicMock(return_value=([], 0))
+    mock_latest = MagicMock(return_value=None)
     monkeypatch.setattr(event_service, "list_events", mock_list)
+    monkeypatch.setattr(event_service, "get_latest_added_event", mock_latest)
 
     resp = client.get(
         "/events/",
@@ -399,11 +382,14 @@ def test_list_events_forwards_date_window(client, monkeypatch):
         sort_by="date",
         sort_order="asc",
     )
+    mock_latest.assert_called_once_with("University of Waterloo")
 
 
 def test_list_events_forwards_filters_and_sort(client, monkeypatch):
     mock_list = MagicMock(return_value=([], 0))
+    mock_latest = MagicMock(return_value=None)
     monkeypatch.setattr(event_service, "list_events", mock_list)
+    monkeypatch.setattr(event_service, "get_latest_added_event", mock_latest)
 
     resp = client.get(
         "/events/",
@@ -448,18 +434,28 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
         sort_by="added_at",
         sort_order="desc",
     )
+    mock_latest.assert_called_once_with("University of Waterloo")
 
 
-def test_get_latest_added_forwards_school_filter(client, monkeypatch):
-    mock_latest = MagicMock(return_value=None)
+def test_list_events_includes_latest_added_metadata(client, monkeypatch):
+    latest = LatestEventResponse(
+        title="MIT Men's Soccer",
+        added_at=datetime(2026, 5, 15, 18, 0, tzinfo=timezone.utc),
+    )
+    mock_list = MagicMock(return_value=([], 0))
+    mock_latest = MagicMock(return_value=latest)
+    monkeypatch.setattr(event_service, "list_events", mock_list)
     monkeypatch.setattr(event_service, "get_latest_added_event", mock_latest)
 
     resp = client.get(
-        "/events/latest-added",
+        "/events/",
         params={"school": "Massachusetts Institute of Technology"},
     )
 
     assert resp.status_code == 200
+    body = resp.json()
+    assert body["latest_added_event"]["title"] == "MIT Men's Soccer"
+    assert body["latest_added_event"]["added_at"].startswith("2026-05-15T18:00:00")
     mock_latest.assert_called_once_with("Massachusetts Institute of Technology")
 
 
@@ -483,6 +479,7 @@ def test_list_events_public_hides_created_by(client, monkeypatch):
     """GET /events/ must not include created_by in any item."""
     events = [_mock_event(created_by="secret-uid-1234")]
     monkeypatch.setattr(event_service, "list_events", MagicMock(return_value=(events, 1)))
+    monkeypatch.setattr(event_service, "get_latest_added_event", MagicMock(return_value=None))
 
     resp = client.get("/events/")
     assert resp.status_code == 200

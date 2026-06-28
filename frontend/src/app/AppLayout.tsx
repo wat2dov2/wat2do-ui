@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
 import {
   Mail,
   Settings,
@@ -21,7 +21,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const { isAuthenticated } = useAuthState();
   const setShowSubmitChoice = useUIStore((s) => s.setShowSubmitChoice);
 

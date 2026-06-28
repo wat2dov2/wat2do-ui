@@ -2,7 +2,7 @@
 // element overflowing the viewport or its own scroll container.
 //
 // Usage:
-//   node scripts/verify.mjs [--url http://localhost:5174]
+//   node scripts/verify.mjs [--url http://localhost:3001]
 
 import puppeteer from "puppeteer";
 import fs from "node:fs/promises";
@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(__dirname, "../verify-out");
 
 const urlArgIdx = process.argv.indexOf("--url");
-const URL = urlArgIdx > -1 ? process.argv[urlArgIdx + 1] : "http://localhost:5174/";
+const URL = urlArgIdx > -1 ? process.argv[urlArgIdx + 1] : "http://localhost:3001/";
 
 const slideNames = [
   "01-title",
@@ -114,7 +114,7 @@ async function inspectActiveSlide(page, viewport) {
       const dx = el.scrollWidth - el.clientWidth;
       const dy = el.scrollHeight - el.clientHeight;
       // Sub-6px scroll deltas are noise from inset box-shadows interacting
-      // with overflow: hidden — not real overflow.
+      // with overflow: hidden, not real overflow.
       if (dx > 6 || dy > 6) {
         const textOverflow = style.textOverflow;
         if (dy <= 6 && textOverflow === "ellipsis") {
@@ -144,19 +144,24 @@ async function inspectActiveSlide(page, viewport) {
     if (content instanceof HTMLElement) {
       const contentRect = content.getBoundingClientRect();
       let maxBottom = contentRect.top;
+      let minTop = contentRect.bottom;
       for (const el of content.querySelectorAll("*")) {
         if (!(el instanceof HTMLElement)) continue;
         const rect = el.getBoundingClientRect();
         const style = window.getComputedStyle(el);
         if (style.display === "none" || style.visibility === "hidden") continue;
         if (rect.width < 8 || rect.height < 8) continue;
+        if (rect.top < minTop) minTop = rect.top;
         if (rect.bottom > maxBottom) maxBottom = rect.bottom;
       }
       const fillRatio =
         contentRect.height > 0
           ? (maxBottom - contentRect.top) / contentRect.height
           : 1;
-      if (fillRatio < 0.78) {
+      const topGap = Math.max(0, minTop - contentRect.top);
+      const bottomGap = Math.max(0, contentRect.bottom - maxBottom);
+      const strandedAtTop = bottomGap > Math.max(topGap * 1.5, 80);
+      if (fillRatio < 0.78 && strandedAtTop) {
         issues.push({
           kind: "low-fill",
           fillPct: Math.round(fillRatio * 100),
@@ -206,7 +211,7 @@ async function inspectActiveSlide(page, viewport) {
       }
     }
 
-    // Limit noise — only first ~10 per slide is plenty to debug.
+    // Limit noise; only first ~10 per slide is plenty to debug.
     return issues.slice(0, 12);
   }, viewport);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
 import { ShieldAlert, CheckCircle, MailOpen, ArrowRight, UserCheck } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { Card, CardTitle, CardDescription, CardContent } from "@/shared/ui/card";
@@ -11,8 +11,9 @@ import confetti from "canvas-confetti";
 import { useTranslation } from "react-i18next";
 
 export function InviteLandingPage() {
-  const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
+  const params = useParams<{ token?: string | string[] }>();
+  const token = Array.isArray(params.token) ? params.token[0] : params.token;
+  const router = useRouter();
   const { isAuthenticated, userEmail } = useAuthState();
   const { t } = useTranslation();
 
@@ -65,7 +66,7 @@ export function InviteLandingPage() {
 
       // Redirect to organization panel after 2 seconds
       setTimeout(() => {
-        navigate(ROUTES.ORGANIZATION_PANEL);
+        router.push(ROUTES.ORGANIZATION_PANEL);
       }, 2000);
     } catch (err) {
       console.error("Failed to accept invitation:", err);
@@ -83,7 +84,7 @@ export function InviteLandingPage() {
       email: inviteInfo.email,
       mode: mode,
     });
-    navigate(`${ROUTES.LOGIN}?${searchParams.toString()}`);
+    router.push(`${ROUTES.LOGIN}?${searchParams.toString()}`);
   };
 
   if (loading) {
@@ -118,7 +119,7 @@ export function InviteLandingPage() {
               <CardDescription className="text-sm text-muted-foreground">
                 {error}
               </CardDescription>
-              <Button onMouseDown={() => navigate(ROUTES.HOME)} className="w-full mt-2">
+              <Button onMouseDown={() => router.push(ROUTES.HOME)} className="w-full mt-2">
                 {t("inviteLanding.goHome")}
               </Button>
             </div>

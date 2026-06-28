@@ -85,9 +85,7 @@ export function EventFormFields() {
               <Button
                 type="button"
                 variant="secondary"
-                size="sm"
                 onMouseDown={addOccurrence}
-                className="min-h-10"
               >
                 <Plus className="size-4" />
                 {t("forms.addDate")}
@@ -122,7 +120,6 @@ export function EventFormFields() {
                     onMouseDown={() => removeOccurrence(index)}
                     disabled={formData.occurrences.length === 1}
                     aria-label={t("forms.removeDate")}
-                    className="min-h-10 w-full sm:size-9"
                   >
                     <Trash2 className="size-4" />
                   </Button>

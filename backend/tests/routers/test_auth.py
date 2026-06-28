@@ -171,7 +171,7 @@ class TestVerifyOtp:
 class TestRefresh:
     """Tests for the token refresh endpoint."""
 
-    ALLOWED_ORIGIN = "http://localhost:5173"
+    ALLOWED_ORIGIN = "http://localhost:3000"
 
     def test_refresh_success(self, client, monkeypatch):
         """Valid refresh token in cookie returns new tokens and rotates the cookie."""

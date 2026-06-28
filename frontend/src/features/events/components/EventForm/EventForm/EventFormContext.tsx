@@ -60,7 +60,6 @@ export function EventFormProvider({
 // This file intentionally exports the provider and its colocated hook together
 // to avoid touching the in-progress event form consumers during cleanup.
 // (Updated: renamed club references to organization to align naming system).
-// eslint-disable-next-line react-refresh/only-export-components
 export function useEventFormContext() {
   const context = useContext(EventFormContext);
   if (!context) {

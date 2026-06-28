@@ -6,7 +6,6 @@
  * All business logic is delegated to hooks and components.
  */
 
-import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { ProfileTab } from "@/features/settings/components/ProfileTab";
@@ -15,11 +14,12 @@ import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
 import { PrivacyTab } from "@/features/settings/components/PrivacyTab";
 import { useUserEmail } from "@/features/auth";
 import { QP } from "@/shared/constants/queryParams";
+import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 
 export function SettingsPage() {
   const userEmail = useUserEmail();
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useMutableSearchParams();
   const tabParam = searchParams.get(QP.TAB) || "profile";
 
   const handleTabChange = (value: string) => {

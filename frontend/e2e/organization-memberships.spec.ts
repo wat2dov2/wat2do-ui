@@ -1,23 +1,35 @@
 import { test, expect, type Page } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
-const BASE = "http://localhost:5173";
-const API = "http://localhost:8000";
+const BASE = "http://127.0.0.1:3000";
+const API = `${BASE}/api`;
 const STUDENT_EMAIL = "student@uwaterloo.ca";
 const OWNER_EMAIL = "owner@uwaterloo.ca";
 
-const MOCK_CLUB = {
+const MOCK_ORGANIZATION = {
   id: 1,
-  club_name: "UW Computer Science Club",
+  organization_name: "UW Computer Science Club",
   categories: ["Media & Web", "Politics & Advocacy"],
-  club_page: "https://csclub.uwaterloo.ca",
+  organization_page: "https://csclub.uwaterloo.ca",
   ig: "uwcsc",
   discord: "https://discord.gg/csc",
-  club_type: "WUSA",
+  organization_type: "WUSA",
   logo_url: null,
   created_by: "owner-user-id",
   school: "University of Waterloo",
+  event_count: 0,
+  latest_event_title: null,
+  latest_event_added_at: null,
 };
+
+function apiPath(url: URL): string | null {
+  if (!url.pathname.startsWith("/api/")) {
+    return null;
+  }
+
+  const path = url.pathname.startsWith("/api/") ? url.pathname.slice(4) : url.pathname;
+  return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
+}
 
 // Seed session helper
 async function seedSession(page: Page, email: string, clubId: number | null = null) {
@@ -34,10 +46,10 @@ async function seedSession(page: Page, email: string, clubId: number | null = nu
           interests: ["AI"],
           isFirstYear: false,
           role: "user",
-          hasClub: clubIdVal !== null,
-          clubs: clubIdVal !== null ? [{ id: clubIdVal, club_name: "UW Computer Science Club" }] : [],
-          clubId: clubIdVal,
-          clubName: clubIdVal !== null ? "UW Computer Science Club" : null,
+          hasOrganization: clubIdVal !== null,
+          clubs: clubIdVal !== null ? [{ id: clubIdVal, organization_name: "UW Computer Science Club" }] : [],
+          organizationId: clubIdVal,
+          organizationName: clubIdVal !== null ? "UW Computer Science Club" : null,
         })
       );
     },
@@ -68,8 +80,32 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
       }
     });
 
+    await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          event_categories: ["Career", "Technology"],
+          organization_categories: ["Media & Web", "Politics & Advocacy"],
+          interests: ["Technology"],
+          interest_to_categories: {
+            Technology: ["Media & Web"],
+          },
+          report_statuses: ["pending", "resolved", "dismissed"],
+        }),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
     // Mock credits balance
-    await page.route(url => url.pathname === "/credits/", async (route) => {
+    await page.route(url => apiPath(url) === "/credits", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -78,7 +114,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     });
 
     // Mock saved events list
-    await page.route(url => url.pathname === "/saved-events/", async (route) => {
+    await page.route(url => apiPath(url) === "/saved-events", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -87,25 +123,55 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     });
 
     // Mock active promotions
-    await page.route(url => url.pathname === "/promotions/active-ids", async (route) => {
+    await page.route(url => apiPath(url) === "/promotions/active-ids", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify([]),
+      });
+    });
+
+    await page.route(url => apiPath(url)?.startsWith("/events/promoted") === true, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    // Mock organizations list
+    await page.route(url => apiPath(url) === "/organizations", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [MOCK_ORGANIZATION],
+          total: 1,
+          page: 1,
+          page_size: 20,
+          total_pages: 1,
+        }),
       });
     });
 
     // Mock general events list
-    await page.route(url => url.pathname === "/events/", async (route) => {
+    await page.route(url => apiPath(url) === "/events", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([]),
+        body: JSON.stringify({
+          items: [],
+          total: 0,
+          page: 1,
+          page_size: 50,
+          total_pages: 0,
+          latest_added_event: null,
+        }),
       });
     });
 
-    // Mock user clubs list (default empty for students)
-    await page.route(url => url.pathname === "/clubs/mine", async (route) => {
+    // Mock user organizations list (default empty for students)
+    await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -114,7 +180,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     });
 
     // Mock posters list (default empty)
-    await page.route(url => url.pathname === "/qr/", async (route) => {
+    await page.route(url => apiPath(url) === "/qr", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -156,17 +222,9 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
       });
     });
 
-    await page.route(`${API}/clubs/?*`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([MOCK_CLUB]),
-      });
-    });
-
     // Mock membership status initially returning null (no request)
     let membershipStatus: Record<string, unknown> | null = null;
-    await page.route(`${API}/clubs/1/membership`, async (route) => {
+    await page.route(`${API}/organizations/1/membership`, async (route) => {
       if (route.request().method() === "GET") {
         await route.fulfill({
           status: 200,
@@ -180,10 +238,10 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     });
 
     // Mock join endpoint
-    await page.route(`${API}/clubs/1/join`, async (route) => {
+    await page.route(`${API}/organizations/1/join`, async (route) => {
       membershipStatus = {
         id: "membership-123",
-        club_id: 1,
+        organization_id: 1,
         user_id: "student-user-id",
         status: "pending",
         role: "member",
@@ -255,11 +313,11 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
       });
     });
 
-    await page.route(url => url.pathname === "/clubs/mine", async (route) => {
+    await page.route(url => apiPath(url) === "/organizations/mine", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([MOCK_CLUB]),
+        body: JSON.stringify([MOCK_ORGANIZATION]),
       });
     });
 
@@ -267,7 +325,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     let mockRoster = [
       {
         id: "membership-owner",
-        club_id: 1,
+        organization_id: 1,
         user_id: "owner-user-id",
         status: "approved",
         role: "owner",
@@ -283,7 +341,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
       },
       {
         id: "membership-pending-student",
-        club_id: 1,
+        organization_id: 1,
         user_id: "student-user-id",
         status: "pending",
         role: "member",
@@ -299,7 +357,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
       },
     ];
 
-    await page.route(url => url.pathname.startsWith("/clubs/1/members"), async (route) => {
+    await page.route(url => apiPath(url)?.startsWith("/organizations/1/memberships") === true, async (route) => {
       const method = route.request().method();
       const url = route.request().url();
 
@@ -326,6 +384,30 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
         mockRoster = mockRoster.filter((m) => m.user_id !== targetUserId);
         await route.fulfill({ status: 204 });
       }
+    });
+
+    await page.route(url => apiPath(url) === "/organizations/1/members", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/organizations/1/invitations", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route(url => apiPath(url) === "/organizations/1/join-requests", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
     });
 
     await seedSession(page, OWNER_EMAIL, 1);

@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { Organization } from "@/shared/types";
 import { getOrganizationsPaginated } from "@/features/organizations/api/organizations.api";
 
+type OrganizationsListMode = "paginated" | "infinite";
+
 interface UseOrganizationsListOptions {
   limit: number;
+  mode?: OrganizationsListMode;
   school?: string;
   search?: string;
   categories?: string[];
@@ -14,6 +17,60 @@ interface UseOrganizationsListOptions {
   isSavedLoaded?: boolean;
 }
 
+function getUniqueOrganizations(organizations: Organization[]): Organization[] {
+  const seen = new Set<number>();
+  return organizations.filter((organization) => {
+    if (seen.has(organization.id)) {
+      return false;
+    }
+    seen.add(organization.id);
+    return true;
+  });
+}
+
+function buildQueryKey(options: {
+  page: number;
+  limit: number;
+  school?: string;
+  search?: string;
+  categories?: string[];
+  organizationType?: string;
+  ids?: number[];
+  isAuthenticated?: boolean;
+  activeTab?: "all" | "followed" | "claimed";
+  isSavedLoaded?: boolean;
+}): string {
+  const {
+    page,
+    limit,
+    school,
+    search,
+    categories,
+    organizationType,
+    ids,
+    isAuthenticated,
+    activeTab = "all",
+    isSavedLoaded = true,
+  } = options;
+
+  return JSON.stringify({
+    page,
+    limit,
+    school: school || "",
+    search: search || "",
+    categories: (categories || []).join(","),
+    organizationType: organizationType || "",
+    ...((activeTab === "followed" || activeTab === "claimed")
+      ? {
+          ids: (ids || []).join(","),
+          isAuthenticated: Boolean(isAuthenticated),
+          isSavedLoaded: Boolean(isSavedLoaded),
+        }
+      : {}),
+    activeTab,
+  });
+}
+
 /**
  * useOrganizationsList Hook
  * Centralized hook to manage fetching paginated organizations with deduplication.
@@ -21,6 +78,7 @@ interface UseOrganizationsListOptions {
 export function useOrganizationsList(options: UseOrganizationsListOptions) {
   const {
     limit,
+    mode = "paginated",
     school,
     search,
     categories,
@@ -36,28 +94,51 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const lastFetchedOptionsRef = useRef<string>("");
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const lastFetchedQueryKeyRef = useRef<string>("");
+  const latestFetchIdRef = useRef(0);
 
   const categoriesStr = (categories || []).join(",");
   const idsStr = (ids || []).join(",");
 
-  // Keep latest options in a ref for absolute stability of loadData callback
-  const latestOptionsRef = useRef({
-    currentPage,
-    limit,
-    school,
-    search,
-    categories,
-    organizationType,
-    ids,
-    isAuthenticated,
-    activeTab,
-    isSavedLoaded,
-  });
+  const filterKey = useMemo(
+    () =>
+      JSON.stringify({
+        limit,
+        school: school || "",
+        search: search || "",
+        categories: categoriesStr,
+        organizationType: organizationType || "",
+        ids: idsStr,
+        isAuthenticated: Boolean(isAuthenticated),
+        activeTab,
+        isSavedLoaded: Boolean(isSavedLoaded),
+      }),
+    [
+      limit,
+      school,
+      search,
+      categoriesStr,
+      organizationType,
+      idsStr,
+      isAuthenticated,
+      activeTab,
+      isSavedLoaded,
+    ],
+  );
 
   useEffect(() => {
-    latestOptionsRef.current = {
-      currentPage,
+    setCurrentPage(1);
+    setOrganizations([]);
+    setHasMore(false);
+    lastFetchedQueryKeyRef.current = "";
+  }, [filterKey]);
+
+  const loadData = useCallback(async () => {
+    const fetchId = ++latestFetchIdRef.current;
+    const queryKey = buildQueryKey({
+      page: currentPage,
       limit,
       school,
       search,
@@ -67,116 +148,126 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
       isAuthenticated,
       activeTab,
       isSavedLoaded,
-    };
-  });
+    });
 
-  const loadData = useCallback(async () => {
-    const {
-      currentPage: latestPage,
-      limit: latestLimit,
-      school: latestSchool,
-      search: latestSearch,
-      categories: latestCategories,
-      organizationType: latestOrgType,
-      ids: latestIds,
-      isAuthenticated: latestAuth,
-      activeTab: latestTab,
-      isSavedLoaded: latestSavedLoaded,
-    } = latestOptionsRef.current;
-
-    // Generate serialized options for deduplication
-    const queryParams = {
-      page: latestPage,
-      limit: latestLimit,
-      school: latestSchool || "",
-      search: latestSearch || "",
-      categories: (latestCategories || []).join(","),
-      organizationType: latestOrgType || "",
-      ...((latestTab === "followed" || latestTab === "claimed") ? {
-        ids: (latestIds || []).join(","),
-        isAuthenticated: Boolean(latestAuth),
-        isSavedLoaded: Boolean(latestSavedLoaded),
-      } : {}),
-      activeTab: latestTab,
-    };
-
-    const queryKey = JSON.stringify(queryParams);
-
-    // If followed or claimed tab but user not authenticated, don't query
-    if ((latestTab === "followed" || latestTab === "claimed") && !latestAuth) {
+    if ((activeTab === "followed" || activeTab === "claimed") && !isAuthenticated) {
       setOrganizations([]);
       setTotalItems(0);
       setTotalPages(0);
+      setHasMore(false);
       setIsLoading(false);
-      lastFetchedOptionsRef.current = queryKey;
+      setIsLoadingMore(false);
+      lastFetchedQueryKeyRef.current = queryKey;
       return;
     }
 
-    // If followed tab and saved store hasn't loaded yet, show loading and don't query
-    if (latestTab === "followed" && !latestSavedLoaded) {
+    if (activeTab === "followed" && !isSavedLoaded) {
       setIsLoading(true);
+      setIsLoadingMore(false);
       return;
     }
 
-    // If followed or claimed tab and we have no ids to query, return empty list
-    if ((latestTab === "followed" || latestTab === "claimed") && (!latestIds || latestIds.length === 0)) {
+    if (
+      (activeTab === "followed" || activeTab === "claimed") &&
+      (!ids || ids.length === 0)
+    ) {
       setOrganizations([]);
       setTotalItems(0);
       setTotalPages(0);
+      setHasMore(false);
       setIsLoading(false);
-      lastFetchedOptionsRef.current = queryKey;
+      setIsLoadingMore(false);
+      lastFetchedQueryKeyRef.current = queryKey;
       return;
     }
 
-    if (lastFetchedOptionsRef.current === queryKey) {
-      return; // Skip duplicate fetch
+    if (lastFetchedQueryKeyRef.current === queryKey) {
+      return;
     }
-    lastFetchedOptionsRef.current = queryKey;
+    lastFetchedQueryKeyRef.current = queryKey;
 
-    setIsLoading(true);
+    const isLoadMore = mode === "infinite" && currentPage > 1;
+    if (isLoadMore) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+
     try {
       const result = await getOrganizationsPaginated({
-        page: latestPage,
-        limit: latestLimit,
-        school: latestSchool,
-        search: latestSearch,
-        categories: latestCategories,
-        organizationType: latestOrgType,
-        ids: (latestTab === "followed" || latestTab === "claimed") ? latestIds : undefined,
+        page: currentPage,
+        limit,
+        school,
+        search,
+        categories,
+        organizationType,
+        ids: activeTab === "followed" || activeTab === "claimed" ? ids : undefined,
       });
-      setOrganizations(result.items);
+
+      if (fetchId !== latestFetchIdRef.current) {
+        return;
+      }
+
       setTotalItems(result.total);
       setTotalPages(result.total_pages);
+      setHasMore(result.page < result.total_pages);
+      setOrganizations((current) =>
+        mode === "infinite" && currentPage > 1
+          ? getUniqueOrganizations([...current, ...result.items])
+          : result.items,
+      );
     } catch (error) {
+      if (fetchId !== latestFetchIdRef.current) {
+        return;
+      }
       console.error("Failed to load organizations data:", error);
+      if (mode === "infinite" && currentPage > 1) {
+        setHasMore(false);
+      }
     } finally {
-      setIsLoading(false);
+      if (fetchId === latestFetchIdRef.current) {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
     }
-  }, []);
+  }, [
+    activeTab,
+    categories,
+    currentPage,
+    ids,
+    isAuthenticated,
+    isSavedLoaded,
+    limit,
+    mode,
+    organizationType,
+    school,
+    search,
+  ]);
 
   useEffect(() => {
     void loadData();
-  }, [
-    currentPage,
-    limit,
-    school,
-    search,
-    categoriesStr,
-    organizationType,
-    idsStr,
-    isAuthenticated,
-    activeTab,
-    isSavedLoaded,
-    loadData,
-  ]);
+  }, [loadData]);
+
+  const loadMore = useCallback(() => {
+    if (mode !== "infinite" || isLoading || isLoadingMore || !hasMore) {
+      return;
+    }
+    setCurrentPage((page) => page + 1);
+  }, [hasMore, isLoading, isLoadingMore, mode]);
 
   return {
     organizations,
     totalItems,
     totalPages,
     isLoading,
+    isLoadingMore,
+    hasMore,
     currentPage,
     setCurrentPage,
-    refresh: loadData,
+    loadMore,
+    refresh: () => {
+      lastFetchedQueryKeyRef.current = "";
+      void loadData();
+    },
   };
 }

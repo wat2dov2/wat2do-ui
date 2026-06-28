@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   animate,
-  motion,
+  m,
   useInView,
   useMotionValue,
   useTransform,
   type HTMLMotionProps,
-} from "motion/react"
+} from "framer-motion"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -246,7 +246,7 @@ export function DiaTextReveal({
       : undefined
 
   return (
-    <motion.span
+    <m.span
       ref={spanRef}
       className={cn("align-bottom leading-[100%] text-inherit", className)}
       style={{
@@ -269,6 +269,6 @@ export function DiaTextReveal({
       {...props}
     >
       {texts[activeIndex]}
-    </motion.span>
+    </m.span>
   )
 }

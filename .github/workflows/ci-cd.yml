@@ -88,7 +88,8 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          VITE_API_URL: /api
+          NEXT_PUBLIC_API_URL: /api
+          BACKEND_API_URL: http://localhost:8000
         run: npm run build
 
   deploy-backend:
@@ -164,7 +165,7 @@ jobs:
         working-directory: frontend
         run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
-      - name: Expose Vercel environment to Vite
+      - name: Expose Vercel environment to Next
         if: env.VERCEL_TOKEN != ''
         working-directory: frontend
         run: cp .vercel/.env.production.local .env.production.local
@@ -173,7 +174,7 @@ jobs:
         if: env.VERCEL_TOKEN != ''
         working-directory: frontend
         env:
-          VITE_API_URL: /api
+          NEXT_PUBLIC_API_URL: /api
         run: npx vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy Vercel output

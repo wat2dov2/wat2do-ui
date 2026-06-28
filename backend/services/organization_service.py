@@ -27,6 +27,7 @@ from schemas.organization import (
     OrganizationResponse,
     OrganizationUpdate,
 )
+from services import event_service
 
 
 def _normalize_organization_name(name: str | None) -> str:
@@ -222,6 +223,18 @@ def list_organizations(
     for row in r.data or []:
         email = _fetch_owner_email(row.get("created_by"))
         items.append(OrganizationResponse.model_validate({**row, "owner_email": email}))
+
+    if items:
+        stats = event_service.get_organization_event_stats([item.id for item in items])
+        items = [
+            item.model_copy(
+                update=stats[item.id].model_dump()
+                if item.id in stats
+                else {"event_count": 0, "latest_event_title": None, "latest_event_added_at": None}
+            )
+            for item in items
+        ]
+
     return items, r.count or len(items)
 
 

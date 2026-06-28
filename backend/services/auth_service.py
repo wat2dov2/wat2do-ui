@@ -43,7 +43,7 @@ def _sanitize_for_log(value: str | None) -> str:
 
 
 def _password_reset_redirect_url() -> str:
-    base_url = settings.frontend_url.rstrip("/") or "http://localhost:5173"
+    base_url = settings.frontend_url.rstrip("/") or "http://localhost:3000"
     return f"{base_url}/reset-password"
 
 
@@ -193,7 +193,7 @@ class AuthService:
         # Format and send the email
         from services.email_service import EmailMessage, email_service
 
-        base_url = settings.frontend_url.rstrip("/") or "http://localhost:5173"
+        base_url = settings.frontend_url.rstrip("/") or "http://localhost:3000"
         callback_url = f"{base_url}/auth/callback?token={hashed_token}&email={email_clean}"
 
         subject = "Your Wat2Do login code and link"

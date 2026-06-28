@@ -27,7 +27,9 @@ from schemas.event import (
     LatestEventResponse,
 )
 from schemas.event_date import OccurrenceResponse
+from schemas.organization import OrganizationEventStats
 from services import event_date_service, event_query
+from services.event_feed_revalidation import event_feed_revalidation_service
 from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
@@ -108,6 +110,45 @@ def get_latest_added_event(school: str | None = None) -> LatestEventResponse | N
     if not r.data or len(r.data) == 0:
         return None
     return LatestEventResponse.model_validate(r.data[0])
+
+
+@supabase_retry
+def get_organization_event_stats(
+    organization_ids: list[int],
+) -> dict[int, OrganizationEventStats]:
+    """Return per-organization event totals and most recently added event."""
+    if not organization_ids:
+        return {}
+
+    stats = {organization_id: OrganizationEventStats() for organization_id in organization_ids}
+
+    r = (
+        get_sb()
+        .table(EVENTS)
+        .select("organization_id,title,added_at")
+        .in_("organization_id", organization_ids)
+        .order("added_at", desc=True)
+        .execute()
+    )
+
+    for row in r.data or []:
+        organization_id = row.get("organization_id")
+        if organization_id not in stats:
+            continue
+
+        current = stats[organization_id]
+        current.event_count += 1
+        if current.latest_event_title is None:
+            current.latest_event_title = row.get("title")
+            added_at = row.get("added_at")
+            if added_at is not None:
+                current.latest_event_added_at = (
+                    added_at
+                    if isinstance(added_at, datetime)
+                    else datetime.fromisoformat(str(added_at).replace("Z", "+00:00"))
+                )
+
+    return stats
 
 
 @supabase_retry
@@ -231,6 +272,7 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     occ_rows = event_date_service.list_for_event(new_id)
     invalidate_candidates_cache()
     invalidate_events_cache()
+    event_feed_revalidation_service.revalidate_school(new_row.get("school"))
     return event_query.hydrate_event(new_row, occ_rows, EventResponse)
 
 
@@ -283,7 +325,10 @@ def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
 
     invalidate_candidates_cache()
     invalidate_events_cache()
-    return get_event(event_id)
+    updated = get_event(event_id)
+    if updated is not None:
+        event_feed_revalidation_service.revalidate_schools([existing.school, updated.school])
+    return updated
 
 
 def delete_event(event_id: int) -> bool:
@@ -309,6 +354,8 @@ def delete_event(event_id: int) -> bool:
     if r.data:
         invalidate_candidates_cache()
         invalidate_events_cache()
+        deleted = r.data[0] if isinstance(r.data[0], dict) else {}
+        event_feed_revalidation_service.revalidate_school(deleted.get("school"))
     return bool(r.data)
 
 
