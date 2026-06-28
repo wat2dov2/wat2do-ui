@@ -1,5 +1,4 @@
 import { EventRoutePage } from "@/app/event-route-page";
-import { StaticEventFeed } from "@/features/events/components/StaticEventFeed";
 import { getEventFeedForSchool } from "@/features/events/api/eventFeed.server";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { SCHOOL_SLUGS, isKnownSchool, resolveSchool } from "@/shared/constants/schools";
@@ -31,10 +30,5 @@ export default async function SchoolHomePage({ params }: SchoolHomePageProps) {
   const school = resolveSchool(rawSchool);
   const feed = isKnownSchool(school) ? await loadInitialFeed(school) : null;
 
-  return (
-    <>
-      {feed ? <StaticEventFeed feed={feed} school={school} /> : null}
-      <EventRoutePage initialFeed={feed} initialSchool={school} />
-    </>
-  );
+  return <EventRoutePage initialFeed={feed} initialSchool={school} />;
 }

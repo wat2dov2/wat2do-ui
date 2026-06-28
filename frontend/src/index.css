@@ -216,9 +216,6 @@
   body {
     @apply bg-background text-foreground;
   }
-  html[data-client-ready="true"] #server-event-feed {
-    display: none;
-  }
   button,
   [role="button"] {
     cursor: pointer;

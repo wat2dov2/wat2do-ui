@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { AppPage } from "@/app/app-page";
 import { useAppReady } from "@/app/client-providers";
 import { EventsPageContainer } from "@/features/events/pages/EventsPageContainer";
@@ -15,7 +15,7 @@ interface EventRoutePageProps {
 export function EventRoutePage({ initialFeed, initialSchool }: EventRoutePageProps) {
   const ready = useAppReady();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!ready) return;
 
     if (initialFeed) {

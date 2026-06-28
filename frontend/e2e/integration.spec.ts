@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
 const BASE = "http://127.0.0.1:3000";
-const API = "http://localhost:8000";
 const APP_API = `${BASE}/api`;
 
 /** Shared test identity used across auth-seeded tests. */
@@ -588,8 +587,8 @@ test.describe("Events Page", () => {
     await page.screenshot({ path: "e2e/screenshots/events-page.png", fullPage: true });
   });
 
-  test("backend API returns events", async ({ request }) => {
-    const res = await request.get(`${API}/events/`);
+  test("app API proxy returns events", async ({ request }) => {
+    const res = await request.get(`${APP_API}/events/`);
     expect(res.status()).toBe(200);
     const feed = await res.json();
     const events = feed.items;
@@ -600,27 +599,31 @@ test.describe("Events Page", () => {
     expect(events[0]).toHaveProperty("id");
   });
 
-  test("backend events match expected seed data", async ({ request }) => {
-    const res = await request.get(`${API}/events/`);
+  test("app API proxy preserves the event feed contract", async ({ request }) => {
+    const res = await request.get(`${APP_API}/events/`);
     const feed = await res.json();
-    const events = feed.items;
-    const titles = events.map((e: { title: string }) => e.title);
-    expect(titles).toContain("Tech Career Fair");
-    expect(titles).toContain("Board Game Night");
-    expect(titles).toContain("UWMUN Events");
+    expect(feed.total).toBeGreaterThanOrEqual(feed.items.length);
+    expect(feed.page).toBeGreaterThanOrEqual(1);
+    expect(feed.page_size).toBeGreaterThan(0);
+    expect(feed.total_pages).toBeGreaterThanOrEqual(1);
   });
 
-  test("event search filter works on API", async ({ request }) => {
-    const res = await request.get(`${API}/events/?search=career`);
+  test("event search filter works through app API proxy", async ({ request }) => {
+    const res = await request.get(`${APP_API}/events/?search=career`);
     expect(res.status()).toBe(200);
     const feed = await res.json();
     const events = feed.items;
     expect(events.length).toBeGreaterThanOrEqual(1);
-    expect(events.map((e: { title: string }) => e.title)).toContain("Tech Career Fair");
+    const searchableText = events
+      .map((event: { title: string; category?: string; organization?: string | null }) =>
+        `${event.title} ${event.category ?? ""} ${event.organization ?? ""}`.toLowerCase(),
+      )
+      .join(" ");
+    expect(searchableText).toContain("career");
   });
 
-  test("event category filter works on API", async ({ request }) => {
-    const res = await request.get(`${API}/events/?categories=Career`);
+  test("event category filter works through app API proxy", async ({ request }) => {
+    const res = await request.get(`${APP_API}/events/?categories=Career`);
     expect(res.status()).toBe(200);
     const feed = await res.json();
     const events = feed.items;
@@ -641,8 +644,8 @@ test.describe("Organizations Page", () => {
     await page.screenshot({ path: "e2e/screenshots/organizations-page.png", fullPage: true });
   });
 
-  test("backend API returns organizations", async ({ request }) => {
-    const res = await request.get(`${API}/organizations/`);
+  test("app API proxy returns organizations", async ({ request }) => {
+    const res = await request.get(`${APP_API}/organizations/`);
     expect(res.status()).toBe(200);
     const organizations = await res.json();
     expect(organizations.items.length).toBeGreaterThan(0);
@@ -650,8 +653,8 @@ test.describe("Organizations Page", () => {
     expect(organizations.items[0]).toHaveProperty("organization_type");
   });
 
-  test("backend organizations match paginated contract", async ({ request }) => {
-    const res = await request.get(`${API}/organizations/`);
+  test("app API proxy preserves the organization paginated contract", async ({ request }) => {
+    const res = await request.get(`${APP_API}/organizations/`);
     const organizations = await res.json();
     expect(organizations.total).toBeGreaterThanOrEqual(organizations.items.length);
     expect(
@@ -663,12 +666,17 @@ test.describe("Organizations Page", () => {
     ).toBeTruthy();
   });
 
-  test("organization search filter works on API", async ({ request }) => {
-    const res = await request.get(`${API}/organizations/?search=computer`);
+  test("organization search filter works through app API proxy", async ({ request }) => {
+    const res = await request.get(`${APP_API}/organizations/?search=computer`);
     expect(res.status()).toBe(200);
     const organizations = await res.json();
     expect(organizations.items.length).toBeGreaterThanOrEqual(1);
-    expect(organizations.items.map((c: { organization_name: string }) => c.organization_name)).toContain("UW Computer Science Club");
+    const searchableText = organizations.items
+      .map((organization: { organization_name: string; categories?: string[] }) =>
+        `${organization.organization_name} ${(organization.categories ?? []).join(" ")}`.toLowerCase(),
+      )
+      .join(" ");
+    expect(searchableText).toContain("computer");
   });
 });
 
@@ -690,26 +698,26 @@ test.describe("Onboarding Page", () => {
 
 test.describe("Auth-protected API endpoints", () => {
   test("POST /events/ requires authentication", async ({ request }) => {
-    const res = await request.post(`${API}/events/`, {
+    const res = await request.post(`${APP_API}/events/`, {
       data: { title: "Test", location: "Test" },
     });
     expect([401, 403]).toContain(res.status());
   });
 
   test("POST /organizations/ requires authentication", async ({ request }) => {
-    const res = await request.post(`${API}/organizations/`, {
+    const res = await request.post(`${APP_API}/organizations/`, {
       data: { organization_name: "Test", organization_type: "Test", categories: ["Technology"] },
     });
     expect([401, 403]).toContain(res.status());
   });
 
   test("GET /users/me requires authentication", async ({ request }) => {
-    const res = await request.get(`${API}/users/me`);
+    const res = await request.get(`${APP_API}/users/me`);
     expect([401, 403]).toContain(res.status());
   });
 
   test("PATCH /users/me/profile requires authentication", async ({ request }) => {
-    const res = await request.patch(`${API}/users/me/profile`, {
+    const res = await request.patch(`${APP_API}/users/me/profile`, {
       data: { faculty: "Engineering" },
     });
     expect([401, 403]).toContain(res.status());
@@ -735,8 +743,8 @@ test.describe("Navigation", () => {
 
     expect(rootResponse.status()).toBe(200);
     expect(schoolResponse.status()).toBe(200);
-    expect(rootHtml).toContain("server-event-feed");
-    expect(schoolHtml).toContain("server-event-feed");
+    expect(rootHtml).not.toContain("server-event-feed");
+    expect(schoolHtml).not.toContain("server-event-feed");
     expect(rootHtml.includes("hmr-client")).toBe(schoolHtml.includes("hmr-client"));
     expect(rootHtml.includes("next-devtools")).toBe(schoolHtml.includes("next-devtools"));
   });

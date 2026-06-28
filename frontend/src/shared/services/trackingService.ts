@@ -27,6 +27,15 @@ function getSessionId(): string {
   return sid;
 }
 
+function isExpectedFlushAbort(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") {
+    return true;
+  }
+
+  const message = err instanceof Error ? err.message : String(err);
+  return message === "Failed to fetch" && document.visibilityState === "hidden";
+}
+
 class Tracker {
   private queue: QueuedInteraction[] = [];
 
@@ -68,7 +77,10 @@ class Tracker {
       headers,
       body: payload,
       keepalive: true,
-    }).catch((err) => console.error("Failed to flush interaction batch:", err));
+    }).catch((err: unknown) => {
+      if (isExpectedFlushAbort(err)) return;
+      console.error("Failed to flush interaction batch:", err);
+    });
   }
 }
 
