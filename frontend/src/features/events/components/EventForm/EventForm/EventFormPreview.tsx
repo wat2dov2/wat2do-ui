@@ -49,7 +49,12 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
   );
 
   return (
-    <div className={cn("min-h-0 w-[22rem] shrink-0 flex-col overflow-y-auto border-l border-border bg-background/40 p-5", className)}>
+    <div
+      className={cn(
+        "min-h-0 w-[19rem] shrink-0 flex-col overflow-y-auto border-l border-border bg-background/40 p-4",
+        className,
+      )}
+    >
       <div className="mb-4">
         <span className="whitespace-nowrap text-sm font-semibold text-foreground">
           {t("forms.livePreview")}
@@ -58,7 +63,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
 
       {/* Preview Card - Matches EventCard styling exactly */}
       <article
-        className="mx-auto flex w-full max-w-[18.5rem] flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/80"
+        className="mx-auto flex w-full max-w-[16.5rem] flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/80"
       >
         {/* Event Image */}
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>

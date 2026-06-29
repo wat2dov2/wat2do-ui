@@ -29,14 +29,12 @@ from schemas.interaction import InteractionCreate
 log = logging.getLogger(__name__)
 
 
-# Anonymous interactions are accepted only for the low-signal ``view``
-# (and ``unsave``) types.  High-signal types (save/click/share/detail_view)
-# feed popularity + collaborative-filtering scoring and would otherwise let
-# a rotating-IP attacker inflate any event's ranking for free (audit I18).
+# Anonymous interactions are accepted for ``view``, ``click``, and ``unsave``.
+# ``save``/``share``/``detail_view`` still feed popularity + collaborative-
+# filtering scoring and would let a rotating-IP attacker inflate rankings.
 _ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
     {
         INTERACTION_SAVE,
-        INTERACTION_CLICK,
         INTERACTION_SHARE,
         INTERACTION_DETAIL_VIEW,
     }
@@ -132,7 +130,7 @@ def record_interactions_batch(
     - Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.
     - If the payload contains a ``user_id`` it must match the authenticated
       user.  Unauthenticated requests may not send a ``user_id``.
-    - Authenticated users get deduplication; anonymous users do not.
+    - Authenticated users get deduplication; anonymous users get session dedup.
     - DB errors propagate — the global APIError handler returns 502 so
       clients can retry rather than silently receiving ``{"recorded": 0}``
       (which is indistinguishable from "successfully deduped to empty").
@@ -165,6 +163,12 @@ def record_interactions_batch(
                 session_id,
             )
         interactions = filtered
+        if not interactions:
+            return 0
+        interactions = check_duplicate_interactions_for_session(
+            session_id=session_id,
+            interactions=interactions,
+        )
         if not interactions:
             return 0
 
@@ -322,6 +326,77 @@ def check_duplicate_interactions(
             continue
 
         # Track in-batch duplicates and global count
+        counts[key] = current + 1
+        total_in_window += 1
+        filtered.append(item)
+
+    return filtered
+
+
+def check_duplicate_interactions_for_session(
+    session_id: str,
+    interactions: list[InteractionCreate],
+) -> list[InteractionCreate]:
+    """Filter anonymous session interactions that exceed dedup thresholds."""
+    if not interactions:
+        return []
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=DEDUP_WINDOW_MINUTES)).isoformat()
+
+    try:
+        existing: list[dict] = list(
+            iter_all_pages(
+                lambda offset, ps: (
+                    (
+                        get_sb()
+                        .table(USER_INTERACTIONS)
+                        .select("event_id, interaction_type")
+                        .eq("session_id", session_id)
+                        .is_("user_id", "null")
+                        .gte("created_at", cutoff)
+                        .order("created_at")
+                        .range(offset, offset + ps - 1)
+                        .execute()
+                    ).data
+                    or []
+                ),
+            )
+        )
+    except Exception as e:
+        log.error("Anonymous dedup check failed, rejecting batch: %s", e)
+        return []
+
+    counts: dict[tuple[int, str], int] = {}
+    total_in_window = len(existing)
+    for row in existing:
+        key = (row["event_id"], row["interaction_type"])
+        counts[key] = counts.get(key, 0) + 1
+
+    filtered: list[InteractionCreate] = []
+    for item in interactions:
+        if total_in_window >= MAX_USER_INTERACTIONS_PER_WINDOW:
+            log.warning(
+                "Dropping anonymous interaction session=%s event=%s type=%s — global cap reached (%d/%d)",
+                session_id,
+                item.event_id,
+                item.interaction_type,
+                total_in_window,
+                MAX_USER_INTERACTIONS_PER_WINDOW,
+            )
+            continue
+
+        key = (item.event_id, item.interaction_type)
+        current = counts.get(key, 0)
+        if current >= MAX_DUPLICATE_INTERACTIONS:
+            log.warning(
+                "Dropping duplicate anonymous interaction session=%s event=%s type=%s (count=%d)",
+                session_id,
+                item.event_id,
+                item.interaction_type,
+                current,
+            )
+            continue
+
         counts[key] = current + 1
         total_in_window += 1
         filtered.append(item)

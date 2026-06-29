@@ -1,7 +1,7 @@
-import { lazy, memo, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
+import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Download,
@@ -32,14 +32,8 @@ import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
-import { QP } from "@/shared/constants/queryParams";
+import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
 import { useFilterUrlActions } from "@/features/search";
-
-const EventDetailsModal = lazy(() =>
-  import("@/features/events/components/EventDetailsModal").then((module) => ({
-    default: module.EventDetailsModal,
-  })),
-);
 
 interface EventCardProps {
   event: Event;
@@ -356,29 +350,6 @@ function EventCardBody({
   );
 }
 
-interface EventDetailsModalMountProps {
-  event: Event;
-  open: boolean;
-  onClose: () => void;
-}
-
-function EventDetailsModalMount({
-  event,
-  open,
-  onClose,
-}: EventDetailsModalMountProps) {
-  if (!open) return null;
-
-  return (
-    <Suspense fallback={null}>
-      <EventDetailsModal
-        event={event}
-        onClose={onClose}
-      />
-    </Suspense>
-  );
-}
-
 interface UseEventCardNavigationOptions {
   event: Event;
   eventCategory: string;
@@ -394,11 +365,8 @@ function useEventCardNavigation({
 }: UseEventCardNavigationOptions) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const filterUrlActions = useFilterUrlActions();
-
-  const eventIdParam = searchParams.get(QP.EVENT_ID);
-  const showDetailsModal = !disableModal && eventIdParam === event.id.toString();
+  const { openEventId } = useEventIdUrlActions();
 
   const handleCategoryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -426,24 +394,14 @@ function useEventCardNavigation({
     if (onEventClick) {
       onEventClick(event);
     } else if (!disableModal) {
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set(QP.EVENT_ID, event.id.toString());
-      router.push(`/?${newParams.toString()}`);
+      openEventId(event.id);
     }
-  }, [disableModal, event, onEventClick, router, searchParams]);
-
-  const handleDetailsModalClose = useCallback(() => {
-    const newParams = new URLSearchParams(searchParams.toString());
-    newParams.delete(QP.EVENT_ID);
-    router.push(newParams.toString() ? `/?${newParams.toString()}` : "/");
-  }, [router, searchParams]);
+  }, [disableModal, event, onEventClick, openEventId]);
 
   return {
     handleCategoryClick,
     handleOrganizationMouseDown,
     handleCardActivate,
-    handleDetailsModalClose,
-    showDetailsModal,
   };
 }
 
@@ -514,8 +472,6 @@ function EventCardComponent({
     handleCategoryClick,
     handleOrganizationMouseDown,
     handleCardActivate,
-    handleDetailsModalClose,
-    showDetailsModal,
   } = useEventCardNavigation({
     event,
     eventCategory,
@@ -586,12 +542,6 @@ function EventCardComponent({
           t={t}
         />
       </article>
-
-      <EventDetailsModalMount
-        event={event}
-        open={showDetailsModal}
-        onClose={handleDetailsModalClose}
-      />
     </>
   );
 }

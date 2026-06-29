@@ -41,8 +41,9 @@ def record_interactions(
     user — submitting interactions on behalf of another user is rejected.
 
     Anonymous requests (no auth at all) are still allowed for basic
-    view/impression tracking, but without a ``user_id`` they cannot influence
-    authenticated analytics or personalization signals.
+    view/click tracking, but without a ``user_id`` they cannot influence
+    authenticated analytics or personalization signals beyond public click
+    counts and low-signal impressions.
     Anonymous requests are IP-rate-limited to prevent abuse.
     """
     # ── Resolve user identity ─────────────────────────────────────────

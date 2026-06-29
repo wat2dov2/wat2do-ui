@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
@@ -10,7 +10,14 @@ import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
+import { useEventDetailsFromUrl } from "@/features/events/hooks/useEventIdUrl";
 import type { ViewMode, QuickFilterConfig } from "@/shared/types";
+
+const EventDetailsModal = lazy(() =>
+  import("@/features/events/components/EventDetailsModal").then((module) => ({
+    default: module.EventDetailsModal,
+  })),
+);
 
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
@@ -39,7 +46,9 @@ export function EventsPageContainer() {
     filters,
     orderedEvents,
     handleDeleteEvent,
-  } = useEventsPageData({ profileCompleted });
+  } = useEventsPageData({ profileCompleted, viewMode });
+
+  const { detailEvent, closeEventDetails } = useEventDetailsFromUrl(orderedEvents);
 
   const isPageLoading = isLoading;
 
@@ -223,6 +232,13 @@ export function EventsPageContainer() {
         </main>
       </div>
       <EventsBackToTopButton />
+      <Suspense fallback={null}>
+        <EventDetailsModal
+          event={detailEvent}
+          onClose={closeEventDetails}
+          allEvents={orderedEvents}
+        />
+      </Suspense>
     </>
   );
 }

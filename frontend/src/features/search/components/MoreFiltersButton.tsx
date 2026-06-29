@@ -33,6 +33,10 @@ export function MoreFiltersButton({
         <button
           type="button"
           data-elevation="control"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            onOpenChange(!open);
+          }}
           className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
             open || filterCount > 0
               ? "bg-primary/80 text-primary-foreground"

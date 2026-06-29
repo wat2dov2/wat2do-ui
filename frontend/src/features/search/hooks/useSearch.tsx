@@ -5,7 +5,7 @@ import { filterEvents, sortEvents, getFilterCounts } from "@/features/search/api
 import { getEventCategories } from "@/shared/data/eventCategories";
 import { availableDays, availableFoods } from "@/shared/constants/eventFilters";
 import { translateCategory } from "@/shared/utils/event";
-import type { Event } from "@/shared/types";
+import type { Event, ViewMode } from "@/shared/types";
 
 /**
  * Hook for search and filtering orchestration.
@@ -18,12 +18,14 @@ export interface UseSearchOptions {
   events: Event[];
   profileCompleted: boolean;
   savedEventIds: number[];
+  viewMode: ViewMode;
 }
 
 export function useSearch({
   events,
   profileCompleted,
   savedEventIds,
+  viewMode,
 }: UseSearchOptions) {
   const { t } = useTranslation();
 
@@ -98,6 +100,7 @@ export function useSearch({
         sortBy: filterState.sortBy,
         sortOrder: filterState.sortOrder,
         addedWithin24h: filterState.addedWithin24h,
+        viewMode,
       }),
     [
       filterState.searchQuery,
@@ -113,6 +116,7 @@ export function useSearch({
       filterState.sortBy,
       filterState.sortOrder,
       filterState.addedWithin24h,
+      viewMode,
     ],
   );
 

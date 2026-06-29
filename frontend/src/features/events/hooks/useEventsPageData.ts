@@ -16,9 +16,11 @@ import {
   useEventsFeed,
   usePromotedEvents,
 } from "@/features/events/hooks/useEventsFeed";
+import type { ViewMode } from "@/shared/types";
 
 interface UseEventsPageDataOptions {
   profileCompleted: boolean;
+  viewMode: ViewMode;
 }
 
 /**
@@ -26,7 +28,7 @@ interface UseEventsPageDataOptions {
  * events feed queries, saved events, promotions, search/filters, and derived
  * ordered events.
  */
-export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions) {
+export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageDataOptions) {
   const { t } = useTranslation();
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
@@ -45,6 +47,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
     events,
     profileCompleted,
     savedEventIds,
+    viewMode,
   });
 
   const eventQuery = useMemo<EventListQuery>(() => {

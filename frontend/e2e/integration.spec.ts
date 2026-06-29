@@ -611,6 +611,19 @@ test.describe("Events Page", () => {
     await expect(page).not.toHaveURL(/eventId=1/);
   });
 
+  test("closes event details opened from a direct eventId link", async ({ page }) => {
+    await page.goto(`${BASE}/?eventId=1`);
+    await page.waitForTimeout(3000);
+
+    await expect(page).toHaveURL(/eventId=1/);
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    await page.getByRole("button", { name: "Close" }).click();
+
+    await expect(page).not.toHaveURL(/eventId=1/);
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+  });
+
   test("keeps click count optimistic when opening event details", async ({ page }) => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);

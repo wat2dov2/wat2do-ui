@@ -22,9 +22,11 @@ export function getFilterCounts(filters: {
   sortBy: string;
   sortOrder: "asc" | "desc";
   addedWithin24h?: boolean;
+  viewMode?: "grid" | "calendar" | "map";
 }): number {
   const hasActiveSort = filters.sortBy !== "date" || filters.sortOrder !== "asc";
   const hasSearchQuery = Boolean(filters.searchQuery?.trim());
+  const hasActiveViewMode = filters.viewMode != null && filters.viewMode !== "grid";
 
   return (
     (hasSearchQuery ? 1 : 0) +
@@ -38,6 +40,7 @@ export function getFilterCounts(filters: {
     (filters.freeFoodFilter ? 1 : 0) +
     (filters.savedFilter ? 1 : 0) +
     (filters.addedWithin24h ? 1 : 0) +
-    (hasActiveSort ? 1 : 0)
+    (hasActiveSort ? 1 : 0) +
+    (hasActiveViewMode ? 1 : 0)
   );
 }

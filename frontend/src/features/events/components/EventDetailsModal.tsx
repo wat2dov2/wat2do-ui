@@ -29,7 +29,6 @@ import {
   FoodTagsContainer,
   FoodTag,
 } from "@/shared/ui/modal-components";
-import { useModalState } from "@/shared/hooks/useModalState";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
@@ -76,6 +75,7 @@ export function EventDetailsModal({
   // modal. We reset it whenever the prop event changes by tracking the prop
   // id during render (React's pattern for prop-derived resets).
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
+  const [userDismissed, setUserDismissed] = useState(false);
   const [trackedPropEventId, setTrackedPropEventId] = useState<number | null>(
     event?.id ?? null,
   );
@@ -84,10 +84,10 @@ export function EventDetailsModal({
   if ((event?.id ?? null) !== trackedPropEventId) {
     setTrackedPropEventId(event?.id ?? null);
     setOverrideEvent(null);
+    setUserDismissed(false);
   }
   const displayedEvent = overrideEvent ?? event;
-
-  const isOpen = event !== null;
+  const drawerOpen = event !== null && !userDismissed;
   const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;
   const isSaveActive = profileCompleted && isSaved;
 
@@ -136,10 +136,18 @@ export function EventDetailsModal({
     }
   }, []);
 
-  const modalState = useModalState({ onClose });
+  const handleDrawerOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setUserDismissed(true);
+        onClose();
+      }
+    },
+    [onClose],
+  );
 
   return (
-    <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
+    <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
         <div
           ref={contentRef}

@@ -132,7 +132,7 @@ function IconContainer({
       className={cn(
         "relative flex size-11 aspect-square items-center justify-center rounded-full sm:size-9",
         isActive
-          ? "border border-white bg-primary text-white"
+          ? "bg-primary text-white"
           : "border border-transparent bg-transparent text-foreground/80 hover:text-foreground",
       )}
     >

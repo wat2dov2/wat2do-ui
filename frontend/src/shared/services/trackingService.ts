@@ -36,8 +36,13 @@ function isExpectedFlushAbort(err: unknown): boolean {
   return message === "Failed to fetch" && document.visibilityState === "hidden";
 }
 
+// High-signal interactions should reach the server during normal browsing, not
+// only when the tab hides or the page unloads.
+const FLUSH_DEBOUNCE_MS = 1_000;
+
 class Tracker {
   private queue: QueuedInteraction[] = [];
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -50,9 +55,26 @@ class Tracker {
 
   track(eventId: number, type: string, metadata?: Record<string, unknown>) {
     this.queue.push({ event_id: eventId, interaction_type: type, metadata });
+    this.scheduleFlush();
+  }
+
+  private scheduleFlush() {
+    if (this.flushTimer !== null) {
+      clearTimeout(this.flushTimer);
+    }
+
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.flush();
+    }, FLUSH_DEBOUNCE_MS);
   }
 
   flush() {
+    if (this.flushTimer !== null) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+
     if (this.queue.length === 0) return;
     const batch = this.queue.splice(0);
     const payload = JSON.stringify({

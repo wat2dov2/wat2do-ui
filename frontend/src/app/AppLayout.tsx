@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Mail,
@@ -22,6 +22,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const pathname = usePathname();
+  const router = useRouter();
   const { isAuthenticated } = useAuthState();
   const setShowSubmitChoice = useUIStore((s) => s.setShowSubmitChoice);
 
@@ -38,6 +39,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       title: t("navigation.explore"),
       icon: <Compass className="size-4" />,
       href: ROUTES.HOME,
+      onMouseDown: () => router.push(ROUTES.HOME),
       isActive: isActive(ROUTES.HOME),
     },
     ...(!isOrganizationPanel
@@ -53,12 +55,14 @@ export function AppLayout({ children }: AppLayoutProps) {
       title: t("navigation.organizations"),
       icon: <OrganizationChart className="size-4" />,
       href: ROUTES.ORGANIZATIONS,
+      onMouseDown: () => router.push(ROUTES.ORGANIZATIONS),
       isActive: isActive(ROUTES.ORGANIZATIONS),
     },
     {
       title: t("navigation.contact"),
       icon: <Mail className="size-4" />,
       href: ROUTES.CONTACT,
+      onMouseDown: () => router.push(ROUTES.CONTACT),
       isActive: isActive(ROUTES.CONTACT),
     },
     ...(isAuthenticated
@@ -67,6 +71,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             title: t("navigation.settings"),
             icon: <Settings className="size-4" />,
             href: ROUTES.SETTINGS,
+            onMouseDown: () => router.push(ROUTES.SETTINGS),
             isActive: isActive(ROUTES.SETTINGS),
           },
         ]

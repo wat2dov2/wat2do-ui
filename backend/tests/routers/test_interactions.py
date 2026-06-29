@@ -92,6 +92,11 @@ def test_batch_202_anonymous(client, monkeypatch):
     """POST /interactions/batch returns 202 without auth (anonymous tracking)."""
     from services import interaction_service
 
+    monkeypatch.setattr(
+        interaction_service,
+        "check_duplicate_interactions_for_session",
+        lambda **kw: kw["interactions"],
+    )
     monkeypatch.setattr(interaction_service, "record_interactions", MagicMock(return_value=2))
 
     resp = client.post("/interactions/batch", json=_batch_payload())
@@ -99,10 +104,57 @@ def test_batch_202_anonymous(client, monkeypatch):
     assert resp.json()["recorded"] == 2
 
 
+def test_batch_anonymous_records_clicks(client, monkeypatch):
+    """Anonymous click interactions are persisted for public click counts."""
+    from services import interaction_service
+
+    monkeypatch.setattr(
+        interaction_service,
+        "check_duplicate_interactions_for_session",
+        lambda **kw: kw["interactions"],
+    )
+    mock_record = MagicMock(return_value=1)
+    monkeypatch.setattr(interaction_service, "record_interactions", mock_record)
+
+    resp = client.post(
+        "/interactions/batch",
+        json=_batch_payload(
+            interactions=[{"event_id": 7, "interaction_type": "click"}],
+        ),
+    )
+    assert resp.status_code == 202
+    assert resp.json()["recorded"] == 1
+    mock_record.assert_called_once()
+    assert mock_record.call_args.kwargs["interactions"][0].event_id == 7
+
+
+def test_batch_anonymous_still_rejects_save(client, monkeypatch):
+    """Anonymous save interactions remain blocked."""
+    from services import interaction_service
+
+    mock_record = MagicMock(return_value=1)
+    monkeypatch.setattr(interaction_service, "record_interactions", mock_record)
+
+    resp = client.post(
+        "/interactions/batch",
+        json=_batch_payload(
+            interactions=[{"event_id": 7, "interaction_type": "save"}],
+        ),
+    )
+    assert resp.status_code == 202
+    assert resp.json()["recorded"] == 0
+    mock_record.assert_not_called()
+
+
 def test_batch_anonymous_passes_no_user_id(client, monkeypatch):
     """Anonymous request passes user_id=None to the service."""
     from services import interaction_service
 
+    monkeypatch.setattr(
+        interaction_service,
+        "check_duplicate_interactions_for_session",
+        lambda **kw: kw["interactions"],
+    )
     mock_record = MagicMock(return_value=2)
     monkeypatch.setattr(interaction_service, "record_interactions", mock_record)
 
@@ -363,6 +415,11 @@ def test_batch_propagates_db_error(client, monkeypatch):
 
     from services import interaction_service
 
+    monkeypatch.setattr(
+        interaction_service,
+        "check_duplicate_interactions_for_session",
+        lambda **kw: kw["interactions"],
+    )
     monkeypatch.setattr(
         interaction_service,
         "record_interactions",
