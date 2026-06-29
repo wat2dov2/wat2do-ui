@@ -146,7 +146,7 @@ function EventFooterActions({
       ) : (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="block min-h-10 cursor-not-allowed" onMouseDown={(e) => e.stopPropagation()}>
+            <span className="block min-h-10 cursor-not-allowed" onClick={(e) => e.stopPropagation()}>
               {saveButton}
             </span>
           </TooltipTrigger>
@@ -159,8 +159,7 @@ function EventFooterActions({
       <EventCalendarDownloadMenu event={event} stopPropagation>
         <button
           type="button"
-          onMouseDown={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           aria-label={t("common.download")}
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
@@ -175,8 +174,7 @@ function EventFooterActions({
       >
         <button
           type="button"
-          onMouseDown={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           aria-label={t("common.actions")}
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
@@ -207,7 +205,7 @@ function SaveEventButton({
   return (
     <button
       type="button"
-      onMouseDown={(e) => {
+      onClick={(e) => {
         e.stopPropagation();
         if (profileCompleted) onToggleSaveEvent(eventId);
       }}
@@ -537,7 +535,7 @@ function EventCardComponent({
         role="button"
         tabIndex={0}
         aria-label={`Event: ${event.title}`}
-        onMouseDown={handleCardActivate}
+        onClick={handleCardActivate}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
