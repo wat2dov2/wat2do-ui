@@ -587,8 +587,33 @@ test.describe("Events Page", () => {
     await page.screenshot({ path: "e2e/screenshots/events-page.png", fullPage: true });
   });
 
+  test("share and report overflow actions do not open event details", async ({ page }) => {
+    await page.goto(BASE);
+    await page.waitForTimeout(3000);
+
+    const card = page.locator('article[data-event-id="1"]').first();
+    await expect(card).toBeVisible();
+
+    const overflowButton = card.getByRole("button", { name: "Actions" });
+    await overflowButton.click();
+    await page.getByRole("menuitem", { name: "Share" }).click();
+
+    await expect(page.getByRole("heading", { name: "Share" })).toBeVisible();
+    await expect(page).not.toHaveURL(/eventId=1/);
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("heading", { name: "Share" })).not.toBeVisible();
+
+    await overflowButton.click();
+    await page.getByRole("menuitem", { name: "Report" }).click();
+
+    await expect(page.getByRole("heading", { name: /Report event/i })).toBeVisible();
+    await expect(page).not.toHaveURL(/eventId=1/);
+  });
+
   test("keeps click count optimistic when opening event details", async ({ page }) => {
     await page.goto(BASE);
+    await page.waitForTimeout(3000);
 
     const card = page.locator('article[data-event-id="1"]').first();
     await expect(card).toBeVisible();

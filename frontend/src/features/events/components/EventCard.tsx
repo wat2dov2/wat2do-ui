@@ -140,7 +140,11 @@ function EventFooterActions({
   t,
 }: EventFooterActionsProps) {
   return (
-    <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
+    <div
+      data-event-card-footer
+      onClick={(event) => event.stopPropagation()}
+      className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
+    >
       {profileCompleted ? (
         saveButton
       ) : (
@@ -526,6 +530,16 @@ function EventCardComponent({
     [event, onActionDialogOpen],
   );
 
+  const handleCardClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (event.target instanceof Element && event.target.closest("[data-event-card-footer]")) {
+        return;
+      }
+      handleCardActivate();
+    },
+    [handleCardActivate],
+  );
+
   return (
     <>
       <article
@@ -535,7 +549,7 @@ function EventCardComponent({
         role="button"
         tabIndex={0}
         aria-label={`Event: ${event.title}`}
-        onClick={handleCardActivate}
+        onClick={handleCardClick}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();

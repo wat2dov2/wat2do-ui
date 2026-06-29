@@ -4,6 +4,24 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { cn } from "@/shared/lib/utils";
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure";
 
+const TRAILING_CLICK_SWALLOW_MS = 300;
+
+function registerTrailingClickSwallow() {
+  const swallowTrailingClick = (clickEvent: MouseEvent) => {
+    clickEvent.preventDefault();
+    clickEvent.stopPropagation();
+    cleanup();
+  };
+
+  const cleanup = () => {
+    document.removeEventListener("click", swallowTrailingClick, true);
+    window.clearTimeout(timeoutId);
+  };
+
+  document.addEventListener("click", swallowTrailingClick, true);
+  const timeoutId = window.setTimeout(cleanup, TRAILING_CLICK_SWALLOW_MS);
+}
+
 function DropdownMenu({
   open,
   defaultOpen,
@@ -89,47 +107,12 @@ function DropdownMenuItem({
   inset?: boolean;
   variant?: "default" | "destructive";
 }) {
-  const handledMouseSelectRef = React.useRef(false);
-  const preventedMouseSelectRef = React.useRef(false);
-
-  const handleMouseDown = React.useCallback(
-    (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
-      onMouseDown?.(event);
-      if (event.defaultPrevented || event.button !== 0 || !onSelect) return;
-
-      const selectEvent = new Event("select", { cancelable: true });
-      onSelect(selectEvent);
-      handledMouseSelectRef.current = true;
-      preventedMouseSelectRef.current = selectEvent.defaultPrevented;
-
-      // Items select on pointer-down, but parent cards often activate on click.
-      // When the menu unmounts before mouse-up, that click lands on the card.
-      event.preventDefault();
-      const swallowTrailingClick = (clickEvent: MouseEvent) => {
-        clickEvent.preventDefault();
-        clickEvent.stopPropagation();
-        document.removeEventListener("click", swallowTrailingClick, true);
-      };
-      document.addEventListener("click", swallowTrailingClick, true);
-      window.setTimeout(() => {
-        document.removeEventListener("click", swallowTrailingClick, true);
-      }, 0);
-    },
-    [onMouseDown, onSelect],
-  );
-
   const handleSelect = React.useCallback(
     (event: Event) => {
-      if (handledMouseSelectRef.current) {
-        handledMouseSelectRef.current = false;
-        if (preventedMouseSelectRef.current) {
-          event.preventDefault();
-          preventedMouseSelectRef.current = false;
-        }
-        return;
-      }
-
       onSelect?.(event);
+      // Parent cards activate on click. When the menu closes before mouse-up,
+      // the trailing click can land on the card underneath.
+      registerTrailingClickSwallow();
     },
     [onSelect],
   );
@@ -139,7 +122,7 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
-      onMouseDown={handleMouseDown}
+      onMouseDown={onMouseDown}
       onSelect={handleSelect}
       className={cn(
         "focus:bg-secondary focus:text-foreground data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error relative flex cursor-default select-none items-center gap-2 rounded-lg px-2 py-1.5 text-xs outline-hidden transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-[inset=true]:pl-8 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0",

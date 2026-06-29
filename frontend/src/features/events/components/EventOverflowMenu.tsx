@@ -31,32 +31,16 @@ export function EventOverflowMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault();
-            onAction("share");
-          }}
-        >
+        <DropdownMenuItem onSelect={() => onAction("share")}>
           <Share2 className="size-3.5 shrink-0" />
           {t("common.share")}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault();
-            onAction("report");
-          }}
-        >
+        <DropdownMenuItem onSelect={() => onAction("report")}>
           <Flag className="size-3.5 shrink-0" />
           {t("common.report")}
         </DropdownMenuItem>
         {canDelete && (
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={(event) => {
-              event.preventDefault();
-              onAction("delete");
-            }}
-          >
+          <DropdownMenuItem variant="destructive" onSelect={() => onAction("delete")}>
             <Trash2 className="size-3.5 shrink-0" />
             {t("common.delete")}
           </DropdownMenuItem>
