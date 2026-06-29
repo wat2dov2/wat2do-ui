@@ -1,23 +1,16 @@
-import { lazy, Suspense, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { LightRays } from "@/registry/magicui/light-rays";
-import { SearchBar, QuickFilterChip, MoreFiltersButton } from "@/features/search";
+import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import type { ViewMode, QuickFilterConfig } from "@/shared/types";
-
-const FilterDropdown = lazy(() =>
-  import("@/features/search").then((module) => ({
-    default: module.FilterDropdown,
-  })),
-);
 
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
@@ -173,16 +166,14 @@ export function EventsPageContainer() {
                 onClearFilters={filters.handleClearAllFilters}
               >
                 {showFilterDropdown ? (
-                  <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
-                    <FilterDropdown
-                      filterViewMode={filterViewMode}
-                      onFilterViewModeChange={setFilterViewMode}
-                      viewMode={viewMode}
-                      onViewModeChange={handleViewModeChange}
-                      filters={filters}
-                      isDarkMode={isDarkMode}
-                    />
-                  </Suspense>
+                  <FilterDropdown
+                    filterViewMode={filterViewMode}
+                    onFilterViewModeChange={setFilterViewMode}
+                    viewMode={viewMode}
+                    onViewModeChange={handleViewModeChange}
+                    filters={filters}
+                    isDarkMode={isDarkMode}
+                  />
                 ) : null}
               </MoreFiltersButton>
             </div>
