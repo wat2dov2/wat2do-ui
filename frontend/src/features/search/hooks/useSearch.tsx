@@ -85,6 +85,7 @@ export function useSearch({
   const filterCount = useMemo(
     () =>
       getFilterCounts({
+        searchQuery: filterState.searchQuery,
         selectedCategories: filterState.selectedCategories,
         selectedLocations: filterState.selectedLocations,
         selectedFoods: filterState.selectedFoods,
@@ -99,6 +100,7 @@ export function useSearch({
         addedWithin24h: filterState.addedWithin24h,
       }),
     [
+      filterState.searchQuery,
       filterState.selectedCategories,
       filterState.selectedLocations,
       filterState.selectedFoods,

@@ -5,56 +5,130 @@ type BadgeMaskVariant = "top-left" | "top-right" | "bottom-left";
 interface BadgeMaskProps {
   variant: BadgeMaskVariant;
   children: React.ReactNode;
+  /** Draw a hairline along the mask groove curves (e.g. org cards without an image). */
+  outlined?: boolean;
+  outlineClassName?: string;
 }
 
-// Inline SVG components matching the original SVG files exactly
-const EventBadgeMaskTopLeft = ({ className }: { className?: string }) => (
-  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M64 0C28.65 0 0 28.65 0 64L0 0L64 0Z" fill="currentColor"/>
-  </svg>
-);
+const TOP_LEFT_FILL = "M64 0C28.65 0 0 28.65 0 64L0 0L64 0Z";
+const TOP_LEFT_CURVE = "M64 0C28.65 0 0 28.65 0 64";
 
-const EventBadgeMaskTopRight = ({ className }: { className?: string }) => (
-  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M64 64C64 28.65 35.35 0 0 0H64V64Z" fill="currentColor"/>
-  </svg>
-);
+const TOP_RIGHT_FILL = "M64 64C64 28.65 35.35 0 0 0H64V64Z";
+const TOP_RIGHT_CURVE = "M0 0C35.35 0 64 28.65 64 64";
 
-const EventBadgeMaskBottomLeft = ({ className }: { className?: string }) => (
-  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M0 0C0 35.35 28.65 64 64 64H0V0Z" fill="currentColor"/>
-  </svg>
-);
+const BOTTOM_LEFT_FILL = "M0 0C0 35.35 28.65 64 64 64H0V0Z";
+const BOTTOM_LEFT_CURVE = "M0 0C0 35.35 28.65 64 64 64";
 
-export function BadgeMask({ variant, children }: BadgeMaskProps) {
+interface MaskSvgProps {
+  fillPath: string;
+  curvePath: string;
+  className?: string;
+  outlined?: boolean;
+  outlineClassName?: string;
+}
+
+function MaskSvg({ fillPath, curvePath, className, outlined, outlineClassName }: MaskSvgProps) {
+  return (
+    <svg
+      width="64"
+      height="64"
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d={fillPath} fill="currentColor" />
+      {outlined ? (
+        <path
+          d={curvePath}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
+          className={outlineClassName}
+        />
+      ) : null}
+    </svg>
+  );
+}
+
+export function BadgeMask({
+  variant,
+  children,
+  outlined = false,
+  outlineClassName,
+}: BadgeMaskProps) {
   switch (variant) {
     case "top-left":
       return (
-        <div className="absolute top-0 left-0 flex flex-col">
+        <div className="absolute top-0 left-0 z-10 flex flex-col pointer-events-none">
           <div className="flex">
-            <div className="pb-1 pr-1 bg-background rounded-br-xl">{children}</div>
-            <EventBadgeMaskTopLeft className="size-2 text-background" />
+            <div className="pointer-events-auto pb-1 pr-1 bg-background rounded-br-xl">
+              {children}
+            </div>
+            <MaskSvg
+              fillPath={TOP_LEFT_FILL}
+              curvePath={TOP_LEFT_CURVE}
+              className="size-2 text-background"
+              outlined={outlined}
+              outlineClassName={outlineClassName}
+            />
           </div>
-          <EventBadgeMaskTopLeft className="size-2 text-background" />
+          <MaskSvg
+            fillPath={TOP_LEFT_FILL}
+            curvePath={TOP_LEFT_CURVE}
+            className="size-2 text-background"
+            outlined={outlined}
+            outlineClassName={outlineClassName}
+          />
         </div>
       );
     case "top-right":
       return (
-        <div className="absolute top-0 right-0 flex flex-col">
+        <div className="absolute top-0 right-0 z-10 flex flex-col pointer-events-none">
           <div className="flex">
-            <EventBadgeMaskTopRight className="size-2 text-background" />
-            <div className="pb-1 pl-1 bg-background rounded-bl-xl">{children}</div>
+            <MaskSvg
+              fillPath={TOP_RIGHT_FILL}
+              curvePath={TOP_RIGHT_CURVE}
+              className="size-2 text-background"
+              outlined={outlined}
+              outlineClassName={outlineClassName}
+            />
+            <div className="pointer-events-auto pb-1 pl-1 bg-background rounded-bl-xl">
+              {children}
+            </div>
           </div>
-          <EventBadgeMaskTopRight className="size-2 ml-auto text-background" />
+          <MaskSvg
+            fillPath={TOP_RIGHT_FILL}
+            curvePath={TOP_RIGHT_CURVE}
+            className="size-2 ml-auto text-background"
+            outlined={outlined}
+            outlineClassName={outlineClassName}
+          />
         </div>
       );
     case "bottom-left":
       return (
-        <div className="absolute bottom-0 left-0 flex flex-col">
-            <EventBadgeMaskBottomLeft className="size-2 text-background" />
+        <div className="absolute bottom-0 left-0 z-10 flex flex-col pointer-events-none">
+          <MaskSvg
+            fillPath={BOTTOM_LEFT_FILL}
+            curvePath={BOTTOM_LEFT_CURVE}
+            className="size-2 text-background"
+            outlined={outlined}
+            outlineClassName={outlineClassName}
+          />
           <div className="flex">
-            <div className="pt-1 pr-1 bg-background rounded-tr-xl">{children}</div>
-            <EventBadgeMaskBottomLeft className="size-2 mt-auto text-background" />
+            <div className="pointer-events-auto pt-1 pr-1 bg-background rounded-tr-xl">
+              {children}
+            </div>
+            <MaskSvg
+              fillPath={BOTTOM_LEFT_FILL}
+              curvePath={BOTTOM_LEFT_CURVE}
+              className="size-2 mt-auto text-background"
+              outlined={outlined}
+              outlineClassName={outlineClassName}
+            />
           </div>
         </div>
       );

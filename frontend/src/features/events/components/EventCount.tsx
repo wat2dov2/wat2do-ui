@@ -6,9 +6,14 @@ import type { LatestAddedEvent } from "@/features/events/api/events.api";
 interface EventCountProps {
   count: number;
   latestAddedEvent: LatestAddedEvent;
+  onLatestAddedEventSearch: () => void;
 }
 
-export function EventCount({ count, latestAddedEvent }: EventCountProps) {
+export function EventCount({
+  count,
+  latestAddedEvent,
+  onLatestAddedEventSearch,
+}: EventCountProps) {
   const { t } = useTranslation();
 
   return (
@@ -18,12 +23,16 @@ export function EventCount({ count, latestAddedEvent }: EventCountProps) {
         label={t("events.upcomingEventCount", { count })}
       />
       {latestAddedEvent ? (
-        <span className="text-xs font-medium text-muted-foreground">
+        <button
+          type="button"
+          onClick={onLatestAddedEventSearch}
+          className="cursor-pointer text-left text-xs font-medium text-muted-foreground opacity-80 underline-offset-4 transition-[color,opacity] hover:text-foreground hover:opacity-100 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           {t("events.latestAddedEvent", {
             title: latestAddedEvent.title,
             time: formatRelativeTime(latestAddedEvent.added_at, t),
           })}
-        </span>
+        </button>
       ) : null}
     </span>
   );

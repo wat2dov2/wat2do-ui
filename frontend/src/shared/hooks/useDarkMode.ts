@@ -1,23 +1,39 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { loadTheme, saveTheme } from "@/shared/services/preferencesStorage";
+
+function getDarkModeSnapshot(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getServerDarkModeSnapshot(): boolean {
+  return false;
+}
+
+function subscribeToDarkMode(onStoreChange: () => void): () => void {
+  const observer = new MutationObserver(onStoreChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", onStoreChange);
+  return () => {
+    observer.disconnect();
+    media.removeEventListener("change", onStoreChange);
+  };
+}
 
 /**
  * Custom hook for managing dark mode
  */
 export function useDarkMode() {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    const saved = loadTheme();
-    if (saved !== null) {
-      return saved === "dark";
-    }
-    // Check system preference
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const isDarkMode = useSyncExternalStore(
+    subscribeToDarkMode,
+    getDarkModeSnapshot,
+    getServerDarkModeSnapshot,
+  );
 
-  // Apply dark mode class to document (initial load only)
+  // Align stored preference + DOM class on first client mount.
   useEffect(() => {
     const saved = loadTheme();
     const shouldBeDark = saved !== null
@@ -30,40 +46,23 @@ export function useDarkMode() {
       document.documentElement.classList.remove("dark");
     }
     saveTheme(shouldBeDark ? "dark" : "light");
-    requestAnimationFrame(() => {
-      setIsDarkMode(shouldBeDark);
-    });
 
-    // Remove no-transitions class after mount so transitions work for manual toggling
     const raf = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         document.documentElement.classList.remove("no-transitions");
       });
     });
     return () => cancelAnimationFrame(raf);
-  }, []); // Only run on mount
-
-  // Sync isDarkMode state when theme changes externally
-  const handleThemeChange = useCallback((isDark: boolean) => {
-    setIsDarkMode(isDark);
-    saveTheme(isDark ? "dark" : "light");
   }, []);
 
-  // Watch for theme changes via MutationObserver (for AnimatedThemeToggler)
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const isDark = document.documentElement.classList.contains("dark");
-      if (isDark !== isDarkMode) {
-        setIsDarkMode(isDark);
-        saveTheme(isDark ? "dark" : "light");
-      }
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, [isDarkMode]);
+  const handleThemeChange = useCallback((isDark: boolean) => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    saveTheme(isDark ? "dark" : "light");
+  }, []);
 
   return {
     isDarkMode,

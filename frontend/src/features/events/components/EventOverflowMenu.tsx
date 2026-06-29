@@ -31,11 +31,21 @@ export function EventOverflowMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
-        <DropdownMenuItem onSelect={() => onAction("share")}>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            onAction("share");
+          }}
+        >
           <Share2 className="size-3.5 shrink-0" />
           {t("common.share")}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onAction("report")}>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            onAction("report");
+          }}
+        >
           <Flag className="size-3.5 shrink-0" />
           {t("common.report")}
         </DropdownMenuItem>

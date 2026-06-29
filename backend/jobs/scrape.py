@@ -38,6 +38,12 @@ from core.constants import (  # noqa: E402
     SCRAPING_HANDLES_PER_RUN,
 )
 from services.scraper.pipeline import run_pipeline  # noqa: E402
+from services.scraper.school_resolution import resolve_scrape_school  # noqa: E402
+from services.scraper.single_user import (  # noqa: E402
+    fetch_posts_for_single_user,
+    filter_valid_posts,
+    resolve_single_user_handle,
+)
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +59,11 @@ def _parse_args() -> argparse.Namespace:
     # User subcommand
     user_parser = subparsers.add_parser("user", help="Scrape a single Instagram user")
     user_parser.add_argument("--username", required=True, help="Instagram username to scrape")
-    user_parser.add_argument("--school", required=True, help="Canonical school name")
+    user_parser.add_argument(
+        "--school",
+        default=None,
+        help="Canonical school name (falls back to SCHOOL env, intended_recipient_id mapping, or Waterloo)",
+    )
     user_parser.add_argument(
         "--limit", type=int, default=1, help="Max posts per handle (Apify resultsLimit)"
     )
@@ -123,36 +133,69 @@ def _format_summary(
 
 def _run_single_user_mode(
     username: str,
-    school: str,
+    school: str | None,
     cutoff_days: int,
     limit: int | None,
     dry_run: bool,
     allow_past_events: bool,
 ) -> int:
+    resolved_school = resolve_scrape_school(explicit_school=school)
+    target = username.strip()
+    if not target:
+        log.error("Repository dispatch triggered but no valid username provided, exiting.")
+        return 1
+
     log.info(
         "Single-user mode: username=%s, school=%s, cutoff_days=%d, limit=%s, dry_run=%s, allow_past_events=%s",
-        username,
-        school,
+        target,
+        resolved_school,
         cutoff_days,
         limit,
         dry_run,
         allow_past_events,
     )
 
+    from services.scraper.instagram_scraper import get_scraper
+
+    scraper = get_scraper()
+    posts, pinned_warning = fetch_posts_for_single_user(
+        target,
+        cutoff_days=cutoff_days,
+        scraper=scraper,
+    )
+    posts = filter_valid_posts(posts)
+    if not posts:
+        log.info("No valid posts retrieved for target=%s", target)
+        print(
+            _format_summary(
+                resolved_school,
+                [target],
+                0,
+                0,
+                0,
+                dry_run=dry_run,
+            )
+        )
+        return 0
+
+    handle = resolve_single_user_handle(target=target, posts=posts)
+
     result = run_pipeline(
-        usernames=[username],
-        school=school,
+        usernames=[handle],
+        school=resolved_school,
         cutoff_days=cutoff_days,
         results_limit=limit,
         dry_run=dry_run,
         github_run_id=os.getenv("GITHUB_RUN_ID"),
         allow_past_events=allow_past_events,
+        prefetched_posts=posts,
+        prefetched_pinned_warning=pinned_warning,
     )
 
     print(
         _format_summary(
-            school,
-            [username],
+            resolved_school,
+            [handle],
             result.total_inserted,
             result.total_extracted,
             result.total_posts,

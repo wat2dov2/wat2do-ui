@@ -53,6 +53,14 @@ export function EventsPageContainer() {
     filters.toggleAddedWithin24h();
   }, [filters]);
 
+  const handleLatestAddedEventSearch = useCallback(() => {
+    if (!latestAddedEvent) {
+      return;
+    }
+
+    filters.setSearchQuery(latestAddedEvent.title);
+  }, [filters, latestAddedEvent]);
+
   // Build filter config array. `filters` is the aggregate returned by
   // useSearch; React Compiler infers it as a single dep rather than the
   // narrow property list, so depend on the whole object for consistency
@@ -113,7 +121,11 @@ export function EventsPageContainer() {
       </div>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">
-          <EventCount count={totalEvents} latestAddedEvent={latestAddedEvent} />
+          <EventCount
+            count={totalEvents}
+            latestAddedEvent={latestAddedEvent}
+            onLatestAddedEventSearch={handleLatestAddedEventSearch}
+          />
           <SearchBar
             searchQuery={filters.searchQuery}
             onSearchChange={(query) => {
@@ -199,15 +211,7 @@ export function EventsPageContainer() {
               viewMode={viewMode}
               onDelete={handleDeleteEvent}
               onClearFilters={filters.handleClearAllFilters}
-              hasActiveFilters={
-                filters.filterCount > 0 ||
-                filters.searchQuery !== "" ||
-                filters.freeFoodFilter ||
-                filters.savedFilter ||
-                filters.addedWithin24h ||
-                filters.sortBy !== "date" ||
-                filters.sortOrder !== "asc"
-              }
+              hasActiveFilters={filters.filterCount > 0}
               savedEventIds={savedEventIds}
               isLoading={isPageLoading}
               isLoadingMore={isLoadingMore}

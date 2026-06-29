@@ -209,6 +209,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     # exactly ONE events-shaped dict insert.
     events_inserts = [c for c in dict_inserts if c[0][0].get("title") == "Tea Tasting Series"]
     assert len(events_inserts) == 1
+    assert events_inserts[0][0][0]["school"] == "University of Waterloo"
 
     occurrence_inserts = [
         c

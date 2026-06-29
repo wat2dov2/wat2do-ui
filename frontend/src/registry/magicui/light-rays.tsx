@@ -24,17 +24,23 @@ type LightRay = {
   intensity: number
 }
 
+/** Deterministic 0 to 1 value so SSR and client produce identical ray layouts. */
+const pseudoRandom = (seed: number) => {
+  const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453
+  return value - Math.floor(value)
+}
+
 const createRays = (count: number, cycle: number): LightRay[] => {
   if (count <= 0) return []
 
   return Array.from({ length: count }, (_, index) => {
-    const left = 8 + Math.random() * 84
-    const rotate = -28 + Math.random() * 56
-    const width = 160 + Math.random() * 160
-    const swing = 0.8 + Math.random() * 1.8
+    const left = 8 + pseudoRandom(index * 1.1 + 0.2) * 84
+    const rotate = -28 + pseudoRandom(index * 2.3 + 0.4) * 56
+    const width = 160 + pseudoRandom(index * 3.7 + 0.6) * 160
+    const swing = 0.8 + pseudoRandom(index * 4.9 + 0.8) * 1.8
     const delay = (index / Math.max(count, 1)) * cycle * 0.45
-    const duration = cycle * (0.75 + Math.random() * 0.5)
-    const intensity = 0.6 + Math.random() * 0.5
+    const duration = cycle * (0.75 + pseudoRandom(index * 5.1 + 1.0) * 0.5)
+    const intensity = 0.6 + pseudoRandom(index * 6.3 + 1.2) * 0.5
 
     return {
       id: `${index}-${Math.round(left * 10)}`,

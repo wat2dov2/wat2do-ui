@@ -2,18 +2,15 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bookmark,
-  Building2,
   ExternalLink,
   MoreHorizontal,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
-import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { sanitizeHref } from "@/shared/utils/url";
-import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
@@ -37,7 +34,7 @@ function getOrganizationPrimaryCategory(organization: Organization): string {
   return organization.categories[0] ?? "";
 }
 
-interface OrganizationImageBadgesProps {
+interface OrganizationCategoryBadgeProps {
   primaryCategory: string;
   categoryClasses: CategoryClasses;
   badgeHoverProps: {
@@ -48,19 +45,23 @@ interface OrganizationImageBadgesProps {
   t: (key: string) => string;
 }
 
-function OrganizationImageBadges({
+function OrganizationCategoryBadge({
   primaryCategory,
   categoryClasses,
   badgeHoverProps,
   onCategoryClick,
   t,
-}: OrganizationImageBadgesProps) {
+}: OrganizationCategoryBadgeProps) {
   if (!primaryCategory) {
     return null;
   }
 
   return (
-    <BadgeMask variant="top-left">
+    <BadgeMask
+      variant="top-left"
+      outlined
+      outlineClassName={`${categoryClasses.text} opacity-30`}
+    >
       <button
         type="button"
         onMouseDown={onCategoryClick}
@@ -272,57 +273,37 @@ function OrganizationCardComponent({
           handleCardActivate();
         }
       }}
-      className={`rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
+      className={`event-card-waterpaint relative flex flex-col h-full rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group border-x border-b ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border} ${
         isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
       }`}
+      style={getEventCardWaterpaintStyle(organization.id)}
     >
-      <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-        <LazyImage
-          src={organization.logo_url ?? undefined}
-          alt={organization.organization_name}
-          className="absolute inset-0 w-full h-full object-cover"
-          fallback={
-            <div
-              className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}
-            >
-              <Building2 className={`size-8 ${categoryClasses.text} opacity-40`} />
-            </div>
-          }
-          placeholder={
-            <div className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`} />
-          }
-        />
-        <OrganizationImageBadges
-          primaryCategory={primaryCategory}
-          categoryClasses={categoryClasses}
-          badgeHoverProps={badgeHoverProps}
-          onCategoryClick={handleCategoryClick}
-          t={t}
-        />
-      </div>
+      <OrganizationCategoryBadge
+        primaryCategory={primaryCategory}
+        categoryClasses={categoryClasses}
+        badgeHoverProps={badgeHoverProps}
+        onCategoryClick={handleCategoryClick}
+        t={t}
+      />
 
-      <div
-        className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
-        style={getEventCardWaterpaintStyle(organization.id)}
-      >
-        <EventCardContent
-          title={organization.organization_name}
-          date={lastPostedLine}
-          location={socialHandle}
-          badges={eventCountBadges}
-          textClassName={categoryClasses.text}
-          secondaryTextClassName={categoryClasses.text}
-          badgeClassName={`border-current ${categoryClasses.text}`}
-        />
+      <EventCardContent
+        title={organization.organization_name}
+        date={lastPostedLine}
+        location={socialHandle}
+        badges={eventCountBadges}
+        className="pt-8 sm:pt-9"
+        textClassName={categoryClasses.text}
+        secondaryTextClassName={categoryClasses.text}
+        badgeClassName={`border-current ${categoryClasses.text}`}
+      />
 
-        <OrganizationFooterActions
-          organization={organization}
-          followButton={followButton}
-          profileCompleted={profileCompleted}
-          categoryClasses={categoryClasses}
-          t={t}
-        />
-      </div>
+      <OrganizationFooterActions
+        organization={organization}
+        followButton={followButton}
+        profileCompleted={profileCompleted}
+        categoryClasses={categoryClasses}
+        t={t}
+      />
     </article>
   );
 }

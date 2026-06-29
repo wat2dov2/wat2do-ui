@@ -9,6 +9,7 @@
  * Counts fields that change the event result set or its active ordering.
  */
 export function getFilterCounts(filters: {
+  searchQuery?: string;
   selectedCategories: string[];
   selectedLocations: string[];
   selectedFoods: string[];
@@ -23,8 +24,10 @@ export function getFilterCounts(filters: {
   addedWithin24h?: boolean;
 }): number {
   const hasActiveSort = filters.sortBy !== "date" || filters.sortOrder !== "asc";
+  const hasSearchQuery = Boolean(filters.searchQuery?.trim());
 
   return (
+    (hasSearchQuery ? 1 : 0) +
     filters.selectedCategories.length +
     filters.selectedLocations.length +
     filters.selectedFoods.length +

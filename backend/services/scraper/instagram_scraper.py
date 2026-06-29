@@ -66,6 +66,7 @@ class InstagramScraper:
         if isinstance(usernames, str):
             usernames = [usernames]
         username_list = list(usernames)
+        has_post_url = any(isinstance(u, str) and u.startswith("http") for u in username_list)
 
         cutoff = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
         cutoff_str = cutoff.strftime("%Y-%m-%d")
@@ -130,7 +131,9 @@ class InstagramScraper:
 
         log.info("Apify run %s returned %d items", run_id, len(dataset_items))
 
-        pinned_returned = any(bool(item.get("isPinned")) for item in dataset_items)
+        pinned_returned = False
+        if not has_post_url:
+            pinned_returned = any(bool(item.get("isPinned")) for item in dataset_items)
         if results_limit == 1 and pinned_returned:
             warning = "Apify returned a pinned post while resultsLimit=1"
             log.warning(warning)

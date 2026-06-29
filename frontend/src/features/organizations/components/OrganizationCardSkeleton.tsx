@@ -1,17 +1,20 @@
 import { Skeleton } from "@/shared/ui/skeleton";
-import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export function OrganizationCardSkeleton() {
   return (
     <article
       data-organization-card-skeleton
-      className="rounded-xl overflow-hidden flex flex-col h-full bg-card border border-border/50 shadow-sm animate-pulse"
+      className="rounded-xl overflow-hidden flex flex-col h-full border-x border-b border-border/50 shadow-sm animate-pulse bg-card"
     >
-      <div className="relative overflow-hidden bg-muted/30" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-        <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
-      </div>
+      <div className="relative flex flex-col flex-1 p-3 pb-2.5 pt-10 gap-2.5 sm:p-4 sm:pb-3 sm:pt-11 sm:gap-3">
+        <div className="absolute top-0 left-0 flex flex-col">
+          <div className="flex">
+            <Skeleton className="h-5 w-16 rounded-full rounded-br-xl" />
+            <div className="size-2" />
+          </div>
+          <div className="size-2" />
+        </div>
 
-      <div className="flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden border-border/50 p-3 pb-2.5 bg-card gap-2.5 sm:p-4 sm:pb-3 sm:gap-3">
         <div className="flex flex-col gap-2.5 h-full flex-1 sm:gap-3">
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-3/4 rounded-lg" />

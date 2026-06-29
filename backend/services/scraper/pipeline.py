@@ -85,6 +85,8 @@ def run_pipeline(
     dry_run: bool = False,
     github_run_id: str | None = None,
     allow_past_events: bool = False,
+    prefetched_posts: list[dict] | None = None,
+    prefetched_pinned_warning: bool = False,
 ) -> PipelineResult:
     """Run the four-stage pipeline against ``usernames`` for ``school``.
 
@@ -99,6 +101,10 @@ def run_pipeline(
             same network paths.
         github_run_id: optional GitHub Actions run id for WorkflowRun
             tracking. Has no effect in dry-run.
+        prefetched_posts: when set, skip the Apify scrape and process
+            these items instead (single-user webhook mode).
+        prefetched_pinned_warning: pinned-post warning from the
+            prefetched scrape; ignored when ``prefetched_posts`` is None.
 
     Returns the aggregate ``PipelineResult``.
     """
@@ -118,12 +124,21 @@ def run_pipeline(
         dry_run,
     )
 
-    posts, pinned_warning = scraper.scrape(
-        usernames,
-        results_limit=results_limit,
-        cutoff_days=cutoff_days,
-    )
-    log.info("Apify returned %d total post(s) for %d handle(s)", len(posts), len(usernames))
+    if prefetched_posts is not None:
+        posts = prefetched_posts
+        pinned_warning = prefetched_pinned_warning
+        log.info(
+            "Using %d prefetched post(s) for %d handle(s)",
+            len(posts),
+            len(usernames),
+        )
+    else:
+        posts, pinned_warning = scraper.scrape(
+            usernames,
+            results_limit=results_limit,
+            cutoff_days=cutoff_days,
+        )
+        log.info("Apify returned %d total post(s) for %d handle(s)", len(posts), len(usernames))
 
     grouped = _group_by_handle(posts, usernames)
 
@@ -287,6 +302,8 @@ def _process_one_post(
             idx = 0
         if uploaded:
             event["source_image_url"] = uploaded[idx if 0 <= idx < len(uploaded) else 0]
+
+        event["school"] = school
 
         if dry_run:
             log.info(

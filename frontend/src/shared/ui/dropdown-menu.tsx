@@ -101,6 +101,19 @@ function DropdownMenuItem({
       onSelect(selectEvent);
       handledMouseSelectRef.current = true;
       preventedMouseSelectRef.current = selectEvent.defaultPrevented;
+
+      // Items select on pointer-down, but parent cards often activate on click.
+      // When the menu unmounts before mouse-up, that click lands on the card.
+      event.preventDefault();
+      const swallowTrailingClick = (clickEvent: MouseEvent) => {
+        clickEvent.preventDefault();
+        clickEvent.stopPropagation();
+        document.removeEventListener("click", swallowTrailingClick, true);
+      };
+      document.addEventListener("click", swallowTrailingClick, true);
+      window.setTimeout(() => {
+        document.removeEventListener("click", swallowTrailingClick, true);
+      }, 0);
     },
     [onMouseDown, onSelect],
   );
