@@ -1,10 +1,10 @@
 /**
  * Admin Results Count Component
- * Displays filtered results count
+ * Displays filtered results count using the same heading style as events/org pages.
  */
 
-
 import type { ReactNode } from "react";
+import { PageCountHeading } from "@/shared/ui/page-count-heading";
 
 interface AdminResultsCountProps {
   count: number;
@@ -20,10 +20,11 @@ export function AdminResultsCount({
   children,
 }: AdminResultsCountProps) {
   return (
-    <div className="flex items-center justify-between w-full">
-      <span className="font-bold text-xl text-foreground">
-        {count} {count === 1 ? singularLabel : pluralLabel}
-      </span>
+    <div className="flex w-full items-center justify-between gap-3">
+      <PageCountHeading
+        count={count}
+        label={count === 1 ? singularLabel : pluralLabel}
+      />
       {children}
     </div>
   );

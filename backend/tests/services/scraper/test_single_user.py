@@ -5,12 +5,44 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
 from services.scraper.single_user import (
+    SchoolResolutionError,
     fetch_posts_for_single_user,
     filter_valid_posts,
     is_post_url_target,
     resolve_single_user_handle,
+    resolve_single_user_scrape_school,
 )
+
+
+def test_resolve_single_user_scrape_school_waterloo(monkeypatch):
+    monkeypatch.setenv("INTENDED_RECIPIENT_ID", "76214170483")
+    assert resolve_single_user_scrape_school() == "uwaterloo"
+
+
+def test_resolve_single_user_scrape_school_utm(monkeypatch):
+    monkeypatch.setenv("INTENDED_RECIPIENT_ID", "78383689040")
+    assert resolve_single_user_scrape_school() == "utm"
+
+
+def test_resolve_single_user_scrape_school_requires_recipient_id(monkeypatch):
+    monkeypatch.delenv("INTENDED_RECIPIENT_ID", raising=False)
+    with pytest.raises(SchoolResolutionError, match="INTENDED_RECIPIENT_ID is required"):
+        resolve_single_user_scrape_school()
+
+
+def test_resolve_single_user_scrape_school_rejects_unknown_recipient_id(monkeypatch):
+    monkeypatch.setenv("INTENDED_RECIPIENT_ID", "99999999999")
+    with pytest.raises(SchoolResolutionError, match="No school mapping"):
+        resolve_single_user_scrape_school()
+
+
+def test_resolve_single_user_scrape_school_ignores_school_env(monkeypatch):
+    monkeypatch.setenv("SCHOOL", "McGill University")
+    monkeypatch.setenv("INTENDED_RECIPIENT_ID", "76214170483")
+    assert resolve_single_user_scrape_school() == "uwaterloo"
 
 
 def test_is_post_url_target():

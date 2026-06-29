@@ -1,4 +1,4 @@
-"""School directory helpers backed by the allowed-email dataset."""
+"""School directory helpers for search."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import unicodedata
 from typing import Final
 
 from core.allowed_emails import ALLOWED_EMAIL_DOMAINS, _ensure_loaded
+from core.constants.school_mappings import SCHOOLS
 
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 
@@ -19,27 +20,19 @@ def _compact(text: str | None) -> str:
     return re.sub(r"[^a-z0-9]", "", _normalize(text))
 
 
-def _canonical_school_lookup() -> dict[str, str]:
-    _ensure_loaded()
-    lookup: dict[str, str] = {}
-    for school in ALLOWED_EMAIL_DOMAINS.values():
-        normalized = _normalize(school)
-        if normalized:
-            lookup.setdefault(normalized, school.strip())
-    return lookup
-
-
 def _search_index() -> dict[str, tuple[str, ...]]:
-    lookup = _canonical_school_lookup()
-    index: dict[str, set[str]] = {
-        school: {_normalize(school), _compact(school)} for school in lookup.values()
-    }
+    _ensure_loaded()
+    index: dict[str, set[str]] = {}
 
-    for domain, school in ALLOWED_EMAIL_DOMAINS.items():
-        canonical = lookup.get(_normalize(school))
-        if canonical:
-            index[canonical].add(_normalize(domain))
-            index[canonical].add(_compact(domain))
+    for slug, school in SCHOOLS.items():
+        terms = {_normalize(slug), _compact(slug), _normalize(school["display_name"])}
+        terms.add(_compact(school["display_name"]))
+        index[slug] = terms
+
+    for domain, slug in ALLOWED_EMAIL_DOMAINS.items():
+        if slug in index:
+            index[slug].add(_normalize(domain))
+            index[slug].add(_compact(domain))
 
     return {
         school: tuple(sorted(term for term in terms if term)) for school, terms in index.items()
@@ -61,7 +54,7 @@ def _score_term(term: str, query: str, query_compact: str) -> tuple[int, int] | 
 
 
 def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[str]:
-    """Search the allowed-school directory using a fuzzy, prefix-friendly match."""
+    """Search the school directory using a fuzzy, prefix-friendly match."""
     normalized_query = _normalize(query)
     if not normalized_query:
         return []

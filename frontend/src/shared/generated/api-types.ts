@@ -400,8 +400,9 @@ export interface paths {
          *     user — submitting interactions on behalf of another user is rejected.
          *
          *     Anonymous requests (no auth at all) are still allowed for basic
-         *     view/impression tracking, but without a ``user_id`` they cannot influence
-         *     authenticated analytics or personalization signals.
+         *     view/click tracking, but without a ``user_id`` they cannot influence
+         *     authenticated analytics or personalization signals beyond public click
+         *     counts and low-signal impressions.
          *     Anonymous requests are IP-rate-limited to prevent abuse.
          */
         post: operations["record_interactions_interactions_batch_post"];
@@ -2081,7 +2082,7 @@ export interface components {
             owner_user_id?: string | null;
             /**
              * School
-             * @default University of Waterloo
+             * @default uwaterloo
              */
             school: string;
         };
@@ -3384,6 +3385,7 @@ export interface operations {
                 registration?: boolean | null;
                 organizations?: string[] | null;
                 free_food?: boolean;
+                added_within_24h?: boolean;
                 ids?: number[] | null;
                 sort_by?: "date" | "title" | "location" | "price" | "added_at";
                 sort_order?: "asc" | "desc";

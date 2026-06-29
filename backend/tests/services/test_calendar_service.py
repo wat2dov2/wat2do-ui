@@ -21,19 +21,15 @@ from services import calendar_service, saved_event_service
 
 
 def test_resolve_timezone_known_school():
-    assert calendar_service.resolve_school_timezone("University of Waterloo") == "America/Toronto"
+    assert calendar_service.resolve_school_timezone("uwaterloo") == "America/Toronto"
 
 
 def test_resolve_timezone_known_school_casefolded():
-    assert (
-        calendar_service.resolve_school_timezone("  UNIVERSITY of Waterloo ") == "America/Toronto"
-    )
+    assert calendar_service.resolve_school_timezone("  uwaterloo ") == "America/Toronto"
 
 
-def test_resolve_timezone_waterloo_alias():
-    assert calendar_service.resolve_school_timezone("uw") == "America/Toronto"
-    assert calendar_service.resolve_school_timezone("UW") == "America/Toronto"
-    assert calendar_service.resolve_school_timezone("laurier") == "UTC"
+def test_resolve_timezone_other_slug():
+    assert calendar_service.resolve_school_timezone("wlu") == "America/Toronto"
 
 
 def test_resolve_timezone_unknown_falls_back_to_utc():
@@ -162,7 +158,7 @@ def _event_row(**overrides) -> dict:
         "title": "Jazz Night",
         "description": "Live jazz on the quad",
         "location": "The Quad",
-        "school": "University of Waterloo",
+        "school": "uwaterloo",
         "organization": "Music Organization",
         "source_url": None,
         "added_at": "2026-04-15T10:00:00+00:00",

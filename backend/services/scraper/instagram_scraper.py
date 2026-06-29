@@ -7,7 +7,7 @@ not re-instantiate the client and tests can swap it via monkeypatch.
 
 Current Apify policy:
     * ``skipPinnedPosts=True`` always set on the actor input.
-    * 1-hour timeout per Apify run (chunking handled by the orchestrator).
+    * 1-hour timeout per Apify run.
     * Server-side warning when a pinned post comes back despite the flag
       (Apify occasionally violates skipPinnedPosts when ``resultsLimit==1``).
 """
@@ -18,7 +18,6 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Iterable
 
 from apify_client import ApifyClient
 from apify_client.errors import ApifyApiError
@@ -51,22 +50,18 @@ class InstagramScraper:
 
     def scrape(
         self,
-        usernames: Iterable[str] | str,
+        target: str,
         *,
         results_limit: int | None = None,
         cutoff_days: int = 1,
         timeout_seconds: int = SCRAPING_APIFY_TIMEOUT_SECONDS,
     ) -> tuple[list[dict], bool]:
-        """Run the actor for ``usernames``; return (raw_posts, pinned_warning).
+        """Run the actor for ``target``; return (raw_posts, pinned_warning).
 
-        The pinned-warning flag is True when ``results_limit==1`` and any
-        returned item has ``isPinned=true``. We surface the boolean here and
-        let the caller decide whether to log a workflow warning.
+        ``target`` is an Instagram handle, @handle, or post URL.
         """
-        if isinstance(usernames, str):
-            usernames = [usernames]
-        username_list = list(usernames)
-        has_post_url = any(isinstance(u, str) and u.startswith("http") for u in username_list)
+        username_list = [target]
+        has_post_url = target.startswith("http")
 
         cutoff = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
         cutoff_str = cutoff.strftime("%Y-%m-%d")
@@ -80,8 +75,8 @@ class InstagramScraper:
             run_input["resultsLimit"] = results_limit
 
         log.info(
-            "Apify scrape start: %d users, limit=%s, cutoff=%s",
-            len(username_list),
+            "Apify scrape start: target=%s, limit=%s, cutoff=%s",
+            target,
             results_limit,
             cutoff_str,
         )

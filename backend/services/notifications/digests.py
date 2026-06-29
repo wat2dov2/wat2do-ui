@@ -28,7 +28,7 @@ from services.notifications.rendering import (
     _render_digest_text,
 )
 from services.notifications.schedule import ensure_aware_utc
-from services.school_context import resolve_user_timezone, school_for_user
+from services.school_context import resolve_user_timezone, school_display_name, school_for_user
 
 log = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ def send_daily_new_events_digest(user: dict, now_utc: datetime) -> bool:
     if row_id is None:
         return False
 
-    school_label = school or "your school"
+    school_label = school_display_name(school) if school else "your school"
     subject = _daily_new_events_subject(len(events), school_label)
     try:
         email_service.send(

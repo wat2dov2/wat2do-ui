@@ -14,7 +14,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
         "organization_type": "Social",
         "categories": ["Games & Recreation"],
         "created_by": FAKE_USER["id"],
-        "school": "University of Waterloo",
+        "school": "uwaterloo",
     }
     defaults.update(overrides)
     return OrganizationResponse.model_validate(defaults)

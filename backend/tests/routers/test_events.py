@@ -63,12 +63,8 @@ def test_create_event_sets_created_by_for_organization_owner(authenticated_clien
         organization_id=7, organization="Verified Organization", organization_type="WUSA"
     )
     mock_create = MagicMock(return_value=created_event)
-    mock_get_organization = MagicMock(
-        return_value=_mock_organization(id=7, school="University of Waterloo")
-    )
-    mock_resolve = MagicMock(
-        return_value=[_mock_organization(id=7, school="University of Waterloo")]
-    )
+    mock_get_organization = MagicMock(return_value=_mock_organization(id=7, school="uwaterloo"))
+    mock_resolve = MagicMock(return_value=[_mock_organization(id=7, school="uwaterloo")])
     monkeypatch.setattr(organization_service, "get_organization", mock_get_organization)
     monkeypatch.setattr(organization_service, "list_organizations_by_owner", mock_resolve)
     monkeypatch.setattr(event_service, "create_event", mock_create)
@@ -310,7 +306,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
 
     resp = client.get(
         "/events/",
-        params={"school": "University of Waterloo", "page": 2, "page_size": 50},
+        params={"school": "uwaterloo", "page": 2, "page_size": 50},
     )
 
     assert resp.status_code == 200
@@ -323,7 +319,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         "latest_added_event": None,
     }
     mock_list.assert_called_once_with(
-        school="University of Waterloo",
+        school="uwaterloo",
         skip=50,
         limit=50,
         start_utc=None,
@@ -343,7 +339,7 @@ def test_list_events_forwards_school_and_pagination(client, monkeypatch):
         sort_order="asc",
         added_within_24h=False,
     )
-    mock_latest.assert_called_once_with("University of Waterloo")
+    mock_latest.assert_called_once_with("uwaterloo")
 
 
 def test_list_events_forwards_date_window(client, monkeypatch):
@@ -356,7 +352,7 @@ def test_list_events_forwards_date_window(client, monkeypatch):
     resp = client.get(
         "/events/",
         params={
-            "school": "University of Waterloo",
+            "school": "uwaterloo",
             "start_utc": "1970-01-01T00:00:00+00:00",
             "end_utc": "2026-12-31T23:59:59+00:00",
         },
@@ -364,7 +360,7 @@ def test_list_events_forwards_date_window(client, monkeypatch):
 
     assert resp.status_code == 200
     mock_list.assert_called_once_with(
-        school="University of Waterloo",
+        school="uwaterloo",
         skip=0,
         limit=50,
         start_utc=datetime(1970, 1, 1, tzinfo=timezone.utc),
@@ -384,7 +380,7 @@ def test_list_events_forwards_date_window(client, monkeypatch):
         sort_order="asc",
         added_within_24h=False,
     )
-    mock_latest.assert_called_once_with("University of Waterloo")
+    mock_latest.assert_called_once_with("uwaterloo")
 
 
 def test_list_events_forwards_filters_and_sort(client, monkeypatch):
@@ -396,7 +392,7 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
     resp = client.get(
         "/events/",
         params=[
-            ("school", "University of Waterloo"),
+            ("school", "uwaterloo"),
             ("search", "hack"),
             ("categories", "Technology"),
             ("categories", "Career"),
@@ -417,7 +413,7 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
 
     assert resp.status_code == 200
     mock_list.assert_called_once_with(
-        school="University of Waterloo",
+        school="uwaterloo",
         skip=0,
         limit=50,
         start_utc=None,
@@ -437,7 +433,7 @@ def test_list_events_forwards_filters_and_sort(client, monkeypatch):
         sort_order="desc",
         added_within_24h=False,
     )
-    mock_latest.assert_called_once_with("University of Waterloo")
+    mock_latest.assert_called_once_with("uwaterloo")
 
 
 def test_list_events_forwards_added_within_24h(client, monkeypatch):
@@ -449,14 +445,14 @@ def test_list_events_forwards_added_within_24h(client, monkeypatch):
     resp = client.get(
         "/events/",
         params={
-            "school": "University of Waterloo",
+            "school": "uwaterloo",
             "added_within_24h": "true",
         },
     )
 
     assert resp.status_code == 200
     mock_list.assert_called_once_with(
-        school="University of Waterloo",
+        school="uwaterloo",
         skip=0,
         limit=50,
         start_utc=None,
@@ -476,7 +472,7 @@ def test_list_events_forwards_added_within_24h(client, monkeypatch):
         sort_order="asc",
         added_within_24h=True,
     )
-    mock_latest.assert_called_once_with("University of Waterloo")
+    mock_latest.assert_called_once_with("uwaterloo")
 
 
 def test_list_events_includes_latest_added_metadata(client, monkeypatch):
@@ -574,9 +570,9 @@ def test_list_promoted_events_endpoint(client, monkeypatch):
     mock_promoted = MagicMock(return_value=[_mock_event(id=1, title="Promoted Event")])
     monkeypatch.setattr(event_service, "list_promoted_events", mock_promoted)
 
-    resp = client.get("/events/promoted", params={"school": "University of Waterloo"})
+    resp = client.get("/events/promoted", params={"school": "uwaterloo"})
     assert resp.status_code == 200
     body = resp.json()
     assert len(body) == 1
     assert body[0]["title"] == "Promoted Event"
-    mock_promoted.assert_called_once_with(school="University of Waterloo")
+    mock_promoted.assert_called_once_with(school="uwaterloo")

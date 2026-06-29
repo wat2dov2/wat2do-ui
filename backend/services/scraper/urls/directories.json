@@ -2,7 +2,7 @@
   {
     "id": "wusa",
     "name": "WUSA Events",
-    "school": "University of Waterloo",
+    "school": "uwaterloo",
     "entry_url": "https://wusa.ca/events/",
     "event_url_contains": "/event/",
     "next_page_selector": "a.tribe-events-c-nav__next",

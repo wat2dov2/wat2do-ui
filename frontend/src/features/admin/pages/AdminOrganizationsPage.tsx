@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, Plus, Instagram, Discord, ExternalLink, ShieldAlert, Clock } from "@/shared/ui/doodle-icons";
+import { Building2, Plus, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -229,7 +229,7 @@ export function AdminOrganizationsPage({
           activeTab === "organizations"
             ? {
                 label: t("organizations.addClub"),
-                onMouseDown: openAddModal,
+                onClick: openAddModal,
                 icon: Plus,
               }
             : undefined
@@ -239,7 +239,7 @@ export function AdminOrganizationsPage({
       <div className="space-y-5 pb-2">
         <div className="flex gap-2 border-b border-border pb-3">
           <button
-            onMouseDown={() => setActiveTab("organizations")}
+            onClick={() => setActiveTab("organizations")}
             data-elevation="control"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
               activeTab === "organizations"
@@ -250,7 +250,7 @@ export function AdminOrganizationsPage({
             {t("admin.clubsList")}
           </button>
           <button
-            onMouseDown={() => setActiveTab("claims")}
+            onClick={() => setActiveTab("claims")}
             data-elevation="control"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
               activeTab === "claims"
@@ -285,7 +285,7 @@ export function AdminOrganizationsPage({
                   setSelectedOrganizationType(value === ALL_ORGANIZATION_TYPES_VALUE ? "" : value)
                 }
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger showIcon={false} className="h-11 w-[180px]">
                   <SelectValue placeholder={t("admin.allTypes")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -333,7 +333,7 @@ export function AdminOrganizationsPage({
                   claimsPagination.setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger showIcon={false} className="h-11 w-[180px]">
                   <SelectValue placeholder={t("admin.allStatus")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -374,8 +374,8 @@ export function AdminOrganizationsPage({
                 { label: t("forms.categories") },
                 { label: t("forms.organizationType") },
                 { label: t("forms.ownerEmail") },
-                { label: <span className="flex items-center gap-1.5"><Instagram className="size-3.5" />{t("admin.instagram")}</span> },
-                { label: <span className="flex items-center gap-1.5"><Discord className="size-3.5" />{t("admin.discord")}</span> },
+                { label: t("admin.instagram") },
+                { label: t("admin.discord") },
                 { label: t("common.actions"), align: "right" },
               ]}
             >
@@ -383,7 +383,7 @@ export function AdminOrganizationsPage({
                 <TableRow
                   key={org.id}
                   className="cursor-pointer"
-                  onMouseDown={() => openEditModal(org)}
+                  onClick={() => openEditModal(org)}
                 >
                   <TableCell>
                     <div className="font-medium text-sm text-foreground">
@@ -426,7 +426,7 @@ export function AdminOrganizationsPage({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onMouseDown={(e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
                           openEditModal(org);
                         }}
@@ -436,7 +436,7 @@ export function AdminOrganizationsPage({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onMouseDown={(e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
                           setDeleteConfirmId(org.id);
                         }}
@@ -471,7 +471,7 @@ export function AdminOrganizationsPage({
                   { label: t("admin.requestedBy") },
                   { label: t("admin.executiveRole") },
                   { label: <span className="flex items-center gap-1"><ExternalLink className="size-3" />{t("admin.proofUrl")}</span> },
-                  { label: <span className="flex items-center gap-1.5"><Clock className="size-3.5" />{t("admin.submittedAt") || "Submitted At"}</span> } ,
+                  { label: t("admin.submittedAt") || "Submitted At" },
                   { label: t("admin.status") || "Status" },
                   { label: t("common.actions"), align: "right" },
                 ]}
@@ -532,7 +532,7 @@ export function AdminOrganizationsPage({
                             <Button
                               variant="secondary"
                               size="sm"
-                              onMouseDown={() => handleApproveClaim(claim.id)}
+                              onClick={() => handleApproveClaim(claim.id)}
                               className="text-primary hover:bg-primary/10 border border-transparent"
                             >
                               {t("admin.approve")}
@@ -540,7 +540,7 @@ export function AdminOrganizationsPage({
                             <Button
                               variant="secondary"
                               size="sm"
-                              onMouseDown={() => setRejectClaimId(claim.id)}
+                              onClick={() => setRejectClaimId(claim.id)}
                               className="text-error hover:bg-error/10 border border-transparent"
                             >
                               {t("admin.reject")}
@@ -599,12 +599,12 @@ export function AdminOrganizationsPage({
             />
           </div>
           <DialogFooter className="flex gap-2 justify-end">
-            <Button variant="outline" onMouseDown={() => setRejectClaimId(null)} disabled={submittingResolution}>
+            <Button variant="outline" onClick={() => setRejectClaimId(null)} disabled={submittingResolution}>
               {t("common.cancel") || "Cancel"}
             </Button>
             <Button
               variant="destructive"
-              onMouseDown={handleRejectClaim}
+              onClick={handleRejectClaim}
               disabled={submittingResolution || !rejectionReason.trim()}
             >
               {t("admin.rejectRequest") || "Reject Request"}

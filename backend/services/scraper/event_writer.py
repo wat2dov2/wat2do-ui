@@ -21,6 +21,7 @@ from core.constants import (
     MAX_EVENT_ORGANIZATION_TYPE_LENGTH,
     MAX_EVENT_SCHOOL_LENGTH,
     MAX_EVENT_TITLE_LENGTH,
+    MAX_ORGANIZATION_NAME_LENGTH,
 )
 from core.database import get_sb
 from core.tables import EVENTS, ORGANIZATIONS
@@ -31,6 +32,8 @@ from services.event_feed_revalidation import event_feed_revalidation_service
 from services.scraper.dedup import find_match
 
 log = logging.getLogger(__name__)
+
+_SCRAPED_ORGANIZATION_TYPE = "Independent"
 
 
 def write_event(
@@ -61,7 +64,11 @@ def write_event(
         )
         return "skipped"
 
-    organization_dict = _resolve_organization_by_ig(ig_handle)
+    organization_dict = _ensure_organization_by_ig(
+        ig_handle,
+        school=(event.get("school") or "").strip() or None,
+        preferred_name=(event.get("organization") or "").strip() or None,
+    )
     organization_name = _resolve_organization_name(
         event, ig_handle=ig_handle, organization=organization_dict
     )
@@ -165,10 +172,7 @@ def write_event(
     return "inserted"
 
 
-def _resolve_organization_by_ig(ig_handle: str | None) -> dict | None:
-    """Return the registered organization row for an Instagram handle, if any."""
-    if not ig_handle:
-        return None
+def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
     rows = (
         get_sb()
         .table(ORGANIZATIONS)
@@ -178,6 +182,56 @@ def _resolve_organization_by_ig(ig_handle: str | None) -> dict | None:
         .execute()
     ).data or []
     return rows[0] if rows else None
+
+
+def _ensure_organization_by_ig(
+    ig_handle: str | None,
+    *,
+    school: str | None,
+    preferred_name: str | None = None,
+) -> dict | None:
+    """Return the organization for an IG handle, creating a stub row when missing."""
+    cleaned = (ig_handle or "").strip().lstrip("@")
+    if not cleaned:
+        return None
+
+    existing = _lookup_organization_by_ig(cleaned)
+    if existing is not None:
+        return existing
+
+    school_slug = (school or "").strip()
+    if not school_slug:
+        log.warning("[%s] skipping organization auto-create — school slug is required", cleaned)
+        return None
+
+    organization_name = ((preferred_name or "").strip() or f"@{cleaned}")[
+        :MAX_ORGANIZATION_NAME_LENGTH
+    ]
+    inserted = (
+        get_sb()
+        .table(ORGANIZATIONS)
+        .insert(
+            {
+                "organization_name": organization_name,
+                "ig": cleaned,
+                "school": school_slug,
+                "organization_type": _SCRAPED_ORGANIZATION_TYPE,
+            }
+        )
+        .execute()
+    )
+    if inserted.data:
+        row = inserted.data[0]
+        log.info(
+            "[%s] auto-created organization id=%s name=%r school=%s",
+            cleaned,
+            row.get("id"),
+            organization_name,
+            school_slug,
+        )
+        return row
+
+    return _lookup_organization_by_ig(cleaned)
 
 
 def _resolve_organization_name(

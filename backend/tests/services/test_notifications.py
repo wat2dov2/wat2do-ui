@@ -38,7 +38,7 @@ def _user(**overrides) -> dict:
     defaults = {
         "id": "11111111-1111-1111-1111-111111111111",
         "email": "alice@uwaterloo.ca",
-        "school": "university of waterloo",
+        "school": "uwaterloo",
     }
     defaults.update(overrides)
     return defaults
@@ -295,21 +295,21 @@ def test_enqueue_event_change_no_saved_users_returns_zero(fake_sb, patch_sb):
 
 def test_is_morning_digest_time_returns_date_at_9am_local():
     """Waterloo (America/Toronto) at 13:00 UTC is 09:00 local (EDT in May)."""
-    user = _user(school="university of waterloo")
+    user = _user(school="uwaterloo")
     now_utc = datetime(2026, 5, 1, 13, 0, tzinfo=timezone.utc)
     result = schedule.is_morning_digest_time(user, now_utc)
     assert result == date(2026, 5, 1)
 
 
 def test_is_morning_digest_time_returns_none_off_hour():
-    user = _user(school="university of waterloo")
+    user = _user(school="uwaterloo")
     now_utc = datetime(2026, 5, 1, 16, 0, tzinfo=timezone.utc)  # noon local
     assert schedule.is_morning_digest_time(user, now_utc) is None
 
 
 def test_is_weekly_digest_time_returns_next_monday_on_sunday_6pm():
     """Sunday 6pm local → returns tomorrow (Monday) as the preview week start."""
-    user = _user(school="university of waterloo")
+    user = _user(school="uwaterloo")
     # 2026-05-03 is a Sunday; 18:00 EDT = 22:00 UTC
     now_utc = datetime(2026, 5, 3, 22, 0, tzinfo=timezone.utc)
     result = schedule.is_weekly_digest_time(user, now_utc)
@@ -319,14 +319,14 @@ def test_is_weekly_digest_time_returns_next_monday_on_sunday_6pm():
 
 def test_is_weekly_digest_time_returns_none_not_sunday():
     """Monday 6pm local → None."""
-    user = _user(school="university of waterloo")
+    user = _user(school="uwaterloo")
     # 2026-05-04 is a Monday; 18:00 EDT = 22:00 UTC
     now_utc = datetime(2026, 5, 4, 22, 0, tzinfo=timezone.utc)
     assert schedule.is_weekly_digest_time(user, now_utc) is None
 
 
 def test_is_weekly_digest_time_returns_none_sunday_off_hour():
-    user = _user(school="university of waterloo")
+    user = _user(school="uwaterloo")
     # 2026-05-03 is Sunday; 15:00 UTC = 11am local, not 6pm
     now_utc = datetime(2026, 5, 3, 15, 0, tzinfo=timezone.utc)
     assert schedule.is_weekly_digest_time(user, now_utc) is None
@@ -342,7 +342,7 @@ def test_unknown_school_falls_back_to_utc():
 
 def test_is_daily_new_events_time_returns_local_timestamp_at_1030():
     """Waterloo (America/Toronto) at 14:30 UTC is 10:30 local (EDT in May)."""
-    user = _user(school="university of waterloo")
+    user = _user(school="uwaterloo")
     now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
     result = schedule.is_daily_new_events_time(user, now_utc)
     assert result is not None
@@ -352,13 +352,13 @@ def test_is_daily_new_events_time_returns_local_timestamp_at_1030():
 
 
 def test_is_daily_new_events_time_returns_none_off_minute():
-    user = _user(school="university of waterloo")
+    user = _user(school="uwaterloo")
     now_utc = datetime(2026, 5, 1, 14, 0, tzinfo=timezone.utc)
     assert schedule.is_daily_new_events_time(user, now_utc) is None
 
 
 def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
-    user = _user(id="user-uuid", school="University of Waterloo")
+    user = _user(id="user-uuid", school="uwaterloo")
     now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
     previous_sent_at = datetime(2026, 4, 30, 14, 30, tzinfo=timezone.utc)
     event = {
@@ -394,7 +394,7 @@ def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
     assert digests.send_daily_new_events_digest(user, now_utc) is True
 
     assert captured == {
-        "school": "University of Waterloo",
+        "school": "uwaterloo",
         "start_utc": previous_sent_at,
         "end_utc": now_utc,
     }
@@ -410,7 +410,7 @@ def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
 
 
 def test_send_daily_new_events_digest_skips_without_events(monkeypatch):
-    user = _user(id="user-uuid", school="University of Waterloo")
+    user = _user(id="user-uuid", school="uwaterloo")
     monkeypatch.setattr(digests, "is_enabled", lambda *_: True)
     monkeypatch.setattr(digests, "_last_successful_send_at", lambda *_: None)
     monkeypatch.setattr(digests, "_fetch_new_events_added_since", lambda **_: [])
@@ -425,7 +425,7 @@ def test_send_daily_new_events_digest_skips_without_events(monkeypatch):
 def test_render_daily_new_events_html_escapes_event_text():
     html = rendering._render_daily_new_events_html(
         subject="1 new event at University of Waterloo",
-        school="University of Waterloo",
+        school="uwaterloo",
         events=[
             {
                 "title": "<script>alert(1)</script>",

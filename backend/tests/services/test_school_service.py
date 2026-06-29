@@ -23,6 +23,17 @@ def test_search_schools_matches_domain_fragment(monkeypatch):
     assert school_service.search_schools("mit.edu") == ["mit"]
 
 
+def test_search_schools_matches_display_name_fragment(monkeypatch):
+    _stub_loaded(monkeypatch)
+    monkeypatch.setattr(
+        school_service,
+        "ALLOWED_EMAIL_DOMAINS",
+        {"uwaterloo.ca": "uwaterloo"},
+    )
+
+    assert school_service.search_schools("waterloo") == ["uwaterloo"]
+
+
 def test_search_schools_returns_empty_list_for_blank_query(monkeypatch):
     _stub_loaded(monkeypatch)
     monkeypatch.setattr(

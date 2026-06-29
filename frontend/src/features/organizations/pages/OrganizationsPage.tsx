@@ -140,7 +140,7 @@ export function OrganizationsPage() {
                   icon={null}
                   label={translateCategory(category, t)}
                   active={selectedCategories.includes(category)}
-                  onMouseDown={() => toggleCategory(category)}
+                  onClick={() => toggleCategory(category)}
                 />
               ))}
               <span

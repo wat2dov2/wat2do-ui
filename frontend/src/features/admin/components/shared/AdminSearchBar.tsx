@@ -1,11 +1,12 @@
 /**
  * Admin Search Bar Component
- * Reusable search input with clear button
+ * Reusable search input aligned with events/org SubmittedSearchInput styling.
  */
 
 import { Search, X } from "@/shared/ui/doodle-icons";
-import { Input } from "@/shared/ui/input";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
+import { useEnterKeySubmit } from "@/shared/hooks";
+import { cn } from "@/shared/lib/utils";
 
 interface AdminSearchBarProps {
   value: string;
@@ -26,6 +27,10 @@ export function AdminSearchBar({
   submitLabel,
   clearLabel,
 }: AdminSearchBarProps) {
+  const handleEnterSubmit = useEnterKeySubmit<HTMLInputElement>({
+    onSubmit: () => onChange(value.trim()),
+  });
+
   if (onSubmit && onClear && submitLabel && clearLabel) {
     return (
       <SubmittedSearchInput
@@ -41,22 +46,38 @@ export function AdminSearchBar({
   }
 
   return (
-    <div className="relative flex-1">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none z-10" />
-      <Input
+    <div
+      className={cn(
+        "relative h-11 min-w-0 flex-1 overflow-hidden rounded-xl bg-secondary shadow-xs transition-[color,box-shadow] focus-within:ring-[3px] focus-within:ring-ring/50",
+      )}
+      data-elevation="control"
+    >
+      <input
         type="text"
         placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="pl-9 pr-9"
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={handleEnterSubmit}
+        className={cn(
+          "block h-full w-full min-w-0 rounded-none bg-transparent px-3 py-2 text-base leading-7 text-secondary-foreground outline-none placeholder:text-muted-foreground",
+          value ? "pr-10" : "pr-3",
+        )}
       />
       {value && (
         <button
-          onMouseDown={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+          type="button"
+          onClick={() => onChange("")}
+          className="absolute right-0 top-0 flex h-full w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={clearLabel ?? "Clear search"}
         >
           <X className="size-4" />
         </button>
+      )}
+      {!value && (
+        <Search
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        />
       )}
     </div>
   );

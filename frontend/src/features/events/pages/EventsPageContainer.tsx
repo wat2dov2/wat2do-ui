@@ -82,7 +82,7 @@ export function EventsPageContainer() {
           icon: null,
           labelKey: "filters.saved",
           active: filters.savedFilter,
-          onMouseDown: () => filters.setSavedFilter(!filters.savedFilter),
+          onClick: () => filters.setSavedFilter(!filters.savedFilter),
           visible: profileCompleted,
         },
         {
@@ -90,14 +90,14 @@ export function EventsPageContainer() {
           icon: null,
           labelKey: "events.newlyAdded",
           active: isNewlyAddedActive,
-          onMouseDown: handleNewlyAddedToggle,
+          onClick: handleNewlyAddedToggle,
         },
         {
           id: "freeFood",
           icon: null,
           labelKey: "common.freeFood",
           active: filters.freeFoodFilter,
-          onMouseDown: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
+          onClick: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
         },
       ].filter((config) => config.visible !== false),
     [filters, handleNewlyAddedToggle, isNewlyAddedActive, profileCompleted]
@@ -159,7 +159,7 @@ export function EventsPageContainer() {
                     icon={config.icon}
                     label={t(config.labelKey)}
                     active={config.active}
-                    onMouseDown={config.onMouseDown}
+                    onClick={config.onClick}
                   />
                 ))}
                 {filters.categoryPieItems.map((category) => (
@@ -168,7 +168,7 @@ export function EventsPageContainer() {
                     icon={null}
                     label={category.label}
                     active={filters.selectedCategories.includes(category.id)}
-                    onMouseDown={() => filters.toggleCategory(category.id)}
+                    onClick={() => filters.toggleCategory(category.id)}
                   />
                 ))}
                 <span

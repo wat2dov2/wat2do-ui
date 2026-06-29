@@ -22,6 +22,7 @@ from core.constants import EVENT_CATEGORIES
 from services.school_context import (
     current_semester_end,
     resolve_school_timezone,
+    school_display_name,
 )
 
 log = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ def extract_events_from_post(
         post_created_at: aware datetime of the post (used for relative
             phrases like "tonight"/"tomorrow"). Falls back to "now" in
             the school's local TZ if missing.
-        school: full canonical school name (e.g. "University of Waterloo").
+        school: school slug (e.g. "uwaterloo").
         model: vision-capable OpenAI model. Defaults to
             ``settings.openai_extraction_model``.
 
@@ -102,7 +103,7 @@ def extract_events_from_post(
     prompt = _build_prompt(
         caption_text=caption_text,
         image_urls=image_urls or [],
-        school=school,
+        school=school_display_name(school),
         local_tz_key=local_tz.key,
         current_date=now_local.strftime("%Y-%m-%d"),
         current_day=now_local.strftime("%A"),

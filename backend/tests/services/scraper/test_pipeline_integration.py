@@ -6,7 +6,6 @@ These complement the per-helper unit tests by exercising the full
     one events row plus N event_dates rows.
 
 Mocks installed:
-    * ``InstagramScraper.scrape``      -> returns canned Apify output.
     * ``upload_post_images``           -> returns the URLs verbatim
       (skip the storage round-trip).
     * ``extract_events_from_post``     -> returns canned events with
@@ -53,7 +52,7 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
             "price": 0.0,
             "food": ["Yes!"],
             "registration": False,
-            "school": "University of Waterloo",
+            "school": "uwaterloo",
             "occurrences": [
                 {
                     "dtstart_utc": _future_iso(2),
@@ -90,14 +89,6 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     patch_sb("services.workflow_run_service")
     patch_sb("services.scraper.dedup")
 
-    # Deterministic Apify response.
-    fake_scraper = MagicMock()
-    fake_scraper.scrape = MagicMock(return_value=([_apify_post()], False))
-    import services.scraper.instagram_scraper as ig_mod
-
-    monkeypatch.setattr(ig_mod, "get_scraper", lambda: fake_scraper)
-
-    # Storage skip + canned extractor + no dedup matches.
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
     monkeypatch.setattr(
         pipeline_module,
@@ -186,19 +177,17 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     fake_sb.execute.side_effect = _smart_execute
 
     result = pipeline_module.run_pipeline(
-        usernames=["uwteaorganization"],
-        school="University of Waterloo",
+        ig_handle="uwteaorganization",
+        school="uwaterloo",
+        posts=[_apify_post()],
         cutoff_days=4,
-        results_limit=10,
         dry_run=False,
     )
 
-    assert len(result.handles) == 1
-    handle_result = result.handles[0]
-    assert handle_result.events_extracted == 1
-    assert handle_result.events_saved == 1
-    assert handle_result.events_updated == 0
-    assert handle_result.events_duplicates == 0
+    assert result.events_extracted == 1
+    assert result.events_saved == 1
+    assert result.events_updated == 0
+    assert result.events_duplicates == 0
 
     # The headline invariant: ONE events insert (dict payload) + ONE
     # event_dates insert (list payload of 3 rows).
@@ -209,7 +198,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     # exactly ONE events-shaped dict insert.
     events_inserts = [c for c in dict_inserts if c[0][0].get("title") == "Tea Tasting Series"]
     assert len(events_inserts) == 1
-    assert events_inserts[0][0][0]["school"] == "University of Waterloo"
+    assert events_inserts[0][0][0]["school"] == "uwaterloo"
 
     occurrence_inserts = [
         c
@@ -233,12 +222,6 @@ def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     patch_sb("services.workflow_run_service")
     patch_sb("services.scraper.dedup")
 
-    fake_scraper = MagicMock()
-    fake_scraper.scrape = MagicMock(return_value=([_apify_post()], False))
-    import services.scraper.instagram_scraper as ig_mod
-
-    monkeypatch.setattr(ig_mod, "get_scraper", lambda: fake_scraper)
-
     monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
     monkeypatch.setattr(
         pipeline_module,
@@ -247,18 +230,16 @@ def test_pipeline_dry_run_skips_db_writes(monkeypatch, fake_sb, patch_sb):
     )
 
     result = pipeline_module.run_pipeline(
-        usernames=["uwteaorganization"],
-        school="University of Waterloo",
+        ig_handle="uwteaorganization",
+        school="uwaterloo",
+        posts=[_apify_post()],
         cutoff_days=4,
-        results_limit=10,
         dry_run=True,
     )
 
-    handle_result = result.handles[0]
-    # Dry-run reports the would-save count but does no DB writes.
-    assert handle_result.events_extracted == 1
-    assert handle_result.events_saved == 1  # "would have saved"
-    assert handle_result.workflow_run_id is None  # no workflow_runs row created
+    assert result.events_extracted == 1
+    assert result.events_saved == 1
+    assert result.workflow_run_id is None
 
     # No insert/update calls of any kind on the fake_sb.
     assert fake_sb.insert.call_count == 0

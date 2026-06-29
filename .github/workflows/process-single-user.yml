@@ -5,9 +5,8 @@ run-name: Process @${{ github.event.client_payload.username || inputs.username }
 # Triggered either manually (workflow_dispatch) or by an external service
 # posting to repository_dispatch with type=new_instagram_post.
 #
-# When triggered manually, IGNORE_CUTOFF=true makes services/wat2do walk
-# back five years instead of one day so an admin can backfill an account
-# that hasn't been scraped before.
+# When triggered manually, the workflow uses a five-year cutoff instead of
+# one day so an admin can backfill an account that hasn't been scraped before.
 
 on:
   repository_dispatch:
@@ -18,32 +17,10 @@ on:
         description: 'Instagram username to process'
         required: true
         type: string
-      school:
-        description: 'School the handle belongs to (controls timezone + semester context)'
+      intended_recipient_id:
+        description: 'Instagram profile ID that received the post (maps to school via school_mappings.py)'
         required: true
-        type: choice
-        default: 'University of Waterloo'
-        options:
-          - 'University of Waterloo'
-          - 'University of Toronto - St. George'
-          - 'University of Toronto - Scarborough'
-          - 'McGill University'
-          - 'McMaster University'
-          - 'Western University'
-          - "Queen's University"
-          - 'Carleton University'
-          - 'Brock University'
-          - 'Wilfrid Laurier University'
-          - 'York University'
-          - 'Toronto Metropolitan University'
-          - 'University of Ottawa'
-          - 'OCAD University'
-          - 'Cornell University'
-          - 'New York University'
-          - 'University of Pennsylvania'
-          - 'Columbia University'
-          - 'Massachusetts Institute of Technology'
-          - 'University of British Columbia'
+        type: string
 
 jobs:
   process-post:
@@ -64,13 +41,10 @@ jobs:
       SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
-      # jobs/scrape.py reads these - TARGET_USERNAME is the scrape target;
-      # IGNORE_CUTOFF widens the look-back to five years for manual dispatches;
-      # SCHOOL and INTENDED_RECIPIENT_ID resolve the canonical school name.
-      TARGET_USERNAME: ${{ github.event.client_payload.username || inputs.username }}
+      # INTENDED_RECIPIENT_ID is read by jobs/scrape.py to resolve the school.
+      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || inputs.intended_recipient_id }}
+      # IGNORE_CUTOFF is converted to --cutoff-days in the run step below.
       IGNORE_CUTOFF: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
-      SCHOOL: ${{ github.event.client_payload.school || inputs.school }}
-      INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -104,9 +78,9 @@ jobs:
           else
             CUTOFF_DAYS=1
           fi
-          python -u jobs/scrape.py user \
-            --username "$TARGET_USERNAME" \
-            ${SCHOOL:+--school "$SCHOOL"} \
+          USERNAME='${{ github.event.client_payload.username || inputs.username }}'
+          python -u jobs/scrape.py \
+            --username "$USERNAME" \
             --cutoff-days "$CUTOFF_DAYS" \
             --dry-run false \
             2>&1 | tee logs/scraping.log

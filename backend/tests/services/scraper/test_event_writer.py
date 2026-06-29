@@ -6,6 +6,8 @@ The tests assert on both layers via the fake_sb fixture.
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from services.scraper import event_writer
 from services.scraper.event_writer import (
     _clean_food,
@@ -13,6 +15,15 @@ from services.scraper.event_writer import (
     _parse_iso,
     write_event,
 )
+
+_REAL_ENSURE_ORGANIZATION_BY_IG = event_writer._ensure_organization_by_ig
+
+
+@pytest.fixture(autouse=True)
+def disable_organization_auto_create(monkeypatch):
+    """Existing write_event tests focus on event persistence, not org creation."""
+    monkeypatch.setattr(event_writer, "_ensure_organization_by_ig", lambda *args, **kwargs: None)
+
 
 # ── _clean_food ───────────────────────────────────────────────────────
 
@@ -113,7 +124,7 @@ def _event(**overrides) -> dict:
         "price": 0.0,
         "food": ["Yes!"],
         "registration": False,
-        "school": "University of Waterloo",
+        "school": "uwaterloo",
     }
     base.update(overrides)
     return base
@@ -133,20 +144,132 @@ def test_write_event_skips_when_required_fields_missing(monkeypatch):
     assert write_event(_event(location=""), ig_handle="x", source_url="u") == "skipped"
 
 
+def test_ensure_organization_by_ig_returns_existing_without_insert(fake_sb, patch_sb):
+    patch_sb("services.scraper.event_writer")
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 9,
+                    "organization_name": "UW Tea Organization",
+                    "organization_type": "Independent",
+                }
+            ]
+        ]
+    )
+
+    result = _REAL_ENSURE_ORGANIZATION_BY_IG(
+        "@uwteaorganization",
+        school="uwaterloo",
+        preferred_name="Ignored When Existing",
+    )
+
+    assert result == {
+        "id": 9,
+        "organization_name": "UW Tea Organization",
+        "organization_type": "Independent",
+    }
+    assert fake_sb.insert.call_count == 0
+
+
+def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb):
+    patch_sb("services.scraper.event_writer")
+    fake_sb.queue_responses(
+        [
+            [],
+            [
+                {
+                    "id": 42,
+                    "organization_name": "UW Tea Organization",
+                    "organization_type": "Independent",
+                }
+            ],
+        ]
+    )
+
+    result = _REAL_ENSURE_ORGANIZATION_BY_IG(
+        "uwteaorganization",
+        school="uwaterloo",
+        preferred_name="UW Tea Organization",
+    )
+
+    assert result["id"] == 42
+    insert_payload = fake_sb.insert.call_args_list[0][0][0]
+    assert insert_payload == {
+        "organization_name": "UW Tea Organization",
+        "ig": "uwteaorganization",
+        "school": "uwaterloo",
+        "organization_type": "Independent",
+    }
+
+
+def test_ensure_organization_by_ig_skips_create_without_school(fake_sb, patch_sb):
+    patch_sb("services.scraper.event_writer")
+    fake_sb.queue_responses([[]])
+
+    assert _REAL_ENSURE_ORGANIZATION_BY_IG("club", school=None) is None
+    assert fake_sb.insert.call_count == 0
+
+
+def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.scraper.event_writer")
+    patch_sb("services.event_date_service")
+    monkeypatch.setattr(event_writer, "_ensure_organization_by_ig", _REAL_ENSURE_ORGANIZATION_BY_IG)
+    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
+
+    occ_now = datetime.now(timezone.utc).isoformat()
+    fake_sb.queue_responses(
+        [
+            [],  # organization lookup miss
+            [
+                {
+                    "id": 5,
+                    "organization_name": "UW Tea Organization",
+                    "organization_type": "Independent",
+                }
+            ],  # organization insert
+            [{"id": 7}],  # events insert
+            [
+                {
+                    "id": 1,
+                    "event_id": 7,
+                    "dtstart_utc": _future(2),
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                    "created_at": occ_now,
+                }
+            ],
+        ]
+    )
+
+    result = write_event(
+        _event(),
+        ig_handle="uwteaorganization",
+        source_url="https://instagram.com/p/abc",
+    )
+    assert result == "inserted"
+
+    dict_inserts = [
+        call[0][0] for call in fake_sb.insert.call_args_list if isinstance(call[0][0], dict)
+    ]
+    assert dict_inserts[0]["ig"] == "uwteaorganization"
+    assert dict_inserts[1]["organization_id"] == 5
+    assert dict_inserts[1]["organization"] == "UW Tea Organization"
+    assert dict_inserts[1]["organization_type"] == "Independent"
+
+
 def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, monkeypatch):
     """Multi-occurrence post -> ONE events row + N event_dates rows."""
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     # Sequence of execute responses the writer hits, in order:
-    #   1. (event_writer) organizations lookup for organization_type — _resolve_organization
-    #      short-circuits because the event dict already has an organization.
-    #   2. (event_writer) events insert -> [{"id": 7}]
-    #   3. (event_date_service) event_dates insert -> [...] (>=1 row)
+    #   1. events insert -> [{"id": 7}]
+    #   2. (event_date_service) event_dates insert -> [...] (>=1 row)
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
-            [],  # organizations lookup for organization_type
             [{"id": 7}],  # events insert
             # occurrences insert — return shape must satisfy OccurrenceResponse
             [
@@ -217,7 +340,6 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
-            [],  # organizations organization_type
             [{"id": 11}],  # events insert
             # occurrences insert — only one survives the past-event filter
             [
@@ -253,11 +375,6 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
 
 def test_write_event_returns_skipped_when_all_occurrences_past(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.scraper.event_writer")
-    fake_sb.queue_responses(
-        [
-            [],  # organizations lookup for organization_type
-        ]
-    )
     monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     event = _event(
@@ -286,7 +403,6 @@ def test_write_event_keeps_past_occurrences_when_flag_set(fake_sb, patch_sb, mon
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     fake_sb.queue_responses(
         [
-            [],  # organizations lookup for organization_type
             [{"id": 12}],  # events insert
             # occurrences insert — past occurrence survives due to flag
             [

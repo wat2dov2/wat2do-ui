@@ -110,19 +110,19 @@ export function SubmissionDetailsDialog({
 
           {submission.status === SUBMISSION_PENDING && (
             <div className="flex gap-2 justify-end pt-4 border-t border-border">
-              <Button variant="outline" onMouseDown={onClose} disabled={isApproving}>
+              <Button variant="outline" onClick={onClose} disabled={isApproving}>
                 {t("common.cancel")}
               </Button>
               <Button
                 variant="outline"
-                onMouseDown={() => onRejectClick(submission)}
+                onClick={() => onRejectClick(submission)}
                 className="text-error hover:text-error hover:bg-error/10"
                 disabled={isApproving}
               >
                 {t("admin.reject")}
               </Button>
               <LoadingButton
-                onMouseDown={() => onApprove(submission)}
+                onClick={() => onApprove(submission)}
                 isLoading={isApproving}
                 loadingText={t("common.pleaseWait")}
               >

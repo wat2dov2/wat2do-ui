@@ -137,7 +137,10 @@ function OrganizationFooterActions({
   const hasOverflowLinks = Boolean(organization.ig || (organization.discord && sanitizeHref(organization.discord)));
 
   return (
-    <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
+    >
       {profileCompleted ? (
         followButton
       ) : (
@@ -180,8 +183,8 @@ function OrganizationFooterActions({
       <OrganizationOverflowMenu organization={organization} stopPropagation>
         <button
           type="button"
-          onMouseDown={(event) => event.stopPropagation()}
-          onPointerDown={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={(event) => event.stopPropagation()}
           aria-label={t("common.actions")}
           disabled={!hasOverflowLinks}
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.border} ${categoryClasses.text}`}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar, MapPin, Tag, AlertTriangle, Clock, User, FileText } from "@/shared/ui/doodle-icons";
+import { Calendar, AlertTriangle, FileText } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -163,7 +163,7 @@ export function AdminEventsPage({
       {/* Tabs toggle */}
       <div className="flex gap-2 border-b border-border pb-3">
         <button
-          onMouseDown={() => setActiveTab("events")}
+          onClick={() => setActiveTab("events")}
           data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             activeTab === "events"
@@ -174,7 +174,7 @@ export function AdminEventsPage({
           {t("admin.eventsList")}
         </button>
         <button
-          onMouseDown={() => setActiveTab("submissions")}
+          onClick={() => setActiveTab("submissions")}
           data-elevation="control"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
             activeTab === "submissions"
@@ -204,7 +204,7 @@ export function AdminEventsPage({
               value={selectedCategory || undefined}
               onValueChange={(value) => setSelectedCategory(value || "")}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger showIcon={false} className="h-11 w-[180px]">
                 <SelectValue placeholder={t("admin.allCategories")} />
               </SelectTrigger>
               <SelectContent>
@@ -219,7 +219,7 @@ export function AdminEventsPage({
               type="button"
               variant="secondary"
               size="sm"
-              onMouseDown={toggleReportedOnly}
+              onClick={toggleReportedOnly}
               aria-pressed={showReportedOnly}
               className={cn(
                 "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
@@ -245,10 +245,10 @@ export function AdminEventsPage({
               headers={[
                 { label: t("events.eventTitle") },
                 { label: t("events.organization") },
-                { label: <span className="flex items-center gap-1.5"><Calendar className="size-3.5" />{t("filters.date")}</span> },
-                { label: <span className="flex items-center gap-1.5"><MapPin className="size-3.5" />{t("filters.location")}</span> },
-                { label: <span className="flex items-center gap-1.5"><Tag className="size-3.5" />{t("filters.category")}</span> },
-                { label: <span className="flex items-center gap-1.5"><AlertTriangle className="size-3.5" />{t("events.status")}</span> },
+                { label: t("filters.date") },
+                { label: t("filters.location") },
+                { label: t("filters.category") },
+                { label: t("events.status") },
                 { label: t("common.actions"), align: "right" },
               ]}
             >
@@ -260,7 +260,7 @@ export function AdminEventsPage({
                     key={event.id}
                     id={`event-${event.id}`}
                     className={`cursor-pointer hover:bg-secondary/50 ${isHighlighted ? "bg-primary/10" : ""}`}
-                    onMouseDown={() => {
+                    onClick={() => {
                       const newParams = new URLSearchParams(searchParams.toString());
                       newParams.set(QP.EVENT_ID, event.id.toString());
                       setSearchParams(newParams);
@@ -293,13 +293,9 @@ export function AdminEventsPage({
                     </TableCell>
                     <TableCell>
                       {isReported ? (
-                        <span className="text-xs text-error font-medium">
-                          {t("admin.reported")}
-                        </span>
+                        <AdminStatusBadge status="reported" />
                       ) : (
-                        <span className="text-xs text-muted-foreground">
-                          {t("common.live")}
-                        </span>
+                        <AdminStatusBadge status="live" />
                       )}
                     </TableCell>
                     <TableCell>
@@ -307,7 +303,7 @@ export function AdminEventsPage({
                         <Button
                           variant="secondary"
                           size="sm"
-                          onMouseDown={async (e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
                             await onEditEvent?.(event);
                           }}
@@ -317,7 +313,7 @@ export function AdminEventsPage({
                         <Button
                           variant="secondary"
                           size="sm"
-                          onMouseDown={(e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
                             setDeleteConfirmId(event.id);
                           }}
@@ -391,7 +387,7 @@ export function AdminEventsPage({
                 submissionPagination.setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger showIcon={false} className="h-11 w-[180px]">
                 <SelectValue placeholder={t("admin.allStatus")} />
               </SelectTrigger>
               <SelectContent>
@@ -414,8 +410,8 @@ export function AdminEventsPage({
               headers={[
                 { label: t("events.eventTitle") },
                 { label: t("events.organization") },
-                { label: <span className="flex items-center gap-1.5"><User className="size-3.5" />{t("admin.submittedBy")}</span> },
-                { label: <span className="flex items-center gap-1.5"><Clock className="size-3.5" />{t("admin.submittedAt")}</span> },
+                { label: t("admin.submittedBy") },
+                { label: t("admin.submittedAt") },
                 { label: t("events.status") },
                 { label: t("common.actions"), align: "right" },
               ]}
@@ -425,7 +421,7 @@ export function AdminEventsPage({
                   key={submission.id}
                   id={`submission-${submission.id}`}
                   className={`cursor-pointer hover:bg-secondary/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
-                  onMouseDown={() => {
+                  onClick={() => {
                     const newParams = new URLSearchParams(searchParams.toString());
                     newParams.set(QP.SUBMISSION_ID, submission.id);
                     setSearchParams(newParams);
@@ -461,7 +457,7 @@ export function AdminEventsPage({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onMouseDown={(e) => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               submissionActions.handleApprove(submission);
                             }}
@@ -472,7 +468,7 @@ export function AdminEventsPage({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onMouseDown={(e) => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               submissionActions.handleRejectClick(submission);
                             }}

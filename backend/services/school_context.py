@@ -1,8 +1,7 @@
 """Shared school context helpers for time-sensitive backend behavior.
 
-Calendar feeds, notification scheduling, and the wat2do scraper all need the
-same school canonicalization and timezone rules. Keep the domain behavior here
-so feature services do not each grow their own variant.
+School slugs are the wire/DB contract.  Metadata lives in
+``core.constants.school_mappings``; email domains live in ``core.allowed_emails``.
 """
 
 import logging
@@ -10,7 +9,12 @@ from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from core.constants import SCHOOL_ALIASES, SCHOOL_SEMESTER_ENDS, SCHOOL_TIMEZONES
+from core.constants.school_mappings import (
+    normalize_school_slug,
+    school_display_name,
+    school_semester_ends,
+    school_timezone,
+)
 
 log = logging.getLogger(__name__)
 
@@ -18,37 +22,28 @@ _UTC_TZID = "UTC"
 
 
 def canonical_school_key(school: str | None) -> str:
-    """Return the normalized key used by school constants."""
-    from core.allowed_emails import _ensure_loaded
-
-    _ensure_loaded()
-    raw = (school or "").strip().lower()
-    return SCHOOL_ALIASES.get(raw, raw)
+    """Return the normalized school slug."""
+    return normalize_school_slug(school)
 
 
 def resolve_school_timezone(school: str | None) -> str:
-    """Return the IANA timezone for a school, falling back to UTC.
-
-    School timezones are loaded from the ``schools`` table in Supabase (see
-    ``load_allowed_domains``). Unmapped schools fall back to UTC.
-    """
-    canonical = canonical_school_key(school)
-    if not canonical:
+    """Return the IANA timezone for a school slug, falling back to UTC."""
+    slug = canonical_school_key(school)
+    if not slug:
         return _UTC_TZID
 
-    tz = SCHOOL_TIMEZONES.get(canonical)
+    tz = school_timezone(slug)
     if tz is None:
         log.warning(
-            "Unknown school %r (canonical %r) in school timezone lookup; falling back to UTC",
+            "Unknown school slug %r in timezone lookup; falling back to UTC",
             school,
-            canonical,
         )
         return _UTC_TZID
     return tz
 
 
 def school_for_user(user: dict[str, Any]) -> str | None:
-    """Resolve a user's school, reading exclusively from the stored school field."""
+    """Return the user's stored school slug, if any."""
     explicit = (user.get("school") or "").strip()
     return explicit or None
 
@@ -56,8 +51,7 @@ def school_for_user(user: dict[str, Any]) -> str | None:
 def resolve_user_timezone(user: dict[str, Any]) -> ZoneInfo:
     """Return a user's school timezone as ``ZoneInfo``, falling back to UTC."""
     school = school_for_user(user)
-    canonical = canonical_school_key(school)
-    tz_name = SCHOOL_TIMEZONES.get(canonical)
+    tz_name = school_timezone(canonical_school_key(school))
     if not tz_name:
         log.warning(
             "unresolved school=%r for user=%s; falling back to UTC",
@@ -71,16 +65,13 @@ def resolve_user_timezone(user: dict[str, Any]) -> ZoneInfo:
 def current_semester_end(school: str | None, *, now: datetime | None = None) -> str | None:
     """Return the UTC end timestamp of the semester containing ``now``.
 
-    Format is ``YYYYMMDDTHHMMSSZ``. Unknown schools return ``None`` so callers
-    can omit school-specific prompt context instead of guessing. Only Waterloo
-    has an explicit semester schedule; other schools use the neutral
-    ``None`` fallback.
+    Format is ``YYYYMMDDTHHMMSSZ``. Unknown schools return ``None``.
     """
-    canonical = canonical_school_key(school)
-    if not canonical:
+    slug = canonical_school_key(school)
+    if not slug:
         return None
 
-    ends = SCHOOL_SEMESTER_ENDS.get(canonical)
+    ends = school_semester_ends(slug)
     if ends is None:
         return None
 
@@ -97,5 +88,6 @@ __all__ = [
     "current_semester_end",
     "resolve_school_timezone",
     "resolve_user_timezone",
+    "school_display_name",
     "school_for_user",
 ]

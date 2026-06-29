@@ -3,13 +3,41 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
-from services.scraper.pipeline import _parse_post_timestamp
+from core.constants.school_mappings import RECIPIENT_ID_TO_SCHOOL_SLUG
+from services.scraper.pipeline import parse_post_timestamp
 
 log = logging.getLogger(__name__)
 
 _RECENT_POST_WINDOW = timedelta(minutes=30)
+
+
+class SchoolResolutionError(ValueError):
+    """Raised when a single-user scrape cannot resolve its school."""
+
+
+def resolve_single_user_scrape_school() -> str:
+    """Resolve school from ``INTENDED_RECIPIENT_ID`` only."""
+    recipient_id = (os.getenv("INTENDED_RECIPIENT_ID") or "").strip()
+    if not recipient_id:
+        raise SchoolResolutionError(
+            "INTENDED_RECIPIENT_ID is required for single-user scrapes",
+        )
+
+    slug = RECIPIENT_ID_TO_SCHOOL_SLUG.get(recipient_id)
+    if not slug:
+        raise SchoolResolutionError(
+            f"No school mapping for intended_recipient_id={recipient_id!r}",
+        )
+
+    log.info(
+        "Resolved school slug=%r from intended_recipient_id=%s",
+        slug,
+        recipient_id,
+    )
+    return slug
 
 
 def is_post_url_target(target: str) -> bool:
@@ -54,7 +82,7 @@ def fetch_posts_for_single_user(
     )
 
     if not is_post and posts and posts[0].get("timestamp"):
-        post_dt = _parse_post_timestamp(posts[0]["timestamp"])
+        post_dt = parse_post_timestamp(posts[0]["timestamp"])
         now = datetime.now(timezone.utc)
         if post_dt and post_dt > now - _RECENT_POST_WINDOW:
             log.info("Fetched post is recent, using it")

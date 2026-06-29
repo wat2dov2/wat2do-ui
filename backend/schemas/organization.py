@@ -94,9 +94,7 @@ class OrganizationCreate(BaseModel):
     owner_user_id: UUID | None = Field(
         default=None, description="Approved organization owner user ID"
     )
-    school: str = Field(
-        default="University of Waterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH
-    )
+    school: str = Field(default="uwaterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH)
 
     @field_validator("organization_name", "organization_type", "school")
     @classmethod

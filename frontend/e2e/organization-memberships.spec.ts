@@ -16,7 +16,7 @@ const MOCK_ORGANIZATION = {
   organization_type: "WUSA",
   logo_url: null,
   created_by: "owner-user-id",
-  school: "University of Waterloo",
+  school: "uwaterloo",
   event_count: 0,
   latest_event_title: null,
   latest_event_added_at: null,
@@ -41,7 +41,7 @@ async function seedSession(page: Page, email: string, clubId: number | null = nu
         JSON.stringify({
           id: emailValue === "owner@uwaterloo.ca" ? "owner-user-id" : "student-user-id",
           email: emailValue,
-          school: "University of Waterloo",
+          school: "uwaterloo",
           faculty: "Mathematics",
           interests: ["AI"],
           isFirstYear: false,
@@ -216,7 +216,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
         body: JSON.stringify({
           id: "student-user-id",
           email: STUDENT_EMAIL,
-          school: "University of Waterloo",
+          school: "uwaterloo",
           role: "user",
         }),
       });
@@ -307,7 +307,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
         body: JSON.stringify({
           id: "owner-user-id",
           email: OWNER_EMAIL,
-          school: "University of Waterloo",
+          school: "uwaterloo",
           role: "user",
         }),
       });

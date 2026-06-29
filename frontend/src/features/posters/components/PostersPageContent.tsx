@@ -159,7 +159,7 @@ export function PostersPageContent({
               scansPagination.setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger showIcon={false} className="h-11 w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

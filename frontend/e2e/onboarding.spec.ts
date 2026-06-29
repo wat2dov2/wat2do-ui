@@ -67,7 +67,7 @@ test.describe("Onboarding Wizard E2E Flow", () => {
         body: JSON.stringify({
           id: "mock-user-id",
           email: TEST_EMAIL,
-          school: "University of Waterloo",
+          school: "uwaterloo",
           faculty: "",
           interests: [],
           is_first_year: false,
@@ -147,7 +147,7 @@ test.describe("Onboarding Wizard E2E Flow", () => {
               registration: false,
               category: "Technology",
               organization: "Tech Club",
-              school: "University of Waterloo",
+              school: "uwaterloo",
               added_at: new Date().toISOString(),
               status: "CONFIRMED",
             },

@@ -6,6 +6,7 @@ const SCHOOL_LABELS: Record<string, string> = {
   uwaterloo: "University of Waterloo",
   utoronto: "University of Toronto",
   utsc: "University of Toronto Scarborough",
+  utm: "University of Toronto Mississauga",
   mcgill: "McGill University",
   mcmaster: "McMaster University",
   western: "Western University",
@@ -30,44 +31,7 @@ export const SCHOOL_SLUGS = Object.keys(SCHOOL_LABELS).filter(
   (school) => school !== "all",
 );
 
-const SCHOOL_ALIASES: Record<string, string> = {
-  "old-uw": DEFAULT_SCHOOL,
-  "old-waterloo": DEFAULT_SCHOOL,
-  "old-uwaterloo": DEFAULT_SCHOOL,
-  "old-mit": "mit",
-  "university-of-waterloo": DEFAULT_SCHOOL,
-  "university of waterloo": DEFAULT_SCHOOL,
-  "university of toronto": "utoronto",
-  "university of toronto - st. george": "utoronto",
-  "university of toronto scarborough": "utsc",
-  "university of toronto - scarborough": "utsc",
-  "mcgill university": "mcgill",
-  "mcmaster university": "mcmaster",
-  "western university": "western",
-  "queen's university": "queens",
-  "carleton university": "carleton",
-  "brock university": "brock",
-  "wilfrid laurier university": "wlu",
-  "york university": "york",
-  "toronto metropolitan university": "tmu",
-  "university of ottawa": "uottawa",
-  "ocad university": "ocad",
-  "cornell university": "cornell",
-  "new york university": "nyu",
-  "university of pennsylvania": "upenn",
-  "columbia university": "columbia",
-  uw: DEFAULT_SCHOOL,
-  waterloo: DEFAULT_SCHOOL,
-  uwaterloo: DEFAULT_SCHOOL,
-  "massachusetts-institute-of-technology": "mit",
-  "massachusetts institute of technology": "mit",
-  mit: "mit",
-  "university of california, berkeley": "berkeley",
-  "uc berkeley": "berkeley",
-  berkeley: "berkeley",
-};
-
-function normalizeSchoolLabel(value: string): string {
+function normalizeSchoolSlug(value: string): string {
   return value.trim().toLowerCase().replace(/_/g, "-");
 }
 
@@ -75,16 +39,17 @@ function hasSchoolLabel(school: string): boolean {
   return Object.hasOwn(SCHOOL_LABELS, school) && school !== "all";
 }
 
+/** Normalize a school slug. Empty input falls back to the default school. */
 export function resolveSchool(value: string | null | undefined): string {
   const raw = value?.trim() ?? "";
   if (!raw) return DEFAULT_SCHOOL;
-  return SCHOOL_ALIASES[normalizeSchoolLabel(raw)] ?? raw;
+  return normalizeSchoolSlug(raw);
 }
 
 function parseSchoolCandidateFromHostname(hostname: string): string | null {
   const labels = hostname
     .split(".")
-    .map(normalizeSchoolLabel)
+    .map(normalizeSchoolSlug)
     .filter(Boolean);
   const isWat2DoHostname =
     labels.length >= 2 && labels[labels.length - 2] === "wat2do" && labels[labels.length - 1] === "io";
@@ -93,8 +58,7 @@ function parseSchoolCandidateFromHostname(hostname: string): string | null {
     return null;
   }
 
-  const oldIndex = labels.indexOf("old");
-  const candidate = oldIndex >= 0 ? labels[oldIndex + 1] : labels[0];
+  const candidate = labels[0];
   if (
     !candidate ||
     candidate === "localhost" ||
@@ -143,5 +107,6 @@ export function getCurrentSchool(): string {
 }
 
 export function getSchoolDisplayName(school: string): string {
-  return SCHOOL_LABELS[resolveSchool(school)] ?? school;
+  const slug = resolveSchool(school);
+  return SCHOOL_LABELS[slug] ?? slug;
 }

@@ -37,12 +37,12 @@ def test_revalidate_school_posts_school_with_bearer_secret(monkeypatch):
     monkeypatch.setattr(module.settings, "event_feed_revalidation_timeout", 2.5)
     monkeypatch.setattr(module.httpx, "post", fake_post)
 
-    module.event_feed_revalidation_service.revalidate_school("University of Waterloo")
+    module.event_feed_revalidation_service.revalidate_school("uwaterloo")
 
     assert calls == [
         {
             "url": "https://wat2do.io/api/revalidate-events",
-            "json": {"school": "University of Waterloo"},
+            "json": {"school": "uwaterloo"},
             "headers": {"Authorization": "Bearer secret"},
             "timeout": 2.5,
         }

@@ -29,7 +29,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           aria-label={t("admin.previous")}
-          onMouseDown={() => onPageChange(Math.max(1, currentPage - 1))}
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           className="size-7 rounded-lg p-0 text-xs"
         >
@@ -45,7 +45,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           aria-label={t("admin.next")}
-          onMouseDown={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className="size-7 rounded-lg p-0 text-xs"
         >

@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     openai_temperature_creative: float = 0.7
     # Apify token for the Instagram scraper (services/wat2do).
     # Empty string => the scraping pipeline raises at startup.  Set in
-    # GitHub repo secrets for the big-scrape and process-single-user workflows.
+    # GitHub repo secrets for the process-single-user workflow.
     apify_api_token: str = ""
     # OpenAI model used for vision-based event extraction in services/wat2do.
     # Kept separate from ``openai_model`` so we can swap the extraction model

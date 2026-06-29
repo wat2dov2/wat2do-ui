@@ -12,7 +12,7 @@ import { useSavedOrganizationsStore } from "@/features/organizations/store/saved
 import { useAuthState } from "@/features/auth";
 import { useOrganizationsList } from "@/features/organizations/hooks/useOrganizationsList";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 40;
 
 export function useOrganizationsPage() {
   const { isAuthenticated, clubs: claimedClubs } = useAuthState();

@@ -4,13 +4,13 @@ interface QuickFilterChipProps {
   icon: React.ReactNode;
   label: string;
   active: boolean;
-  onMouseDown: () => void;
+  onClick: () => void;
 }
 
-export function QuickFilterChip({ icon, label, active, onMouseDown }: QuickFilterChipProps) {
+export function QuickFilterChip({ icon, label, active, onClick }: QuickFilterChipProps) {
   return (
     <button
-      onMouseDown={onMouseDown}
+      onClick={onClick}
       data-elevation="control"
       className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
         active

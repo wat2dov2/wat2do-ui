@@ -2,10 +2,13 @@
 Allowed student email domains mapped to schools.
 Only emails from these domains can sign up.
 
-The {domain -> school name} mapping is stored in the Supabase
+The {domain -> school slug} mapping is stored in the Supabase
 ``school_email_domains`` table (joined to ``schools``) and is loaded
 lazily on first lookup.  Falls back to a hardcoded UWaterloo entry if
 Supabase is unreachable so the app still boots.
+
+School display names, aliases, and timezones live in
+``core.constants.school_mappings`` — not loaded here.
 """
 
 import logging
@@ -22,7 +25,7 @@ FALLBACK_DOMAINS: dict[str, str] = {
     "edu.uwaterloo.ca": "uwaterloo",
 }
 
-# Dynamic mapping of domain -> school name.  Lazily populated on first
+# Dynamic mapping of domain -> school slug.  Lazily populated on first
 # lookup from the ``school_email_domains`` table.  Tests can monkeypatch
 # this dict directly; set ``_loaded`` to True to skip the Supabase load.
 ALLOWED_EMAIL_DOMAINS: dict[str, str] = {}
@@ -55,7 +58,7 @@ def _normalize_domain(domain: str) -> str | None:
 
 
 def load_allowed_domains() -> None:
-    """Populate ``ALLOWED_EMAIL_DOMAINS`` and school metadata from Supabase, merging fallback entries.
+    """Populate ``ALLOWED_EMAIL_DOMAINS`` from Supabase, merging fallback entries.
 
     Idempotent — sets ``_loaded`` so subsequent calls are no-ops.  Imported
     lazily inside the function so module import doesn't trigger a Supabase
@@ -65,54 +68,11 @@ def load_allowed_domains() -> None:
     ALLOWED_EMAIL_DOMAINS.clear()
     ALLOWED_EMAIL_DOMAINS.update(FALLBACK_DOMAINS)
 
-    from core.constants.schools import (
-        FALLBACK_ALIASES,
-        FALLBACK_SEMESTER_ENDS,
-        FALLBACK_TIMEZONES,
-        SCHOOL_ALIASES,
-        SCHOOL_SEMESTER_ENDS,
-        SCHOOL_TIMEZONES,
-    )
-
-    SCHOOL_TIMEZONES.clear()
-    SCHOOL_TIMEZONES.update(FALLBACK_TIMEZONES)
-
-    SCHOOL_ALIASES.clear()
-    SCHOOL_ALIASES.update(FALLBACK_ALIASES)
-
-    SCHOOL_SEMESTER_ENDS.clear()
-    SCHOOL_SEMESTER_ENDS.update(FALLBACK_SEMESTER_ENDS)
-
     try:
         from core.database import get_sb
-        from core.tables import SCHOOL_EMAIL_DOMAINS, SCHOOLS
+        from core.tables import SCHOOL_EMAIL_DOMAINS
 
         sb = get_sb()
-
-        # 1. Load school metadata (timezone, aliases, semester_ends)
-        res_schools = sb.table(SCHOOLS).select("name, timezone, aliases, semester_ends").execute()
-        for row in res_schools.data or []:
-            school_name = row.get("name")
-            if not school_name:
-                continue
-
-            key_name = school_name.strip().lower()
-
-            tz = row.get("timezone")
-            if tz:
-                SCHOOL_TIMEZONES[key_name] = tz.strip()
-
-            aliases = row.get("aliases") or []
-            for alias in aliases:
-                alias_clean = alias.strip().lower()
-                if alias_clean:
-                    SCHOOL_ALIASES[alias_clean] = key_name
-
-            ends = row.get("semester_ends") or []
-            if len(ends) == 3:
-                SCHOOL_SEMESTER_ENDS[key_name] = (ends[0], ends[1], ends[2])
-
-        # 2. Load email domains mapping
         res_domains = sb.table(SCHOOL_EMAIL_DOMAINS).select("domain, schools(name)").execute()
         for row in res_domains.data or []:
             domain = row.get("domain")
@@ -121,10 +81,9 @@ def load_allowed_domains() -> None:
                 continue
             canonical = _normalize_domain(domain)
             if canonical and canonical not in ALLOWED_EMAIL_DOMAINS:
-                ALLOWED_EMAIL_DOMAINS[canonical] = school
+                ALLOWED_EMAIL_DOMAINS[canonical] = school.strip().lower()
     except Exception as e:
-        # If Supabase is unreachable, stick with fallback domains and metadata
-        log.error("Failed to load school email domains/metadata from Supabase: %s", e)
+        log.error("Failed to load school email domains from Supabase: %s", e)
 
     _loaded = True
 
@@ -135,7 +94,7 @@ def _ensure_loaded() -> None:
 
 
 def get_school_for_email(email: str) -> str | None:
-    """Return the school for an email domain, or None if not allowed.
+    """Return the school slug for an email domain, or None if not allowed.
 
     Rejects inputs with embedded ``@`` in the local part (e.g. smuggled
     header-injection payloads like ``a@b@uwaterloo.ca``).  Splits on the

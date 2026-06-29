@@ -7,16 +7,14 @@ Stages:
     4. Save — insert one events row per logical event and one event_dates
        row per occurrence.
 
-Public entry point: ``run_pipeline``. Used by both single-user (one
-handle) and big-scrape (many handles, chunked) modes — chunking lives
-in ``backend/jobs/scrape.py``, not here, so the pipeline stays oblivious
-to which mode it's serving.
+Public entry point: ``run_pipeline``. ``backend/jobs/scrape.py`` prefetches
+posts via Apify, then hands them here for processing.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from core.constants import (
@@ -31,17 +29,12 @@ from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
 
-# ``instagram_scraper`` pulls in ``apify_client``, which is heavy and
-# unnecessary for the deterministic helpers below.  Tests that exercise
-# only those helpers should not pay the import cost — get_scraper is
-# imported lazily inside run_pipeline.
-
 log = logging.getLogger(__name__)
 
 
 @dataclass
-class HandleResult:
-    """Per-handle pipeline result. Aggregated by the caller for summary logs."""
+class ScrapeResult:
+    """Outcome of processing one handle's prefetched posts."""
 
     ig_handle: str
     posts_fetched: int = 0
@@ -54,184 +47,76 @@ class HandleResult:
     status: str = WORKFLOW_RUN_SUCCESS
     error_message: str | None = None
     workflow_run_id: str | None = None
-
-
-@dataclass
-class PipelineResult:
-    """Aggregate result across all handles in one run."""
-
-    handles: list[HandleResult] = field(default_factory=list)
     dry_run: bool = False
-
-    @property
-    def total_inserted(self) -> int:
-        return sum(h.events_saved for h in self.handles)
-
-    @property
-    def total_extracted(self) -> int:
-        return sum(h.events_extracted for h in self.handles)
-
-    @property
-    def total_posts(self) -> int:
-        return sum(h.posts_fetched for h in self.handles)
 
 
 def run_pipeline(
     *,
-    usernames: list[str],
+    ig_handle: str,
     school: str,
+    posts: list[dict],
     cutoff_days: int,
-    results_limit: int | None = None,
+    pinned_post_warning: bool = False,
     dry_run: bool = False,
     github_run_id: str | None = None,
     allow_past_events: bool = False,
-    prefetched_posts: list[dict] | None = None,
-    prefetched_pinned_warning: bool = False,
-) -> PipelineResult:
-    """Run the four-stage pipeline against ``usernames`` for ``school``.
+) -> ScrapeResult:
+    """Process prefetched Apify posts for one Instagram handle."""
+    result = ScrapeResult(
+        ig_handle=ig_handle,
+        pinned_post_warning=pinned_post_warning,
+        dry_run=dry_run,
+    )
 
-    Args:
-        usernames: Instagram handles to scrape (no leading @).
-        school: full canonical school name (used for prompt context).
-        cutoff_days: drop posts older than this many days.
-        results_limit: max posts per handle (None = Apify default).
-        dry_run: when True, skip WorkflowRun row creation, skip the
-            seen-shortcodes filter, skip DB inserts. Image uploads
-            and OpenAI calls still run so the workflow exercises the
-            same network paths.
-        github_run_id: optional GitHub Actions run id for WorkflowRun
-            tracking. Has no effect in dry-run.
-        prefetched_posts: when set, skip the Apify scrape and process
-            these items instead (single-user webhook mode).
-        prefetched_pinned_warning: pinned-post warning from the
-            prefetched scrape; ignored when ``prefetched_posts`` is None.
-
-    Returns the aggregate ``PipelineResult``.
-    """
-    if not usernames:
-        return PipelineResult(handles=[], dry_run=dry_run)
-
-    from services.scraper.instagram_scraper import get_scraper
-
-    scraper = get_scraper()
-
-    seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes()
     log.info(
-        "Pipeline start: %d username(s), school=%s, cutoff_days=%d, dry_run=%s",
-        len(usernames),
+        "Pipeline start: handle=%s, school=%s, cutoff_days=%d, dry_run=%s, posts=%d",
+        ig_handle,
         school,
         cutoff_days,
         dry_run,
+        len(posts),
     )
 
-    if prefetched_posts is not None:
-        posts = prefetched_posts
-        pinned_warning = prefetched_pinned_warning
-        log.info(
-            "Using %d prefetched post(s) for %d handle(s)",
-            len(posts),
-            len(usernames),
+    if not dry_run:
+        run = workflow_run_service.create_workflow_run(
+            WorkflowRunCreate(ig_username=ig_handle, github_run_id=github_run_id),
         )
-    else:
-        posts, pinned_warning = scraper.scrape(
-            usernames,
-            results_limit=results_limit,
-            cutoff_days=cutoff_days,
+        result.workflow_run_id = run.id
+
+    try:
+        result.posts_fetched = len(posts)
+        if not posts:
+            result.status = WORKFLOW_RUN_NO_POSTS
+            _finalize(result)
+            return result
+
+        seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes()
+        cutoff_dt = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
+        new_posts = _filter_new_posts(
+            posts,
+            seen_shortcodes=seen_shortcodes,
+            cutoff=cutoff_dt,
         )
-        log.info("Apify returned %d total post(s) for %d handle(s)", len(posts), len(usernames))
+        result.posts_new = len(new_posts)
 
-    grouped = _group_by_handle(posts, usernames)
-
-    cutoff_dt = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
-    handle_results: list[HandleResult] = []
-
-    for handle in usernames:
-        result = HandleResult(ig_handle=handle, pinned_post_warning=pinned_warning)
-        if not dry_run:
-            run = workflow_run_service.create_workflow_run(
-                WorkflowRunCreate(ig_username=handle, github_run_id=github_run_id),
+        for post in new_posts:
+            _process_one_post(
+                post,
+                handle=ig_handle,
+                school=school,
+                result=result,
+                dry_run=dry_run,
+                allow_past_events=allow_past_events,
             )
-            result.workflow_run_id = run.id
 
-        try:
-            handle_posts = grouped.get(handle, [])
-            result.posts_fetched = len(handle_posts)
-            if not handle_posts:
-                result.status = WORKFLOW_RUN_NO_POSTS
-                handle_results.append(result)
-                _finalize(result, dry_run=dry_run)
-                continue
+        _finalize(result)
+    except Exception as exc:
+        log.exception("Pipeline failed for handle=%s: %s", ig_handle, exc)
+        result.status = WORKFLOW_RUN_ERROR
+        result.error_message = str(exc)[:4000]
+        _finalize(result)
 
-            new_posts = _filter_new_posts(
-                handle_posts,
-                seen_shortcodes=seen_shortcodes,
-                cutoff=cutoff_dt,
-            )
-            result.posts_new = len(new_posts)
-
-            for post in new_posts:
-                _process_one_post(
-                    post,
-                    handle=handle,
-                    school=school,
-                    result=result,
-                    dry_run=dry_run,
-                    allow_past_events=allow_past_events,
-                )
-
-            handle_results.append(result)
-            _finalize(result, dry_run=dry_run)
-        except Exception as e:
-            log.exception("Pipeline failed for handle=%s: %s", handle, e)
-            result.status = WORKFLOW_RUN_ERROR
-            result.error_message = str(e)[:4000]
-            handle_results.append(result)
-            _finalize(result, dry_run=dry_run)
-
-    return PipelineResult(handles=handle_results, dry_run=dry_run)
-
-
-def _group_by_handle(posts: list[dict], usernames: list[str]) -> dict[str, list[dict]]:
-    """Bucket Apify results by their ``ownerUsername`` (or ``username``) field.
-
-    Instagram handles are case-insensitive — Apify sometimes returns
-    ``ownerUsername`` in different casing than the requested handle (we
-    ask for ``uwteaorganization``, get back ``UWTeaOrganization``). A case-sensitive
-    bucket would silently drop those posts and report ``posts_fetched=0``,
-    making active accounts look dormant. Match casefold-on-both-sides.
-    Supports collab posts by falling back to matching against ``inputUrl`` or co-authors.
-    """
-    lookup = {h.lower(): h for h in usernames}
-    by_handle: dict[str, list[dict]] = {h: [] for h in usernames}
-    for post in posts:
-        owner = (post.get("ownerUsername") or post.get("username") or "").lower()
-        canonical = lookup.get(owner)
-        if canonical is None:
-            # Check co-authors/collaborators (usually under coauthor_producers or coauthors)
-            coauthors = post.get("coauthor_producers") or post.get("coauthors") or []
-            if isinstance(coauthors, list):
-                for coauthor in coauthors:
-                    co_username = ""
-                    if isinstance(coauthor, dict):
-                        co_username = (
-                            coauthor.get("username") or coauthor.get("ownerUsername") or ""
-                        )
-                    elif isinstance(coauthor, str):
-                        co_username = coauthor
-
-                    co_username = co_username.lower()
-                    if co_username in lookup:
-                        canonical = lookup[co_username]
-                        break
-        if canonical is None:
-            input_url = (post.get("inputUrl") or "").lower()
-            for handle in usernames:
-                if f"instagram.com/{handle.lower()}" in input_url:
-                    canonical = handle
-                    break
-        if canonical is not None:
-            by_handle[canonical].append(post)
-    return by_handle
+    return result
 
 
 def _filter_new_posts(
@@ -240,24 +125,17 @@ def _filter_new_posts(
     seen_shortcodes: set[str],
     cutoff: datetime,
 ) -> list[dict]:
-    """Drop already-seen shortcodes and posts older than ``cutoff``.
-
-    Uses ``dedup._extract_shortcode`` for both the seen-set lookup and
-    the URL-shape check so a URL with a query string or fragment
-    canonicalises the same way it does in the DB-backed seen set.
-    """
+    """Drop already-seen shortcodes and posts older than ``cutoff``."""
     fresh: list[dict] = []
     for post in posts:
         url = post.get("url") or ""
         shortcode = _extract_shortcode(url)
         if shortcode is None:
-            # Profile link, story URL, or unrecognised path — skip.
             continue
         if shortcode in seen_shortcodes:
             continue
 
-        timestamp = post.get("timestamp")
-        post_dt = _parse_post_timestamp(timestamp)
+        post_dt = parse_post_timestamp(post.get("timestamp"))
         if post_dt is not None and post_dt < cutoff:
             continue
 
@@ -270,7 +148,7 @@ def _process_one_post(
     *,
     handle: str,
     school: str,
-    result: HandleResult,
+    result: ScrapeResult,
     dry_run: bool,
     allow_past_events: bool = False,
 ) -> None:
@@ -278,7 +156,7 @@ def _process_one_post(
     uploaded = upload_post_images(image_urls)
 
     caption = post.get("caption") or post.get("text") or ""
-    post_dt = _parse_post_timestamp(post.get("timestamp"))
+    post_dt = parse_post_timestamp(post.get("timestamp"))
 
     events = extract_events_from_post(
         caption_text=caption,
@@ -293,9 +171,6 @@ def _process_one_post(
     source_url = post.get("url") or ""
 
     for event in events:
-        # Pick the source image based on the extractor's image_index. If the
-        # model returns a bad index, use the first uploaded image so the post
-        # can still be processed.
         try:
             idx = int(event.get("image_index") or 0)
         except (TypeError, ValueError):
@@ -327,8 +202,8 @@ def _process_one_post(
             result.events_duplicates += 1
 
 
-def _finalize(result: HandleResult, *, dry_run: bool) -> None:
-    if dry_run or not result.workflow_run_id:
+def _finalize(result: ScrapeResult) -> None:
+    if result.dry_run or not result.workflow_run_id:
         return
     workflow_run_service.mark_finished(
         result.workflow_run_id,
@@ -343,12 +218,7 @@ def _finalize(result: HandleResult, *, dry_run: bool) -> None:
 
 
 def _extract_image_urls(post: dict) -> list[str]:
-    """Pull image URLs from an Apify Instagram-post-scraper item.
-
-    Apify's actor returns slightly different shapes for single-image vs.
-    carousel posts. We accept the union and fall back to ``displayUrl``
-    so single-image posts still produce one URL.
-    """
+    """Pull image URLs from an Apify Instagram-post-scraper item."""
     images: list[str] = []
 
     images_field = post.get("images")
@@ -375,7 +245,7 @@ def _extract_image_urls(post: dict) -> list[str]:
     return images
 
 
-def _parse_post_timestamp(value: object) -> datetime | None:
+def parse_post_timestamp(value: object) -> datetime | None:
     """Apify timestamps come as ISO 8601 strings (sometimes with trailing Z)."""
     if not isinstance(value, str) or not value:
         return None

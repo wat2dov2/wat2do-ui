@@ -15,7 +15,6 @@ import {
 import { Button } from "@/shared/ui/button";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
-// fallow-ignore-next-line circular-dependency
 import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
 import { translateCategory } from "@/shared/utils/event";
 import { translateFood } from "@/shared/utils/foodTranslation";

@@ -100,7 +100,7 @@ def _organization(**overrides) -> OrganizationResponse:
         "organization_type": "WUSA",
         "logo_url": None,
         "created_by": "11111111-1111-1111-1111-111111111111",
-        "school": "University of Waterloo",
+        "school": "uwaterloo",
     }
     defaults.update(overrides)
     return OrganizationResponse.model_validate(defaults)
@@ -114,7 +114,7 @@ def test_resolve_organization_fields_derives_from_organization(monkeypatch):
     assert event_service._resolve_organization_fields(7) == {
         "organization": "UW Tea Organization",
         "organization_type": "WUSA",
-        "school": "University of Waterloo",
+        "school": "uwaterloo",
     }
 
 
@@ -350,7 +350,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
         },
     )
 
-    results, total = event_service.list_events(school="University of Waterloo")
+    results, total = event_service.list_events(school="uwaterloo")
     assert len(results) == 1
     assert total == 1
     assert results[0].click_count == 5
@@ -358,7 +358,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     assert results[0].occurrences[0].dtstart_utc == future_1
 
     # The query filters to occurrences starting today-or-later, scoped to school.
-    fake_sb.eq.assert_any_call("events.school", "University of Waterloo")
+    fake_sb.eq.assert_any_call("events.school", "uwaterloo")
     gte_bounds = [
         call.args[1]
         for call in fake_sb.gte.call_args_list
@@ -384,12 +384,12 @@ def test_list_events_is_cached_until_invalidated(monkeypatch):
         MagicMock(return_value=[1]),
     )
 
-    event_service.list_promoted_events(school="University of Waterloo")
-    event_service.list_promoted_events(school="University of Waterloo")
+    event_service.list_promoted_events(school="uwaterloo")
+    event_service.list_promoted_events(school="uwaterloo")
     assert calls["n"] == 1  # second call is a cache hit
 
     event_service.invalidate_events_cache()
-    event_service.list_promoted_events(school="University of Waterloo")
+    event_service.list_promoted_events(school="uwaterloo")
     assert calls["n"] == 2  # reloaded after invalidation
 
 
@@ -399,7 +399,7 @@ def test_list_events_pushes_filters_into_event_query(monkeypatch):
     monkeypatch.setattr(event_service.event_query, "load_events_page", mock_page)
 
     event_service.list_events(
-        school="University of Waterloo",
+        school="uwaterloo",
         skip=50,
         limit=25,
         search="hack",
@@ -418,7 +418,7 @@ def test_list_events_pushes_filters_into_event_query(monkeypatch):
     )
 
     _, kwargs = mock_page.call_args
-    assert kwargs["school"] == "University of Waterloo"
+    assert kwargs["school"] == "uwaterloo"
     assert kwargs["offset"] == 50
     assert kwargs["limit"] == 25
     assert kwargs["cap"] == MAX_LIST_LIMIT
@@ -454,7 +454,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "title": "Alpha Hack Night",
                     "location": "SLC Great Hall",
                     "organization": "UW Blueprint",
-                    "school": "University of Waterloo",
+                    "school": "uwaterloo",
                     "category": "Technology",
                     "price": 0,
                     "food": ["Pizza"],
@@ -474,7 +474,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "title": "Beta Hack Night",
                     "location": "SLC Great Hall",
                     "organization": "UW Blueprint",
-                    "school": "University of Waterloo",
+                    "school": "uwaterloo",
                     "category": "Technology",
                     "price": 0,
                     "food": ["Pizza"],
@@ -492,7 +492,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
                     "title": "Library Talk",
                     "location": "DC Library",
                     "organization": "Library Organization",
-                    "school": "University of Waterloo",
+                    "school": "uwaterloo",
                     "category": "Academic",
                     "price": 0,
                     "food": [],
@@ -518,7 +518,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     items, total = event_query.load_events_page(
         start_utc=datetime(2026, 6, 1, tzinfo=timezone.utc),
         end_utc=None,
-        school="University of Waterloo",
+        school="uwaterloo",
         offset=1,
         limit=1,
         cap=10,
@@ -541,7 +541,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     assert [event.id for event in items] == [2]
     assert items[0].occurrences[0].id == 22
     list_for_events.assert_called_once_with([2])
-    fake_sb.eq.assert_any_call("events.school", "University of Waterloo")
+    fake_sb.eq.assert_any_call("events.school", "uwaterloo")
     fake_sb.in_.assert_any_call("events.category", ["Technology"])
     fake_sb.in_.assert_any_call("events.organization", ["UW Blueprint"])
     fake_sb.eq.assert_any_call("events.registration", True)
@@ -590,7 +590,7 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
                     "title": "Beta Hack Night",
                     "location": "SLC Great Hall",
                     "organization": "UW Blueprint",
-                    "school": "University of Waterloo",
+                    "school": "uwaterloo",
                     "category": "Technology",
                     "price": 0,
                     "food": ["Pizza"],
@@ -619,7 +619,7 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
     items, total = event_query.load_events_page(
         start_utc=datetime(2026, 6, 1, tzinfo=timezone.utc),
         end_utc=None,
-        school="University of Waterloo",
+        school="uwaterloo",
         offset=1,
         limit=1,
         cap=10,
