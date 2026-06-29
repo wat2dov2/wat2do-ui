@@ -266,7 +266,7 @@ function OrganizationCardComponent({
       role="button"
       tabIndex={0}
       aria-label={`Organization: ${organization.organization_name}`}
-      onMouseDown={handleCardActivate}
+      onClick={handleCardActivate}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();

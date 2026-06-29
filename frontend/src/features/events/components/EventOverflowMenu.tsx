@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Flag, Share2, Trash2 } from "@/shared/ui/doodle-icons";
 import {
@@ -6,6 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  registerTrailingClickSwallow,
 } from "@/shared/ui/dropdown-menu";
 
 type EventOverflowAction = "share" | "report" | "delete";
@@ -16,6 +17,15 @@ interface EventOverflowMenuProps {
   canDelete?: boolean;
   contentClassName?: string;
   stopPropagation?: boolean;
+}
+
+function runOverflowMenuAction(
+  event: React.MouseEvent<HTMLDivElement>,
+  action: () => void,
+) {
+  event.preventDefault();
+  registerTrailingClickSwallow();
+  action();
 }
 
 export function EventOverflowMenu({
@@ -31,11 +41,19 @@ export function EventOverflowMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
-        <DropdownMenuItem onSelect={() => onAction("share")}>
+        <DropdownMenuItem
+          onMouseDown={(event: MouseEvent<HTMLDivElement>) =>
+            runOverflowMenuAction(event, () => onAction("share"))
+          }
+        >
           <Share2 className="size-3.5 shrink-0" />
           {t("common.share")}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onAction("report")}>
+        <DropdownMenuItem
+          onMouseDown={(event: MouseEvent<HTMLDivElement>) =>
+            runOverflowMenuAction(event, () => onAction("report"))
+          }
+        >
           <Flag className="size-3.5 shrink-0" />
           {t("common.report")}
         </DropdownMenuItem>

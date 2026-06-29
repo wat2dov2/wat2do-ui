@@ -157,6 +157,7 @@ function EventFooterActions({
       <EventCalendarDownloadMenu event={event} stopPropagation>
         <button
           type="button"
+          onPointerDown={(e) => e.preventDefault()}
           onClick={(e) => e.stopPropagation()}
           aria-label={t("common.download")}
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
@@ -172,6 +173,7 @@ function EventFooterActions({
       >
         <button
           type="button"
+          onPointerDown={(e) => e.preventDefault()}
           onClick={(e) => e.stopPropagation()}
           aria-label={t("common.actions")}
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}

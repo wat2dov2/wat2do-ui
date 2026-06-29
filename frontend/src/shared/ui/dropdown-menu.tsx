@@ -138,4 +138,5 @@ export {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  registerTrailingClickSwallow,
 };
