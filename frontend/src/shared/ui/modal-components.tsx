@@ -37,10 +37,16 @@ export function InfoRow({
   value: React.ReactNode;
   className?: string;
 } & React.ComponentProps<"div">) {
+  const isPlainTextValue = typeof value === "string" || typeof value === "number";
+
   return (
     <div className={cn("space-y-1", className)} {...props}>
       <h3 className="font-semibold text-sm text-foreground">{label}</h3>
-      <p className="text-sm text-muted-foreground">{value}</p>
+      {isPlainTextValue ? (
+        <p className="text-sm text-muted-foreground">{value}</p>
+      ) : (
+        <div className="text-sm text-muted-foreground">{value}</div>
+      )}
     </div>
   );
 }

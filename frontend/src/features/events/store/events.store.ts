@@ -50,6 +50,77 @@ interface EventsState {
   incrementClickCount: (eventId: number) => void;
 }
 
+const optimisticClickCounts = new Map<number, number>();
+
+function applyOptimisticClickCount(event: AppEvent): AppEvent {
+  const optimisticCount = optimisticClickCounts.get(event.id);
+  const currentCount = event.click_count ?? 0;
+  if (optimisticCount === undefined || currentCount >= optimisticCount) return event;
+  return { ...event, click_count: optimisticCount };
+}
+
+export function applyOptimisticClickCountsToEvents(events: AppEvent[]): AppEvent[] {
+  let changed = false;
+  const nextEvents = events.map((event) => {
+    const nextEvent = applyOptimisticClickCount(event);
+    if (nextEvent !== event) changed = true;
+    return nextEvent;
+  });
+
+  return changed ? nextEvents : events;
+}
+
+function applyOptimisticClickCountsToFeed(
+  feed: PaginatedEventsResponse,
+): PaginatedEventsResponse {
+  const items = applyOptimisticClickCountsToEvents(feed.items);
+  return items === feed.items ? feed : { ...feed, items };
+}
+
+function applyOptimisticClickCountsToFeedPages(
+  pages: PaginatedEventsResponse[],
+): PaginatedEventsResponse[] {
+  let changed = false;
+  const nextPages = pages.map((page) => {
+    const nextPage = applyOptimisticClickCountsToFeed(page);
+    if (nextPage !== page) changed = true;
+    return nextPage;
+  });
+
+  return changed ? nextPages : pages;
+}
+
+function getEventClickCount(events: AppEvent[], eventId: number): number | null {
+  const event = events.find((item) => item.id === eventId);
+  return event ? event.click_count ?? 0 : null;
+}
+
+function getVisibleClickCount(state: EventsState, eventId: number): number {
+  return (
+    getEventClickCount(state.events, eventId) ??
+    getEventClickCount(state.promotedEvents, eventId) ??
+    optimisticClickCounts.get(eventId) ??
+    0
+  );
+}
+
+function patchEventClickCount(
+  events: AppEvent[],
+  eventId: number,
+  clickCount: number,
+): AppEvent[] {
+  let changed = false;
+  const nextEvents = events.map((event) => {
+    if (event.id !== eventId) return event;
+    const nextClickCount = Math.max(event.click_count ?? 0, clickCount);
+    if (nextClickCount === event.click_count) return event;
+    changed = true;
+    return { ...event, click_count: nextClickCount };
+  });
+
+  return changed ? nextEvents : events;
+}
+
 function getInitialSchoolFilter(): string {
   if (typeof window !== "undefined") {
     const schoolParam = new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim();
@@ -72,7 +143,7 @@ function patchFeedCache(
 
   queryClient.setQueryData<InfiniteData<PaginatedEventsResponse>>(queryKey, (current) => {
     if (!current) return current;
-    const nextPages = updater(current.pages);
+    const nextPages = applyOptimisticClickCountsToFeedPages(updater(current.pages));
     return { ...current, pages: nextPages };
   });
 }
@@ -100,26 +171,27 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   eventQuery: normalizeEventQuery(undefined),
 
   hydrateInitialFeed: (feed, school) => {
+    const hydratedFeed = applyOptimisticClickCountsToFeed(feed);
     const nextSchool = school ? resolveSchool(school) : get().schoolFilter;
     const eventQuery = normalizeEventQuery(undefined);
     const queryKey = queryKeys.events.feed(getSchoolFetchKey(nextSchool), eventQuery);
 
     getQueryClient().setQueryData<InfiniteData<PaginatedEventsResponse>>(queryKey, {
-      pages: [feed],
+      pages: [hydratedFeed],
       pageParams: [1],
     });
 
     set({
-      events: feed.items,
-      latestAddedEvent: feed.latest_added_event ?? null,
+      events: hydratedFeed.items,
+      latestAddedEvent: hydratedFeed.latest_added_event ?? null,
       isLoading: false,
       isLoadingMore: false,
       error: null,
       schoolFilter: nextSchool,
-      eventsPage: feed.page,
-      eventsPageSize: feed.page_size,
-      totalEvents: feed.total,
-      hasMoreEvents: feed.page < feed.total_pages,
+      eventsPage: hydratedFeed.page,
+      eventsPageSize: hydratedFeed.page_size,
+      totalEvents: hydratedFeed.total,
+      hasMoreEvents: hydratedFeed.page < hydratedFeed.total_pages,
       eventQuery,
     });
   },
@@ -167,19 +239,20 @@ export const useEventsStore = create<EventsState>((set, get) => ({
 
   updateEvent: async (eventId, data) => {
     const updated = await updateEventAPI(eventId, data);
+    const visibleUpdated = applyOptimisticClickCount(updated);
 
     patchFeedCache((pages) =>
       pages.map((page) => ({
         ...page,
-        items: page.items.map((event) => (event.id === eventId ? updated : event)),
+        items: page.items.map((event) => (event.id === eventId ? visibleUpdated : event)),
       })),
     );
 
     set((state) => ({
-      events: state.events.map((event) => (event.id === eventId ? updated : event)),
+      events: state.events.map((event) => (event.id === eventId ? visibleUpdated : event)),
       latestAddedEvent:
-        state.latestAddedEvent?.added_at === updated.added_at
-          ? { title: updated.title, added_at: updated.added_at }
+        state.latestAddedEvent?.added_at === visibleUpdated.added_at
+          ? { title: visibleUpdated.title, added_at: visibleUpdated.added_at }
           : state.latestAddedEvent,
     }));
   },
@@ -209,13 +282,22 @@ export const useEventsStore = create<EventsState>((set, get) => ({
   },
 
   incrementClickCount: (eventId) => {
+    const nextClickCount = Math.max(
+      getVisibleClickCount(get(), eventId),
+      optimisticClickCounts.get(eventId) ?? 0,
+    ) + 1;
+    optimisticClickCounts.set(eventId, nextClickCount);
+
+    patchFeedCache((pages) =>
+      pages.map((page) => {
+        const items = patchEventClickCount(page.items, eventId, nextClickCount);
+        return items === page.items ? page : { ...page, items };
+      }),
+    );
+
     set((state) => ({
-      events: state.events.map((event) =>
-        event.id === eventId ? { ...event, click_count: (event.click_count ?? 0) + 1 } : event,
-      ),
-      promotedEvents: state.promotedEvents.map((event) =>
-        event.id === eventId ? { ...event, click_count: (event.click_count ?? 0) + 1 } : event,
-      ),
+      events: patchEventClickCount(state.events, eventId, nextClickCount),
+      promotedEvents: patchEventClickCount(state.promotedEvents, eventId, nextClickCount),
     }));
   },
 }));

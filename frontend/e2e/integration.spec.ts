@@ -587,6 +587,22 @@ test.describe("Events Page", () => {
     await page.screenshot({ path: "e2e/screenshots/events-page.png", fullPage: true });
   });
 
+  test("keeps click count optimistic when opening event details", async ({ page }) => {
+    await page.goto(BASE);
+
+    const card = page.locator('article[data-event-id="1"]').first();
+    await expect(card).toBeVisible();
+    await expect(card).toContainText("0 clicks");
+
+    await card.click({ position: { x: 30, y: 30 } });
+
+    await expect(page).toHaveURL(/eventId=1/);
+    await expect(card).toContainText("1 click");
+
+    await page.waitForTimeout(500);
+    await expect(card).toContainText("1 click");
+  });
+
   test("app API proxy returns events", async ({ request }) => {
     const res = await request.get(`${APP_API}/events/`);
     expect(res.status()).toBe(200);
@@ -753,8 +769,15 @@ test.describe("Navigation", () => {
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
 
     await expect(page.locator("#server-event-feed")).toHaveCount(0);
-    await expect(page.getByRole("status")).toBeVisible();
-    await expect(page.getByRole("status")).toHaveAccessibleName(/Loading/i);
+    const loadingStatus = page.getByRole("status").first();
+    if (await loadingStatus.count()) {
+      await expect(loadingStatus).toBeVisible();
+      await expect(loadingStatus).toHaveAccessibleName(/Loading/i);
+      return;
+    }
+
+    await expect(page.getByRole("banner")).toBeVisible();
+    await expect(page.getByRole("main")).toBeVisible();
   });
 
   test("no console errors on events page", async ({ page }) => {

@@ -1,7 +1,10 @@
 import { useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearch } from "@/features/search";
-import { useEventsStore } from "@/features/events/store/events.store";
+import {
+  applyOptimisticClickCountsToEvents,
+  useEventsStore,
+} from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
@@ -94,8 +97,12 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
       ? getApiErrorMessage(feedQuery.error, t("events.loadFailed"))
       : null;
 
+    const visibleEvents = flattenedFeed
+      ? applyOptimisticClickCountsToEvents(flattenedFeed.items)
+      : [];
+
     useEventsStore.setState({
-      events: flattenedFeed?.items ?? [],
+      events: visibleEvents,
       latestAddedEvent: flattenedFeed?.latest_added_event ?? null,
       isLoading: feedQuery.isLoading,
       isLoadingMore: feedQuery.isFetchingNextPage,
@@ -118,7 +125,7 @@ export function useEventsPageData({ profileCompleted }: UseEventsPageDataOptions
 
   useEffect(() => {
     useEventsStore.setState({
-      promotedEvents: promotedQuery.data ?? [],
+      promotedEvents: applyOptimisticClickCountsToEvents(promotedQuery.data ?? []),
       isPromotedLoading: promotedQuery.isLoading,
     });
   }, [promotedQuery.data, promotedQuery.isLoading]);
