@@ -180,4 +180,4 @@ jobs:
       - name: Deploy Vercel output
         if: env.VERCEL_TOKEN != ''
         working-directory: frontend
-        run: npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        run: npx vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN"
