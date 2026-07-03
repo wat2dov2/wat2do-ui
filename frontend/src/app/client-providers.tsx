@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { LazyMotion, domMax } from "framer-motion";
 import "@/shared/lib/i18n";
 import i18n, { getStoredLanguage } from "@/shared/lib/i18n";
@@ -9,7 +9,6 @@ import ErrorBoundary from "@/app/ErrorBoundary";
 import { fetchProfileAPI, initializeAuth } from "@/features/auth/api/auth.api";
 import { loadAppConstants } from "@/shared/api/metaApi";
 import { initClarity } from "@/shared/lib/clarity";
-import { initGoogleAnalytics } from "@/shared/lib/googleAnalytics";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { installBundledLocales } from "@/app/localeResources";
@@ -66,18 +65,24 @@ async function bootstrapAuth() {
   }
 }
 
-function shouldRenderVercelAnalytics() {
-  if (typeof window === "undefined") return false;
-  return !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
-}
-
 export function useAppReady() {
   return useContext(AppReadyContext);
+}
+
+function subscribeNoop() {
+  return () => {};
+}
+function getMountedTrue() {
+  return true;
+}
+function getMountedFalse() {
+  return false;
 }
 
 export function ClientProviders({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(() => i18n.hasResourceBundle("en", "translation"));
   const [queryClient] = useState(() => getQueryClient());
+  const mounted = useSyncExternalStore(subscribeNoop, getMountedTrue, getMountedFalse);
 
   useEffect(() => {
     const handleLogin = () => {
@@ -123,7 +128,6 @@ export function ClientProviders({ children }: { children: ReactNode }) {
 
     document.documentElement.dataset.clientReady = "true";
     initClarity(process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID);
-    initGoogleAnalytics(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID);
     void bootstrapConstants();
     void bootstrapAuth();
 
@@ -144,7 +148,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
                 </Suspense>
               ) : null}
               {children}
-              {shouldRenderVercelAnalytics() ? (
+              {mounted && !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) ? (
                 <Suspense fallback={null}>
                   <Analytics />
                 </Suspense>
