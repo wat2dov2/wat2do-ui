@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
 import { ClientProviders } from "@/app/client-providers";
 import "../index.css";
-
-const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 const APP_DESCRIPTION =
   "Discover campus events, explore student organizations, and stay connected with what's happening around you.";
@@ -69,7 +66,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
         <ClientProviders>{children}</ClientProviders>
-        {gaMeasurementId ? <GoogleAnalytics gaId={gaMeasurementId} /> : null}
       </body>
     </html>
   );

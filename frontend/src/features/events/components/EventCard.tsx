@@ -17,7 +17,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
-import { useEventsStore } from "@/features/events/store/events.store";
 import { getUserId } from "@/features/auth/api/auth.api";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
@@ -333,7 +332,6 @@ function EventCardBody({
         time={time}
         location={event.location}
         badges={badges}
-        clickLabel={t("events.clickCount", { count: event.click_count ?? 0 })}
         textClassName={categoryClasses.text}
         secondaryTextClassName={categoryClasses.text}
         badgeClassName={`border-current ${categoryClasses.text}`}
@@ -392,7 +390,6 @@ function useEventCardNavigation({
 
   const handleCardActivate = useCallback(() => {
     tracker.track(event.id, "click");
-    useEventsStore.getState().incrementClickCount(event.id);
     if (onEventClick) {
       onEventClick(event);
     } else if (!disableModal) {

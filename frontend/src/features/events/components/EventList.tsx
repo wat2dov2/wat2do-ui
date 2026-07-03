@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
 import { m } from "framer-motion";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,6 @@ import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/dat
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
-import { Spinner } from "@/shared/ui/spinner";
 
 interface EventListProps {
   events: Event[];
@@ -23,9 +22,6 @@ interface EventListProps {
   hasActiveFilters?: boolean;
   savedEventIds: number[];
   isLoading?: boolean;
-  isLoadingMore?: boolean;
-  hasMoreEvents?: boolean;
-  onLoadMore?: () => void;
   groupByDateSections?: boolean;
 }
 
@@ -201,9 +197,6 @@ export function EventList({
   hasActiveFilters = false,
   savedEventIds,
   isLoading = false,
-  isLoadingMore = false,
-  hasMoreEvents = false,
-  onLoadMore,
   groupByDateSections = true,
 }: EventListProps) {
   const { t } = useTranslation();
@@ -214,8 +207,6 @@ export function EventList({
       animationIndexByEventId: new Map(),
     }),
   );
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
   // Wrap id arrays in Sets for O(1) membership lookups per card.
   const savedSet = useMemo(
     () => new Set(savedEventIds),
@@ -252,31 +243,6 @@ export function EventList({
       ),
     });
   }
-  useEffect(() => {
-    if (!onLoadMore || !hasMoreEvents || isLoadingMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const first = entries[0];
-        if (first.isIntersecting) {
-          onLoadMore();
-        }
-      },
-      { threshold: 0.1 },
-    );
-
-    const currentRef = loadMoreRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
-    }
-
-    return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
-    };
-  }, [onLoadMore, hasMoreEvents, isLoadingMore]);
-
   const handleActionDialogOpen = useCallback((type: EventCardDialog, event: Event) => {
     setActiveDialog({ type, event });
   }, []);
@@ -439,14 +405,6 @@ export function EventList({
               onActionDialogOpen={handleActionDialogOpen}
             />
           </section>
-        )}
-        {hasMoreEvents && (
-          <div ref={loadMoreRef} className="flex justify-center py-8">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Spinner className="size-5" />
-              <span>{t("common.loading")}</span>
-            </div>
-          </div>
         )}
       </div>
       {actionDialogs}

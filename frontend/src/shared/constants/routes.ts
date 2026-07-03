@@ -37,6 +37,10 @@ export const ROUTES = {
   ORGANIZATION_PANEL_MEMBERS: "/organization-panel/members",
 } as const;
 
+export function schoolPath(school: string): string {
+  return `/school/${school}`;
+}
+
 const APP_NAME = "Wat2Do";
 
 const ROUTE_PAGE_TITLES: Partial<Record<(typeof ROUTES)[keyof typeof ROUTES], string>> = {

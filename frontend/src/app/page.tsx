@@ -1,13 +1,13 @@
-import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { EventRoutePage } from "@/app/event-route-page";
-import { getEventFeedForSchool } from "@/features/events/api/eventFeed.server";
-import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
+import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
+import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 export const revalidate = 3600;
 
-async function loadInitialFeed(school: string): Promise<PaginatedEventsResponse | null> {
+async function loadInitialSnapshot(school: string): Promise<SchoolBrowseSnapshot | null> {
   try {
-    return await getEventFeedForSchool(school);
+    return await getSchoolBrowseSnapshot(school);
   } catch (err) {
     console.error("Initial event feed fetch failed:", err);
     return null;
@@ -15,7 +15,7 @@ async function loadInitialFeed(school: string): Promise<PaginatedEventsResponse 
 }
 
 export default async function HomePage() {
-  const feed = await loadInitialFeed(DEFAULT_SCHOOL);
+  const snapshot = await loadInitialSnapshot(DEFAULT_SCHOOL);
 
-  return <EventRoutePage initialFeed={feed} initialSchool={DEFAULT_SCHOOL} />;
+  return <EventRoutePage initialSnapshot={snapshot} initialSchool={DEFAULT_SCHOOL} />;
 }

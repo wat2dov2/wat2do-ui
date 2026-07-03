@@ -1,6 +1,6 @@
 import { EventRoutePage } from "@/app/event-route-page";
-import { getEventFeedForSchool } from "@/features/events/api/eventFeed.server";
-import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
+import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { SCHOOL_SLUGS, isKnownSchool, resolveSchool } from "@/shared/constants/schools";
 
 interface SchoolHomePageProps {
@@ -16,9 +16,9 @@ export function generateStaticParams() {
   return SCHOOL_SLUGS.map((school) => ({ school }));
 }
 
-async function loadInitialFeed(school: string): Promise<PaginatedEventsResponse | null> {
+async function loadInitialSnapshot(school: string): Promise<SchoolBrowseSnapshot | null> {
   try {
-    return await getEventFeedForSchool(school);
+    return await getSchoolBrowseSnapshot(school);
   } catch (err) {
     console.error("Initial event feed fetch failed:", err);
     return null;
@@ -28,7 +28,7 @@ async function loadInitialFeed(school: string): Promise<PaginatedEventsResponse 
 export default async function SchoolHomePage({ params }: SchoolHomePageProps) {
   const { school: rawSchool } = await params;
   const school = resolveSchool(rawSchool);
-  const feed = isKnownSchool(school) ? await loadInitialFeed(school) : null;
+  const snapshot = isKnownSchool(school) ? await loadInitialSnapshot(school) : null;
 
-  return <EventRoutePage initialFeed={feed} initialSchool={school} />;
+  return <EventRoutePage initialSnapshot={snapshot} initialSchool={school} />;
 }

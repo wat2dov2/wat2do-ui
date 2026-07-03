@@ -24,8 +24,6 @@ export function EventsPageContainer() {
   const setViewMode = useUIStore((s) => s.setViewMode);
   const filterViewMode = useUIStore((s) => s.filterViewMode);
   const setFilterViewMode = useUIStore((s) => s.setFilterViewMode);
-  // Filter dropdown open/close lives in the UI store (shared with the
-  // command palette) rather than the search filter-value store.
   const showFilterDropdown = useUIStore((s) => s.showFilterDropdown);
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
   const { isDarkMode } = useDarkMode();
@@ -34,25 +32,20 @@ export function EventsPageContainer() {
 
   const {
     isLoading,
-    isLoadingMore,
     error,
     refreshEvents,
-    loadMoreEvents,
     totalEvents,
-    hasMoreEvents,
     savedEventIds,
     latestAddedEvent,
     promotedEvents,
     filters,
     orderedEvents,
+    allEvents,
     handleDeleteEvent,
   } = useEventsPageData({ profileCompleted, viewMode });
 
-  const { detailEvent, closeEventDetails } = useEventDetailsFromUrl(orderedEvents);
+  const { detailEvent, closeEventDetails } = useEventDetailsFromUrl(allEvents);
 
-  const isPageLoading = isLoading;
-
-  // Memoize view mode change handler to ensure stable reference
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
   }, [setViewMode]);
@@ -70,10 +63,6 @@ export function EventsPageContainer() {
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
-  // Build filter config array. `filters` is the aggregate returned by
-  // useSearch; React Compiler infers it as a single dep rather than the
-  // narrow property list, so depend on the whole object for consistency
-  // with the compiler's preservation check.
   const filterConfigs: QuickFilterConfig[] = useMemo(
     () =>
       [
@@ -143,7 +132,6 @@ export function EventsPageContainer() {
             onSearchClear={() => filters.setSearchQuery("")}
           />
 
-          {/* Filters stay visible while event cards load. */}
           <div className="flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
               <div
@@ -222,10 +210,7 @@ export function EventsPageContainer() {
               onClearFilters={filters.handleClearAllFilters}
               hasActiveFilters={filters.filterCount > 0}
               savedEventIds={savedEventIds}
-              isLoading={isPageLoading}
-              isLoadingMore={isLoadingMore}
-              hasMoreEvents={hasMoreEvents}
-              onLoadMore={loadMoreEvents}
+              isLoading={isLoading}
               groupByDateSections={filters.sortBy === "date" && filters.sortOrder === "asc"}
             />
           )}

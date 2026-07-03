@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
-import { fetchEventById } from "@/features/events/api/events.api";
 import type { Event } from "@/shared/types";
 
 export function useEventIdUrlActions() {
@@ -39,42 +38,11 @@ export function useEventIdUrlActions() {
 
 export function useEventDetailsFromUrl(events: Event[]) {
   const { eventId, closeEventId } = useEventIdUrlActions();
-  const [fetchedEvent, setFetchedEvent] = useState<Event | null>(null);
-  const [fetchedForId, setFetchedForId] = useState<number | null>(null);
 
-  const eventFromList = useMemo(() => {
+  const detailEvent = useMemo(() => {
     if (eventId == null) return null;
     return events.find((event) => event.id === eventId) ?? null;
   }, [eventId, events]);
-
-  useEffect(() => {
-    if (eventId == null || eventFromList) {
-      return;
-    }
-
-    let cancelled = false;
-    void fetchEventById(eventId)
-      .then((event) => {
-        if (!cancelled) {
-          setFetchedEvent(event);
-          setFetchedForId(eventId);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFetchedEvent(null);
-          setFetchedForId(eventId);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId, eventFromList]);
-
-  const fetchedDetailEvent =
-    eventId != null && fetchedForId === eventId ? fetchedEvent : null;
-  const detailEvent = eventFromList ?? fetchedDetailEvent;
 
   return {
     detailEvent,

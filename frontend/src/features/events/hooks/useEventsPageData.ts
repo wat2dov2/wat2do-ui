@@ -1,21 +1,14 @@
-import { useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useSearch } from "@/features/search";
-import {
-  applyOptimisticClickCountsToEvents,
-  useEventsStore,
-} from "@/features/events/store/events.store";
+import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { getUniqueEvents } from "@/shared/utils/event";
-import type { EventListQuery } from "@/features/events/api/events.api";
-import {
-  eventsFeedHasMore,
-  flattenEventsFeedPages,
-  useEventsFeed,
-  usePromotedEvents,
-} from "@/features/events/hooks/useEventsFeed";
+import type { Event } from "@/shared/types";
 import type { ViewMode } from "@/shared/types";
 
 interface UseEventsPageDataOptions {
@@ -23,25 +16,45 @@ interface UseEventsPageDataOptions {
   viewMode: ViewMode;
 }
 
+function derivePromotedEvents(
+  snapshotPromoted: Event[],
+  allEvents: Event[],
+  activePromotedIds: number[],
+): Event[] {
+  const byId = new Map<number, Event>();
+
+  for (const event of snapshotPromoted) {
+    byId.set(event.id, event);
+  }
+
+  for (const id of activePromotedIds) {
+    if (byId.has(id)) continue;
+    const event = allEvents.find((item) => item.id === id);
+    if (event) {
+      byId.set(id, event);
+    }
+  }
+
+  return Array.from(byId.values());
+}
+
 /**
- * Hook that aggregates all data orchestration for the EventsPageContainer:
- * events feed queries, saved events, promotions, search/filters, and derived
- * ordered events.
+ * Hook that aggregates data orchestration for the EventsPageContainer:
+ * embedded browse snapshot, saved events, client-side search/filters, and
+ * derived ordered events.
  */
 export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageDataOptions) {
   const { t } = useTranslation();
-  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const router = useRouter();
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+  const activePromotedEventIds = useCreditsStore((s) => s.activePromotedEventIds);
 
   const events = useEventsStore((s) => s.events);
-  const promotedEvents = useEventsStore((s) => s.promotedEvents);
+  const snapshotPromotedEvents = useEventsStore((s) => s.promotedEvents);
   const latestAddedEvent = useEventsStore((s) => s.latestAddedEvent);
   const isLoading = useEventsStore((s) => s.isLoading);
-  const isLoadingMore = useEventsStore((s) => s.isLoadingMore);
   const error = useEventsStore((s) => s.error);
-  const totalEvents = useEventsStore((s) => s.totalEvents);
-  const hasMoreEvents = useEventsStore((s) => s.hasMoreEvents);
 
   const filters = useSearch({
     events,
@@ -50,102 +63,21 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     viewMode,
   });
 
-  const eventQuery = useMemo<EventListQuery>(() => {
-    const minPrice = parsePrice(filters.priceRange.min);
-    const maxPrice = parsePrice(filters.priceRange.max);
-    return {
-      search: filters.searchQuery || undefined,
-      categories: filters.selectedCategories,
-      locations: filters.selectedLocations,
-      foods: filters.selectedFoods,
-      days: filters.selectedDays,
-      minPrice,
-      maxPrice,
-      registration: filters.registration ? true : undefined,
-      organizations: filters.selectedOrganizations,
-      freeFood: filters.freeFoodFilter,
-      ids: filters.savedFilter ? savedEventIds : undefined,
-      sortBy: filters.sortBy,
-      sortOrder: filters.sortOrder,
-      addedWithin24h: filters.addedWithin24h || undefined,
-    };
-  }, [
-    filters.searchQuery,
-    filters.selectedCategories,
-    filters.selectedLocations,
-    filters.selectedFoods,
-    filters.selectedDays,
-    filters.priceRange.min,
-    filters.priceRange.max,
-    filters.registration,
-    filters.selectedOrganizations,
-    filters.freeFoodFilter,
-    filters.savedFilter,
-    filters.sortBy,
-    filters.sortOrder,
-    filters.addedWithin24h,
-    savedEventIds,
-  ]);
-
-  const feedQuery = useEventsFeed(schoolFilter, eventQuery);
-  const promotedQuery = usePromotedEvents(schoolFilter);
-
-  const flattenedFeed = useMemo(
-    () => flattenEventsFeedPages(feedQuery.data?.pages),
-    [feedQuery.data?.pages],
+  const orderedEvents = useMemo(
+    () => getUniqueEvents(filters.filteredEvents),
+    [filters.filteredEvents],
   );
 
-  useEffect(() => {
-    const feedError = feedQuery.error
-      ? getApiErrorMessage(feedQuery.error, t("events.loadFailed"))
-      : null;
+  const promotedEvents = useMemo(
+    () => derivePromotedEvents(snapshotPromotedEvents, events, activePromotedEventIds),
+    [snapshotPromotedEvents, events, activePromotedEventIds],
+  );
 
-    const visibleEvents = flattenedFeed
-      ? applyOptimisticClickCountsToEvents(flattenedFeed.items)
-      : [];
-
-    useEventsStore.setState({
-      events: visibleEvents,
-      latestAddedEvent: flattenedFeed?.latest_added_event ?? null,
-      isLoading: feedQuery.isLoading,
-      isLoadingMore: feedQuery.isFetchingNextPage,
-      error: feedError,
-      eventsPage: flattenedFeed?.page ?? 0,
-      eventsPageSize: flattenedFeed?.page_size ?? useEventsStore.getState().eventsPageSize,
-      totalEvents: flattenedFeed?.total ?? 0,
-      hasMoreEvents: eventsFeedHasMore(feedQuery.data?.pages),
-      eventQuery,
-    });
-  }, [
-    eventQuery,
-    feedQuery.data?.pages,
-    feedQuery.error,
-    feedQuery.isFetchingNextPage,
-    feedQuery.isLoading,
-    flattenedFeed,
-    t,
-  ]);
-
-  useEffect(() => {
-    useEventsStore.setState({
-      promotedEvents: applyOptimisticClickCountsToEvents(promotedQuery.data ?? []),
-      isPromotedLoading: promotedQuery.isLoading,
-    });
-  }, [promotedQuery.data, promotedQuery.isLoading]);
+  const totalEvents = filters.filteredEvents.length;
 
   const refreshEvents = useCallback(() => {
-    void feedQuery.refetch();
-    void promotedQuery.refetch();
-  }, [feedQuery, promotedQuery]);
-
-  const loadMoreEvents = useCallback(() => {
-    if (!feedQuery.hasNextPage || feedQuery.isFetchingNextPage) return;
-    void feedQuery.fetchNextPage();
-  }, [feedQuery]);
-
-  const orderedEvents = useMemo(() => {
-    return getUniqueEvents(events);
-  }, [events]);
+    router.refresh();
+  }, [router]);
 
   const handleDeleteEvent = useCallback(
     async (eventId: number) => {
@@ -166,23 +98,15 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
 
   return {
     isLoading,
-    isLoadingMore,
     error,
     refreshEvents,
-    loadMoreEvents,
     totalEvents,
-    hasMoreEvents,
     savedEventIds,
     latestAddedEvent,
     promotedEvents,
     filters,
     orderedEvents,
+    allEvents: events,
     handleDeleteEvent,
   };
-}
-
-function parsePrice(value: string): number | undefined {
-  if (!value.trim()) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
 }

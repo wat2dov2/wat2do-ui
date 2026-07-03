@@ -48,8 +48,6 @@
     "noEventsScheduled": "暂无活动安排",
     "noEventsScheduledDesc": "当前没有任何活动安排，请稍后再来看看！",
     "newlyAdded": "最新添加",
-    "clickCount": "{{count}} 次点击",
-    "clickCount_other": "{{count}} 次点击",
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",
     "mapViewComingSoon": "地图视图即将推出...",

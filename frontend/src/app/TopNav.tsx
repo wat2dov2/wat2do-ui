@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { ROUTES } from "@/shared/constants/routes";
+import { ROUTES, schoolPath } from "@/shared/constants/routes";
 import { cn } from "@/shared/lib/utils";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
@@ -75,6 +75,17 @@ export function TopNav() {
     router.push(ROUTES.LOGIN);
   }, [router]);
 
+  const handleSchoolChange = useCallback(
+    (school: string) => {
+      if (school === "all") {
+        setSchoolFilter(school);
+        return;
+      }
+      router.push(schoolPath(school));
+    },
+    [router, setSchoolFilter],
+  );
+
   return (
     <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-sidebar px-2 sm:gap-2 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
@@ -92,7 +103,7 @@ export function TopNav() {
         <span className="text-muted-foreground text-lg font-light max-[359px]:hidden">/</span>
         <SchoolCombobox
           value={schoolFilter ?? ""}
-          onChange={setSchoolFilter}
+          onChange={handleSchoolChange}
           isAdmin={isAdmin}
           triggerClassName="max-w-[26vw] pl-1 pr-2 sm:max-w-none sm:pl-1.5 sm:pr-3"
         />

@@ -1,33 +1,4 @@
-function stableEventQueryKey(input: object): Record<string, unknown> {
-  const query = input as Record<string, unknown>;
-
-  return {
-    search: query.search ?? "",
-    categories: query.categories ?? [],
-    locations: query.locations ?? [],
-    foods: query.foods ?? [],
-    days: query.days ?? [],
-    minPrice: query.minPrice ?? null,
-    maxPrice: query.maxPrice ?? null,
-    registration: query.registration ?? null,
-    organizations: query.organizations ?? [],
-    freeFood: query.freeFood === true,
-    ids: query.ids ?? null,
-    sortBy: query.sortBy ?? "date",
-    sortOrder: query.sortOrder ?? "asc",
-    startUtc: query.startUtc ?? null,
-    endUtc: query.endUtc ?? null,
-    addedWithin24h: query.addedWithin24h === true,
-  };
-}
-
 export const queryKeys = {
-  events: {
-    all: ["events"] as const,
-    feed: (school: string, query: object) =>
-      [...queryKeys.events.all, "feed", school, stableEventQueryKey(query)] as const,
-    promoted: (school: string) => [...queryKeys.events.all, "promoted", school] as const,
-  },
   organizations: {
     all: ["organizations"] as const,
     list: (filters: Record<string, unknown>) =>

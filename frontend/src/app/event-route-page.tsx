@@ -5,25 +5,38 @@ import { AppPage } from "@/app/app-page";
 import { useAppReady } from "@/app/client-providers";
 import { EventsPageContainer } from "@/features/events/pages/EventsPageContainer";
 import { useEventsStore } from "@/features/events/store/events.store";
-import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import { resolveSchool } from "@/shared/constants/schools";
+import i18n from "@/shared/lib/i18n";
+import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 
 interface EventRoutePageProps {
-  initialFeed: PaginatedEventsResponse | null;
+  initialSnapshot: SchoolBrowseSnapshot | null;
   initialSchool: string;
 }
 
-export function EventRoutePage({ initialFeed, initialSchool }: EventRoutePageProps) {
+export function EventRoutePage({ initialSnapshot, initialSchool }: EventRoutePageProps) {
   const ready = useAppReady();
 
   useLayoutEffect(() => {
     if (!ready) return;
 
-    if (initialFeed) {
-      useEventsStore.getState().hydrateInitialFeed(initialFeed, initialSchool);
-    } else {
-      useEventsStore.getState().setSchoolFilter(initialSchool);
+    if (initialSnapshot) {
+      useEventsStore
+        .getState()
+        .hydrateInitialFeed(
+          initialSnapshot.feed,
+          initialSchool,
+          initialSnapshot.promotedEvents,
+        );
+      return;
     }
-  }, [initialFeed, initialSchool, ready]);
+
+    useEventsStore.setState({
+      schoolFilter: resolveSchool(initialSchool),
+      isLoading: false,
+      error: i18n.t("events.loadFailed"),
+    });
+  }, [initialSnapshot, initialSchool, ready]);
 
   if (!ready) {
     return null;

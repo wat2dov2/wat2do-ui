@@ -48,8 +48,6 @@
     "noEventsScheduled": "No events scheduled",
     "noEventsScheduledDesc": "No events are currently scheduled. Check back later!",
     "newlyAdded": "Newly Added",
-    "clickCount": "{{count}} click",
-    "clickCount_other": "{{count}} clicks",
     "clearAllFilters": "Clear all filters",
     "calendarViewComingSoon": "Calendar view coming soon...",
     "mapViewComingSoon": "Map view coming soon...",
