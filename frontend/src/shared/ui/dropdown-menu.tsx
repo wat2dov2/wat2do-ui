@@ -3,6 +3,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
 import { cn } from "@/shared/lib/utils";
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure";
+import { useMouseSelectDedup } from "@/shared/hooks/useMouseDownPress";
 
 const TRAILING_CLICK_SWALLOW_MS = 300;
 
@@ -26,6 +27,7 @@ function DropdownMenu({
   open,
   defaultOpen,
   onOpenChange,
+  modal = false,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   const [exclusiveOpen, setExclusiveOpen] = useExclusiveDisclosure({
@@ -37,6 +39,7 @@ function DropdownMenu({
   return (
     <DropdownMenuPrimitive.Root
       data-slot="dropdown-menu"
+      modal={modal}
       open={exclusiveOpen}
       onOpenChange={setExclusiveOpen}
       {...props}
@@ -47,7 +50,12 @@ function DropdownMenu({
 function DropdownMenuTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
+  return (
+    <DropdownMenuPrimitive.Trigger
+      data-slot="dropdown-menu-trigger"
+      {...props}
+    />
+  );
 }
 
 function DropdownMenuContent({
@@ -107,14 +115,39 @@ function DropdownMenuItem({
   inset?: boolean;
   variant?: "default" | "destructive";
 }) {
-  const handleSelect = React.useCallback(
-    (event: Event) => {
-      onSelect?.(event);
-      // Parent cards activate on click. When the menu closes before mouse-up,
-      // the trailing click can land on the card underneath.
+  const { markMouseSelect, shouldSkipSelect } = useMouseSelectDedup();
+
+  const handleMouseDown = React.useCallback(
+    (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
+      onMouseDown?.(event);
+      if (event.button !== 0 || event.defaultPrevented) {
+        return;
+      }
+
+      event.preventDefault();
+      markMouseSelect();
+      onSelect?.(event.nativeEvent);
       registerTrailingClickSwallow();
     },
-    [onSelect],
+    [markMouseSelect, onMouseDown, onSelect],
+  );
+
+  const handleSelect = React.useCallback(
+    (event: Event) => {
+      if (shouldSkipSelect()) {
+        return;
+      }
+      onSelect?.(event);
+      registerTrailingClickSwallow();
+    },
+    [onSelect, shouldSkipSelect],
+  );
+
+  const handleClick = React.useCallback(
+    (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
+      event.preventDefault();
+    },
+    [],
   );
 
   return (
@@ -122,7 +155,8 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
-      onMouseDown={onMouseDown}
+      onMouseDown={handleMouseDown}
+      onClick={handleClick}
       onSelect={handleSelect}
       className={cn(
         "focus:bg-secondary focus:text-foreground data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error relative flex cursor-default select-none items-center gap-2 rounded-lg px-2 py-1.5 text-xs outline-hidden transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-[inset=true]:pl-8 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0",

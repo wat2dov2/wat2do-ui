@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Download, ImageOff, ExternalLink, Heart, MoreHorizontal, X } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, Bookmark, MoreHorizontal, X } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerClose,
@@ -13,8 +13,10 @@ import {
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
+import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
 import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
 import { translateCategory } from "@/shared/utils/event";
 import { translateFood } from "@/shared/utils/foodTranslation";
@@ -186,33 +188,53 @@ export function EventDetailsModal({
             <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
               <DrawerHeader className="relative min-h-9 p-0 text-center">
                 <div className="absolute right-0 top-0 z-10 flex items-center justify-end gap-1.5">
-                  <Button
-                    type="button"
-                    variant={isSaveActive ? "secondary" : "outline"}
-                    size="icon-sm"
-                    disabled={!profileCompleted}
-                    onMouseDown={() => toggleSaveEvent(displayedEvent.id)}
-                    aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
-                    title={isSaveActive ? t("common.saved") : t("common.imInterested")}
-                    className={
-                      !profileCompleted
-                        ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
-                        : isSaveActive
-                          ? "border-error/20 bg-error/10 text-error hover:bg-error/15"
-                          : ""
-                    }
-                  >
-                    <Heart className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={isSaveActive ? "secondary" : "outline"}
+                        size="icon-sm"
+                        disabled={!profileCompleted}
+                        onClick={() => toggleSaveEvent(displayedEvent.id)}
+                        aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
+                        title={
+                          !profileCompleted
+                            ? t("events.saveRequiresLogin")
+                            : isSaveActive
+                              ? t("common.saved")
+                              : t("common.imInterested")
+                        }
+                        className={
+                          !profileCompleted
+                            ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
+                            : isSaveActive
+                              ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
+                              : ""
+                        }
+                      >
+                        <Bookmark className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {!profileCompleted
+                          ? t("events.saveRequiresLogin")
+                          : isSaveActive
+                            ? t("common.saved")
+                            : t("common.imInterested")}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                   <EventCalendarDownloadMenu event={displayedEvent}>
                     <Button
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      aria-label={t("common.download")}
-                      title={t("common.download")}
+                      data-slot="dropdown-menu-trigger"
+                      aria-label={t("common.addToCalendar")}
+                      title={t("common.addToCalendar")}
                     >
-                      <Download className="size-4" />
+                      <Calendar className="size-4" />
                     </Button>
                   </EventCalendarDownloadMenu>
                   <EventOverflowMenu
@@ -225,8 +247,9 @@ export function EventDetailsModal({
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      aria-label={t("common.actions")}
-                      title={t("common.actions")}
+                      data-slot="dropdown-menu-trigger"
+                      aria-label={t("common.moreOptions")}
+                      title={t("common.moreOptions")}
                     >
                       <MoreHorizontal className="size-4" />
                     </Button>
@@ -234,7 +257,10 @@ export function EventDetailsModal({
                 </div>
                 <div className="mx-auto max-w-2xl px-16 text-center sm:px-28">
                   <DrawerTitle className="leading-tight">{displayedEvent.title}</DrawerTitle>
-                  <DrawerDescription>{displayedEvent.organization}</DrawerDescription>
+                  <DrawerDescription className="flex items-center justify-center gap-2">
+                    <span>{displayedEvent.organization}</span>
+                    <OrganizationVerifiedBadge />
+                  </DrawerDescription>
                 </div>
               </DrawerHeader>
 

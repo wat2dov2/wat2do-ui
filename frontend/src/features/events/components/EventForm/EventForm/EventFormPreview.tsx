@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Download, Heart, ImageOff, Share2 } from "@/shared/ui/doodle-icons";
+import { Bookmark, Calendar, ImageOff, Share2 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
@@ -122,7 +122,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
 
           <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
             <div className={`flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-medium opacity-75 ${categoryClasses.text}`}>
-              <Heart className="size-4" />
+              <Bookmark className="size-4" />
               <span className="truncate">{t("common.imInterested")}</span>
             </div>
             <div className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 ${categoryClasses.border} ${categoryClasses.text}`}>
@@ -130,8 +130,8 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
               <span className="truncate">{t("common.share")}</span>
             </div>
             <div className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 ${categoryClasses.border} ${categoryClasses.text}`}>
-              <Download className="size-4" />
-              <span className="truncate">{t("common.export")}</span>
+              <Calendar className="size-4" />
+              <span className="truncate">{t("common.addToCalendar")}</span>
             </div>
           </div>
         </div>

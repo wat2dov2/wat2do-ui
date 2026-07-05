@@ -13,6 +13,7 @@ import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint"
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth";
+import { useCardMouseDownActivate } from "@/shared/hooks";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
 import {
   formatOrganizationLastPosted,
@@ -138,7 +139,8 @@ function OrganizationFooterActions({
 
   return (
     <div
-      onClick={(event) => event.stopPropagation()}
+      data-organization-card-footer
+      onMouseDown={(event) => event.stopPropagation()}
       className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
     >
       {profileCompleted ? (
@@ -183,11 +185,11 @@ function OrganizationFooterActions({
       <OrganizationOverflowMenu organization={organization} stopPropagation>
         <button
           type="button"
-          onPointerDown={(event) => event.preventDefault()}
-          onClick={(event) => event.stopPropagation()}
-          aria-label={t("common.actions")}
+          onMouseDown={(event) => event.stopPropagation()}
+          aria-label={t("common.moreOptions")}
+          title={t("common.moreOptions")}
           disabled={!hasOverflowLinks}
-          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <MoreHorizontal className="size-4" />
         </button>
@@ -251,6 +253,11 @@ function OrganizationCardComponent({
     onOrganizationClick?.(organization);
   }, [onOrganizationClick, organization]);
 
+  const handleCardMouseDown = useCardMouseDownActivate(
+    handleCardActivate,
+    "[data-organization-card-footer]",
+  );
+
   const followButton = (
     <FollowOrganizationButton
       organizationId={organization.id}
@@ -269,7 +276,7 @@ function OrganizationCardComponent({
       role="button"
       tabIndex={0}
       aria-label={`Organization: ${organization.organization_name}`}
-      onClick={handleCardActivate}
+      onMouseDown={handleCardMouseDown}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();

@@ -30,7 +30,7 @@ import {
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
-import { useMouseDownAction } from "@/shared/hooks";
+import { useMouseDownAction, createMouseDownPressHandlers } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
@@ -160,6 +160,7 @@ function EventFooterActions({
       <EventCalendarDownloadMenu event={event} stopPropagation>
         <button
           type="button"
+          onMouseDown={(event) => event.stopPropagation()}
           aria-label={t("common.addToCalendar")}
           title={t("common.addToCalendar")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
@@ -175,6 +176,7 @@ function EventFooterActions({
       >
         <button
           type="button"
+          onMouseDown={(event) => event.stopPropagation()}
           aria-label={t("common.moreOptions")}
           title={t("common.moreOptions")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
@@ -203,19 +205,20 @@ function SaveEventButton({
   onToggleSaveEvent,
   t,
 }: SaveEventButtonProps) {
-  const handleSaveMouseDown = useMouseDownAction(() => {
-    if (profileCompleted) {
-      onToggleSaveEvent(eventId);
-    }
+  const pressHandlers = createMouseDownPressHandlers({
+    disabled: !profileCompleted,
+    onClick: (event) => {
+      event.stopPropagation();
+      if (profileCompleted) {
+        onToggleSaveEvent(eventId);
+      }
+    },
   });
 
   return (
     <button
       type="button"
-      onMouseDown={(event) => {
-        event.stopPropagation();
-        handleSaveMouseDown(event);
-      }}
+      {...pressHandlers}
       disabled={!profileCompleted}
       aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
       title={isSaveActive ? t("common.saved") : t("common.imInterested")}

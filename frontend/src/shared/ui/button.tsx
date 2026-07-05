@@ -3,6 +3,7 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/shared/lib/utils"
+import { createMouseDownPressHandlers } from "@/shared/hooks/useMouseDownPress"
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-normal transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
@@ -41,20 +42,47 @@ const Button = React.forwardRef<
   React.ComponentProps<"button"> &
     VariantProps<typeof buttonVariants> & {
       asChild?: boolean
+      "data-slot"?: string
     }
->(({ className, variant, size, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? Slot : "button"
+>(
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      onClick,
+      onMouseDown,
+      onPointerDown,
+      disabled,
+      type = "button",
+      "data-slot": dataSlot = "button",
+      ...props
+    },
+    ref,
+  ) => {
+    const Comp = asChild ? Slot : "button"
+    const pressHandlers = createMouseDownPressHandlers({
+      onMouseDown,
+      onClick,
+      disabled,
+    })
 
-  return (
-    <Comp
-      ref={ref}
-      data-slot="button"
-      data-elevation="control"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
-})
+    return (
+      <Comp
+        ref={ref}
+        data-slot={dataSlot}
+        data-elevation="control"
+        type={asChild ? undefined : type}
+        disabled={disabled}
+        className={cn(buttonVariants({ variant, size, className }))}
+        onPointerDown={onPointerDown}
+        {...props}
+        {...pressHandlers}
+      />
+    )
+  },
+)
 
 Button.displayName = "Button"
 

@@ -13,7 +13,6 @@ import { Check } from "@/shared/ui/doodle-icons";
 interface PieMenuItem {
   id: string;
   label: string;
-  icon?: React.ReactNode;
   disabled?: boolean;
   onMouseDown?: () => void;
 }
@@ -249,38 +248,10 @@ export function PieMenu({
                   transition={{ duration: 0.1 }}
                 />
 
-                {/* Icon */}
-                {item.icon && (
-                  <foreignObject
-                    x={contentX - 10}
-                    y={contentY - (items.length > 6 ? 18 : 20)}
-                    width={20}
-                    height={20}
-                    style={{ pointerEvents: "none" }}
-                  >
-                    <div
-                      style={{
-                        width: 20,
-                        height: 20,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: isActive 
-                          ? "white" 
-                          : item.disabled 
-                            ? "var(--gray-400)" 
-                            : (isDarkMode ? "var(--gray-300)" : "var(--gray-600)"),
-                      }}
-                    >
-                      {item.icon}
-                    </div>
-                  </foreignObject>
-                )}
-
                 {/* Label */}
                 <text
                   x={contentX}
-                  y={contentY + (item.icon ? (items.length > 6 ? 10 : 12) : 0)}
+                  y={contentY}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   style={{
