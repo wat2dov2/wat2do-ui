@@ -94,6 +94,7 @@
     "promoted": "热门推广",
     "new": "新",
     "saveRequiresLogin": "登录后即可保存活动",
+    "verifiedOrganization": "已认证组织",
     "deleteEventTitle": "删除活动",
     "deleteEventConfirm": "您确定要删除“{{title}}”吗？此操作无法撤销。",
     "similarEvents": "相似活动"

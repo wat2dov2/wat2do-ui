@@ -2483,6 +2483,34 @@ export const XasXIcon = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.Co
   }
 );
 
+/** Twitter-style verified badge mark. */
+export const VerifiedBadge = /* @__PURE__ */ React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg"> & { size?: number | string }>(
+  ({ size, className, ...props }, ref) => {
+    const width = size || props.width || "24";
+    const height = size || props.height || "24";
+    return (
+      <svg
+        ref={ref}
+        width={width}
+        height={height}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+        aria-hidden={props["aria-label"] ? undefined : true}
+        {...props}
+      >
+        <path
+          d="M 50 14 L 62.4 3.6 L 68 18.8 L 83.9 16.1 L 81.2 32 L 96.4 37.6 L 86 50 L 96.4 62.4 L 81.2 68 L 83.9 83.9 L 68 81.2 L 62.4 96.4 L 50 86 L 37.6 96.4 L 32 81.2 L 16.1 83.9 L 18.8 68 L 3.6 62.4 L 14 50 L 3.6 37.6 L 18.8 32 L 16.1 16.1 L 32 18.8 L 37.6 3.6 Z M 31 53 L 37 47 L 44 54 L 64 34 L 70 40 L 44 66 Z"
+          fill="#1DA1F2"
+          fillRule="evenodd"
+        />
+      </svg>
+    );
+  }
+);
+VerifiedBadge.displayName = "VerifiedBadge";
+
 /** Doodle X/Twitter brand mark for in-app social links (not share drawer close buttons). */
 export const XBrand = XasXIcon;
 
