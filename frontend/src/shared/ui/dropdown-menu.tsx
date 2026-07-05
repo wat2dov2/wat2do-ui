@@ -53,11 +53,15 @@ function DropdownMenuTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
   const preferClick = useMobileGridClickActivation();
+  const wasOpenRef = React.useRef(false);
 
   const handlePointerDown = React.useCallback(
     (event: React.PointerEvent<HTMLButtonElement>) => {
       onPointerDown?.(event);
       if (preferClick && event.isTrusted && !event.defaultPrevented) {
+        const button = event.currentTarget;
+        const isOpen = button.getAttribute("data-state") === "open" || button.getAttribute("aria-expanded") === "true";
+        wasOpenRef.current = isOpen;
         event.preventDefault();
       }
     },
@@ -68,13 +72,16 @@ function DropdownMenuTrigger({
     (event: React.MouseEvent<HTMLButtonElement>) => {
       onClick?.(event);
       if (preferClick && event.isTrusted && !event.defaultPrevented) {
-        const button = event.currentTarget;
-        const pointerEvent = new PointerEvent("pointerdown", {
-          bubbles: true,
-          cancelable: true,
-          pointerType: "touch",
-        });
-        button.dispatchEvent(pointerEvent);
+        if (!wasOpenRef.current) {
+          const button = event.currentTarget;
+          const pointerEvent = new PointerEvent("pointerdown", {
+            bubbles: true,
+            cancelable: true,
+            pointerType: "touch",
+          });
+          button.dispatchEvent(pointerEvent);
+        }
+        wasOpenRef.current = false;
       }
     },
     [onClick, preferClick],
