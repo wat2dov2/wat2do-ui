@@ -12,6 +12,52 @@ interface MouseDownPressHandlersOptions {
 }
 
 /**
+ * Touch/coarse pointers and hover-none devices use click instead of mousedown.
+ */
+export function prefersClickActivation() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+}
+
+/**
+ * Mousedown-first on desktop; native click on touch/coarse pointers.
+ */
+export function createAdaptivePressHandlers({
+  onMouseDown,
+  onClick,
+  disabled = false,
+}: MouseDownPressHandlersOptions) {
+  if (prefersClickActivation()) {
+    const handleClick: PressHandler = (event) => {
+      onMouseDown?.(event);
+      if (event.defaultPrevented || event.button !== 0 || disabled) {
+        return;
+      }
+      onClick?.(event);
+    };
+
+    return onClick || onMouseDown ? { onClick: handleClick } : {};
+  }
+
+  return createMouseDownPressHandlers({ onMouseDown, onClick, disabled });
+}
+
+/**
+ * Stop propagation on mousedown (desktop) or click (touch).
+ */
+export function createAdaptiveStopPropagationHandlers() {
+  const stop: PressHandler = (event) => {
+    event.stopPropagation();
+  };
+
+  if (prefersClickActivation()) {
+    return { onClick: stop };
+  }
+
+  return { onMouseDown: stop };
+}
+
+/**
  * Standard press handlers for the app's mouse-down-first UI.
  * Runs `onClick` on left mouse down and swallows the trailing click.
  */

@@ -186,8 +186,20 @@ export function EventDetailsModal({
             </div>
 
             <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
-              <DrawerHeader className="relative min-h-9 p-0 pb-5 text-left sm:pb-0 sm:text-center">
-                <div className="absolute right-0 top-0 z-10 flex items-center justify-end gap-1.5">
+              <DrawerHeader className="relative min-h-9 gap-3 p-0 pb-5 text-left sm:pb-0 sm:text-center">
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1 text-left sm:mx-auto sm:max-w-2xl sm:text-center">
+                    <DrawerTitle className="leading-tight text-left sm:text-center">
+                      {displayedEvent.title}
+                    </DrawerTitle>
+                    <DrawerDescription className="mt-1 flex items-center justify-start sm:justify-center">
+                      <span className="inline-flex items-center gap-0.5">
+                        <span>{displayedEvent.organization}</span>
+                        <OrganizationVerifiedBadge />
+                      </span>
+                    </DrawerDescription>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -254,17 +266,7 @@ export function EventDetailsModal({
                       <MoreHorizontal className="size-4" />
                     </Button>
                   </EventOverflowMenu>
-                </div>
-                <div className="max-w-2xl pt-10 pr-2 text-left sm:mx-auto sm:px-28 sm:pt-0 sm:text-center">
-                  <DrawerTitle className="leading-tight text-left sm:text-center">
-                    {displayedEvent.title}
-                  </DrawerTitle>
-                  <DrawerDescription className="mt-1 flex items-center justify-start sm:justify-center">
-                    <span className="inline-flex items-center gap-0.5">
-                      <span>{displayedEvent.organization}</span>
-                      <OrganizationVerifiedBadge />
-                    </span>
-                  </DrawerDescription>
+                  </div>
                 </div>
               </DrawerHeader>
 

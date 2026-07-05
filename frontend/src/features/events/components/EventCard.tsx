@@ -30,7 +30,7 @@ import {
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
-import { useMouseDownAction, createMouseDownPressHandlers } from "@/shared/hooks";
+import { useMouseDownAction, createAdaptivePressHandlers, createAdaptiveStopPropagationHandlers, prefersClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
@@ -52,11 +52,6 @@ export type EventCardDialog = "delete" | "share" | "report";
 
 const CARD_ACTIVATE_IGNORE_SELECTOR =
   "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate], [data-event-card-footer]";
-
-function prefersClickActivation() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(hover: none), (pointer: coarse)").matches;
-}
 
 type CategoryClasses = ReturnType<typeof getCategoryClasses>;
 
@@ -145,6 +140,8 @@ function EventFooterActions({
   onActionDialogOpen,
   t,
 }: EventFooterActionsProps) {
+  const stopFooterButtonPropagation = createAdaptiveStopPropagationHandlers();
+
   return (
     <div
       data-event-card-footer
@@ -174,7 +171,7 @@ function EventFooterActions({
       >
         <button
           type="button"
-          onMouseDown={(event) => event.stopPropagation()}
+          {...stopFooterButtonPropagation}
           aria-label={t("common.addToCalendar")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
@@ -190,7 +187,7 @@ function EventFooterActions({
       >
         <button
           type="button"
-          onMouseDown={(event) => event.stopPropagation()}
+          {...stopFooterButtonPropagation}
           aria-label={t("common.moreOptions")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
@@ -218,7 +215,7 @@ function SaveEventButton({
   onToggleSaveEvent,
   t,
 }: SaveEventButtonProps) {
-  const pressHandlers = createMouseDownPressHandlers({
+  const pressHandlers = createAdaptivePressHandlers({
     disabled: !profileCompleted,
     onClick: (event) => {
       event.stopPropagation();
