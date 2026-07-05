@@ -30,7 +30,7 @@ import {
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
-import { useCardMouseDownActivate } from "@/shared/hooks";
+import { useMouseDownAction } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
@@ -138,6 +138,7 @@ function EventFooterActions({
   return (
     <div
       data-event-card-footer
+      onMouseDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
       className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
     >
@@ -202,12 +203,18 @@ function SaveEventButton({
   onToggleSaveEvent,
   t,
 }: SaveEventButtonProps) {
+  const handleSaveMouseDown = useMouseDownAction(() => {
+    if (profileCompleted) {
+      onToggleSaveEvent(eventId);
+    }
+  });
+
   return (
     <button
       type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (profileCompleted) onToggleSaveEvent(eventId);
+      onMouseDown={(event) => {
+        event.stopPropagation();
+        handleSaveMouseDown(event);
       }}
       disabled={!profileCompleted}
       aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
@@ -487,10 +494,11 @@ function EventCardComponent({
     [event, onActionDialogOpen],
   );
 
-  const handleCardMouseDown = useCardMouseDownActivate(
-    handleCardActivate,
-    "[data-event-card-footer]",
-  );
+  const handleCardMouseDown = useMouseDownAction(handleCardActivate);
+
+  const handleCardClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+  }, []);
 
   return (
     <>
@@ -502,6 +510,7 @@ function EventCardComponent({
         tabIndex={0}
         aria-label={`Event: ${event.title}`}
         onMouseDown={handleCardMouseDown}
+        onClick={handleCardClick}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
