@@ -235,15 +235,7 @@ function OrganizationCardComponent({
 
     // Standard rounded rect path if no badge
     if (cw_c === 0 || ch_c === 0) {
-      const standardPath = `M ${R} 0
-        L ${w - R} 0
-        A ${R} ${R} 0 0 1 ${w} ${R}
-        L ${w} ${h - R}
-        A ${R} ${R} 0 0 1 ${w - R} ${h}
-        L ${R} ${h}
-        A ${R} ${R} 0 0 1 0 ${h - R}
-        L 0 ${R}
-        A ${R} ${R} 0 0 1 ${R} 0 Z`;
+      const standardPath = `M ${R} 0 L ${w - R} 0 A ${R} ${R} 0 0 1 ${w} ${R} L ${w} ${h - R} A ${R} ${R} 0 0 1 ${w - R} ${h} L ${R} ${h} A ${R} ${R} 0 0 1 0 ${h - R} L 0 ${R} A ${R} ${R} 0 0 1 ${R} 0 Z`;
       return { border: standardPath, clip: standardPath };
     }
 
@@ -253,35 +245,11 @@ function OrganizationCardComponent({
     const cw_b = cw_c - offset;
     const ch_b = ch_c - offset;
 
-    // Border path with 0.5px offset to avoid clipping card outlines
-    const borderPath = `M ${cw_b + r} ${offset}
-      L ${w_b - R} ${offset}
-      A ${R} ${R} 0 0 1 ${w_b} ${R}
-      L ${w_b} ${h_b - R}
-      A ${R} ${R} 0 0 1 ${w_b - R} ${h_b}
-      L ${R} ${h_b}
-      A ${R} ${R} 0 0 1 ${offset} ${h_b - R}
-      L ${offset} ${ch_b + r}
-      A ${r} ${r} 0 0 1 ${r + offset} ${ch_b}
-      L ${cw_b - r} ${ch_b}
-      A ${r} ${r} 0 0 0 ${cw_b} ${ch_b - r}
-      L ${cw_b} ${r + offset}
-      A ${r} ${r} 0 0 1 ${cw_b + r} ${offset} Z`;
+    // Border path with 0.5px offset, completely flattened to prevent newline parsing errors in browser engines
+    const borderPath = `M ${cw_b + r} ${offset} L ${w_b - R} ${offset} A ${R} ${R} 0 0 1 ${w_b} ${R} L ${w_b} ${h_b - R} A ${R} ${R} 0 0 1 ${w_b - R} ${h_b} L ${R} ${h_b} A ${R} ${R} 0 0 1 ${offset} ${h_b - R} L ${offset} ${ch_b + r} A ${r} ${r} 0 0 1 ${r + offset} ${ch_b} L ${cw_b - r} ${ch_b} A ${r} ${r} 0 0 0 ${cw_b} ${ch_b - r} L ${cw_b} ${r + offset} A ${r} ${r} 0 0 1 ${cw_b + r} ${offset} Z`;
 
-    // Clip path (running along the absolute outer edge)
-    const clipPath = `M ${cw_c + r} 0
-      L ${w - R} 0
-      A ${R} ${R} 0 0 1 ${w} ${R}
-      L ${w} ${h - R}
-      A ${R} ${R} 0 0 1 ${w - R} ${h}
-      L ${R} ${h}
-      A ${R} ${R} 0 0 1 0 ${h - R}
-      L 0 ${ch_c + r}
-      A ${r} ${r} 0 0 1 ${r} ${ch_c}
-      L ${cw_c - r} ${ch_c}
-      A ${r} ${r} 0 0 0 ${cw_c} ${ch_c - r}
-      L ${cw_c} ${r}
-      A ${r} ${r} 0 0 1 ${cw_c + r} 0 Z`;
+    // Clip path (running along the absolute outer edge), completely flattened to prevent browser parsing bugs
+    const clipPath = `M ${cw_c + r} 0 L ${w - R} 0 A ${R} ${R} 0 0 1 ${w} ${R} L ${w} ${h - R} A ${R} ${R} 0 0 1 ${w - R} ${h} L ${R} ${h} A ${R} ${R} 0 0 1 0 ${h - R} L 0 ${ch_c + r} A ${r} ${r} 0 0 1 ${r} ${ch_c} L ${cw_c - r} ${ch_c} A ${r} ${r} 0 0 0 ${cw_c} ${ch_c - r} L ${cw_c} ${r} A ${r} ${r} 0 0 1 ${cw_c + r} 0 Z`;
 
     return { border: borderPath, clip: clipPath };
   }, [dimensions]);
@@ -329,6 +297,9 @@ function OrganizationCardComponent({
   const badgeBgClass = categoryClasses.text.split(" ").find(c => c.startsWith("text-"))?.replace("text-", "bg-") || "bg-foreground";
   const badgeTextClass = categoryClasses.bg.split(" ").find(c => c.startsWith("bg-"))?.replace("bg-", "text-") || "text-background";
 
+  // Translate category border color class (border-*) to text color class (text-*) for SVG stroke color compatibility
+  const strokeColorClass = categoryClasses.border.replace("border-", "text-");
+
   return (
     <article
       data-organization-card
@@ -348,16 +319,17 @@ function OrganizationCardComponent({
       }`}
       ref={cardRef}
     >
-      {/* 1. Custom Background with clip-path for the waterpaint gradients */}
+      {/* 1. Custom Background with clip-path (including -webkit support for Safari compatibility) */}
       <div
         className={`event-card-waterpaint absolute inset-0 rounded-xl ${categoryClasses.bg}`}
         style={{
           clipPath: paths.clip ? `path('${paths.clip}')` : undefined,
+          WebkitClipPath: paths.clip ? `path('${paths.clip}')` : undefined,
           ...getEventCardWaterpaintStyle(organization.id),
         }}
       />
 
-      {/* 2. Custom Border SVG overlay */}
+      {/* 2. Custom Border SVG overlay (matching divider color) */}
       {paths.border && (
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
           <path
@@ -365,19 +337,19 @@ function OrganizationCardComponent({
             fill="none"
             stroke="currentColor"
             strokeWidth={1}
-            className={categoryClasses.border}
+            className={strokeColorClass}
           />
         </svg>
       )}
 
-      {/* 3. The Badge (rendered outside the clipped background, so it is fully visible) */}
+      {/* 3. The Badge (rendered outside the clipped background, with NO border) */}
       {primaryCategory && (
         <div ref={badgeRef} className="absolute top-0 left-0 z-30">
           <button
             type="button"
             onMouseDown={handleCategoryClick}
             {...badgeHoverProps}
-            className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-90 hover:opacity-100 active:scale-95 border ${categoryClasses.border} ${badgeBgClass} ${badgeTextClass}`}
+            className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-90 hover:opacity-100 active:scale-95 ${badgeBgClass} ${badgeTextClass}`}
           >
             {translateCategory(primaryCategory, t)}
           </button>

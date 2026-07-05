@@ -48,15 +48,7 @@ export function OrganizationCardSkeleton() {
 
     // Standard rounded rect path if no badge
     if (cw_c === 0 || ch_c === 0) {
-      const standardPath = `M ${R} 0
-        L ${w - R} 0
-        A ${R} ${R} 0 0 1 ${w} ${R}
-        L ${w} ${h - R}
-        A ${R} ${R} 0 0 1 ${w - R} ${h}
-        L ${R} ${h}
-        A ${R} ${R} 0 0 1 0 ${h - R}
-        L 0 ${R}
-        A ${R} ${R} 0 0 1 ${R} 0 Z`;
+      const standardPath = `M ${R} 0 L ${w - R} 0 A ${R} ${R} 0 0 1 ${w} ${R} L ${w} ${h - R} A ${R} ${R} 0 0 1 ${w - R} ${h} L ${R} ${h} A ${R} ${R} 0 0 1 0 ${h - R} L 0 ${R} A ${R} ${R} 0 0 1 ${R} 0 Z`;
       return { border: standardPath, clip: standardPath };
     }
 
@@ -66,35 +58,11 @@ export function OrganizationCardSkeleton() {
     const cw_b = cw_c - offset;
     const ch_b = ch_c - offset;
 
-    // Border path with 0.5px offset to avoid clipping card outlines
-    const borderPath = `M ${cw_b + r} ${offset}
-      L ${w_b - R} ${offset}
-      A ${R} ${R} 0 0 1 ${w_b} ${R}
-      L ${w_b} ${h_b - R}
-      A ${R} ${R} 0 0 1 ${w_b - R} ${h_b}
-      L ${R} ${h_b}
-      A ${R} ${R} 0 0 1 ${offset} ${h_b - R}
-      L ${offset} ${ch_b + r}
-      A ${r} ${r} 0 0 1 ${r + offset} ${ch_b}
-      L ${cw_b - r} ${ch_b}
-      A ${r} ${r} 0 0 0 ${cw_b} ${ch_b - r}
-      L ${cw_b} ${r + offset}
-      A ${r} ${r} 0 0 1 ${cw_b + r} ${offset} Z`;
+    // Border path with 0.5px offset, completely flattened to prevent newline parsing errors in browser engines
+    const borderPath = `M ${cw_b + r} ${offset} L ${w_b - R} ${offset} A ${R} ${R} 0 0 1 ${w_b} ${R} L ${w_b} ${h_b - R} A ${R} ${R} 0 0 1 ${w_b - R} ${h_b} L ${R} ${h_b} A ${R} ${R} 0 0 1 ${offset} ${h_b - R} L ${offset} ${ch_b + r} A ${r} ${r} 0 0 1 ${r + offset} ${ch_b} L ${cw_b - r} ${ch_b} A ${r} ${r} 0 0 0 ${cw_b} ${ch_b - r} L ${cw_b} ${r + offset} A ${r} ${r} 0 0 1 ${cw_b + r} ${offset} Z`;
 
-    // Clip path (running along the absolute outer edge)
-    const clipPath = `M ${cw_c + r} 0
-      L ${w - R} 0
-      A ${R} ${R} 0 0 1 ${w} ${R}
-      L ${w} ${h - R}
-      A ${R} ${R} 0 0 1 ${w - R} ${h}
-      L ${R} ${h}
-      A ${R} ${R} 0 0 1 0 ${h - R}
-      L 0 ${ch_c + r}
-      A ${r} ${r} 0 0 1 ${r} ${ch_c}
-      L ${cw_c - r} ${ch_c}
-      A ${r} ${r} 0 0 0 ${cw_c} ${ch_c - r}
-      L ${cw_c} ${r}
-      A ${r} ${r} 0 0 1 ${cw_c + r} 0 Z`;
+    // Clip path (running along the absolute outer edge), completely flattened to prevent browser parsing bugs
+    const clipPath = `M ${cw_c + r} 0 L ${w - R} 0 A ${R} ${R} 0 0 1 ${w} ${R} L ${w} ${h - R} A ${R} ${R} 0 0 1 ${w - R} ${h} L ${R} ${h} A ${R} ${R} 0 0 1 0 ${h - R} L 0 ${ch_c + r} A ${r} ${r} 0 0 1 ${r} ${ch_c} L ${cw_c - r} ${ch_c} A ${r} ${r} 0 0 0 ${cw_c} ${ch_c - r} L ${cw_c} ${r} A ${r} ${r} 0 0 1 ${cw_c + r} 0 Z`;
 
     return { border: borderPath, clip: clipPath };
   }, [dimensions]);
@@ -105,11 +73,12 @@ export function OrganizationCardSkeleton() {
       className="relative flex flex-col h-full rounded-xl cursor-default animate-pulse"
       ref={cardRef}
     >
-      {/* 1. Custom Background with clip-path matching OrganizationCard shape */}
+      {/* 1. Custom Background with clip-path (including -webkit support for Safari compatibility) */}
       <div
         className="absolute inset-0 rounded-xl bg-card"
         style={{
           clipPath: paths.clip ? `path('${paths.clip}')` : undefined,
+          WebkitClipPath: paths.clip ? `path('${paths.clip}')` : undefined,
         }}
       />
 
@@ -126,33 +95,15 @@ export function OrganizationCardSkeleton() {
         </svg>
       )}
 
-      {/* 3. Category badge skeleton */}
-      <div ref={badgeRef} className="absolute top-0 left-0 z-30">
-        <Skeleton className="h-5 w-16 rounded-full" />
+      {/* 3. Category badge wrapper (invisible, only for cutout sizing) */}
+      <div ref={badgeRef} className="absolute top-0 left-0 z-30 opacity-0 pointer-events-none">
+        <div className="h-5 w-16" />
       </div>
 
-      {/* 4. simplified Skeleton body matching EventCardSkeleton */}
-      <div className="relative z-10 flex flex-col flex-1 p-3 pb-2.5 pt-10 gap-2.5 sm:p-4 sm:pb-3 sm:gap-3">
-        <div className="flex flex-col gap-2.5 h-full flex-1 sm:gap-3">
-          {/* Title skeleton */}
-          <div className="space-y-1.5">
-            <Skeleton className="h-4 w-3/4 rounded-lg" />
-            <Skeleton className="h-4 w-1/2 rounded-lg" />
-          </div>
-
-          {/* Info + Badges pinned to bottom */}
-          <div className="flex items-end justify-between gap-3 mt-auto min-w-0">
-            <div className="space-y-1.5 min-w-0 flex-1">
-              <Skeleton className="h-3 w-1/3 rounded-lg" />
-              <Skeleton className="h-3 w-1/2 rounded-lg" />
-            </div>
-          </div>
-        </div>
-
-        {/* Action Button Skeleton (matches EventCardSkeleton button structure) */}
-        <div className="w-full pt-3 border-t border-border/50 flex items-center justify-center">
-          <Skeleton className="h-4 w-28 rounded-lg" />
-        </div>
+      {/* 4. Simplified skeleton body: just 2 horizontal rectangles inside the outlined card */}
+      <div className="relative z-10 flex flex-col flex-1 p-4 pt-20 pb-8 gap-3">
+        <Skeleton className="h-4 w-3/4 rounded-lg" />
+        <Skeleton className="h-4 w-1/2 rounded-lg" />
       </div>
     </article>
   );
