@@ -293,3 +293,16 @@
 
 
 }
+
+/* Faster drawer close so background scroll unlocks sooner on mobile. */
+[data-vaul-drawer],
+[data-vaul-overlay] {
+  animation-duration: 280ms !important;
+  transition-duration: 280ms !important;
+}
+
+[data-vaul-drawer][data-state="closed"],
+[data-vaul-overlay][data-state="closed"] {
+  pointer-events: none !important;
+  touch-action: auto !important;
+}

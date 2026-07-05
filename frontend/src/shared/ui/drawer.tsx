@@ -3,6 +3,37 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/shared/lib/utils"
 
+/** Release scroll/pointer locks as soon as a drawer starts closing. */
+export function releaseDrawerScrollLock() {
+  if (typeof document === "undefined") return
+
+  const { body, documentElement: html } = document
+
+  let scrollX = 0
+  let scrollY = 0
+  if (body.style.position === "fixed") {
+    scrollY = -parseInt(body.style.top, 10) || 0
+    scrollX = -parseInt(body.style.left, 10) || 0
+  }
+
+  body.style.pointerEvents = ""
+  body.style.overflow = ""
+  body.style.position = ""
+  body.style.top = ""
+  body.style.left = ""
+  body.style.height = ""
+  body.style.right = ""
+  body.style.paddingRight = ""
+  html.style.overflow = ""
+  html.style.paddingRight = ""
+
+  if (scrollY !== 0 || scrollX !== 0) {
+    requestAnimationFrame(() => {
+      window.scrollTo(scrollX, scrollY)
+    })
+  }
+}
+
 function isNestedPortalTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
   return Boolean(
@@ -17,9 +48,29 @@ function isNestedPortalTarget(target: EventTarget | null) {
 }
 
 function Drawer({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      onOpenChange?.(open)
+      if (!open) {
+        // Run after vaul's own close handler restores iOS scroll position.
+        queueMicrotask(() => {
+          releaseDrawerScrollLock()
+        })
+      }
+    },
+    [onOpenChange],
+  )
+
+  return (
+    <DrawerPrimitive.Root
+      data-slot="drawer"
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  )
 }
 
 function DrawerTrigger({
@@ -48,10 +99,9 @@ const DrawerOverlay = React.forwardRef<
     ref={ref}
     data-slot="drawer-overlay"
     className={cn(
-      "fixed inset-0 z-modal bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+      "fixed inset-0 z-modal bg-black/50 [animation-duration:280ms] data-[state=closed]:pointer-events-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
-    style={{ pointerEvents: "auto" }}
     onMouseDown={(event) => {
       if (isNestedPortalTarget(event.target)) {
         event.stopPropagation()
@@ -72,7 +122,7 @@ const DrawerContent = React.forwardRef<
       ref={ref}
       data-slot="drawer-content"
       className={cn(
-        "group/drawer-content fixed z-modal flex h-auto flex-col bg-background",
+        "group/drawer-content fixed z-modal flex h-auto flex-col bg-background [animation-duration:280ms] data-[state=closed]:pointer-events-none",
         "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-xl data-[vaul-drawer-direction=top]:border-b",
         "data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:left-1/2 data-[vaul-drawer-direction=bottom]:w-full data-[vaul-drawer-direction=bottom]:max-w-screen-md data-[vaul-drawer-direction=bottom]:-translate-x-1/2 data-[vaul-drawer-direction=bottom]:mt-16 data-[vaul-drawer-direction=bottom]:max-h-[92dvh] data-[vaul-drawer-direction=bottom]:rounded-t-xl data-[vaul-drawer-direction=bottom]:border-t",
         "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
