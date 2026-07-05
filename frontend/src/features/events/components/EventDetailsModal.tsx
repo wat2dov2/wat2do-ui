@@ -186,7 +186,7 @@ export function EventDetailsModal({
             </div>
 
             <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
-              <DrawerHeader className="relative min-h-9 p-0 text-center">
+              <DrawerHeader className="relative min-h-9 p-0 pb-5 text-left sm:pb-0 sm:text-center">
                 <div className="absolute right-0 top-0 z-10 flex items-center justify-end gap-1.5">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -255,9 +255,11 @@ export function EventDetailsModal({
                     </Button>
                   </EventOverflowMenu>
                 </div>
-                <div className="mx-auto max-w-2xl px-16 text-center sm:px-28">
-                  <DrawerTitle className="leading-tight">{displayedEvent.title}</DrawerTitle>
-                  <DrawerDescription className="flex items-center justify-center">
+                <div className="max-w-2xl pt-10 pr-2 text-left sm:mx-auto sm:px-28 sm:pt-0 sm:text-center">
+                  <DrawerTitle className="leading-tight text-left sm:text-center">
+                    {displayedEvent.title}
+                  </DrawerTitle>
+                  <DrawerDescription className="mt-1 flex items-center justify-start sm:justify-center">
                     <span className="inline-flex items-center gap-0.5">
                       <span>{displayedEvent.organization}</span>
                       <OrganizationVerifiedBadge />
@@ -266,7 +268,7 @@ export function EventDetailsModal({
                 </div>
               </DrawerHeader>
 
-              <ModalSection className="space-y-3">
+              <ModalSection className="mt-2 space-y-3 pt-2 sm:mt-0 sm:pt-0">
                 <InfoRow
                   label={t("forms.description")}
                   value={displayedEvent.description || t("common.noDescription")}
