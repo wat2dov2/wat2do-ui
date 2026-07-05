@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import { Skeleton } from "@/shared/ui/skeleton";
+
+const useSafeLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export function OrganizationCardSkeleton() {
   const cardRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ w: 0, h: 0, cw: 0, ch: 0 });
 
-  useEffect(() => {
+  useSafeLayoutEffect(() => {
     const cardEl = cardRef.current;
     const badgeEl = badgeRef.current;
     if (!cardEl) return;
@@ -52,7 +54,7 @@ export function OrganizationCardSkeleton() {
       return { border: standardPath, clip: standardPath };
     }
 
-    const offset = 0.5;
+    const offset = 0.75;
     const w_b = w - offset;
     const h_b = h - offset;
     const cw_b = cw_c - offset;

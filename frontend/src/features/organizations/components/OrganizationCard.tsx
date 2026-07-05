@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback, useState, useRef, useEffect } from "react";
+import { memo, useMemo, useCallback, useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bookmark,
@@ -20,6 +20,8 @@ import {
   getOrganizationSocialHandle,
 } from "@/features/organizations/utils/organizationCardContent";
 import type { Organization } from "@/shared/types";
+
+const useSafeLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 interface OrganizationCardProps {
   organization: Organization;
@@ -172,7 +174,7 @@ function OrganizationCardComponent({
   const badgeRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ w: 0, h: 0, cw: 0, ch: 0 });
 
-  useEffect(() => {
+  useSafeLayoutEffect(() => {
     const cardEl = cardRef.current;
     const badgeEl = badgeRef.current;
     if (!cardEl) return;
@@ -239,7 +241,7 @@ function OrganizationCardComponent({
       return { border: standardPath, clip: standardPath };
     }
 
-    const offset = 0.5;
+    const offset = 0.75;
     const w_b = w - offset;
     const h_b = h - offset;
     const cw_b = cw_c - offset;
