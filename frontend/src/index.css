@@ -308,3 +308,11 @@ html[data-drawer-scroll-release] [data-vaul-overlay],
   pointer-events: none !important;
   touch-action: pan-y !important;
 }
+
+html[data-drawer-scroll-release] [data-slot="drawer-close"],
+html[data-drawer-scroll-release] [data-slot="drawer-close"] button,
+[data-vaul-drawer][data-state="open"] [data-slot="drawer-close"],
+[data-vaul-drawer][data-state="open"] [data-slot="drawer-close"] button {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+}

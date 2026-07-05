@@ -1,24 +1,9 @@
-import { useTranslation } from "react-i18next";
-import { X } from "@/shared/ui/doodle-icons";
-import { DrawerClose } from "@/shared/ui/drawer";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { ModalContentWrapper, ModalSection } from "@/shared/ui/modal-components";
 
 export function EventDetailsDrawerSkeleton() {
-  const { t } = useTranslation();
-
   return (
     <>
-      <DrawerClose asChild>
-        <button
-          type="button"
-          className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          aria-label={t("common.close")}
-        >
-          <X className="size-4" />
-        </button>
-      </DrawerClose>
-
       <div className="relative h-64 w-full overflow-hidden sm:h-80">
         <Skeleton className="absolute inset-0 rounded-none" />
       </div>

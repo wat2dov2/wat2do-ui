@@ -12,6 +12,7 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
+  drawerCloseButtonClassName,
 } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -166,7 +167,16 @@ export function EventDetailsModal({
 
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
-      <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
+      <DrawerContent className="relative overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
+        <DrawerClose asChild>
+          <button
+            type="button"
+            className={drawerCloseButtonClassName}
+            aria-label={t("common.close")}
+          >
+            <X className="size-4" />
+          </button>
+        </DrawerClose>
         <div
           ref={contentRef}
           className="max-h-[92dvh] overflow-y-auto border-0 p-0"
@@ -175,15 +185,6 @@ export function EventDetailsModal({
           <EventDetailsDrawerSkeleton />
         ) : displayedEvent ? (
           <>
-            <DrawerClose asChild>
-              <button
-                type="button"
-                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                aria-label={t("common.close")}
-              >
-                <X className="size-4" />
-              </button>
-            </DrawerClose>
             <div
               className="relative h-64 w-full select-none overflow-hidden sm:h-80"
               onDragStart={(dragEvent) => dragEvent.preventDefault()}

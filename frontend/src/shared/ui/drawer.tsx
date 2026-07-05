@@ -94,8 +94,6 @@ function Drawer({
         window.setTimeout(() => {
           resetDrawerTouchCapture()
         }, DRAWER_CLOSE_ANIMATION_MS)
-      } else {
-        resetDrawerTouchCapture()
       }
       onOpenChange?.(open)
     },
@@ -103,11 +101,8 @@ function Drawer({
   )
 
   React.useEffect(() => {
-    if (props.open === false) {
-      releaseDrawerTouchCapture()
-      queueMicrotask(() => {
-        releaseDrawerScrollLock()
-      })
+    if (props.open) {
+      resetDrawerTouchCapture()
     }
   }, [props.open])
 
@@ -138,6 +133,9 @@ function DrawerClose({
 }: React.ComponentProps<typeof DrawerPrimitive.Close>) {
   return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
 }
+
+export const drawerCloseButtonClassName =
+  "pointer-events-auto touch-manipulation absolute right-3 top-3 z-50 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
