@@ -103,12 +103,12 @@ function EventImageBadges({
             type="button"
             onMouseDown={onOrganizationMouseDown}
             {...badgeHoverProps}
-            className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-1.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+            className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
           >
             <span className="font-bold truncate max-w-[128px]">
               {event.organization}
             </span>
-            <OrganizationVerifiedBadge className="ml-0.5" />
+            <OrganizationVerifiedBadge />
           </button>
         </BadgeMask>
       )}

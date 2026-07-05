@@ -8,6 +8,8 @@ import {
 } from "@/shared/services/validationService";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
+import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
+import { JSON_EDITOR_DEBOUNCE_MS } from "@/shared/constants/ui";
 import {
   getInitialState,
   getSmartDefaults,
@@ -163,12 +165,9 @@ export function useEventForm(options: UseEventFormOptions) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isEditMode, initialData]);
 
-  // Handle JSON changes
-  const handleJsonChange = useCallback(
-    (value: string | undefined) => {
-      if (!value) return;
-      setJsonValue(value);
-
+  // Handle JSON changes — update the editor immediately, parse after debounce.
+  const applyJsonParse = useCallback(
+    (value: string) => {
       try {
         const parsed = JSON.parse(value);
         setJsonError("");
@@ -180,7 +179,21 @@ export function useEventForm(options: UseEventFormOptions) {
         setJsonError(t("forms.invalidJsonFormat"));
       }
     },
-    [t, form]
+    [form, t],
+  );
+
+  const debouncedApplyJsonParse = useDebouncedCallback(
+    applyJsonParse,
+    JSON_EDITOR_DEBOUNCE_MS,
+  );
+
+  const handleJsonChange = useCallback(
+    (value: string | undefined) => {
+      if (!value) return;
+      setJsonValue(value);
+      debouncedApplyJsonParse(value);
+    },
+    [debouncedApplyJsonParse],
   );
 
   // Sync formData to JSON when needed

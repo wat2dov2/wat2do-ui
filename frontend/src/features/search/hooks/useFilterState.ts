@@ -14,6 +14,8 @@ import {
 } from "@/features/search/api/filterService";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
+import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
+import { JSON_EDITOR_DEBOUNCE_MS } from "@/shared/constants/ui";
 import { useSearchStore } from "@/features/search/store/search.store";
 import type { FilterState } from "@/shared/types";
 
@@ -269,11 +271,8 @@ export function useFilterState(profileCompleted: boolean) {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
 
-  // Handle JSON editor changes
-  const handleJsonChange = useCallback(
-    (value: string | undefined) => {
-      if (!value) return;
-
+  const applyJsonFilters = useCallback(
+    (value: string) => {
       const { filters, error } = parseFiltersFromJSON(value);
       if (error) {
         setJsonError(error);
@@ -298,6 +297,20 @@ export function useFilterState(profileCompleted: boolean) {
       });
     },
     [setFilterState],
+  );
+
+  const debouncedApplyJsonFilters = useDebouncedCallback(
+    applyJsonFilters,
+    JSON_EDITOR_DEBOUNCE_MS,
+  );
+
+  // Handle JSON editor changes
+  const handleJsonChange = useCallback(
+    (value: string | undefined) => {
+      if (!value) return;
+      debouncedApplyJsonFilters(value);
+    },
+    [debouncedApplyJsonFilters],
   );
 
   // AI filter generation handler

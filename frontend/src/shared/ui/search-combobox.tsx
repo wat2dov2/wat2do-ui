@@ -162,20 +162,18 @@ export function SearchCombobox<T>({
     }
   };
 
-  const handleOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
     openRef.current = nextOpen;
     setOpen(nextOpen);
     if (!nextOpen) {
       resetSearchState();
     }
-  };
+  }, [resetSearchState]);
 
   const handleSelect = useCallback((item: T) => {
     onSelect(item);
-    openRef.current = false;
-    setOpen(false);
-    resetSearchState();
-  }, [onSelect, resetSearchState]);
+    handleOpenChange(false);
+  }, [handleOpenChange, onSelect]);
 
   const handleSelectFirstResult = useCallback(async () => {
     const firstResult = results[0];
@@ -208,12 +206,9 @@ export function SearchCombobox<T>({
     setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
 
     const nextOpen = !openRef.current;
-    openRef.current = nextOpen;
-    setOpen(nextOpen);
+    handleOpenChange(nextOpen);
 
-    if (!nextOpen) {
-      resetSearchState();
-    } else if (willFetch(search)) {
+    if (nextOpen && willFetch(search)) {
       setIsLoading(true);
       setResults([]);
     }
@@ -279,7 +274,21 @@ export function SearchCombobox<T>({
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
       </PopoverAnchor>
-      <PopoverContent className={contentStyles} align={align} style={contentStyle}>
+      <PopoverContent
+        className={contentStyles}
+        align={align}
+        style={contentStyle}
+        onPointerDownOutside={(event) => {
+          if (triggerRef.current?.contains(event.target as Node)) {
+            event.preventDefault();
+          }
+        }}
+        onInteractOutside={(event) => {
+          if (triggerRef.current?.contains(event.target as Node)) {
+            event.preventDefault();
+          }
+        }}
+      >
         <div className="flex items-center border-b border-border px-3">
           <Search className="size-4 text-muted-foreground shrink-0" />
           <input

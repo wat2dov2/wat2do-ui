@@ -43,6 +43,15 @@ export function formatRelativeTime(
       ? t("common.dayAgo", { count: diffDays })
       : `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   }
+  if (options?.alwaysAgo) {
+    const days = Math.max(diffDays, 0);
+    if (days === 0) {
+      return t ? t("common.justNow") : "just now";
+    }
+    return t
+      ? t("common.dayAgo", { count: days })
+      : `${days} day${days > 1 ? "s" : ""} ago`;
+  }
   return d.toLocaleDateString();
 }
 

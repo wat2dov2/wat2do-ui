@@ -18,6 +18,9 @@ export const CARD_GRID_CLASS =
 /** Font size (px) for Monaco JSON editors across the app. */
 export const JSON_EDITOR_FONT_SIZE = 12;
 
+/** Debounce window (ms) before parsing JSON editor input into app state. */
+export const JSON_EDITOR_DEBOUNCE_MS = 300;
+
 
 /** Small delay (ms) to allow DOM updates before scrolling to an element. */
 export const SCROLL_INTO_VIEW_DELAY_MS = 100;

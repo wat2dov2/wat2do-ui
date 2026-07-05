@@ -257,9 +257,11 @@ export function EventDetailsModal({
                 </div>
                 <div className="mx-auto max-w-2xl px-16 text-center sm:px-28">
                   <DrawerTitle className="leading-tight">{displayedEvent.title}</DrawerTitle>
-                  <DrawerDescription className="flex items-center justify-center gap-2">
-                    <span>{displayedEvent.organization}</span>
-                    <OrganizationVerifiedBadge />
+                  <DrawerDescription className="flex items-center justify-center">
+                    <span className="inline-flex items-center gap-0.5">
+                      <span>{displayedEvent.organization}</span>
+                      <OrganizationVerifiedBadge />
+                    </span>
                   </DrawerDescription>
                 </div>
               </DrawerHeader>

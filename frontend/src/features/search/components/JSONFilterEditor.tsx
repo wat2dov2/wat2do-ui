@@ -1,6 +1,7 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
+import { JSON_EDITOR_DEBOUNCE_MS, JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
+import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 
 // Lazy load Monaco Editor (3.6MB) - only needed for JSON filter view
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -17,6 +18,15 @@ export function JSONFilterEditor({
   isDarkMode,
 }: JSONFilterEditorProps) {
   const { t } = useTranslation();
+  const [draft, setDraft] = useState(jsonValue);
+  const debouncedOnJsonChange = useDebouncedCallback(
+    onJsonChange,
+    JSON_EDITOR_DEBOUNCE_MS,
+  );
+
+  useEffect(() => {
+    setDraft(jsonValue);
+  }, [jsonValue]);
 
   return (
     <div className="space-y-2">
@@ -37,8 +47,12 @@ export function JSONFilterEditor({
             key={isDarkMode ? "dark" : "light"}
             height="250px"
             defaultLanguage="json"
-            value={jsonValue}
-            onChange={onJsonChange}
+            value={draft}
+            onChange={(value) => {
+              if (value === undefined) return;
+              setDraft(value);
+              debouncedOnJsonChange(value);
+            }}
             theme={isDarkMode ? "vs-dark" : "vs-light"}
             options={{
               minimap: { enabled: false },
