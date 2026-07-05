@@ -316,3 +316,7 @@ html[data-drawer-scroll-release] [data-slot="drawer-close"] button,
   pointer-events: auto !important;
   touch-action: manipulation !important;
 }
+
+[data-sonner-toaster] {
+  z-index: var(--z-index-toast);
+}

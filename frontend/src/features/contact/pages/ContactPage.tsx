@@ -2,8 +2,8 @@ import { useRouter } from "next/navigation";
 import { m } from "framer-motion";
 import {
   EMPTY_FILTER_STATE,
-  writeFiltersToSearchParams,
 } from "@/features/search";
+import { useSearchStore } from "@/features/search/store/search.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { EXTERNAL_LINKS } from "@/shared/constants/links";
 import { useTranslation } from "react-i18next";
@@ -31,11 +31,11 @@ export function ContactPage() {
       return;
     }
 
-    const params = writeFiltersToSearchParams(
-      new URLSearchParams(),
-      { ...EMPTY_FILTER_STATE, searchQuery: query },
-    );
-    router.push(params.toString() ? `${ROUTES.HOME}?${params.toString()}` : ROUTES.HOME);
+    useSearchStore.getState().setFilterState({
+      ...EMPTY_FILTER_STATE,
+      searchQuery: query,
+    });
+    router.push(ROUTES.HOME);
   };
 
   return (

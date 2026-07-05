@@ -60,7 +60,6 @@ interface ActiveEventDetailsDialog {
 
 interface EventDetailsModalProps {
   eventId?: number | null;
-  eventOpenNonce?: number;
   event: Event | null;
   onClose: () => void;
   allEvents?: Event[];
@@ -70,7 +69,6 @@ interface EventDetailsModalProps {
 
 export function EventDetailsModal({
   eventId = null,
-  eventOpenNonce = 0,
   event,
   onClose,
   allEvents,
@@ -86,7 +84,6 @@ export function EventDetailsModal({
   // id during render (React's pattern for prop-derived resets).
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
   const [overrideForEventId, setOverrideForEventId] = useState<number | null>(null);
-  const [closedAtOpenNonce, setClosedAtOpenNonce] = useState(0);
   const [activeDialog, setActiveDialog] = useState<ActiveEventDetailsDialog | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const resolvedEventId = eventId ?? event?.id ?? null;
@@ -102,8 +99,7 @@ export function EventDetailsModal({
   });
 
   const displayedEvent = activeOverride ?? listEvent ?? fetchedEvent ?? null;
-  const drawerOpen =
-    resolvedEventId !== null && closedAtOpenNonce !== eventOpenNonce;
+  const drawerOpen = resolvedEventId !== null;
   const showSkeleton =
     drawerOpen && displayedEvent == null && !isFetchError && isFetchingEvent;
   const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;
@@ -158,11 +154,10 @@ export function EventDetailsModal({
   const handleDrawerOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
-        setClosedAtOpenNonce(eventOpenNonce);
         onClose();
       }
     },
-    [eventOpenNonce, onClose],
+    [onClose],
   );
 
   return (

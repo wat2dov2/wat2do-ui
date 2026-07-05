@@ -14,12 +14,11 @@ import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
-import { useSearchStore } from "@/features/search/store/search.store";
 import { getRouteDocumentTitle } from "@/shared/constants/routes";
 import type { Role } from "@/shared/constants/roles";
 import { getHostnameSchoolStatus } from "@/shared/constants/schools";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import { Toaster } from "@/shared/ui/toaster";
+import { Toaster } from "@/shared/ui/sonner";
 
 interface AppPageProps {
   children: ReactNode;
@@ -73,7 +72,6 @@ function AppPageContent({
   const userEmail = useUserEmail();
   const events = useEventsStore((s) => s.events);
   const setSchoolFilter = useEventsStore((s) => s.setSchoolFilter);
-  const setFilterStateFromURL = useSearchStore((s) => s.setFilterStateFromURL);
 
   const hostnameSchoolStatus = useMemo(() => {
     if (typeof window === "undefined" || skipSchoolCheck) {
@@ -96,7 +94,6 @@ function AppPageContent({
 
   useAppNavigation({
     events,
-    setFilterStateFromURL,
     setSchoolFilter,
   });
 

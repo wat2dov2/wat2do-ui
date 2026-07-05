@@ -7,13 +7,11 @@ import {
   storeStatesToFilterState,
   generatedFilterStateToFilterState,
   normalizeFilterState,
-  writeFiltersToSearchParams,
   clearNarrowingFilterState,
   DEFAULT_FILTER_SORT_BY,
   DEFAULT_FILTER_SORT_ORDER,
 } from "@/features/search/api/filterService";
 import { generateFiltersWithAI, isApiKeyConfigured } from "@/shared/lib/openai";
-import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 import { JSON_EDITOR_DEBOUNCE_MS } from "@/shared/constants/ui";
 import { useSearchStore } from "@/features/search/store/search.store";
@@ -25,22 +23,13 @@ function readCurrentFilterState(): FilterState {
   return storeStatesToFilterState(useSearchStore.getState());
 }
 
-export function useFilterUrlActions() {
-  const [searchParams, setSearchParams] = useMutableSearchParams();
-
-  const setFilterState = useCallback(
-    (updater: FilterStateUpdater) => {
-      const nextFilters = normalizeFilterState(
-        typeof updater === "function" ? updater(readCurrentFilterState()) : updater,
-      );
-      useSearchStore.getState().setFilterStateFromURL(nextFilters);
-      const nextParams = new URLSearchParams(searchParams.toString());
-      setSearchParams(writeFiltersToSearchParams(nextParams, nextFilters), {
-        replace: true,
-      });
-    },
-    [searchParams, setSearchParams],
-  );
+export function useFilterActions() {
+  const setFilterState = useCallback((updater: FilterStateUpdater) => {
+    const nextFilters = normalizeFilterState(
+      typeof updater === "function" ? updater(readCurrentFilterState()) : updater,
+    );
+    useSearchStore.getState().setFilterState(nextFilters);
+  }, []);
 
   const updateFilterState = useCallback(
     (patch: Partial<FilterState>) => {
@@ -124,7 +113,7 @@ export function useFilterState(profileCompleted: boolean) {
     updateFilterState,
     toggleFilterValue,
     clearAllFilters,
-  } = useFilterUrlActions();
+  } = useFilterActions();
 
   const setSearchQuery = useCallback(
     (value: string) => updateFilterState({ searchQuery: value }),
@@ -204,8 +193,6 @@ export function useFilterState(profileCompleted: boolean) {
     });
   }, [setFilterState]);
 
-  // Per-filter toggle adapters — stable refs derived from the single
-  // URL action so downstream props don't churn.
   const toggleCategory = useCallback(
     (cat: string) => toggleFilterValue("categories", cat),
     [toggleFilterValue],
@@ -227,9 +214,6 @@ export function useFilterState(profileCompleted: boolean) {
     [toggleFilterValue],
   );
 
-  // Derived JSON value - no useEffect needed.
-  // The key rename (selectedCategories → categories, etc.) is documented on
-  // storeStatesToFilterState in filterService.ts.
   const jsonValue = useMemo(
     () =>
       serializeFiltersToJSON(
@@ -266,7 +250,6 @@ export function useFilterState(profileCompleted: boolean) {
     ],
   );
 
-  // JSON editor + AI state (only the dropdown cares; kept local)
   const [jsonError, setJsonError] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -304,7 +287,6 @@ export function useFilterState(profileCompleted: boolean) {
     JSON_EDITOR_DEBOUNCE_MS,
   );
 
-  // Handle JSON editor changes
   const handleJsonChange = useCallback(
     (value: string | undefined) => {
       if (!value) return;
@@ -313,7 +295,6 @@ export function useFilterState(profileCompleted: boolean) {
     [debouncedApplyJsonFilters],
   );
 
-  // AI filter generation handler
   const handleAiGenerate = useCallback(async () => {
     if (!aiPrompt.trim()) return;
 
@@ -349,7 +330,6 @@ export function useFilterState(profileCompleted: boolean) {
   }, [aiPrompt, profileCompleted, handleJsonChange, t]);
 
   return {
-    // Filter state
     searchQuery,
     setSearchQuery,
     selectedCategories,
@@ -366,8 +346,6 @@ export function useFilterState(profileCompleted: boolean) {
     setRegistration,
     selectedOrganizations,
     setSelectedOrganizations,
-
-    // Quick filters (only the ones wired to UI)
     freeFoodFilter,
     setFreeFoodFilter,
     savedFilter,
@@ -375,29 +353,19 @@ export function useFilterState(profileCompleted: boolean) {
     addedWithin24h,
     setAddedWithin24h,
     toggleAddedWithin24h,
-
-    // Toggle functions
     toggleCategory,
     toggleLocation,
     toggleDay,
     toggleFood,
     toggleOrganization,
-
-    // JSON editor (derived, no state needed)
     jsonValue,
     jsonError,
     handleJsonChange,
-
-    // AI generation
     aiPrompt,
     setAiPrompt,
     aiGenerating,
     handleAiGenerate,
-
-    // Utilities
     clearAllFilters,
-
-    // Sort
     sortBy,
     setSortBy,
     sortOrder,

@@ -1,11 +1,10 @@
 import type { FilterState } from "@/shared/types";
 import type { ApiFilterStateResponse } from "@/shared/generated";
-import { QP } from "@/shared/constants/queryParams";
 import i18n from "@/shared/lib/i18n";
 
 /**
  * Filter Service
- * Serializer/parser used by the JSON editor and URL hydration.
+ * Serializer/parser used by the JSON editor and one-shot QR filter handoff.
  */
 
 export const DEFAULT_FILTER_SORT_BY = "date";
@@ -95,12 +94,11 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
 
 /**
  * Map Zustand search-store filter values to the shared `FilterState`
- * shape used by the JSON editor and URL params.
+ * shape used by the JSON editor.
  *
  * Key rename: the store uses `selectedCategories`/`selectedLocations`/
  * `selectedFoods`/`selectedDays` (UI-oriented naming), while `FilterState`
- * uses shorter `categories`/`locations`/`foods`/`days` keys (URL/JSON
- * friendly). All other keys pass through unchanged.
+ * uses shorter `categories`/`locations`/`foods`/`days` keys (JSON friendly).
  */
 export function storeStatesToFilterState(
   values: SearchStoreFilterValues,
@@ -123,7 +121,7 @@ export function storeStatesToFilterState(
 }
 
 /**
- * Normalize the generated AI FilterStateResponse to the UI/URL FilterState.
+ * Normalize the generated AI FilterStateResponse to the UI FilterState.
  */
 export function generatedFilterStateToFilterState(
   filters: GeneratedFilterStateInput,
@@ -146,13 +144,6 @@ export function generatedFilterStateToFilterState(
   });
 }
 
-function isDefaultPriceRange(priceRange: FilterState["priceRange"]): boolean {
-  return priceRange.min === "" && priceRange.max === "";
-}
-
-/**
- * Clear narrowing filters while preserving the current sort preference.
- */
 export function clearNarrowingFilterState(current: FilterState): FilterState {
   return normalizeFilterState({
     ...EMPTY_FILTER_STATE,
@@ -161,22 +152,25 @@ export function clearNarrowingFilterState(current: FilterState): FilterState {
   });
 }
 
-function isEmptyFilterState(filters: FilterState): boolean {
-  return (
-    filters.searchQuery === "" &&
-    filters.categories.length === 0 &&
-    filters.locations.length === 0 &&
-    filters.foods.length === 0 &&
-    filters.days.length === 0 &&
-    isDefaultPriceRange(filters.priceRange) &&
-    !filters.registration &&
-    filters.organizations.length === 0 &&
-    !filters.freeFood &&
-    !filters.saved &&
-    !filters.addedWithin24h &&
-    filters.sortBy === DEFAULT_FILTER_SORT_BY &&
-    filters.sortOrder === DEFAULT_FILTER_SORT_ORDER
+export const PENDING_FILTERS_SESSION_KEY = "wat2do:pending-filters";
+
+/** Stage filters for a full-page redirect (e.g. QR poster events-list). */
+export function stagePendingFilterState(filters: Partial<FilterState>) {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(
+    PENDING_FILTERS_SESSION_KEY,
+    serializeFiltersToJSON(normalizeFilterState(filters)),
   );
+}
+
+/** Read and clear staged filters once after landing on the events page. */
+export function consumePendingFilterState(): FilterState | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(PENDING_FILTERS_SESSION_KEY);
+  if (!raw) return null;
+  sessionStorage.removeItem(PENDING_FILTERS_SESSION_KEY);
+  const { filters, error } = parseFiltersFromJSON(raw);
+  return error ? null : filters;
 }
 
 /**
@@ -203,38 +197,4 @@ export function parseFiltersFromJSON(
       error: i18n.t("forms.invalidJsonFormat"),
     };
   }
-}
-
-/**
- * Parse filter state from a URL query string fragment (e.g. "filters=…").
- * Returns null for missing or malformed payloads.
- */
-export function parseFilterQueryString(
-  queryString: string,
-): FilterState | null {
-  try {
-    const params = new URLSearchParams(queryString);
-    const filtersParam = params.get(QP.FILTERS);
-    if (!filtersParam) return null;
-
-    const { filters, error } = parseFiltersFromJSON(filtersParam);
-    if (error) return null;
-    return filters;
-  } catch (err) {
-    console.error("Failed to parse filter query string:", err);
-    return null;
-  }
-}
-
-export function writeFiltersToSearchParams(
-  params: URLSearchParams,
-  filters: FilterState,
-): URLSearchParams {
-  const normalized = normalizeFilterState(filters);
-  if (isEmptyFilterState(normalized)) {
-    params.delete(QP.FILTERS);
-  } else {
-    params.set(QP.FILTERS, JSON.stringify(normalized));
-  }
-  return params;
 }

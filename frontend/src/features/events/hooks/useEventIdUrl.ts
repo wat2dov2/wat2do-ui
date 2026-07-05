@@ -4,7 +4,6 @@ import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import type { Event } from "@/shared/types";
 
 let pendingEventId: number | null = null;
-let openNonce = 0;
 const pendingListeners = new Set<() => void>();
 
 function emitPendingEventIdChange() {
@@ -26,10 +25,6 @@ function getPendingEventIdSnapshot() {
   return pendingEventId;
 }
 
-function getOpenNonceSnapshot() {
-  return openNonce;
-}
-
 function parseEventIdParam(eventIdParam: string | null) {
   if (!eventIdParam) return null;
   const parsed = parseInt(eventIdParam, 10);
@@ -42,11 +37,6 @@ export function useEventIdUrlActions() {
     subscribePendingEventId,
     getPendingEventIdSnapshot,
     () => null,
-  );
-  const eventOpenNonce = useSyncExternalStore(
-    subscribePendingEventId,
-    getOpenNonceSnapshot,
-    () => 0,
   );
 
   const eventIdParam = searchParams.get(QP.EVENT_ID);
@@ -64,9 +54,7 @@ export function useEventIdUrlActions() {
 
   const openEventId = useCallback(
     (id: number) => {
-      openNonce += 1;
       setPendingEventId(id);
-      emitPendingEventIdChange();
       const nextParams = new URLSearchParams(searchParams.toString());
       nextParams.set(QP.EVENT_ID, id.toString());
       setSearchParams(nextParams);
@@ -84,14 +72,13 @@ export function useEventIdUrlActions() {
   return {
     eventId,
     eventIdParam,
-    eventOpenNonce,
     openEventId,
     closeEventId,
   };
 }
 
 export function useEventDetailsFromUrl(events: Event[]) {
-  const { eventId, eventOpenNonce, closeEventId } = useEventIdUrlActions();
+  const { eventId, closeEventId } = useEventIdUrlActions();
 
   const detailEvent = useMemo(() => {
     if (eventId == null) return null;
@@ -100,7 +87,6 @@ export function useEventDetailsFromUrl(events: Event[]) {
 
   return {
     eventId,
-    eventOpenNonce,
     detailEvent,
     closeEventDetails: closeEventId,
   };

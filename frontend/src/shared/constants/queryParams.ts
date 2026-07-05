@@ -19,9 +19,6 @@ export const QP = {
   /** Identifies a specific QR-code / poster (uuid string) */
   QR_CODE_ID: "qrCodeId",
 
-  /** JSON-encoded FilterState blob */
-  FILTERS: "filters",
-
   /** Initial school selection for auth redirects / deep links */
   SCHOOL: "school",
 

@@ -37,7 +37,7 @@ import {
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { useUIStore } from "@/shared/store/ui.store";
-import { useFilterUrlActions } from "@/features/search";
+import { useFilterActions } from "@/features/search";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { submitEventForReview } from "@/shared/api/submissions.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
@@ -89,7 +89,7 @@ export function ModalContainer() {
   const storeAddCredits = useCreditsStore((s) => s.addCredits);
   const storePromoteEvent = useCreditsStore((s) => s.promoteEvent);
 
-  const { clearAllFilters } = useFilterUrlActions();
+  const { clearAllFilters } = useFilterActions();
 
   // ── Buy credits modal (local UI state) ───────────────────────
   const [showBuyCredits, setShowBuyCredits] = useState(false);

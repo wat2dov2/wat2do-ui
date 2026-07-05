@@ -34,7 +34,7 @@ import { useMouseDownAction, createAdaptivePressHandlers, createAdaptiveStopProp
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
-import { useFilterUrlActions } from "@/features/search";
+import { useFilterActions } from "@/features/search";
 
 interface EventCardProps {
   event: Event;
@@ -396,28 +396,28 @@ function useEventCardNavigation({
 }: UseEventCardNavigationOptions) {
   const router = useRouter();
   const pathname = usePathname();
-  const filterUrlActions = useFilterUrlActions();
+  const filterActions = useFilterActions();
   const { openEventId } = useEventIdUrlActions();
 
   const handleCategoryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    filterUrlActions.toggleFilterValue("categories", eventCategory);
+    filterActions.toggleFilterValue("categories", eventCategory);
     if (pathname !== "/") {
       router.push("/");
     }
-  }, [eventCategory, filterUrlActions, pathname, router]);
+  }, [eventCategory, filterActions, pathname, router]);
 
   const handleOrganizationMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (event.organization) {
-      filterUrlActions.toggleFilterValue("organizations", event.organization);
+      filterActions.toggleFilterValue("organizations", event.organization);
       if (pathname !== "/") {
         router.push("/");
       }
     }
-  }, [event.organization, filterUrlActions, pathname, router]);
+  }, [event.organization, filterActions, pathname, router]);
 
   const handleCardActivate = useCallback(() => {
     tracker.track(event.id, "click");

@@ -9,9 +9,5 @@ export { QuickFilterChip } from "./components/QuickFilterChip";
 export { SortStatusLabel } from "./components/SortStatusLabel";
 
 export { useSearch } from "./hooks/useSearch";
-export { useFilterUrlActions } from "./hooks/useFilterState";
-export {
-  EMPTY_FILTER_STATE,
-  parseFilterQueryString,
-  writeFiltersToSearchParams,
-} from "./api/filterService";
+export { useFilterActions } from "./hooks/useFilterState";
+export { EMPTY_FILTER_STATE } from "./api/filterService";

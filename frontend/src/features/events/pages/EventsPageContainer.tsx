@@ -39,7 +39,7 @@ export function EventsPageContainer() {
     handleDeleteEvent,
   } = useEventsPageData({ profileCompleted, viewMode });
 
-  const { eventId, eventOpenNonce, detailEvent, closeEventDetails } = useEventDetailsFromUrl(allEvents);
+  const { eventId, detailEvent, closeEventDetails } = useEventDetailsFromUrl(allEvents);
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -215,7 +215,6 @@ export function EventsPageContainer() {
       <EventsBackToTopButton />
       <EventDetailsModal
         eventId={eventId}
-        eventOpenNonce={eventOpenNonce}
         event={detailEvent}
         onClose={closeEventDetails}
         allEvents={orderedEvents}

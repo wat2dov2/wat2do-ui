@@ -7,15 +7,15 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { FilterState, Event } from "@/shared/types";
+import type { Event } from "@/shared/types";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
-import { EMPTY_FILTER_STATE, parseFilterQueryString } from "@/features/search";
+import { consumePendingFilterState } from "@/features/search/api/filterService";
+import { useSearchStore } from "@/features/search/store/search.store";
 
 interface UseAppNavigationOptions {
   events: Event[];
-  setFilterStateFromURL: (filters: FilterState) => void;
   setSchoolFilter: (school: string) => void;
 }
 
@@ -24,27 +24,21 @@ interface UseAppNavigationOptions {
  */
 export function useAppNavigation({
   events,
-  setFilterStateFromURL,
   setSchoolFilter,
 }: UseAppNavigationOptions) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const search = searchParams.toString();
 
-  // Track one-shot URL concerns. Filters themselves are intentionally parsed
-  // whenever the URL changes so back/forward/shared links hydrate state.
   const hasProcessedInitialRouteMode = useRef(false);
   const hasProcessedInitialSchool = useRef(false);
   const hasProcessedInitialScroll = useRef(false);
+  const hasConsumedPendingFilters = useRef(false);
 
   useEffect(() => {
-    const filtersParam = searchParams.get(QP.FILTERS);
     const schoolParam = searchParams.get(QP.SCHOOL);
     const pageModeParam = searchParams.get(QP.PAGE_MODE);
 
-    // Process pageMode exactly once on initial mount.
     if (!hasProcessedInitialRouteMode.current) {
-      // Handle pageMode redirect
       if (pageModeParam) {
         if (pageModeParam === "marketing") {
           router.replace(ROUTES.MARKETING);
@@ -64,29 +58,22 @@ export function useAppNavigation({
       }
       hasProcessedInitialSchool.current = true;
     }
+  }, [router, searchParams, setSchoolFilter]);
 
-    // Handle filters from URL on every URL change. Cap length to protect
-    // against oversized/attacker-controlled blobs.
-    const MAX_FILTERS_PARAM_BYTES = 4096;
-    if (
-      filtersParam &&
-      filtersParam.length > 2 &&
-      filtersParam.length <= MAX_FILTERS_PARAM_BYTES
-    ) {
-      const parsed = parseFilterQueryString(search ? `?${search}` : "");
-      setFilterStateFromURL(parsed ?? EMPTY_FILTER_STATE);
-    } else {
-      setFilterStateFromURL(EMPTY_FILTER_STATE);
+  useEffect(() => {
+    if (hasConsumedPendingFilters.current) return;
+    hasConsumedPendingFilters.current = true;
+
+    const pendingFilters = consumePendingFilterState();
+    if (pendingFilters) {
+      useSearchStore.getState().setFilterState(pendingFilters);
     }
-  }, [router, search, searchParams, setFilterStateFromURL, setSchoolFilter]);
+  }, []);
 
   useEffect(() => {
     const eventId = searchParams.get(QP.EVENT_ID);
-    // Handle eventId scroll. Only mark processed once we've actually found the
-    // event in the loaded events array (cold-load deep-link support).
     if (!hasProcessedInitialScroll.current && eventId) {
       if (events.length === 0) {
-        // Wait for events to load; effect will re-run when events changes.
         return;
       }
       const event = events.find((e) => e.id === parseInt(eventId, 10));
@@ -106,8 +93,6 @@ export function useAppNavigation({
           if (timeoutId !== undefined) clearTimeout(timeoutId);
         };
       } else {
-        // Events are loaded but this event is not in the list — don't keep
-        // re-entering. Mark as processed.
         hasProcessedInitialScroll.current = true;
       }
     } else if (!eventId) {

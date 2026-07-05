@@ -12,7 +12,7 @@
     "or": "or",
     "separatorBullet": "•",
     "free": "Free",
-    "freeFood": "Free Food",
+    "freeFood": "Free food",
     "registration": "Registration",
     "registrationRequired": "Registration",
     "active": "Active",
@@ -143,7 +143,7 @@
     "title": "Title",
     "location": "Location",
     "price": "Price",
-    "added_at": "Newly Added",
+    "added_at": "Newly added",
     "category": "Category",
     "food": "Food",
     "addedSince": "Added since",
@@ -175,7 +175,7 @@
     "aiNotAvailable": "AI generation is not available. Please check server configuration.",
     "aiGenerateFailed": "Failed to generate filters. Please try again.",
     "editJsonDirectly": "Edit JSON directly. Changes apply automatically.",
-    "sortStatusLabel": "Sort by: Start Time",
+    "sortStatusLabel": "Sort by start time",
     "sortStatusAria": "Events are sorted by start time, soonest first"
   },
   "commands": {

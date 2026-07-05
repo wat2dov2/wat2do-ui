@@ -1,9 +1,8 @@
 /**
  * Search / Filter Store (Zustand)
  *
- * Single source of truth for filter state. Replaces the per-component
- * useReducer so that App Router pages (URL hydration, command palette) and
- * EventsPageContainer (filter UI, event list) share one state.
+ * Single source of truth for filter state. App pages, command palette, and
+ * EventsPageContainer share one client-side filter snapshot.
  *
  * Only filter *values* live here. Derived data (filtered event list,
  * pie-menu items, filter counts) stays in useSearch where it can
@@ -40,7 +39,7 @@ interface FilterValues {
 
 interface SearchStoreState extends FilterValues {
   // Bulk operations
-  setFilterStateFromURL: (filters: FilterState) => void;
+  setFilterState: (filters: FilterState) => void;
   clearAllFilters: () => void;
 }
 
@@ -63,10 +62,8 @@ const emptyFilters: FilterValues = {
 export const useSearchStore = create<SearchStoreState>((set) => ({
   ...emptyFilters,
 
-  // ── Bulk ────────────────────────────────────────────────────────
-  // Full overwrite: every field is named explicitly so callers get a
-  // clean slate rather than a half-hydrated mix of URL + prior state.
-  setFilterStateFromURL: (filters) => {
+  // Full overwrite: every field is named explicitly for a clean slate.
+  setFilterState: (filters) => {
     const normalized = normalizeFilterState(filters);
     set({
       searchQuery: normalized.searchQuery,

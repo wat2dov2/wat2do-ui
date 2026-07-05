@@ -7,6 +7,10 @@ import type { ApiQrCodeRedirect } from "@/shared/generated";
 import { api, isApiError } from "@/shared/services/apiClient";
 import { isSafeUrl } from "@/shared/utils/url";
 import { ROUTES } from "@/shared/constants/routes";
+import {
+  generatedFilterStateToFilterState,
+  stagePendingFilterState,
+} from "@/features/search/api/filterService";
 
 /** Response from GET /qr/{id}: backend records the scan and returns redirect config. */
 export type QrRedirectConfig = ApiQrCodeRedirect;
@@ -58,11 +62,14 @@ export function redirectFromConfig(config: QrRedirectConfig): void {
         window.location.href = `${ROUTES.HOME}?eventId=${config.destination_id}`;
       break;
     case "events-list":
-      if (config.filters && typeof config.filters === "object") {
-        window.location.href = `${ROUTES.HOME}?filters=${encodeURIComponent(JSON.stringify(config.filters))}`;
-      } else {
-        window.location.href = ROUTES.HOME;
+      if (config.filters && typeof config.filters === "object" && !Array.isArray(config.filters)) {
+        stagePendingFilterState(
+          generatedFilterStateToFilterState(
+            config.filters as Record<string, unknown>,
+          ),
+        );
       }
+      window.location.href = ROUTES.HOME;
       break;
     case "custom-url":
       if (config.destination_id != null && typeof config.destination_id === "string") {
