@@ -49,6 +49,7 @@ function DropdownMenu({
 
 function DropdownMenuTrigger({
   onPointerDown,
+  onClick,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
   const preferClick = useMobileGridClickActivation();
@@ -56,17 +57,34 @@ function DropdownMenuTrigger({
   const handlePointerDown = React.useCallback(
     (event: React.PointerEvent<HTMLButtonElement>) => {
       onPointerDown?.(event);
-      if (preferClick && !event.defaultPrevented) {
+      if (preferClick && event.isTrusted && !event.defaultPrevented) {
         event.preventDefault();
       }
     },
     [onPointerDown, preferClick],
   );
 
+  const handleClick = React.useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      onClick?.(event);
+      if (preferClick && event.isTrusted && !event.defaultPrevented) {
+        const button = event.currentTarget;
+        const pointerEvent = new PointerEvent("pointerdown", {
+          bubbles: true,
+          cancelable: true,
+          pointerType: "touch",
+        });
+        button.dispatchEvent(pointerEvent);
+      }
+    },
+    [onClick, preferClick],
+  );
+
   return (
     <DropdownMenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
       onPointerDown={handlePointerDown}
+      onClick={handleClick}
       {...props}
     />
   );

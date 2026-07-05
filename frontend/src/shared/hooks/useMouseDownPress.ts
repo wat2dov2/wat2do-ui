@@ -1,4 +1,4 @@
-import { useCallback, useRef, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useRef, useState, useEffect, type MouseEvent as ReactMouseEvent } from "react";
 
 const CARD_INTERACTIVE_SELECTOR =
   "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate]";
@@ -28,15 +28,22 @@ export function prefersMobileGridClickActivation() {
 }
 
 export function useMobileGridClickActivation() {
-  return useSyncExternalStore(
-    (onStoreChange) => {
-      const media = window.matchMedia(MOBILE_GRID_CLICK_MEDIA);
-      media.addEventListener("change", onStoreChange);
-      return () => media.removeEventListener("change", onStoreChange);
-    },
-    prefersMobileGridClickActivation,
-    () => false,
-  );
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(MOBILE_GRID_CLICK_MEDIA);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActive(media.matches);
+
+    const listener = (event: MediaQueryListEvent) => {
+      setActive(event.matches);
+    };
+
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, []);
+
+  return active;
 }
 
 /**
