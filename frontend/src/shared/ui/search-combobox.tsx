@@ -89,6 +89,7 @@ export function SearchCombobox<T>({
   const [isLoading, setIsLoading] = useState(false);
   const [triggerWidth, setTriggerWidth] = useState(280);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const openRef = useRef(false);
 
   const resetSearchState = useCallback(() => {
     setSearch("");
@@ -96,23 +97,14 @@ export function SearchCombobox<T>({
     setIsLoading(false);
   }, []);
 
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
   const willFetch = useCallback(
     (query: string) => query.trim().length > 0 || searchOnEmpty,
     [searchOnEmpty],
   );
-
-  const closeMenu = useCallback(() => {
-    setOpen(false);
-    resetSearchState();
-  }, [resetSearchState]);
-
-  const openMenu = useCallback(() => {
-    setOpen(true);
-    if (willFetch(search)) {
-      setIsLoading(true);
-      setResults([]);
-    }
-  }, [search, willFetch]);
 
   const fetchResults = useCallback(
     async (query: string) => {
@@ -171,17 +163,19 @@ export function SearchCombobox<T>({
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      openMenu();
-      return;
+    openRef.current = nextOpen;
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      resetSearchState();
     }
-    closeMenu();
   };
 
   const handleSelect = useCallback((item: T) => {
     onSelect(item);
-    closeMenu();
-  }, [closeMenu, onSelect]);
+    openRef.current = false;
+    setOpen(false);
+    resetSearchState();
+  }, [onSelect, resetSearchState]);
 
   const handleSelectFirstResult = useCallback(async () => {
     const firstResult = results[0];
@@ -210,14 +204,21 @@ export function SearchCombobox<T>({
   const handleTriggerMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return;
 
-    e.preventDefault();
     e.stopPropagation();
     setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
-    if (open) {
-      closeMenu();
-    } else {
-      openMenu();
+
+    const nextOpen = !openRef.current;
+    openRef.current = nextOpen;
+    setOpen(nextOpen);
+
+    if (!nextOpen) {
+      resetSearchState();
+    } else if (willFetch(search)) {
+      setIsLoading(true);
+      setResults([]);
     }
+
+    e.preventDefault();
   };
 
   const handleTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {

@@ -4,8 +4,8 @@ import { tracker } from "@/shared/services/trackingService";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
-  Download,
-  Heart,
+  Bookmark,
+  Calendar,
   ImageOff,
   MoreHorizontal,
 } from "@/shared/ui/doodle-icons";
@@ -16,6 +16,7 @@ import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
+import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
@@ -29,6 +30,7 @@ import {
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
+import { useCardMouseDownActivate } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
@@ -101,11 +103,12 @@ function EventImageBadges({
             type="button"
             onMouseDown={onOrganizationMouseDown}
             {...badgeHoverProps}
-            className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+            className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-1.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
           >
             <span className="font-bold truncate max-w-[128px]">
               {event.organization}
             </span>
+            <OrganizationVerifiedBadge className="ml-0.5" />
           </button>
         </BadgeMask>
       )}
@@ -156,12 +159,11 @@ function EventFooterActions({
       <EventCalendarDownloadMenu event={event} stopPropagation>
         <button
           type="button"
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={(e) => e.stopPropagation()}
-          aria-label={t("common.download")}
-          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          aria-label={t("common.addToCalendar")}
+          title={t("common.addToCalendar")}
+          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
-          <Download className="size-4" />
+          <Calendar className="size-4" />
         </button>
       </EventCalendarDownloadMenu>
 
@@ -172,10 +174,9 @@ function EventFooterActions({
       >
         <button
           type="button"
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={(e) => e.stopPropagation()}
-          aria-label={t("common.actions")}
-          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          aria-label={t("common.moreOptions")}
+          title={t("common.moreOptions")}
+          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <MoreHorizontal className="size-4" />
         </button>
@@ -210,6 +211,7 @@ function SaveEventButton({
       }}
       disabled={!profileCompleted}
       aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
+      title={isSaveActive ? t("common.saved") : t("common.imInterested")}
       className={`flex min-h-10 w-full items-center justify-center px-2 transition-colors ${
         !profileCompleted
           ? `pointer-events-none cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
@@ -218,8 +220,8 @@ function SaveEventButton({
           : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
       }`}
     >
-      <Heart
-        className={`size-4 ${isSaveActive ? "fill-error text-error" : ""}`}
+      <Bookmark
+        className={`size-4 ${isSaveActive ? "fill-current" : ""}`}
         fill={isSaveActive ? "currentColor" : "none"}
       />
     </button>
@@ -485,14 +487,9 @@ function EventCardComponent({
     [event, onActionDialogOpen],
   );
 
-  const handleCardClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      if (event.target instanceof Element && event.target.closest("[data-event-card-footer]")) {
-        return;
-      }
-      handleCardActivate();
-    },
-    [handleCardActivate],
+  const handleCardMouseDown = useCardMouseDownActivate(
+    handleCardActivate,
+    "[data-event-card-footer]",
   );
 
   return (
@@ -504,7 +501,7 @@ function EventCardComponent({
         role="button"
         tabIndex={0}
         aria-label={`Event: ${event.title}`}
-        onClick={handleCardClick}
+        onMouseDown={handleCardMouseDown}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();

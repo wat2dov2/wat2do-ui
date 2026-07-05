@@ -175,8 +175,8 @@
     "aiNotAvailable": "AI generation is not available. Please check server configuration.",
     "aiGenerateFailed": "Failed to generate filters. Please try again.",
     "editJsonDirectly": "Edit JSON directly. Changes apply automatically.",
-    "sortStatusLabel": "Sorted by start, soonest",
-    "sortStatusAria": "Events are sorted by start date, soonest first"
+    "sortStatusLabel": "Sort by: Start Time",
+    "sortStatusAria": "Events are sorted by start time, soonest first"
   },
   "commands": {
     "commands": "Commands",

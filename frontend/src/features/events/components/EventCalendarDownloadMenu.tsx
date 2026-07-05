@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { AppleIcon, GoogleIcon } from "@/shared/ui/platform-icons";
-import { useMouseDownDropdownTrigger } from "@/shared/hooks";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,27 +24,16 @@ export function EventCalendarDownloadMenu({
   stopPropagation = false,
 }: EventCalendarDownloadMenuProps) {
   const { t } = useTranslation();
-  const { open, setOpen, close, triggerChild } = useMouseDownDropdownTrigger(children);
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>{triggerChild}</DropdownMenuTrigger>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
-        <DropdownMenuItem
-          onSelect={() => {
-            openGoogleCalendar(event);
-            close();
-          }}
-        >
+        <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
           <GoogleIcon className="size-3.5 shrink-0" />
           {t("events.calendar.googleCalendar")}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => {
-            downloadICS(event);
-            close();
-          }}
-        >
+        <DropdownMenuItem onSelect={() => downloadICS(event)}>
           <AppleIcon className="size-3.5 shrink-0" />
           {t("events.calendar.iCal")}
         </DropdownMenuItem>
