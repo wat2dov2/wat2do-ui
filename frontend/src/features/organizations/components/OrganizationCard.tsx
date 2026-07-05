@@ -57,17 +57,21 @@ function OrganizationCategoryBadge({
     return null;
   }
 
+  // Invert the badge colors: light green/theme text background, dark green/theme bg text
+  const badgeBgClass = categoryClasses.text.split(" ").find(c => c.startsWith("text-"))?.replace("text-", "bg-") || "bg-foreground";
+  const badgeTextClass = categoryClasses.bg.split(" ").find(c => c.startsWith("bg-"))?.replace("bg-", "text-") || "text-background";
+
   return (
     <BadgeMask
       variant="top-left"
       outlined
-      outlineClassName={`${categoryClasses.text} opacity-30`}
+      outlineClassName={`${categoryClasses.text}`}
     >
       <button
         type="button"
         onMouseDown={onCategoryClick}
         {...badgeHoverProps}
-        className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
+        className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-90 hover:opacity-100 active:scale-95 ${badgeBgClass} ${badgeTextClass}`}
       >
         {translateCategory(primaryCategory, t)}
       </button>
@@ -141,7 +145,7 @@ function OrganizationFooterActions({
     <div
       data-organization-card-footer
       onMouseDown={(event) => event.stopPropagation()}
-      className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
+      className="grid grid-cols-3 border-t border-current"
     >
       {profileCompleted ? (
         followButton
@@ -169,14 +173,14 @@ function OrganizationFooterActions({
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           aria-label={t("organizations.viewClubPage")}
-          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 items-center justify-center border-l border-current/20 px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.text}`}
         >
           <ExternalLink className="size-4" />
         </a>
       ) : (
         <span
           aria-hidden="true"
-          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-35 ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 items-center justify-center border-l border-current/20 px-2 opacity-35 ${categoryClasses.text}`}
         >
           <ExternalLink className="size-4" />
         </span>
@@ -189,7 +193,7 @@ function OrganizationFooterActions({
           aria-label={t("common.moreOptions")}
           title={t("common.moreOptions")}
           disabled={!hasOverflowLinks}
-          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 w-full items-center justify-center border-l border-current/20 px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.text}`}
         >
           <MoreHorizontal className="size-4" />
         </button>
@@ -283,7 +287,7 @@ function OrganizationCardComponent({
           handleCardActivate();
         }
       }}
-      className={`event-card-waterpaint relative flex flex-col h-full rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group border-x border-b ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border} ${
+      className={`event-card-waterpaint relative flex flex-col h-full rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group border border-current ${categoryClasses.bg} ${categoryClasses.text} ${
         isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
       }`}
       style={getEventCardWaterpaintStyle(organization.id)}

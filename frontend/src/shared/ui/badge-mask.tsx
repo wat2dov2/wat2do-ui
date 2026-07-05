@@ -44,7 +44,7 @@ function MaskSvg({ fillPath, curvePath, className, outlined, outlineClassName }:
           d={curvePath}
           fill="none"
           stroke="currentColor"
-          strokeWidth={2}
+          strokeWidth={1}
           vectorEffect="non-scaling-stroke"
           className={outlineClassName}
         />
@@ -64,7 +64,7 @@ export function BadgeMask({
       return (
         <div className="absolute top-0 left-0 z-10 flex flex-col pointer-events-none">
           <div className="flex">
-            <div className="pointer-events-auto pb-1 pr-1 bg-background rounded-br-xl">
+            <div className={`pointer-events-auto pb-1 pr-1 bg-background rounded-br-xl ${outlined ? `border-r border-b border-current ${outlineClassName}` : ""}`}>
               {children}
             </div>
             <MaskSvg
@@ -95,7 +95,7 @@ export function BadgeMask({
               outlined={outlined}
               outlineClassName={outlineClassName}
             />
-            <div className="pointer-events-auto pb-1 pl-1 bg-background rounded-bl-xl">
+            <div className={`pointer-events-auto pb-1 pl-1 bg-background rounded-bl-xl ${outlined ? `border-l border-b border-current ${outlineClassName}` : ""}`}>
               {children}
             </div>
           </div>
@@ -119,7 +119,7 @@ export function BadgeMask({
             outlineClassName={outlineClassName}
           />
           <div className="flex">
-            <div className="pointer-events-auto pt-1 pr-1 bg-background rounded-tr-xl">
+            <div className={`pointer-events-auto pt-1 pr-1 bg-background rounded-tr-xl ${outlined ? `border-r border-t border-current ${outlineClassName}` : ""}`}>
               {children}
             </div>
             <MaskSvg
