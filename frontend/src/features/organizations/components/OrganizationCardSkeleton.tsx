@@ -70,7 +70,7 @@ export function OrganizationCardSkeleton() {
   return (
     <article
       data-organization-card-skeleton
-      className="relative flex flex-col h-full rounded-xl cursor-default animate-pulse"
+      className="relative flex flex-col h-full rounded-xl cursor-default"
       ref={cardRef}
     >
       {/* 1. Custom Background with clip-path (including -webkit support for Safari compatibility) */}
@@ -90,7 +90,7 @@ export function OrganizationCardSkeleton() {
             fill="none"
             stroke="currentColor"
             strokeWidth={1.5}
-            className="text-border/50"
+            className="text-border"
           />
         </svg>
       )}
