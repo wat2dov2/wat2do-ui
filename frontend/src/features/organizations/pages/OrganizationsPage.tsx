@@ -55,7 +55,6 @@ export function OrganizationsPage() {
 
   const savedOrganizationIds = useSavedOrganizationsStore(useShallow((state) => state.savedOrganizationIds));
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
-  const shouldShowOrganizationMeta = !((activeTab === "followed" || activeTab === "claimed") && !authed);
   const tabOptions = [
     { value: "all" as const, label: t("organizations.allClubs") },
     { value: "followed" as const, label: t("organizations.followedClubs") },
@@ -80,16 +79,14 @@ export function OrganizationsPage() {
   return (
     <div className="space-y-2">
       <div className="space-y-3 pb-2">
-        {shouldShowOrganizationMeta && (
-          <PageCountHeading
-            count={totalItems}
-            label={
-              totalItems === 1
-                ? t("organizations.organizationLabel")
-                : t("organizations.organizationLabel_other")
-            }
-          />
-        )}
+        <PageCountHeading
+          count={totalItems}
+          label={
+            totalItems === 1
+              ? t("organizations.organizationLabel")
+              : t("organizations.organizationLabel_other")
+          }
+        />
 
         <div className="flex items-stretch gap-3">
           <SubmittedSearchInput

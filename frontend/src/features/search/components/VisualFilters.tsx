@@ -127,10 +127,11 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
                 key={option.id}
                 type="button"
                 onMouseDown={() => onViewModeChange(option.id)}
+                aria-pressed={active}
                 className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition-colors ${
                   active
-                    ? "bg-primary/80 text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:bg-muted/60"
+                    ? "bg-secondary text-foreground ring-1 ring-border/80 hover:bg-muted/60 dark:hover:bg-muted/60"
+                    : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
                 }`}
               >
                 <ViewIcon className="size-3.5" />

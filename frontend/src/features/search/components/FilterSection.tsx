@@ -51,7 +51,7 @@ export const FilterSection = React.memo(function FilterSection({
                   onClear?.();
                 }
               }}
-              className="text-primary-foreground font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:opacity-90 transition-colors cursor-pointer bg-primary"
+              className="bg-secondary text-foreground font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 ring-1 ring-border/80 hover:bg-muted/60 transition-colors cursor-pointer"
             >
               <X className="size-2.5" strokeWidth={3} />
               {indicator}

@@ -33,10 +33,11 @@ export function MoreFiltersButton({
       <button
         type="button"
         data-elevation="control"
+        aria-expanded={open}
         onMouseDown={handleToggle}
         className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
           open || filterCount > 0
-            ? "bg-primary/80 text-primary-foreground"
+            ? "bg-secondary text-foreground ring-1 ring-border/80 hover:bg-muted/60 dark:hover:bg-muted/60"
             : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
         }`}
       >
@@ -60,7 +61,7 @@ export function MoreFiltersButton({
                 onClearFilters?.();
               }
             }}
-            className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/70 transition-colors cursor-pointer"
+            className="bg-muted text-foreground px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 ring-1 ring-border/80 hover:bg-muted/80 transition-colors cursor-pointer"
           >
             <X className="size-2.5" strokeWidth={3} />
             {filterCount}
