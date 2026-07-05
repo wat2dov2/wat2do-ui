@@ -122,6 +122,7 @@ function EventCardsGrid({
             isSaved={savedEventIds.has(event.id)}
             onEventClick={onEventClick}
             disableModal={disableModal}
+            mobileClickActivation
             onDelete={onDelete}
             onActionDialogOpen={onActionDialogOpen}
           />

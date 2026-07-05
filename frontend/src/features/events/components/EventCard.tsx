@@ -41,12 +41,22 @@ interface EventCardProps {
   isSaved?: boolean;
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
+  /** Grid cards: open on click for touch/coarse pointers instead of mousedown. */
+  mobileClickActivation?: boolean;
   /** Called when the user confirms deletion (shown only to owners/admins). */
   onDelete?: (eventId: number) => void;
   onActionDialogOpen: (dialog: EventCardDialog, event: Event) => void;
 }
 
 export type EventCardDialog = "delete" | "share" | "report";
+
+const CARD_ACTIVATE_IGNORE_SELECTOR =
+  "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate], [data-event-card-footer]";
+
+function prefersClickActivation() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+}
 
 type CategoryClasses = ReturnType<typeof getCategoryClasses>;
 
@@ -433,6 +443,7 @@ function EventCardComponent({
   isSaved = false,
   onEventClick,
   disableModal,
+  mobileClickActivation = false,
   onDelete,
   onActionDialogOpen,
 }: EventCardProps) {
@@ -500,11 +511,31 @@ function EventCardComponent({
     [event, onActionDialogOpen],
   );
 
-  const handleCardMouseDown = useMouseDownAction(handleCardActivate);
+  const runMouseDownActivate = useMouseDownAction(handleCardActivate);
 
-  const handleCardClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    event.preventDefault();
-  }, []);
+  const handleCardMouseDown = useCallback(
+    (mouseEvent: React.MouseEvent<HTMLElement>) => {
+      if (mobileClickActivation && prefersClickActivation()) {
+        return;
+      }
+      runMouseDownActivate(mouseEvent);
+    },
+    [mobileClickActivation, runMouseDownActivate],
+  );
+
+  const handleCardClick = useCallback(
+    (mouseEvent: React.MouseEvent<HTMLElement>) => {
+      if (mobileClickActivation && prefersClickActivation()) {
+        if (mouseEvent.button !== 0) return;
+        if (!(mouseEvent.target instanceof Element)) return;
+        if (mouseEvent.target.closest(CARD_ACTIVATE_IGNORE_SELECTOR)) return;
+        handleCardActivate();
+        return;
+      }
+      mouseEvent.preventDefault();
+    },
+    [handleCardActivate, mobileClickActivation],
+  );
 
   return (
     <>
