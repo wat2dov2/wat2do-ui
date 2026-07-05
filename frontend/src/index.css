@@ -301,8 +301,10 @@
   transition-duration: 280ms !important;
 }
 
+html[data-drawer-scroll-release] [data-vaul-drawer],
+html[data-drawer-scroll-release] [data-vaul-overlay],
 [data-vaul-drawer][data-state="closed"],
 [data-vaul-overlay][data-state="closed"] {
   pointer-events: none !important;
-  touch-action: auto !important;
+  touch-action: pan-y !important;
 }

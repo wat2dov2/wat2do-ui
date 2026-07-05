@@ -3,6 +3,33 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/shared/lib/utils"
 
+const DRAWER_CLOSE_ANIMATION_MS = 280
+
+/** Let the page receive touches while the drawer exit animation finishes. */
+export function releaseDrawerTouchCapture() {
+  if (typeof document === "undefined") return
+
+  document.documentElement.dataset.drawerScrollRelease = ""
+  document.querySelectorAll("[data-vaul-drawer], [data-vaul-overlay]").forEach((node) => {
+    if (node instanceof HTMLElement) {
+      node.style.pointerEvents = "none"
+      node.style.touchAction = "pan-y"
+    }
+  })
+}
+
+export function resetDrawerTouchCapture() {
+  if (typeof document === "undefined") return
+
+  delete document.documentElement.dataset.drawerScrollRelease
+  document.querySelectorAll("[data-vaul-drawer], [data-vaul-overlay]").forEach((node) => {
+    if (node instanceof HTMLElement) {
+      node.style.pointerEvents = ""
+      node.style.touchAction = ""
+    }
+  })
+}
+
 /** Release scroll/pointer locks as soon as a drawer starts closing. */
 export function releaseDrawerScrollLock() {
   if (typeof document === "undefined") return
@@ -49,25 +76,46 @@ function isNestedPortalTarget(target: EventTarget | null) {
 
 function Drawer({
   onOpenChange,
+  onClose,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
+  const handleClose = React.useCallback(() => {
+    releaseDrawerTouchCapture()
+    onClose?.()
+  }, [onClose])
+
   const handleOpenChange = React.useCallback(
     (open: boolean) => {
-      onOpenChange?.(open)
       if (!open) {
-        // Run after vaul's own close handler restores iOS scroll position.
+        releaseDrawerTouchCapture()
         queueMicrotask(() => {
           releaseDrawerScrollLock()
         })
+        window.setTimeout(() => {
+          resetDrawerTouchCapture()
+        }, DRAWER_CLOSE_ANIMATION_MS)
+      } else {
+        resetDrawerTouchCapture()
       }
+      onOpenChange?.(open)
     },
     [onOpenChange],
   )
+
+  React.useEffect(() => {
+    if (props.open === false) {
+      releaseDrawerTouchCapture()
+      queueMicrotask(() => {
+        releaseDrawerScrollLock()
+      })
+    }
+  }, [props.open])
 
   return (
     <DrawerPrimitive.Root
       data-slot="drawer"
       onOpenChange={handleOpenChange}
+      onClose={handleClose}
       {...props}
     />
   )
