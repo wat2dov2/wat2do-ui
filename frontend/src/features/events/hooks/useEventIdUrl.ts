@@ -45,6 +45,7 @@ export function useEventDetailsFromUrl(events: Event[]) {
   }, [eventId, events]);
 
   return {
+    eventId,
     detailEvent,
     closeEventDetails: closeEventId,
   };

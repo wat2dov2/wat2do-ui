@@ -20,4 +20,8 @@ export const queryKeys = {
   user: {
     all: ["user"] as const,
   },
+  events: {
+    all: ["events"] as const,
+    detail: (eventId: number) => [...queryKeys.events.all, "detail", eventId] as const,
+  },
 } as const;

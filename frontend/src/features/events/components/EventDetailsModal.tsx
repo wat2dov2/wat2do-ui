@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
@@ -17,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
 import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
+import { EventDetailsDrawerSkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
 import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
 import { translateCategory } from "@/shared/utils/event";
 import { translateFood } from "@/shared/utils/foodTranslation";
@@ -33,6 +35,8 @@ import {
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
+import { fetchEventById } from "@/features/events/api/events.api";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Event } from "@/shared/types";
 
 const EventShareDialog = lazy(() =>
@@ -54,6 +58,7 @@ interface ActiveEventDetailsDialog {
 }
 
 interface EventDetailsModalProps {
+  eventId?: number | null;
   event: Event | null;
   onClose: () => void;
   allEvents?: Event[];
@@ -62,6 +67,7 @@ interface EventDetailsModalProps {
 }
 
 export function EventDetailsModal({
+  eventId = null,
   event,
   onClose,
   allEvents,
@@ -78,17 +84,29 @@ export function EventDetailsModal({
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
   const [userDismissed, setUserDismissed] = useState(false);
   const [trackedPropEventId, setTrackedPropEventId] = useState<number | null>(
-    event?.id ?? null,
+    eventId ?? event?.id ?? null,
   );
   const [activeDialog, setActiveDialog] = useState<ActiveEventDetailsDialog | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  if ((event?.id ?? null) !== trackedPropEventId) {
-    setTrackedPropEventId(event?.id ?? null);
+  const resolvedEventId = eventId ?? event?.id ?? null;
+  const listEvent = event;
+
+  const { data: fetchedEvent, isPending: isFetchingEvent, isError: isFetchError } = useQuery({
+    queryKey: queryKeys.events.detail(resolvedEventId ?? 0),
+    queryFn: () => fetchEventById(resolvedEventId!),
+    enabled: resolvedEventId != null && listEvent == null && overrideEvent == null,
+    staleTime: 60_000,
+  });
+
+  if (resolvedEventId !== trackedPropEventId) {
+    setTrackedPropEventId(resolvedEventId);
     setOverrideEvent(null);
     setUserDismissed(false);
   }
-  const displayedEvent = overrideEvent ?? event;
-  const drawerOpen = event !== null && !userDismissed;
+  const displayedEvent = overrideEvent ?? listEvent ?? fetchedEvent ?? null;
+  const drawerOpen = resolvedEventId !== null && !userDismissed;
+  const showSkeleton =
+    drawerOpen && displayedEvent == null && !isFetchError && isFetchingEvent;
   const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;
   const isSaveActive = profileCompleted && isSaved;
 
@@ -154,7 +172,9 @@ export function EventDetailsModal({
           ref={contentRef}
           className="max-h-[92dvh] overflow-y-auto border-0 p-0"
         >
-        {displayedEvent && (
+        {showSkeleton ? (
+          <EventDetailsDrawerSkeleton />
+        ) : displayedEvent ? (
           <>
             <DrawerClose asChild>
               <button
@@ -360,7 +380,11 @@ export function EventDetailsModal({
               </ModalSection>
             </ModalContentWrapper>
           </>
-        )}
+        ) : isFetchError ? (
+          <ModalContentWrapper className="px-4 py-8 text-center text-sm text-muted-foreground">
+            <p>{t("common.error")}</p>
+          </ModalContentWrapper>
+        ) : null}
         </div>
       </DrawerContent>
       {activeDialog?.type === "share" && (
