@@ -1,7 +1,9 @@
-import { useCallback, useRef, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useRef, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from "react";
 
 const CARD_INTERACTIVE_SELECTOR =
   "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate]";
+
+const MOBILE_GRID_CLICK_MEDIA = "(hover: none), (pointer: coarse), (max-width: 639px)";
 
 type PressHandler = (event: ReactMouseEvent<HTMLElement>) => void;
 
@@ -9,25 +11,44 @@ interface MouseDownPressHandlersOptions {
   onMouseDown?: PressHandler;
   onClick?: PressHandler;
   disabled?: boolean;
+  preferClick?: boolean;
 }
 
 /**
- * Touch/coarse pointers and hover-none devices use click instead of mousedown.
+ * Touch/coarse pointers and sub-sm viewports use click instead of mousedown.
  */
 export function prefersClickActivation() {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(hover: none), (pointer: coarse)").matches;
 }
 
+export function prefersMobileGridClickActivation() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(MOBILE_GRID_CLICK_MEDIA).matches;
+}
+
+export function useMobileGridClickActivation() {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const media = window.matchMedia(MOBILE_GRID_CLICK_MEDIA);
+      media.addEventListener("change", onStoreChange);
+      return () => media.removeEventListener("change", onStoreChange);
+    },
+    prefersMobileGridClickActivation,
+    () => false,
+  );
+}
+
 /**
- * Mousedown-first on desktop; native click on touch/coarse pointers.
+ * Mousedown-first on desktop; native click on touch/coarse pointers or mobile width.
  */
 export function createAdaptivePressHandlers({
   onMouseDown,
   onClick,
   disabled = false,
+  preferClick = prefersClickActivation(),
 }: MouseDownPressHandlersOptions) {
-  if (prefersClickActivation()) {
+  if (preferClick) {
     const handleClick: PressHandler = (event) => {
       onMouseDown?.(event);
       if (event.defaultPrevented || event.button !== 0 || disabled) {
@@ -43,14 +64,16 @@ export function createAdaptivePressHandlers({
 }
 
 /**
- * Stop propagation on mousedown (desktop) or click (touch).
+ * Stop propagation on mousedown (desktop) or click (touch/mobile width).
  */
-export function createAdaptiveStopPropagationHandlers() {
+export function createAdaptiveStopPropagationHandlers(
+  preferClick = prefersClickActivation(),
+) {
   const stop: PressHandler = (event) => {
     event.stopPropagation();
   };
 
-  if (prefersClickActivation()) {
+  if (preferClick) {
     return { onClick: stop };
   }
 

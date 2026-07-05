@@ -30,7 +30,7 @@ import {
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
-import { useMouseDownAction, createAdaptivePressHandlers, createAdaptiveStopPropagationHandlers, prefersClickActivation } from "@/shared/hooks";
+import { useMouseDownAction, createAdaptivePressHandlers, createAdaptiveStopPropagationHandlers, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
@@ -41,7 +41,7 @@ interface EventCardProps {
   isSaved?: boolean;
   onEventClick?: (event: Event) => void;
   disableModal?: boolean;
-  /** Grid cards: open on click for touch/coarse pointers instead of mousedown. */
+  /** Grid cards: open footer actions on click below the sm breakpoint or on touch. */
   mobileClickActivation?: boolean;
   /** Called when the user confirms deletion (shown only to owners/admins). */
   onDelete?: (eventId: number) => void;
@@ -127,6 +127,7 @@ interface EventFooterActionsProps {
   profileCompleted: boolean;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
+  preferClickPress: boolean;
   onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
 }
@@ -137,15 +138,16 @@ function EventFooterActions({
   profileCompleted,
   categoryClasses,
   canDelete,
+  preferClickPress,
   onActionDialogOpen,
   t,
 }: EventFooterActionsProps) {
-  const stopFooterButtonPropagation = createAdaptiveStopPropagationHandlers();
+  const stopFooterButtonPropagation = createAdaptiveStopPropagationHandlers(preferClickPress);
 
   return (
     <div
       data-event-card-footer
-      onMouseDown={(event) => event.stopPropagation()}
+      onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
       className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
     >
@@ -203,6 +205,7 @@ interface SaveEventButtonProps {
   profileCompleted: boolean;
   isSaveActive: boolean;
   categoryClasses: CategoryClasses;
+  preferClickPress: boolean;
   onToggleSaveEvent: (eventId: number) => void;
   t: TFunction;
 }
@@ -212,10 +215,12 @@ function SaveEventButton({
   profileCompleted,
   isSaveActive,
   categoryClasses,
+  preferClickPress,
   onToggleSaveEvent,
   t,
 }: SaveEventButtonProps) {
   const pressHandlers = createAdaptivePressHandlers({
+    preferClick: preferClickPress,
     disabled: !profileCompleted,
     onClick: (event) => {
       event.stopPropagation();
@@ -314,6 +319,7 @@ interface EventCardBodyProps {
   isSaveActive: boolean;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
+  preferClickPress: boolean;
   onToggleSaveEvent: (eventId: number) => void;
   onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
@@ -328,6 +334,7 @@ function EventCardBody({
   isSaveActive,
   categoryClasses,
   canDelete,
+  preferClickPress,
   onToggleSaveEvent,
   onActionDialogOpen,
   t,
@@ -338,6 +345,7 @@ function EventCardBody({
       profileCompleted={profileCompleted}
       isSaveActive={isSaveActive}
       categoryClasses={categoryClasses}
+      preferClickPress={preferClickPress}
       onToggleSaveEvent={onToggleSaveEvent}
       t={t}
     />
@@ -365,6 +373,7 @@ function EventCardBody({
         profileCompleted={profileCompleted}
         categoryClasses={categoryClasses}
         canDelete={canDelete}
+        preferClickPress={preferClickPress}
         onActionDialogOpen={onActionDialogOpen}
         t={t}
       />
@@ -501,6 +510,9 @@ function EventCardComponent({
     onEventClick,
   });
 
+  const mobileGridClickActivation = useMobileGridClickActivation();
+  const preferClickPress = mobileClickActivation && mobileGridClickActivation;
+
   const handleActionDialogOpen = useCallback(
     (dialog: EventCardDialog) => {
       onActionDialogOpen(dialog, event);
@@ -512,17 +524,17 @@ function EventCardComponent({
 
   const handleCardMouseDown = useCallback(
     (mouseEvent: React.MouseEvent<HTMLElement>) => {
-      if (mobileClickActivation && prefersClickActivation()) {
+      if (preferClickPress) {
         return;
       }
       runMouseDownActivate(mouseEvent);
     },
-    [mobileClickActivation, runMouseDownActivate],
+    [preferClickPress, runMouseDownActivate],
   );
 
   const handleCardClick = useCallback(
     (mouseEvent: React.MouseEvent<HTMLElement>) => {
-      if (mobileClickActivation && prefersClickActivation()) {
+      if (preferClickPress) {
         if (mouseEvent.button !== 0) return;
         if (!(mouseEvent.target instanceof Element)) return;
         if (mouseEvent.target.closest(CARD_ACTIVATE_IGNORE_SELECTOR)) return;
@@ -531,7 +543,7 @@ function EventCardComponent({
       }
       mouseEvent.preventDefault();
     },
-    [handleCardActivate, mobileClickActivation],
+    [handleCardActivate, preferClickPress],
   );
 
   return (
@@ -576,6 +588,7 @@ function EventCardComponent({
           isSaveActive={isSaveActive}
           categoryClasses={categoryClasses}
           canDelete={canManageEvent && Boolean(onDelete)}
+          preferClickPress={preferClickPress}
           onToggleSaveEvent={toggleSaveEvent}
           onActionDialogOpen={handleActionDialogOpen}
           t={t}
