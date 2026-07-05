@@ -12,7 +12,7 @@ import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint"
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth";
-import { useCardMouseDownActivate } from "@/shared/hooks";
+import { useCardMouseDownActivate, useMobileGridClickActivation, createAdaptivePressHandlers } from "@/shared/hooks";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
 import {
   formatOrganizationLastPosted,
@@ -41,6 +41,7 @@ interface FollowOrganizationButtonProps {
   profileCompleted: boolean;
   isSaved: boolean;
   categoryClasses: CategoryClasses;
+  preferClickPress: boolean;
   onToggleSave: (organizationId: number) => void;
   t: (key: string, options?: Record<string, unknown>) => string;
 }
@@ -50,19 +51,25 @@ function FollowOrganizationButton({
   profileCompleted,
   isSaved,
   categoryClasses,
+  preferClickPress,
   onToggleSave,
   t,
 }: FollowOrganizationButtonProps) {
+  const pressHandlers = createAdaptivePressHandlers({
+    preferClick: preferClickPress,
+    disabled: !profileCompleted,
+    onClick: () => {
+      if (profileCompleted) {
+        onToggleSave(organizationId);
+      }
+    },
+  });
+
   return (
     <button
       type="button"
       disabled={!profileCompleted}
-      onMouseDown={(event) => {
-        event.stopPropagation();
-        if (profileCompleted) {
-          onToggleSave(organizationId);
-        }
-      }}
+      {...pressHandlers}
       aria-label={isSaved ? t("organizations.saved") : t("organizations.save")}
       className={`flex min-h-10 w-full items-center justify-center px-2 transition-colors ${
         !profileCompleted
@@ -85,6 +92,7 @@ interface OrganizationFooterActionsProps {
   followButton: React.ReactNode;
   profileCompleted: boolean;
   categoryClasses: CategoryClasses;
+  preferClickPress: boolean;
   t: (key: string, options?: Record<string, unknown>) => string;
 }
 
@@ -93,6 +101,7 @@ function OrganizationFooterActions({
   followButton,
   profileCompleted,
   categoryClasses,
+  preferClickPress,
   t,
 }: OrganizationFooterActionsProps) {
   const organizationPageHref = sanitizeHref(organization.organization_page);
@@ -101,7 +110,8 @@ function OrganizationFooterActions({
   return (
     <div
       data-organization-card-footer
-      onMouseDown={(event) => event.stopPropagation()}
+      onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
       className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
     >
       {profileCompleted ? (
@@ -111,7 +121,7 @@ function OrganizationFooterActions({
           <TooltipTrigger asChild>
             <span
               className="block min-h-10 w-full cursor-not-allowed"
-              onMouseDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             >
               {followButton}
             </span>
@@ -127,7 +137,7 @@ function OrganizationFooterActions({
           href={organizationPageHref}
           target="_blank"
           rel="noopener noreferrer"
-          onMouseDown={(event) => event.stopPropagation()}
+          onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           aria-label={t("organizations.viewClubPage")}
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
@@ -146,7 +156,6 @@ function OrganizationFooterActions({
       <OrganizationOverflowMenu organization={organization} stopPropagation>
         <button
           type="button"
-          onMouseDown={(event) => event.stopPropagation()}
           aria-label={t("common.moreOptions")}
           title={t("common.moreOptions")}
           disabled={!hasOverflowLinks}
@@ -264,6 +273,8 @@ function OrganizationCardComponent({
     [],
   );
 
+  const preferClickPress = useMobileGridClickActivation();
+
   const handleCategoryClick = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
@@ -279,9 +290,33 @@ function OrganizationCardComponent({
     onOrganizationClick?.(organization);
   }, [onOrganizationClick, organization]);
 
-  const handleCardMouseDown = useCardMouseDownActivate(
+  const runMouseDownActivate = useCardMouseDownActivate(
     handleCardActivate,
     "[data-organization-card-footer]",
+  );
+
+  const handleCardMouseDown = useCallback(
+    (mouseEvent: React.MouseEvent<HTMLElement>) => {
+      if (preferClickPress) {
+        return;
+      }
+      runMouseDownActivate(mouseEvent);
+    },
+    [preferClickPress, runMouseDownActivate],
+  );
+
+  const handleCardClick = useCallback(
+    (mouseEvent: React.MouseEvent<HTMLElement>) => {
+      if (preferClickPress) {
+        if (mouseEvent.button !== 0) return;
+        if (!(mouseEvent.target instanceof Element)) return;
+        if (mouseEvent.target.closest("button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate], [data-organization-card-footer]")) return;
+        handleCardActivate();
+        return;
+      }
+      mouseEvent.preventDefault();
+    },
+    [handleCardActivate, preferClickPress],
   );
 
   const followButton = (
@@ -290,6 +325,7 @@ function OrganizationCardComponent({
       profileCompleted={profileCompleted}
       isSaved={isSaved}
       categoryClasses={categoryClasses}
+      preferClickPress={preferClickPress}
       onToggleSave={toggleSaveOrganization}
       t={t}
     />
@@ -303,6 +339,7 @@ function OrganizationCardComponent({
       tabIndex={0}
       aria-label={`Organization: ${organization.organization_name}`}
       onMouseDown={handleCardMouseDown}
+      onClick={handleCardClick}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
@@ -370,6 +407,7 @@ function OrganizationCardComponent({
           followButton={followButton}
           profileCompleted={profileCompleted}
           categoryClasses={categoryClasses}
+          preferClickPress={preferClickPress}
           t={t}
         />
       </div>

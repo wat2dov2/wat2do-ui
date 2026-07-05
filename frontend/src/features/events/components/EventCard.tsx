@@ -30,7 +30,7 @@ import {
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useViewTracking } from "@/features/events/hooks/useViewTracking";
-import { useMouseDownAction, createAdaptivePressHandlers, createAdaptiveStopPropagationHandlers, useMobileGridClickActivation } from "@/shared/hooks";
+import { useMouseDownAction, createAdaptivePressHandlers, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { useFilterActions } from "@/features/search";
@@ -140,7 +140,6 @@ function EventFooterActions({
   onActionDialogOpen,
   t,
 }: EventFooterActionsProps) {
-  const stopFooterButtonPropagation = createAdaptiveStopPropagationHandlers(preferClickPress);
 
   return (
     <div
@@ -171,7 +170,6 @@ function EventFooterActions({
       >
         <button
           type="button"
-          {...stopFooterButtonPropagation}
           aria-label={t("common.addToCalendar")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
@@ -187,7 +185,6 @@ function EventFooterActions({
       >
         <button
           type="button"
-          {...stopFooterButtonPropagation}
           aria-label={t("common.moreOptions")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
@@ -220,8 +217,7 @@ function SaveEventButton({
   const pressHandlers = createAdaptivePressHandlers({
     preferClick: preferClickPress,
     disabled: !profileCompleted,
-    onClick: (event) => {
-      event.stopPropagation();
+    onClick: () => {
       if (profileCompleted) {
         onToggleSaveEvent(eventId);
       }
