@@ -293,13 +293,6 @@ function OrganizationCardComponent({
     />
   );
 
-  // Invert the badge colors: light theme text background, dark theme bg text
-  const badgeBgClass = categoryClasses.text.split(" ").find(c => c.startsWith("text-"))?.replace("text-", "bg-") || "bg-foreground";
-  const badgeTextClass = categoryClasses.bg.split(" ").find(c => c.startsWith("bg-"))?.replace("bg-", "text-") || "text-background";
-
-  // Translate category border color class (border-*) to text color class (text-*) for SVG stroke color compatibility
-  const strokeColorClass = categoryClasses.border.replace("border-", "text-");
-
   return (
     <article
       data-organization-card
@@ -329,27 +322,28 @@ function OrganizationCardComponent({
         }}
       />
 
-      {/* 2. Custom Border SVG overlay (matching divider color) */}
+      {/* 2. Custom Border SVG overlay (matching divider color at 25% opacity) */}
       {paths.border && (
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
           <path
             d={paths.border}
             fill="none"
             stroke="currentColor"
+            style={{ stroke: "currentColor", opacity: 0.25 }}
+            className={categoryClasses.text}
             strokeWidth={1}
-            className={strokeColorClass}
           />
         </svg>
       )}
 
-      {/* 3. The Badge (rendered outside the clipped background, with NO border) */}
+      {/* 3. The Badge (rendered outside the clipped background, with subtle border) */}
       {primaryCategory && (
         <div ref={badgeRef} className="absolute top-0 left-0 z-30">
           <button
             type="button"
             onMouseDown={handleCategoryClick}
             {...badgeHoverProps}
-            className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-90 hover:opacity-100 active:scale-95 ${badgeBgClass} ${badgeTextClass}`}
+            className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 border ${categoryClasses.border} ${categoryClasses.bg} ${categoryClasses.text}`}
           >
             {translateCategory(primaryCategory, t)}
           </button>

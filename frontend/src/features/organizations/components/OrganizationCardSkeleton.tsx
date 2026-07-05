@@ -95,9 +95,9 @@ export function OrganizationCardSkeleton() {
         </svg>
       )}
 
-      {/* 3. Category badge wrapper (invisible, only for cutout sizing) */}
-      <div ref={badgeRef} className="absolute top-0 left-0 z-30 opacity-0 pointer-events-none">
-        <div className="h-5 w-16" />
+      {/* 3. Category badge skeleton */}
+      <div ref={badgeRef} className="absolute top-0 left-0 z-30">
+        <Skeleton className="h-5 w-16 rounded-full" />
       </div>
 
       {/* 4. Simplified skeleton body: just 2 horizontal rectangles inside the outlined card */}
