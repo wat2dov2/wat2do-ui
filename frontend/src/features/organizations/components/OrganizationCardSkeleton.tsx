@@ -89,7 +89,7 @@ export function OrganizationCardSkeleton() {
             d={paths.border}
             fill="none"
             stroke="currentColor"
-            strokeWidth={1}
+            strokeWidth={1.5}
             className="text-border/50"
           />
         </svg>

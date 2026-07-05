@@ -336,14 +336,14 @@ function OrganizationCardComponent({
         </svg>
       )}
 
-      {/* 3. The Badge (rendered outside the clipped background, with subtle border) */}
+      {/* 3. The Badge (rendered outside the clipped background, matching Event Card badge style) */}
       {primaryCategory && (
         <div ref={badgeRef} className="absolute top-0 left-0 z-30">
           <button
             type="button"
             onMouseDown={handleCategoryClick}
             {...badgeHoverProps}
-            className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 border ${categoryClasses.border} ${categoryClasses.bg} ${categoryClasses.text}`}
+            className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
           >
             {translateCategory(primaryCategory, t)}
           </button>
