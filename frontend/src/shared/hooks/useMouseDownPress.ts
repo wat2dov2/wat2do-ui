@@ -50,10 +50,10 @@ export function createAdaptivePressHandlers({
 }: MouseDownPressHandlersOptions) {
   if (preferClick) {
     const handleClick: PressHandler = (event) => {
-      onMouseDown?.(event);
-      if (event.defaultPrevented || event.button !== 0 || disabled) {
+      if (disabled || event.button !== 0) {
         return;
       }
+      onMouseDown?.(event);
       onClick?.(event);
     };
 

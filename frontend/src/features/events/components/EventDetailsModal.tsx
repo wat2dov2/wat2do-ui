@@ -162,7 +162,7 @@ export function EventDetailsModal({
 
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
-      <DrawerContent className="relative overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
+      <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
         <DrawerClose asChild>
           <button
             type="button"
@@ -365,7 +365,6 @@ export function EventDetailsModal({
                           key={similarEvent.id}
                           event={similarEvent}
                           onEventClick={handleSimilarEventClick}
-                          disableModal={true}
                           onActionDialogOpen={handleActionDialogOpen}
                         />
                       ))}

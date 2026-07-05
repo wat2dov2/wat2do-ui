@@ -33,14 +33,12 @@ import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import { useMouseDownAction, createAdaptivePressHandlers, createAdaptiveStopPropagationHandlers, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
-import { useEventIdUrlActions } from "@/features/events/hooks/useEventIdUrl";
 import { useFilterActions } from "@/features/search";
 
 interface EventCardProps {
   event: Event;
   isSaved?: boolean;
   onEventClick?: (event: Event) => void;
-  disableModal?: boolean;
   /** Grid cards: open footer actions on click below the sm breakpoint or on touch. */
   mobileClickActivation?: boolean;
   /** Called when the user confirms deletion (shown only to owners/admins). */
@@ -65,8 +63,8 @@ interface EventImageBadgesProps {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
   };
-  onCategoryClick: (e: React.MouseEvent) => void;
-  onOrganizationMouseDown: (e: React.MouseEvent) => void;
+  categoryPressHandlers: React.HTMLAttributes<HTMLButtonElement>;
+  organizationPressHandlers: React.HTMLAttributes<HTMLButtonElement>;
   t: TFunction;
 }
 
@@ -77,8 +75,8 @@ function EventImageBadges({
   isLive,
   isNew,
   badgeHoverProps,
-  onCategoryClick,
-  onOrganizationMouseDown,
+  categoryPressHandlers,
+  organizationPressHandlers,
   t,
 }: EventImageBadgesProps) {
   return (
@@ -86,7 +84,7 @@ function EventImageBadges({
       <BadgeMask variant="top-left">
         <button
           type="button"
-          onMouseDown={onCategoryClick}
+          {...categoryPressHandlers}
           {...badgeHoverProps}
           className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
         >
@@ -106,7 +104,7 @@ function EventImageBadges({
         <BadgeMask variant="bottom-left">
           <button
             type="button"
-            onMouseDown={onOrganizationMouseDown}
+            {...organizationPressHandlers}
             {...badgeHoverProps}
             className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
           >
@@ -260,8 +258,8 @@ interface EventCardImageProps {
   isLive: boolean;
   isNew: boolean;
   badgeHoverProps: EventImageBadgesProps["badgeHoverProps"];
-  onCategoryClick: EventImageBadgesProps["onCategoryClick"];
-  onOrganizationMouseDown: EventImageBadgesProps["onOrganizationMouseDown"];
+  categoryPressHandlers: EventImageBadgesProps["categoryPressHandlers"];
+  organizationPressHandlers: EventImageBadgesProps["organizationPressHandlers"];
   t: TFunction;
 }
 
@@ -272,8 +270,8 @@ function EventCardImage({
   isLive,
   isNew,
   badgeHoverProps,
-  onCategoryClick,
-  onOrganizationMouseDown,
+  categoryPressHandlers,
+  organizationPressHandlers,
   t,
 }: EventCardImageProps) {
   return (
@@ -302,8 +300,8 @@ function EventCardImage({
         isLive={isLive}
         isNew={isNew}
         badgeHoverProps={badgeHoverProps}
-        onCategoryClick={onCategoryClick}
-        onOrganizationMouseDown={onOrganizationMouseDown}
+        categoryPressHandlers={categoryPressHandlers}
+        organizationPressHandlers={organizationPressHandlers}
         t={t}
       />
     </div>
@@ -384,20 +382,17 @@ function EventCardBody({
 interface UseEventCardNavigationOptions {
   event: Event;
   eventCategory: string;
-  disableModal?: boolean;
   onEventClick?: (event: Event) => void;
 }
 
 function useEventCardNavigation({
   event,
   eventCategory,
-  disableModal,
   onEventClick,
 }: UseEventCardNavigationOptions) {
   const router = useRouter();
   const pathname = usePathname();
   const filterActions = useFilterActions();
-  const { openEventId } = useEventIdUrlActions();
 
   const handleCategoryClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -408,7 +403,7 @@ function useEventCardNavigation({
     }
   }, [eventCategory, filterActions, pathname, router]);
 
-  const handleOrganizationMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleOrganizationClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (event.organization) {
@@ -421,23 +416,19 @@ function useEventCardNavigation({
 
   const handleCardActivate = useCallback(() => {
     tracker.track(event.id, "click");
-    if (onEventClick) {
-      onEventClick(event);
-    } else if (!disableModal) {
-      openEventId(event.id);
-    }
-  }, [disableModal, event, onEventClick, openEventId]);
+    onEventClick?.(event);
+  }, [event, onEventClick]);
 
   return {
     handleCategoryClick,
-    handleOrganizationMouseDown,
+    handleOrganizationClick,
     handleCardActivate,
   };
 }
 
 /**
  * Data flow:
- * 1. Explicit props (onEventClick, disableModal, onDelete) come from the
+ * 1. Explicit props (onEventClick, onDelete) come from the
  *    page-level container (EventsPageContainer) via EventList.
  * 2. Stores supply global data:
  *    - `useSavedEventsStore` for the save/unsave action.
@@ -448,8 +439,7 @@ function EventCardComponent({
   event,
   isSaved = false,
   onEventClick,
-  disableModal,
-  mobileClickActivation = false,
+  mobileClickActivation = true,
   onDelete,
   onActionDialogOpen,
 }: EventCardProps) {
@@ -501,17 +491,26 @@ function EventCardComponent({
 
   const {
     handleCategoryClick,
-    handleOrganizationMouseDown,
+    handleOrganizationClick,
     handleCardActivate,
   } = useEventCardNavigation({
     event,
     eventCategory,
-    disableModal,
     onEventClick,
   });
 
   const mobileGridClickActivation = useMobileGridClickActivation();
   const preferClickPress = mobileClickActivation && mobileGridClickActivation;
+
+  const categoryPressHandlers = createAdaptivePressHandlers({
+    preferClick: preferClickPress,
+    onClick: handleCategoryClick,
+  });
+
+  const organizationPressHandlers = createAdaptivePressHandlers({
+    preferClick: preferClickPress,
+    onClick: handleOrganizationClick,
+  });
 
   const handleActionDialogOpen = useCallback(
     (dialog: EventCardDialog) => {
@@ -574,8 +573,8 @@ function EventCardComponent({
           isLive={isLive}
           isNew={isNew}
           badgeHoverProps={badgeHoverProps}
-          onCategoryClick={handleCategoryClick}
-          onOrganizationMouseDown={handleOrganizationMouseDown}
+          categoryPressHandlers={categoryPressHandlers}
+          organizationPressHandlers={organizationPressHandlers}
           t={t}
         />
 

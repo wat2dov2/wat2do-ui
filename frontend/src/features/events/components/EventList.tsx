@@ -14,7 +14,6 @@ interface EventListProps {
   promotedEvents?: Event[];
   viewMode: "grid" | "calendar" | "map";
   onEventClick?: (event: Event) => void;
-  disableModal?: boolean;
   /** Called when the user confirms deletion on an owned/admin event card. */
   onDelete?: (eventId: number) => void;
   /** Called when the empty-state "Clear filters" button is pressed. */
@@ -74,7 +73,6 @@ interface EventCardsGridProps {
   savedEventIds: Set<number>;
   animationIndexByEventId: Map<number, number>;
   onEventClick?: (event: Event) => void;
-  disableModal?: boolean;
   onDelete?: (eventId: number) => void;
   onActionDialogOpen: (type: EventCardDialog, event: Event) => void;
 }
@@ -83,6 +81,9 @@ function EventCardListItem({
   animationIndex,
   children,
 }: EventCardListItemProps) {
+  // Cap stagger index at 15 to prevent performance bottlenecks on large list rendering
+  const cappedIndex = Math.min(animationIndex, 15);
+
   return (
     <m.div
       role="listitem"
@@ -91,7 +92,7 @@ function EventCardListItem({
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.5,
-        delay: animationIndex * (EVENT_CARD_ANIMATION_STAGGER_MS / 1000),
+        delay: cappedIndex * (EVENT_CARD_ANIMATION_STAGGER_MS / 1000),
         ease: [0.18, 0.39, 0.14, 0.9],
       }}
       style={{ pointerEvents: "auto" }}
@@ -106,7 +107,6 @@ function EventCardsGrid({
   savedEventIds,
   animationIndexByEventId,
   onEventClick,
-  disableModal,
   onDelete,
   onActionDialogOpen,
 }: EventCardsGridProps) {
@@ -121,7 +121,6 @@ function EventCardsGrid({
             event={event}
             isSaved={savedEventIds.has(event.id)}
             onEventClick={onEventClick}
-            disableModal={disableModal}
             mobileClickActivation
             onDelete={onDelete}
             onActionDialogOpen={onActionDialogOpen}
@@ -192,7 +191,6 @@ export function EventList({
   promotedEvents = [],
   viewMode,
   onEventClick,
-  disableModal,
   onDelete,
   onClearFilters,
   hasActiveFilters = false,
@@ -365,7 +363,6 @@ export function EventList({
               savedEventIds={savedSet}
               animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
               onEventClick={onEventClick}
-              disableModal={disableModal}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}
             />
@@ -387,7 +384,6 @@ export function EventList({
                   savedEventIds={savedSet}
                   animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
                   onEventClick={onEventClick}
-                  disableModal={disableModal}
                   onDelete={onDelete}
                   onActionDialogOpen={handleActionDialogOpen}
                 />
@@ -401,7 +397,6 @@ export function EventList({
               savedEventIds={savedSet}
               animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
               onEventClick={onEventClick}
-              disableModal={disableModal}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}
             />

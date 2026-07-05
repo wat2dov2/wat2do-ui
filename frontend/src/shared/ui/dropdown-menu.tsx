@@ -3,7 +3,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
 import { cn } from "@/shared/lib/utils";
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure";
-import { useMouseSelectDedup } from "@/shared/hooks/useMouseDownPress";
+import { useMouseSelectDedup, useMobileGridClickActivation } from "@/shared/hooks/useMouseDownPress";
 
 const TRAILING_CLICK_SWALLOW_MS = 300;
 
@@ -48,11 +48,25 @@ function DropdownMenu({
 }
 
 function DropdownMenuTrigger({
+  onPointerDown,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  const preferClick = useMobileGridClickActivation();
+
+  const handlePointerDown = React.useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      onPointerDown?.(event);
+      if (preferClick && !event.defaultPrevented) {
+        event.preventDefault();
+      }
+    },
+    [onPointerDown, preferClick],
+  );
+
   return (
     <DropdownMenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
+      onPointerDown={handlePointerDown}
       {...props}
     />
   );

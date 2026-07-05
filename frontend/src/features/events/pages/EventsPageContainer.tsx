@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
@@ -10,9 +10,8 @@ import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
-import { useEventDetailsFromUrl } from "@/features/events/hooks/useEventIdUrl";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
-import type { ViewMode, QuickFilterConfig } from "@/shared/types";
+import type { ViewMode, QuickFilterConfig, Event } from "@/shared/types";
 
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
@@ -39,7 +38,36 @@ export function EventsPageContainer() {
     handleDeleteEvent,
   } = useEventsPageData({ profileCompleted, viewMode });
 
-  const { eventId, detailEvent, closeEventDetails } = useEventDetailsFromUrl(allEvents);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+
+  // Read initial eventId from URL parameters on mount to support deep-linking
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const paramId = params.get("eventId");
+      if (paramId) {
+        const parsed = parseInt(paramId, 10);
+        if (!isNaN(parsed)) {
+          setTimeout(() => {
+            setSelectedEventId(parsed);
+          }, 0);
+        }
+      }
+    }
+  }, []);
+
+  const selectedEvent = useMemo(() => {
+    if (selectedEventId == null) return null;
+    return allEvents.find((e) => e.id === selectedEventId) ?? null;
+  }, [selectedEventId, allEvents]);
+
+  const handleEventClick = useCallback((event: Event) => {
+    setSelectedEventId(event.id);
+  }, []);
+
+  const handleCloseEventDetails = useCallback(() => {
+    setSelectedEventId(null);
+  }, []);
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -202,6 +230,7 @@ export function EventsPageContainer() {
               events={orderedEvents}
               promotedEvents={promotedEvents}
               viewMode={viewMode}
+              onEventClick={handleEventClick}
               onDelete={handleDeleteEvent}
               onClearFilters={filters.handleClearAllFilters}
               hasActiveFilters={filters.filterCount > 0}
@@ -214,9 +243,9 @@ export function EventsPageContainer() {
       </div>
       <EventsBackToTopButton />
       <EventDetailsModal
-        eventId={eventId}
-        event={detailEvent}
-        onClose={closeEventDetails}
+        eventId={selectedEventId}
+        event={selectedEvent}
+        onClose={handleCloseEventDetails}
         allEvents={orderedEvents}
       />
     </>
