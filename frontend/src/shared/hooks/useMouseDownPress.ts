@@ -17,14 +17,9 @@ interface MouseDownPressHandlersOptions {
 /**
  * Touch/coarse pointers and sub-sm viewports use click instead of mousedown.
  */
-export function prefersClickActivation() {
+function prefersClickActivation() {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(hover: none), (pointer: coarse)").matches;
-}
-
-export function prefersMobileGridClickActivation() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia(MOBILE_GRID_CLICK_MEDIA).matches;
 }
 
 export function useMobileGridClickActivation() {
@@ -73,25 +68,11 @@ export function createAdaptivePressHandlers({
 /**
  * Stop propagation on mousedown (desktop) or click (touch/mobile width).
  */
-export function createAdaptiveStopPropagationHandlers(
-  preferClick = prefersClickActivation(),
-) {
-  const stop: PressHandler = (event) => {
-    event.stopPropagation();
-  };
-
-  if (preferClick) {
-    return { onClick: stop };
-  }
-
-  return { onMouseDown: stop };
-}
-
 /**
  * Standard press handlers for the app's mouse-down-first UI.
  * Runs `onClick` on left mouse down and swallows the trailing click.
  */
-export function createMouseDownPressHandlers({
+function createMouseDownPressHandlers({
   onMouseDown,
   onClick,
   disabled = false,

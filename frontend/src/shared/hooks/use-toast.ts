@@ -31,12 +31,4 @@ function toast({ title, description, variant = "default" }: ToastOptions) {
   return sonnerToast.message(message)
 }
 
-function useToast() {
-  return {
-    toast,
-    dismiss: sonnerToast.dismiss,
-    toasts: [],
-  }
-}
-
-export { useToast, toast }
+export { toast }

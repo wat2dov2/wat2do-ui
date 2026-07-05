@@ -152,7 +152,7 @@ export function clearNarrowingFilterState(current: FilterState): FilterState {
   });
 }
 
-export const PENDING_FILTERS_SESSION_KEY = "wat2do:pending-filters";
+const PENDING_FILTERS_SESSION_KEY = "wat2do:pending-filters";
 
 /** Stage filters for a full-page redirect (e.g. QR poster events-list). */
 export function stagePendingFilterState(filters: Partial<FilterState>) {

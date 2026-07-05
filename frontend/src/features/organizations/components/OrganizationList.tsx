@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { m } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/shared/ui/spinner";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
+import { useNewItemAnimationIndexes } from "@/shared/hooks";
 import { OrganizationCard } from "@/features/organizations/components/OrganizationCard";
 import { OrganizationCardSkeleton } from "@/features/organizations/components/OrganizationCardSkeleton";
 import type { Organization } from "@/shared/types";
@@ -17,11 +18,6 @@ interface OrganizationListProps {
   onLoadMore?: () => void;
   onOrganizationClick?: (organization: Organization) => void;
   onCategoryClick?: (category: string) => void;
-}
-
-interface VisibleOrgAnimationState {
-  orgIds: Set<number>;
-  animationIndexByOrgId: Map<number, number>;
 }
 
 interface OrganizationCardListItemProps {
@@ -56,29 +52,6 @@ function OrganizationCardListItem({
   );
 }
 
-function hasSameOrgIds(orgs: Organization[], orgIds: Set<number>): boolean {
-  return orgs.length === orgIds.size && orgs.every((org) => orgIds.has(org.id));
-}
-
-function getOrgIds(orgs: Organization[]): Set<number> {
-  return new Set(orgs.map((org) => org.id));
-}
-
-function getNewOrgAnimationIndexById(
-  orgs: Organization[],
-  previousOrgIds: Set<number>,
-): Map<number, number> {
-  const animationIndexByOrgId = new Map<number, number>();
-
-  orgs.forEach((org) => {
-    if (!previousOrgIds.has(org.id)) {
-      animationIndexByOrgId.set(org.id, animationIndexByOrgId.size);
-    }
-  });
-
-  return animationIndexByOrgId;
-}
-
 export function OrganizationList({
   organizations,
   savedOrganizationIds,
@@ -92,23 +65,7 @@ export function OrganizationList({
   const { t } = useTranslation();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const savedSet = new Set(savedOrganizationIds);
-
-  const [visibleOrgAnimation, setVisibleOrgAnimation] = useState<VisibleOrgAnimationState>(
-    () => ({
-      orgIds: new Set(),
-      animationIndexByOrgId: new Map(),
-    }),
-  );
-
-  if (!hasSameOrgIds(organizations, visibleOrgAnimation.orgIds)) {
-    setVisibleOrgAnimation({
-      orgIds: getOrgIds(organizations),
-      animationIndexByOrgId: getNewOrgAnimationIndexById(
-        organizations,
-        visibleOrgAnimation.orgIds,
-      ),
-    });
-  }
+  const animationIndexByOrgId = useNewItemAnimationIndexes(organizations);
 
   useEffect(() => {
     if (!onLoadMore || !hasMore || isLoadingMore) return;
@@ -159,7 +116,7 @@ export function OrganizationList({
         {organizations.map((organization) => (
           <OrganizationCardListItem
             key={organization.id}
-            animationIndex={visibleOrgAnimation.animationIndexByOrgId.get(organization.id) ?? 0}
+            animationIndex={animationIndexByOrgId.get(organization.id) ?? 0}
           >
             <OrganizationCard
               organization={organization}

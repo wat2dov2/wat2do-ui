@@ -11,6 +11,8 @@ import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
+import { QP } from "@/shared/constants/queryParams";
+import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import type { ViewMode, QuickFilterConfig, Event } from "@/shared/types";
 
 export function EventsPageContainer() {
@@ -23,6 +25,7 @@ export function EventsPageContainer() {
   const { isDarkMode } = useDarkMode();
   const profileCompleted = useProfileCompleted();
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useMutableSearchParams();
 
   const {
     isLoading,
@@ -39,22 +42,16 @@ export function EventsPageContainer() {
   } = useEventsPageData({ profileCompleted, viewMode });
 
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const urlEventId = useMemo(() => {
+    const eventIdParam = searchParams.get(QP.EVENT_ID);
+    if (!eventIdParam) return null;
+    const parsed = parseInt(eventIdParam, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [searchParams]);
 
-  // Read initial eventId from URL parameters on mount to support deep-linking
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const paramId = params.get("eventId");
-      if (paramId) {
-        const parsed = parseInt(paramId, 10);
-        if (!isNaN(parsed)) {
-          setTimeout(() => {
-            setSelectedEventId(parsed);
-          }, 0);
-        }
-      }
-    }
-  }, []);
+    setSelectedEventId(urlEventId);
+  }, [urlEventId]);
 
   const selectedEvent = useMemo(() => {
     if (selectedEventId == null) return null;
@@ -63,11 +60,17 @@ export function EventsPageContainer() {
 
   const handleEventClick = useCallback((event: Event) => {
     setSelectedEventId(event.id);
-  }, []);
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set(QP.EVENT_ID, event.id.toString());
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
 
   const handleCloseEventDetails = useCallback(() => {
     setSelectedEventId(null);
-  }, []);
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete(QP.EVENT_ID);
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);

@@ -1,73 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import { Skeleton } from "@/shared/ui/skeleton";
-
-const useSafeLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+import { useOrganizationCardFrame } from "@/features/organizations/hooks/useOrganizationCardFrame";
 
 export function OrganizationCardSkeleton() {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const badgeRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ w: 0, h: 0, cw: 0, ch: 0 });
-
-  useSafeLayoutEffect(() => {
-    const cardEl = cardRef.current;
-    const badgeEl = badgeRef.current;
-    if (!cardEl) return;
-
-    const updateDimensions = () => {
-      setDimensions({
-        w: cardEl.offsetWidth,
-        h: cardEl.offsetHeight,
-        cw: badgeEl ? badgeEl.offsetWidth : 0,
-        ch: badgeEl ? badgeEl.offsetHeight : 0,
-      });
-    };
-
-    updateDimensions();
-
-    const observer = new ResizeObserver(() => {
-      updateDimensions();
-    });
-
-    observer.observe(cardEl);
-    if (badgeEl) observer.observe(badgeEl);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  const paths = useMemo(() => {
-    const { w, h, cw, ch } = dimensions;
-    if (w === 0 || h === 0) return { border: "", clip: "" };
-
-    const R = 12; // Card corner radius
-    const r = 8;  // Cutout transition radius
-    const gap = 4; // Space around badge
-
-    // Cutout dimensions including the gap
-    const cw_c = cw > 0 ? cw + gap : 0;
-    const ch_c = ch > 0 ? ch + gap : 0;
-
-    // Standard rounded rect path if no badge
-    if (cw_c === 0 || ch_c === 0) {
-      const standardPath = `M ${R} 0 L ${w - R} 0 A ${R} ${R} 0 0 1 ${w} ${R} L ${w} ${h - R} A ${R} ${R} 0 0 1 ${w - R} ${h} L ${R} ${h} A ${R} ${R} 0 0 1 0 ${h - R} L 0 ${R} A ${R} ${R} 0 0 1 ${R} 0 Z`;
-      return { border: standardPath, clip: standardPath };
-    }
-
-    const offset = 0.75;
-    const w_b = w - offset;
-    const h_b = h - offset;
-    const cw_b = cw_c - offset;
-    const ch_b = ch_c - offset;
-
-    // Border path with 0.5px offset, completely flattened to prevent newline parsing errors in browser engines
-    const borderPath = `M ${cw_b + r} ${offset} L ${w_b - R} ${offset} A ${R} ${R} 0 0 1 ${w_b} ${R} L ${w_b} ${h_b - R} A ${R} ${R} 0 0 1 ${w_b - R} ${h_b} L ${R} ${h_b} A ${R} ${R} 0 0 1 ${offset} ${h_b - R} L ${offset} ${ch_b + r} A ${r} ${r} 0 0 1 ${r + offset} ${ch_b} L ${cw_b - r} ${ch_b} A ${r} ${r} 0 0 0 ${cw_b} ${ch_b - r} L ${cw_b} ${r + offset} A ${r} ${r} 0 0 1 ${cw_b + r} ${offset} Z`;
-
-    // Clip path (running along the absolute outer edge), completely flattened to prevent browser parsing bugs
-    const clipPath = `M ${cw_c + r} 0 L ${w - R} 0 A ${R} ${R} 0 0 1 ${w} ${R} L ${w} ${h - R} A ${R} ${R} 0 0 1 ${w - R} ${h} L ${R} ${h} A ${R} ${R} 0 0 1 0 ${h - R} L 0 ${ch_c + r} A ${r} ${r} 0 0 1 ${r} ${ch_c} L ${cw_c - r} ${ch_c} A ${r} ${r} 0 0 0 ${cw_c} ${ch_c - r} L ${cw_c} ${r} A ${r} ${r} 0 0 1 ${cw_c + r} 0 Z`;
-
-    return { border: borderPath, clip: clipPath };
-  }, [dimensions]);
+  const { cardRef, badgeRef, paths } = useOrganizationCardFrame();
 
   return (
     <article

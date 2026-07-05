@@ -145,6 +145,7 @@ function DropdownMenuContent({
 
 function DropdownMenuItem({
   className,
+  disabled,
   inset,
   onMouseDown,
   onSelect,
@@ -159,7 +160,7 @@ function DropdownMenuItem({
   const handleMouseDown = React.useCallback(
     (event: React.MouseEvent<React.ElementRef<typeof DropdownMenuPrimitive.Item>>) => {
       onMouseDown?.(event);
-      if (event.button !== 0 || event.defaultPrevented) {
+      if (disabled || event.button !== 0 || event.defaultPrevented) {
         return;
       }
 
@@ -168,7 +169,7 @@ function DropdownMenuItem({
       onSelect?.(event.nativeEvent);
       registerTrailingClickSwallow();
     },
-    [markMouseSelect, onMouseDown, onSelect],
+    [disabled, markMouseSelect, onMouseDown, onSelect],
   );
 
   const handleSelect = React.useCallback(
@@ -192,6 +193,7 @@ function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
+      disabled={disabled}
       data-inset={inset}
       data-variant={variant}
       onMouseDown={handleMouseDown}
@@ -211,5 +213,4 @@ export {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  registerTrailingClickSwallow,
 };

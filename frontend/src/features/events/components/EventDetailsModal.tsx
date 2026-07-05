@@ -100,6 +100,10 @@ export function EventDetailsModal({
 
   const displayedEvent = activeOverride ?? listEvent ?? fetchedEvent ?? null;
   const drawerOpen = resolvedEventId !== null;
+  if (!drawerOpen && (overrideEvent !== null || overrideForEventId !== null)) {
+    setOverrideEvent(null);
+    setOverrideForEventId(null);
+  }
   const showSkeleton =
     drawerOpen && displayedEvent == null && !isFetchError && isFetchingEvent;
   const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;

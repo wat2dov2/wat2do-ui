@@ -6,7 +6,7 @@ import { cn } from "@/shared/lib/utils"
 const DRAWER_CLOSE_ANIMATION_MS = 280
 
 /** Let the page receive touches while the drawer exit animation finishes. */
-export function releaseDrawerTouchCapture() {
+function releaseDrawerTouchCapture() {
   if (typeof document === "undefined") return
 
   document.documentElement.dataset.drawerScrollRelease = ""
@@ -18,7 +18,7 @@ export function releaseDrawerTouchCapture() {
   })
 }
 
-export function resetDrawerTouchCapture() {
+function resetDrawerTouchCapture() {
   if (typeof document === "undefined") return
 
   delete document.documentElement.dataset.drawerScrollRelease
@@ -31,7 +31,7 @@ export function resetDrawerTouchCapture() {
 }
 
 /** Release scroll/pointer locks as soon as a drawer starts closing. */
-export function releaseDrawerScrollLock() {
+function releaseDrawerScrollLock() {
   if (typeof document === "undefined") return
 
   const { body, documentElement: html } = document
@@ -114,12 +114,6 @@ function Drawer({
       {...props}
     />
   )
-}
-
-function DrawerTrigger({
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
-  return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />
 }
 
 function DrawerPortal({
@@ -253,7 +247,6 @@ function DrawerDescription({
 
 export {
   Drawer,
-  DrawerTrigger,
   DrawerClose,
   DrawerContent,
   DrawerHeader,

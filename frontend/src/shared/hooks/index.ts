@@ -17,3 +17,4 @@ export * from "./useHorizontalScrollFade";
 export * from "./useMutableSearchParams";
 export * from "./useMouseDownPress";
 export * from "./useDebouncedCallback";
+export * from "./useNewItemAnimationIndexes";

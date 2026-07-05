@@ -3,6 +3,7 @@ import { m } from "framer-motion";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
+import { useNewItemAnimationIndexes } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
@@ -56,11 +57,6 @@ const EventReportDialog = lazy(() =>
 interface ActiveEventDialog {
   type: EventCardDialog;
   event: Event;
-}
-
-interface VisibleEventAnimationState {
-  eventIds: Set<number>;
-  animationIndexByEventId: Map<number, number>;
 }
 
 interface EventCardListItemProps {
@@ -156,29 +152,6 @@ function groupEventsByDateSection(events: Event[]): Record<EventDateCategory, Ev
   return groups;
 }
 
-function hasSameEventIds(events: Event[], eventIds: Set<number>): boolean {
-  return events.length === eventIds.size && events.every((event) => eventIds.has(event.id));
-}
-
-function getEventIds(events: Event[]): Set<number> {
-  return new Set(events.map((event) => event.id));
-}
-
-function getNewEventAnimationIndexById(
-  events: Event[],
-  previousEventIds: Set<number>,
-): Map<number, number> {
-  const animationIndexByEventId = new Map<number, number>();
-
-  events.forEach((event) => {
-    if (!previousEventIds.has(event.id)) {
-      animationIndexByEventId.set(event.id, animationIndexByEventId.size);
-    }
-  });
-
-  return animationIndexByEventId;
-}
-
 /**
  * Event list component.
  *
@@ -200,12 +173,6 @@ export function EventList({
 }: EventListProps) {
   const { t } = useTranslation();
   const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
-  const [visibleEventAnimation, setVisibleEventAnimation] = useState<VisibleEventAnimationState>(
-    () => ({
-      eventIds: new Set(),
-      animationIndexByEventId: new Map(),
-    }),
-  );
   // Wrap id arrays in Sets for O(1) membership lookups per card.
   const savedSet = useMemo(
     () => new Set(savedEventIds),
@@ -233,15 +200,7 @@ export function EventList({
     () => [...promotedEvents, ...sectionOrderedEvents],
     [promotedEvents, sectionOrderedEvents],
   );
-  if (!hasSameEventIds(visibleEvents, visibleEventAnimation.eventIds)) {
-    setVisibleEventAnimation({
-      eventIds: getEventIds(visibleEvents),
-      animationIndexByEventId: getNewEventAnimationIndexById(
-        visibleEvents,
-        visibleEventAnimation.eventIds,
-      ),
-    });
-  }
+  const animationIndexByEventId = useNewItemAnimationIndexes(visibleEvents);
   const handleActionDialogOpen = useCallback((type: EventCardDialog, event: Event) => {
     setActiveDialog({ type, event });
   }, []);
@@ -361,7 +320,7 @@ export function EventList({
             <EventCardsGrid
               events={promotedEvents}
               savedEventIds={savedSet}
-              animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
+              animationIndexByEventId={animationIndexByEventId}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}
@@ -382,7 +341,7 @@ export function EventList({
                 <EventCardsGrid
                   events={sectionEvents}
                   savedEventIds={savedSet}
-                  animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
+                  animationIndexByEventId={animationIndexByEventId}
                   onEventClick={onEventClick}
                   onDelete={onDelete}
                   onActionDialogOpen={handleActionDialogOpen}
@@ -395,7 +354,7 @@ export function EventList({
             <EventCardsGrid
               events={sectionOrderedEvents}
               savedEventIds={savedSet}
-              animationIndexByEventId={visibleEventAnimation.animationIndexByEventId}
+              animationIndexByEventId={animationIndexByEventId}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}
