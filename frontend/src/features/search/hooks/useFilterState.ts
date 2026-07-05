@@ -8,7 +8,7 @@ import {
   generatedFilterStateToFilterState,
   normalizeFilterState,
   writeFiltersToSearchParams,
-  EMPTY_FILTER_STATE,
+  clearNarrowingFilterState,
   DEFAULT_FILTER_SORT_BY,
   DEFAULT_FILTER_SORT_ORDER,
 } from "@/features/search/api/filterService";
@@ -63,7 +63,7 @@ export function useFilterUrlActions() {
   );
 
   const clearAllFilters = useCallback(() => {
-    setFilterState(EMPTY_FILTER_STATE);
+    setFilterState((current) => clearNarrowingFilterState(current));
   }, [setFilterState]);
 
   return {

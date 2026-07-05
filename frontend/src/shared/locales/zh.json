@@ -33,7 +33,7 @@
     "minuteAgoCompact": "{{count}} 分钟前",
     "hourAgoCompact": "{{count}} 小时前",
     "dayAgoCompact": "{{count}} 天前",
-    "advancedFilters": "高级筛选",
+    "extraFilters": "额外筛选",
     "event": "活动",
     "events": "活动",
     "generating": "生成中...",
@@ -54,6 +54,7 @@
     "share": "分享",
     "export": "导出",
     "addToCalendar": "添加到日历",
+    "moreOptions": "更多选项",
     "report": "举报",
     "download": "下载",
     "done": "完成",
@@ -173,7 +174,15 @@
     "aiSignInRequired": "登录以使用 AI 筛选生成。",
     "aiNotAvailable": "AI 生成不可用。请检查服务器配置。",
     "aiGenerateFailed": "生成筛选条件失败，请重试。",
-    "editJsonDirectly": "直接编辑 JSON。更改将自动生效。"
+    "editJsonDirectly": "直接编辑 JSON。更改将自动生效。",
+    "sortHappeningSoon": "即将开始",
+    "sortLaterDates": "更晚日期",
+    "sortRecentlyAdded": "最近添加",
+    "sortTitleAZ": "标题 A 到 Z",
+    "sortLowestPrice": "最低价格",
+    "sortLocationAZ": "地点 A 到 Z",
+    "sortChipLabel": "排序：{{sort}}",
+    "sortMenuAriaLabel": "活动排序。当前排序：{{sort}}"
   },
   "commands": {
     "commands": "命令",

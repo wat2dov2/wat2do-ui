@@ -97,8 +97,6 @@ export function useSearch({
         selectedOrganizations: filterState.selectedOrganizations,
         freeFoodFilter: filterState.freeFoodFilter,
         savedFilter: filterState.savedFilter,
-        sortBy: filterState.sortBy,
-        sortOrder: filterState.sortOrder,
         addedWithin24h: filterState.addedWithin24h,
         viewMode,
       }),
@@ -113,8 +111,6 @@ export function useSearch({
       filterState.selectedOrganizations,
       filterState.freeFoodFilter,
       filterState.savedFilter,
-      filterState.sortBy,
-      filterState.sortOrder,
       filterState.addedWithin24h,
       viewMode,
     ],
@@ -125,7 +121,6 @@ export function useSearch({
       getEventCategories().map((cat) => ({
         id: cat,
         label: translateCategory(cat, t),
-        iconName: "Tag" as const,
       })),
     [t],
   );
@@ -139,7 +134,6 @@ export function useSearch({
         return {
           id: food,
           label,
-          iconName: "Utensils" as const,
         };
       }),
     [t],
@@ -153,20 +147,8 @@ export function useSearch({
         return {
           id: day,
           label: translated !== key ? translated : day,
-          iconName: "Calendar" as const,
         };
       }),
-    [t],
-  );
-
-  const sortPieItems = useMemo(
-    () => [
-      { id: "date", label: t("filters.date"), iconName: "CalendarDays" as const },
-      { id: "title", label: t("filters.title"), iconName: "Tag" as const },
-      { id: "location", label: t("filters.location"), iconName: "MapPin" as const },
-      { id: "price", label: t("filters.price"), iconName: "ArrowUpDown" as const },
-      { id: "added_at", label: t("events.newlyAdded"), iconName: "Sparkles" as const },
-    ],
     [t],
   );
 
@@ -178,7 +160,6 @@ export function useSearch({
     categoryPieItems,
     foodPieItems,
     dayPieItems,
-    sortPieItems,
 
     // Filtered and sorted events
     filteredEvents,

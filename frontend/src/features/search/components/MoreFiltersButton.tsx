@@ -1,13 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/shared/ui/doodle-icons";
+import { useMouseDownAction } from "@/shared/hooks";
 import {
   Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/shared/ui/drawer";
 
 interface MoreFiltersButtonProps {
@@ -26,56 +26,50 @@ export function MoreFiltersButton({
   children,
 }: MoreFiltersButtonProps) {
   const { t } = useTranslation();
+  const handleToggle = useMouseDownAction(() => onOpenChange(!open));
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerTrigger asChild>
-        <button
-          type="button"
-          data-elevation="control"
-          onMouseDown={(event) => {
-            event.preventDefault();
-            onOpenChange(!open);
-          }}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-            open || filterCount > 0
-              ? "bg-primary/80 text-primary-foreground"
-              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
-          }`}
-        >
-          {t("common.advancedFilters")}
-          {filterCount > 0 && (
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label={t("common.clearFilters", "Clear filters")}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+      <button
+        type="button"
+        data-elevation="control"
+        onMouseDown={handleToggle}
+        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+          open || filterCount > 0
+            ? "bg-primary/80 text-primary-foreground"
+            : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+        }`}
+      >
+        {t("common.extraFilters")}
+        {filterCount > 0 && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={t("common.clearFilters", "Clear filters")}
+            onMouseDown={(event) => {
+              if (event.button !== 0) {
+                return;
+              }
+              event.stopPropagation();
+              onClearFilters?.();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.stopPropagation();
                 onClearFilters?.();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onClearFilters?.();
-                }
-              }}
-              className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/70 transition-colors cursor-pointer"
-            >
-              <X className="size-2.5" strokeWidth={3} />
-              {filterCount}
-            </span>
-          )}
-        </button>
-      </DrawerTrigger>
-      <DrawerContent className="max-h-[85dvh] overflow-hidden p-0">
+              }
+            }}
+            className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-primary/70 transition-colors cursor-pointer"
+          >
+            <X className="size-2.5" strokeWidth={3} />
+            {filterCount}
+          </span>
+        )}
+      </button>
+      <DrawerContent className="max-h-[85dvh] !max-w-sm overflow-hidden p-0">
         <DrawerHeader className="sr-only">
-          <DrawerTitle>{t("common.advancedFilters")}</DrawerTitle>
+          <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>
         </DrawerHeader>
         <div className="max-h-[calc(85dvh-1.5rem)] overflow-y-auto p-4">

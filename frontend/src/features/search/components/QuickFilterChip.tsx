@@ -1,4 +1,5 @@
 import React from "react";
+import { useMouseDownAction } from "@/shared/hooks";
 
 interface QuickFilterChipProps {
   icon: React.ReactNode;
@@ -8,9 +9,12 @@ interface QuickFilterChipProps {
 }
 
 export function QuickFilterChip({ icon, label, active, onClick }: QuickFilterChipProps) {
+  const handleMouseDown = useMouseDownAction(onClick);
+
   return (
     <button
-      onClick={onClick}
+      type="button"
+      onMouseDown={handleMouseDown}
       data-elevation="control"
       className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
         active

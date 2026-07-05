@@ -4,7 +4,7 @@ import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
 import { LightRays } from "@/registry/magicui/light-rays";
-import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
+import { SearchBar, QuickFilterChip, SortChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
@@ -167,7 +167,12 @@ export function EventsPageContainer() {
               </div>
               <HorizontalScrollFadeEdge visible={showFilterScrollFade} />
             </div>
-            <div className="relative shrink-0 pb-1">
+            <div className="relative shrink-0 pb-1 flex items-center gap-2">
+              <SortChip
+                sortBy={filters.sortBy}
+                sortOrder={filters.sortOrder}
+                onSortChange={filters.setSort}
+              />
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}

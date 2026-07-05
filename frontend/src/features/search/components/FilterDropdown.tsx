@@ -9,7 +9,6 @@ import type { FilterViewMode, ViewMode } from "@/shared/types";
 interface PieMenuItem {
   id: string;
   label: string;
-  iconName: string;
 }
 
 interface FilterDropdownFilters {
@@ -45,12 +44,6 @@ interface FilterDropdownFilters {
   setPriceRange: (range: { min: string; max: string }) => void;
   registration: boolean;
   setRegistration: (value: boolean) => void;
-  // Sort
-  sortBy: string;
-  setSortBy: (sortBy: string) => void;
-  sortOrder: "asc" | "desc";
-  setSortOrder: (order: "asc" | "desc") => void;
-  sortPieItems: PieMenuItem[];
   // Organization
   selectedOrganizations: string[];
   setSelectedOrganizations: (value: string[]) => void;

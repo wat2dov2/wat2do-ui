@@ -33,7 +33,7 @@
     "minuteAgoCompact": "{{count}}m ago",
     "hourAgoCompact": "{{count}}h ago",
     "dayAgoCompact": "{{count}}d ago",
-    "advancedFilters": "Advanced filters",
+    "extraFilters": "Extra filters",
     "event": "event",
     "events": "events",
     "generating": "Generating...",
@@ -54,6 +54,7 @@
     "share": "Share",
     "export": "Export",
     "addToCalendar": "Add to Calendar",
+    "moreOptions": "More options",
     "report": "Report",
     "download": "Download",
     "done": "Done",
@@ -173,7 +174,15 @@
     "aiSignInRequired": "Sign in to use AI filter generation.",
     "aiNotAvailable": "AI generation is not available. Please check server configuration.",
     "aiGenerateFailed": "Failed to generate filters. Please try again.",
-    "editJsonDirectly": "Edit JSON directly. Changes apply automatically."
+    "editJsonDirectly": "Edit JSON directly. Changes apply automatically.",
+    "sortHappeningSoon": "Happening soon",
+    "sortLaterDates": "Later dates",
+    "sortRecentlyAdded": "Recently added",
+    "sortTitleAZ": "Title A to Z",
+    "sortLowestPrice": "Lowest price",
+    "sortLocationAZ": "Location A to Z",
+    "sortChipLabel": "Sort: {{sort}}",
+    "sortMenuAriaLabel": "Sort events. Current sort: {{sort}}"
   },
   "commands": {
     "commands": "Commands",

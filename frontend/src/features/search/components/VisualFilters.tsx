@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Tag, MapPin, Utensils, Calendar, CalendarDays, ArrowUpDown, Sparkles, Grid3x3 } from "@/shared/ui/doodle-icons";
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import { Tag, Utensils, Calendar, CalendarDays, Grid3x3 } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
 import { translateCategory } from "@/shared/utils/event";
 import { PieMenu } from "@/shared/ui/pie-menu";
@@ -9,23 +8,6 @@ import { Switch } from "@/shared/ui/switch";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import type { ViewMode } from "@/shared/types";
-
-const PIE_ICON_MAP: Record<string, LucideIcon> = {
-  Tag,
-  MapPin,
-  Utensils,
-  Calendar,
-  CalendarDays,
-  ArrowUpDown,
-  Sparkles,
-};
-
-function mapPieItems(items: Array<{ id: string; label: string; iconName: string }>) {
-  return items.map((item) => {
-    const Icon = PIE_ICON_MAP[item.iconName];
-    return { id: item.id, label: item.label, icon: Icon ? <Icon className="size-4" /> : undefined };
-  });
-}
 
 interface LocationFilterInputProps {
   value: string;
@@ -62,27 +44,22 @@ interface VisualFiltersProps {
   filters: {
     selectedCategories: string[];
     setSelectedCategories: (categories: string[]) => void;
-    categoryPieItems: Array<{ id: string; label: string; iconName: string }>;
+    categoryPieItems: Array<{ id: string; label: string }>;
     toggleCategory: (id: string) => void;
     selectedLocations: string[];
     setSelectedLocations: (locations: string[]) => void;
     selectedFoods: string[];
     setSelectedFoods: (foods: string[]) => void;
-    foodPieItems: Array<{ id: string; label: string; iconName: string }>;
+    foodPieItems: Array<{ id: string; label: string }>;
     toggleFood: (id: string) => void;
     selectedDays: string[];
     setSelectedDays: (days: string[]) => void;
-    dayPieItems: Array<{ id: string; label: string; iconName: string }>;
+    dayPieItems: Array<{ id: string; label: string }>;
     toggleDay: (id: string) => void;
     priceRange: { min: string; max: string };
     setPriceRange: (range: { min: string; max: string }) => void;
     registration: boolean;
     setRegistration: (value: boolean) => void;
-    sortBy: string;
-    setSortBy: (sortBy: string) => void;
-    sortOrder: "asc" | "desc";
-    setSortOrder: (order: "asc" | "desc") => void;
-    sortPieItems: Array<{ id: string; label: string; iconName: string }>;
     selectedOrganizations: string[];
     setSelectedOrganizations: (value: string[]) => void;
     toggleOrganization: (org: string) => void;
@@ -99,31 +76,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
   const categoryPieMenu = usePieMenu();
   const foodPieMenu = usePieMenu();
   const dayPieMenu = usePieMenu();
-  const sortPieMenu = usePieMenu();
 
-  // Map icon-name data into JSX for PieMenu rendering
-  const categoryPieItemsWithIcons = useMemo(
-    () => mapPieItems(filters.categoryPieItems),
-    [filters.categoryPieItems],
-  );
-  const foodPieItemsWithIcons = useMemo(
-    () => mapPieItems(filters.foodPieItems),
-    [filters.foodPieItems],
-  );
-  const dayPieItemsWithIcons = useMemo(
-    () => mapPieItems(filters.dayPieItems),
-    [filters.dayPieItems],
-  );
-  const sortPieItemsWithIcons = useMemo(
-    () => mapPieItems(filters.sortPieItems),
-    [filters.sortPieItems],
-  );
-  const selectedSortLabel = useMemo(
-    () =>
-      filters.sortPieItems.find((item) => item.id === filters.sortBy)?.label ??
-      t(`filters.${filters.sortBy}`),
-    [filters.sortBy, filters.sortPieItems, t],
-  );
   const viewModeOptions = useMemo(
     () => [
       { id: "grid" as const, label: t("settings.appearance.grid"), icon: Grid3x3 },
@@ -213,7 +166,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             <Tag className="size-4 text-muted-foreground" />
           </button>
           <PieMenu
-            items={categoryPieItemsWithIcons}
+            items={filters.categoryPieItems}
             isOpen={categoryPieMenu.isOpen}
             position={categoryPieMenu.position}
             onClose={categoryPieMenu.close}
@@ -269,7 +222,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             <Utensils className="size-4 text-muted-foreground" />
           </button>
           <PieMenu
-            items={foodPieItemsWithIcons}
+            items={filters.foodPieItems}
             isOpen={foodPieMenu.isOpen}
             position={foodPieMenu.position}
             onClose={foodPieMenu.close}
@@ -311,7 +264,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             <CalendarDays className="size-4 text-muted-foreground" />
           </button>
           <PieMenu
-            items={dayPieItemsWithIcons}
+            items={filters.dayPieItems}
             isOpen={dayPieMenu.isOpen}
             position={dayPieMenu.position}
             onClose={dayPieMenu.close}
@@ -411,57 +364,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
               filters.setRegistration(!!checked)
             }
           />
-        </div>
-      </FilterSection>
-
-      {/* Sort Filter */}
-      <FilterSection
-        title={t("filters.sort")}
-      >
-        <div className="space-y-2">
-          <div className="relative">
-            <button
-              onMouseDown={sortPieMenu.open}
-              className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
-            >
-              <span>
-                {selectedSortLabel} (
-                {filters.sortOrder === "asc" ? t("filters.asc") : t("filters.desc")})
-              </span>
-              <ArrowUpDown className="size-4 text-muted-foreground" />
-            </button>
-            <PieMenu
-              items={sortPieItemsWithIcons}
-              isOpen={sortPieMenu.isOpen}
-              position={sortPieMenu.position}
-              onClose={sortPieMenu.close}
-              onSelect={(item) => {
-                filters.setSortBy(item.id);
-                sortPieMenu.close();
-              }}
-              selectedIds={[filters.sortBy]}
-              closeOnSelect={true}
-              radius={140}
-              innerRadius={20}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onMouseDown={() =>
-                filters.setSortOrder(
-                  filters.sortOrder === "asc" ? "desc" : "asc",
-                )
-              }
-              className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-xl hover:bg-muted/60 transition-colors flex items-center gap-1.5"
-            >
-              <ArrowUpDown className="size-3.5" />
-              <span>
-                {filters.sortOrder === "asc"
-                  ? t("filters.ascending")
-                  : t("filters.descending")}
-              </span>
-            </button>
-          </div>
         </div>
       </FilterSection>
     </div>

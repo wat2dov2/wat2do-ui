@@ -150,6 +150,17 @@ function isDefaultPriceRange(priceRange: FilterState["priceRange"]): boolean {
   return priceRange.min === "" && priceRange.max === "";
 }
 
+/**
+ * Clear narrowing filters while preserving the current sort preference.
+ */
+export function clearNarrowingFilterState(current: FilterState): FilterState {
+  return normalizeFilterState({
+    ...EMPTY_FILTER_STATE,
+    sortBy: current.sortBy,
+    sortOrder: current.sortOrder,
+  });
+}
+
 function isEmptyFilterState(filters: FilterState): boolean {
   return (
     filters.searchQuery === "" &&
