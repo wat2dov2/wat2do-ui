@@ -1,11 +1,10 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useMemo, useCallback, useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bookmark,
   ExternalLink,
   MoreHorizontal,
 } from "@/shared/ui/doodle-icons";
-import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
@@ -33,50 +32,6 @@ type CategoryClasses = ReturnType<typeof getCategoryClasses>;
 
 function getOrganizationPrimaryCategory(organization: Organization): string {
   return organization.categories[0] ?? "";
-}
-
-interface OrganizationCategoryBadgeProps {
-  primaryCategory: string;
-  categoryClasses: CategoryClasses;
-  badgeHoverProps: {
-    onMouseEnter: () => void;
-    onMouseLeave: () => void;
-  };
-  onCategoryClick: (event: React.MouseEvent) => void;
-  t: (key: string) => string;
-}
-
-function OrganizationCategoryBadge({
-  primaryCategory,
-  categoryClasses,
-  badgeHoverProps,
-  onCategoryClick,
-  t,
-}: OrganizationCategoryBadgeProps) {
-  if (!primaryCategory) {
-    return null;
-  }
-
-  // Invert the badge colors: light green/theme text background, dark green/theme bg text
-  const badgeBgClass = categoryClasses.text.split(" ").find(c => c.startsWith("text-"))?.replace("text-", "bg-") || "bg-foreground";
-  const badgeTextClass = categoryClasses.bg.split(" ").find(c => c.startsWith("bg-"))?.replace("bg-", "text-") || "text-background";
-
-  return (
-    <BadgeMask
-      variant="top-left"
-      outlined
-      outlineClassName={`${categoryClasses.border}`}
-    >
-      <button
-        type="button"
-        onMouseDown={onCategoryClick}
-        {...badgeHoverProps}
-        className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-90 hover:opacity-100 active:scale-95 ${badgeBgClass} ${badgeTextClass}`}
-      >
-        {translateCategory(primaryCategory, t)}
-      </button>
-    </BadgeMask>
-  );
 }
 
 interface FollowOrganizationButtonProps {
@@ -193,7 +148,7 @@ function OrganizationFooterActions({
           aria-label={t("common.moreOptions")}
           title={t("common.moreOptions")}
           disabled={!hasOverflowLinks}
-          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <MoreHorizontal className="size-4" />
         </button>
@@ -212,6 +167,38 @@ function OrganizationCardComponent({
   const profileCompleted = useProfileCompleted();
   const toggleSaveOrganization = useSavedOrganizationsStore((state) => state.toggleSaveOrganization);
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ w: 0, h: 0, cw: 0, ch: 0 });
+
+  useEffect(() => {
+    const cardEl = cardRef.current;
+    const badgeEl = badgeRef.current;
+    if (!cardEl) return;
+
+    const updateDimensions = () => {
+      setDimensions({
+        w: cardEl.offsetWidth,
+        h: cardEl.offsetHeight,
+        cw: badgeEl ? badgeEl.offsetWidth : 0,
+        ch: badgeEl ? badgeEl.offsetHeight : 0,
+      });
+    };
+
+    updateDimensions();
+
+    const observer = new ResizeObserver(() => {
+      updateDimensions();
+    });
+
+    observer.observe(cardEl);
+    if (badgeEl) observer.observe(badgeEl);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const primaryCategory = useMemo(
     () => getOrganizationPrimaryCategory(organization),
@@ -233,6 +220,71 @@ function OrganizationCardComponent({
     () => getOrganizationSocialHandle(organization),
     [organization],
   );
+
+  const paths = useMemo(() => {
+    const { w, h, cw, ch } = dimensions;
+    if (w === 0 || h === 0) return { border: "", clip: "" };
+
+    const R = 12; // Card corner radius
+    const r = 8;  // Cutout transition radius
+    const gap = 4; // Space around badge
+
+    // Cutout dimensions including the gap
+    const cw_c = cw > 0 ? cw + gap : 0;
+    const ch_c = ch > 0 ? ch + gap : 0;
+
+    // Standard rounded rect path if no badge
+    if (cw_c === 0 || ch_c === 0) {
+      const standardPath = `M ${R} 0
+        L ${w - R} 0
+        A ${R} ${R} 0 0 1 ${w} ${R}
+        L ${w} ${h - R}
+        A ${R} ${R} 0 0 1 ${w - R} ${h}
+        L ${R} ${h}
+        A ${R} ${R} 0 0 1 0 ${h - R}
+        L 0 ${R}
+        A ${R} ${R} 0 0 1 ${R} 0 Z`;
+      return { border: standardPath, clip: standardPath };
+    }
+
+    const offset = 0.5;
+    const w_b = w - offset;
+    const h_b = h - offset;
+    const cw_b = cw_c - offset;
+    const ch_b = ch_c - offset;
+
+    // Border path with 0.5px offset to avoid clipping card outlines
+    const borderPath = `M ${cw_b + r} ${offset}
+      L ${w_b - R} ${offset}
+      A ${R} ${R} 0 0 1 ${w_b} ${R}
+      L ${w_b} ${h_b - R}
+      A ${R} ${R} 0 0 1 ${w_b - R} ${h_b}
+      L ${R} ${h_b}
+      A ${R} ${R} 0 0 1 ${offset} ${h_b - R}
+      L ${offset} ${ch_b + r}
+      A ${r} ${r} 0 0 1 ${r + offset} ${ch_b}
+      L ${cw_b - r} ${ch_b}
+      A ${r} ${r} 0 0 0 ${cw_b} ${ch_b - r}
+      L ${cw_b} ${r + offset}
+      A ${r} ${r} 0 0 1 ${cw_b + r} ${offset} Z`;
+
+    // Clip path (running along the absolute outer edge)
+    const clipPath = `M ${cw_c + r} 0
+      L ${w - R} 0
+      A ${R} ${R} 0 0 1 ${w} ${R}
+      L ${w} ${h - R}
+      A ${R} ${R} 0 0 1 ${w - R} ${h}
+      L ${R} ${h}
+      A ${R} ${R} 0 0 1 0 ${h - R}
+      L 0 ${ch_c + r}
+      A ${r} ${r} 0 0 1 ${r} ${ch_c}
+      L ${cw_c - r} ${ch_c}
+      A ${r} ${r} 0 0 0 ${cw_c} ${ch_c - r}
+      L ${cw_c} ${r}
+      A ${r} ${r} 0 0 1 ${cw_c + r} 0 Z`;
+
+    return { border: borderPath, clip: clipPath };
+  }, [dimensions]);
 
   const badgeHoverProps = useMemo(
     () => ({
@@ -273,6 +325,10 @@ function OrganizationCardComponent({
     />
   );
 
+  // Invert the badge colors: light theme text background, dark theme bg text
+  const badgeBgClass = categoryClasses.text.split(" ").find(c => c.startsWith("text-"))?.replace("text-", "bg-") || "bg-foreground";
+  const badgeTextClass = categoryClasses.bg.split(" ").find(c => c.startsWith("bg-"))?.replace("bg-", "text-") || "text-background";
+
   return (
     <article
       data-organization-card
@@ -287,37 +343,68 @@ function OrganizationCardComponent({
           handleCardActivate();
         }
       }}
-      className={`event-card-waterpaint relative flex flex-col h-full rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group border ${categoryClasses.border} ${categoryClasses.bg} ${categoryClasses.text} ${
+      className={`relative flex flex-col h-full rounded-xl cursor-pointer transition-all duration-300 group ${categoryClasses.text} ${
         isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
       }`}
-      style={getEventCardWaterpaintStyle(organization.id)}
+      ref={cardRef}
     >
-      <OrganizationCategoryBadge
-        primaryCategory={primaryCategory}
-        categoryClasses={categoryClasses}
-        badgeHoverProps={badgeHoverProps}
-        onCategoryClick={handleCategoryClick}
-        t={t}
+      {/* 1. Custom Background with clip-path for the waterpaint gradients */}
+      <div
+        className={`event-card-waterpaint absolute inset-0 rounded-xl ${categoryClasses.bg}`}
+        style={{
+          clipPath: paths.clip ? `path('${paths.clip}')` : undefined,
+          ...getEventCardWaterpaintStyle(organization.id),
+        }}
       />
 
-      <EventCardContent
-        title={organization.organization_name}
-        date={lastPostedLine}
-        location={socialHandle}
-        badges={eventCountBadges}
-        className="pt-8 sm:pt-9"
-        textClassName={categoryClasses.text}
-        secondaryTextClassName={categoryClasses.text}
-        badgeClassName={`border-current ${categoryClasses.text}`}
-      />
+      {/* 2. Custom Border SVG overlay */}
+      {paths.border && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
+          <path
+            d={paths.border}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1}
+            className={categoryClasses.border}
+          />
+        </svg>
+      )}
 
-      <OrganizationFooterActions
-        organization={organization}
-        followButton={followButton}
-        profileCompleted={profileCompleted}
-        categoryClasses={categoryClasses}
-        t={t}
-      />
+      {/* 3. The Badge (rendered outside the clipped background, so it is fully visible) */}
+      {primaryCategory && (
+        <div ref={badgeRef} className="absolute top-0 left-0 z-30">
+          <button
+            type="button"
+            onMouseDown={handleCategoryClick}
+            {...badgeHoverProps}
+            className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-90 hover:opacity-100 active:scale-95 border ${categoryClasses.border} ${badgeBgClass} ${badgeTextClass}`}
+          >
+            {translateCategory(primaryCategory, t)}
+          </button>
+        </div>
+      )}
+
+      {/* 4. Card Content (rendered on top of background) */}
+      <div className="relative z-10 flex flex-col flex-1">
+        <EventCardContent
+          title={organization.organization_name}
+          date={lastPostedLine}
+          location={socialHandle}
+          badges={eventCountBadges}
+          className="pt-8 sm:pt-9"
+          textClassName={categoryClasses.text}
+          secondaryTextClassName={categoryClasses.text}
+          badgeClassName={`border-current ${categoryClasses.text}`}
+        />
+
+        <OrganizationFooterActions
+          organization={organization}
+          followButton={followButton}
+          profileCompleted={profileCompleted}
+          categoryClasses={categoryClasses}
+          t={t}
+        />
+      </div>
     </article>
   );
 }
