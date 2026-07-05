@@ -59,6 +59,7 @@ interface ActiveEventDetailsDialog {
 
 interface EventDetailsModalProps {
   eventId?: number | null;
+  eventOpenNonce?: number;
   event: Event | null;
   onClose: () => void;
   allEvents?: Event[];
@@ -68,6 +69,7 @@ interface EventDetailsModalProps {
 
 export function EventDetailsModal({
   eventId = null,
+  eventOpenNonce = 0,
   event,
   onClose,
   allEvents,
@@ -82,29 +84,25 @@ export function EventDetailsModal({
   // modal. We reset it whenever the prop event changes by tracking the prop
   // id during render (React's pattern for prop-derived resets).
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
-  const [userDismissed, setUserDismissed] = useState(false);
-  const [trackedPropEventId, setTrackedPropEventId] = useState<number | null>(
-    eventId ?? event?.id ?? null,
-  );
+  const [overrideForEventId, setOverrideForEventId] = useState<number | null>(null);
+  const [closedAtOpenNonce, setClosedAtOpenNonce] = useState(0);
   const [activeDialog, setActiveDialog] = useState<ActiveEventDetailsDialog | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const resolvedEventId = eventId ?? event?.id ?? null;
   const listEvent = event;
+  const activeOverride =
+    overrideEvent && overrideForEventId === resolvedEventId ? overrideEvent : null;
 
   const { data: fetchedEvent, isPending: isFetchingEvent, isError: isFetchError } = useQuery({
     queryKey: queryKeys.events.detail(resolvedEventId ?? 0),
     queryFn: () => fetchEventById(resolvedEventId!),
-    enabled: resolvedEventId != null && listEvent == null && overrideEvent == null,
+    enabled: resolvedEventId != null && listEvent == null && activeOverride == null,
     staleTime: 60_000,
   });
 
-  if (resolvedEventId !== trackedPropEventId) {
-    setTrackedPropEventId(resolvedEventId);
-    setOverrideEvent(null);
-    setUserDismissed(false);
-  }
-  const displayedEvent = overrideEvent ?? listEvent ?? fetchedEvent ?? null;
-  const drawerOpen = resolvedEventId !== null && !userDismissed;
+  const displayedEvent = activeOverride ?? listEvent ?? fetchedEvent ?? null;
+  const drawerOpen =
+    resolvedEventId !== null && closedAtOpenNonce !== eventOpenNonce;
   const showSkeleton =
     drawerOpen && displayedEvent == null && !isFetchError && isFetchingEvent;
   const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;
@@ -141,8 +139,9 @@ export function EventDetailsModal({
 
   const handleSimilarEventClick = useCallback((clickedEvent: Event) => {
     setOverrideEvent(clickedEvent);
+    setOverrideForEventId(resolvedEventId);
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [resolvedEventId]);
 
   const handleActionDialogOpen = useCallback((type: EventCardDialog, targetEvent: Event) => {
     if (type === "delete") return;
@@ -158,11 +157,11 @@ export function EventDetailsModal({
   const handleDrawerOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
-        setUserDismissed(true);
+        setClosedAtOpenNonce(eventOpenNonce);
         onClose();
       }
     },
-    [onClose],
+    [eventOpenNonce, onClose],
   );
 
   return (
@@ -206,9 +205,9 @@ export function EventDetailsModal({
             </div>
 
             <ModalContentWrapper className="space-y-4 px-4 py-3 sm:px-5 sm:py-4">
-              <DrawerHeader className="relative min-h-9 gap-3 p-0 pb-5 text-left sm:pb-0 sm:text-center">
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1 text-left sm:mx-auto sm:max-w-2xl sm:text-center">
+              <DrawerHeader className="relative min-h-9 gap-3 p-0 pb-5 text-left sm:pb-0">
+                <div className="relative flex items-start gap-3 sm:justify-center">
+                  <div className="min-w-0 flex-1 text-left sm:flex-none sm:max-w-2xl sm:px-14 sm:text-center">
                     <DrawerTitle className="leading-tight text-left sm:text-center">
                       {displayedEvent.title}
                     </DrawerTitle>
@@ -219,7 +218,7 @@ export function EventDetailsModal({
                       </span>
                     </DrawerDescription>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5 sm:absolute sm:right-0 sm:top-0">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
