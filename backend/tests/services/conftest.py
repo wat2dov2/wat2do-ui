@@ -83,6 +83,12 @@ class FakeSupabase:
 
         self._response = MagicMock(data=[], count=0)
         self.execute = MagicMock(side_effect=lambda: self._response, name="execute")
+        # Supabase exposes ``not_`` as a nested filter builder (``.not_.is_(...)``).
+        # Point it at this instance so chained calls still reach ``execute()``.
+        self.not_ = self
+        # Supabase exposes ``not_`` as a nested filter builder (``.not_.is_(...)``).
+        # Point it at this instance so chained calls still reach ``execute()``.
+        self.not_ = self
 
     def set_response(self, *, data: list | None = None, count: int | None = None) -> None:
         """Configure what every ``.execute()`` call returns.

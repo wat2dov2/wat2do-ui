@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 from core.constants import MAX_CREDITS_PER_ADD, ROLE_ADMIN
@@ -27,21 +27,24 @@ def _mock_db_user(**overrides) -> UserResponse:
 
 
 def _mock_event(**overrides) -> EventResponse:
+    now = datetime.now(timezone.utc)
+    start = now + timedelta(days=7)
+    end = start + timedelta(hours=1)
     defaults = {
         "id": 1,
         "organization_id": 1,
         "title": "Test Event",
         "location": "Here",
         "organization": "TestOrg",
-        "added_at": datetime.now(timezone.utc),
+        "added_at": now,
         "created_by": FAKE_USER["id"],
         "occurrences": [
             {
                 "id": 1,
                 "event_id": 1,
-                "dtstart_utc": datetime(2026, 7, 1, 17, 0, tzinfo=timezone.utc),
-                "dtend_utc": datetime(2026, 7, 1, 18, 0, tzinfo=timezone.utc),
-                "created_at": datetime.now(timezone.utc),
+                "dtstart_utc": start,
+                "dtend_utc": end,
+                "created_at": now,
             }
         ],
     }
