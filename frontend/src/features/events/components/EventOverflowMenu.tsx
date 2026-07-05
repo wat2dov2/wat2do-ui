@@ -1,6 +1,7 @@
 import type { ReactElement, MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Flag, Share2, Trash2 } from "@/shared/ui/doodle-icons";
+import { useMouseDownDropdownTrigger } from "@/shared/hooks";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,14 +37,20 @@ export function EventOverflowMenu({
   stopPropagation = false,
 }: EventOverflowMenuProps) {
   const { t } = useTranslation();
+  const { open, setOpen, close, triggerChild } = useMouseDownDropdownTrigger(children);
+
+  const handleAction = (action: EventOverflowAction) => {
+    onAction(action);
+    close();
+  };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>{triggerChild}</DropdownMenuTrigger>
       <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
         <DropdownMenuItem
           onMouseDown={(event: MouseEvent<HTMLDivElement>) =>
-            runOverflowMenuAction(event, () => onAction("share"))
+            runOverflowMenuAction(event, () => handleAction("share"))
           }
         >
           <Share2 className="size-3.5 shrink-0" />
@@ -51,14 +58,17 @@ export function EventOverflowMenu({
         </DropdownMenuItem>
         <DropdownMenuItem
           onMouseDown={(event: MouseEvent<HTMLDivElement>) =>
-            runOverflowMenuAction(event, () => onAction("report"))
+            runOverflowMenuAction(event, () => handleAction("report"))
           }
         >
           <Flag className="size-3.5 shrink-0" />
           {t("common.report")}
         </DropdownMenuItem>
         {canDelete && (
-          <DropdownMenuItem variant="destructive" onSelect={() => onAction("delete")}>
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => handleAction("delete")}
+          >
             <Trash2 className="size-3.5 shrink-0" />
             {t("common.delete")}
           </DropdownMenuItem>

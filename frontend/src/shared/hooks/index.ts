@@ -16,3 +16,4 @@ export * from "./useEnterKeySubmit";
 export * from "./useHorizontalScrollFade";
 export * from "./useMutableSearchParams";
 export * from "./useMouseDownPress";
+export * from "./useMouseDownDropdownTrigger";

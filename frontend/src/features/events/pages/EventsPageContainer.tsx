@@ -4,7 +4,7 @@ import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
 import { LightRays } from "@/registry/magicui/light-rays";
-import { SearchBar, QuickFilterChip, SortChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
+import { SearchBar, QuickFilterChip, SortStatusLabel, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
@@ -141,6 +141,7 @@ export function EventsPageContainer() {
                 onTouchEnd={syncFilterScrollFade}
                 className="no-visible-scrollbar flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1"
               >
+                <SortStatusLabel />
                 {filterConfigs.map((config) => (
                   <QuickFilterChip
                     key={config.id}
@@ -167,12 +168,7 @@ export function EventsPageContainer() {
               </div>
               <HorizontalScrollFadeEdge visible={showFilterScrollFade} />
             </div>
-            <div className="relative shrink-0 pb-1 flex items-center gap-2">
-              <SortChip
-                sortBy={filters.sortBy}
-                sortOrder={filters.sortOrder}
-                onSortChange={filters.setSort}
-              />
+            <div className="relative shrink-0 pb-1">
               <MoreFiltersButton
                 open={showFilterDropdown}
                 onOpenChange={setShowFilterDropdown}

@@ -90,6 +90,30 @@ export function SearchCombobox<T>({
   const [triggerWidth, setTriggerWidth] = useState(280);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  const resetSearchState = useCallback(() => {
+    setSearch("");
+    setResults([]);
+    setIsLoading(false);
+  }, []);
+
+  const willFetch = useCallback(
+    (query: string) => query.trim().length > 0 || searchOnEmpty,
+    [searchOnEmpty],
+  );
+
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    resetSearchState();
+  }, [resetSearchState]);
+
+  const openMenu = useCallback(() => {
+    setOpen(true);
+    if (willFetch(search)) {
+      setIsLoading(true);
+      setResults([]);
+    }
+  }, [search, willFetch]);
+
   const fetchResults = useCallback(
     async (query: string) => {
       try {
@@ -136,11 +160,6 @@ export function SearchCombobox<T>({
     };
   }, [open, search, searchOnEmpty, debounceMs, fetchResults]);
 
-  const willFetch = useCallback(
-    (query: string) => query.trim().length > 0 || searchOnEmpty,
-    [searchOnEmpty],
-  );
-
   const handleSearchChange = (value: string) => {
     setSearch(value);
     if (willFetch(value)) {
@@ -152,24 +171,17 @@ export function SearchCombobox<T>({
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (!nextOpen) {
-      setSearch("");
-      setResults([]);
-      setIsLoading(false);
-    } else if (willFetch(search)) {
-      setIsLoading(true);
-      setResults([]);
+    if (nextOpen) {
+      openMenu();
+      return;
     }
+    closeMenu();
   };
 
   const handleSelect = useCallback((item: T) => {
     onSelect(item);
-    setOpen(false);
-    setSearch("");
-    setResults([]);
-    setIsLoading(false);
-  }, [onSelect]);
+    closeMenu();
+  }, [closeMenu, onSelect]);
 
   const handleSelectFirstResult = useCallback(async () => {
     const firstResult = results[0];
@@ -199,17 +211,27 @@ export function SearchCombobox<T>({
     if (e.button !== 0) return;
 
     e.preventDefault();
-    triggerRef.current?.focus();
+    e.stopPropagation();
     setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
-    handleOpenChange(!open);
+    if (open) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  };
+
+  const handleTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
   };
 
   const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key !== "Enter" && e.key !== " " && e.key !== "ArrowDown") return;
+    if (e.key !== "ArrowDown") return;
 
     e.preventDefault();
     setTriggerWidth(e.currentTarget.getBoundingClientRect().width);
-    handleOpenChange(e.key === "ArrowDown" ? true : !open);
+    if (!open) {
+      handleOpenChange(true);
+    }
   };
 
   const hasQuery = search.trim().length > 0;
@@ -249,6 +271,7 @@ export function SearchCombobox<T>({
           aria-expanded={open}
           aria-haspopup="listbox"
           onMouseDown={handleTriggerMouseDown}
+          onClick={handleTriggerClick}
           onKeyDown={handleTriggerKeyDown}
         >
           {labelNode}

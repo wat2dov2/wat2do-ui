@@ -175,14 +175,8 @@
     "aiNotAvailable": "AI generation is not available. Please check server configuration.",
     "aiGenerateFailed": "Failed to generate filters. Please try again.",
     "editJsonDirectly": "Edit JSON directly. Changes apply automatically.",
-    "sortHappeningSoon": "Happening soon",
-    "sortLaterDates": "Later dates",
-    "sortRecentlyAdded": "Recently added",
-    "sortTitleAZ": "Title A to Z",
-    "sortLowestPrice": "Lowest price",
-    "sortLocationAZ": "Location A to Z",
-    "sortChipLabel": "Sort: {{sort}}",
-    "sortMenuAriaLabel": "Sort events. Current sort: {{sort}}"
+    "sortStatusLabel": "Sorted by start, soonest",
+    "sortStatusAria": "Events are sorted by start date, soonest first"
   },
   "commands": {
     "commands": "Commands",
