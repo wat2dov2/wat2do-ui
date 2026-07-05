@@ -62,7 +62,7 @@ export function BadgeMask({
   switch (variant) {
     case "top-left":
       return (
-        <div className="absolute top-0 left-0 z-10 flex flex-col pointer-events-none">
+        <div className="absolute -top-px -left-px z-10 flex flex-col pointer-events-none">
           <div className="flex">
             <div className={`pointer-events-auto pb-1 pr-1 bg-background rounded-br-xl ${outlined ? `border-r border-b border-current ${outlineClassName}` : ""}`}>
               {children}
@@ -86,7 +86,7 @@ export function BadgeMask({
       );
     case "top-right":
       return (
-        <div className="absolute top-0 right-0 z-10 flex flex-col pointer-events-none">
+        <div className="absolute -top-px -right-px z-10 flex flex-col pointer-events-none">
           <div className="flex">
             <MaskSvg
               fillPath={TOP_RIGHT_FILL}
@@ -110,7 +110,7 @@ export function BadgeMask({
       );
     case "bottom-left":
       return (
-        <div className="absolute bottom-0 left-0 z-10 flex flex-col pointer-events-none">
+        <div className="absolute -bottom-px -left-px z-10 flex flex-col pointer-events-none">
           <MaskSvg
             fillPath={BOTTOM_LEFT_FILL}
             curvePath={BOTTOM_LEFT_CURVE}

@@ -65,7 +65,7 @@ function OrganizationCategoryBadge({
     <BadgeMask
       variant="top-left"
       outlined
-      outlineClassName={`${categoryClasses.text}`}
+      outlineClassName={`${categoryClasses.border}`}
     >
       <button
         type="button"
@@ -145,7 +145,7 @@ function OrganizationFooterActions({
     <div
       data-organization-card-footer
       onMouseDown={(event) => event.stopPropagation()}
-      className="grid grid-cols-3 border-t border-current"
+      className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
     >
       {profileCompleted ? (
         followButton
@@ -173,14 +173,14 @@ function OrganizationFooterActions({
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           aria-label={t("organizations.viewClubPage")}
-          className={`flex min-h-10 items-center justify-center border-l border-current/20 px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.text}`}
+          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <ExternalLink className="size-4" />
         </a>
       ) : (
         <span
           aria-hidden="true"
-          className={`flex min-h-10 items-center justify-center border-l border-current/20 px-2 opacity-35 ${categoryClasses.text}`}
+          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-35 ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <ExternalLink className="size-4" />
         </span>
@@ -193,7 +193,7 @@ function OrganizationFooterActions({
           aria-label={t("common.moreOptions")}
           title={t("common.moreOptions")}
           disabled={!hasOverflowLinks}
-          className={`flex min-h-10 w-full items-center justify-center border-l border-current/20 px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.text}`}
+          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <MoreHorizontal className="size-4" />
         </button>
@@ -287,7 +287,7 @@ function OrganizationCardComponent({
           handleCardActivate();
         }
       }}
-      className={`event-card-waterpaint relative flex flex-col h-full rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group border border-current ${categoryClasses.bg} ${categoryClasses.text} ${
+      className={`event-card-waterpaint relative flex flex-col h-full rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group border ${categoryClasses.border} ${categoryClasses.bg} ${categoryClasses.text} ${
         isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
       }`}
       style={getEventCardWaterpaintStyle(organization.id)}
