@@ -1,5 +1,5 @@
 /**
- * Event card in the same style as the auth page right-side (hero) section.
+ * Event card in the same style as the main event grid, without footer actions.
  * Used in AuthHeroPanel and OnboardingEventGrid.
  */
 
@@ -11,8 +11,10 @@ import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
+import { Badge } from "@/shared/ui/badge";
 import { EventCardContent } from "@/shared/ui/event-card-content";
-import { PREVIEW_CARD_IMAGE_HEIGHT } from "@/features/auth/constants";
+import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
+import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export interface PreviewEventData {
   title: string;
@@ -23,6 +25,8 @@ export interface PreviewEventData {
   time: string;
   location: string;
   badges: Array<{ text: string; bgClass: string; textClass: string }>;
+  isLive?: boolean;
+  isNew?: boolean;
 }
 
 interface PreviewStyleEventCardProps {
@@ -42,8 +46,6 @@ export function PreviewStyleEventCard({
   const { t } = useTranslation();
   const catClasses = getCategoryClasses(event.category);
 
-  // Only attach interactive props when there is an onMouseDown — keeps static
-  // a11y analysis happy (role is always present when an event handler is).
   const interactiveProps = onMouseDown
     ? {
         role: "button" as const,
@@ -63,12 +65,12 @@ export function PreviewStyleEventCard({
       {...interactiveProps}
       data-event-id={dataEventId}
       className={cn(
-        "rounded-xl overflow-hidden flex flex-col bg-card",
-        onMouseDown && "cursor-pointer transition-shadow duration-200 hover:opacity-90",
-        selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl"
+        "rounded-xl overflow-hidden flex flex-col h-full bg-card transition-all duration-300",
+        onMouseDown && "cursor-pointer group hover:opacity-90 hover:shadow-lg",
+        selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl",
       )}
     >
-      <div className="relative overflow-hidden" style={{ height: PREVIEW_CARD_IMAGE_HEIGHT }}>
+      <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
         <LazyImage
           src={event.image}
           alt={event.title}
@@ -86,29 +88,39 @@ export function PreviewStyleEventCard({
         <BadgeMask variant="top-left">
           <span
             className={cn(
-              "font-bold text-[10px] px-2 py-0.5 block rounded-full",
+              "font-bold text-[10px] px-2 py-0.5 block rounded-full opacity-70",
               catClasses.bg,
-              catClasses.text
+              catClasses.text,
             )}
           >
             {translateCategory(event.category, t)}
           </span>
         </BadgeMask>
 
-        <BadgeMask variant="bottom-left">
-          <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
-            <span className="truncate max-w-[112px]">{event.org}</span>
-          </span>
-        </BadgeMask>
+        {(event.isLive || event.isNew) && (
+          <BadgeMask variant="top-right">
+            <Badge variant={event.isLive ? "live" : "new"} className="uppercase">
+              {event.isLive ? t("common.live") : t("events.new")}
+            </Badge>
+          </BadgeMask>
+        )}
+
+        {event.org && (
+          <BadgeMask variant="bottom-left">
+            <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 opacity-70">
+              <span className="font-bold truncate max-w-[128px]">{event.org}</span>
+              <OrganizationVerifiedBadge />
+            </span>
+          </BadgeMask>
+        )}
       </div>
 
       <div
         className={cn(
-          "event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-b-xl overflow-hidden",
-          "rounded-tl-xl",
+          "event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden",
           catClasses.bg,
           catClasses.text,
-          catClasses.border
+          catClasses.border,
         )}
         style={getEventCardWaterpaintStyle(`${event.category}-${event.title}`)}
       >

@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
 type EventOverflowAction = "share" | "report" | "delete";
 
@@ -16,6 +17,7 @@ interface EventOverflowMenuProps {
   canDelete?: boolean;
   contentClassName?: string;
   stopPropagation?: boolean;
+  triggerTooltip?: string;
 }
 
 export function EventOverflowMenu({
@@ -24,12 +26,24 @@ export function EventOverflowMenu({
   canDelete = false,
   contentClassName = "w-44",
   stopPropagation = false,
+  triggerTooltip,
 }: EventOverflowMenuProps) {
   const { t } = useTranslation();
 
+  const menuTrigger = <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>;
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      {triggerTooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{menuTrigger}</TooltipTrigger>
+          <TooltipContent>
+            <p>{triggerTooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        menuTrigger
+      )}
       <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
         <DropdownMenuItem onSelect={() => onAction("share")}>
           <Share2 className="size-3.5 shrink-0" />

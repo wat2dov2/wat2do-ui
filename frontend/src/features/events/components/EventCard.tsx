@@ -157,12 +157,15 @@ function EventFooterActions({
         </Tooltip>
       )}
 
-      <EventCalendarDownloadMenu event={event} stopPropagation>
+      <EventCalendarDownloadMenu
+        event={event}
+        stopPropagation
+        triggerTooltip={t("common.addToCalendar")}
+      >
         <button
           type="button"
           onMouseDown={(event) => event.stopPropagation()}
           aria-label={t("common.addToCalendar")}
-          title={t("common.addToCalendar")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <Calendar className="size-4" />
@@ -173,12 +176,12 @@ function EventFooterActions({
         canDelete={canDelete}
         onAction={onActionDialogOpen}
         stopPropagation
+        triggerTooltip={t("common.moreOptions")}
       >
         <button
           type="button"
           onMouseDown={(event) => event.stopPropagation()}
           aria-label={t("common.moreOptions")}
-          title={t("common.moreOptions")}
           className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <MoreHorizontal className="size-4" />

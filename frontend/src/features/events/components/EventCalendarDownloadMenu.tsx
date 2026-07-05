@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { downloadICS, openGoogleCalendar } from "@/shared/utils/generateICS";
 import type { Event } from "@/shared/types";
 
@@ -15,6 +16,7 @@ interface EventCalendarDownloadMenuProps {
   children: ReactElement;
   contentClassName?: string;
   stopPropagation?: boolean;
+  triggerTooltip?: string;
 }
 
 export function EventCalendarDownloadMenu({
@@ -22,12 +24,24 @@ export function EventCalendarDownloadMenu({
   children,
   contentClassName = "w-44",
   stopPropagation = false,
+  triggerTooltip,
 }: EventCalendarDownloadMenuProps) {
   const { t } = useTranslation();
 
+  const menuTrigger = <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>;
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      {triggerTooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{menuTrigger}</TooltipTrigger>
+          <TooltipContent>
+            <p>{triggerTooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        menuTrigger
+      )}
       <DropdownMenuContent className={contentClassName} align="end" stopPropagation={stopPropagation}>
         <DropdownMenuItem onSelect={() => openGoogleCalendar(event)}>
           <GoogleIcon className="size-3.5 shrink-0" />
