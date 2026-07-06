@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Slot } from "@radix-ui/react-slot";
+import { Slot, Slottable } from "@radix-ui/react-slot";
 import { cn } from "@/shared/lib/utils";
 import {
   createAdaptivePressHandlers,
@@ -72,7 +72,7 @@ const Chip = React.forwardRef<HTMLButtonElement, ChipProps>(
         {...pressHandlers}
       >
         {icon && <span className="shrink-0 [&_svg]:size-3.5">{icon}</span>}
-        {children}
+        <Slottable>{children}</Slottable>
       </Comp>
     );
   }
