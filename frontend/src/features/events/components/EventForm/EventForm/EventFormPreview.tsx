@@ -87,7 +87,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
           {formData.category && (
             <BadgeMask variant="top-left">
               <span
-                className={`font-bold text-[11px] px-2.5 py-1 block rounded-full opacity-70 ${
+                className={`font-bold text-[11px] px-2.5 py-1 block rounded-lg opacity-70 ${
                   categoryClasses.bg
                 } ${categoryClasses.text}`}
               >
