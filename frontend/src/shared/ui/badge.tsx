@@ -28,9 +28,9 @@ const badgeVariants = cva(
           "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
       },
       size: {
-        sm: "px-1.5 py-px text-[9px] font-medium rounded-md",
+        sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",
         md: "px-2 py-0.5 text-[11px] font-bold rounded-lg",
-        lg: "px-2.5 py-0.5 text-[11px] font-bold rounded-xl",
+        lg: "px-2.5 py-px text-[11px] font-bold leading-none rounded-xl",
       },
     },
     defaultVariants: {

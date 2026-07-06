@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Drawer as DrawerPrimitive } from "vaul"
 import { X } from "@/shared/ui/doodle-icons"
 
@@ -158,7 +159,10 @@ const DrawerContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
     hideClose?: boolean
   }
->(({ className, children, hideClose = false, ...props }, ref) => (
+>(({ className, children, hideClose = false, ...props }, ref) => {
+  const { t } = useTranslation()
+
+  return (
   <DrawerPortal data-slot="drawer-portal">
     <DrawerOverlay />
     <DrawerPrimitive.Content
@@ -199,7 +203,7 @@ const DrawerContent = React.forwardRef<
           <button
             type="button"
             className={drawerCloseButtonClassName}
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X className="size-4" />
           </button>
@@ -207,7 +211,8 @@ const DrawerContent = React.forwardRef<
       )}
     </DrawerPrimitive.Content>
   </DrawerPortal>
-))
+  )
+})
 DrawerContent.displayName = "DrawerContent"
 
 function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {

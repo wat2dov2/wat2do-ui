@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import { ImageOff } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
-import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -119,12 +118,11 @@ export function PreviewStyleEventCard({
 
       <div
         className={cn(
-          "event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden",
+          "flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden",
           catClasses.bg,
           catClasses.text,
           catClasses.border,
         )}
-        style={getEventCardWaterpaintStyle(`${event.category}-${event.title}`)}
       >
         <EventCardContent
           title={event.title}

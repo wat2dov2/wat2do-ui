@@ -3,7 +3,6 @@
  * Used by EventCard, EventFormPreview, and PreviewStyleEventCard.
  */
 
-import { LightRays } from "@/shared/ui/light-rays";
 import { Badge } from "@/shared/ui/badge";
 
 interface CardBadge {
@@ -37,7 +36,6 @@ export function EventCardContent({
 }: EventCardContentProps) {
   return (
     <div className={`relative flex flex-col flex-1 px-2.5 pt-3 pb-2.5 sm:px-3 sm:pt-4 sm:pb-3 ${className ?? ""}`}>
-      <LightRays />
       <div className="flex flex-col gap-3 h-full flex-1">
         <h3 className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
           {title}

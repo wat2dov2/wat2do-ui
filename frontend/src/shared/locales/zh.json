@@ -174,9 +174,7 @@
     "aiSignInRequired": "登录以使用 AI 筛选生成。",
     "aiNotAvailable": "AI 生成不可用。请检查服务器配置。",
     "aiGenerateFailed": "生成筛选条件失败，请重试。",
-    "editJsonDirectly": "直接编辑 JSON。更改将自动生效。",
-    "sortStatusLabel": "排序：开始时间",
-    "sortStatusAria": "活动按开始时间排序，最早的在前面"
+    "editJsonDirectly": "直接编辑 JSON。更改将自动生效。"
   },
   "commands": {
     "commands": "命令",

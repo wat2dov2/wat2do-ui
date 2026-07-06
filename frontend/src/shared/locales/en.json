@@ -174,9 +174,7 @@
     "aiSignInRequired": "Sign in to use AI filter generation.",
     "aiNotAvailable": "AI generation is not available. Please check server configuration.",
     "aiGenerateFailed": "Failed to generate filters. Please try again.",
-    "editJsonDirectly": "Edit JSON directly. Changes apply automatically.",
-    "sortStatusLabel": "Sort by start time",
-    "sortStatusAria": "Events are sorted by start time, soonest first"
+    "editJsonDirectly": "Edit JSON directly. Changes apply automatically."
   },
   "commands": {
     "commands": "Commands",

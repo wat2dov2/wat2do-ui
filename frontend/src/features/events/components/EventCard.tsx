@@ -21,7 +21,6 @@ import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
-import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import {
   formatCardDate,
   formatCardTime,
@@ -347,8 +346,7 @@ function EventCardBody({
 
   return (
     <div
-      className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
-      style={getEventCardWaterpaintStyle(event.id)}
+      className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
     >
       <EventCardContent
         title={event.title}

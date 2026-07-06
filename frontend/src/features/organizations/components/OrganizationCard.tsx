@@ -8,7 +8,6 @@ import {
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
-import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth";
@@ -290,11 +289,10 @@ function OrganizationCardComponent({
     >
       {/* 1. Custom Background with clip-path (including -webkit support for Safari compatibility) */}
       <div
-        className={`event-card-waterpaint absolute inset-0 rounded-xl ${categoryClasses.bg}`}
+        className={`absolute inset-0 rounded-xl ${categoryClasses.bg}`}
         style={{
           clipPath: paths.clip ? `path('${paths.clip}')` : undefined,
           WebkitClipPath: paths.clip ? `path('${paths.clip}')` : undefined,
-          ...getEventCardWaterpaintStyle(organization.id),
         }}
       />
 
