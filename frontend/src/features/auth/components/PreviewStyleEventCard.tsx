@@ -87,7 +87,7 @@ export function PreviewStyleEventCard({
         <BadgeMask variant="top-left">
           <span
             className={cn(
-              "font-bold text-[10px] px-2 py-0.5 block rounded-full opacity-70",
+              "font-bold text-[11px] px-2.5 py-1 block rounded-full opacity-70",
               catClasses.bg,
               catClasses.text,
             )}

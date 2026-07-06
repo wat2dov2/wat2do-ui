@@ -60,7 +60,7 @@ export function EventCardContent({
               {badges.map((badge) => (
                 <span
                   key={badge.text}
-                  className={`text-[9px] font-medium px-1.5 py-px rounded-full border whitespace-nowrap ${badgeClassName}`}
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${badgeClassName}`}
                 >
                   {badge.text}
                 </span>

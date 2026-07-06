@@ -83,7 +83,7 @@ function EventImageBadges({
           type="button"
           {...categoryPressHandlers}
           {...badgeHoverProps}
-          className={`font-bold text-[10px] px-2 py-0.5 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
+          className={`font-bold text-[11px] px-2.5 py-1 block rounded-full transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
         >
           {translateCategory(eventCategory, t)}
         </button>

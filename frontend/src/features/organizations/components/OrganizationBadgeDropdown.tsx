@@ -57,7 +57,7 @@ export function OrganizationBadgeDropdown({
 
   if (disabled || !organizationName) {
     return (
-      <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 opacity-70">
+      <span className="text-[11px] tracking-normal px-2.5 py-1 rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 opacity-70">
         <span className="font-bold truncate max-w-[128px]">
           {organizationName || t("events.organization")}
         </span>
@@ -75,7 +75,7 @@ export function OrganizationBadgeDropdown({
           type="button"
           onMouseEnter={badgeHoverProps?.onMouseEnter}
           onMouseLeave={badgeHoverProps?.onMouseLeave}
-          className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+          className="text-[11px] tracking-normal px-2.5 py-1 rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
         >
           <span className="font-bold truncate max-w-[128px]">
             {organizationName}

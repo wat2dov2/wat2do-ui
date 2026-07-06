@@ -33,7 +33,7 @@ export function OrganizationCategoryBadges({
             variant="outline"
             title={label}
             className={cn(
-              "inline-flex h-6 max-w-full items-center border-0 px-2 py-0 text-[10px] font-medium leading-none",
+              "inline-flex h-6 max-w-full items-center border-0 px-2 py-0 text-[11px] font-medium leading-none",
               colors.bg,
               colors.text,
               badgeClassName,
@@ -47,7 +47,7 @@ export function OrganizationCategoryBadges({
         <Badge
           variant="secondary"
           className={cn(
-            "inline-flex h-6 shrink-0 items-center border-0 px-2 py-0 text-[10px] font-medium leading-none text-muted-foreground",
+            "inline-flex h-6 shrink-0 items-center border-0 px-2 py-0 text-[11px] font-medium leading-none text-muted-foreground",
             badgeClassName,
           )}
         >

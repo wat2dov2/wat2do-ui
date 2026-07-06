@@ -43,7 +43,7 @@ const FloatingDockDesktop = ({
   const [canMagnify, setCanMagnify] = useState(false);
 
   useEffect(() => {
-    const query = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 480px)");
+    const query = window.matchMedia("(hover: hover) and (min-width: 480px)");
     const syncCanMagnify = () => setCanMagnify(query.matches);
     syncCanMagnify();
     query.addEventListener("change", syncCanMagnify);
@@ -54,10 +54,10 @@ const FloatingDockDesktop = ({
     <div className="relative mx-auto inline-flex w-fit max-w-full items-end justify-center">
       {/* 2D Icons Container */}
       <m.div
-        onMouseMove={(e) => mouseX.set(e.pageX)}
+        onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
-          "relative z-10 flex h-[64px] max-w-full items-end justify-center gap-4 px-2 pb-0 sm:h-[60px] sm:px-6",
+          "relative z-10 flex h-[86px] max-w-full items-end justify-center gap-4 px-2 pb-1 sm:h-[80px] sm:px-6 sm:pb-1",
           className,
         )}
       >
