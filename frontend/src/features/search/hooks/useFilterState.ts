@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, startTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -28,7 +28,9 @@ export function useFilterActions() {
     const nextFilters = normalizeFilterState(
       typeof updater === "function" ? updater(readCurrentFilterState()) : updater,
     );
-    useSearchStore.getState().setFilterState(nextFilters);
+    startTransition(() => {
+      useSearchStore.getState().setFilterState(nextFilters);
+    });
   }, []);
 
   const updateFilterState = useCallback(

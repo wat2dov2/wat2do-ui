@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useDeferredValue } from "react";
+import { useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useSearch } from "@/features/search";
@@ -63,11 +63,9 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     viewMode,
   });
 
-  const deferredFilteredEvents = useDeferredValue(filters.filteredEvents);
-
   const orderedEvents = useMemo(
-    () => getUniqueEvents(deferredFilteredEvents),
-    [deferredFilteredEvents],
+    () => getUniqueEvents(filters.filteredEvents),
+    [filters.filteredEvents],
   );
 
   const promotedEvents = useMemo(
@@ -75,7 +73,7 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     [snapshotPromotedEvents, events, activePromotedEventIds],
   );
 
-  const totalEvents = deferredFilteredEvents.length;
+  const totalEvents = filters.filteredEvents.length;
 
   const refreshEvents = useCallback(() => {
     router.refresh();
