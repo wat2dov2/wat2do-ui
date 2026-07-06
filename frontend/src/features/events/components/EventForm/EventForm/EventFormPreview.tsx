@@ -6,6 +6,7 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
+import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
@@ -105,7 +106,8 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
         </div>
 
         <div
-          className={`relative isolate flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          style={getEventCardWaterpaintStyle(`${formData.category}-${formData.title || "preview"}`)}
         >
           <EventCardContent
             title={formData.title || t("events.eventTitle")}

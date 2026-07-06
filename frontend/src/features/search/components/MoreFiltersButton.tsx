@@ -61,9 +61,9 @@ export function MoreFiltersButton({
                 onClearFilters?.();
               }
             }}
-            className="bg-background/18 text-background px-1.5 py-0.5 rounded-full text-[10px] ml-1 flex items-center gap-1 hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18 transition-colors cursor-pointer"
+            className="bg-background/18 text-background px-1.5 h-4 rounded-full text-[10px] ml-1 flex items-center gap-0.5 hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18 transition-colors cursor-pointer"
           >
-            <X className="size-2.5" strokeWidth={3} />
+            <X className="size-2" strokeWidth={3} />
             {filterCount}
           </span>
         )}

@@ -13,6 +13,7 @@ import { EventDetailsModal } from "@/features/events/components/EventDetailsModa
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import type { ViewMode, QuickFilterConfig, Event } from "@/shared/types";
+import { LightRays } from "@/registry/magicui/light-rays";
 
 export function EventsPageContainer() {
   const viewMode = useUIStore((s) => s.viewMode);
@@ -123,6 +124,19 @@ export function EventsPageContainer() {
 
   return (
     <>
+      <div
+        className="pointer-events-none fixed left-0 right-2.5 top-0 z-[45] hidden h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)] sm:block"
+        aria-hidden="true"
+      >
+        {isDarkMode && (
+          <LightRays
+            data-page-light-rays
+            length="110dvh"
+            color="rgba(255, 255, 255, 0.06)"
+            blendMode="screen"
+          />
+        )}
+      </div>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">
           <EventCount

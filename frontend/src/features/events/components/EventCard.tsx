@@ -21,6 +21,7 @@ import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
+import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import {
   formatCardDate,
   formatCardTime,
@@ -99,10 +100,16 @@ function EventImageBadges({
 
       {event.organization && (
         <BadgeMask variant="bottom-left">
-          <OrganizationBadgeDropdown
-            organizationName={event.organization}
-            badgeHoverProps={badgeHoverProps}
-          />
+          <div
+            className="inline-flex"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <OrganizationBadgeDropdown
+              organizationName={event.organization}
+              badgeHoverProps={badgeHoverProps}
+            />
+          </div>
         </BadgeMask>
       )}
     </>
@@ -334,7 +341,8 @@ function EventCardBody({
 
   return (
     <div
-      className={`relative isolate flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+      className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+      style={getEventCardWaterpaintStyle(event.id)}
     >
       <EventCardContent
         title={event.title}
