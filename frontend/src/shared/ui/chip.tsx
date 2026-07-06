@@ -14,7 +14,7 @@ const chipVariants = cva(
       active: {
         true: "bg-foreground text-background hover:bg-foreground dark:bg-[#e7e5e4] dark:text-[#1c1917] dark:hover:bg-[#e7e5e4]",
         false:
-          "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60",
+          "bg-sidebar text-muted-foreground hover:bg-secondary/60 dark:bg-secondary dark:hover:bg-muted/60",
       },
       size: {
         sm: "px-1.5 py-0.5 text-[10px] rounded-md gap-1",

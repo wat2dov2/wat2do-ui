@@ -61,7 +61,7 @@
       "saveFailed": "Couldn't follow this organization",
       "unsaveFailed": "Couldn't unfollow this organization"
     },
-    "filterBy": "Filter by {{name}}",
+    "filterBy": "See more events by {{name}}",
     "visitWebsite": "Visit Website",
     "instagram": "Instagram",
     "discord": "Discord"
