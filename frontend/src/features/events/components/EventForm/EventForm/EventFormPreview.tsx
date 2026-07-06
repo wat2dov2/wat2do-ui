@@ -1,16 +1,16 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Bookmark, Calendar, ImageOff, Share2 } from "@/shared/ui/doodle-icons";
+import { Bookmark, Calendar, ImageOff, MoreHorizontal } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
-import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { cn } from "@/shared/lib/utils";
+import { OrganizationBadgeDropdown } from "@/features/organizations";
 
 interface EventFormPreviewProps {
   className?: string;
@@ -86,7 +86,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
           {formData.category && (
             <BadgeMask variant="top-left">
               <span
-                className={`font-bold text-[10px] px-2 py-0.5 block rounded-full ${
+                className={`font-bold text-[10px] px-2 py-0.5 block rounded-full opacity-70 ${
                   categoryClasses.bg
                 } ${categoryClasses.text}`}
               >
@@ -97,17 +97,15 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
 
           {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
-            <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center">
-              <span className="font-bold truncate max-w-[128px]">
-                {selectedOrganizationName || t("events.organization")}
-              </span>
-            </span>
+            <OrganizationBadgeDropdown
+              organizationName={selectedOrganizationName}
+              disabled={true}
+            />
           </BadgeMask>
         </div>
 
         <div
-          className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
-          style={getEventCardWaterpaintStyle(`${formData.category}-${formData.title || "preview"}`)}
+          className={`relative isolate flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
         >
           <EventCardContent
             title={formData.title || t("events.eventTitle")}
@@ -121,17 +119,14 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
           />
 
           <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
-            <div className={`flex min-h-10 items-center justify-center gap-1.5 px-2 text-xs font-medium opacity-75 ${categoryClasses.text}`}>
+            <div className={`flex min-h-10 w-full items-center justify-center px-2 opacity-75 transition-colors ${categoryClasses.text}`}>
               <Bookmark className="size-4" />
-              <span className="truncate">{t("common.imInterested")}</span>
             </div>
-            <div className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 ${categoryClasses.border} ${categoryClasses.text}`}>
-              <Share2 className="size-4" />
-              <span className="truncate">{t("common.share")}</span>
-            </div>
-            <div className={`flex min-h-10 items-center justify-center gap-1.5 border-l px-2 text-xs font-medium opacity-75 ${categoryClasses.border} ${categoryClasses.text}`}>
+            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors ${categoryClasses.border} ${categoryClasses.text}`}>
               <Calendar className="size-4" />
-              <span className="truncate">{t("common.addToCalendar")}</span>
+            </div>
+            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors ${categoryClasses.border} ${categoryClasses.text}`}>
+              <MoreHorizontal className="size-4" />
             </div>
           </div>
         </div>

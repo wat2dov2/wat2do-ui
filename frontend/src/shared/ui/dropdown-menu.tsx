@@ -168,6 +168,15 @@ function DropdownMenuItem({
       markMouseSelect();
       onSelect?.(event.nativeEvent);
       registerTrailingClickSwallow();
+
+      // Programmatically close the Radix dropdown menu by simulating Escape keydown
+      const escEvent = new KeyboardEvent("keydown", {
+        key: "Escape",
+        code: "Escape",
+        bubbles: true,
+        cancelable: true,
+      });
+      event.currentTarget.dispatchEvent(escEvent);
     },
     [disabled, markMouseSelect, onMouseDown, onSelect],
   );

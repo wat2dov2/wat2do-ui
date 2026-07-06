@@ -8,12 +8,11 @@ import { useTranslation } from "react-i18next";
 import { ImageOff } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
 import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
-import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
 import { EventCardContent } from "@/shared/ui/event-card-content";
-import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
+import { OrganizationBadgeDropdown } from "@/features/organizations";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export interface PreviewEventData {
@@ -107,22 +106,18 @@ export function PreviewStyleEventCard({
 
         {event.org && (
           <BadgeMask variant="bottom-left">
-            <span className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 opacity-70">
-              <span className="font-bold truncate max-w-[128px]">{event.org}</span>
-              <OrganizationVerifiedBadge />
-            </span>
+            <OrganizationBadgeDropdown organizationName={event.org} disabled={true} />
           </BadgeMask>
         )}
       </div>
 
       <div
         className={cn(
-          "event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden",
+          "relative isolate flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden",
           catClasses.bg,
           catClasses.text,
           catClasses.border,
         )}
-        style={getEventCardWaterpaintStyle(`${event.category}-${event.title}`)}
       >
         <EventCardContent
           title={event.title}

@@ -7,6 +7,7 @@ import { PieMenu } from "@/shared/ui/pie-menu";
 import { Switch } from "@/shared/ui/switch";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
+import { Input } from "@/shared/ui/input";
 import type { ViewMode } from "@/shared/types";
 
 interface LocationFilterInputProps {
@@ -14,6 +15,9 @@ interface LocationFilterInputProps {
   onChange: (value: string[]) => void;
   placeholder: string;
 }
+
+const pieFilterTriggerClassName =
+  "flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-xl bg-secondary px-3 py-2 text-left text-base text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm";
 
 function LocationFilterInput({ value, onChange, placeholder }: LocationFilterInputProps) {
   const [localValue, setLocalValue] = useState(value);
@@ -30,12 +34,11 @@ function LocationFilterInput({ value, onChange, placeholder }: LocationFilterInp
   };
 
   return (
-    <input
+    <Input
       type="text"
       placeholder={placeholder}
       value={localValue}
       onChange={handleChange}
-      className="bg-secondary text-foreground text-xs px-3 py-2.5 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border placeholder:text-muted-foreground"
     />
   );
 }
@@ -130,7 +133,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
                 aria-pressed={active}
                 className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition-colors ${
                   active
-                    ? "bg-secondary text-foreground ring-1 ring-border/80 hover:bg-muted/60 dark:hover:bg-muted/60"
+                    ? "bg-foreground text-background hover:bg-foreground dark:bg-[#e7e5e4] dark:text-[#1c1917] dark:hover:bg-[#e7e5e4]"
                     : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
                 }`}
               >
@@ -155,9 +158,9 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         <div className="relative">
           <button
             onMouseDown={categoryPieMenu.open}
-            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
+            className={pieFilterTriggerClassName}
           >
-            <span>
+            <span className={filters.selectedCategories.length > 0 ? undefined : "text-muted-foreground"}>
               {filters.selectedCategories.length > 0
                 ? filters.selectedCategories
                     .map((cat) => translateCategory(cat, t))
@@ -208,9 +211,9 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         <div className="relative">
           <button
             onMouseDown={foodPieMenu.open}
-            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
+            className={pieFilterTriggerClassName}
           >
-            <span>
+            <span className={filters.selectedFoods.length > 0 ? undefined : "text-muted-foreground"}>
               {filters.selectedFoods.length > 0
                 ? filters.selectedFoods
                     .map((food) => {
@@ -249,9 +252,9 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         <div className="relative">
           <button
             onMouseDown={dayPieMenu.open}
-            className="bg-secondary font-medium text-foreground text-xs px-3 py-2.5 rounded-xl w-full text-left hover:bg-muted/60 transition-colors flex items-center justify-between cursor-pointer"
+            className={pieFilterTriggerClassName}
           >
-            <span>
+            <span className={filters.selectedDays.length > 0 ? undefined : "text-muted-foreground"}>
               {filters.selectedDays.length > 0
                 ? filters.selectedDays
                     .map((day) => {
@@ -322,7 +325,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
       >
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="number"
               placeholder={t("filters.minPrice")}
               value={filters.priceRange.min}
@@ -332,10 +335,9 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
                   min: e.target.value,
                 })
               }
-              className="bg-secondary text-foreground text-xs px-3 py-2 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border"
             />
             <span className="text-muted-foreground text-xs">-</span>
-            <input
+            <Input
               type="number"
               placeholder={t("filters.maxPrice")}
               value={filters.priceRange.max}
@@ -345,7 +347,6 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
                   max: e.target.value,
                 })
               }
-              className="bg-secondary text-foreground text-xs px-3 py-2 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary border border-border"
             />
           </div>
         </div>

@@ -136,6 +136,8 @@ def _read_xlsx_rows() -> list[dict]:
         "Instagram URL",
         "Instagram Handle",
         "IG Source",
+        "Discord URL",
+        "Discord Source",
     ]
     if header != expected:
         raise RuntimeError(f"Unexpected xlsx header.  Expected {expected!r}, got {header!r}")
@@ -154,6 +156,7 @@ def _read_xlsx_rows() -> list[dict]:
                 "ig_url": _normalize_str(raw_row[5]),
                 "ig_handle": _normalize_handle(raw_row[6]),
                 "ig_source": _normalize_ig_source(raw_row[7]),
+                "discord": _normalize_str(raw_row[8]) if len(raw_row) > 8 else None,
             }
         )
     wb.close()
@@ -219,6 +222,7 @@ def _validate_rows(
                 "categories": valid_categories,
                 "organization_page": row["directory"],
                 "ig": row["ig_handle"],
+                "discord": row["discord"],
                 "organization_type": DEFAULT_ORGANIZATION_TYPE,
             }
         )
@@ -250,7 +254,7 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
         res = (
             sb.table(ORGANIZATIONS)
             .select(
-                "id, organization_name, school, categories, organization_page, ig, organization_type"
+                "id, organization_name, school, categories, organization_page, ig, discord, organization_type"
             )
             .in_("school", list(schools))
             .range(offset, offset + page_size - 1)
@@ -267,7 +271,7 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
 
 def _diff(planned: dict, existing: dict) -> dict | None:
     """Return a dict of {field: (old, new)} for fields that differ, or None."""
-    fields = ("categories", "organization_page", "ig", "organization_type")
+    fields = ("categories", "organization_page", "ig", "discord", "organization_type")
     diff: dict[str, tuple] = {}
     for field in fields:
         old = existing.get(field)
@@ -390,6 +394,7 @@ def main() -> int:
                 "categories": planned["categories"],
                 "organization_page": planned["organization_page"],
                 "ig": planned["ig"],
+                "discord": planned["discord"],
                 "organization_type": planned["organization_type"],
             }
         ).eq("id", cid).execute()

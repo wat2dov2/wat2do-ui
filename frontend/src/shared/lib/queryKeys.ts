@@ -5,6 +5,8 @@ export const queryKeys = {
       [...queryKeys.organizations.all, "list", filters] as const,
     allForSchool: (school: string | null | undefined) =>
       [...queryKeys.organizations.all, "all", school ?? ""] as const,
+    byName: (name: string) =>
+      [...queryKeys.organizations.all, "by-name", name] as const,
     adminTypes: (school: string | null | undefined, refreshCounter: number) =>
       [...queryKeys.organizations.all, "admin-types", school ?? "", refreshCounter] as const,
   },

@@ -1,9 +1,7 @@
 import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
-import { m } from "framer-motion";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
-import { useNewItemAnimationIndexes } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
@@ -36,8 +34,6 @@ const EVENT_DATE_SECTIONS: Array<{
   { category: "later", labelKey: "events.dateSections.later" },
 ];
 
-const EVENT_CARD_ANIMATION_STAGGER_MS = 50;
-
 const DeleteEventDialog = lazy(() =>
   import("@/features/events/components/DeleteEventDialog").then((module) => ({
     default: module.DeleteEventDialog,
@@ -60,48 +56,30 @@ interface ActiveEventDialog {
 }
 
 interface EventCardListItemProps {
-  animationIndex: number;
   children: ReactNode;
 }
 
 interface EventCardsGridProps {
   events: Event[];
   savedEventIds: Set<number>;
-  animationIndexByEventId: Map<number, number>;
   onEventClick?: (event: Event) => void;
   onDelete?: (eventId: number) => void;
   onActionDialogOpen: (type: EventCardDialog, event: Event) => void;
 }
 
 function EventCardListItem({
-  animationIndex,
   children,
 }: EventCardListItemProps) {
-  // Cap stagger index at 15 to prevent performance bottlenecks on large list rendering
-  const cappedIndex = Math.min(animationIndex, 15);
-
   return (
-    <m.div
-      role="listitem"
-      className="min-w-0"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.5,
-        delay: cappedIndex * (EVENT_CARD_ANIMATION_STAGGER_MS / 1000),
-        ease: [0.18, 0.39, 0.14, 0.9],
-      }}
-      style={{ pointerEvents: "auto" }}
-    >
+    <div role="listitem" className="min-w-0">
       {children}
-    </m.div>
+    </div>
   );
 }
 
 function EventCardsGrid({
   events,
   savedEventIds,
-  animationIndexByEventId,
   onEventClick,
   onDelete,
   onActionDialogOpen,
@@ -109,10 +87,7 @@ function EventCardsGrid({
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {events.map((event) => (
-        <EventCardListItem
-          key={event.id}
-          animationIndex={animationIndexByEventId.get(event.id) ?? 0}
-        >
+        <EventCardListItem key={event.id}>
           <EventCard
             event={event}
             isSaved={savedEventIds.has(event.id)}
@@ -196,11 +171,6 @@ export function EventList({
     () => groupEventsByDateSection(sectionOrderedEvents),
     [sectionOrderedEvents],
   );
-  const visibleEvents = useMemo(
-    () => [...promotedEvents, ...sectionOrderedEvents],
-    [promotedEvents, sectionOrderedEvents],
-  );
-  const animationIndexByEventId = useNewItemAnimationIndexes(visibleEvents);
   const handleActionDialogOpen = useCallback((type: EventCardDialog, event: Event) => {
     setActiveDialog({ type, event });
   }, []);
@@ -320,7 +290,6 @@ export function EventList({
             <EventCardsGrid
               events={promotedEvents}
               savedEventIds={savedSet}
-              animationIndexByEventId={animationIndexByEventId}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}
@@ -341,7 +310,6 @@ export function EventList({
                 <EventCardsGrid
                   events={sectionEvents}
                   savedEventIds={savedSet}
-                  animationIndexByEventId={animationIndexByEventId}
                   onEventClick={onEventClick}
                   onDelete={onDelete}
                   onActionDialogOpen={handleActionDialogOpen}
@@ -354,7 +322,6 @@ export function EventList({
             <EventCardsGrid
               events={sectionOrderedEvents}
               savedEventIds={savedSet}
-              animationIndexByEventId={animationIndexByEventId}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}

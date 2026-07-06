@@ -16,12 +16,11 @@ import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
-import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
+import { OrganizationBadgeDropdown } from "@/features/organizations";
 import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
-import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint";
 import {
   formatCardDate,
   formatCardTime,
@@ -64,7 +63,6 @@ interface EventImageBadgesProps {
     onMouseLeave: () => void;
   };
   categoryPressHandlers: React.HTMLAttributes<HTMLButtonElement>;
-  organizationPressHandlers: React.HTMLAttributes<HTMLButtonElement>;
   t: TFunction;
 }
 
@@ -76,7 +74,6 @@ function EventImageBadges({
   isNew,
   badgeHoverProps,
   categoryPressHandlers,
-  organizationPressHandlers,
   t,
 }: EventImageBadgesProps) {
   return (
@@ -102,17 +99,10 @@ function EventImageBadges({
 
       {event.organization && (
         <BadgeMask variant="bottom-left">
-          <button
-            type="button"
-            {...organizationPressHandlers}
-            {...badgeHoverProps}
-            className="text-[10px] tracking-normal px-1.5 py-px rounded-full bg-background border border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
-          >
-            <span className="font-bold truncate max-w-[128px]">
-              {event.organization}
-            </span>
-            <OrganizationVerifiedBadge />
-          </button>
+          <OrganizationBadgeDropdown
+            organizationName={event.organization}
+            badgeHoverProps={badgeHoverProps}
+          />
         </BadgeMask>
       )}
     </>
@@ -255,7 +245,6 @@ interface EventCardImageProps {
   isNew: boolean;
   badgeHoverProps: EventImageBadgesProps["badgeHoverProps"];
   categoryPressHandlers: EventImageBadgesProps["categoryPressHandlers"];
-  organizationPressHandlers: EventImageBadgesProps["organizationPressHandlers"];
   t: TFunction;
 }
 
@@ -267,7 +256,6 @@ function EventCardImage({
   isNew,
   badgeHoverProps,
   categoryPressHandlers,
-  organizationPressHandlers,
   t,
 }: EventCardImageProps) {
   return (
@@ -297,7 +285,6 @@ function EventCardImage({
         isNew={isNew}
         badgeHoverProps={badgeHoverProps}
         categoryPressHandlers={categoryPressHandlers}
-        organizationPressHandlers={organizationPressHandlers}
         t={t}
       />
     </div>
@@ -347,8 +334,7 @@ function EventCardBody({
 
   return (
     <div
-      className={`event-card-waterpaint flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
-      style={getEventCardWaterpaintStyle(event.id)}
+      className={`relative isolate flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
     >
       <EventCardContent
         title={event.title}
@@ -399,17 +385,6 @@ function useEventCardNavigation({
     }
   }, [eventCategory, filterActions, pathname, router]);
 
-  const handleOrganizationClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (event.organization) {
-      filterActions.toggleFilterValue("organizations", event.organization);
-      if (pathname !== "/") {
-        router.push("/");
-      }
-    }
-  }, [event.organization, filterActions, pathname, router]);
-
   const handleCardActivate = useCallback(() => {
     tracker.track(event.id, "click");
     onEventClick?.(event);
@@ -417,7 +392,6 @@ function useEventCardNavigation({
 
   return {
     handleCategoryClick,
-    handleOrganizationClick,
     handleCardActivate,
   };
 }
@@ -487,7 +461,6 @@ function EventCardComponent({
 
   const {
     handleCategoryClick,
-    handleOrganizationClick,
     handleCardActivate,
   } = useEventCardNavigation({
     event,
@@ -501,11 +474,6 @@ function EventCardComponent({
   const categoryPressHandlers = createAdaptivePressHandlers({
     preferClick: preferClickPress,
     onClick: handleCategoryClick,
-  });
-
-  const organizationPressHandlers = createAdaptivePressHandlers({
-    preferClick: preferClickPress,
-    onClick: handleOrganizationClick,
   });
 
   const handleActionDialogOpen = useCallback(
@@ -570,7 +538,6 @@ function EventCardComponent({
           isNew={isNew}
           badgeHoverProps={badgeHoverProps}
           categoryPressHandlers={categoryPressHandlers}
-          organizationPressHandlers={organizationPressHandlers}
           t={t}
         />
 

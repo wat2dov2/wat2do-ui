@@ -60,7 +60,11 @@
     "savedClubs": {
       "saveFailed": "无法关注此组织",
       "unsaveFailed": "无法取消关注此组织"
-    }
+    },
+    "filterBy": "按 {{name}} 筛选",
+    "visitWebsite": "访问网站",
+    "instagram": "Instagram",
+    "discord": "Discord"
   },
   "inviteLanding": {
     "validating": "正在验证邀请链接...",

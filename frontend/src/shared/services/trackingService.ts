@@ -36,6 +36,15 @@ function isExpectedFlushAbort(err: unknown): boolean {
   return message === "Failed to fetch" && document.visibilityState === "hidden";
 }
 
+function isExpectedLocalDevNetworkMiss(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  const localApi =
+    API_BASE_URL.startsWith("http://localhost") ||
+    API_BASE_URL.startsWith("http://127.0.0.1");
+
+  return process.env.NODE_ENV === "development" && localApi && message === "Failed to fetch";
+}
+
 // High-signal interactions should reach the server during normal browsing, not
 // only when the tab hides or the page unloads.
 const FLUSH_DEBOUNCE_MS = 1_000;
@@ -100,7 +109,7 @@ class Tracker {
       body: payload,
       keepalive: true,
     }).catch((err: unknown) => {
-      if (isExpectedFlushAbort(err)) return;
+      if (isExpectedFlushAbort(err) || isExpectedLocalDevNetworkMiss(err)) return;
       console.error("Failed to flush interaction batch:", err);
     });
   }

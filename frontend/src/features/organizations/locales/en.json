@@ -60,7 +60,11 @@
     "savedClubs": {
       "saveFailed": "Couldn't follow this organization",
       "unsaveFailed": "Couldn't unfollow this organization"
-    }
+    },
+    "filterBy": "Filter by {{name}}",
+    "visitWebsite": "Visit Website",
+    "instagram": "Instagram",
+    "discord": "Discord"
   },
   "inviteLanding": {
     "validating": "Validating invitation link...",

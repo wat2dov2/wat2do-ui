@@ -5,10 +5,12 @@
 
 // Components
 export { AddOrganizationModal } from "./components/AddOrganizationModal";
+export { OrganizationBadgeDropdown } from "./components/OrganizationBadgeDropdown";
 
 // API
 export {
   getAllOrganizations,
+  getOrganizationByName,
   getMyOrganizations,
   createOrganizationAPI,
   updateOrganizationAPI,

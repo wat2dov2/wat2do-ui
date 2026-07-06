@@ -19,6 +19,9 @@ export interface FloatingDockItem {
   isActive?: boolean;
 }
 
+const dockItemHitboxClassName =
+  "flex size-11 items-center justify-center touch-manipulation [@media(pointer:coarse)]:size-14 sm:size-9 sm:[@media(pointer:coarse)]:size-14";
+
 export const FloatingDock = ({
   items,
   desktopClassName,
@@ -159,7 +162,11 @@ function IconContainer({
 
   if (onMouseDown) {
     return (
-      <button type="button" onMouseDown={onMouseDown} className="cursor-pointer">
+      <button
+        type="button"
+        onMouseDown={onMouseDown}
+        className={cn(dockItemHitboxClassName, "cursor-pointer")}
+      >
         {content}
       </button>
     );
@@ -167,7 +174,7 @@ function IconContainer({
 
   if (href) {
     return (
-      <Link href={href}>
+      <Link href={href} className={dockItemHitboxClassName}>
         {content}
       </Link>
     );

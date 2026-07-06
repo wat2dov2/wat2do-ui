@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
-import { LightRays } from "@/registry/magicui/light-rays";
 import { SearchBar, QuickFilterChip, SortStatusLabel, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
@@ -25,7 +24,7 @@ export function EventsPageContainer() {
   const { isDarkMode } = useDarkMode();
   const profileCompleted = useProfileCompleted();
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useMutableSearchParams();
+  const [searchParams] = useMutableSearchParams();
 
   const {
     isLoading,
@@ -60,17 +59,11 @@ export function EventsPageContainer() {
 
   const handleEventClick = useCallback((event: Event) => {
     setSelectedEventId(event.id);
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set(QP.EVENT_ID, event.id.toString());
-    setSearchParams(nextParams);
-  }, [searchParams, setSearchParams]);
+  }, []);
 
   const handleCloseEventDetails = useCallback(() => {
     setSelectedEventId(null);
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.delete(QP.EVENT_ID);
-    setSearchParams(nextParams, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, []);
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -130,19 +123,6 @@ export function EventsPageContainer() {
 
   return (
     <>
-      <div
-        className="pointer-events-none fixed left-0 right-2.5 top-0 z-[45] hidden h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_72%,transparent_100%)] sm:block"
-        aria-hidden="true"
-      >
-        {isDarkMode && (
-          <LightRays
-            data-page-light-rays
-            length="110dvh"
-            color="rgba(255, 255, 255, 0.06)"
-            blendMode="screen"
-          />
-        )}
-      </div>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">
           <EventCount

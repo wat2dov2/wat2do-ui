@@ -19,7 +19,7 @@ export function QuickFilterChip({ icon, label, active, onClick }: QuickFilterChi
       data-elevation="control"
       className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
         active
-          ? "bg-secondary text-foreground ring-1 ring-border/80 hover:bg-muted/60 dark:hover:bg-muted/60"
+          ? "bg-foreground text-background hover:bg-foreground dark:bg-[#e7e5e4] dark:text-[#1c1917] dark:hover:bg-[#e7e5e4]"
           : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
       }`}
     >

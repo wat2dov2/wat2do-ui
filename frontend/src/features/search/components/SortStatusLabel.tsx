@@ -5,7 +5,7 @@ export function SortStatusLabel() {
 
   return (
     <span
-      className="flex shrink-0 items-center whitespace-nowrap rounded-xl bg-secondary px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-border/80"
+      className="flex shrink-0 cursor-not-allowed items-center whitespace-nowrap rounded-xl bg-foreground px-3 py-1.5 text-xs font-medium text-background dark:bg-[#e7e5e4] dark:text-[#1c1917]"
       aria-label={t("filters.sortStatusAria")}
     >
       {t("filters.sortStatusLabel")}

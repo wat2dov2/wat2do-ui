@@ -50,7 +50,7 @@ export interface SearchComboboxProps<T> {
 const VARIANT_TRIGGER_STYLES: Record<SearchComboboxVariant, string> = {
   nav: "flex h-8 min-w-0 items-center gap-1 overflow-hidden rounded-xl bg-transparent px-3 text-sm text-foreground transition-colors hover:bg-secondary",
   field:
-    "flex h-9 w-full items-center justify-between gap-2 rounded-xl border border-border bg-secondary px-3 py-1 text-left text-base md:text-sm text-foreground hover:bg-muted/60 shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
+    "flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-xl bg-secondary px-3 py-2 text-left text-base text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:bg-input/50 dark:disabled:bg-input/80 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
 };
 
 const VARIANT_CONTENT_STYLES: Record<SearchComboboxVariant, string> = {

@@ -40,6 +40,18 @@ export async function getAllOrganizations(school?: string): Promise<Organization
   return rawOrgs.map(normalizeOrganization);
 }
 
+export async function getOrganizationByName(name: string): Promise<Organization | null> {
+  const response = await getOrganizationsPaginated({
+    page: 1,
+    limit: 10,
+    search: name,
+  });
+  const exactMatch = response.items.find(
+    (org) => org.organization_name.toLowerCase() === name.toLowerCase()
+  );
+  return exactMatch || response.items[0] || null;
+}
+
 export interface PaginatedOrganizationsResponse {
   items: Organization[];
   total: number;
