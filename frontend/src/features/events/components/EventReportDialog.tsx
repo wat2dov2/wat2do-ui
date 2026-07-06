@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { CheckCircle2, X } from "@/shared/ui/doodle-icons";
+import { CheckCircle2 } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -61,20 +60,10 @@ export function EventReportDialog({
   return (
     <Drawer open={open} onOpenChange={(nextOpen) => !isSubmitting && onOpenChange(nextOpen)}>
       <DrawerContent className="overflow-hidden p-0">
-        <DrawerClose asChild>
-          <button
-            type="button"
-            disabled={isSubmitting}
-            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-40"
-            aria-label={t("common.close")}
-          >
-            <X className="size-4" />
-          </button>
-        </DrawerClose>
         <div className="mx-auto w-full max-w-md space-y-4 p-4">
           {isSubmitted ? (
             <>
-              <DrawerHeader className="items-start p-0 pr-10 text-left">
+              <DrawerHeader className="items-start p-0 text-left">
                 <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <CheckCircle2 className="size-5" />
                 </div>
@@ -92,7 +81,7 @@ export function EventReportDialog({
             </>
           ) : (
             <>
-              <DrawerHeader className="p-0 pr-10 text-left">
+              <DrawerHeader className="p-0 text-left">
                 <DrawerTitle>{t("events.reportDialog.title")}</DrawerTitle>
                 <DrawerDescription>
                   {t("events.reportDialog.description", { title: eventTitle })}

@@ -4,15 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Calendar, ImageOff, ExternalLink, Bookmark, MoreHorizontal, X } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, Bookmark, MoreHorizontal } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  drawerCloseButtonClassName,
 } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -167,15 +165,6 @@ export function EventDetailsModal({
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerContent className="overflow-hidden p-0 [&_[data-slot=drawer-handle]]:hidden">
-        <DrawerClose asChild>
-          <button
-            type="button"
-            className={drawerCloseButtonClassName}
-            aria-label={t("common.close")}
-          >
-            <X className="size-4" />
-          </button>
-        </DrawerClose>
         <div
           ref={contentRef}
           className="max-h-[92dvh] overflow-y-auto border-0 p-0"

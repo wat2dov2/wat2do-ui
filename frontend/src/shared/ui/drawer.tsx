@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
+import { X } from "@/shared/ui/doodle-icons"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -154,8 +155,10 @@ DrawerOverlay.displayName = "DrawerOverlay"
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
+    hideClose?: boolean
+  }
+>(({ className, children, hideClose = false, ...props }, ref) => (
   <DrawerPortal data-slot="drawer-portal">
     <DrawerOverlay />
     <DrawerPrimitive.Content
@@ -191,6 +194,17 @@ const DrawerContent = React.forwardRef<
         className="mx-auto mt-4 hidden h-1.5 w-12 shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
       />
       {children}
+      {!hideClose && (
+        <DrawerClose asChild>
+          <button
+            type="button"
+            className={drawerCloseButtonClassName}
+            aria-label="Close"
+          >
+            <X className="size-4" />
+          </button>
+        </DrawerClose>
+      )}
     </DrawerPrimitive.Content>
   </DrawerPortal>
 ))
