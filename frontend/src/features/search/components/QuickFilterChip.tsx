@@ -1,5 +1,5 @@
 import React from "react";
-import { useMouseDownAction } from "@/shared/hooks";
+import { Chip } from "@/shared/ui/chip";
 
 interface QuickFilterChipProps {
   icon: React.ReactNode;
@@ -9,22 +9,16 @@ interface QuickFilterChipProps {
 }
 
 export function QuickFilterChip({ icon, label, active, onClick }: QuickFilterChipProps) {
-  const handleMouseDown = useMouseDownAction(onClick);
-
   return (
-    <button
-      type="button"
-      onMouseDown={handleMouseDown}
+    <Chip
+      active={active}
+      size="md"
+      icon={icon}
+      onClick={onClick}
       aria-pressed={active}
       data-elevation="control"
-      className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-        active
-          ? "bg-foreground text-background hover:bg-foreground dark:bg-[#e7e5e4] dark:text-[#1c1917] dark:hover:bg-[#e7e5e4]"
-          : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
-      }`}
     >
-      {icon}
-      <span>{label}</span>
-    </button>
+      {label}
+    </Chip>
   );
 }

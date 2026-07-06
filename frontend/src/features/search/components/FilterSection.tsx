@@ -5,6 +5,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/shared/ui/tooltip";
+import { Chip } from "@/shared/ui/chip";
 
 interface FilterSectionProps {
   title: string;
@@ -35,27 +36,18 @@ export const FilterSection = React.memo(function FilterSection({
             </TooltipContent>
           </Tooltip>
           {indicator && (
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label={`Clear ${title}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
+            <Chip
+              active
+              size="sm"
+              icon={<X className="size-2.5" strokeWidth={3} />}
+              onClick={(e) => {
                 e.stopPropagation();
                 onClear?.();
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onClear?.();
-                }
-              }}
-              className="bg-foreground text-background dark:bg-[#e7e5e4] dark:text-[#1c1917] font-medium text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-foreground dark:hover:bg-[#e7e5e4] transition-colors cursor-pointer"
+              aria-label={`Clear ${title}`}
             >
-              <X className="size-2.5" strokeWidth={3} />
               {indicator}
-            </span>
+            </Chip>
           )}
         </div>
       </div>

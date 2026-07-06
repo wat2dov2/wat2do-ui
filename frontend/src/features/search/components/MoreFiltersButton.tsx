@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/shared/ui/doodle-icons";
-import { useMouseDownAction } from "@/shared/hooks";
+import { Chip } from "@/shared/ui/chip";
 import {
   Drawer,
   DrawerContent,
@@ -26,20 +26,14 @@ export function MoreFiltersButton({
   children,
 }: MoreFiltersButtonProps) {
   const { t } = useTranslation();
-  const handleToggle = useMouseDownAction(() => onOpenChange(!open));
-
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <button
-        type="button"
-        data-elevation="control"
+      <Chip
+        active={open || filterCount > 0}
+        size="md"
+        onClick={() => onOpenChange(!open)}
         aria-expanded={open}
-        onMouseDown={handleToggle}
-        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-          open || filterCount > 0
-            ? "bg-foreground text-background hover:bg-foreground dark:bg-[#e7e5e4] dark:text-[#1c1917] dark:hover:bg-[#e7e5e4]"
-            : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
-        }`}
+        data-elevation="control"
       >
         {t("common.extraFilters")}
         {filterCount > 0 && (
@@ -67,7 +61,7 @@ export function MoreFiltersButton({
             {filterCount}
           </span>
         )}
-      </button>
+      </Chip>
       <DrawerContent className="max-h-[85dvh] !max-w-sm overflow-hidden p-0">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>

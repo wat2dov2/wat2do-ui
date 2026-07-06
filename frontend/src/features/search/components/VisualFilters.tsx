@@ -8,6 +8,7 @@ import { Switch } from "@/shared/ui/switch";
 import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { Input } from "@/shared/ui/input";
+import { Chip } from "@/shared/ui/chip";
 import type { ViewMode } from "@/shared/types";
 
 interface LocationFilterInputProps {
@@ -126,20 +127,17 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             const active = viewMode === option.id;
 
             return (
-              <button
+              <Chip
                 key={option.id}
-                type="button"
-                onMouseDown={() => onViewModeChange(option.id)}
+                active={active}
+                size="lg"
+                onClick={() => onViewModeChange(option.id)}
                 aria-pressed={active}
-                className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition-colors ${
-                  active
-                    ? "bg-foreground text-background hover:bg-foreground dark:bg-[#e7e5e4] dark:text-[#1c1917] dark:hover:bg-[#e7e5e4]"
-                    : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
-                }`}
+                icon={<ViewIcon className="size-3.5" />}
+                className="w-full"
               >
-                <ViewIcon className="size-3.5" />
-                <span>{option.label}</span>
-              </button>
+                {option.label}
+              </Chip>
             );
           })}
         </div>
