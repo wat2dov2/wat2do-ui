@@ -86,15 +86,20 @@ export function PreviewStyleEventCard({
         />
 
         <BadgeMask variant="top-left">
-          <span
+          <Badge
+            asChild
+            variant="outline"
+            size="lg"
             className={cn(
-              "font-bold text-[11px] px-2.5 py-1 block rounded-lg opacity-70",
+              "block border-0 opacity-70",
               catClasses.bg,
               catClasses.text,
             )}
           >
-            {translateCategory(event.category, t)}
-          </span>
+            <span>
+              {translateCategory(event.category, t)}
+            </span>
+          </Badge>
         </BadgeMask>
 
         {(event.isLive || event.isNew) && (

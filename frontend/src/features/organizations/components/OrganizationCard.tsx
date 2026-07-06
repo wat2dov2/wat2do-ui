@@ -12,6 +12,7 @@ import { getEventCardWaterpaintStyle } from "@/shared/utils/eventCardWaterpaint"
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth";
+import { Badge } from "@/shared/ui/badge";
 import { useCardMouseDownActivate, useMobileGridClickActivation, createAdaptivePressHandlers } from "@/shared/hooks";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
 import {
@@ -314,14 +315,20 @@ function OrganizationCardComponent({
       {/* 3. The Badge (rendered outside the clipped background, matching Event Card badge style) */}
       {primaryCategory && (
         <div ref={badgeRef} className="absolute top-0 left-0 z-30">
-          <button
-            type="button"
-            onMouseDown={handleCategoryClick}
-            {...badgeHoverProps}
-            className={`font-bold text-[11px] px-2.5 py-1 block rounded-lg transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
+          <Badge
+            asChild
+            variant="outline"
+            size="lg"
+            className={`block border-0 transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 cursor-pointer ${categoryClasses.bg} ${categoryClasses.text}`}
           >
-            {translateCategory(primaryCategory, t)}
-          </button>
+            <button
+              type="button"
+              onMouseDown={handleCategoryClick}
+              {...badgeHoverProps}
+            >
+              {translateCategory(primaryCategory, t)}
+            </button>
+          </Badge>
         </div>
       )}
 

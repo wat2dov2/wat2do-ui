@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Badge } from "@/shared/ui/badge";
 
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
@@ -57,31 +58,44 @@ export function OrganizationBadgeDropdown({
 
   if (disabled || !organizationName) {
     return (
-      <span className="text-[11px] tracking-normal px-2.5 py-1 rounded-lg bg-background border border-foreground text-foreground flex items-center gap-0.5 opacity-70">
-        <span className="font-bold truncate max-w-[128px]">
-          {organizationName || t("events.organization")}
+      <Badge
+        asChild
+        variant="outline"
+        size="lg"
+        className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-0.5 opacity-70"
+      >
+        <span>
+          <span className="font-bold truncate max-w-[128px]">
+            {organizationName || t("events.organization")}
+          </span>
+          {organizationName && organizationName !== t("events.organization") && (
+            <OrganizationVerifiedBadge />
+          )}
         </span>
-        {organizationName && organizationName !== t("events.organization") && (
-          <OrganizationVerifiedBadge />
-        )}
-      </span>
+      </Badge>
     );
   }
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          onMouseEnter={badgeHoverProps?.onMouseEnter}
-          onMouseLeave={badgeHoverProps?.onMouseLeave}
-          className="text-[11px] tracking-normal px-2.5 py-1 rounded-lg bg-background border border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+        <Badge
+          asChild
+          variant="outline"
+          size="lg"
+          className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
         >
-          <span className="font-bold truncate max-w-[128px]">
-            {organizationName}
-          </span>
-          <OrganizationVerifiedBadge />
-        </button>
+          <button
+            type="button"
+            onMouseEnter={badgeHoverProps?.onMouseEnter}
+            onMouseLeave={badgeHoverProps?.onMouseLeave}
+          >
+            <span className="font-bold truncate max-w-[128px]">
+              {organizationName}
+            </span>
+            <OrganizationVerifiedBadge />
+          </button>
+        </Badge>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48" align="start" stopPropagation>
         <DropdownMenuItem onSelect={handleFilterSelect}>

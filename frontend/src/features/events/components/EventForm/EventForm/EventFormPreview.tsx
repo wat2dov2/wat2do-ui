@@ -11,6 +11,7 @@ import { useEventFormContext } from "@/features/events/components/EventForm/Even
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { cn } from "@/shared/lib/utils";
+import { Badge } from "@/shared/ui/badge";
 import { OrganizationBadgeDropdown } from "@/features/organizations";
 
 interface EventFormPreviewProps {
@@ -86,13 +87,18 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
           {/* Category Badge - Top Left */}
           {formData.category && (
             <BadgeMask variant="top-left">
-              <span
-                className={`font-bold text-[11px] px-2.5 py-1 block rounded-lg opacity-70 ${
+              <Badge
+                asChild
+                variant="outline"
+                size="lg"
+                className={`block border-0 opacity-70 ${
                   categoryClasses.bg
                 } ${categoryClasses.text}`}
               >
-                {translateCategory(formData.category, t)}
-              </span>
+                <span>
+                  {translateCategory(formData.category, t)}
+                </span>
+              </Badge>
             </BadgeMask>
           )}
 

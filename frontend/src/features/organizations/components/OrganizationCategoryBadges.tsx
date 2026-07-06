@@ -31,9 +31,10 @@ export function OrganizationCategoryBadges({
           <Badge
             key={category}
             variant="outline"
+            size="md"
             title={label}
             className={cn(
-              "inline-flex h-6 max-w-full items-center border-0 px-2 py-0 text-[11px] font-medium leading-none",
+              "max-w-full border-0 font-medium leading-none",
               colors.bg,
               colors.text,
               badgeClassName,
@@ -46,8 +47,9 @@ export function OrganizationCategoryBadges({
       {overflowCount > 0 && (
         <Badge
           variant="secondary"
+          size="md"
           className={cn(
-            "inline-flex h-6 shrink-0 items-center border-0 px-2 py-0 text-[11px] font-medium leading-none text-muted-foreground",
+            "border-0 font-medium leading-none text-muted-foreground",
             badgeClassName,
           )}
         >

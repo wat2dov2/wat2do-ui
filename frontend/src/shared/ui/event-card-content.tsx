@@ -4,6 +4,7 @@
  */
 
 import { LightRays } from "@/shared/ui/light-rays";
+import { Badge } from "@/shared/ui/badge";
 
 interface CardBadge {
   text: string;
@@ -61,12 +62,14 @@ export function EventCardContent({
           {badges.length > 0 && (
             <div className="flex flex-col gap-1.5 items-end shrink-0">
               {badges.map((badge) => (
-                <span
+                <Badge
                   key={badge.text}
-                  className={`text-[9px] font-medium px-1.5 py-px rounded-full border whitespace-nowrap ${badgeClassName}`}
+                  variant="outline"
+                  size="sm"
+                  className={`whitespace-nowrap ${badgeClassName}`}
                 >
                   {badge.text}
-                </span>
+                </Badge>
               ))}
             </div>
           )}

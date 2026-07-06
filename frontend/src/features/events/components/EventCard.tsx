@@ -80,19 +80,25 @@ function EventImageBadges({
   return (
     <>
       <BadgeMask variant="top-left">
-        <button
-          type="button"
-          {...categoryPressHandlers}
-          {...badgeHoverProps}
-          className={`font-bold text-[11px] px-2.5 py-1 block rounded-lg transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 ${categoryClasses.bg} ${categoryClasses.text}`}
+        <Badge
+          asChild
+          variant="outline"
+          size="lg"
+          className={`block border-0 transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 cursor-pointer ${categoryClasses.bg} ${categoryClasses.text}`}
         >
-          {translateCategory(eventCategory, t)}
-        </button>
+          <button
+            type="button"
+            {...categoryPressHandlers}
+            {...badgeHoverProps}
+          >
+            {translateCategory(eventCategory, t)}
+          </button>
+        </Badge>
       </BadgeMask>
 
       {(isLive || isNew) && (
         <BadgeMask variant="top-right">
-          <Badge variant={isLive ? "live" : "new"} className="uppercase">
+          <Badge variant={isLive ? "live" : "new"} size="lg" className="uppercase">
             {isLive ? t("common.live") : t("events.new")}
           </Badge>
         </BadgeMask>
