@@ -1,7 +1,5 @@
 import * as React from "react"
-import { useTranslation } from "react-i18next"
 import { Drawer as DrawerPrimitive } from "vaul"
-import { X } from "@/shared/ui/doodle-icons"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -130,9 +128,6 @@ function DrawerClose({
   return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
 }
 
-export const drawerCloseButtonClassName =
-  "pointer-events-auto touch-manipulation absolute right-3 top-3 z-50 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
@@ -156,12 +151,8 @@ DrawerOverlay.displayName = "DrawerOverlay"
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
-    hideClose?: boolean
-  }
->(({ className, children, hideClose = false, ...props }, ref) => {
-  const { t } = useTranslation()
-
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
+>(({ className, children, ...props }, ref) => {
   return (
   <DrawerPortal data-slot="drawer-portal">
     <DrawerOverlay />
@@ -194,17 +185,6 @@ const DrawerContent = React.forwardRef<
       {...props}
     >
       {children}
-      {!hideClose && (
-        <DrawerClose asChild>
-          <button
-            type="button"
-            className={drawerCloseButtonClassName}
-            aria-label={t("common.close")}
-          >
-            <X className="size-4" />
-          </button>
-        </DrawerClose>
-      )}
     </DrawerPrimitive.Content>
   </DrawerPortal>
   )
