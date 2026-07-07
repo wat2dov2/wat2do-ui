@@ -105,7 +105,7 @@ export function TopNav() {
           value={schoolFilter ?? ""}
           onChange={handleSchoolChange}
           isAdmin={isAdmin}
-          triggerClassName="max-w-[26vw] pl-1 pr-2 sm:max-w-none sm:pl-1.5 sm:pr-3"
+          triggerClassName="pl-1 pr-2 sm:pl-1.5 sm:pr-3"
         />
       </div>
 
