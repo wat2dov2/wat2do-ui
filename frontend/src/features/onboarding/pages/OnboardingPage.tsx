@@ -93,8 +93,19 @@ export function OnboardingPage() {
       isFirstYear: boolean;
       dailyNewEventsOptIn: boolean;
     }) => {
+      const homeWithSchool = `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: data.school })}`;
+
+      // Anonymous preview (reached via the "continue without signing in" path):
+      // there is no account to attach preferences to, so send them straight to
+      // their school feed instead of persisting an ownerless profile.
+      const userId = getUserId();
+      if (!userId) {
+        router.push(homeWithSchool);
+        return;
+      }
+
       const profile = {
-        id: getUserId() || "",
+        id: userId,
         faculty: data.faculty,
         interests: data.selectedTopics,
         isFirstYear: data.isFirstYear,
@@ -116,7 +127,7 @@ export function OnboardingPage() {
         );
       }
 
-      router.push(`${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: data.school })}`);
+      router.push(homeWithSchool);
     },
     [router, persistProfile]
   );

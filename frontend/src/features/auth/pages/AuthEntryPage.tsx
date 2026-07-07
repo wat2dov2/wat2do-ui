@@ -43,6 +43,7 @@ export function AuthEntryPage() {
         onOtpChange={authEntry.onOtpChange}
         onContinue={authEntry.onContinue}
         onResend={authEntry.onResend}
+        onSkipToOnboarding={() => router.push(ROUTES.ONBOARDING)}
         canContinue={authEntry.isFormValid}
         isLoading={authEntry.isLoading}
         error={authEntry.error}

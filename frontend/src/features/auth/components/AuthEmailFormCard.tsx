@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Input } from "@/shared/ui/input";
 import {
@@ -15,6 +16,7 @@ interface AuthEmailFormCardProps {
   onOtpChange: (value: string) => void;
   onContinue: () => void;
   onResend: () => void;
+  onSkipToOnboarding: () => void;
   canContinue: boolean;
   isLoading: boolean;
   error: string | null;
@@ -29,6 +31,7 @@ export function AuthEmailFormCard({
   onOtpChange,
   onContinue,
   onResend,
+  onSkipToOnboarding,
   canContinue,
   isLoading,
   error,
@@ -70,6 +73,16 @@ export function AuthEmailFormCard({
           >
             {t("auth.continue") || "Continue"}
           </LoadingButton>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onSkipToOnboarding}
+            disabled={isLoading}
+            className="w-full"
+          >
+            {t("auth.skipToOnboarding")}
+          </Button>
         </>
       ) : (
         <>

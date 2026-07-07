@@ -5,6 +5,7 @@
     "emailLabel": "Email address",
     "emailPlaceholder": "you@uwaterloo.ca",
     "continue": "Continue",
+    "skipToOnboarding": "Continue without signing in",
     "signIn": "Sign in",
     "verifyOtp": "Verify code",
     "resendOtp": "Resend code",

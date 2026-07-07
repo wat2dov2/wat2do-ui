@@ -5,6 +5,7 @@
     "emailLabel": "电子邮箱",
     "emailPlaceholder": "you@uwaterloo.ca",
     "continue": "继续",
+    "skipToOnboarding": "跳过登录，先体验",
     "signIn": "登录",
     "verifyOtp": "验证验证码",
     "resendOtp": "重新发送验证码",
