@@ -1783,8 +1783,13 @@ export interface components {
         /**
          * EventSummaryResponse
          * @description Lightweight payload for list/card views — omits large text fields
-         *     (description, social handles) that are only needed in detail views.
+         *     (description) that are only needed in detail views.
          *     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
+         *
+         *     The owning organization's link/social fields (``organization_page``,
+         *     ``organization_ig``, ``organization_discord``) are embedded read-time from
+         *     the ``organizations`` row via the ``events.organization_id`` FK so the event
+         *     card's org badge can render its links without a second fetch.
          *
          *     ``created_by`` is intentionally omitted — this response is returned on
          *     public GET /events/ and would otherwise leak the creator's Supabase
@@ -1816,6 +1821,12 @@ export interface components {
             organization?: string | null;
             /** Organization Type */
             organization_type?: string | null;
+            /** Organization Page */
+            organization_page?: string | null;
+            /** Organization Ig */
+            organization_ig?: string | null;
+            /** Organization Discord */
+            organization_discord?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
             /** School */

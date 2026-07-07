@@ -29,6 +29,10 @@ interface EventViewOnlyFields {
   source_url?: ApiEventResponse["source_url"];
   organization_type?: ApiEventResponse["organization_type"];
   created_by?: ApiEventResponse["created_by"];
+  /** Org link/social fields are embedded only on the list summary shape. */
+  organization_page?: ApiEventSummaryResponse["organization_page"];
+  organization_ig?: ApiEventSummaryResponse["organization_ig"];
+  organization_discord?: ApiEventSummaryResponse["organization_discord"];
 }
 
 export type Event = EventApiShape & EventViewOnlyFields;

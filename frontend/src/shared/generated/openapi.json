@@ -6028,6 +6028,39 @@
             ],
             "title": "Organization Type"
           },
+          "organization_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Page"
+          },
+          "organization_ig": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Ig"
+          },
+          "organization_discord": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Discord"
+          },
           "ig_handle": {
             "anyOf": [
               {
@@ -6068,7 +6101,7 @@
           "added_at"
         ],
         "title": "EventSummaryResponse",
-        "description": "Lightweight payload for list/card views \u2014 omits large text fields\n(description, social handles) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\n``created_by`` is intentionally omitted \u2014 this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers (see audit I10 / S16)."
+        "description": "Lightweight payload for list/card views \u2014 omits large text fields\n(description) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\nThe owning organization's link/social fields (``organization_page``,\n``organization_ig``, ``organization_discord``) are embedded read-time from\nthe ``organizations`` row via the ``events.organization_id`` FK so the event\ncard's org badge can render its links without a second fetch.\n\n``created_by`` is intentionally omitted \u2014 this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers (see audit I10 / S16)."
       },
       "EventUpdate": {
         "properties": {

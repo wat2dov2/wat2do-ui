@@ -116,6 +116,9 @@ function EventImageBadges({
           <OrganizationBadgeDropdown
             organizationName={event.organization}
             organizationType={event.organization_type}
+            organizationPage={event.organization_page}
+            organizationIg={event.organization_ig}
+            organizationDiscord={event.organization_discord}
             badgeHoverProps={badgeHoverProps}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}

@@ -34,10 +34,21 @@ T = TypeVar("T", bound=BaseModel)
 
 # Columns the summary response needs from the events table. Computed fields are
 # filled after fetch and must not be sent to PostgREST as real column names.
-_SUMMARY_COMPUTED_FIELDS = {"occurrences", "click_count"}
+# The organization link/social fields are hydrated from the embedded
+# ``organizations`` row (see ``_ORGANIZATION_EMBED``), not real events columns.
+_SUMMARY_COMPUTED_FIELDS = {
+    "occurrences",
+    "click_count",
+    "organization_page",
+    "organization_ig",
+    "organization_discord",
+}
 _SUMMARY_COLUMNS = ",".join(
     f for f in EventSummaryResponse.model_fields if f not in _SUMMARY_COMPUTED_FIELDS
 )
+# Read-time embed of the owning organization's link/social fields via the
+# ``events.organization_id`` FK, flattened onto the event in ``hydrate_event``.
+_ORGANIZATION_EMBED = "organizations(organization_page,ig,discord)"
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
@@ -66,8 +77,23 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     The one place that knows how an events row + occurrence list become an API
     model — shared by the browse list, recommender candidates, and the calendar
     feed so the shape never drifts between them.
+
+    When the row carries an embedded ``organizations`` object (from
+    ``_ORGANIZATION_EMBED``), its link/social fields are flattened onto the
+    event so the card badge can render them without a second fetch. Rows without
+    the embed (e.g. the single-event ``select("*")`` path) are left unchanged.
     """
-    return model.model_validate({**row, "occurrences": occurrences})
+    org = row.pop("organizations", None)
+    org_fields = (
+        {
+            "organization_page": org.get("organization_page"),
+            "organization_ig": org.get("ig"),
+            "organization_discord": org.get("discord"),
+        }
+        if isinstance(org, dict)
+        else {}
+    )
+    return model.model_validate({**row, **org_fields, "occurrences": occurrences})
 
 
 def with_click_counts(rows: list[dict]) -> list[dict]:
@@ -162,7 +188,7 @@ def load_events_in_window(
     q = (
         get_sb()
         .table(EVENT_DATES)
-        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns})")
+        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{_ORGANIZATION_EMBED})")
     )
     if start_utc is not None:
         q = q.gte("dtstart_utc", start_utc.isoformat())
@@ -242,7 +268,7 @@ def load_events_page(
     q = (
         get_sb()
         .table(EVENT_DATES)
-        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns})")
+        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{_ORGANIZATION_EMBED})")
     )
     if start_utc is not None:
         q = q.gte("dtstart_utc", start_utc.isoformat())
@@ -372,7 +398,15 @@ def _load_lightweight_date_page(
         return [], total
 
     columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
-    event_rows = get_sb().table(EVENTS).select(columns).in_("id", page_ids).execute().data or []
+    event_rows = (
+        get_sb()
+        .table(EVENTS)
+        .select(f"{columns},{_ORGANIZATION_EMBED}")
+        .in_("id", page_ids)
+        .execute()
+        .data
+        or []
+    )
     row_by_id = {row.get("id"): row for row in event_rows}
     page_rows = with_click_counts(
         [row_by_id[event_id] for event_id in page_ids if event_id in row_by_id]

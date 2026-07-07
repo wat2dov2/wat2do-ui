@@ -1,9 +1,6 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
-import { queryKeys } from "@/shared/lib/queryKeys";
-import { getOrganizationByName } from "@/features/organizations/api/organizations.api";
 import { useFilterActions } from "@/features/search";
 import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
 import {
@@ -12,12 +9,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { Badge } from "@/shared/ui/badge";
 
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
   organizationType?: string | null;
+  /** Owning organization's link/social fields, embedded on the event response. */
+  organizationPage?: string | null;
+  organizationIg?: string | null;
+  organizationDiscord?: string | null;
   badgeHoverProps?: {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
@@ -30,6 +30,9 @@ interface OrganizationBadgeDropdownProps {
 export function OrganizationBadgeDropdown({
   organizationName,
   organizationType,
+  organizationPage,
+  organizationIg,
+  organizationDiscord,
   badgeHoverProps,
   disabled = false,
   onMouseDown,
@@ -41,14 +44,7 @@ export function OrganizationBadgeDropdown({
   const filterActions = useFilterActions();
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: organization, isLoading } = useQuery({
-    queryKey: queryKeys.organizations.byName(organizationName),
-    queryFn: () => getOrganizationByName(organizationName),
-    enabled: isOpen && !disabled && !!organizationName,
-  });
-
-  const effectiveOrgType = organizationType ?? organization?.organization_type;
-  const showVerified = effectiveOrgType?.toUpperCase() === "WUSA";
+  const showVerified = organizationType?.toUpperCase() === "WUSA";
 
   const handleFilterSelect = useCallback(() => {
     setIsOpen(false);
@@ -115,40 +111,27 @@ export function OrganizationBadgeDropdown({
           {t("organizations.filterBy", { name: organizationName })}
         </DropdownMenuItem>
 
-        {isLoading ? (
-          <div className="flex flex-col gap-2 p-2">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-full" />
-          </div>
-        ) : (
-          <>
-            {organization?.organization_page && (
-              <DropdownMenuItem
-                onSelect={() => handleLinkSelect(organization.organization_page)}
-              >
-                {t("organizations.visitWebsite")}
-              </DropdownMenuItem>
-            )}
-            {organization?.ig && (
-              <DropdownMenuItem
-                onSelect={() => {
-                  const igUrl = organization.ig.startsWith("http")
-                    ? organization.ig
-                    : `https://instagram.com/${organization.ig}`;
-                  handleLinkSelect(igUrl);
-                }}
-              >
-                {t("organizations.instagram")}
-              </DropdownMenuItem>
-            )}
-            {organization?.discord && (
-              <DropdownMenuItem
-                onSelect={() => handleLinkSelect(organization.discord)}
-              >
-                {t("organizations.discord")}
-              </DropdownMenuItem>
-            )}
-          </>
+        {organizationPage && (
+          <DropdownMenuItem onSelect={() => handleLinkSelect(organizationPage)}>
+            {t("organizations.visitWebsite")}
+          </DropdownMenuItem>
+        )}
+        {organizationIg && (
+          <DropdownMenuItem
+            onSelect={() => {
+              const igUrl = organizationIg.startsWith("http")
+                ? organizationIg
+                : `https://instagram.com/${organizationIg}`;
+              handleLinkSelect(igUrl);
+            }}
+          >
+            {t("organizations.instagram")}
+          </DropdownMenuItem>
+        )}
+        {organizationDiscord && (
+          <DropdownMenuItem onSelect={() => handleLinkSelect(organizationDiscord)}>
+            {t("organizations.discord")}
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

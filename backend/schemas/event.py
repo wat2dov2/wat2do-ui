@@ -201,8 +201,13 @@ class EventTimeMeta(BaseModel):
 
 class EventSummaryResponse(BaseModel):
     """Lightweight payload for list/card views — omits large text fields
-    (description, social handles) that are only needed in detail views.
+    (description) that are only needed in detail views.
     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
+
+    The owning organization's link/social fields (``organization_page``,
+    ``organization_ig``, ``organization_discord``) are embedded read-time from
+    the ``organizations`` row via the ``events.organization_id`` FK so the event
+    card's org badge can render its links without a second fetch.
 
     ``created_by`` is intentionally omitted — this response is returned on
     public GET /events/ and would otherwise leak the creator's Supabase
@@ -220,6 +225,9 @@ class EventSummaryResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     organization_type: str | None = None
+    organization_page: str | None = None
+    organization_ig: str | None = None
+    organization_discord: str | None = None
     ig_handle: str | None = None
     school: str | None = None
     added_at: datetime

@@ -10,7 +10,6 @@ export { OrganizationBadgeDropdown } from "./components/OrganizationBadgeDropdow
 // API
 export {
   getAllOrganizations,
-  getOrganizationByName,
   getMyOrganizations,
   createOrganizationAPI,
   updateOrganizationAPI,
