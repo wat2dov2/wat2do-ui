@@ -1,6 +1,6 @@
 # Start Frontend
 ```bash
-cd frontend && npm run dev
+cd frontend && next start
 ```
 
 # Start Backend
