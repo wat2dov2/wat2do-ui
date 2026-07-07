@@ -72,7 +72,7 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
   const resolvedSchool = resolveSchool(school);
   const fetchOptions: RequestInit = {
     next: {
-      revalidate: EVENT_FEED_REVALIDATE_SECONDS,
+      revalidate: process.env.NODE_ENV === "development" ? 0 : EVENT_FEED_REVALIDATE_SECONDS,
       tags: [eventFeedTag(resolvedSchool)],
     },
   };

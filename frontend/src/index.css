@@ -186,7 +186,9 @@
   50% {
     background-position: 100% 100%;}
   to {
-    background-position: 0% 0%;}}}
+    background-position: 0% 0%;}}
+
+}
 
 /* View Transitions for animated theme toggle */
 ::view-transition-old(root),
@@ -196,9 +198,12 @@
 }
 
 @layer base {
-  * {
+  *:not(.animate-pulse-live) {
     @apply border-border outline-ring/50;
     box-shadow: none !important;
+  }
+  .animate-pulse-live {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.89);
   }
   /* Allow subtle elevation on floating surfaces (popovers, dropdowns, dialogs). */
   [data-slot="popover-content"],
@@ -295,4 +300,20 @@ html[data-drawer-scroll-release] [data-slot="drawer-close"] button,
 
 [data-sonner-toaster] {
   z-index: var(--z-index-toast);
+}
+
+/* Pulsating animation for live badge */
+@keyframes pulse-live {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.89);
+  }
+  35%,
+  100% {
+    box-shadow: 0 0 0 5px rgba(239, 68, 68, 0);
+  }
+}
+
+.animate-pulse-live {
+  animation: pulse-live 4s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.89);
 }

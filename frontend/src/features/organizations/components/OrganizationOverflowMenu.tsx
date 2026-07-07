@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { Instagram, Discord } from "@/shared/ui/doodle-icons";
+import { ExternalLink, Discord } from "@/shared/ui/doodle-icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,15 +23,15 @@ export function OrganizationOverflowMenu({
 }: OrganizationOverflowMenuProps) {
   const { t } = useTranslation();
   const discordHref = organization.discord ? sanitizeHref(organization.discord) : null;
-  const instagramHref = organization.ig ? `https://instagram.com/${organization.ig}` : null;
+  const websiteHref = organization.organization_page ? sanitizeHref(organization.organization_page) : null;
 
   const items = [
-    instagramHref
+    websiteHref
       ? {
-          key: "instagram",
-          href: instagramHref,
-          label: t("organizations.instagram"),
-          icon: Instagram,
+          key: "website",
+          href: websiteHref,
+          label: t("organizations.viewClubPage"),
+          icon: ExternalLink,
         }
       : null,
     discordHref
@@ -46,7 +46,7 @@ export function OrganizationOverflowMenu({
     key: string;
     href: string;
     label: string;
-    icon: typeof Instagram;
+    icon: typeof ExternalLink;
   }>;
 
   if (items.length === 0) {

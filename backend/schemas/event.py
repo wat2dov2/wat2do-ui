@@ -219,6 +219,7 @@ class EventSummaryResponse(BaseModel):
     source_image_url: str | None = None
     category: str | None = None
     organization: str | None = None
+    organization_type: str | None = None
     ig_handle: str | None = None
     school: str | None = None
     added_at: datetime

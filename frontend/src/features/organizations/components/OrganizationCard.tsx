@@ -2,8 +2,8 @@ import { memo, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bookmark,
-  ExternalLink,
   MoreHorizontal,
+  Instagram,
 } from "@/shared/ui/doodle-icons";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -103,8 +103,8 @@ function OrganizationFooterActions({
   preferClickPress,
   t,
 }: OrganizationFooterActionsProps) {
-  const organizationPageHref = sanitizeHref(organization.organization_page);
-  const hasOverflowLinks = Boolean(organization.ig || (organization.discord && sanitizeHref(organization.discord)));
+  const instagramHref = organization.ig ? `https://instagram.com/${organization.ig}` : null;
+  const hasOverflowLinks = Boolean(organization.organization_page || (organization.discord && sanitizeHref(organization.discord)));
 
   return (
     <div
@@ -131,24 +131,24 @@ function OrganizationFooterActions({
         </Tooltip>
       )}
 
-      {organizationPageHref ? (
+      {instagramHref ? (
         <a
-          href={organizationPageHref}
+          href={instagramHref}
           target="_blank"
           rel="noopener noreferrer"
           onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
-          aria-label={t("organizations.viewClubPage")}
+          aria-label={t("organizations.instagram")}
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
-          <ExternalLink className="size-4" />
+          <Instagram className="size-4" />
         </a>
       ) : (
         <span
           aria-hidden="true"
           className={`flex min-h-10 items-center justify-center border-l px-2 opacity-35 ${categoryClasses.border} ${categoryClasses.text}`}
         >
-          <ExternalLink className="size-4" />
+          <Instagram className="size-4" />
         </span>
       )}
 

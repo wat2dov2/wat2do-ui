@@ -1,6 +1,6 @@
 import React from "react";
 
-type BadgeMaskVariant = "top-left" | "top-right" | "bottom-left";
+type BadgeMaskVariant = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 interface BadgeMaskProps {
   variant: BadgeMaskVariant;
@@ -18,6 +18,9 @@ const TOP_RIGHT_CURVE = "M0 0C35.35 0 64 28.65 64 64";
 
 const BOTTOM_LEFT_FILL = "M0 0C0 35.35 28.65 64 64 64H0V0Z";
 const BOTTOM_LEFT_CURVE = "M0 0C0 35.35 28.65 64 64 64";
+
+const BOTTOM_RIGHT_FILL = "M64 0C64 35.35 35.35 64 0 64H64V0Z";
+const BOTTOM_RIGHT_CURVE = "M64 0C64 35.35 35.35 64 0 64";
 
 interface MaskSvgProps {
   fillPath: string;
@@ -129,6 +132,30 @@ export function BadgeMask({
               outlined={outlined}
               outlineClassName={outlineClassName}
             />
+          </div>
+        </div>
+      );
+    case "bottom-right":
+      return (
+        <div className="absolute bottom-0 right-0 z-10 flex flex-col pointer-events-none">
+          <MaskSvg
+            fillPath={BOTTOM_RIGHT_FILL}
+            curvePath={BOTTOM_RIGHT_CURVE}
+            className="size-2 ml-auto text-background"
+            outlined={outlined}
+            outlineClassName={outlineClassName}
+          />
+          <div className="flex">
+            <MaskSvg
+              fillPath={BOTTOM_RIGHT_FILL}
+              curvePath={BOTTOM_RIGHT_CURVE}
+              className="size-2 mt-auto text-background"
+              outlined={outlined}
+              outlineClassName={outlineClassName}
+            />
+            <div className={`pointer-events-auto pt-1 pl-1 bg-background rounded-tl-xl ${outlined ? `border-l border-t border-current ${outlineClassName}` : ""}`}>
+              {children}
+            </div>
           </div>
         </div>
       );

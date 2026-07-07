@@ -16,7 +16,6 @@ export function QuickFilterChip({ icon, label, active, onClick }: QuickFilterChi
       icon={icon}
       onClick={onClick}
       aria-pressed={active}
-      data-elevation="control"
     >
       {label}
     </Chip>

@@ -26,6 +26,7 @@ export interface PreviewEventData {
   badges: Array<{ text: string; bgClass: string; textClass: string }>;
   isLive?: boolean;
   isNew?: boolean;
+  organizationType?: string | null;
 }
 
 interface PreviewStyleEventCardProps {
@@ -64,31 +65,33 @@ export function PreviewStyleEventCard({
       {...interactiveProps}
       data-event-id={dataEventId}
       className={cn(
-        "rounded-xl overflow-hidden flex flex-col h-full bg-card transition-all duration-300",
+        "rounded-xl flex flex-col h-full bg-card transition-all duration-300",
         onMouseDown && "cursor-pointer group hover:opacity-90 hover:shadow-lg",
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl",
       )}
     >
-      <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-        <LazyImage
-          src={event.image}
-          alt={event.title}
-          className="absolute inset-0 w-full h-full"
-          fallback={
-            <div className={cn("absolute inset-0 flex items-center justify-center", catClasses.bg)}>
-              <ImageOff className={cn("size-8 opacity-40", catClasses.text)} />
-            </div>
-          }
-          placeholder={
-            <div className={cn("absolute inset-0 animate-pulse", catClasses.bg)} />
-          }
-        />
+      <div className="relative" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
+        <div className="absolute inset-0 overflow-hidden rounded-t-xl">
+          <LazyImage
+            src={event.image}
+            alt={event.title}
+            className="absolute inset-0 w-full h-full"
+            fallback={
+              <div className={cn("absolute inset-0 flex items-center justify-center", catClasses.bg)}>
+                <ImageOff className={cn("size-8 opacity-40", catClasses.text)} />
+              </div>
+            }
+            placeholder={
+              <div className={cn("absolute inset-0 animate-pulse", catClasses.bg)} />
+            }
+          />
+        </div>
 
         <BadgeMask variant="top-left">
           <Badge
             asChild
             variant="outline"
-            size="lg"
+            size="md"
             className={cn(
               "block border-0 opacity-70",
               catClasses.bg,
@@ -101,17 +104,29 @@ export function PreviewStyleEventCard({
           </Badge>
         </BadgeMask>
 
-        {(event.isLive || event.isNew) && (
+        {event.isLive && (
           <BadgeMask variant="top-right">
-            <Badge variant={event.isLive ? "live" : "new"} className="uppercase">
-              {event.isLive ? t("common.live") : t("events.new")}
+            <Badge variant="live" size="md" className="uppercase flex items-center">
+              {t("common.live")}
+            </Badge>
+          </BadgeMask>
+        )}
+
+        {event.isNew && (
+          <BadgeMask variant="bottom-right">
+            <Badge variant="new" size="md" className="uppercase flex items-center">
+              {t("events.new")}
             </Badge>
           </BadgeMask>
         )}
 
         {event.org && (
           <BadgeMask variant="bottom-left">
-            <OrganizationBadgeDropdown organizationName={event.org} disabled={true} />
+            <OrganizationBadgeDropdown
+              organizationName={event.org}
+              organizationType={event.organizationType}
+              disabled={true}
+            />
           </BadgeMask>
         )}
       </div>

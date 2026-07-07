@@ -33,7 +33,6 @@ export function MoreFiltersButton({
         size="md"
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
-        data-elevation="control"
       >
         {t("common.extraFilters")}
         {filterCount > 0 && (

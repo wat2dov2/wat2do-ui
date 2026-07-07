@@ -28,7 +28,7 @@ export function EventCount({
         <button
           type="button"
           onMouseDown={handleLatestAddedMouseDown}
-          className="cursor-pointer text-left text-xs font-medium text-muted-foreground opacity-80 underline-offset-4 transition-[color,opacity] hover:text-foreground hover:opacity-100 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="cursor-pointer text-left text-sm font-medium text-muted-foreground opacity-80 underline-offset-4 transition-[color,opacity] hover:text-foreground hover:opacity-100 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {t("events.latestAddedEvent", {
             title: latestAddedEvent.title,

@@ -82,7 +82,7 @@ function EventImageBadges({
         <Badge
           asChild
           variant="outline"
-          size="lg"
+          size="md"
           className={`block border-0 transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 cursor-pointer ${categoryClasses.bg} ${categoryClasses.text}`}
         >
           <button
@@ -95,26 +95,31 @@ function EventImageBadges({
         </Badge>
       </BadgeMask>
 
-      {(isLive || isNew) && (
+      {isLive && (
         <BadgeMask variant="top-right">
-          <Badge variant={isLive ? "live" : "new"} size="lg" className="uppercase">
-            {isLive ? t("common.live") : t("events.new")}
+          <Badge variant="live" size="md" className="uppercase flex items-center">
+            {t("common.live")}
+          </Badge>
+        </BadgeMask>
+      )}
+
+      {isNew && (
+        <BadgeMask variant="bottom-right">
+          <Badge variant="new" size="md" className="uppercase flex items-center">
+            {t("events.new")}
           </Badge>
         </BadgeMask>
       )}
 
       {event.organization && (
         <BadgeMask variant="bottom-left">
-          <div
-            className="inline-flex"
+          <OrganizationBadgeDropdown
+            organizationName={event.organization}
+            organizationType={event.organization_type}
+            badgeHoverProps={badgeHoverProps}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-          >
-            <OrganizationBadgeDropdown
-              organizationName={event.organization}
-              badgeHoverProps={badgeHoverProps}
-            />
-          </div>
+          />
         </BadgeMask>
       )}
     </>
@@ -271,24 +276,26 @@ function EventCardImage({
   t,
 }: EventCardImageProps) {
   return (
-    <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-      <LazyImage
-        src={event.source_image_url ?? undefined}
-        alt={event.title}
-        className="absolute inset-0 w-full h-full"
-        fallback={
-          <div
-            className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}
-          >
-            <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
-          </div>
-        }
-        placeholder={
-          <div
-            className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`}
-          />
-        }
-      />
+    <div className="relative" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
+      <div className="absolute inset-0 overflow-hidden rounded-t-xl">
+        <LazyImage
+          src={event.source_image_url ?? undefined}
+          alt={event.title}
+          className="absolute inset-0 w-full h-full"
+          fallback={
+            <div
+              className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}
+            >
+              <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
+            </div>
+          }
+          placeholder={
+            <div
+              className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`}
+            />
+          }
+        />
+      </div>
       <EventImageBadges
         event={event}
         eventCategory={eventCategory}
@@ -467,8 +474,8 @@ function EventCardComponent({
   const cardTime = useMemo(() => formatCardTime(event), [event]);
   const isLive = useMemo(() => isEventHappeningNow(event), [event]);
   const isNew = useMemo(
-    () => !isLive && wasAddedWithinLast24Hours(event),
-    [event, isLive],
+    () => wasAddedWithinLast24Hours(event),
+    [event],
   );
 
   const {
@@ -538,7 +545,7 @@ function EventCardComponent({
             handleCardActivate();
           }
         }}
-        className={`rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
+        className={`rounded-xl cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
           isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
         }`}
       >

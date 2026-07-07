@@ -1765,6 +1765,8 @@ export interface components {
             category?: string | null;
             /** Organization */
             organization?: string | null;
+            /** Organization Type */
+            organization_type?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
             /** School */

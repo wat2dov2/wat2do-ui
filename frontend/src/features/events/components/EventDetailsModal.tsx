@@ -203,7 +203,9 @@ export function EventDetailsModal({
                     <DrawerDescription className="mt-1 flex items-center justify-start sm:justify-center">
                       <span className="inline-flex items-center gap-0.5">
                         <span>{displayedEvent.organization}</span>
-                        <OrganizationVerifiedBadge />
+                        {displayedEvent.organization_type?.toUpperCase() === "WUSA" && (
+                          <OrganizationVerifiedBadge />
+                        )}
                       </span>
                     </DrawerDescription>
                   </div>

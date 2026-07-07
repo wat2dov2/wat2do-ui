@@ -17,17 +17,23 @@ import { Badge } from "@/shared/ui/badge";
 
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
+  organizationType?: string | null;
   badgeHoverProps?: {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
   };
   disabled?: boolean;
+  onMouseDown?: React.MouseEventHandler;
+  onClick?: React.MouseEventHandler;
 }
 
 export function OrganizationBadgeDropdown({
   organizationName,
+  organizationType,
   badgeHoverProps,
   disabled = false,
+  onMouseDown,
+  onClick,
 }: OrganizationBadgeDropdownProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -40,6 +46,9 @@ export function OrganizationBadgeDropdown({
     queryFn: () => getOrganizationByName(organizationName),
     enabled: isOpen && !disabled && !!organizationName,
   });
+
+  const effectiveOrgType = organizationType ?? organization?.organization_type;
+  const showVerified = effectiveOrgType?.toUpperCase() === "WUSA";
 
   const handleFilterSelect = useCallback(() => {
     setIsOpen(false);
@@ -61,14 +70,16 @@ export function OrganizationBadgeDropdown({
       <Badge
         asChild
         variant="outline"
-        size="lg"
+        size="md"
         className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-0.5 opacity-70"
+        onMouseDown={onMouseDown}
+        onClick={onClick}
       >
         <span>
           <span className="font-bold truncate max-w-[128px]">
             {organizationName || t("events.organization")}
           </span>
-          {organizationName && organizationName !== t("events.organization") && (
+          {organizationName && organizationName !== t("events.organization") && showVerified && (
             <OrganizationVerifiedBadge />
           )}
         </span>
@@ -82,8 +93,10 @@ export function OrganizationBadgeDropdown({
         <Badge
           asChild
           variant="outline"
-          size="lg"
+          size="md"
           className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+          onMouseDown={onMouseDown}
+          onClick={onClick}
         >
           <button
             type="button"
@@ -93,7 +106,7 @@ export function OrganizationBadgeDropdown({
             <span className="font-bold truncate max-w-[128px]">
               {organizationName}
             </span>
-            <OrganizationVerifiedBadge />
+            {showVerified && <OrganizationVerifiedBadge />}
           </button>
         </Badge>
       </DropdownMenuTrigger>

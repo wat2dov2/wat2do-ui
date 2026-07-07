@@ -21,15 +21,15 @@ const badgeVariants = cva(
           "border-transparent bg-warning text-warning-foreground hover:bg-warning/90",
         outline: "text-foreground",
         live:
-          "border-transparent bg-error text-error-foreground hover:bg-error/80 animate-pulse",
+          "border-transparent bg-error text-error-foreground hover:bg-error/80 animate-pulse-live",
         soon:
           "border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
         new:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "border-transparent bg-blue-500 text-white hover:bg-blue-500/80",
       },
       size: {
         sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",
-        md: "px-2 py-0.5 text-[11px] font-bold rounded-lg",
+        md: "px-2 py-0.5 text-[11px] font-bold rounded-xl",
         lg: "px-2.5 py-1 text-xs font-bold rounded-xl",
       },
     },
