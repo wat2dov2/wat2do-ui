@@ -54,14 +54,14 @@ export function MoreFiltersButton({
                 onClearFilters?.();
               }
             }}
-            className="bg-background/18 text-background px-1.5 h-4 rounded-full text-[10px] ml-1 flex items-center gap-0.5 hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18 transition-colors cursor-pointer"
+            className="bg-background/18 text-background px-1.5 h-4 rounded-full text-[10px] ml-1 flex items-center gap-0.5 hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18 transition-colors cursor-pointer touch-manipulation pointer-coarse:h-6 pointer-coarse:px-2.5 pointer-coarse:gap-1 pointer-coarse:text-xs"
           >
-            <X className="size-2" strokeWidth={3} />
+            <X className="size-2 pointer-coarse:size-3" strokeWidth={3} />
             {filterCount}
           </span>
         )}
       </Chip>
-      <DrawerContent className="max-h-[85dvh] !max-w-sm overflow-hidden p-0">
+      <DrawerContent className="max-h-[85dvh] max-w-sm! overflow-hidden p-0">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>
           <DrawerDescription>{t("filters.filtersHeader")}</DrawerDescription>

@@ -196,8 +196,8 @@ test.describe("Onboarding Wizard E2E Flow", () => {
     await page.getByRole("button", { name: /continue/i }).click();
     await page.waitForTimeout(500);
 
-    // Step 2: Interests selection
-    await expect(page.getByPlaceholder(/search or select/i)).toBeVisible();
+    // Step 2: Interests selection (chip multi-select)
+    await expect(page.getByRole("button", { name: /technology/i })).toBeVisible();
     await page.getByRole("button", { name: /continue/i }).click();
     await page.waitForTimeout(500);
 

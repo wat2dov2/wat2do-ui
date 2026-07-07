@@ -6,7 +6,7 @@ import { JSONFilterEditor } from "@/features/search/components/JSONFilterEditor"
 import { useProfileCompleted } from "@/features/auth";
 import type { FilterViewMode, ViewMode } from "@/shared/types";
 
-interface PieMenuItem {
+interface FilterOption {
   id: string;
   label: string;
 }
@@ -24,7 +24,7 @@ interface FilterDropdownFilters {
   // Category filters
   selectedCategories: string[];
   setSelectedCategories: (categories: string[]) => void;
-  categoryPieItems: PieMenuItem[];
+  categoryOptions: FilterOption[];
   toggleCategory: (id: string) => void;
   // Location filters
   selectedLocations: string[];
@@ -32,12 +32,12 @@ interface FilterDropdownFilters {
   // Food filters
   selectedFoods: string[];
   setSelectedFoods: (foods: string[]) => void;
-  foodPieItems: PieMenuItem[];
+  foodOptions: FilterOption[];
   toggleFood: (id: string) => void;
   // Day of week filters
   selectedDays: string[];
   setSelectedDays: (days: string[]) => void;
-  dayPieItems: PieMenuItem[];
+  dayOptions: FilterOption[];
   toggleDay: (id: string) => void;
   // Price & registration
   priceRange: { min: string; max: string };

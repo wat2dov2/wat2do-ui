@@ -118,7 +118,7 @@ export function EventsPageContainer() {
     syncScrollFade: syncFilterScrollFade,
     syncScrollFadeAfterWheel: syncFilterScrollFadeAfterWheel,
   } = useHorizontalScrollFade<HTMLDivElement>({
-    refreshKey: `${filterConfigs.length}:${filters.categoryPieItems.length}`,
+    refreshKey: `${filterConfigs.length}:${filters.categoryOptions.length}`,
   });
 
   return (
@@ -156,7 +156,7 @@ export function EventsPageContainer() {
                     onClick={config.onClick}
                   />
                 ))}
-                {filters.categoryPieItems.map((category) => (
+                {filters.categoryOptions.map((category) => (
                   <QuickFilterChip
                     key={category.id}
                     icon={null}

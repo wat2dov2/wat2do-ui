@@ -12,7 +12,7 @@ import type { Event, ViewMode } from "@/shared/types";
  *
  * - State management → useFilterState (shallow-subscribed to the store)
  * - Business logic → searchService
- * - UI state (pie menus, expanded sections) lives in components
+ * - UI state (expanded sections) lives in components
  */
 export interface UseSearchOptions {
   events: Event[];
@@ -116,7 +116,7 @@ export function useSearch({
     ],
   );
 
-  const categoryPieItems = useMemo(
+  const categoryOptions = useMemo(
     () =>
       getEventCategories().map((cat) => ({
         id: cat,
@@ -125,7 +125,7 @@ export function useSearch({
     [t],
   );
 
-  const foodPieItems = useMemo(
+  const foodOptions = useMemo(
     () =>
       availableFoods.map((food) => {
         const translation = t(`foods.${food}`);
@@ -139,7 +139,7 @@ export function useSearch({
     [t],
   );
 
-  const dayPieItems = useMemo(
+  const dayOptions = useMemo(
     () =>
       availableDays.map((day) => {
         const key = `days.${day.toLowerCase()}`;
@@ -156,10 +156,10 @@ export function useSearch({
     // Filter state from useFilterState
     ...filterState,
 
-    // Pie menu items (data only; menu state lives inside VisualFilters)
-    categoryPieItems,
-    foodPieItems,
-    dayPieItems,
+    // Filter option lists (data only)
+    categoryOptions,
+    foodOptions,
+    dayOptions,
 
     // Filtered and sorted events
     filteredEvents,

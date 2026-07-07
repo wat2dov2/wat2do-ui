@@ -5,7 +5,7 @@
  * EventsPageContainer share one client-side filter snapshot.
  *
  * Only filter *values* live here. Derived data (filtered event list,
- * pie-menu items, filter counts) stays in useSearch where it can
+ * filter option lists, filter counts) stays in useSearch where it can
  * depend on the events array passed in by the caller.
  *
  * Never use `useSearchStore()` without a selector — an unselected

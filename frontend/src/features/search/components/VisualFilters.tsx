@@ -1,11 +1,9 @@
 import { useCallback, useMemo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Tag, Utensils, Calendar, CalendarDays, Grid3x3 } from "@/shared/ui/doodle-icons";
+import { Calendar, Grid3x3 } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
-import { translateCategory } from "@/shared/utils/event";
-import { PieMenu } from "@/shared/ui/pie-menu";
+import { MultiSelect } from "@/shared/ui/multi-select";
 import { Switch } from "@/shared/ui/switch";
-import { usePieMenu } from "@/shared/hooks/usePieMenu";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { Input } from "@/shared/ui/input";
 import { Chip } from "@/shared/ui/chip";
@@ -16,9 +14,6 @@ interface LocationFilterInputProps {
   onChange: (value: string[]) => void;
   placeholder: string;
 }
-
-const pieFilterTriggerClassName =
-  "flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-xl bg-secondary px-3 py-2 text-left text-base text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm";
 
 function LocationFilterInput({ value, onChange, placeholder }: LocationFilterInputProps) {
   const [localValue, setLocalValue] = useState(value);
@@ -48,17 +43,17 @@ interface VisualFiltersProps {
   filters: {
     selectedCategories: string[];
     setSelectedCategories: (categories: string[]) => void;
-    categoryPieItems: Array<{ id: string; label: string }>;
+    categoryOptions: Array<{ id: string; label: string }>;
     toggleCategory: (id: string) => void;
     selectedLocations: string[];
     setSelectedLocations: (locations: string[]) => void;
     selectedFoods: string[];
     setSelectedFoods: (foods: string[]) => void;
-    foodPieItems: Array<{ id: string; label: string }>;
+    foodOptions: Array<{ id: string; label: string }>;
     toggleFood: (id: string) => void;
     selectedDays: string[];
     setSelectedDays: (days: string[]) => void;
-    dayPieItems: Array<{ id: string; label: string }>;
+    dayOptions: Array<{ id: string; label: string }>;
     toggleDay: (id: string) => void;
     priceRange: { min: string; max: string };
     setPriceRange: (range: { min: string; max: string }) => void;
@@ -76,10 +71,30 @@ interface VisualFiltersProps {
 export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFiltersProps) {
   const { t } = useTranslation();
 
-  // Pie-menu UI state lives here, alongside the components that render the menus.
-  const categoryPieMenu = usePieMenu();
-  const foodPieMenu = usePieMenu();
-  const dayPieMenu = usePieMenu();
+  const categoryValues = useMemo(
+    () => filters.categoryOptions.map((o) => o.id),
+    [filters.categoryOptions],
+  );
+  const categoryLabels = useMemo(
+    () => new Map(filters.categoryOptions.map((o) => [o.id, o.label])),
+    [filters.categoryOptions],
+  );
+  const foodValues = useMemo(
+    () => filters.foodOptions.map((o) => o.id),
+    [filters.foodOptions],
+  );
+  const foodLabels = useMemo(
+    () => new Map(filters.foodOptions.map((o) => [o.id, o.label])),
+    [filters.foodOptions],
+  );
+  const dayValues = useMemo(
+    () => filters.dayOptions.map((o) => o.id),
+    [filters.dayOptions],
+  );
+  const dayLabels = useMemo(
+    () => new Map(filters.dayOptions.map((o) => [o.id, o.label])),
+    [filters.dayOptions],
+  );
 
   const viewModeOptions = useMemo(
     () => [
@@ -153,32 +168,12 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         }
         onClear={() => filters.setSelectedCategories([])}
       >
-        <div className="relative">
-          <button
-            onMouseDown={categoryPieMenu.open}
-            className={pieFilterTriggerClassName}
-          >
-            <span className={filters.selectedCategories.length > 0 ? undefined : "text-muted-foreground"}>
-              {filters.selectedCategories.length > 0
-                ? filters.selectedCategories
-                    .map((cat) => translateCategory(cat, t))
-                    .join(", ")
-                : t("forms.selectCategories")}
-            </span>
-            <Tag className="size-4 text-muted-foreground" />
-          </button>
-          <PieMenu
-            items={filters.categoryPieItems}
-            isOpen={categoryPieMenu.isOpen}
-            position={categoryPieMenu.position}
-            onClose={categoryPieMenu.close}
-            onSelect={(item) => filters.toggleCategory(item.id)}
-            selectedIds={filters.selectedCategories}
-            closeOnSelect={false}
-            radius={140}
-            innerRadius={20}
-          />
-        </div>
+        <MultiSelect
+          options={categoryValues}
+          selected={filters.selectedCategories}
+          onToggle={filters.toggleCategory}
+          getLabel={(id) => categoryLabels.get(id) ?? id}
+        />
       </FilterSection>
 
       {/* Location Filter (free-text: filter events by location substring) */}
@@ -206,35 +201,12 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         }
         onClear={() => filters.setSelectedFoods([])}
       >
-        <div className="relative">
-          <button
-            onMouseDown={foodPieMenu.open}
-            className={pieFilterTriggerClassName}
-          >
-            <span className={filters.selectedFoods.length > 0 ? undefined : "text-muted-foreground"}>
-              {filters.selectedFoods.length > 0
-                ? filters.selectedFoods
-                    .map((food) => {
-                      const translation = t(`foods.${food}`);
-                      return translation.startsWith("foods.") ? food : translation;
-                    })
-                    .join(", ")
-                : t("forms.selectFoods")}
-            </span>
-            <Utensils className="size-4 text-muted-foreground" />
-          </button>
-          <PieMenu
-            items={filters.foodPieItems}
-            isOpen={foodPieMenu.isOpen}
-            position={foodPieMenu.position}
-            onClose={foodPieMenu.close}
-            onSelect={(item) => filters.toggleFood(item.id)}
-            selectedIds={filters.selectedFoods}
-            closeOnSelect={false}
-            radius={140}
-            innerRadius={20}
-          />
-        </div>
+        <MultiSelect
+          options={foodValues}
+          selected={filters.selectedFoods}
+          onToggle={filters.toggleFood}
+          getLabel={(id) => foodLabels.get(id) ?? id}
+        />
       </FilterSection>
 
       {/* Day of Week Filter */}
@@ -247,36 +219,12 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         }
         onClear={() => filters.setSelectedDays([])}
       >
-        <div className="relative">
-          <button
-            onMouseDown={dayPieMenu.open}
-            className={pieFilterTriggerClassName}
-          >
-            <span className={filters.selectedDays.length > 0 ? undefined : "text-muted-foreground"}>
-              {filters.selectedDays.length > 0
-                ? filters.selectedDays
-                    .map((day) => {
-                      const key = `days.${day.toLowerCase()}`;
-                      const translated = t(key);
-                      return translated !== key ? translated : day;
-                    })
-                    .join(", ")
-                : t("forms.selectDays")}
-            </span>
-            <CalendarDays className="size-4 text-muted-foreground" />
-          </button>
-          <PieMenu
-            items={filters.dayPieItems}
-            isOpen={dayPieMenu.isOpen}
-            position={dayPieMenu.position}
-            onClose={dayPieMenu.close}
-            onSelect={(item) => filters.toggleDay(item.id)}
-            selectedIds={filters.selectedDays}
-            closeOnSelect={false}
-            radius={140}
-            innerRadius={20}
-          />
-        </div>
+        <MultiSelect
+          options={dayValues}
+          selected={filters.selectedDays}
+          onToggle={filters.toggleDay}
+          getLabel={(id) => dayLabels.get(id) ?? id}
+        />
       </FilterSection>
 
       {/* Organization Filter */}

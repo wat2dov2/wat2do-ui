@@ -6,7 +6,6 @@
 export * from "./useIntersectionObserver";
 export * from "./useDarkMode";
 export * from "./useConfetti";
-export * from "./usePieMenu";
 export * from "./useTranslatedOptions";
 export * from "./useLanguage";
 export * from "./useForm";

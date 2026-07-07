@@ -17,8 +17,7 @@
  *   MODAL       (60)  — dialog overlays and content
  *   TOAST       (70)  — toast notifications (above modals)
  *   EASTER_EGG  (80)  — full-screen fun overlays
- *   PIE_MENU    (90)  — pie-menu backdrop (floats above everything)
- *   MAX         (100) — pie-menu content, easter-egg toasts
+ *   MAX         (100) — highest layer: easter-egg toasts
  */
 
 export const Z_INDEX = {
@@ -43,9 +42,6 @@ export const Z_INDEX = {
   /** Full-screen easter-egg animations. */
   EASTER_EGG: 80,
 
-  /** Pie-menu backdrop — above everything except its own content. */
-  PIE_MENU: 90,
-
-  /** Highest layer: pie-menu content, easter-egg toast messages. */
+  /** Highest layer: easter-egg toast messages. */
   MAX: 100,
 } as const;

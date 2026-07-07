@@ -8,8 +8,7 @@ import { cn } from "@/shared/lib/utils"
 function isNestedPortalTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
   return Boolean(
-    target.closest("[data-pie-menu]") ||
-      target.closest("[data-slot='popover-content']") ||
+    target.closest("[data-slot='popover-content']") ||
       target.closest("[data-slot='popover-trigger']")
   )
 }

@@ -64,8 +64,7 @@ function releaseDrawerScrollLock() {
 function isNestedPortalTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
   return Boolean(
-    target.closest("[data-pie-menu]") ||
-      target.closest("[data-slot='dropdown-menu-content']") ||
+    target.closest("[data-slot='dropdown-menu-content']") ||
       target.closest("[data-slot='dropdown-menu-trigger']") ||
       target.closest("[aria-haspopup='menu']") ||
       target.closest("[data-slot='popover-content']") ||

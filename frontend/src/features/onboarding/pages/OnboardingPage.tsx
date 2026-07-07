@@ -10,12 +10,13 @@ import { useUpdateProfile } from "../hooks/useUpdateProfile";
 import { getUserId } from "@/features/auth";
 import { setDailyNewEventsEmailPreferenceAPI } from "@/features/settings/api/notificationPreferences.api";
 import { OnboardingEventGrid } from "../components/OnboardingEventGrid";
-import { OnboardingInterestsCombobox } from "../components/OnboardingInterestsCombobox";
 import { OnboardingFacultyStep } from "../components/OnboardingFacultyStep";
 import { GooseDialogue } from "../components/GooseDialogue";
 import { OnboardingProgressDots } from "../components/OnboardingProgressDots";
 import { OnboardingYearStep } from "../components/OnboardingYearStep";
 import { LanguageSelector } from "@/shared/ui/language-selector";
+import { MultiSelect } from "@/shared/ui/multi-select";
+import { getEventCategories } from "@/shared/data/eventCategories";
 import { Switch } from "@/shared/ui/switch";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { translateSchool } from "@/shared/utils/schoolTranslation";
@@ -145,10 +146,11 @@ export function OnboardingPage() {
       />
     ),
     2: (
-      <OnboardingInterestsCombobox
+      <MultiSelect
+        className="max-w-md mx-auto"
+        options={getEventCategories()}
         selected={flow.selectedTopics}
         onToggle={flow.toggleTopic}
-        placeholder={t("onboarding.searchPlaceholder")}
       />
     ),
     3: (
@@ -182,7 +184,7 @@ export function OnboardingPage() {
   }, [flow.currentStep, flow.school, t]);
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
+    <main className="h-dvh bg-background flex flex-col overflow-hidden">
       <div className="fixed top-0 left-0 right-0 z-10 w-full px-6 pt-4 pb-4 bg-background flex items-center justify-between">
         <OnboardingProgressDots
           currentStep={flow.currentStep}
@@ -194,34 +196,38 @@ export function OnboardingPage() {
         </div>
       </div>
 
-      {/* Extra bottom padding so content never overlaps the fixed dialogue */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-20 py-8 pb-[220px]">
-        <div className="w-full max-w-3xl flex-1 flex items-center justify-center">
-          <AnimatePresence mode="wait">
-            <m.div
-              key={flow.currentStep}
-              variants={stepVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="w-full"
-            >
-              {stepContent[flow.currentStep]}
-            </m.div>
-          </AnimatePresence>
+      {/* Scroll container: the sticky dialogue reserves its own space, so
+          tall step content (e.g. the event grid) scrolls above it instead
+          of overlapping it. */}
+      <div className="flex-1 flex flex-col overflow-y-auto pt-20">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+          <div className="w-full max-w-3xl">
+            <AnimatePresence mode="wait">
+              <m.div
+                key={flow.currentStep}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="w-full"
+              >
+                {stepContent[flow.currentStep]}
+              </m.div>
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
 
-      <div className="fixed bottom-0 left-0 right-0 px-6 pb-6 pt-4 bg-background">
-        <GooseDialogue
-          message={gooseMessage}
-          onBack={flow.goBack}
-          onNext={flow.goNext}
-          nextDisabled={!flow.canContinue}
-          showBack={flow.currentStep > 0}
-          nextLabel={isDoneStep ? t("onboarding.doneNextLabel") : undefined}
-        />
+        <div className="sticky bottom-0 px-6 pb-6 pt-4 bg-background">
+          <GooseDialogue
+            message={gooseMessage}
+            onBack={flow.goBack}
+            onNext={flow.goNext}
+            nextDisabled={!flow.canContinue}
+            showBack={flow.currentStep > 0}
+            nextLabel={isDoneStep ? t("onboarding.doneNextLabel") : undefined}
+          />
+        </div>
       </div>
     </main>
   );
