@@ -11,6 +11,7 @@ import { X, ImagePlus } from "@/shared/ui/doodle-icons";
 import { parseEventImage } from "@/shared/services/uploadService";
 import { toast } from "@/shared/hooks/use-toast";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
+import { mapAiResponseToFormData } from "@/features/events/hooks/useEventForm.utils";
 import { useEventFormAI } from "@/features/events/hooks/useEventFormAI";
 import { useEventFormPromotion } from "@/features/events/hooks/useEventFormPromotion";
 import { useSubmitEvent, type SubmitEventResult } from "@/features/events/hooks/useSubmitEvent";
@@ -86,11 +87,14 @@ function SubmitEventModalFormBody({
       try {
         const parsedData = await parseEventImage(file);
 
-        // Prefill form details
-        eventForm.setFormData((prev) => ({
-          ...prev,
-          ...parsedData,
-        }));
+        // Prefill form details through the shared AI-response normalizer so
+        // missing/empty fields (e.g. an undetected flyer date) fall back to the
+        // form's current values instead of wiping them.
+        eventForm.setFormData((prev) =>
+          mapAiResponseToFormData(parsedData as unknown as Record<string, unknown>, {
+            occurrences: prev.occurrences,
+          }),
+        );
 
         if (parsedData.source_image_url) {
           eventForm.setImagePreview(parsedData.source_image_url);
