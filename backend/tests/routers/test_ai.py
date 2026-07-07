@@ -295,6 +295,8 @@ def test_parse_event_image_authenticated(authenticated_client, monkeypatch):
 
     ai_generate_event_rate_limiter._requests.clear()
 
+    monkeypatch.setattr("routers.ai._get_openai_client", lambda: MagicMock())
+
     # Mock extract_events_from_post
     fake_extracted = [
         {
