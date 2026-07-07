@@ -62,8 +62,12 @@ export function SchoolCombobox({
   const renderTriggerLabel =
     variant === "nav" && showHighlight
       ? (label: string) => (
-          <Highlighter action="highlight" color="var(--primary)">
-            <span className="block min-w-0 truncate text-primary-foreground">{label}</span>
+          <Highlighter
+            action="highlight"
+            color="var(--primary)"
+            className="block min-w-0 flex-1 truncate text-primary-foreground"
+          >
+            {label}
           </Highlighter>
         )
       : undefined;

@@ -100,7 +100,7 @@ export function TopNav() {
             src={imgImage1.src}
           />
         </button>
-        <span className="text-muted-foreground text-lg font-light max-[359px]:hidden">/</span>
+        <span className="hidden text-muted-foreground text-lg font-light sm:inline">/</span>
         <SchoolCombobox
           value={schoolFilter ?? ""}
           onChange={handleSchoolChange}
