@@ -40,6 +40,7 @@ export function mapAiResponseToFormData(
       typeof parsed.registration === "boolean"
         ? parsed.registration
         : false,
+    source_image_url: (parsed.source_image_url as string) || null,
   };
 }
 
@@ -72,6 +73,7 @@ export function getInitialState(initialData?: EventFormData, isEditMode = false)
         price: 0,
         food: [],
         registration: false,
+        source_image_url: null,
       };
 
   return {

@@ -20,7 +20,7 @@ export interface FloatingDockItem {
 }
 
 const dockItemHitboxClassName =
-  "flex size-11 items-center justify-center touch-manipulation [@media(pointer:coarse)]:size-14 sm:size-9 sm:[@media(pointer:coarse)]:size-14";
+  "flex items-center justify-center touch-manipulation [@media(pointer:coarse)]:size-14 sm:[@media(pointer:coarse)]:size-14";
 
 export const FloatingDock = ({
   items,
@@ -136,7 +136,7 @@ function IconContainer({
         "relative flex size-11 aspect-square items-center justify-center rounded-full sm:size-9",
         isActive
           ? "bg-primary text-white"
-          : "border border-transparent bg-transparent text-foreground/80 hover:text-foreground",
+          : "border border-border bg-secondary text-foreground/80 hover:text-foreground hover:bg-secondary/80",
       )}
     >
       <AnimatePresence>

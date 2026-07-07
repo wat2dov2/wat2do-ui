@@ -22,7 +22,6 @@ import {
 } from "@/shared/ui/select";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldError,
@@ -47,7 +46,6 @@ interface OrganizationFormData {
   ig: string;
   discord: string;
   organization_type: string;
-  owner_user_id: string;
   school: string;
 }
 
@@ -77,7 +75,6 @@ export function AddOrganizationModal({
     ig: "",
     discord: "",
     organization_type: "WUSA",
-    owner_user_id: "",
     school: DEFAULT_SCHOOL,
   }), []);
 
@@ -105,7 +102,6 @@ export function AddOrganizationModal({
           ig: initialData.ig || "",
           discord: initialData.discord || "",
           organization_type: initialData.organization_type,
-          owner_user_id: initialData.created_by || "",
           school: initialData.school || DEFAULT_SCHOOL,
         }
       : undefined,
@@ -150,7 +146,7 @@ export function AddOrganizationModal({
       ig: form.formData.ig.trim() || null,
       discord: form.formData.discord.trim() || null,
       organization_type: form.formData.organization_type,
-      created_by: form.formData.owner_user_id.trim() || initialData?.created_by || null,
+      created_by: initialData?.created_by || null,
       school: form.formData.school,
     };
 
@@ -182,7 +178,7 @@ export function AddOrganizationModal({
             <X className="size-4" />
           </button>
         </DrawerClose>
-        <div className="max-h-[92dvh] overflow-y-auto px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-3">
+        <div className="max-h-[92dvh] overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
           <form className="space-y-6">
             <DrawerHeader className="p-0 pr-11 text-left">
               <div
@@ -263,23 +259,6 @@ export function AddOrganizationModal({
                       <FieldError className="text-xs">{form.errors.categories}</FieldError>
                     )}
                   </Field>
-                  {!isEditMode && (
-                    <Field>
-                      <FieldLabel htmlFor="owner-user-id" className="text-sm font-medium text-foreground">
-                        {t("forms.ownerUserId")}
-                      </FieldLabel>
-                      <Input
-                        id="owner-user-id"
-                        type="text"
-                        value={form.formData.owner_user_id}
-                        onChange={(e) => form.updateField("owner_user_id", e.target.value)}
-                        placeholder={t("forms.ownerUserIdPlaceholder")}
-                      />
-                      <FieldDescription>
-                        {t("forms.ownerUserIdDescription")}
-                      </FieldDescription>
-                    </Field>
-                  )}
                 </FieldGroup>
               </FieldSet>
 

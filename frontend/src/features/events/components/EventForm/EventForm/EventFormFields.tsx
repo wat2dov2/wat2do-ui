@@ -211,9 +211,11 @@ export function EventFormFields() {
 
           <ImageUploadField
             label={t("forms.eventImage")}
+            required
             imagePreview={imagePreview}
             onImageUpload={onImageUpload}
             onRemoveImage={onRemoveImage}
+            error={!imagePreview ? t("qrCode.posterImageRequired") : undefined}
           />
         </FieldGroup>
       </FieldSet>

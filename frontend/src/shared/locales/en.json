@@ -87,14 +87,6 @@
     "contact": "Contact",
     "goToEvents": "Go to events"
   },
-  "submitChoice": {
-    "title": "What would you like to submit?",
-    "description": "Choose the kind of submission you want to start.",
-    "eventTitle": "Event",
-    "eventDescription": "Share a campus event with students.",
-    "organizationTitle": "Organization",
-    "organizationDescription": "Add an organization to the directory."
-  },
   "modals": {
     "welcome": {
       "title": "Welcome to wat2do",
@@ -251,10 +243,7 @@
     "requiredInformation": "Required Information",
     "organizationName": "Organization Name",
     "organizationNameRequired": "Organization name is required",
-    "ownerUserId": "Owner User ID",
     "ownerEmail": "Owner Email",
-    "ownerUserIdPlaceholder": "Internal user UUID",
-    "ownerUserIdDescription": "Assign this organization to the approved user who should manage it.",
     "categories": "Categories",
     "categoryRequired": "At least one category is required",
     "add": "Add",

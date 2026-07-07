@@ -51,6 +51,7 @@ export interface EventFormData {
   price: number;
   food: string[];
   registration: boolean;
+  source_image_url?: string | null;
 }
 
 // Form validation errors

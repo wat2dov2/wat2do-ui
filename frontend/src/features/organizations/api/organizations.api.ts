@@ -111,12 +111,22 @@ export async function getMyOrganizations(): Promise<Organization[]> {
   return rawOrgs.map(normalizeOrganization);
 }
 
-export async function createOrganizationAPI(organizationData: Omit<Organization, "id">): Promise<Organization> {
-  const { created_by, ...payload } = organizationData;
-  const raw = await api.post<ApiOrganizationResponse>("/organizations/", {
-    ...payload,
-    owner_user_id: created_by || undefined,
-  });
+export type OrganizationCreateInput = Pick<
+  Organization,
+  | "organization_name"
+  | "categories"
+  | "organization_page"
+  | "ig"
+  | "discord"
+  | "organization_type"
+  | "logo_url"
+  | "school"
+>;
+
+export async function createOrganizationAPI(
+  organizationData: OrganizationCreateInput,
+): Promise<Organization> {
+  const raw = await api.post<ApiOrganizationResponse>("/organizations/", organizationData);
   return normalizeOrganization(raw);
 }
 

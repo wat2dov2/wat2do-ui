@@ -6,7 +6,6 @@
  * re-rendering route page content.
  *
  * Subscribes to:
- *   - showSubmitChoice / setShowSubmitChoice
  *   - showSubmitEvent / setShowSubmitEvent
  *   - showCommandPalette / setShowCommandPalette
  *   - setShowFilterDropdown (passed to CommandPalette)
@@ -22,28 +21,18 @@
 import { useCallback, useState, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Calendar, Heart, LogIn, OrganizationChart, X } from "@/shared/ui/doodle-icons";
+import { Heart, LogIn } from "@/shared/ui/doodle-icons";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { CommandPalette } from "@/shared/components/CommandPalette";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { CommandItem } from "@/shared/ui/command";
-import { Button } from "@/shared/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/shared/ui/drawer";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useFilterActions } from "@/features/search";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { submitEventForReview } from "@/shared/api/submissions.api";
 import { eventToFormData, getEventCategory } from "@/shared/utils/event";
 import { ROUTES } from "@/shared/constants/routes";
-import type { EventFormData, Organization } from "@/shared/types";
-import { createOrganizationAPI } from "@/features/organizations";
+import type { EventFormData } from "@/shared/types";
 
 const SubmitEventModal = lazy(() =>
   import("@/features/events/components/SubmitEventModal").then((m) => ({
@@ -57,12 +46,6 @@ const BuyCreditsModal = lazy(() =>
   }))
 );
 
-const AddOrganizationModal = lazy(() =>
-  import("@/features/organizations").then((m) => ({
-    default: m.AddOrganizationModal,
-  }))
-);
-
 export function ModalContainer() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -70,8 +53,6 @@ export function ModalContainer() {
   const canCreateEvents = hasOrganization || isAdmin;
 
   // ── UI-store subscriptions (isolated from route pages) ─────
-  const showSubmitChoice = useUIStore((s) => s.showSubmitChoice);
-  const setShowSubmitChoice = useUIStore((s) => s.setShowSubmitChoice);
   const showSubmitEvent = useUIStore((s) => s.showSubmitEvent);
   const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
   const showCommandPalette = useUIStore((s) => s.showCommandPalette);
@@ -93,7 +74,6 @@ export function ModalContainer() {
 
   // ── Buy credits modal (local UI state) ───────────────────────
   const [showBuyCredits, setShowBuyCredits] = useState(false);
-  const [showAddOrganization, setShowAddOrganization] = useState(false);
 
   const promoteEvent = useCallback(
     async (eventId: number): Promise<boolean> => {
@@ -111,40 +91,6 @@ export function ModalContainer() {
     setShowSubmitEvent(false);
     clearEditingEvent();
   }, [setShowSubmitEvent, clearEditingEvent]);
-
-  const handleChooseSubmitEvent = useCallback(() => {
-    setShowSubmitChoice(false);
-    setShowSubmitEvent(true);
-  }, [setShowSubmitChoice, setShowSubmitEvent]);
-
-  const handleChooseSubmitOrganization = useCallback(() => {
-    setShowSubmitChoice(false);
-    setShowAddOrganization(true);
-  }, [setShowSubmitChoice]);
-
-  const handleBackToSubmitChoiceFromEvent = useCallback(() => {
-    setShowSubmitEvent(false);
-    setShowSubmitChoice(true);
-  }, [setShowSubmitChoice, setShowSubmitEvent]);
-
-  const handleBackToSubmitChoiceFromOrganization = useCallback(() => {
-    setShowAddOrganization(false);
-    setShowSubmitChoice(true);
-  }, [setShowSubmitChoice]);
-
-  const handleSubmitOrganization = useCallback(async (organization: Organization) => {
-    await createOrganizationAPI({
-      organization_name: organization.organization_name,
-      categories: organization.categories,
-      organization_page: organization.organization_page,
-      ig: organization.ig,
-      discord: organization.discord,
-      organization_type: organization.organization_type,
-      logo_url: organization.logo_url,
-      created_by: organization.created_by,
-      school: organization.school,
-    });
-  }, []);
 
   const loadEventForEdit = useCallback(
     async (eventId: number): Promise<EventFormData> => {
@@ -177,74 +123,15 @@ export function ModalContainer() {
 
   return (
     <>
-      <Drawer open={showSubmitChoice} onOpenChange={setShowSubmitChoice}>
-        <DrawerContent className="overflow-hidden p-0" aria-describedby="submit-choice-description">
-          <div className="max-h-[96dvh] overflow-y-auto p-4">
-            <DrawerClose asChild>
-              <button
-                type="button"
-                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl bg-background/90 text-foreground opacity-80 shadow-sm transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                aria-label={t("common.close")}
-              >
-                <X className="size-4" />
-              </button>
-            </DrawerClose>
-            <DrawerHeader className="p-0 text-center">
-              <DrawerTitle>{t("submitChoice.title")}</DrawerTitle>
-              <DrawerDescription id="submit-choice-description">
-                {t("submitChoice.description")}
-              </DrawerDescription>
-            </DrawerHeader>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
-                onMouseDown={handleChooseSubmitEvent}
-              >
-                <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <Calendar className="size-5" />
-                </span>
-                <span className="min-w-0 space-y-1">
-                  <span className="block font-medium text-foreground">{t("submitChoice.eventTitle")}</span>
-                  <span className="block text-sm font-normal text-muted-foreground">
-                    {t("submitChoice.eventDescription")}
-                  </span>
-                </span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="h-auto min-w-0 flex-col items-start gap-3 whitespace-normal p-4 text-left"
-                onMouseDown={handleChooseSubmitOrganization}
-              >
-                <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <OrganizationChart className="size-5" />
-                </span>
-                <span className="min-w-0 space-y-1">
-                  <span className="block font-medium text-foreground">{t("submitChoice.organizationTitle")}</span>
-                  <span className="block text-sm font-normal text-muted-foreground">
-                    {t("submitChoice.organizationDescription")}
-                  </span>
-                </span>
-              </Button>
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
-
       <Suspense fallback={null}>
         <SubmitEventModal
-          isOpen={showSubmitEvent}
+          isOpen={showSubmitEvent && profileCompleted}
           onClose={handleSubmitEventClose}
           onSubmit={handleSubmitEvent}
           canCreateEvents={canCreateEvents}
           userCredits={userCredits}
           onPromote={profileCompleted && canCreateEvents ? promoteEvent : undefined}
           onBuyCredits={() => setShowBuyCredits(true)}
-          onBack={!editingEvent ? handleBackToSubmitChoiceFromEvent : undefined}
           editEventId={editingEvent?.id}
           initialData={editingEvent && "title" in editingEvent ? eventToFormData(editingEvent) : undefined}
           loadEventForEdit={loadEventForEdit}
@@ -252,15 +139,6 @@ export function ModalContainer() {
             await updateEvent(eventId, eventData);
             handleSubmitEventClose();
           }}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <AddOrganizationModal
-          isOpen={showAddOrganization}
-          onClose={() => setShowAddOrganization(false)}
-          onSave={handleSubmitOrganization}
-          onBack={handleBackToSubmitChoiceFromOrganization}
         />
       </Suspense>
 
@@ -278,7 +156,7 @@ export function ModalContainer() {
         onOpenChange={setShowCommandPalette}
         setShowFilterDropdown={setShowFilterDropdown}
         onClearAllFilters={clearAllFilters}
-        canSubmitEvents
+        canSubmitEvents={profileCompleted}
         personalItems={
           profileCompleted ? (
             <CommandItem

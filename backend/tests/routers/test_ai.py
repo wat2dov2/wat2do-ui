@@ -276,3 +276,59 @@ def test_daily_ai_budget_exceeded_returns_502(authenticated_client, monkeypatch)
     assert resp_blocked.status_code == 502
     # Clean up so other tests aren't affected.
     ai_service._daily_ai_cache.clear()
+
+
+# ---------------------------------------------------------------------------
+# Image parsing
+# ---------------------------------------------------------------------------
+
+
+def test_parse_event_image_requires_auth(client):
+    resp = client.post(
+        "/ai/parse-event-image", files={"file": ("flyer.jpg", b"fake_bytes", "image/jpeg")}
+    )
+    assert resp.status_code == 401
+
+
+def test_parse_event_image_authenticated(authenticated_client, monkeypatch):
+    from core.rate_limit import ai_generate_event_rate_limiter
+
+    ai_generate_event_rate_limiter._requests.clear()
+
+    # Mock extract_events_from_post
+    fake_extracted = [
+        {
+            "title": "Mock Image Event",
+            "description": "Mock Description",
+            "location": "SLC",
+            "organization": "Mock Org",
+            "price": 0.0,
+            "food": ["Pizza"],
+            "registration": False,
+            "occurrences": [
+                {"dtstart_utc": "2026-04-10T22:00:00Z", "dtend_utc": "", "tz": "America/Toronto"}
+            ],
+            "category": "Games & Recreation",
+        }
+    ]
+
+    monkeypatch.setattr(
+        "services.scraper.extractor.extract_events_from_post", lambda **kwargs: fake_extracted
+    )
+    monkeypatch.setattr(
+        "services.storage_service.storage.validate_and_prepare",
+        lambda bucket, data, content_type: (data, content_type),
+    )
+    monkeypatch.setattr(
+        "services.storage_service.storage.upload_file",
+        lambda bucket, file_bytes, content_type: "https://example.com/mock-flyer.png",
+    )
+
+    resp = authenticated_client.post(
+        "/ai/parse-event-image", files={"file": ("flyer.jpg", b"fake_bytes", "image/jpeg")}
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["title"] == "Mock Image Event"
+    assert data["occurrences"][0]["dtstart_local"] == "2026-04-10T18:00"
+    assert data["source_image_url"] == "https://example.com/mock-flyer.png"

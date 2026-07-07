@@ -85,7 +85,6 @@ export async function adminCreateOrganization(club: Organization): Promise<Organ
     discord: club.discord,
     organization_type: club.organization_type,
     logo_url: club.logo_url,
-    created_by: club.created_by,
     school: club.school,
   });
 }

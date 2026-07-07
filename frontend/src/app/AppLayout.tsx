@@ -24,7 +24,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated } = useAuthState();
-  const setShowSubmitChoice = useUIStore((s) => s.setShowSubmitChoice);
+  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
   const isActive = (href?: string) => {
     if (!href) return false;
@@ -42,28 +42,28 @@ export function AppLayout({ children }: AppLayoutProps) {
       onMouseDown: () => router.push(ROUTES.HOME),
       isActive: isActive(ROUTES.HOME),
     },
-    ...(!isOrganizationPanel
+    ...(isAuthenticated && !isOrganizationPanel
       ? [
           {
             title: t("navigation.create"),
             icon: <Plus className="size-4" />,
-            onMouseDown: () => setShowSubmitChoice(true),
+            onMouseDown: () => setShowSubmitEvent(true),
           },
         ]
       : []),
-    {
-      title: t("navigation.organizations"),
-      icon: <OrganizationChart className="size-4" />,
-      href: ROUTES.ORGANIZATIONS,
-      onMouseDown: () => router.push(ROUTES.ORGANIZATIONS),
-      isActive: isActive(ROUTES.ORGANIZATIONS),
-    },
     {
       title: t("navigation.contact"),
       icon: <Mail className="size-4" />,
       href: ROUTES.CONTACT,
       onMouseDown: () => router.push(ROUTES.CONTACT),
       isActive: isActive(ROUTES.CONTACT),
+    },
+    {
+      title: t("navigation.organizations"),
+      icon: <OrganizationChart className="size-4" />,
+      href: ROUTES.ORGANIZATIONS,
+      onMouseDown: () => router.push(ROUTES.ORGANIZATIONS),
+      isActive: isActive(ROUTES.ORGANIZATIONS),
     },
     ...(isAuthenticated
       ? [

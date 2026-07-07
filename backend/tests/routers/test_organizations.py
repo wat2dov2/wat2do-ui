@@ -68,16 +68,20 @@ def test_upsert_instagram_integration_requires_auth(client):
     assert response.status_code == 401
 
 
-def test_create_organization_forbidden_for_regular_user(authenticated_client, monkeypatch):
-    """Only admins can approve/create organizations."""
-    monkeypatch.setattr(organization_service, "create_organization", MagicMock())
+def test_create_organization_sets_current_user_as_owner(authenticated_client, monkeypatch):
+    """Authenticated users create organizations owned by themselves."""
+    created_organization = _mock_organization(created_by=FAKE_USER["id"])
+    mock_create = MagicMock(return_value=created_organization)
+    monkeypatch.setattr(organization_service, "create_organization", mock_create)
 
     resp = authenticated_client.post(
         "/organizations/",
         json={"organization_name": "Test Organization", "organization_type": "WUSA"},
     )
-    assert resp.status_code == 403
-    organization_service.create_organization.assert_not_called()
+    assert resp.status_code == 201
+    assert mock_create.call_count == 1
+    _, kwargs = mock_create.call_args
+    assert kwargs["created_by"] == FAKE_USER["id"]
 
 
 def test_create_organization_sets_admin_as_owner_by_default(admin_client, monkeypatch):
@@ -96,10 +100,9 @@ def test_create_organization_sets_admin_as_owner_by_default(admin_client, monkey
     assert kwargs["created_by"] == ADMIN_USER["id"]
 
 
-def test_create_organization_can_assign_approved_owner(admin_client, monkeypatch):
-    """Admins can create an approved organization for a specific user."""
-    created_organization = _mock_organization(created_by=FAKE_USER["id"])
-    mock_create = MagicMock(return_value=created_organization)
+def test_create_organization_rejects_client_supplied_owner(admin_client, monkeypatch):
+    """Organization creation ownership is always derived from the authenticated user."""
+    mock_create = MagicMock()
     monkeypatch.setattr(organization_service, "create_organization", mock_create)
 
     resp = admin_client.post(
@@ -110,9 +113,8 @@ def test_create_organization_can_assign_approved_owner(admin_client, monkeypatch
             "owner_user_id": FAKE_USER["id"],
         },
     )
-    assert resp.status_code == 201
-    _, kwargs = mock_create.call_args
-    assert kwargs["created_by"] == FAKE_USER["id"]
+    assert resp.status_code == 422
+    mock_create.assert_not_called()
 
 
 def test_update_organization_owner_allowed(authenticated_client, monkeypatch):

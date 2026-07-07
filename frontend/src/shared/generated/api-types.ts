@@ -90,6 +90,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ai/parse-event-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parse Event Image */
+        post: operations["parse_event_image_ai_parse_event_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/send-otp": {
         parameters: {
             query?: never;
@@ -1169,6 +1186,26 @@ export interface paths {
         patch: operations["update_submission_submissions__submission_id__patch"];
         trace?: never;
     };
+    "/uploads/event-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Event Image Unsigned
+         * @description Upload an event flyer image and return its public URL.
+         */
+        post: operations["upload_event_image_unsigned_uploads_event_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/uploads/event-image/{event_id}": {
         parameters: {
             query?: never;
@@ -1457,6 +1494,11 @@ export interface components {
             /** Report Statuses */
             report_statuses: string[];
         };
+        /** Body_parse_event_image_ai_parse_event_image_post */
+        Body_parse_event_image_ai_parse_event_image_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_avatar_uploads_avatar_post */
         Body_upload_avatar_uploads_avatar_post: {
             /** File */
@@ -1464,6 +1506,11 @@ export interface components {
         };
         /** Body_upload_claim_proof_uploads_claim_proof_post */
         Body_upload_claim_proof_uploads_claim_proof_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_event_image_unsigned_uploads_event_image_post */
+        Body_upload_event_image_unsigned_uploads_event_image_post: {
             /** File */
             file: string;
         };
@@ -1603,6 +1650,8 @@ export interface components {
              * @default false
              */
             registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
         };
         /** EventFormOccurrenceResponse */
         EventFormOccurrenceResponse: {
@@ -2077,11 +2126,6 @@ export interface components {
             organization_type: string;
             /** Logo Url */
             logo_url?: string | null;
-            /**
-             * Owner User Id
-             * @description Approved organization owner user ID
-             */
-            owner_user_id?: string | null;
             /**
              * School
              * @default uwaterloo
@@ -3004,6 +3048,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AIPromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFormDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_event_image_ai_parse_event_image_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_parse_event_image_ai_parse_event_image_post"];
             };
         };
         responses: {
@@ -5298,6 +5375,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_event_image_unsigned_uploads_event_image_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_event_image_unsigned_uploads_event_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */

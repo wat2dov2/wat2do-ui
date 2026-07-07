@@ -31,11 +31,9 @@ interface UIState {
   setFilterViewMode: (mode: FilterViewMode) => void;
 
   // Modals & Dropdowns (ephemeral)
-  showSubmitChoice: boolean;
   showSubmitEvent: boolean;
   showCommandPalette: boolean;
   showFilterDropdown: boolean;
-  setShowSubmitChoice: (show: boolean) => void;
   setShowSubmitEvent: (show: boolean) => void;
   setShowCommandPalette: (show: boolean) => void;
   setShowFilterDropdown: (show: boolean) => void;
@@ -56,11 +54,9 @@ export const useUIStore = create<UIState>()(
       setFilterViewMode: (mode) => set({ filterViewMode: mode }),
 
       // Modals & Dropdowns default state
-      showSubmitChoice: false,
       showSubmitEvent: false,
       showCommandPalette: false,
       showFilterDropdown: false,
-      setShowSubmitChoice: (show) => set({ showSubmitChoice: show }),
       setShowSubmitEvent: (show) => set({ showSubmitEvent: show }),
       setShowCommandPalette: (show) => set({ showCommandPalette: show }),
       setShowFilterDropdown: (show) => set({ showFilterDropdown: show }),
@@ -87,7 +83,6 @@ export const useUIStore = create<UIState>()(
 if (typeof window !== "undefined") {
   window.addEventListener("auth-user-logout", () => {
     useUIStore.setState({
-      showSubmitChoice: false,
       showSubmitEvent: false,
       showCommandPalette: false,
       showFilterDropdown: false,

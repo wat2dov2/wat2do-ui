@@ -221,6 +221,17 @@ def test_upload_event_image_owner_allowed(authenticated_client, monkeypatch):
     assert resp.status_code == 200
 
 
+def test_upload_event_image_unsigned_authenticated(authenticated_client, monkeypatch):
+    """Authenticated user can upload an unsigned event image flyer."""
+    monkeypatch.setattr(
+        storage, "upload_file", MagicMock(return_value="https://example.com/img.png")
+    )
+    files = _make_file("poster.png", _real_png(), "image/png")
+    resp = authenticated_client.post("/uploads/event-image", files=files)
+    assert resp.status_code == 200
+    assert resp.json()["url"] == "https://example.com/img.png"
+
+
 # ── Organization logo upload ownership ──────────────────────────────────────────
 
 

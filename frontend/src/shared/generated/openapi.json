@@ -151,6 +151,52 @@
         ]
       }
     },
+    "/ai/parse-event-image": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Parse Event Image",
+        "operationId": "parse_event_image_ai_parse_event_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_event_image_ai_parse_event_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFormDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/auth/send-otp": {
       "post": {
         "tags": [
@@ -4269,6 +4315,53 @@
         }
       }
     },
+    "/uploads/event-image": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Event Image Unsigned",
+        "description": "Upload an event flyer image and return its public URL.",
+        "operationId": "upload_event_image_unsigned_uploads_event_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_event_image_unsigned_uploads_event_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/uploads/event-image/{event_id}": {
       "post": {
         "tags": [
@@ -5016,6 +5109,20 @@
         "title": "AppConstantsResponse",
         "description": "Shared domain constants that the frontend must stay in sync with.\n\nThe frontend fetches this once on app init so both layers\nalways agree on categories, interest mappings, and status enums."
       },
+      "Body_parse_event_image_ai_parse_event_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_event_image_ai_parse_event_image_post"
+      },
       "Body_upload_avatar_uploads_avatar_post": {
         "properties": {
           "file": {
@@ -5043,6 +5150,20 @@
           "file"
         ],
         "title": "Body_upload_claim_proof_uploads_claim_proof_post"
+      },
+      "Body_upload_event_image_unsigned_uploads_event_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_event_image_unsigned_uploads_event_image_post"
       },
       "Body_upload_event_image_uploads_event_image__event_id__post": {
         "properties": {
@@ -5408,6 +5529,17 @@
             "type": "boolean",
             "title": "Registration",
             "default": false
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
           }
         },
         "type": "object",
@@ -6726,19 +6858,6 @@
               }
             ],
             "title": "Logo Url"
-          },
-          "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner User Id",
-            "description": "Approved organization owner user ID"
           },
           "school": {
             "type": "string",

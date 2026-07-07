@@ -60,7 +60,7 @@ export function EventReportDialog({
   return (
     <Drawer open={open} onOpenChange={(nextOpen) => !isSubmitting && onOpenChange(nextOpen)}>
       <DrawerContent className="overflow-hidden p-0">
-        <div className="mx-auto w-full max-w-md space-y-4 p-4">
+        <div className="mx-auto w-full max-w-md space-y-4 px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
           {isSubmitted ? (
             <>
               <DrawerHeader className="items-start p-0 text-left">

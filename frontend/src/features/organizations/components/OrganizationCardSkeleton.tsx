@@ -20,15 +20,26 @@ export function OrganizationCardSkeleton() {
       />
 
       {/* 2. Custom Border SVG overlay */}
-      {paths.border && (
+      {(paths.borderOuter || paths.borderCutout) && (
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
-          <path
-            d={paths.border}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            className="text-border"
-          />
+          {paths.borderOuter && (
+            <path
+              d={paths.borderOuter}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              className="text-border"
+            />
+          )}
+          {paths.borderCutout && (
+            <path
+              d={paths.borderCutout}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              className="text-border"
+            />
+          )}
         </svg>
       )}
 

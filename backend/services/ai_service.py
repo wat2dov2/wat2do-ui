@@ -519,3 +519,114 @@ def generate_event(
 
     parsed = parse_json_response(content)
     return validate_event_response(parsed)
+
+
+def parse_event_image(
+    file_contents: bytes,
+    content_type: str,
+    *,
+    client: OpenAI | None = None,
+    user_id: str | None = None,
+    user_school: str | None = None,
+) -> dict:
+    """Extract event form data from an uploaded image file using OpenAI Vision."""
+    import base64
+    from zoneinfo import ZoneInfo
+
+    from services.school_context import resolve_school_timezone
+    from services.scraper.extractor import extract_events_from_post
+
+    if user_id is not None:
+        enforce_daily_ai_budget(user_id)
+
+    # Encode the image bytes to base64
+    base64_data = base64.b64encode(file_contents).decode("utf-8")
+    image_url = f"data:{content_type};base64,{base64_data}"
+
+    school = user_school or "uwaterloo"
+
+    # Call the existing extractor service
+    # extract_events_from_post accepts caption_text, image_urls, post_created_at, school
+    extracted_events = extract_events_from_post(
+        caption_text=None,
+        image_urls=[image_url],
+        post_created_at=None,
+        school=school,
+    )
+
+    if not extracted_events:
+        # Return default empty event form response
+        return {
+            "title": "",
+            "description": "",
+            "occurrences": [],
+            "location": "",
+            "category": "",
+            "price": 0.0,
+            "food": [],
+            "registration": False,
+        }
+
+    # Grab the first extracted event
+    event = extracted_events[0]
+
+    # Convert UTC occurrences to local occurrences for the frontend form prefill
+    local_occurrences = []
+    for occ in event.get("occurrences", []):
+        dtstart_utc_str = occ.get("dtstart_utc")
+        dtend_utc_str = occ.get("dtend_utc")
+        tz_str = occ.get("tz") or resolve_school_timezone(school)
+
+        try:
+            local_tz = ZoneInfo(tz_str)
+        except Exception:
+            local_tz = ZoneInfo("UTC")
+
+        dtstart_local_str = ""
+        dtend_local_str = ""
+
+        if dtstart_utc_str:
+            try:
+                # Remove Z and parse
+                clean_start = dtstart_utc_str.replace("Z", "+00:00")
+                dtstart_utc = datetime.fromisoformat(clean_start)
+                dtstart_local = dtstart_utc.astimezone(local_tz)
+                dtstart_local_str = dtstart_local.strftime("%Y-%m-%dT%H:%M")
+            except Exception as e:
+                log.warning("Failed to parse start datetime %s: %s", dtstart_utc_str, e)
+
+        if dtend_utc_str:
+            try:
+                clean_end = dtend_utc_str.replace("Z", "+00:00")
+                dtend_utc = datetime.fromisoformat(clean_end)
+                dtend_local = dtend_utc.astimezone(local_tz)
+                dtend_local_str = dtend_local.strftime("%Y-%m-%dT%H:%M")
+            except Exception as e:
+                log.warning("Failed to parse end datetime %s: %s", dtend_utc_str, e)
+
+        if dtstart_local_str:
+            local_occurrences.append(
+                {
+                    "dtstart_local": dtstart_local_str,
+                    "dtend_local": dtend_local_str,
+                }
+            )
+
+    # Validate and sanitize other fields
+    validated = validate_event_response(
+        {
+            "title": event.get("title", ""),
+            "description": event.get("description", ""),
+            "location": event.get("location", ""),
+            "category": event.get("category", ""),
+            "price": event.get("price", 0.0),
+            "food": event.get("food", []),
+            "registration": event.get("registration", False),
+        }
+    )
+
+    # Overwrite validated occurrences with converted local occurrences
+    if local_occurrences:
+        validated["occurrences"] = local_occurrences
+
+    return validated

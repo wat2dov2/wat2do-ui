@@ -146,7 +146,7 @@ export function EventFormStep({
     <EventFormProvider value={formContextValue}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Form Panel */}
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-3">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
           {/* Header with Tabs */}
           <div className="mb-5 sm:mb-7">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">

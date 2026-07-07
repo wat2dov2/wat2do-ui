@@ -239,7 +239,7 @@ def list_organizations(
 
 
 def create_organization(data: OrganizationCreate, *, created_by: str) -> OrganizationResponse:
-    payload = data.model_dump(exclude={"owner_user_id"})
+    payload = data.model_dump()
     payload["created_by"] = created_by
     r = get_sb().table(ORGANIZATIONS).insert(payload).execute()
     email = _fetch_owner_email(created_by)

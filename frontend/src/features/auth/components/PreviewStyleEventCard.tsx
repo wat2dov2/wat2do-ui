@@ -133,7 +133,7 @@ export function PreviewStyleEventCard({
 
       <div
         className={cn(
-          "flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden",
+          "flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20",
           catClasses.bg,
           catClasses.text,
           catClasses.border,

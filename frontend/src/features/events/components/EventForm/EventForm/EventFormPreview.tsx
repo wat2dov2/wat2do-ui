@@ -111,7 +111,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
         </div>
 
         <div
-          className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20 ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
         >
           <EventCardContent
             title={formData.title || t("events.eventTitle")}

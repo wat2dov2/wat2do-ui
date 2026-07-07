@@ -228,7 +228,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="overflow-hidden p-0">
-        <div className="max-h-[92dvh] overflow-y-auto p-4">
+        <div className="max-h-[92dvh] overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
           <DrawerClose asChild>
             <button
               type="button"

@@ -91,9 +91,6 @@ class OrganizationCreate(BaseModel):
     discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     organization_type: str = Field(..., min_length=1, max_length=MAX_ORGANIZATION_TYPE_LENGTH)
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    owner_user_id: UUID | None = Field(
-        default=None, description="Approved organization owner user ID"
-    )
     school: str = Field(default="uwaterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH)
 
     @field_validator("organization_name", "organization_type", "school")

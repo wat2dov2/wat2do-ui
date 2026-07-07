@@ -42,8 +42,19 @@ export function useSubmitEvent({
       if (!isValid) return;
       setIsSubmitting(true);
       try {
+        let finalImageUrl = formData.source_image_url;
+        if (imageFile) {
+          const { uploadEventImageUnsigned } = await import("@/shared/services/uploadService");
+          finalImageUrl = await uploadEventImageUnsigned(imageFile);
+        }
+
+        const dataToSubmit = {
+          ...formData,
+          source_image_url: finalImageUrl,
+        };
+
         if (isEditMode && editEventId && onUpdate) {
-          await onUpdate(editEventId, formData);
+          await onUpdate(editEventId, dataToSubmit);
           toast({
             title: t("events.eventUpdated"),
             description: t("events.eventUpdatedMessage", { title: formData.title }),
@@ -52,16 +63,9 @@ export function useSubmitEvent({
           onClose();
           return;
         }
-        const result = await onSubmit(formData);
+        const result = await onSubmit(dataToSubmit);
         const eventId = result.type === "event" ? result.eventId : null;
         onSubmitted(eventId);
-        if (imageFile && eventId) {
-          import("@/shared/services/uploadService").then(({ uploadEventImage }) => {
-            uploadEventImage(eventId, imageFile).catch((err) =>
-              console.error("Failed to upload event image:", err)
-            );
-          });
-        }
         if (!showPromotion) {
           triggerConfetti();
         }

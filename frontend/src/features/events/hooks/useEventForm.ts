@@ -204,8 +204,8 @@ export function useEventForm(options: UseEventFormOptions) {
   // isValid is derived from the domain-specific isEventFormValid (stronger than
   // useForm.isValid which only checks "errors is empty").
   const isValid = useMemo(
-    () => isEventFormValid(form.formData, errors),
-    [form.formData, errors],
+    () => isEventFormValid(form.formData, errors) && Boolean(imagePreview),
+    [form.formData, errors, imagePreview],
   );
 
   const markAllFieldsTouched = useCallback(() => {
@@ -250,6 +250,8 @@ export function useEventForm(options: UseEventFormOptions) {
     imageFile,
     onImageUpload,
     onRemoveImage,
+    setImagePreview,
+    setImageFile,
 
     // Utilities
     markAllFieldsTouched,

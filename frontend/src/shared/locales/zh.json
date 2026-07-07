@@ -87,14 +87,6 @@
     "contact": "联系我们",
     "goToEvents": "前往活动"
   },
-  "submitChoice": {
-    "title": "您想提交什么？",
-    "description": "选择要开始的提交类型。",
-    "eventTitle": "活动",
-    "eventDescription": "向学生分享校园活动。",
-    "organizationTitle": "组织",
-    "organizationDescription": "将组织添加到目录。"
-  },
   "modals": {
     "welcome": {
       "title": "欢迎来到 wat2do",
@@ -251,10 +243,7 @@
     "requiredInformation": "必填信息",
     "organizationName": "组织名称",
     "organizationNameRequired": "组织名称为必填项",
-    "ownerUserId": "所有者用户 ID",
     "ownerEmail": "所有者邮箱",
-    "ownerUserIdPlaceholder": "内部用户 UUID",
-    "ownerUserIdDescription": "将此组织分配给应管理它的获批用户。",
     "categories": "分类",
     "categoryRequired": "至少需要选择一个分类",
     "add": "添加",

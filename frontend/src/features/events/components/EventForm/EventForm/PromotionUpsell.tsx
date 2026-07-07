@@ -45,7 +45,7 @@ export function PromotionUpsell({
             <X className="size-4" />
           </button>
         </DrawerClose>
-        <div className="mx-auto w-full max-w-md p-4">
+        <div className="mx-auto w-full max-w-md px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
           <DrawerHeader className="px-10 pt-0 text-center">
             <DrawerTitle>{t("promotion.promoteEvent")}</DrawerTitle>
             <DrawerDescription>

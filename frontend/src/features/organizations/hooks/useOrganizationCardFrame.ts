@@ -10,11 +10,12 @@ interface OrganizationCardFrameDimensions {
 }
 
 interface OrganizationCardFramePaths {
-  border: string;
+  borderOuter: string;
+  borderCutout: string;
   clip: string;
 }
 
-const EMPTY_FRAME_PATHS: OrganizationCardFramePaths = { border: "", clip: "" };
+const EMPTY_FRAME_PATHS: OrganizationCardFramePaths = { borderOuter: "", borderCutout: "", clip: "" };
 
 function getOrganizationCardFramePaths({
   w,
@@ -32,7 +33,7 @@ function getOrganizationCardFramePaths({
 
   if (cutoutWidth === 0 || cutoutHeight === 0) {
     const standardPath = `M ${cardRadius} 0 L ${w - cardRadius} 0 A ${cardRadius} ${cardRadius} 0 0 1 ${w} ${cardRadius} L ${w} ${h - cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${w - cardRadius} ${h} L ${cardRadius} ${h} A ${cardRadius} ${cardRadius} 0 0 1 0 ${h - cardRadius} L 0 ${cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${cardRadius} 0 Z`;
-    return { border: standardPath, clip: standardPath };
+    return { borderOuter: standardPath, borderCutout: "", clip: standardPath };
   }
 
   const offset = 0.75;
@@ -41,10 +42,11 @@ function getOrganizationCardFramePaths({
   const borderCutoutWidth = cutoutWidth - offset;
   const borderCutoutHeight = cutoutHeight - offset;
 
-  const borderPath = `M ${borderCutoutWidth + cutoutRadius} ${offset} L ${borderWidth - cardRadius} ${offset} A ${cardRadius} ${cardRadius} 0 0 1 ${borderWidth} ${cardRadius} L ${borderWidth} ${borderHeight - cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${borderWidth - cardRadius} ${borderHeight} L ${cardRadius} ${borderHeight} A ${cardRadius} ${cardRadius} 0 0 1 ${offset} ${borderHeight - cardRadius} L ${offset} ${borderCutoutHeight + cutoutRadius} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${cutoutRadius + offset} ${borderCutoutHeight} L ${borderCutoutWidth - cutoutRadius} ${borderCutoutHeight} A ${cutoutRadius} ${cutoutRadius} 0 0 0 ${borderCutoutWidth} ${borderCutoutHeight - cutoutRadius} L ${borderCutoutWidth} ${cutoutRadius + offset} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${borderCutoutWidth + cutoutRadius} ${offset} Z`;
+  const borderOuter = `M ${borderCutoutWidth + cutoutRadius} ${offset} L ${borderWidth - cardRadius} ${offset} A ${cardRadius} ${cardRadius} 0 0 1 ${borderWidth} ${cardRadius} L ${borderWidth} ${borderHeight - cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${borderWidth - cardRadius} ${borderHeight} L ${cardRadius} ${borderHeight} A ${cardRadius} ${cardRadius} 0 0 1 ${offset} ${borderHeight - cardRadius} L ${offset} ${borderCutoutHeight + cutoutRadius}`;
+  const borderCutout = `M ${offset} ${borderCutoutHeight + cutoutRadius} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${cutoutRadius + offset} ${borderCutoutHeight} L ${borderCutoutWidth - cutoutRadius} ${borderCutoutHeight} A ${cutoutRadius} ${cutoutRadius} 0 0 0 ${borderCutoutWidth} ${borderCutoutHeight - cutoutRadius} L ${borderCutoutWidth} ${cutoutRadius + offset} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${borderCutoutWidth + cutoutRadius} ${offset}`;
   const clipPath = `M ${cutoutWidth + cutoutRadius} 0 L ${w - cardRadius} 0 A ${cardRadius} ${cardRadius} 0 0 1 ${w} ${cardRadius} L ${w} ${h - cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${w - cardRadius} ${h} L ${cardRadius} ${h} A ${cardRadius} ${cardRadius} 0 0 1 0 ${h - cardRadius} L 0 ${cutoutHeight + cutoutRadius} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${cutoutRadius} ${cutoutHeight} L ${cutoutWidth - cutoutRadius} ${cutoutHeight} A ${cutoutRadius} ${cutoutRadius} 0 0 0 ${cutoutWidth} ${cutoutHeight - cutoutRadius} L ${cutoutWidth} ${cutoutRadius} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${cutoutWidth + cutoutRadius} 0 Z`;
 
-  return { border: borderPath, clip: clipPath };
+  return { borderOuter, borderCutout, clip: clipPath };
 }
 
 export function useOrganizationCardFrame() {

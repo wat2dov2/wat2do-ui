@@ -296,14 +296,26 @@ function OrganizationCardComponent({
         }}
       />
 
-      {/* 2. Custom Border SVG overlay (matching divider color at 25% opacity) */}
-      {paths.border && (
+      {/* 2. Custom Border SVG overlay */}
+      {paths.borderOuter && (
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
           <path
-            d={paths.border}
+            d={paths.borderOuter}
             fill="none"
             stroke="currentColor"
             style={{ stroke: "currentColor", opacity: 0.25 }}
+            className={categoryClasses.text}
+            strokeWidth={1}
+          />
+        </svg>
+      )}
+      {paths.borderCutout && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-40">
+          <path
+            d={paths.borderCutout}
+            fill="none"
+            stroke="currentColor"
+            style={{ stroke: "currentColor", opacity: 0.38 }}
             className={categoryClasses.text}
             strokeWidth={1}
           />

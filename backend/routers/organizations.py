@@ -205,10 +205,9 @@ def disconnect_platform_integration(
 @router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED)
 def create_organization(
     data: OrganizationCreate,
-    admin: UserResponse = Depends(get_admin_user),
+    db_user: UserResponse = Depends(get_db_user),
 ):
-    owner_id = data.owner_user_id or admin.id
-    return organization_service.create_organization(data, created_by=str(owner_id))
+    return organization_service.create_organization(data, created_by=str(db_user.id))
 
 
 @router.patch("/{organization_id}", response_model=OrganizationResponse)

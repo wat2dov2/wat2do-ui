@@ -121,6 +121,24 @@ async def _replace_image(
     return url
 
 
+@router.post("/event-image", response_model=UploadResponse)
+async def upload_event_image_unsigned(
+    file: UploadFile = File(...),
+    db_user=Depends(get_db_user),
+    _rl: None = Depends(_rate_limit_dep),
+    _cl: None = Depends(_enforce_content_length(BUCKET_EVENT_IMAGES)),
+):
+    """Upload an event flyer image and return its public URL."""
+    data, content_type = await _validated_upload(file, BUCKET_EVENT_IMAGES)
+    url = await asyncio.to_thread(
+        storage.upload_file,
+        BUCKET_EVENT_IMAGES,
+        data,
+        content_type,
+    )
+    return {"url": url}
+
+
 @router.post("/event-image/{event_id}", response_model=UploadResponse)
 async def upload_event_image(
     event_id: int,
