@@ -15,7 +15,6 @@ import {
 import { loadAppConstants } from "@/shared/api/metaApi";
 import {
   identifyPostHogUser,
-  initPostHog,
   resetPostHogUser,
 } from "@/shared/lib/posthog";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
@@ -140,7 +139,6 @@ export function ClientProviders({ children }: { children: ReactNode }) {
     if (!ready) return;
 
     document.documentElement.dataset.clientReady = "true";
-    initPostHog();
     void bootstrapConstants();
     void bootstrapAuth().then((ok) => {
       if (ok) {
