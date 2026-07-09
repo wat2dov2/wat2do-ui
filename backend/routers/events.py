@@ -2,9 +2,10 @@ import logging
 from datetime import datetime
 from typing import Literal
 
+import posthog
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_authorized_resource, get_db_user, is_admin
+from core.auth import get_authorized_resource, get_current_user, get_db_user, is_admin
 from core.constants import (
     MAX_EVENT_PRICE,
     MAX_EVENT_SCHOOL_LENGTH,
@@ -141,9 +142,21 @@ def get_event(event_id: int):
 def create_event(
     data: EventCreate,
     db_user: UserResponse = Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
     _authorize_event_organization(data.organization_id, db_user)
-    return event_service.create_event(data, created_by=str(db_user.id))
+    result = event_service.create_event(data, created_by=str(db_user.id))
+    posthog.capture(
+        "event_created",
+        distinct_id=auth_user["id"],
+        properties={
+            "organization_id": data.organization_id,
+            "has_price": data.price is not None and data.price > 0,
+            "has_registration": data.registration,
+            "category": data.category,
+        },
+    )
+    return result
 
 
 @router.patch("/{event_id}", response_model=EventResponse)
@@ -151,6 +164,7 @@ def update_event(
     event_id: int,
     data: EventUpdate,
     db_user: UserResponse = Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
     old_event = _get_event_or_404_authorized(event_id, db_user)
     # Reassigning to a different organization requires ownership of the target organization
@@ -167,6 +181,7 @@ def update_event(
             event_change.enqueue_event_change(event_id, diff)
         except Exception as e:
             log.warning("enqueue_event_change failed event=%s: %s", event_id, e)
+    posthog.capture("event_updated", distinct_id=auth_user["id"], properties={"event_id": event_id})
     return updated_event
 
 
@@ -174,6 +189,8 @@ def update_event(
 def delete_event(
     event_id: int,
     db_user: UserResponse = Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
     _get_event_or_404_authorized(event_id, db_user)
     event_service.delete_event(event_id)
+    posthog.capture("event_deleted", distinct_id=auth_user["id"], properties={"event_id": event_id})

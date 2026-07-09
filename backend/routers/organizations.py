@@ -1,6 +1,7 @@
 from typing import Union
 from uuid import UUID
 
+import posthog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user
@@ -206,8 +207,15 @@ def disconnect_platform_integration(
 def create_organization(
     data: OrganizationCreate,
     db_user: UserResponse = Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
-    return organization_service.create_organization(data, created_by=str(db_user.id))
+    result = organization_service.create_organization(data, created_by=str(db_user.id))
+    posthog.capture(
+        "organization_created",
+        distinct_id=auth_user["id"],
+        properties={"organization_id": result.id},
+    )
+    return result
 
 
 @router.patch("/{organization_id}", response_model=OrganizationResponse)
@@ -451,11 +459,18 @@ def create_claim(
     organization_id: int,
     data: OrganizationClaimCreate,
     db_user: UserResponse = Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
     """Submit a claim for an unowned organization."""
-    return organization_service.create_claim(
+    result = organization_service.create_claim(
         organization_id, db_user.id, data.executive_role, data.proof_url
     )
+    posthog.capture(
+        "organization_claimed",
+        distinct_id=auth_user["id"],
+        properties={"organization_id": organization_id},
+    )
+    return result
 
 
 @router.patch("/claims/{claim_id}", response_model=OrganizationClaimResponse)
@@ -477,9 +492,16 @@ def create_join_request(
     organization_id: int,
     data: OrganizationJoinRequestCreate,
     db_user: UserResponse = Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
     """Submit a request to join a organization's management team."""
-    return organization_service.create_join_request(organization_id, db_user.id, data.pitch)
+    result = organization_service.create_join_request(organization_id, db_user.id, data.pitch)
+    posthog.capture(
+        "organization_join_requested",
+        distinct_id=auth_user["id"],
+        properties={"organization_id": organization_id},
+    )
+    return result
 
 
 @router.get(

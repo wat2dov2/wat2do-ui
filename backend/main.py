@@ -1,7 +1,9 @@
 import importlib
 import logging
 import pkgutil
+from contextlib import asynccontextmanager
 
+import posthog
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,12 +14,24 @@ from core.security_headers import SecurityHeadersMiddleware
 
 log = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if not settings.posthog_disabled and settings.posthog_project_token:
+        posthog.api_key = settings.posthog_project_token
+        posthog.host = settings.posthog_host
+    yield
+    if not settings.posthog_disabled and settings.posthog_project_token:
+        posthog.flush()
+
+
 app = FastAPI(
     title="wat2do API",
     # Disable OpenAPI docs in production to reduce attack surface.
     docs_url=None if settings.is_production else "/docs",
     redoc_url=None if settings.is_production else "/redoc",
     openapi_url=None if settings.is_production else "/openapi.json",
+    lifespan=lifespan,
 )
 register_error_handlers(app)
 

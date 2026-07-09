@@ -1,9 +1,10 @@
 import logging
 
+import posthog
 from fastapi import APIRouter, Depends, status
 from postgrest.exceptions import APIError
 
-from core.auth import get_db_user
+from core.auth import get_current_user, get_db_user
 from core.constants import MAX_SAVED_EVENTS_PER_USER
 from core.errors import EVENT_NOT_FOUND, SAVED_EVENTS_CAP_REACHED
 from core.exceptions import NotFoundError, ValidationError
@@ -29,7 +30,9 @@ def list_saved_events(user=Depends(get_db_user)):
     status_code=status.HTTP_200_OK,
     response_model=SaveEventStatusResponse,
 )
-def save_event(event_id: int, user=Depends(get_db_user)):
+def save_event(
+    event_id: int, user=Depends(get_db_user), auth_user: dict = Depends(get_current_user)
+):
     """Save (bookmark) an event.
 
     - 404 if the referenced event does not exist (audit I9).
@@ -49,6 +52,7 @@ def save_event(event_id: int, user=Depends(get_db_user)):
         raise ValidationError(SAVED_EVENTS_CAP_REACHED)
 
     saved_event_service.save_event(str(user.id), event_id)
+    posthog.capture("event_saved", distinct_id=auth_user["id"], properties={"event_id": event_id})
     return {"status": "saved"}
 
 
@@ -57,7 +61,10 @@ def save_event(event_id: int, user=Depends(get_db_user)):
     status_code=status.HTTP_200_OK,
     response_model=SaveEventStatusResponse,
 )
-def unsave_event(event_id: int, user=Depends(get_db_user)):
+def unsave_event(
+    event_id: int, user=Depends(get_db_user), auth_user: dict = Depends(get_current_user)
+):
     """Remove a saved event."""
     saved_event_service.unsave_event(str(user.id), event_id)
+    posthog.capture("event_unsaved", distinct_id=auth_user["id"], properties={"event_id": event_id})
     return {"status": "unsaved"}
