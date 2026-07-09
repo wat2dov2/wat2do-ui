@@ -44,6 +44,7 @@
     "mapbox-gl": "^3.18.0",
     "motion": "^12.40.0",
     "next": "^16.2.9",
+    "posthog-js": "^1.399.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "radix-ui": "^1.4.3",

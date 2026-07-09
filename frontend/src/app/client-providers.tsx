@@ -6,9 +6,18 @@ import "@/shared/lib/i18n";
 import i18n, { getStoredLanguage } from "@/shared/lib/i18n";
 import { loadLanguage } from "@/shared/lib/loadLanguage";
 import ErrorBoundary from "@/app/ErrorBoundary";
-import { fetchProfileAPI, initializeAuth } from "@/features/auth/api/auth.api";
+import {
+  fetchProfileAPI,
+  getSessionEmail,
+  getUserId,
+  initializeAuth,
+} from "@/features/auth/api/auth.api";
 import { loadAppConstants } from "@/shared/api/metaApi";
-import { initClarity } from "@/shared/lib/clarity";
+import {
+  identifyPostHogUser,
+  initPostHog,
+  resetPostHogUser,
+} from "@/shared/lib/posthog";
 import { setOnAfterRefresh } from "@/shared/services/apiClient";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { installBundledLocales } from "@/app/localeResources";
@@ -49,7 +58,7 @@ async function bootstrapConstants() {
   }
 }
 
-async function bootstrapAuth() {
+async function bootstrapAuth(): Promise<boolean> {
   try {
     const ok = await Promise.race([
       initializeAuth(),
@@ -60,8 +69,10 @@ async function bootstrapAuth() {
     if (ok) {
       window.dispatchEvent(new Event("auth-user-login"));
     }
+    return ok;
   } catch (err) {
     console.error("Auth initialization failed or timed out, continuing without session:", err);
+    return false;
   }
 }
 
@@ -87,9 +98,11 @@ export function ClientProviders({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleLogin = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.user.all });
+      identifyPostHogUser(getUserId(), getSessionEmail());
     };
     const handleLogout = () => {
       queryClient.removeQueries({ queryKey: queryKeys.user.all });
+      resetPostHogUser();
     };
     window.addEventListener("auth-user-login", handleLogin);
     window.addEventListener("auth-user-logout", handleLogout);
@@ -127,9 +140,13 @@ export function ClientProviders({ children }: { children: ReactNode }) {
     if (!ready) return;
 
     document.documentElement.dataset.clientReady = "true";
-    initClarity(process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID);
+    initPostHog();
     void bootstrapConstants();
-    void bootstrapAuth();
+    void bootstrapAuth().then((ok) => {
+      if (ok) {
+        identifyPostHogUser(getUserId(), getSessionEmail());
+      }
+    });
 
     return () => {
       delete document.documentElement.dataset.clientReady;
