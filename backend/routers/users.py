@@ -1,5 +1,6 @@
 from uuid import UUID
 
+import posthog
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user
@@ -29,8 +30,16 @@ def get_me(auth_user: dict = Depends(get_current_user)):
 def update_me(
     data: UserUpdate,
     user=Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
     updated = user_service.update_user(user.id, data)
+    fields_changed = [k for k, v in data.model_dump(exclude_unset=True).items() if v is not None]
+    if fields_changed:
+        posthog.capture(
+            "profile_updated",
+            distinct_id=auth_user["id"],
+            properties={"fields_changed": fields_changed},
+        )
     return updated
 
 
@@ -38,9 +47,17 @@ def update_me(
 def update_profile(
     data: UserProfileUpdate,
     user=Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
 ):
     update_data = UserUpdate(**data.model_dump(exclude_unset=True))
     updated = user_service.update_user(user.id, update_data)
+    fields_changed = [k for k, v in data.model_dump(exclude_unset=True).items() if v is not None]
+    if fields_changed:
+        posthog.capture(
+            "profile_updated",
+            distinct_id=auth_user["id"],
+            properties={"fields_changed": fields_changed},
+        )
     return updated
 
 

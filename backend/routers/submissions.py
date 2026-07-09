@@ -1,5 +1,6 @@
 import logging
 
+import posthog
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_optional_user, resolve_db_user
@@ -35,7 +36,14 @@ def create_submission(
     user: UserResponse | None = resolve_db_user(auth_user) if auth_user else None
     if user and user.school:
         data.event_data = data.event_data.model_copy(update={"school": user.school})
-    return submission_service.create_submission(str(user.id) if user else None, data.event_data)
+    result = submission_service.create_submission(str(user.id) if user else None, data.event_data)
+    distinct_id = auth_user["id"] if auth_user else f"anon-{result.id}"
+    posthog.capture(
+        "submission_created",
+        distinct_id=distinct_id,
+        properties={"is_authenticated": auth_user is not None},
+    )
+    return result
 
 
 @router.get("/", response_model=PaginatedResponse[SubmissionResponse])

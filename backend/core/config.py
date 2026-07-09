@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     event_feed_revalidation_secret: str = ""
     event_feed_revalidation_timeout: float = 3.0
 
+    # PostHog
+    posthog_project_token: str = ""
+    posthog_host: str = "https://us.i.posthog.com"
+    posthog_disabled: bool = False
+
     @model_validator(mode="after")
     def validate_database_region(self) -> "Settings":
         if not self.database_url:

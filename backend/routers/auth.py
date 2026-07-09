@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from posthog import capture, identify_context, new_context
 
 from core.client_ip import get_client_ip
 from core.config import settings
@@ -134,6 +135,16 @@ def verify_otp(
     result = auth.verify_otp(data.email, data.token)
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token)
+    if result.body and result.body.user_id:
+        with new_context():
+            identify_context(result.body.user_id)
+            capture(
+                "user_verified_otp",
+                properties={
+                    "login_method": "otp",
+                    "is_new_user": result.body.onboarding_required,
+                },
+            )
     return result.body
 
 

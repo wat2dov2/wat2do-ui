@@ -1,5 +1,6 @@
 import logging
 
+import posthog
 from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user, is_admin
@@ -79,6 +80,7 @@ def list_promotions(
 def create_promotion(
     data: PromotionCreate,
     user=Depends(get_db_user),
+    auth_user: dict = Depends(get_current_user),
     _rl: None = Depends(credit_mutation_rate_limiter.dependency(key_func=_user_id_key)),
 ):
     event = get_or_404(event_service.get_event(data.event_id), EVENT_NOT_FOUND)
@@ -89,10 +91,16 @@ def create_promotion(
         and organization_service.is_organization_member(event.organization_id, str(user.id))
     ):
         raise AuthorizationError(ORGANIZATION_PROMOTION_REQUIRED)
-    return credit_service.create_promotion(
+    result = credit_service.create_promotion(
         user_id=str(user.id),
         event_id=data.event_id,
     )
+    posthog.capture(
+        "promotion_created",
+        distinct_id=auth_user["id"],
+        properties={"event_id": data.event_id},
+    )
+    return result
 
 
 @router.get("/promotions/active-ids", response_model=list[int])
