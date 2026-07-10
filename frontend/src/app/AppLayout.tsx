@@ -13,6 +13,7 @@ import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
 import { useAuthState } from "@/features/auth";
 import { useUIStore } from "@/shared/store/ui.store";
+import { toast } from "@/shared/hooks/use-toast";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AppLayoutProps {
@@ -33,6 +34,14 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const isOrganizationPanel = pathname.startsWith(ROUTES.ORGANIZATION_PANEL);
 
+  const handleCreateClick = () => {
+    if (!isAuthenticated) {
+      toast({ description: t("navigation.loginRequiredToSubmit") });
+      return;
+    }
+    setShowSubmitEvent(true);
+  };
+
   const dockItems: FloatingDockItem[] = [
     {
       title: t("navigation.explore"),
@@ -40,12 +49,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       href: ROUTES.HOME,
       isActive: isActive(ROUTES.HOME),
     },
-    ...(isAuthenticated && !isOrganizationPanel
+    ...(!isOrganizationPanel
       ? [
           {
             title: t("navigation.create"),
             icon: <Plus className="size-4" />,
-            onMouseDown: () => setShowSubmitEvent(true),
+            onMouseDown: handleCreateClick,
           },
         ]
       : []),

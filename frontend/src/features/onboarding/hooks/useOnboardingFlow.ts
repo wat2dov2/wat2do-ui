@@ -46,12 +46,6 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   // All questions optional - user can always continue
   const canContinue = true;
 
-  const toggleTopic = useCallback((category: string) => {
-    setSelectedTopics((prev) =>
-      prev.includes(category) ? prev.filter((t) => t !== category) : [...prev, category]
-    );
-  }, []);
-
   const toggleEventId = useCallback((eventId: number) => {
     setSelectedEventIds((prev) =>
       prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
@@ -103,7 +97,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     setFaculty,
     setIsFirstYear,
     setDailyNewEventsOptIn,
-    toggleTopic,
+    setSelectedTopics,
     toggleEventId,
     goNext,
     goBack,

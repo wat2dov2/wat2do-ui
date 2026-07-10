@@ -25,6 +25,7 @@ import {
   CommandShortcut,
 } from "@/shared/ui/command";
 import { useUIStore } from "@/shared/store/ui.store";
+import { toast } from "@/shared/hooks/use-toast";
 import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
 
 interface CommandPaletteProps {
@@ -112,18 +113,21 @@ export function CommandPalette({
         <CommandSeparator />
 
         <CommandGroup heading={t("common.actions")}>
-          {canSubmitEvents && (
-            <CommandItem
-              onSelect={() => {
-                setShowSubmitEvent(true);
+          <CommandItem
+            onSelect={() => {
+              if (!canSubmitEvents) {
+                toast({ description: t("navigation.loginRequiredToSubmit") });
                 onOpenChange(false);
-              }}
-            >
-              <Plus className="mr-2 size-4" />
-              <span>{t("commands.createNewEvent")}</span>
-              <CommandShortcut>N</CommandShortcut>
-            </CommandItem>
-          )}
+                return;
+              }
+              setShowSubmitEvent(true);
+              onOpenChange(false);
+            }}
+          >
+            <Plus className="mr-2 size-4" />
+            <span>{t("commands.createNewEvent")}</span>
+            <CommandShortcut>N</CommandShortcut>
+          </CommandItem>
           <CommandItem
             onSelect={() => {
               onClearAllFilters();

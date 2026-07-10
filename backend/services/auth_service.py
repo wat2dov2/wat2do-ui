@@ -198,9 +198,9 @@ class AuthService:
             <div style="background-color: #f7fafc; border: 1px solid #edf2f7; border-radius: 6px; padding: 12px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #2d3748; margin: 16px 0;">
                 {link_res.properties.email_otp}
             </div>
-            <p style="color: #4a5568; line-height: 1.5;">Or click the button below to log in automatically:</p>
+            <p style="color: #4a5568; line-height: 1.5;">Or open this link and confirm to sign in:</p>
             <div style="text-align: center; margin: 24px 0;">
-                <a href="{callback_url}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Log In Automatically</a>
+                <a href="{callback_url}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Open sign-in link</a>
             </div>
             <hr style="border: 0; border-top: 1px solid #edf2f7; margin: 24px 0;" />
             <p style="color: #718096; font-size: 12px; line-height: 1.5;">This code and link will expire in 15 minutes. If you did not request this, you can safely ignore this email.</p>
@@ -212,7 +212,7 @@ class AuthService:
         Here is your 6-digit login code:
         {link_res.properties.email_otp}
 
-        Or log in automatically using this link:
+        Or open this link and confirm to sign in:
         {callback_url}
 
         This code and link will expire in 15 minutes. If you did not request this, you can safely ignore this email.

@@ -33,6 +33,7 @@ import { useSavedOrganizationsStore } from "@/features/organizations/store/saved
 import type { Organization } from "@/shared/types";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 import { createOrganizationAPI } from "@/features/organizations/api/organizations.api";
+import { toast } from "@/shared/hooks/use-toast";
 
 type OrganizationScope = "all" | "followed" | "claimed";
 
@@ -143,18 +144,22 @@ export function OrganizationsPage() {
             </Select>
           </div>
 
-          {authed && (
-            <Button
-              type="button"
-              variant="secondary"
-              className="h-auto self-stretch px-3"
-              onMouseDown={() => setShowAddOrganization(true)}
-              aria-label={t("organizations.addClub")}
-            >
-              <Plus className="size-4" />
-              <span className="hidden sm:inline">{t("organizations.addClub")}</span>
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="secondary"
+            className="h-auto self-stretch px-3"
+            onMouseDown={() => {
+              if (!authed) {
+                toast({ description: t("navigation.loginRequiredToSubmit") });
+                return;
+              }
+              setShowAddOrganization(true);
+            }}
+            aria-label={t("organizations.addClub")}
+          >
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">{t("organizations.addClub")}</span>
+          </Button>
         </div>
 
         <div className="flex items-center gap-2">

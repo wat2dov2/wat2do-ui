@@ -1,7 +1,6 @@
 import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
-import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Bookmark,
@@ -32,7 +31,6 @@ import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import { useMouseDownAction, createAdaptivePressHandlers, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
-import { useFilterActions } from "@/features/search";
 
 interface EventCardProps {
   event: Event;
@@ -62,7 +60,6 @@ interface EventImageBadgesProps {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
   };
-  categoryPressHandlers: React.HTMLAttributes<HTMLButtonElement>;
   t: TFunction;
 }
 
@@ -73,7 +70,6 @@ function EventImageBadges({
   isLive,
   isNew,
   badgeHoverProps,
-  categoryPressHandlers,
   t,
 }: EventImageBadgesProps) {
   return (
@@ -83,15 +79,9 @@ function EventImageBadges({
           asChild
           variant="outline"
           size="md"
-          className={`block border-0 transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 cursor-pointer ${categoryClasses.bg} ${categoryClasses.text}`}
+          className={`block border-0 opacity-70 ${categoryClasses.bg} ${categoryClasses.text}`}
         >
-          <button
-            type="button"
-            {...categoryPressHandlers}
-            {...badgeHoverProps}
-          >
-            {translateCategory(eventCategory, t)}
-          </button>
+          <span>{translateCategory(eventCategory, t)}</span>
         </Badge>
       </BadgeMask>
 
@@ -264,7 +254,6 @@ interface EventCardImageProps {
   isLive: boolean;
   isNew: boolean;
   badgeHoverProps: EventImageBadgesProps["badgeHoverProps"];
-  categoryPressHandlers: EventImageBadgesProps["categoryPressHandlers"];
   t: TFunction;
 }
 
@@ -275,7 +264,6 @@ function EventCardImage({
   isLive,
   isNew,
   badgeHoverProps,
-  categoryPressHandlers,
   t,
 }: EventCardImageProps) {
   return (
@@ -306,7 +294,6 @@ function EventCardImage({
         isLive={isLive}
         isNew={isNew}
         badgeHoverProps={badgeHoverProps}
-        categoryPressHandlers={categoryPressHandlers}
         t={t}
       />
     </div>
@@ -385,35 +372,19 @@ function EventCardBody({
 
 interface UseEventCardNavigationOptions {
   event: Event;
-  eventCategory: string;
   onEventClick?: (event: Event) => void;
 }
 
 function useEventCardNavigation({
   event,
-  eventCategory,
   onEventClick,
 }: UseEventCardNavigationOptions) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const filterActions = useFilterActions();
-
-  const handleCategoryClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    filterActions.toggleFilterValue("categories", eventCategory);
-    if (pathname !== "/") {
-      router.push("/");
-    }
-  }, [eventCategory, filterActions, pathname, router]);
-
   const handleCardActivate = useCallback(() => {
     tracker.track(event.id, "click");
     onEventClick?.(event);
   }, [event, onEventClick]);
 
   return {
-    handleCategoryClick,
     handleCardActivate,
   };
 }
@@ -467,22 +438,13 @@ function EventCardComponent({
     [event],
   );
 
-  const {
-    handleCategoryClick,
-    handleCardActivate,
-  } = useEventCardNavigation({
+  const { handleCardActivate } = useEventCardNavigation({
     event,
-    eventCategory,
     onEventClick,
   });
 
   const mobileGridClickActivation = useMobileGridClickActivation();
   const preferClickPress = mobileClickActivation && mobileGridClickActivation;
-
-  const categoryPressHandlers = createAdaptivePressHandlers({
-    preferClick: preferClickPress,
-    onClick: handleCategoryClick,
-  });
 
   const handleActionDialogOpen = useCallback(
     (dialog: EventCardDialog) => {
@@ -545,7 +507,6 @@ function EventCardComponent({
           isLive={isLive}
           isNew={isNew}
           badgeHoverProps={badgeHoverProps}
-          categoryPressHandlers={categoryPressHandlers}
           t={t}
         />
 

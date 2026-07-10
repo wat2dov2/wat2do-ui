@@ -83,19 +83,5 @@ export function useProfile() {
     });
   };
 
-  const toggleInterest = (interest: string) => {
-    hasLocalEditsRef.current = true;
-    setProfile((prev) => {
-      const updated = {
-        ...prev,
-        interests: prev.interests.includes(interest)
-          ? prev.interests.filter((i) => i !== interest)
-          : [...prev.interests, interest],
-      };
-      syncProfile(updated);
-      return updated;
-    });
-  };
-
-  return { profile, updateProfile, toggleInterest, syncing };
+  return { profile, updateProfile, syncing };
 }

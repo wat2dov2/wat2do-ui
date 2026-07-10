@@ -77,6 +77,7 @@
     "events": "活动",
     "explore": "探索",
     "create": "提交活动",
+    "loginRequiredToSubmit": "只有登录用户才能提交活动或组织。",
     "organizations": "组织",
     "myEvents": "我的活动",
     "settings": "设置",

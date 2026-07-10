@@ -15,8 +15,16 @@ import { GooseDialogue } from "../components/GooseDialogue";
 import { OnboardingProgressDots } from "../components/OnboardingProgressDots";
 import { OnboardingYearStep } from "../components/OnboardingYearStep";
 import { LanguageSelector } from "@/shared/ui/language-selector";
-import { MultiSelect } from "@/shared/ui/multi-select";
+import {
+  MultiSelect,
+  MultiSelectContent,
+  MultiSelectGroup,
+  MultiSelectItem,
+  MultiSelectTrigger,
+  MultiSelectValue,
+} from "@/shared/ui/multi-select";
 import { getEventCategories } from "@/shared/data/eventCategories";
+import { useTranslatedOptions } from "@/shared/hooks/useTranslatedOptions";
 import { Switch } from "@/shared/ui/switch";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { translateSchool } from "@/shared/utils/schoolTranslation";
@@ -133,6 +141,7 @@ export function OnboardingPage() {
   );
 
   const flow = useOnboardingFlow({ onComplete: handleComplete, initialSchool });
+  const topicOptions = useTranslatedOptions(getEventCategories(), "categories");
 
   const isDoneStep = flow.currentStep === 5;
 
@@ -145,12 +154,25 @@ export function OnboardingPage() {
       />
     ),
     2: (
-      <MultiSelect
-        className="max-w-md mx-auto"
-        options={getEventCategories()}
-        selected={flow.selectedTopics}
-        onToggle={flow.toggleTopic}
-      />
+      <div className="w-full max-w-md mx-auto">
+        <MultiSelect
+          values={flow.selectedTopics}
+          onValuesChange={flow.setSelectedTopics}
+        >
+          <MultiSelectTrigger className="w-full">
+            <MultiSelectValue placeholder={t("settings.profile.selectInterests")} />
+          </MultiSelectTrigger>
+          <MultiSelectContent>
+            <MultiSelectGroup>
+              {topicOptions.map(({ value, label }) => (
+                <MultiSelectItem key={value} value={value}>
+                  {label}
+                </MultiSelectItem>
+              ))}
+            </MultiSelectGroup>
+          </MultiSelectContent>
+        </MultiSelect>
+      </div>
     ),
     3: (
       <OnboardingEventGrid

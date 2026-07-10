@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { verifyOtpAPI } from "@/features/auth/api/auth.api";
@@ -6,76 +6,77 @@ import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
-import { Spinner } from "@/shared/ui/spinner";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
+
+/**
+ * Module-level guard so a token is only verified once per page session.
+ * Survives React Strict Mode remounts (refs alone do not).
+ */
+const verifyingTokens = new Set<string>();
 
 export function AuthCallbackPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const inFlightRef = useRef(false);
 
   const token = searchParams.get("token");
   const email = searchParams.get("email");
+  const hasValidParams = Boolean(token && email);
 
-  useEffect(() => {
-    let active = true;
+  async function handleConfirm() {
+    if (!token || !email || isLoading || inFlightRef.current) return;
 
-    async function performHandshake() {
-      if (!token || !email) {
-        if (active) {
-          setError(t("auth.resetPasswordInvalidLink"));
-          setIsLoading(false);
-        }
-        return;
+    const key = `${email}:${token}`;
+    if (verifyingTokens.has(key)) return;
+
+    inFlightRef.current = true;
+    verifyingTokens.add(key);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await verifyOtpAPI(email, token);
+      const school = result.school || DEFAULT_SCHOOL;
+
+      if (result.onboardingRequired) {
+        router.replace(`${ROUTES.ONBOARDING}?${new URLSearchParams({ [QP.SCHOOL]: school })}`);
+      } else {
+        router.replace(
+          school
+            ? `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: school })}`
+            : ROUTES.HOME,
+        );
       }
-
-      try {
-        const result = await verifyOtpAPI(email, token);
-        if (!active) return;
-
-        const school = result.school || DEFAULT_SCHOOL;
-
-        if (result.onboardingRequired) {
-          router.replace(`${ROUTES.ONBOARDING}?${new URLSearchParams({ [QP.SCHOOL]: school })}`);
-        } else {
-          router.replace(
-            school
-              ? `${ROUTES.HOME}?${new URLSearchParams({ [QP.SCHOOL]: school })}`
-              : ROUTES.HOME,
-          );
-        }
-      } catch (err) {
-        console.error("Auth callback verification failed:", err);
-        if (active) {
-          setError(t("auth.resetPasswordInvalidLink"));
-          setIsLoading(false);
-        }
-      }
+    } catch (err) {
+      console.error("Auth callback verification failed:", err);
+      verifyingTokens.delete(key);
+      setError(t("auth.resetPasswordInvalidLink"));
+      setIsLoading(false);
+      inFlightRef.current = false;
     }
-
-    performHandshake();
-
-    return () => {
-      active = false;
-    };
-  }, [token, email, router, t]);
+  }
 
   return (
     <AuthPageLayout
       heading={t("auth.heading")}
-      description={error ? t("auth.genericError") : t("common.pleaseWait")}
+      description={
+        error
+          ? t("auth.genericError")
+          : hasValidParams
+            ? t("auth.callbackDescription", { email })
+            : t("auth.resetPasswordInvalidLink")
+      }
     >
       <div className="w-full flex flex-col items-center justify-center py-8 space-y-4">
-        {isLoading ? (
+        {error || !hasValidParams ? (
           <>
-            <Spinner className="size-8 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">{t("common.pleaseWait")}</p>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-destructive text-center max-w-xs">{error}</p>
+            <p className="text-sm text-destructive text-center max-w-xs">
+              {error || t("auth.resetPasswordInvalidLink")}
+            </p>
             <Button
               type="button"
               onMouseDown={() => router.replace(ROUTES.LOGIN)}
@@ -90,6 +91,17 @@ export function AuthCallbackPage() {
               {t("auth.backToLogin")}
             </Button>
           </>
+        ) : (
+          <LoadingButton
+            type="button"
+            onClick={handleConfirm}
+            isLoading={isLoading}
+            loadingText={t("common.pleaseWait")}
+            className="w-full"
+            autoFocus
+          >
+            {t("auth.callbackContinue")}
+          </LoadingButton>
         )}
       </div>
     </AuthPageLayout>
