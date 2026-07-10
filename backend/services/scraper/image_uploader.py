@@ -1,19 +1,8 @@
-"""Download Instagram images and hand them to the storage service.
+"""Download post/directory images and upload them via ``storage_service``.
 
-The scraper passes bytes to ``services.storage_service``, which handles
-validation, EXIF stripping, and bucket selection (``BUCKET_EVENT_IMAGES``).
-
-Returned URLs are public (the bucket is set to public-read in the
-``StorageService._DEFAULT_BUCKETS`` config) and cache-friendly.
-
-SSRF protection: the URL we fetch comes from Apify's representation of
-an Instagram post, which is influenced by content the post owner
-controls. Without an allowlist the worker would happily fetch
-``http://169.254.169.254/...`` (cloud metadata services) or internal
-services like ``http://localhost:8000/...`` and then upload the response
-bytes to a public storage bucket — leaking IAM credentials or admin
-endpoints. ``_is_safe_image_url`` narrows the source to
-HTTPS Instagram CDN domains.
+Storage handles validation, EXIF stripping, and ``BUCKET_EVENT_IMAGES``.
+Returned URLs are public-read. Fetch URLs are SSRF-checked in
+``_is_safe_image_url`` before download.
 """
 
 from __future__ import annotations
@@ -37,17 +26,11 @@ _USER_AGENT = (
     "(KHTML, like Gecko) Chrome/120.0 Safari/537.36"
 )
 _DOWNLOAD_TIMEOUT_SECONDS = 60.0
-# Map common content-type prefixes to a canonical MIME for the bucket
-# allowlist. Storage validation does its own SVG/EXIF handling — we just
-# pick the right declared MIME so the upload isn't rejected upfront.
+# Declared MIME fallback when the response Content-Type is missing/invalid.
 _CONTENT_TYPE_FALLBACK = "image/jpeg"
 
-# Instagram serves images from a small, well-known set of CDN hosts.
-# Tightening to suffix-match keeps the allowlist short while covering
-# the regional shards Apify returns (scontent-iad-1.cdninstagram.com,
-# scontent.fora1-1.fna.fbcdn.net, …). New domain shards added by Meta
-# would have to be added here — we accept that maintenance cost rather
-# than expose the full SSRF surface.
+# Suffix allowlist for Instagram/Meta CDN shards (e.g. scontent-*.cdninstagram.com).
+# New Meta shards must be added here; prefer that over opening the SSRF surface.
 _ALLOWED_HOST_SUFFIXES: tuple[str, ...] = (
     ".cdninstagram.com",
     ".fbcdn.net",
@@ -77,9 +60,8 @@ def _is_safe_image_url(url: str, allow_all_domains: bool = False) -> bool:
     if not allow_all_domains and not any(host.endswith(s) for s in _ALLOWED_HOST_SUFFIXES):
         return False
 
-    # Resolve to IP(s) and reject private/loopback/link-local. ``getaddrinfo``
-    # raises on resolution failure — treat as "unsafe" so a transient DNS
-    # error doesn't open a fetch path.
+    # Resolve IPs and reject private/loopback/link-local. DNS failure => unsafe
+    # so a transient resolution error never opens a fetch path.
     try:
         addrs = socket.getaddrinfo(host, None)
     except (socket.gaierror, UnicodeError):
@@ -96,21 +78,17 @@ def _is_safe_image_url(url: str, allow_all_domains: bool = False) -> bool:
 
 
 def upload_image_from_url(url: str, allow_all_domains: bool = False) -> str | None:
-    """Fetch ``url`` from HTTP source, push to event-images bucket.
+    """Fetch ``url`` and push to the event-images bucket.
 
-    Returns the public Supabase Storage URL on success, ``None`` on any
-    failure. Failures are logged but never raised — the pipeline tolerates
-    individual image upload errors and just drops that image from the
-    list passed to the extractor.
+    Returns the public Storage URL on success, ``None`` on failure.
+    Failures are logged and never raised; the caller drops that image.
     """
     if not _is_safe_image_url(url, allow_all_domains=allow_all_domains):
-        log.warning("Refusing to fetch image — URL not allowed by safety check: %s", url)
+        log.warning("Refusing to fetch image - URL not allowed by safety check: %s", url)
         return None
 
     try:
-        # ``follow_redirects=False`` keeps the safety check meaningful —
-        # an attacker who controls a redirect destination can't pivot
-        # through the allowlist.
+        # No redirects: a controlled redirect must not bypass the allowlist.
         with httpx.Client(timeout=_DOWNLOAD_TIMEOUT_SECONDS, follow_redirects=False) as client:
             resp = client.get(url, headers={"User-Agent": _USER_AGENT})
         resp.raise_for_status()
@@ -139,11 +117,10 @@ def upload_image_from_url(url: str, allow_all_domains: bool = False) -> str | No
 
 
 def upload_post_images(image_urls: Iterable[str], allow_all_domains: bool = False) -> list[str]:
-    """Upload each url in order; preserve list position by replacing failures with ``None`` then dropping.
+    """Upload each URL in order; omit failures from the returned list.
 
-    The extractor's ``image_index`` semantics depend on the carousel
-    order, so we keep position by uploading each URL and dropping any
-    that fail. Drops are logged at WARNING.
+    Successful uploads keep relative order. Failed URLs are dropped (not
+    replaced with ``None``), so ``image_index`` may shift when some fail.
     """
     uploaded: list[str] = []
     for url in image_urls:

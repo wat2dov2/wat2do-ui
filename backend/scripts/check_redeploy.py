@@ -13,7 +13,6 @@ def check_redeploy():
         sys.exit(1)
 
     try:
-        # Run railway command to list deployments
         cmd = [
             "railway",
             "deployment",
@@ -24,7 +23,6 @@ def check_redeploy():
             "production",
             "--json",
         ]
-        # We pass RAILWAY_PROJECT_ID in the env when invoking subprocess if it is in the parent env
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         deploys = json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
@@ -34,19 +32,15 @@ def check_redeploy():
         print(f"Error parsing railway JSON output: {e}")
         sys.exit(1)
 
-    # Filter for successful deployments
     success_deploys = [d for d in deploys if d.get("status") == "SUCCESS"]
 
     should_deploy = "true"
     if not success_deploys:
         print("No successful deployments found on Railway. Triggering redeploy.")
     else:
-        # Get creation timestamp of the latest successful deploy
         last_deploy_str = success_deploys[0]["createdAt"]
-        # Convert the Railway ``Z`` suffix to an explicit UTC offset.
         last_deploy_dt = datetime.datetime.fromisoformat(last_deploy_str.replace("Z", "+00:00"))
 
-        # Get latest commit datetime from git log
         try:
             commit_ts_str = (
                 subprocess.check_output(["git", "log", "-1", "--format=%cI"]).decode().strip()
@@ -66,7 +60,6 @@ def check_redeploy():
             print("No new commits since the last successful deployment. Skipping redeploy.")
             should_deploy = "false"
 
-    # Write output to GITHUB_OUTPUT if running inside GitHub Actions
     github_output_path = os.getenv("GITHUB_OUTPUT")
     if github_output_path:
         with open(github_output_path, "a") as f:

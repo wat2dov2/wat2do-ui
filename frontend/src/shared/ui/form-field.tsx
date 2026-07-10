@@ -59,9 +59,6 @@ interface FormTextareaProps extends BaseFormFieldProps {
   rows?: number;
 }
 
-/**
- * Reusable form input field with validation
- */
 export function FormInput({
   name,
   label,
@@ -136,9 +133,6 @@ export function FormInput({
   );
 }
 
-/**
- * Reusable form select field with validation
- */
 export function FormSelect({
   name,
   label,
@@ -198,9 +192,6 @@ export function FormSelect({
 }
 
 
-/**
- * Reusable form date-time picker field with validation.
- */
 export function FormDateTimePicker({
   name,
   label,
@@ -242,9 +233,6 @@ export function FormDateTimePicker({
   );
 }
 
-/**
- * Reusable form textarea field with validation
- */
 export function FormTextarea({
   name,
   label,

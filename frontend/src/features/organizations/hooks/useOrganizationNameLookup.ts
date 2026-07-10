@@ -8,7 +8,7 @@ const NO_ORGANIZATIONS: Organization[] = [];
 
 /**
  * Resolve an organization id to its display name. Loads the full organization list once and
- * exposes a stable lookup — the single source of truth for showing the organization
+ * exposes a stable lookup - the single source of truth for showing the organization
  * name of an event/submission that only carries a organization_id.
  */
 export function useOrganizationNameLookup() {

@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from services.school_context import resolve_user_timezone
 
-# Cron-firing constants — hour-of-day / day-of-week in the user's local
+# Cron-firing constants - hour-of-day / day-of-week in the user's local
 # timezone. The hourly cron iterates users, converts UTC → local per
 # user's school tz, and fires when the local clock matches. Change
 # these once to move the send time for every school.
@@ -45,7 +45,7 @@ def is_weekly_digest_time(user: dict, now_utc: datetime) -> date | None:
     """Return Monday-of-preview-week if ``now_utc`` is Sunday 6pm-local.
 
     Sunday evening previews the UPCOMING week (tomorrow onwards), so the
-    returned date is ``local.date() + 1 day`` — always a Monday.
+    returned date is ``local.date() + 1 day`` - always a Monday.
     """
     local = ensure_aware_utc(now_utc).astimezone(resolve_user_timezone(user))
     if local.weekday() == WEEKLY_DIGEST_WEEKDAY and local.hour == WEEKLY_DIGEST_HOUR:

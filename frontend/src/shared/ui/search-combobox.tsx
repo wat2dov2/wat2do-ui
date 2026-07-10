@@ -33,7 +33,7 @@ export interface SearchComboboxProps<T> {
   isPlaceholder?: boolean;
   /** Wrap the trigger label (e.g. with a highlighter). Defaults to a plain truncating span. */
   renderTriggerLabel?: (label: string) => ReactNode;
-  /** Fetch (and show results) even when the query is empty — list behaves like an input dropdown. */
+  /** Fetch (and show results) even when the query is empty - list behaves like an input dropdown. */
   searchOnEmpty?: boolean;
   /** Debounce before fetching. Use 0 for synchronous client-side filtering. */
   debounceMs?: number;
@@ -60,7 +60,7 @@ const VARIANT_CONTENT_STYLES: Record<SearchComboboxVariant, string> = {
 
 /**
  * Generic search-and-select combobox: a popover with a search input and a
- * scrollable result list. The single source of truth for school/club pickers —
+ * scrollable result list. The single source of truth for school/club pickers -
  * callers supply how to fetch, key, and label items.
  */
 export function SearchCombobox<T>({
@@ -119,7 +119,7 @@ export function SearchCombobox<T>({
   );
 
   // Loading is toggled in the event handlers below (open/typing); the effect
-  // only fires the fetch and writes results from async callbacks — keeping
+  // only fires the fetch and writes results from async callbacks - keeping
   // setState out of the synchronous effect body.
   useEffect(() => {
     if (!open) return;

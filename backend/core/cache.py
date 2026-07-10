@@ -16,7 +16,7 @@ T = TypeVar("T")
 DEFAULT_MAX_SIZE = 1024
 
 # Sentinel used internally to distinguish "no entry" from "entry whose
-# value happens to be None" (P4).  Public callers should never see this
+# value happens to be None".  Public callers should never see this
 # object; the fast-path APIs translate it back to ``None`` when desired.
 _MISSING: object = object()
 
@@ -33,11 +33,11 @@ class TTLCache:
         # Double-check locking pattern:
         result = cache.get_or_compute("key", expensive_fn)
 
-    **Size bound (P5):** By default the cache evicts the least-recently-used
+    **Size bound:** By default the cache evicts the least-recently-used
     entry when it grows beyond ``DEFAULT_MAX_SIZE``. Pass ``max_size=None``
     only for known-bounded keysets that intentionally need no cap.
 
-    **None values (P4):** ``get()`` still returns ``None`` on a miss,
+    **None values:** ``get()`` still returns ``None`` on a miss,
     but ``get_or_compute()`` correctly caches a computed ``None`` and
     does not recompute it on subsequent hits.  Internally an
     ``_MISSING`` sentinel separates the two states.
@@ -69,7 +69,7 @@ class TTLCache:
             # Lazy expiry: drop the entry so ``__contains__`` stays honest.
             del self._store[key]
             return _MISSING
-        # LRU bookkeeping — touching a key keeps it warm.
+        # LRU bookkeeping - touching a key keeps it warm.
         self._store.move_to_end(key)
         return value
 
@@ -89,8 +89,8 @@ class TTLCache:
 
         Note: this API cannot distinguish "cached None" from "cache miss".
         Prefer :meth:`get_or_compute` when the value can legitimately be
-        ``None`` — it uses an internal sentinel to avoid infinite
-        recomputation (P4).
+        ``None`` - it uses an internal sentinel to avoid infinite
+        recomputation.
         """
         with self._lock:
             hit = self._get_unlocked(key)
@@ -104,7 +104,7 @@ class TTLCache:
         Fast path (no lock): returns cached value if valid.
         Slow path (lock): re-checks, then calls *compute()* and caches the result.
 
-        Correctly caches ``None`` results (P4) — a cached ``None`` is NOT
+        Correctly caches ``None`` results - a cached ``None`` is NOT
         recomputed on subsequent calls within the TTL window.
         """
         with self._lock:
@@ -112,7 +112,7 @@ class TTLCache:
             if hit is not _MISSING:
                 return hit  # type: ignore[return-value]
 
-        # Slow path — compute outside the lock, then re-check under it.
+        # Slow path - compute outside the lock, then re-check under it.
         value = compute()
         with self._lock:
             hit = self._get_unlocked(key)
@@ -137,24 +137,19 @@ class TTLCache:
             self._store.clear()
 
 
-# ---------------------------------------------------------------------------
-# Cache-key helpers
-# ---------------------------------------------------------------------------
-
-
 def canonicalize_key(*parts: object) -> str:
     """Build a deterministic cache key from heterogeneous arguments.
 
     Collapses dicts / nested containers into a canonical JSON shape so
     that semantically-equal keys (same dict, different Python insertion
-    order) produce the same string (P16).
+    order) produce the same string.
 
     Usage::
 
         key = canonicalize_key("user_scores", user_id, {"filters": fs})
         cache.get_or_compute(key, compute)
 
-    Non-JSON-serialisable objects fall back to ``repr(obj)`` — good
+    Non-JSON-serialisable objects fall back to ``repr(obj)`` - good
     enough for local cache identity but never interchange.
     """
     import json

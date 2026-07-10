@@ -23,13 +23,13 @@ interface CreditsState {
   userCredits: number;
   activePromotedEventIds: number[];
 
-  /** Fetch the current balance from the backend. Idempotent — skips if already loaded. */
+  /** Fetch the current balance from the backend. Idempotent - skips if already loaded. */
   fetchBalance: () => Promise<void>;
   /** Reset per-user state (called on logout / user switch). */
   reset: () => void;
   /** Grant credits (admin-only on the backend). Resolves with the new balance committed to state. */
   addCredits: (amount: number) => Promise<void>;
-  /** Fetch the current active promoted event IDs from the backend. Idempotent — skips if already loaded. */
+  /** Fetch the current active promoted event IDs from the backend. Idempotent - skips if already loaded. */
   fetchActivePromotedEventIds: () => Promise<void>;
   /** Promote an event using credits. */
   promoteEvent: (eventId: number) => Promise<{ success: boolean; needsCredits?: boolean }>;

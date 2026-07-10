@@ -23,5 +23,6 @@ export function buildEventPayload(eventData: EventFormData): ApiEventCreate {
     category: eventData.category || null,
     organization_id: eventData.organization_id!,
     source_image_url: eventData.source_image_url || null,
+    cancelled: false,
   };
 }

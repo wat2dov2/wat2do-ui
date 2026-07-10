@@ -57,7 +57,7 @@ class ABTestService:
         transitions (M2).  If no row exists, computes a fresh assignment
         from the deterministic hash and inserts it so subsequent calls
         return the same variant.  A DB failure during lookup or insert
-        degrades to the computed hash — the function never raises, so
+        degrades to the computed hash - the function never raises, so
         variant resolution stays non-blocking for the request path.
         """
         sb = get_sb()
@@ -96,7 +96,7 @@ class ABTestService:
         except Exception as e:
             # Race between concurrent assigns resolves via unique key on
             # (user_id, experiment_name); subsequent lookups will see the
-            # winning row.  Anything else is non-fatal — the caller still
+            # winning row.  Anything else is non-fatal - the caller still
             # gets a deterministic variant from the hash.
             log.warning(
                 "Failed to persist AB assignment for user %s in %s: %s",

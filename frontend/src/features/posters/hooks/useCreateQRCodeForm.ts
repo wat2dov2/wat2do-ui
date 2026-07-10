@@ -42,7 +42,7 @@ export function useCreateQRCodeForm(events: Event[]) {
     getDefaults,
   });
 
-  // Errors and qrCodeId are not form fields — they live alongside the form.
+  // Errors and qrCodeId are not form fields - they live alongside the form.
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [qrCodeId, setQrCodeId] = useState<string | null>(null);
 

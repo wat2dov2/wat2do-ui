@@ -161,6 +161,13 @@ def test_diff_location_change_populates_dict():
     }
 
 
+def test_diff_cancelled_change_populates_dict():
+    old = _event(cancelled=False)
+    new = _event(cancelled=True)
+
+    assert event_service.compute_event_diff(old, new) == {"cancelled": {"old": False, "new": True}}
+
+
 def test_diff_occurrence_change_serialises_to_iso():
     """dtstart/dtend live in the occurrences list.
 

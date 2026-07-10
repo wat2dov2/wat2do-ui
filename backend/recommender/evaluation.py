@@ -77,7 +77,6 @@ def evaluate_all_users(
     """
     matrix = get_interaction_matrix()
 
-    # Group by user
     user_events: dict[str, list[tuple[int, float]]] = {}
     for row in matrix:
         uid = row.user_id
@@ -85,7 +84,6 @@ def evaluate_all_users(
             user_events[uid] = []
         user_events[uid].append((row.event_id, row.score))
 
-    # Only evaluate users with 5+ interactions
     eligible = {
         uid: events for uid, events in user_events.items() if len(events) >= EVAL_MIN_INTERACTIONS
     }
@@ -102,13 +100,11 @@ def evaluate_all_users(
     all_event_ids = [e.id for e in all_events_data]
     events_by_id = {e.id: e for e in all_events_data}
 
-    # Collect held-out event IDs so we can ensure they are in the candidate set
     held_out_eids: set[int] = set()
     for events in eligible.values():
         events.sort(key=lambda x: x[1], reverse=True)
         held_out_eids.add(events[0][0])
 
-    # Load any held-out events that fell outside the sampled set
     missing_eids = held_out_eids - set(events_by_id)
     if missing_eids:
         extra = _load_events(list(missing_eids))
@@ -121,13 +117,10 @@ def evaluate_all_users(
             len(all_event_ids),
         )
 
-    # --- Hoist user-independent and batch-fetchable work outside the loop ---
-
-    # Popularity scores are identical for every user; compute once.
+    # Popularity is identical for every user; profiles/counts are batch-fetched
+    # (2 queries) instead of 2*N sequential round-trips.
     pop = get_popularity_scores(all_event_ids)
 
-    # Batch-fetch all user profiles and interaction counts (2 queries total
-    # instead of 2*N sequential round-trips).
     eligible_uids = list(eligible.keys())
     users_by_id = user_service.get_users_by_ids(eligible_uids)
     interaction_counts = interaction_service.get_user_interaction_counts(eligible_uids)
@@ -147,7 +140,6 @@ def evaluate_all_users(
         relevant = {held_out_eid}
 
         try:
-            # Dynamic weights matching production (_compute_live)
             interaction_count = interaction_counts.get(uid, 0)
             user = users_by_id.get(uid)
             has_profile = bool(user and user.interests)
@@ -159,18 +151,14 @@ def evaluate_all_users(
                 warm_threshold=warm_threshold,
             )
 
-            # Mirror the live pipeline: content scorer needs per-user
-            # interaction scores to compute org affinity (worth up to
-            # CB_ORG_AFFINITY of the content score). Without these, offline
-            # metrics measure a weaker model than what production serves.
+            # Content scorer needs per-user scores for org affinity; without
+            # them offline metrics measure a weaker model than production.
             try:
                 user_scores = get_user_event_scores(uid)
             except Exception as e:
                 log.warning("Failed to fetch user event scores for %s during eval: %s", uid, e)
                 user_scores = {}
 
-            # Pass pre-fetched user to avoid redundant DB lookup inside
-            # get_content_scores.
             content = get_content_scores(
                 uid,
                 all_events_data,
@@ -188,8 +176,7 @@ def evaluate_all_users(
                 exclude={held_out_eid},
             )
 
-            # Apply MMR re-ranking matching production.
-            # R18: explicit tie-break on event_id so ordering is reproducible.
+            # Explicit tie-break on event_id so ordering is reproducible.
             scored_list = sorted(blended.items(), key=lambda x: (-x[1], x[0]))
             recommended = mmr_rerank(
                 scored_events=scored_list,
@@ -220,7 +207,6 @@ def _load_all_events(max_events: int = EVAL_MAX_EVENTS) -> list[EventResponse]:
     When the catalog is larger than *max_events*, a random offset is
     chosen so different evaluation runs cover different slices.
     """
-    # Get total count first to decide whether sampling is needed.
     count_resp = get_sb().table(EVENTS).select("id", count="exact").limit(0).execute()
     total = count_resp.count or 0
 

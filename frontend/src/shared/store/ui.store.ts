@@ -1,12 +1,6 @@
 /**
- * UI Store (Zustand)
- *
- * Consolidated store for global UI preferences and states:
- *   - Persisted preferences: viewMode, filterViewMode (backed by localStorage).
- *   - Ephemeral states: modal and dropdown toggles.
- *
- * Utilizes Zustand's persist partialize option so ephemeral properties are
- * never written to localStorage, avoiding schema pollution.
+ * Global UI preferences and ephemeral modal/dropdown state.
+ * Persist partialize keeps only viewMode/filterViewMode in localStorage.
  */
 
 import { create } from "zustand";
@@ -24,13 +18,11 @@ function getPreferenceStorage() {
 }
 
 interface UIState {
-  // Preferences (persisted)
   viewMode: ViewMode;
   filterViewMode: FilterViewMode;
   setViewMode: (mode: ViewMode) => void;
   setFilterViewMode: (mode: FilterViewMode) => void;
 
-  // Modals & Dropdowns (ephemeral)
   showSubmitEvent: boolean;
   showCommandPalette: boolean;
   showFilterDropdown: boolean;
@@ -38,7 +30,6 @@ interface UIState {
   setShowCommandPalette: (show: boolean) => void;
   setShowFilterDropdown: (show: boolean) => void;
 
-  // Event editing (ephemeral)
   editingEvent: Event | null;
   setEditingEvent: (event: Event | null) => void;
   clearEditingEvent: () => void;
@@ -47,13 +38,11 @@ interface UIState {
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
-      // Preferences default state
       viewMode: "grid",
       filterViewMode: "visual",
       setViewMode: (mode) => set({ viewMode: mode }),
       setFilterViewMode: (mode) => set({ filterViewMode: mode }),
 
-      // Modals & Dropdowns default state
       showSubmitEvent: false,
       showCommandPalette: false,
       showFilterDropdown: false,
@@ -61,7 +50,6 @@ export const useUIStore = create<UIState>()(
       setShowCommandPalette: (show) => set({ showCommandPalette: show }),
       setShowFilterDropdown: (show) => set({ showFilterDropdown: show }),
 
-      // Event editing default state
       editingEvent: null,
       setEditingEvent: (event) => set({ editingEvent: event }),
       clearEditingEvent: () => set({ editingEvent: null }),
@@ -70,7 +58,6 @@ export const useUIStore = create<UIState>()(
       name: "wat2do-app-prefs",
       storage: createJSONStorage(getPreferenceStorage),
       version: 1,
-      // Only persist view preferences
       partialize: (state) => ({
         viewMode: state.viewMode,
         filterViewMode: state.filterViewMode,
@@ -79,7 +66,6 @@ export const useUIStore = create<UIState>()(
   )
 );
 
-// Listening to auth broadcasts
 if (typeof window !== "undefined") {
   window.addEventListener("auth-user-logout", () => {
     useUIStore.setState({

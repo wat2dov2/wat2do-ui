@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Each tuple is (directive-name, space-separated sources).
 # To add a new external origin (e.g. analytics), append it to the relevant
-# directive — no need to touch the middleware itself.
+# directive - no need to touch the middleware itself.
 #
 # Why 'unsafe-inline' for style-src?
 #   Tailwind and many UI libs inject <style> tags at runtime.  Switching to
@@ -32,7 +32,7 @@ CSP_DIRECTIVES: list[tuple[str, str]] = [
     # Fallback for any directive not listed below.
     ("default-src", "'self'"),
     # Scripts: only our own bundle.  No eval, no inline (except Vite dev
-    # which injects module scripts — the dev server doesn't go through this
+    # which injects module scripts - the dev server doesn't go through this
     # middleware anyway).
     ("script-src", "'self'"),
     # Styles: self + Google Fonts stylesheet + inline (Tailwind runtime).
@@ -102,7 +102,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         for header, value in _SECURITY_HEADERS.items():
             response.headers[header] = value
 
-        # HSTS: tell browsers to always use HTTPS.  Only set in production —
+        # HSTS: tell browsers to always use HTTPS.  Only set in production -
         # sending this header over plain HTTP on localhost would lock the
         # browser into HTTPS for dev and break the workflow.
         if settings.is_production:

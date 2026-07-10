@@ -51,3 +51,8 @@ follow_imports = "skip"
 # surfaces before requiring every helper to be fully annotated.
 check_untyped_defs = false
 disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+markers = [
+    "live_llm: hits the real OpenAI API (requires OPENAI_API_KEY)",
+]

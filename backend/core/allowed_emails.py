@@ -8,7 +8,7 @@ lazily on first lookup.  Falls back to a hardcoded UWaterloo entry if
 Supabase is unreachable so the app still boots.
 
 School display names, aliases, and timezones live in
-``core.constants.school_mappings`` — not loaded here.
+``core.constants.school_mappings`` - not loaded here.
 """
 
 import logging
@@ -44,7 +44,7 @@ def _has_control_chars(value: str) -> bool:
 def _normalize_domain(domain: str) -> str | None:
     """Return the ASCII/punycode form of *domain*, or None if it's unparseable.
 
-    A5: Unicode homograph attacks (e.g. ``uwaterloо.ca`` with a Cyrillic ``о``)
+    Unicode homograph attacks (e.g. ``uwaterloо.ca`` with a Cyrillic ``о``)
     otherwise bypass the ASCII allowlist.  Applying NFKC normalisation and
     IDNA encoding folds look-alikes down to their punycode form so the
     allowlist check is performed on the canonical ASCII domain.
@@ -60,7 +60,7 @@ def _normalize_domain(domain: str) -> str | None:
 def load_allowed_domains() -> None:
     """Populate ``ALLOWED_EMAIL_DOMAINS`` from Supabase, merging fallback entries.
 
-    Idempotent — sets ``_loaded`` so subsequent calls are no-ops.  Imported
+    Idempotent - sets ``_loaded`` so subsequent calls are no-ops.  Imported
     lazily inside the function so module import doesn't trigger a Supabase
     client construction (matters for scripts and tests).
     """
@@ -101,7 +101,7 @@ def get_school_for_email(email: str) -> str | None:
     LAST ``@`` so a legitimate ``user@sub.uwaterloo.ca`` still maps, but
     the split must produce *exactly* two parts.
 
-    A5: Applies Unicode NFKC normalisation + IDNA encoding to the domain
+    Applies Unicode NFKC normalisation + IDNA encoding to the domain
     before the dictionary lookup so Cyrillic/Greek homographs of allowed
     domains resolve to their punycode form (never in ``ALLOWED_EMAIL_DOMAINS``)
     rather than silently bypassing the check.  Also rejects inputs containing
@@ -113,7 +113,7 @@ def get_school_for_email(email: str) -> str | None:
     email = email.lower()
     # ``rsplit("@", 1)`` returns 1 element if no ``@`` is present, and at most 2
     # even when the input contains many.  A legitimate email has exactly one ``@``
-    # — so we require ``count("@") == 1`` AND a non-empty local part.
+    # - so we require ``count("@") == 1`` AND a non-empty local part.
     if email.count("@") != 1:
         return None
     local, _, domain = email.rpartition("@")

@@ -1,11 +1,11 @@
 """Calendar feed endpoints.
 
-- ``GET /calendar/token`` — returns the user's feed token (auto-
-  generates on first call).  Auth required.
-- ``POST /calendar/token/regenerate`` — rotates the token, breaking
-  any existing subscriptions.  Auth required.
-- ``GET /calendar/feed/{token}.ics`` — public endpoint that returns
-  the user's saved-event VCALENDAR.  Rate-limited per token.
+- ``GET /calendar/token`` - returns the user's feed token (auto-generates
+  on first call). Auth required.
+- ``POST /calendar/token/regenerate`` - rotates the token, breaking any
+  existing subscriptions. Auth required.
+- ``GET /calendar/feed/{token}.ics`` - public VCALENDAR for the token's
+  saved events. Rate-limited per token.
 """
 
 from fastapi import APIRouter, Depends, Request
@@ -25,9 +25,9 @@ from services import calendar_service
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
 
-# Keyed by token so one misbehaving calendar client cannot affect
-# others.  Google/Apple poll on the scale of hours, not seconds —
-# 60/hour is generous headroom even for multi-device sync.
+# Keyed by token so one misbehaving calendar client cannot affect others.
+# Google/Apple poll on the scale of hours, not seconds - 60/hour is
+# generous headroom even for multi-device sync.
 _feed_rate_limiter = RateLimiter(
     max_requests=CALENDAR_FEED_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=CALENDAR_FEED_RATE_LIMIT_WINDOW_SECONDS,
@@ -43,7 +43,6 @@ def get_calendar_token(
     request: Request,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Return the user's feed token, generating one on first call."""
     token = calendar_service.get_or_create_token(str(db_user.id))
     return CalendarTokenResponse(token=token, feed_url=_feed_url_for(request, token))
 
@@ -53,7 +52,6 @@ def regenerate_calendar_token(
     request: Request,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Rotate the user's feed token; existing subscriptions break."""
     token = calendar_service.regenerate_token(str(db_user.id))
     return CalendarTokenResponse(token=token, feed_url=_feed_url_for(request, token))
 
@@ -64,11 +62,7 @@ def regenerate_calendar_token(
     response_class=Response,
 )
 def get_calendar_feed(token: str):
-    """Public: return the VCALENDAR for the token's owner.
-
-    Calendar clients (Google, Apple, Outlook) poll this URL and render
-    each VEVENT as a calendar entry.  Rate-limited per token.
-    """
+    """Public VCALENDAR for the token's owner. Rate-limited per token."""
     _feed_rate_limiter.check(token)
     user_id = calendar_service.get_user_id_by_token(token)
     if user_id is None:

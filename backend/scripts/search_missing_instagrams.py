@@ -412,7 +412,7 @@ def update_workbook(xlsx_path: Path, matches: list[Match]) -> None:
         row=1,
         column=1,
         value=(
-            f"Master list — {row_count:,} student clubs. "
+            f"Master list - {row_count:,} student clubs. "
             f"Instagram URLs: {ig_count:,}. Discord URLs: {discord_count:,}. "
             "SPA merge sources: web_search."
         ),

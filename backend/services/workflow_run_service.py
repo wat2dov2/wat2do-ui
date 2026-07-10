@@ -1,7 +1,7 @@
 """WorkflowRun CRUD via Supabase. Sync.
 
-Internal/operational table — no public router exposes this. Used by the
-services/wat2do pipeline to track per-username scrape attempts and by
+Internal/operational table - no public router exposes this. Used by the
+services/scraper pipeline to track per-username scrape attempts and by
 future admin tooling to surface failures.
 """
 
@@ -59,11 +59,11 @@ def mark_finished(
     """Terminal-state update.
 
     Status must be one of WORKFLOW_RUN_SUCCESS / WORKFLOW_RUN_ERROR /
-    WORKFLOW_RUN_NO_POSTS — RUNNING is the initial state and is never
+    WORKFLOW_RUN_NO_POSTS - RUNNING is the initial state and is never
     written here. Sets ``finished_at`` to ``now()``.
     """
     if status not in (WORKFLOW_RUN_SUCCESS, WORKFLOW_RUN_ERROR, WORKFLOW_RUN_NO_POSTS):
-        # Defensive — every caller passes a constant, so this is a typo
+        # Defensive - every caller passes a constant, so this is a typo
         # check rather than a runtime branch users can hit.
         raise ValueError(f"invalid terminal status: {status!r}")
 

@@ -1,9 +1,4 @@
-"""Public metadata endpoint — serves shared domain constants.
-
-The frontend fetches /meta/constants once on app init so that
-categories, interest mappings, and status enums always come from
-one source of truth (the backend).
-"""
+"""Public ``/meta/constants`` - shared domain enums for the frontend."""
 
 from fastapi import APIRouter, Response
 
@@ -22,12 +17,9 @@ router = APIRouter(prefix="/meta", tags=["meta"])
 def get_constants(response: Response):
     """Return shared domain constants for frontend consumption.
 
-    This endpoint is public (no auth required) and highly cacheable.
-    Sets an explicit ``Cache-Control: public, max-age=60`` header so
-    cheap repeat scrapes hit the CDN / browser cache rather than the
-    application process (audit M13).  The cache window is deliberately
-    short (60 s) so that category / interest changes deployed via a
-    backend-only restart propagate within a minute.
+    Public and cacheable. ``Cache-Control: public, max-age=60`` so repeat
+    scrapes hit CDN/browser cache; 60 s keeps category/interest deploys
+    visible within a minute.
     """
     response.headers["Cache-Control"] = "public, max-age=60"
     return AppConstantsResponse(

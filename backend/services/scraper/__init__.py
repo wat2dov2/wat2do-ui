@@ -1,7 +1,7 @@
 """wat2do scraping pipeline.
 
-Public surface: ``run_pipeline`` in ``pipeline.py`` orchestrates the
-four-stage flow (filter -> upload -> extract -> save) for one prefetched
+Public surface: ``run_pipeline`` in ``pipeline.py`` orchestrates
+filter -> upload -> extract -> reconcile -> save for one prefetched
 handle. The job entrypoint at ``backend/jobs/scrape.py`` fetches posts
 via Apify, then calls it.
 

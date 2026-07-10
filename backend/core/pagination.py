@@ -23,16 +23,16 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Internal exhaustive pagination (PostgREST max-rows bypass)
 # ---------------------------------------------------------------------------
-# Supabase's default PostgREST max-rows is 1000 — queries without an explicit
+# Supabase's default PostgREST max-rows is 1000 - queries without an explicit
 # limit are silently truncated.  The helpers below page through the full result
 # set so callers don't need to hand-roll the while-loop everywhere.
 
 _LOAD_PAGE_SIZE = 1000
 
-# Hard upper bound for ``fetch_all_pages`` / ``iter_all_pages`` (P17).  Without
+# Hard upper bound for ``fetch_all_pages`` / ``iter_all_pages``.  Without
 # a cap, a bot user who bookmarks every event (or a runaway join) can force
 # the helper to materialise an unbounded list in memory, crashing the process.
-# 100k rows ≈ a few MB for typical payloads — generous enough for legitimate
+# 100k rows ≈ a few MB for typical payloads - generous enough for legitimate
 # uses (saved-events, recommendation candidates) while catching anomalies.
 _DEFAULT_MAX_ROWS = 100_000
 
@@ -61,8 +61,8 @@ def fetch_all_pages(
     Returns the concatenation of all pages.
 
     Raises :class:`PaginationOverflowError` if the total rows exceed
-    *max_rows* (P17).  Callers expecting a legitimately large result
-    should pass an explicit ``max_rows`` — the default cap is a safety
+    *max_rows*.  Callers expecting a legitimately large result
+    should pass an explicit ``max_rows`` - the default cap is a safety
     net against pathological queries, not a performance tuning knob.
     """
     if max_rows <= 0:
@@ -104,7 +104,7 @@ def iter_all_pages(
     need the full list.
 
     Raises :class:`PaginationOverflowError` if the total rows exceed
-    *max_rows* (P17).  The caller receives any rows yielded before the
+    *max_rows*.  The caller receives any rows yielded before the
     cap is breached.
     """
     if max_rows <= 0:
@@ -117,7 +117,7 @@ def iter_all_pages(
             yield row
             yielded += 1
             if yielded >= max_rows and len(page) == page_size:
-                # Only raise if there is another page behind this one —
+                # Only raise if there is another page behind this one -
                 # otherwise we'd flag completely-inlined result sets whose
                 # size simply equals the cap.
                 log.warning(
@@ -169,8 +169,8 @@ def apply_stable_order(
 
     Without a unique secondary sort key, offset pagination over data with
     ties (duplicate ``submitted_at``, identical ``dtstart_utc``) returns
-    non-deterministic results — rows can be duplicated across pages or
-    silently skipped when concurrent writes reshuffle the tie group (P6/P8).
+    non-deterministic results - rows can be duplicated across pages or
+    silently skipped when concurrent writes reshuffle the tie group.
 
     Usage::
 

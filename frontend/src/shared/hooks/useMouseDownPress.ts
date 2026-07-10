@@ -66,9 +66,6 @@ export function createAdaptivePressHandlers({
 }
 
 /**
- * Stop propagation on mousedown (desktop) or click (touch/mobile width).
- */
-/**
  * Standard press handlers for the app's mouse-down-first UI.
  * Runs `onClick` on left mouse down and swallows the trailing click.
  */

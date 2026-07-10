@@ -9,14 +9,14 @@ import { shuffle } from "@/features/auth/utils/shuffle";
 export function AuthHeroPanel() {
   const { t, i18n } = useTranslation();
 
-  // Read from store (same data as events page — no duplicate fetch)
+  // Read from store (same data as events page - no duplicate fetch)
   const allEvents = useEventsStore((s) => s.events);
   const loading = useEventsStore((s) => s.isLoading);
 
   const locale = i18n.language || "en-US";
 
   // Memoize the "pick top 4 random events" step so it only recomputes when
-  // the underlying events array changes — not on every locale/translation
+  // the underlying events array changes - not on every locale/translation
   // change. Documents intent: only the first 4 shuffled events are needed.
   const topEvents = useMemo(() => shuffle(allEvents).slice(0, 4), [allEvents]);
 

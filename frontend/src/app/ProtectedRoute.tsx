@@ -25,14 +25,8 @@ const ADMIN_ROLE_FRESHNESS_TTL_MS = 5 * 60 * 1000;
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const router = useRouter();
-  // Subscribe to the same reactive auth snapshot the rest of the app reads
-  // so role demotion / logout / silent-refresh updates propagate to both the
-  // route gate and the TopNav button in a single render tick.
   const { isAuthenticated: authed, role, hasOrganization, userEmail } = useAuthState();
 
-  // For admin routes, ensure the cached role is fresh (<5 min old) before
-  // rendering admin chunks. Demoted-admin attacks / stale role leaks are
-  // blocked at the UI gate.
   const needsFreshRole = requiredRole === ROLE_ADMIN;
   const [refreshing, setRefreshing] = useState<boolean>(() => {
     if (!needsFreshRole) return false;

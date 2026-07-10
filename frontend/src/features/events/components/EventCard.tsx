@@ -418,15 +418,6 @@ function useEventCardNavigation({
   };
 }
 
-/**
- * Data flow:
- * 1. Explicit props (onEventClick, onDelete) come from the
- *    page-level container (EventsPageContainer) via EventList.
- * 2. Stores supply global data:
- *    - `useSavedEventsStore` for the save/unsave action.
- * 3. Narrow auth-slice hooks supply `isAdmin`, `profileCompleted`, and
- *    `getUserId()` the current user identity.
- */
 function EventCardComponent({
   event,
   isSaved = false,
@@ -453,23 +444,18 @@ function EventCardComponent({
   const isAdmin = useIsAdmin();
   const currentUserId = getUserId();
 
-  // Mutations go through stores directly.
   const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
 
-  // Show delete only if the user is an admin or the event owner.
   const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
   const canManageEvent = isAdmin || isOwner;
   const isSaveActive = profileCompleted && isSaved;
   
-  // Track card visibility (view impression)
   const cardRef = useViewTracking(event.id);
 
-  // Use extracted hook for badges
   const badges = useEventBadges(event);
   const eventCategory = useMemo(() => getEventCategory(event), [event]);
   const categoryClasses = useMemo(() => getCategoryClasses(eventCategory), [eventCategory]);
 
-  // Format date and time using extracted utilities
   const cardDate = useMemo(
     () => formatCardDate(event, i18n.language || "en-US"),
     [event, i18n.language],

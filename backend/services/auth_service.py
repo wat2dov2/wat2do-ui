@@ -94,7 +94,7 @@ class AuthService:
         """Log an AuthApiError and raise the corresponding domain exception.
 
         E16: annotated ``NoReturn`` so type-checkers (mypy/pyright) know every
-        call terminates in an exception — prevents latent ``UnboundLocalError``
+        call terminates in an exception - prevents latent ``UnboundLocalError``
         if this helper is ever refactored into a non-raising form.
 
         E7: the untrusted value is passed as a separate %s argument (not
@@ -126,7 +126,6 @@ class AuthService:
             except Exception as e:
                 logger.warning("Failed to check invitation token: %s", e)
 
-        # Check if user exists in public.users
         try:
             r_user = self._db.table(USERS).select("id").eq("email", email_clean).execute()
             exists = bool(r_user.data)
@@ -140,7 +139,7 @@ class AuthService:
 
         safe_email = _sanitize_for_log(email_clean)
 
-        # Ensure Supabase Auth user exists (confirm=True so they are confirmed when they verify)
+        # confirm=True so the Auth user is already confirmed when they verify OTP
         try:
             self._auth_admin.admin.create_user({"email": email_clean, "email_confirm": True})
             logger.info("Created new Supabase auth user for %s", safe_email)
@@ -152,7 +151,6 @@ class AuthService:
         except Exception as e:
             logger.info("Supabase auth user check/creation bypassed: %s", e)
 
-        # Generate magic link + OTP via Supabase admin API
         try:
             link_res = self._auth_admin.admin.generate_link(
                 {
@@ -164,7 +162,6 @@ class AuthService:
             logger.error("Failed to generate magic link from Supabase: %s", e)
             raise ServiceError(FAILED_TO_GENERATE_TOKEN)
 
-        # Delete any existing verification tokens for this email first
         try:
             self._db.table(VERIFICATION_TOKENS).delete().eq("identifier", email_clean).execute()
         except Exception as e:
@@ -174,11 +171,9 @@ class AuthService:
 
         expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
 
-        # Generate hashes for DB storage
         hashed_token = link_res.properties.hashed_token
         otp_hash = hashlib.sha256(link_res.properties.email_otp.encode("utf-8")).hexdigest()
 
-        # Store both rows in verification_tokens
         try:
             self._db.table(VERIFICATION_TOKENS).insert(
                 [
@@ -190,7 +185,6 @@ class AuthService:
             logger.error("Failed to insert verification tokens: %s", e)
             raise ServiceError(FAILED_TO_SAVE_TOKEN)
 
-        # Format and send the email
         from services.email_service import EmailMessage, email_service
 
         base_url = settings.frontend_url.rstrip("/") or "http://localhost:3000"
@@ -233,16 +227,15 @@ class AuthService:
         email_clean = email.strip().lower()
         token_clean = token.strip()
 
-        # Hash incoming token
         hashed_token = hashlib.sha256(token_clean.encode("utf-8")).hexdigest()
 
-        # Query verification_tokens table for a matching token
         from datetime import datetime, timezone
 
         now_str = datetime.now(timezone.utc).isoformat()
 
         try:
-            # Look up by exact token match (which covers hashed magic_link token or hashed OTP code)
+            # Magic-link callback stores the hashed token as-is; OTP stores
+            # sha256(code). Try the raw token first, then the hashed form.
             r = (
                 self._db.table(VERIFICATION_TOKENS)
                 .select("*")
@@ -252,7 +245,6 @@ class AuthService:
                 .execute()
             )
             if not r.data:
-                # Try the hashed match for OTP code
                 r = (
                     self._db.table(VERIFICATION_TOKENS)
                     .select("*")
@@ -271,7 +263,6 @@ class AuthService:
             logger.error("Failed to query verification token: %s", e)
             raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
 
-        # Authenticate with Supabase Auth
         try:
             if token_clean.isdigit():
                 res = self._auth.verify_otp(
@@ -294,7 +285,6 @@ class AuthService:
         except Exception as e:
             logger.warning("Failed to delete used verification tokens: %s", e)
 
-        # Check if user exists in public.users
         school = get_school_for_email(email_clean) or None
         db_user = None
         try:
@@ -307,7 +297,6 @@ class AuthService:
         onboarding_required = False
         if not db_user:
             onboarding_required = True
-            # Create user in public.users
             import uuid
 
             user_id = str(uuid.uuid4())
@@ -326,7 +315,7 @@ class AuthService:
                 logger.error("Failed to create public.users record: %s", e)
                 raise ServiceError(REGISTRATION_FAILED)
 
-            # Auto-join user to organizations they have pending invitations for
+            # Auto-join pending organization invitations for this email
             try:
                 r_invites = (
                     self._db.table("organization_invitations")

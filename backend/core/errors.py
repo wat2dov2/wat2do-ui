@@ -2,7 +2,7 @@
 
 Centralises user-facing error messages so routers, services, and
 handlers stay DRY and wording stays consistent.  Import individual
-constants where needed — do not duplicate literal strings.
+constants where needed - do not duplicate literal strings.
 """
 
 from core.constants import (
@@ -56,7 +56,7 @@ SIGNUP_FAILED = "Unable to create account — check email/password requirements"
 PASSWORD_RESET_FAILED = "Unable to reset password — please try again"
 EMAIL_OR_USERNAME_TAKEN = "Email already taken"
 INSUFFICIENT_CREDITS = "Insufficient credits"
-# C11: machine-readable error code for frontend to branch on without
+# Machine-readable error code for frontend to branch on without
 # relying on the human-readable ``INSUFFICIENT_CREDITS`` message.  Kept
 # snake_case so it stays stable across i18n / wording changes.
 INSUFFICIENT_CREDITS_CODE = "insufficient_credits"

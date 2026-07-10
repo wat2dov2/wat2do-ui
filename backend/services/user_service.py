@@ -99,7 +99,7 @@ def set_role(user_id: UUID, role: str) -> UserResponse | None:
     """Admin-only role rotation.
 
     Updates the ``role`` column directly (bypassing ``UserUpdate`` which
-    intentionally does not list ``role`` — see schema audit S2).  Clears
+    intentionally does not list ``role`` - see schema audit S2).  Clears
     the supabase-auth-id cache so ``_check_admin`` sees the new role
     immediately.
     """
@@ -116,7 +116,7 @@ def count_admins() -> int:
 
     Used by admin-only routes to enforce an admin-quorum invariant: the
     system must never reach a state with zero admins (a bored admin could
-    otherwise lock the platform into a permanently un-administered state —
+    otherwise lock the platform into a permanently un-administered state -
     see audit A26).  Uses PostgREST's ``count="exact"`` to avoid fetching
     the full user list.
     """

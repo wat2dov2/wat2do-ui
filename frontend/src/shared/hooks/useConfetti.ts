@@ -40,10 +40,6 @@ const defaultConfig: Omit<Required<ConfettiConfig>, "colors"> = {
   angle: 90,
 };
 
-/**
- * Hook for triggering confetti celebrations
- * Provides consistent confetti behavior across the app
- */
 export function useConfetti(): UseConfettiReturn {
   const trigger = useCallback((config?: ConfettiConfig) => {
     const colors = config?.colors ?? getThemeConfettiColors();

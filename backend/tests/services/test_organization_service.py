@@ -84,3 +84,95 @@ def test_create_invitation_allows_admins_to_invite_any_domain(monkeypatch, fake_
     fake_sb.queue_responses([[{"id": "inv-2", "organization_id": 1, "email": "invitee@wlu.ca"}]])
     res = organization_service.create_invitation(1, "invitee@wlu.ca", mock_admin.id)
     assert res is not None
+
+
+def test_normalize_organization_name_collapses_case_and_whitespace():
+    assert (
+        organization_service._normalize_organization_name("  UW   Tea  Organization ")
+        == "uw tea organization"
+    )
+    assert organization_service._normalize_organization_name(None) == ""
+
+
+def test_lookup_organization_by_school_and_name_exact_match(fake_sb, patch_sb):
+    patch_sb("services.organization_service")
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 3,
+                    "organization_name": "UW Tea Organization",
+                    "organization_type": "Independent",
+                    "ig": "uwtea",
+                    "school": "uwaterloo",
+                },
+                {
+                    "id": 9,
+                    "organization_name": "Other Club",
+                    "organization_type": "Independent",
+                    "ig": None,
+                    "school": "uwaterloo",
+                },
+            ]
+        ]
+    )
+
+    result = organization_service.lookup_organization_by_school_and_name(
+        "uwaterloo", "  uw tea   organization "
+    )
+    assert result is not None
+    assert result["id"] == 3
+
+
+def test_lookup_organization_by_school_and_name_miss(fake_sb, patch_sb):
+    patch_sb("services.organization_service")
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 3,
+                    "organization_name": "UW Tea Organization",
+                    "organization_type": "Independent",
+                    "ig": "uwtea",
+                    "school": "uwaterloo",
+                }
+            ]
+        ]
+    )
+    assert (
+        organization_service.lookup_organization_by_school_and_name("uwaterloo", "No Such Club")
+        is None
+    )
+
+
+def test_lookup_organization_by_school_and_name_picks_lowest_id_on_dupes(fake_sb, patch_sb):
+    patch_sb("services.organization_service")
+    # Query orders by id ASC; first normalized match wins.
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 5,
+                    "organization_name": "tea   club",
+                    "organization_type": "Independent",
+                    "ig": "b",
+                    "school": "uwaterloo",
+                },
+                {
+                    "id": 12,
+                    "organization_name": "Tea Club",
+                    "organization_type": "Independent",
+                    "ig": "a",
+                    "school": "uwaterloo",
+                },
+            ]
+        ]
+    )
+    result = organization_service.lookup_organization_by_school_and_name("uwaterloo", "Tea Club")
+    assert result is not None
+    assert result["id"] == 5
+
+
+def test_lookup_organization_by_school_and_name_empty_inputs():
+    assert organization_service.lookup_organization_by_school_and_name("", "Tea") is None
+    assert organization_service.lookup_organization_by_school_and_name("uwaterloo", "") is None

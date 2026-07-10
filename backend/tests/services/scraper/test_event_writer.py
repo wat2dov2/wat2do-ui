@@ -1,4 +1,4 @@
-"""Unit tests for services/wat2do/event_writer.
+"""Unit tests for services/scraper/event_writer.
 
 The writer inserts one events row plus N event_dates rows per logical event.
 The tests assert on both layers via the fake_sb fixture.
@@ -86,7 +86,7 @@ def test_coerce_future_occurrences_drops_past():
 
 
 def test_coerce_future_occurrences_skips_invalid():
-    """Invalid date strings drop quietly — one bad occurrence shouldn't kill the event."""
+    """Invalid date strings drop quietly - one bad occurrence shouldn't kill the event."""
     future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
     occurrences = [
         {"dtstart_utc": "not-a-date", "dtend_utc": "", "duration": "", "tz": "UTC"},
@@ -110,7 +110,7 @@ def _event(**overrides) -> dict:
         "location": "SLC 3223",
         "organization": "UW Tea Organization",
         "category": "Arts & Culture",
-        # dtend left as empty string — OccurrenceCreate's
+        # dtend left as empty string - OccurrenceCreate's
         # _dtend_after_dtstart validator only fires when dtend is set.
         "occurrences": [
             {
@@ -132,14 +132,12 @@ def _event(**overrides) -> dict:
 
 def test_write_event_skips_when_occurrences_empty(monkeypatch):
     """No occurrences -> "skipped" without touching the DB."""
-    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     result = write_event(_event(occurrences=[]), ig_handle="x", source_url="u")
     assert result == "skipped"
 
 
 def test_write_event_skips_when_required_fields_missing(monkeypatch):
     """Missing title or location -> skipped."""
-    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     assert write_event(_event(title=""), ig_handle="x", source_url="u") == "skipped"
     assert write_event(_event(location=""), ig_handle="x", source_url="u") == "skipped"
 
@@ -215,7 +213,6 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
     monkeypatch.setattr(event_writer, "_ensure_organization_by_ig", _REAL_ENSURE_ORGANIZATION_BY_IG)
-    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
 
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
@@ -263,7 +260,6 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     """Multi-occurrence post -> ONE events row + N event_dates rows."""
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
-    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     # Sequence of execute responses the writer hits, in order:
     #   1. events insert -> [{"id": 7}]
     #   2. (event_date_service) event_dates insert -> [...] (>=1 row)
@@ -271,7 +267,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     fake_sb.queue_responses(
         [
             [{"id": 7}],  # events insert
-            # occurrences insert — return shape must satisfy OccurrenceResponse
+            # occurrences insert - return shape must satisfy OccurrenceResponse
             [
                 {
                     "id": 1,
@@ -336,12 +332,11 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
     """Past occurrences are filtered out before the events insert."""
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
-    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     occ_now = datetime.now(timezone.utc).isoformat()
     fake_sb.queue_responses(
         [
             [{"id": 11}],  # events insert
-            # occurrences insert — only one survives the past-event filter
+            # occurrences insert - only one survives the past-event filter
             [
                 {
                     "id": 1,
@@ -375,7 +370,6 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
 
 def test_write_event_returns_skipped_when_all_occurrences_past(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.scraper.event_writer")
-    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     event = _event(
         occurrences=[
@@ -398,13 +392,12 @@ def test_coerce_future_occurrences_allows_past_when_flag_set():
 def test_write_event_keeps_past_occurrences_when_flag_set(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
-    monkeypatch.setattr(event_writer, "find_match", lambda **kw: None)
     occ_now = datetime.now(timezone.utc).isoformat()
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
     fake_sb.queue_responses(
         [
             [{"id": 12}],  # events insert
-            # occurrences insert — past occurrence survives due to flag
+            # occurrences insert - past occurrence survives due to flag
             [
                 {
                     "id": 1,
@@ -430,3 +423,225 @@ def test_write_event_keeps_past_occurrences_when_flag_set(fake_sb, patch_sb, mon
     assert len(list_inserts) == 1
     occ_payload = list_inserts[0][0][0]
     assert len(occ_payload) == 1
+
+
+def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
+    """Pass 2 id present -> update path + replace_occurrences."""
+    from schemas.event import EventResponse
+    from schemas.event_date import OccurrenceResponse
+
+    patch_sb("services.scraper.event_writer")
+    patch_sb("services.event_date_service")
+
+    future = datetime.now(timezone.utc) + timedelta(days=2)
+    base = {
+        "id": 42,
+        "title": "Tea Tasting",
+        "location": "SLC 1000",
+        "organization": "UW Tea Organization",
+        "cancelled": False,
+        "added_at": datetime.now(timezone.utc),
+        "occurrences": [
+            {
+                "id": 1,
+                "event_id": 42,
+                "dtstart_utc": future,
+                "dtend_utc": None,
+                "duration": None,
+                "tz": None,
+                "created_at": datetime.now(timezone.utc),
+            }
+        ],
+    }
+    old = EventResponse.model_validate(base)
+    updated = EventResponse.model_validate({**base, "location": "SLC 3223", "cancelled": True})
+    calls = {"n": 0}
+
+    def _get_event(_eid: int):
+        calls["n"] += 1
+        return old if calls["n"] == 1 else updated
+
+    monkeypatch.setattr(event_writer.event_service, "get_event", _get_event)
+    monkeypatch.setattr(event_writer, "enqueue_event_change", lambda *a, **k: 1)
+    monkeypatch.setattr(
+        event_writer.event_date_service,
+        "replace_occurrences",
+        lambda eid, occs: [
+            OccurrenceResponse.model_validate(
+                {
+                    "id": 1,
+                    "event_id": eid,
+                    "dtstart_utc": future,
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                    "created_at": datetime.now(timezone.utc),
+                }
+            )
+        ],
+    )
+
+    fake_sb.queue_responses([[{"id": 42}]])  # events update
+
+    result = write_event(
+        _event(id=42, location="SLC 3223", cancelled=True),
+        ig_handle="uwteaorganization",
+        source_url="https://instagram.com/p/abc",
+    )
+    assert result == "updated"
+    assert fake_sb.update.call_count == 1
+    update_payload = fake_sb.update.call_args_list[0][0][0]
+    assert update_payload["cancelled"] is True
+    assert update_payload["location"] == "SLC 3223"
+
+
+def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch):
+    """Different organization_id on both sides → insert instead of overwrite."""
+    from schemas.event import EventResponse
+    from schemas.event_date import OccurrenceResponse
+    from services.scraper.org_resolve import ResolvedOrganization
+
+    patch_sb("services.scraper.event_writer")
+    patch_sb("services.event_date_service")
+
+    future = datetime.now(timezone.utc) + timedelta(days=2)
+    old = EventResponse.model_validate(
+        {
+            "id": 42,
+            "organization_id": 7,
+            "title": "Tea Tasting",
+            "location": "SLC",
+            "organization": "UW Tea",
+            "ig_handle": "uwtea",
+            "cancelled": False,
+            "added_at": datetime.now(timezone.utc),
+            "occurrences": [
+                {
+                    "id": 1,
+                    "event_id": 42,
+                    "dtstart_utc": future,
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                    "created_at": datetime.now(timezone.utc),
+                }
+            ],
+        }
+    )
+    monkeypatch.setattr(event_writer.event_service, "get_event", lambda _eid: old)
+    monkeypatch.setattr(
+        event_writer.event_date_service,
+        "create_occurrences",
+        lambda eid, occs: [
+            OccurrenceResponse.model_validate(
+                {
+                    "id": 1,
+                    "event_id": eid,
+                    "dtstart_utc": future,
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                    "created_at": datetime.now(timezone.utc),
+                }
+            )
+        ],
+    )
+    fake_sb.queue_responses([[{"id": 99}]])  # insert fallback
+
+    result = write_event(
+        _event(id=42),
+        ig_handle=None,
+        source_url="https://directory.example/event",
+        resolved_org=ResolvedOrganization(
+            organization_id=99,
+            organization_name="Other Club",
+            organization_type="Independent",
+            ig_handle=None,
+        ),
+    )
+    assert result == "inserted"
+    assert fake_sb.update.call_count == 0
+    assert fake_sb.insert.call_count == 1
+
+
+def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, monkeypatch):
+    """Directory-style overwrite must not wipe IG provenance fields."""
+    from schemas.event import EventResponse
+    from schemas.event_date import OccurrenceResponse
+    from services.scraper.org_resolve import ResolvedOrganization
+
+    patch_sb("services.scraper.event_writer")
+    patch_sb("services.event_date_service")
+
+    future = datetime.now(timezone.utc) + timedelta(days=2)
+    base = {
+        "id": 42,
+        "organization_id": 7,
+        "organization_type": "Independent",
+        "title": "Tea Tasting",
+        "location": "SLC 1000",
+        "organization": "UW Tea Organization",
+        "ig_handle": "uwteaorganization",
+        "source_url": "https://instagram.com/p/OLD",
+        "source_image_url": "https://cdn/old.jpg",
+        "cancelled": False,
+        "added_at": datetime.now(timezone.utc),
+        "occurrences": [
+            {
+                "id": 1,
+                "event_id": 42,
+                "dtstart_utc": future,
+                "dtend_utc": None,
+                "duration": None,
+                "tz": None,
+                "created_at": datetime.now(timezone.utc),
+            }
+        ],
+    }
+    old = EventResponse.model_validate(base)
+    updated = EventResponse.model_validate({**base, "location": "SLC 3223"})
+    calls = {"n": 0}
+
+    def _get_event(_eid: int):
+        calls["n"] += 1
+        return old if calls["n"] == 1 else updated
+
+    monkeypatch.setattr(event_writer.event_service, "get_event", _get_event)
+    monkeypatch.setattr(event_writer, "enqueue_event_change", lambda *a, **k: 1)
+    monkeypatch.setattr(
+        event_writer.event_date_service,
+        "replace_occurrences",
+        lambda eid, occs: [
+            OccurrenceResponse.model_validate(
+                {
+                    "id": 1,
+                    "event_id": eid,
+                    "dtstart_utc": future,
+                    "dtend_utc": None,
+                    "duration": None,
+                    "tz": None,
+                    "created_at": datetime.now(timezone.utc),
+                }
+            )
+        ],
+    )
+    fake_sb.queue_responses([[{"id": 42}]])
+
+    result = write_event(
+        _event(id=42, location="SLC 3223", source_image_url=None),
+        ig_handle=None,
+        source_url="",
+        resolved_org=ResolvedOrganization(
+            organization_id=7,
+            organization_name="UW Tea Organization",
+            organization_type=None,
+            ig_handle=None,
+        ),
+    )
+    assert result == "updated"
+    update_payload = fake_sb.update.call_args_list[0][0][0]
+    assert update_payload["ig_handle"] == "uwteaorganization"
+    assert update_payload["organization_id"] == 7
+    assert update_payload["organization_type"] == "Independent"
+    assert update_payload["source_url"] == "https://instagram.com/p/OLD"
+    assert update_payload["source_image_url"] == "https://cdn/old.jpg"

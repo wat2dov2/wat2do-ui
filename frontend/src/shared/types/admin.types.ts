@@ -1,12 +1,7 @@
 /**
- * Admin-related types
- *
- * Status unions are derived from the constants in shared/constants/statuses.ts
- * which mirror the backend Literal types (schemas/report.py).
- *
- * At runtime, the canonical list is fetched via /meta/constants
- * (see shared/api/metaApi.ts). These TypeScript types exist for
- * compile-time safety; the backend is the source of truth.
+ * Status unions derived from shared/constants/statuses.ts (mirrors backend
+ * Literals). Runtime lists come from /meta/constants; these types are for
+ * compile-time safety.
  */
 
 import type { REPORT_STATUSES, SUBMISSION_STATUSES } from "@/shared/constants/statuses";

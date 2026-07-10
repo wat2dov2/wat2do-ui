@@ -1,8 +1,3 @@
-/**
- * Shared Hooks
- * Reusable hooks across features
- */
-
 export * from "./useIntersectionObserver";
 export * from "./useDarkMode";
 export * from "./useConfetti";

@@ -1,9 +1,5 @@
 import type { ReactNode } from "react";
 
-/**
- * Filter-related types
- */
-
 export interface FilterState {
   searchQuery: string;
   categories: string[];
@@ -14,6 +10,7 @@ export interface FilterState {
   registration: boolean;
   organizations: string[];
   freeFood: boolean;
+  cancelled: boolean;
   saved: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";

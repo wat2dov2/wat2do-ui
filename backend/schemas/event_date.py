@@ -10,15 +10,15 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
-# Free-form short strings — the extractor sometimes returns "1 hour"
+# Free-form short strings - the extractor sometimes returns "1 hour"
 # or "01:30:00", and we don't want to force a single format here.
 _MAX_DURATION_LENGTH = 64
-# IANA timezone identifiers like "America/New_York" — generous cap.
+# IANA timezone identifiers like "America/New_York" - generous cap.
 _MAX_TZ_LENGTH = 64
 
 
 class OccurrenceCreate(BaseModel):
-    """One occurrence — start time + optional end / duration / timezone."""
+    """One occurrence: start time plus optional end / duration / timezone."""
 
     model_config = ConfigDict(extra="forbid")
 

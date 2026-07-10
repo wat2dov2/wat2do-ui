@@ -107,6 +107,13 @@ export function EventsPageContainer() {
           active: filters.freeFoodFilter,
           onClick: () => filters.setFreeFoodFilter(!filters.freeFoodFilter),
         },
+        {
+          id: "cancelled",
+          icon: null,
+          labelKey: "common.cancelled",
+          active: filters.cancelledFilter,
+          onClick: () => filters.setCancelledFilter(!filters.cancelledFilter),
+        },
       ].filter((config) => config.visible !== false),
     [filters, handleNewlyAddedToggle, isNewlyAddedActive, profileCompleted]
   );

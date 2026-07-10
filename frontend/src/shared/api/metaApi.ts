@@ -1,7 +1,7 @@
 /**
  * Fetches shared domain constants from the backend (/meta/constants).
  *
- * Loaded during app init (main.tsx) so categories, interest mappings,
+ * Loaded during app init (client-providers.tsx) so categories, interest mappings,
  * and status enums hydrate from one backend source of truth. The small
  * fallback below keeps first paint from waiting on that network request.
  */
@@ -35,7 +35,7 @@ const FALLBACK_INTEREST_TO_CATEGORIES = Object.fromEntries(
 );
 
 // ---------------------------------------------------------------------------
-// Module-level cache — written once by loadAppConstants(), read many times.
+// Module-level cache - written once by loadAppConstants(), read many times.
 // ---------------------------------------------------------------------------
 let cached: AppConstants = {
   event_categories: FALLBACK_CATEGORIES,

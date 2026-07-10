@@ -49,7 +49,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
@@ -68,7 +67,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
         </Button>
       </div>
 
-      {/* QR Codes Grid */}
       {qrCodesWithStats.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {qrCodesWithStats.map((qr) => (
@@ -86,7 +84,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
               }}
               className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:opacity-80 transition-all cursor-pointer"
             >
-              {/* Poster Image - Always show (hardcoded for now) */}
               <div className="w-full h-64 bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                 {qr.imageUrl ? (
                   <img
@@ -123,7 +120,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
                   </div>
                 </div>
 
-                {/* Stats */}
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Eye className="size-4" />
@@ -158,7 +154,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
         </div>
       )}
 
-      {/* Create Modal */}
       <CreateQRCodeModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -167,7 +162,6 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
         userEmail={userEmail}
       />
 
-      {/* Details Modal */}
       {selectedQRCode && (
         <QRCodeDetailsModal
           isOpen={selectedQRCode !== null}

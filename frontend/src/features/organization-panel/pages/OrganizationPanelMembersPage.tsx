@@ -67,21 +67,17 @@ export function OrganizationPanelMembersPage() {
   const router = useRouter();
   const { organizationId } = useAuthState();
 
-  // Navigation tabs
   const [mainTab, setMainTab] = useState<"roster" | "management">("roster");
   const [activeTab, setActiveTab] = useState<"members" | "requests">("members");
 
-  // Roster state
   const [memberships, setMemberships] = useState<OrganizationMembershipWithUser[]>([]);
   const [rosterLoading, setRosterLoading] = useState(false);
 
-  // Management state
   const [managers, setManagers] = useState<OrganizationMember[]>([]);
   const [invitations, setInvitations] = useState<OrganizationInvitation[]>([]);
   const [joinRequests, setJoinRequests] = useState<OrganizationJoinRequest[]>([]);
   const [managementLoading, setManagementLoading] = useState(false);
 
-  // Form & Search inputs
   const [emailInput, setEmailInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -138,7 +134,6 @@ export function OrganizationPanelMembersPage() {
     }
   }, [organizationId, fetchRoster, fetchManagement]);
 
-  // Roster Actions
   const handleApproveMembership = async (userId: string) => {
     if (!organizationId) return;
     setActionLoading(userId);
@@ -205,7 +200,6 @@ export function OrganizationPanelMembersPage() {
     }
   };
 
-  // Management Actions
   const handleAddManager = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!organizationId || !emailInput.trim()) return;
@@ -322,7 +316,6 @@ export function OrganizationPanelMembersPage() {
     }
   };
 
-  // Helper functions for initials
   const getInitials = (fullName: string | null, email: string) => {
     if (fullName) {
       const parts = fullName.trim().split(/\s+/);
@@ -336,7 +329,6 @@ export function OrganizationPanelMembersPage() {
     return email ? email[0].toUpperCase() : "?";
   };
 
-  // Filter lists
   const activeMembers = memberships.filter((m) => m.status === "approved");
   const pendingRequests = memberships.filter((m) => m.status === "pending");
 
@@ -347,7 +339,6 @@ export function OrganizationPanelMembersPage() {
     return name.includes(q) || email.includes(q);
   });
 
-  // Render role tag
   const renderRoleTag = (role: string) => {
     const normalizedRole = role.toLowerCase();
     switch (normalizedRole) {
@@ -388,7 +379,6 @@ export function OrganizationPanelMembersPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Button
           variant="secondary"
@@ -407,7 +397,6 @@ export function OrganizationPanelMembersPage() {
         </div>
       </div>
 
-      {/* Main Tabs */}
       <div className="flex border-b border-border">
         <button
           onMouseDown={() => setMainTab("roster")}
@@ -431,10 +420,8 @@ export function OrganizationPanelMembersPage() {
         </button>
       </div>
 
-      {/* Tab Contents */}
       {mainTab === "roster" ? (
         <div className="space-y-5">
-          {/* Sub Tabs */}
           <div className="flex border-b border-border/60">
             <button
               onMouseDown={() => setActiveTab("members")}
@@ -458,7 +445,6 @@ export function OrganizationPanelMembersPage() {
             </button>
           </div>
 
-          {/* Roster lists */}
           {rosterLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Loader2 className="size-8 animate-spin text-primary mb-3" />
@@ -623,7 +609,6 @@ export function OrganizationPanelMembersPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Invite Manager Card */}
           <Card className="bg-card border border-border shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -658,7 +643,6 @@ export function OrganizationPanelMembersPage() {
             </CardContent>
           </Card>
 
-          {/* Managers List Card */}
           <Card className="bg-card border border-border shadow-sm">
             <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border/60">
               <div>
@@ -760,7 +744,6 @@ export function OrganizationPanelMembersPage() {
             </CardContent>
           </Card>
 
-          {/* Pending Join Requests list */}
           {joinRequests.length > 0 && (
             <Card className="bg-card border border-border shadow-sm mt-6">
               <CardHeader>
@@ -847,7 +830,6 @@ export function OrganizationPanelMembersPage() {
             </Card>
           )}
 
-          {/* Pending Invitations list */}
           {invitations.length > 0 && (
             <Card className="bg-card border border-border shadow-sm mt-6">
               <CardHeader>

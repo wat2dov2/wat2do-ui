@@ -15,7 +15,7 @@ def get_preferences(user_id: str) -> list[NotificationPreferenceResponse]:
     """Return one resolved entry per notification type.
 
     Types with no row in ``notification_preferences`` fall back to
-    ``NOTIFICATION_DEFAULT_ENABLED`` — absence means "never explicitly
+    ``NOTIFICATION_DEFAULT_ENABLED`` - absence means "never explicitly
     set", not "disabled". Callers render one toggle per entry.
     """
     rows = (

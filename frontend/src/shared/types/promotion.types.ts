@@ -1,7 +1,3 @@
-/**
- * Promotion-related types
- */
-
 export type PromotionPackage = "featured";
 
 export interface PromotionPackageInfo {

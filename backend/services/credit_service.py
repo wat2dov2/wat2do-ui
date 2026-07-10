@@ -90,7 +90,7 @@ def create_promotion(
     """Create the single event promotion.
 
     Credit deduction and promotion insertion happen inside a single
-    PostgreSQL RPC (``promote_event``), guaranteeing atomicity — if the
+    PostgreSQL RPC (``promote_event``), guaranteeing atomicity - if the
     insert fails the deduction is rolled back automatically.
     """
     package = DEFAULT_PROMOTION_PACKAGE
@@ -220,7 +220,7 @@ def refund_active_promotions_for_event(event_id: int) -> int:
             end = datetime.fromisoformat(row["end_date"].replace("Z", "+00:00"))
         except (KeyError, ValueError, AttributeError) as e:
             log.warning(
-                "Skipping refund for promotion %s on event %s — bad timestamps: %s",
+                "Skipping refund for promotion %s on event %s - bad timestamps: %s",
                 row.get("id"),
                 event_id,
                 e,
@@ -247,7 +247,7 @@ def refund_active_promotions_for_event(event_id: int) -> int:
                 event_id,
             )
         except Exception as e:
-            # Don't block event deletion on a single bad refund — log and
+            # Don't block event deletion on a single bad refund - log and
             # continue so the caller can still delete the event.  The
             # ledger will show the skipped refunds via the absence of a
             # row if operators audit later.

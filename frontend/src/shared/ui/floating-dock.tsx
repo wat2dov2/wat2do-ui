@@ -52,7 +52,6 @@ const FloatingDockDesktop = ({
 
   return (
     <div className="relative mx-auto inline-flex w-fit max-w-full items-end justify-center">
-      {/* 2D Icons Container */}
       <m.div
         onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => mouseX.set(Infinity)}

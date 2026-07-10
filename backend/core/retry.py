@@ -3,8 +3,8 @@
 Extracted from ``core.constants`` because this is instantiated behavior
 (a configured decorator), not a plain data constant.
 
-**Idempotency requirement (P14).** ``supabase_retry`` is safe to apply
-ONLY to idempotent operations — i.e. operations that can run twice with
+**Idempotency requirement.** ``supabase_retry`` is safe to apply
+ONLY to idempotent operations - i.e. operations that can run twice with
 the same effect as running once.  These include:
 
   * ``SELECT`` reads
@@ -21,7 +21,7 @@ Do **not** decorate operations that are not idempotent, such as:
 If retrying a non-idempotent call is genuinely required, use a
 transactional wrapper (e.g. advisory lock + existence check) instead.
 
-**Thundering-herd prevention (P14).** Under a Supabase outage, every
+**Thundering-herd prevention.** Under a Supabase outage, every
 in-flight request retries on the same backoff schedule; without jitter
 all clients release simultaneously and re-DoS the upstream on
 recovery.  ``wait_exponential_jitter`` adds a random component that

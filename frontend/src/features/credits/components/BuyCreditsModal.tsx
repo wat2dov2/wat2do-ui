@@ -21,8 +21,7 @@ interface BuyCreditsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentCredits: number;
-  // C1: onPurchase must return a Promise so we can surface backend failure
-  // to the user instead of showing fake confetti for a silent rejection.
+  // Await so success UI only runs after the backend resolves.
   onPurchase: (credits: number) => Promise<void> | void;
 }
 
@@ -37,7 +36,6 @@ export function BuyCreditsModal({
   const form = useBuyCreditsForm();
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
-  // Use modal state hook for standardized open/close handling
   const modalState = useModalState({
     onClose,
     resetOnClose: true,
@@ -56,10 +54,6 @@ export function BuyCreditsModal({
     const pkg = CREDIT_PACKAGES[form.selectedPackage];
     const totalCredits = pkg.credits + (pkg.bonus || 0);
 
-    // C1: await the backend mutation and only show success on a resolved
-    // promise.  If the backend rejects (e.g. admin-only endpoint for a
-    // regular user, or network error), show an error state instead of
-    // confetti so the UI reflects reality.
     try {
       await onPurchase(totalCredits);
       form.setPurchasedCredits(totalCredits);

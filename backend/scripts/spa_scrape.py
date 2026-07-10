@@ -1,7 +1,7 @@
 """One-off Playwright scraper for SPA-based club directories.
 
-Feeds JSON into the same shape as backend/services/scraper/clubs-*.json so
-`merge_spa_output.py` can drop rows into the master xlsx without changes.
+Writes ``spa-{school}.json`` files (see ``merge_spa_output.SPA_FILES``) that
+`merge_spa_output.py` merges into the master xlsx.
 
 Usage:
     pip install playwright
@@ -381,9 +381,6 @@ async def extract_ig_from_page(
     return None
 
 
-# ---- UBC AMS ----------------------------------------------------------------
-
-
 async def _harvest_ams_club_links(page: Page) -> list[dict]:
     rows = await page.evaluate(
         r"""() => {
@@ -597,11 +594,8 @@ async def scrape_umanitoba(ctx: BrowserContext, with_details: bool) -> list[dict
     ]
 
 
-# ---- UCalgary Campus Labs Engage --------------------------------------------
-
-
 async def scrape_ucalgary(ctx: BrowserContext, with_details: bool) -> list[dict]:
-    """suuofc.campuslabs.ca — browse the org directory and click LOAD MORE until exhausted."""
+    """suuofc.campuslabs.ca - browse the org directory and click LOAD MORE until exhausted."""
     page = await ctx.new_page()
     print("[ucalgary] loading engage/organizations ...", flush=True)
     await page.goto(
@@ -651,11 +645,8 @@ async def scrape_ucalgary(ctx: BrowserContext, with_details: bool) -> list[dict]
     return results
 
 
-# ---- UAlberta Rubric --------------------------------------------------------
-
-
 async def scrape_ualberta(ctx: BrowserContext, with_details: bool) -> list[dict]:
-    """campus.hellorubric.com — use the location/university pickers, then page results."""
+    """campus.hellorubric.com - use the location/university pickers, then page results."""
     page = await ctx.new_page()
     print("[ualberta] loading rubric search ...", flush=True)
     await page.goto(
@@ -687,9 +678,6 @@ async def scrape_ualberta(ctx: BrowserContext, with_details: bool) -> list[dict]
 
     await page.close()
     return results
-
-
-# ---- Detail-page visitor ----------------------------------------------------
 
 
 async def _visit_details(
@@ -797,9 +785,6 @@ async def _refresh_seeded_rows(
 
     await asyncio.gather(*(one(url, entries) for url, entries in groups.items()))
     return out
-
-
-# ---- Main -------------------------------------------------------------------
 
 
 async def main():

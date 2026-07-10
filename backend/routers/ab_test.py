@@ -14,15 +14,11 @@ router = APIRouter(prefix="/ab", tags=["ab-test"])
 
 @router.get("/variant", response_model=ABVariantResponse)
 def get_variant(auth_user: dict = Depends(get_current_user)):
-    """Get the current user's A/B test variant.
+    """Return the user's A/B variant.
 
-    If the authenticated user has no DB row yet (race between signup and
-    profile creation), we still want a stable variant rather than locking
-    everyone into control and biasing the treatment share downward (M5).
-    Hashing on ``auth_user["id"]`` gives a deterministic assignment that
-    will match once a DB row exists only if the two IDs agree — but since
-    they typically don't, we instead use the auth ID directly so the
-    fallback is random-by-hash, not hard-coded to control.
+    If the auth user has no DB row yet (signup race), hash on
+    ``auth_user["id"]`` for a stable assignment instead of locking everyone
+    into control and biasing treatment share downward.
     """
     try:
         db_user = resolve_db_user(auth_user)
@@ -38,10 +34,9 @@ def get_variant(auth_user: dict = Depends(get_current_user)):
 
 @router.get("/metrics", response_model=ABMetricsResponse)
 def get_metrics(_: dict = Depends(get_admin_user)):
-    """Get CTR metrics by variant (admin only).
+    """CTR metrics by variant (admin only).
 
-    Response is cached in-process for 60 s (see
-    ``ABTestService.get_ctr_by_variant``) so polling dashboards don't
-    trigger a full table scan per poll.
+    Cached in-process for 60 s (see ``ABTestService.get_ctr_by_variant``)
+    so polling dashboards do not full-scan per poll.
     """
     return ab_test.get_ctr_by_variant()

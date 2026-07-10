@@ -29,20 +29,12 @@ from schemas.interaction import EventPopularity, InteractionMatrixRow
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Simple TTL cache for expensive shared queries (interaction matrix, popularity).
-# These are global data identical for every request within a time window.
-# ---------------------------------------------------------------------------
+# Shared TTL cache for expensive global queries (interaction matrix, popularity).
 _shared_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 
-# ---------------------------------------------------------------------------
-# Per-user TTL cache for get_user_event_scores.
-# Uses the shared TTLCache with per-user keys for automatic TTL expiry and
-# thread-safe double-check locking via get_or_compute.
-#
-# P5: bounded with LRU eviction via ``max_size`` so memory stays proportional
-# to the active user cohort, not the all-time-unique-user count.
-# ---------------------------------------------------------------------------
+# Per-user TTL cache for get_user_event_scores. Bounded with LRU eviction via
+# ``max_size`` so memory stays proportional to the active user cohort, not the
+# all-time-unique-user count.
 _user_scores_cache = TTLCache(
     default_ttl=USER_SCORES_CACHE_TTL,
     max_size=USER_SCORES_CACHE_MAX,
@@ -186,7 +178,6 @@ def get_event_popularity(limit: int = DEFAULT_INTERACTION_LIMIT) -> list[EventPo
             weight = INTERACTION_WEIGHTS.get(row["interaction_type"], 0)
             actor_event_scores[key] = actor_event_scores.get(key, 0) + weight
 
-        # Sum across actors with per-actor cap applied.
         scores: dict[int, float] = {}
         for (_, _, eid), raw_score in actor_event_scores.items():
             capped = min(raw_score, POP_MAX_USER_CONTRIBUTION)

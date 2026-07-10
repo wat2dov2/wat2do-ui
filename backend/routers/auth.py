@@ -23,14 +23,12 @@ from services.auth_service import auth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-COOKIE_MAX_AGE = 30 * 24 * 3600  # 30 days
+COOKIE_MAX_AGE = 30 * 24 * 3600
 
 
-# A1: Fail fast at import time when running in production without secure
-# cookies.  The refresh token is a long-lived credential — if it ever leaves
-# the TLS channel an attacker can replay it for up to 30 days.  We accept no
-# operational toggle that silently downgrades this; the envar setting must be
-# explicitly true (default) in prod.
+# Fail fast in production without Secure cookies. The refresh token is a
+# long-lived credential - if it leaves TLS an attacker can replay it for
+# COOKIE_MAX_AGE. No silent downgrade; cookie_secure must be true in prod.
 if settings.is_production and not settings.cookie_secure:
     raise RuntimeError(
         "COOKIE_SECURE must be true in production (environment=production). "
@@ -38,32 +36,29 @@ if settings.is_production and not settings.cookie_secure:
     )
 
 
-# A11: allow optional Bearer for logout so the cookie is always cleared, even
-# if the caller's access token has expired or was never sent.  If we required
-# Bearer here, a user whose access token lapsed would be stuck with a stale
-# (but still valid) refresh cookie that the next app boot would happily replay.
+# Optional Bearer on logout so the cookie is always cleared even when the
+# access token has expired or was never sent. Requiring Bearer would leave
+# a stale (still valid) refresh cookie that the next app boot would replay.
 _optional_bearer = HTTPBearer(auto_error=False)
 
 
-# A2: Scope the refresh cookie to the browser-visible refresh endpoint — the
-# only route that needs it. Narrower paths reduce the number of requests that
-# carry the long-lived credential, shrinking the CSRF / accidental-attach
-# surface. Production Vercel rewrites use /api/auth/refresh.
+# Scope the refresh cookie to the browser-visible refresh endpoint only.
+# Narrower paths reduce CSRF / accidental-attach surface for the long-lived
+# credential. Path comes from settings.refresh_cookie_path (default
+# /auth/refresh; production Vercel rewrites use /api/auth/refresh).
 REFRESH_COOKIE_PATH = settings.refresh_cookie_path
 
 
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
     """Set the refresh token as an httpOnly cookie.
 
-    ``secure`` is set explicitly to ``settings.cookie_secure`` OR
-    ``is_production`` so a misconfigured env var cannot serve a non-Secure
-    cookie in production (A1 hardening — paired with the startup assertion
-    above).
+    ``secure`` is ``settings.cookie_secure`` OR ``is_production`` so a
+    misconfigured env cannot serve a non-Secure cookie in production
+    (paired with the startup assertion above).
 
-    A2: the cookie path is ``/auth/refresh`` so the browser only attaches
-    it to the single endpoint that actually reads it.  Any future endpoint
-    that needs the refresh cookie must be placed under this exact path or
-    explicitly widen the scope here.
+    Cookie path is ``settings.refresh_cookie_path`` so the browser only
+    attaches it to the refresh endpoint. Any future consumer must share
+    that path or widen the scope here.
     """
     response.set_cookie(
         key="refresh_token",
@@ -89,14 +84,12 @@ def _clear_refresh_cookie(response: Response) -> None:
 def _origin_allowed(request: Request) -> bool:
     """Return True if the request's Origin or Referer is in allowed origins.
 
-    A32: SameSite=Lax lets top-level cross-site POSTs attach the refresh
-    cookie.  Without a CSRF token we require that the request originated
-    from a trusted origin — refuse if neither Origin nor Referer is set
-    or if they point outside ``settings.cors_origins``.
+    SameSite=Lax lets top-level cross-site POSTs attach the refresh cookie.
+    Without a CSRF token we require a trusted origin - refuse if neither
+    Origin nor Referer is set or if they fall outside ``settings.cors_origins``.
     """
     if not settings.cors_origins and not settings.cors_origin_regex:
-        # No origins configured → be conservative and reject cross-origin
-        # cookie-bearing POSTs regardless.
+        # No origins configured: reject cross-origin cookie-bearing POSTs.
         return False
 
     origin = request.headers.get("origin")
@@ -111,8 +104,8 @@ def _origin_allowed(request: Request) -> bool:
         )
         return settings.is_allowed_origin(referer_origin)
 
-    # No Origin/Referer at all — treat as untrusted.  Browsers always send
-    # Origin on cross-site POSTs; its absence is suspicious.
+    # No Origin/Referer: treat as untrusted. Browsers send Origin on
+    # cross-site POSTs; its absence is suspicious.
     return False
 
 
@@ -142,10 +135,8 @@ def refresh(
     request: Request,
     response: Response,
 ):
-    # A32: require that the request originated from a trusted origin.
-    # SameSite=Lax does not block top-level cross-site POSTs, so without
-    # a custom header / double-submit token we fall back to Origin/Referer
-    # validation against CORS_ORIGINS.
+    # SameSite=Lax does not block top-level cross-site POSTs; require
+    # Origin/Referer against CORS_ORIGINS as a CSRF fallback.
     if not _origin_allowed(request):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -170,9 +161,9 @@ def _error_response_with_cleared_cookie(
 ) -> JSONResponse:
     """Build a JSONResponse that clears the refresh cookie.
 
-    Used from /auth/logout to guarantee the cookie is cleared even when
-    upstream revocation fails — raising an exception from the route would
-    otherwise drop the cookie header set on the Response parameter.
+    Used from /auth/logout so the cookie is cleared even when upstream
+    revocation fails - raising from the route would drop Set-Cookie on
+    the Response parameter.
     """
     resp = JSONResponse(status_code=status_code, content={"detail": detail})
     resp.delete_cookie(
@@ -190,11 +181,10 @@ def logout(
 ):
     """Log the user out.
 
-    A11: Bearer is optional — if the access token has expired, the refresh
-    cookie is still cleared so the browser doesn't hold a replayable token.
-    Even if upstream revocation fails, the cookie is still cleared; we
-    surface the error via a JSONResponse that carries Set-Cookie for
-    ``refresh_token``.
+    Bearer is optional: if the access token has expired, the refresh cookie
+    is still cleared so the browser does not hold a replayable token.
+    Even if upstream revocation fails, the cookie is cleared via a
+    JSONResponse that carries Set-Cookie for ``refresh_token``.
     """
     if token is not None:
         try:
@@ -205,7 +195,6 @@ def logout(
                 detail=str(e.detail) if e.detail is not None else INVALID_OR_EXPIRED_TOKEN,
             )
         except (AuthenticationError, ServiceError) as e:
-            # Map to 401 for AuthenticationError (consistent with global handler).
             return _error_response_with_cleared_cookie(
                 status_code=401 if isinstance(e, AuthenticationError) else 400,
                 detail=e.detail,

@@ -1,12 +1,11 @@
 /**
  * Role constants used for route protection.
  *
- * ``ROLE_ADMIN`` and ``ROLE_USER`` mirror the backend ``role`` column values
- * in the ``users`` table (see backend/core/constants.py).
+ * ``ROLE_ADMIN`` mirrors the backend ``users.role`` value ``"admin"``.
  *
- * ``ROLE_ORGANIZATION`` is a frontend-only route-guard value backed by
- * /organizations/mine. A user passes this check only when an admin-assigned club
- * row lists them as its owner.
+ * ``ROLE_ORGANIZATION`` is a frontend-only route-guard token (value ``"club"``).
+ * It is not a ``users.role``; access is granted when /organizations/mine
+ * returns an organization the user manages.
  */
 
 export const ROLE_ADMIN = "admin" as const;

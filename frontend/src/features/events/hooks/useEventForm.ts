@@ -22,17 +22,10 @@ interface UseEventFormOptions {
   isOpen: boolean;
 }
 
-/**
- * Custom hook for managing event form state and validation
- */
 export function useEventForm(options: UseEventFormOptions) {
   const { initialData, isEditMode = false, isOpen } = options;
   const { t } = useTranslation();
 
-  // Use the shared useForm hook for core form state (formData, touched, updateField,
-  // handleBlur, reset). We supply a validate callback so `errors` is derived inside
-  // the hook — but we still re-expose it with the EventFormData-specific ValidationErrors
-  // shape below.
   const getDefaults = useCallback(() => getInitialState(initialData, isEditMode).formData, [
     initialData,
     isEditMode,
@@ -56,14 +49,11 @@ export function useEventForm(options: UseEventFormOptions) {
     validate,
   });
 
-  // Re-typed errors for EventForm consumers
   const errors = form.errors as import("@/shared/types").ValidationErrors;
 
-  // JSON editor state
   const [jsonValue, setJsonValue] = useState("");
   const [jsonError, setJsonError] = useState("");
 
-  // Food tag input (manages its own input string; commits to formData.food)
   const foodTag = useTagInput({
     onAdd: (value) => {
       form.updateField("food", [...form.formData.food, value]);
@@ -109,7 +99,6 @@ export function useEventForm(options: UseEventFormOptions) {
     [form],
   );
 
-  // Image upload state
   const [imagePreview, setImagePreview] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -127,9 +116,7 @@ export function useEventForm(options: UseEventFormOptions) {
     setImageFile(null);
   }, []);
 
-  // Reset extras (date/json/food/image) on modal open or when initialData is re-seeded.
-  // useForm handles formData/touched reset on isOpen transition; we mirror that here for
-  // the fields that live outside useForm.
+  // Reset extras (json/food/image) on modal open; useForm owns formData/touched.
   const prevIsOpenRef = useRef(isOpen);
   const prevInitialDataRef = useRef<EventFormData | undefined>(undefined);
 
@@ -165,7 +152,7 @@ export function useEventForm(options: UseEventFormOptions) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isEditMode, initialData]);
 
-  // Handle JSON changes — update the editor immediately, parse after debounce.
+  // Update the editor immediately; parse after debounce.
   const applyJsonParse = useCallback(
     (value: string) => {
       try {
@@ -196,48 +183,40 @@ export function useEventForm(options: UseEventFormOptions) {
     [debouncedApplyJsonParse],
   );
 
-  // Sync formData to JSON when needed
   const syncToJSON = useCallback(() => {
     setJsonValue(JSON.stringify(form.formData, null, 2));
   }, [form.formData]);
 
-  // isValid is derived from the domain-specific isEventFormValid (stronger than
-  // useForm.isValid which only checks "errors is empty").
   const isValid = useMemo(
     () => isEventFormValid(form.formData, errors) && Boolean(imagePreview),
     [form.formData, errors, imagePreview],
   );
 
   const markAllFieldsTouched = useCallback(() => {
-    // useForm does not expose setTouched directly. Touch each required field via handleBlur.
+    // useForm does not expose setTouched; touch each required field via handleBlur.
     const allTouched = markAllFieldsTouchedFn();
     Object.keys(allTouched).forEach((field) => form.handleBlur(field));
   }, [form]);
 
   return {
-    // Form data
     formData: form.formData,
     setFormData: form.setFormData,
     updateField: form.updateField,
 
-    // Occurrences
     updateOccurrence,
     addOccurrence,
     removeOccurrence,
 
-    // Food management
     foodInput: foodTag.inputValue,
     setFoodInput: foodTag.setInputValue,
     addFood: foodTag.handleAdd,
     removeFood,
 
-    // Validation
     errors,
     touched: form.touched,
     handleBlur: form.handleBlur,
     isValid,
 
-    // JSON editor
     jsonValue,
     setJsonValue,
     jsonError,
@@ -245,7 +224,6 @@ export function useEventForm(options: UseEventFormOptions) {
     handleJsonChange,
     syncToJSON,
 
-    // Image upload
     imagePreview,
     imageFile,
     onImageUpload,
@@ -253,7 +231,6 @@ export function useEventForm(options: UseEventFormOptions) {
     setImagePreview,
     setImageFile,
 
-    // Utilities
     markAllFieldsTouched,
   };
 }

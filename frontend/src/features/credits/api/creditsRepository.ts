@@ -1,6 +1,6 @@
 /**
  * Credits Repository
- * Internal data layer for credits feature — backed by the API
+ * Internal data layer for credits feature - backed by the API
  */
 
 import { api } from "@/shared/services/apiClient";
@@ -21,7 +21,7 @@ export async function fetchBalance(): Promise<number> {
  * Add credits via the backend.
  *
  * Backend contract (admin-only): POST /credits/add { user_id, amount }.
- * The frontend must send both fields — passing only `{ amount }` fails
+ * The frontend must send both fields - passing only `{ amount }` fails
  * Pydantic validation with a 422. Non-admin callers will receive a 403.
  */
 export async function addCreditsRepo(
@@ -37,7 +37,7 @@ export async function addCreditsRepo(
 
 /**
  * Create the single event promotion via the backend.
- * Only sends event_id — the server determines cost and duration.
+ * Only sends event_id - the server determines cost and duration.
  */
 export async function createPromotionAPI(
   eventId: number,
@@ -48,7 +48,7 @@ export async function createPromotionAPI(
 }
 
 /**
- * Fetch all currently active promoted event IDs (public endpoint — no auth).
+ * Fetch all currently active promoted event IDs (public endpoint - no auth).
  */
 export async function fetchActivePromotedEventIds(): Promise<number[]> {
   return api.get<number[]>("/promotions/active-ids");

@@ -1,4 +1,4 @@
-"""QR code redirect and scan recording. Public GET /qr/{id} records a scan and returns redirect config."""
+"""QR code redirect and scan recording. Public GET /qr/{qr_code_id} records a scan and returns redirect config."""
 
 import logging
 import uuid
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/qr", tags=["qr"])
 
 
 def _get_poster_or_404_authorized(qr_code_id: str, db_user: UserResponse) -> QrCodeResponse:
-    """Fetch a poster by ID (404 if missing) and verify the user is its owner or an admin (403 if not)."""
+    """Fetch QR code by ID (404 if missing); require creator or admin."""
     return get_authorized_resource(
         lambda: qr_code_service.get_qr_code_by_id(qr_code_id),
         POSTER_NOT_FOUND,
@@ -37,8 +37,8 @@ def list_qr_codes(
 ):
     """List QR codes.
 
-    Admins can list all QR codes. Non-admins (organization managers) can only list
-    QR codes created by themselves.
+    Admins see all. Non-admins (org management members via
+    ``get_organization_owner_or_admin``) see only QR codes they created.
     """
     if school == "all":
         school = None
@@ -61,10 +61,10 @@ def list_scans(
     pagination: PaginationParams = Depends(),
     db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
-    """List QR-code scan events analytics.
+    """List QR-code scan analytics.
 
-    Admins can list all scans. Non-admins (organization managers) can only list scans
-    of QR codes created by themselves.
+    Admins see all scans. Non-admins (org management members via
+    ``get_organization_owner_or_admin``) see only scans of QR codes they created.
     """
     owned_by = None if is_admin(db_user) else str(db_user.id)
     items, total = qr_code_service.list_scans(
@@ -117,11 +117,7 @@ def create_poster(
     data: QrCodeCreate,
     db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
-    """Create a QR code.
-
-    INSERT-only: if the id already exists, ``create_qr_code`` raises
-    ConflictError -> 409.
-    """
+    """Create a QR code. INSERT-only: duplicate id raises ConflictError -> 409."""
     return qr_code_service.create_qr_code(data, created_by=str(db_user.id))
 
 
@@ -131,7 +127,6 @@ def update_poster(
     data: QrCodeCreate,
     db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
-    """Update a QR code."""
     if data.id != qr_code_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ID_MISMATCH)
     existing = _get_poster_or_404_authorized(qr_code_id, db_user)
@@ -145,6 +140,5 @@ def delete_poster(
     qr_code_id: str,
     db_user: UserResponse = Depends(get_organization_owner_or_admin),
 ):
-    """Delete a QR code."""
     _get_poster_or_404_authorized(qr_code_id, db_user)
     qr_code_service.delete_qr_code(qr_code_id)

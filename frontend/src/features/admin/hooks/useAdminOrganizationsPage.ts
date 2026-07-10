@@ -1,8 +1,3 @@
-/**
- * Admin Organizations Page Hook
- * Manages state and logic for AdminOrganizationsPage.
- */
-
 import { useCallback, useState } from "react";
 import type { Organization } from "@/shared/types";
 import { getAllOrganizations, getOrganizationTypes } from "@/features/organizations/api/organizations.api";
@@ -79,7 +74,6 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
   }, [setCurrentPage]);
 
   return {
-    // State
     searchQuery,
     selectedOrganizationType,
     deleteConfirmId,
@@ -91,7 +85,6 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     totalItems,
     totalPages,
     isLoading,
-    // Actions
     setSearchQuery,
     submitSearchQuery,
     clearSearchQuery,

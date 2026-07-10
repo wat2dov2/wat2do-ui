@@ -43,12 +43,12 @@ class AuthUser(TypedDict):
     role: str | None
 
 
-# JWKS client — fetches public keys from Supabase's discovery endpoint
+# JWKS client - fetches public keys from Supabase's discovery endpoint
 # and caches them in-memory for 10 minutes.
 _jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
 _jwks_client: PyJWKClient | None = None
 # Only asymmetric algorithms are allowed in the JWKS path.  Never include
-# HS256 here — doing so enables the classic "algorithm confusion" attack where
+# HS256 here - doing so enables the classic "algorithm confusion" attack where
 # an attacker signs a token with the *public* key as an HMAC secret.
 _ASYMMETRIC_ALGS = ("RS256", "ES256", "EdDSA")
 # Supabase issues tokens with iss = <project_url>/auth/v1
@@ -82,7 +82,7 @@ def _resolve_user(token: HTTPAuthorizationCredentials) -> dict:
 def _decode_jwt(credentials: str) -> dict:
     """Decode and verify a raw JWT string. Returns the auth-user dict.
 
-    A21: narrowed the exception surface so signature failures surface clearly.
+    Narrowed exception surface so signature failures surface clearly.
     Failures are logged at ``warning`` so operators see JWKS regressions.
     """
     try:
@@ -129,7 +129,7 @@ def get_optional_user(
 ) -> AuthUser | None:
     """Accept an optional Bearer token. Returns the auth user or None.
 
-    A4: Distinguishes "no header" (truly anonymous, silent) from "bad
+    Distinguishes "no header" (truly anonymous, silent) from "bad
     header" (malformed / expired token).  Malformed tokens are logged at
     ``warning`` so operators can spot auth regressions and clients can
     detect misconfigured sessions via log correlation rather than blind
@@ -177,7 +177,7 @@ def get_db_user(
 
     Returned ``UserResponse`` carries both ``.id`` (internal UUID used
     for ownership comparisons) and ``.role`` (used for admin checks)
-    — one consistent shape for every downstream helper.
+    - one consistent shape for every downstream helper.
     """
     return resolve_db_user(auth_user)
 
@@ -198,7 +198,7 @@ def get_admin_user(
 def get_organization_owner_or_admin(
     db_user: "UserResponse" = Depends(get_db_user),
 ) -> "UserResponse":
-    """Require admin OR organization owner (user who owns at least one organization). Returns 403 if neither."""
+    """Require admin OR organization manager/member (user in at least one organization). Returns 403 if neither."""
     if db_user.role == ROLE_ADMIN:
         return db_user
 
@@ -213,7 +213,7 @@ def get_organization_owner_or_admin(
 def is_admin(db_user: "UserResponse") -> bool:
     """Return True if *db_user* has the admin role.
 
-    Trivial role check — no DB lookup. Callers must pass the DB user
+    Trivial role check - no DB lookup. Callers must pass the DB user
     from ``get_db_user`` (or ``get_admin_user``), which already bypasses
     the user cache at resolve time.
     """
@@ -223,7 +223,7 @@ def is_admin(db_user: "UserResponse") -> bool:
 def require_owner_or_admin(db_user: "UserResponse", resource_owner_id: str | None) -> None:
     """Raise 403 if *db_user* is neither the resource owner nor an admin.
 
-    Ownership is compared against the internal ``users.id`` UUID — every
+    Ownership is compared against the internal ``users.id`` UUID - every
     resource's ``created_by`` / ``owner_id`` / ``user_id`` column stores
     this value after the ``unify_created_by_to_internal_id`` migration.
 

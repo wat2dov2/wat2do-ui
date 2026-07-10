@@ -55,7 +55,7 @@ INTEGRATION_NOT_FOUND = "Integration not found"
 
 
 def _get_organization_or_403(organization_id: int, db_user: UserResponse) -> OrganizationResponse:
-    """Fetch a organization by ID (404 if missing) and verify the user is its member or an admin (403 if not)."""
+    """Fetch organization by ID (404 if missing); require organization_members membership or admin."""
     organization = organization_service.get_organization(organization_id)
     if organization is None:
         raise NotFoundError(ORGANIZATION_NOT_FOUND)
@@ -70,11 +70,7 @@ def _get_organization_or_403(organization_id: int, db_user: UserResponse) -> Org
 
 
 def _authorize_and_exec(organization_id: int, db_user: UserResponse, action):
-    """Verify organization ownership, execute *action*, and validate the result.
-
-    Separates the authorization check from the action so callers are
-    explicit about what operation is being performed.
-    """
+    """Require membership (or admin), run *action*, and 404 if the result is missing."""
     _get_organization_or_403(organization_id, db_user)
     return get_or_404(action(), INTEGRATION_NOT_FOUND)
 
@@ -106,7 +102,6 @@ def list_organizations(
 
 @router.get("/mine", response_model=list[OrganizationResponse])
 def list_my_organizations(db_user: UserResponse = Depends(get_db_user)):
-    """Return organizations owned by the authenticated user."""
     return organization_service.list_organizations_by_owner(str(db_user.id))
 
 
@@ -135,7 +130,6 @@ def list_claims(
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
     _: UserResponse = Depends(get_admin_user),
 ):
-    """List claims (admin only)."""
     if school == "all":
         school = None
     return organization_service.list_claims(status=status, school=school)
@@ -235,7 +229,6 @@ def list_organization_members(
     organization_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """List all members of a organization. Admin or organization members only."""
     _get_organization_or_403(organization_id, db_user)
     return organization_service.list_organization_members(organization_id)
 
@@ -250,11 +243,7 @@ def add_organization_member(
     data: OrganizationMemberAdd,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Add a member to the organization by email. Admin or organization members only.
-
-    If the user already has an account, they are added directly.
-    Otherwise, a pending invitation is created and sent.
-    """
+    """Add by email: existing users join organization_members directly; otherwise invite."""
     _get_organization_or_403(organization_id, db_user)
 
     from services import user_service
@@ -272,7 +261,6 @@ def remove_organization_member(
     user_id: str,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Remove a member from the organization. Admin or organization members only."""
     _get_organization_or_403(organization_id, db_user)
 
     from uuid import UUID
@@ -297,7 +285,6 @@ def create_invitation(
     data: OrganizationInvitationCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Explicitly create and send an invitation."""
     _get_organization_or_403(organization_id, db_user)
     return organization_service.create_invitation(organization_id, data.email, db_user.id)
 
@@ -307,7 +294,6 @@ def list_invitations(
     organization_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """List pending invitations for the organization."""
     _get_organization_or_403(organization_id, db_user)
     return organization_service.list_invitations(organization_id)
 
@@ -320,7 +306,6 @@ def revoke_invitation(
     invitation_id: str,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Revoke/delete an invitation."""
     _get_organization_or_403(organization_id, db_user)
     success = organization_service.revoke_invitation(organization_id, invitation_id)
     if not success:
@@ -329,7 +314,7 @@ def revoke_invitation(
 
 @router.get("/invitations/{token}", response_model=OrganizationInvitationPublicResponse)
 def get_invitation_by_token(token: str):
-    """Public route to validate an invitation token and fetch public details (organization name)."""
+    """Public: validate invitation token and return public details (organization name)."""
     return organization_service.get_invitation_by_token(token)
 
 
@@ -338,13 +323,9 @@ def accept_invitation(
     token: str,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Accept an invitation token using the logged-in user's identity."""
     success = organization_service.accept_invitation(token, db_user.id)
     if not success:
         raise NotFoundError("Invitation not found or has expired")
-
-
-# --- Organization Memberships & Requests Endpoints (Student Join Requests) ---
 
 
 @router.post(
@@ -356,7 +337,6 @@ def request_to_join_organization(
     organization_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Create a pending request to join the organization."""
     organization = organization_service.get_organization(organization_id)
     if not organization:
         raise HTTPException(status_code=404, detail=ORGANIZATION_NOT_FOUND)
@@ -368,7 +348,6 @@ def leave_organization_or_cancel_request(
     organization_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Leave a organization or cancel a pending join request."""
     organization = organization_service.get_organization(organization_id)
     if not organization:
         raise HTTPException(status_code=404, detail=ORGANIZATION_NOT_FOUND)
@@ -382,7 +361,6 @@ def get_my_membership_status(
     organization_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Get the current user's membership details for this organization."""
     organization = organization_service.get_organization(organization_id)
     if not organization:
         raise HTTPException(status_code=404, detail=ORGANIZATION_NOT_FOUND)
@@ -397,7 +375,6 @@ def list_organization_memberships(
     status: str | None = Query(default=None),
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Organization Admin/Owner: List student memberships and pending requests for the organization."""
     _get_organization_or_403(organization_id, db_user)
     return organization_membership_service.list_organization_memberships(
         organization_id, status=status
@@ -413,7 +390,6 @@ def update_organization_membership(
     data: OrganizationMembershipUpdate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Organization Admin/Owner: Approve/reject a request or change role of a student member."""
     _get_organization_or_403(organization_id, db_user)
     updated = organization_membership_service.update_membership_status(
         organization_id=organization_id,
@@ -432,14 +408,10 @@ def remove_organization_membership(
     user_id: UUID,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Organization Admin/Owner: Remove a student member or request from the organization roster."""
     _get_organization_or_403(organization_id, db_user)
     success = organization_membership_service.delete_membership(organization_id, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Membership not found")
-
-
-# --- Organization Claims & Join Requests Endpoints ---
 
 
 @router.post(
@@ -452,7 +424,6 @@ def create_claim(
     data: OrganizationClaimCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Submit a claim for an unowned organization."""
     return organization_service.create_claim(
         organization_id, db_user.id, data.executive_role, data.proof_url
     )
@@ -464,7 +435,6 @@ def update_claim(
     data: OrganizationClaimUpdate,
     _: UserResponse = Depends(get_admin_user),
 ):
-    """Approve or reject a claim (admin only)."""
     return organization_service.update_claim(claim_id, data.status, data.rejection_reason)
 
 
@@ -478,7 +448,7 @@ def create_join_request(
     data: OrganizationJoinRequestCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Submit a request to join a organization's management team."""
+    """Request to join the organization's management team (organization_members)."""
     return organization_service.create_join_request(organization_id, db_user.id, data.pitch)
 
 
@@ -489,7 +459,6 @@ def list_join_requests(
     organization_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """List pending join requests for a organization (members only)."""
     _get_organization_or_403(organization_id, db_user)
     return organization_service.list_join_requests(organization_id)
 
@@ -503,6 +472,5 @@ def update_join_request(
     data: OrganizationJoinRequestUpdate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    """Approve or reject a join request (members only)."""
     _get_organization_or_403(organization_id, db_user)
     return organization_service.update_join_request(request_id, data.status)

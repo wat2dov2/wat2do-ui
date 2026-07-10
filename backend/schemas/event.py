@@ -29,7 +29,7 @@ _CANONICAL_SET = frozenset(EVENT_CATEGORIES)
 FoodStr = Annotated[str, Field(min_length=1, max_length=MAX_EVENT_FOOD_ITEM_LENGTH)]
 
 # Allowed URL schemes for event-owned links (source_url, source_image_url).
-# Rejects javascript:, data:, file:, ftp: — all historical XSS / SSRF vectors.
+# Rejects javascript:, data:, file:, ftp: - all historical XSS / SSRF vectors.
 _SAFE_URL_PROTOCOLS = {"http", "https"}
 
 
@@ -58,7 +58,7 @@ def _validate_optional_handle(v: str | None) -> str | None:
 
     Social handles in the wild are a mix of @user forms and full profile URLs.
     We reject any value that *looks* like a URL (contains a scheme colon) but
-    uses a scheme other than http/https — that catches ``javascript:`` /
+    uses a scheme other than http/https - that catches ``javascript:`` /
     ``data:`` / ``file:`` without being pedantic about @-handles.
     """
     if v is None:
@@ -106,7 +106,7 @@ class EventCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=MAX_EVENT_TITLE_LENGTH)
     description: str | None = Field(default=None, max_length=MAX_EVENT_DESCRIPTION_LENGTH)
     location: str = Field(..., min_length=1, max_length=MAX_EVENT_LOCATION_LENGTH)
-    # Occurrences live in the event_dates table — one row per occurrence,
+    # Occurrences live in the event_dates table - one row per occurrence,
     # one events row per logical event. Per-occurrence dtstart/dtend
     # validation lives on OccurrenceCreate; the only constraint here is
     # that an event has at least one occurrence.
@@ -122,6 +122,7 @@ class EventCreate(BaseModel):
     # (see event_service._resolve_organization_fields), so they are not accepted here.
     organization_id: int = Field(..., ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
+    cancelled: bool = False
 
     @field_validator("category")
     @classmethod
@@ -148,7 +149,7 @@ class EventUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=MAX_EVENT_DESCRIPTION_LENGTH)
     location: str | None = Field(default=None, max_length=MAX_EVENT_LOCATION_LENGTH)
     # ``None`` (the default) leaves occurrences unchanged. An empty list
-    # is rejected — every event must have at least one occurrence — so
+    # is rejected - every event must have at least one occurrence - so
     # callers wanting to clear dates must instead delete the event.
     occurrences: list[OccurrenceCreate] | None = Field(default=None, min_length=1)
     price: PriceField | None = None
@@ -160,6 +161,7 @@ class EventUpdate(BaseModel):
     # Reassigning the organization re-derives organization/organization_type/school server-side.
     organization_id: int | None = Field(default=None, ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
+    cancelled: bool | None = None
 
     @field_validator("category")
     @classmethod
@@ -189,7 +191,7 @@ class LatestEventResponse(BaseModel):
 class EventTimeMeta(BaseModel):
     """Minimal event metadata for time-decay calculations.
 
-    Decay keys off ``added_at`` (catalog age), not ``dtstart_utc`` —
+    Decay keys off ``added_at`` (catalog age), not ``dtstart_utc`` -
     see the rationale in recommender/popularity.py. The field
     used to be on this model when ``events`` carried dtstart_utc as a
     column; occurrence dates now live in event_dates.
@@ -200,7 +202,7 @@ class EventTimeMeta(BaseModel):
 
 
 class EventSummaryResponse(BaseModel):
-    """Lightweight payload for list/card views — omits large text fields
+    """Lightweight payload for list/card views - omits large text fields
     (description) that are only needed in detail views.
     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
 
@@ -209,9 +211,9 @@ class EventSummaryResponse(BaseModel):
     the ``organizations`` row via the ``events.organization_id`` FK so the event
     card's org badge can render its links without a second fetch.
 
-    ``created_by`` is intentionally omitted — this response is returned on
+    ``created_by`` is intentionally omitted - this response is returned on
     public GET /events/ and would otherwise leak the creator's Supabase
-    auth UID to anonymous callers (see audit I10 / S16).
+    auth UID to anonymous callers.
     """
 
     id: int
@@ -230,6 +232,7 @@ class EventSummaryResponse(BaseModel):
     organization_discord: str | None = None
     ig_handle: str | None = None
     school: str | None = None
+    cancelled: bool = False
     added_at: datetime
     click_count: int = 0
 
@@ -270,6 +273,7 @@ class EventResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     ig_handle: str | None = None
+    cancelled: bool = False
     added_at: datetime
     click_count: int = 0
     created_by: str | None = None
@@ -278,9 +282,8 @@ class EventResponse(BaseModel):
 
 
 class EventPublicResponse(BaseModel):
-    """Public response for GET /events/{id} — identical to EventResponse
-    but with ``created_by`` stripped to avoid leaking creator UUIDs to
-    unauthenticated callers (see audit I10).
+    """Like EventResponse but without ``created_by``, so public detail
+    views do not leak creator UUIDs to unauthenticated callers.
     """
 
     id: int
@@ -299,6 +302,7 @@ class EventPublicResponse(BaseModel):
     category: str | None = None
     organization: str | None = None
     ig_handle: str | None = None
+    cancelled: bool = False
     added_at: datetime
     click_count: int = 0
 

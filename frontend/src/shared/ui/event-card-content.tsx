@@ -41,7 +41,6 @@ export function EventCardContent({
           {title}
         </h3>
 
-        {/* Info + Badges - pinned to bottom */}
         <div className="flex items-end justify-between gap-3 mt-auto min-w-0">
           <div className="space-y-0.5 min-w-0 flex-1">
             {date && (

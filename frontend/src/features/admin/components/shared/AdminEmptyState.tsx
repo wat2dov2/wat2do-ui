@@ -1,8 +1,3 @@
-/**
- * Admin Empty State Component
- * Reusable empty state display
- */
-
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 
 interface AdminEmptyStateProps {

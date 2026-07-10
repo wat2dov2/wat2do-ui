@@ -1,15 +1,15 @@
-"""Insert extracted events into the ``events`` + ``event_dates`` tables.
+"""Insert or overwrite extracted events into ``events`` + ``event_dates``.
 
-Every logical event is one ``events`` row + N ``event_dates`` rows. The
-writer inserts the parent row first, then bulk-inserts occurrences. If the
-occurrence insert fails the parent row is rolled back so we don't leave
-orphan events with no dates.
+Pass 2 reconcile owns insert vs overwrite: objects with an existing
+integer ``id`` overwrite that row; objects without ``id`` insert.
+Every logical event is one ``events`` row + N ``event_dates`` rows.
 """
 
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from core.constants import (
     MAX_EVENT_DESCRIPTION_LENGTH,
@@ -27,9 +27,12 @@ from core.database import get_sb
 from core.tables import EVENTS, ORGANIZATIONS
 from schemas.event import normalize_category
 from schemas.event_date import OccurrenceCreate
-from services import event_date_service
+from services import event_date_service, event_service
 from services.event_feed_revalidation import event_feed_revalidation_service
-from services.scraper.dedup import find_match
+from services.notifications.event_change import enqueue_event_change
+
+if TYPE_CHECKING:
+    from services.scraper.org_resolve import ResolvedOrganization
 
 log = logging.getLogger(__name__)
 
@@ -37,84 +40,71 @@ _SCRAPED_ORGANIZATION_TYPE = "Independent"
 
 
 def write_event(
-    event: dict, *, ig_handle: str | None, source_url: str, allow_past_events: bool = False
+    event: dict,
+    *,
+    ig_handle: str | None,
+    source_url: str,
+    allow_past_events: bool = False,
+    resolved_org: ResolvedOrganization | None = None,
 ) -> str:
-    """Insert (or update) the event extracted from one Instagram post.
+    """Insert or overwrite one event from Pass 1 / Pass 2 output.
 
     Returns one of:
-        ``"inserted"``  — new event row + occurrences created.
-        ``"updated"``   — same-organization update applied to an existing row.
-        ``"duplicate"`` — cross-organization duplicate, skipped.
-        ``"skipped"``   — required field missing (e.g. no occurrence,
-                          no location); caller should log.
+        ``"inserted"``  - new event row + occurrences created.
+        ``"updated"``   - existing ``id`` overwritten.
+        ``"skipped"``   - required field missing or all occurrences past.
     """
     occurrences = event.get("occurrences") or []
     if not occurrences:
-        log.warning("[%s] dropping event %r — no occurrences", ig_handle, event.get("title"))
+        log.warning("[%s] dropping event %r - no occurrences", ig_handle, event.get("title"))
         return "skipped"
 
     location = (event.get("location") or "").strip()
     title = (event.get("title") or "").strip()
     if not location or not title:
         log.warning(
-            "[%s] dropping event — missing required field(s): title=%r location=%r",
+            "[%s] dropping event - missing required field(s): title=%r location=%r",
             ig_handle,
             title,
             location,
         )
         return "skipped"
 
-    organization_dict = _ensure_organization_by_ig(
-        ig_handle,
-        school=(event.get("school") or "").strip() or None,
-        preferred_name=(event.get("organization") or "").strip() or None,
+    if resolved_org is None:
+        from services.scraper.org_resolve import resolve_organization_for_scrape
+
+        resolved_org = resolve_organization_for_scrape(
+            ig_handle=ig_handle,
+            school=(event.get("school") or "").strip() or None,
+            organization_name=(event.get("organization") or "").strip() or None,
+            create_stub_if_missing=bool((ig_handle or "").strip()),
+        )
+
+    effective_ig = resolved_org.ig_handle or (
+        ig_handle[:MAX_EVENT_HANDLE_LENGTH] if ig_handle else None
     )
     organization_name = _resolve_organization_name(
-        event, ig_handle=ig_handle, organization=organization_dict
+        event,
+        ig_handle=effective_ig,
+        organization_name=resolved_org.organization_name,
     )
-    organization_type = organization_dict.get("organization_type") if organization_dict else None
+    organization_type = resolved_org.organization_type
     category = normalize_category(event.get("category")) if event.get("category") else None
 
-    # Build the future-only occurrence list. Past-dated occurrences from
-    # mis-parsed captions are dropped here rather than at insert time.
     future_occurrences = _coerce_future_occurrences(
         occurrences, allow_past_events=allow_past_events
     )
     if not future_occurrences:
         log.info(
-            "[%s] all %d occurrences for %r are in the past — skipping",
+            "[%s] all %d occurrences for %r are in the past - skipping",
             ig_handle,
             len(occurrences),
             title,
         )
         return "skipped"
 
-    # Same-organization / same-day dedup against the events table. Pass the
-    # filtered future-only list so the same-day window is computed
-    # against an actual upcoming date — passing the unfiltered list
-    # could put ``occurrences[0]`` at a past dtstart and drive the
-    # day-window check against a stale day with no relevant matches.
-    future_occurrence_dicts = [o.model_dump(mode="json") for o in future_occurrences]
-    match = find_match(
-        title=title,
-        location=location,
-        description=event.get("description") or "",
-        occurrences=future_occurrence_dicts,
-        ig_handle=ig_handle,
-    )
-    if match is not None and match.kind == "duplicate":
-        log.info(
-            "[%s] cross-organization duplicate of event id=%s — skipping",
-            ig_handle,
-            match.event.get("id"),
-        )
-        return "duplicate"
-
-    # Truncations mirror the API's ``EventCreate`` schema caps (defined in
-    # core/constants.py) so a row written by the scraper round-trips through
-    # the Pydantic boundary. The DB columns themselves are wider in places
-    # (events.title is varchar(500), schema cap is 300) — slicing to the
-    # tighter cap keeps the user-facing contract consistent.
+    # Truncations mirror the API's ``EventCreate`` schema caps so a row written
+    # by the scraper round-trips through the Pydantic boundary.
     event_row = {
         "title": title[:MAX_EVENT_TITLE_LENGTH],
         "description": (event.get("description") or "")[:MAX_EVENT_DESCRIPTION_LENGTH] or None,
@@ -124,28 +114,26 @@ def write_event(
         "registration": bool(event.get("registration", False)),
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
-        "organization_id": organization_dict.get("id") if organization_dict else None,
+        "organization_id": resolved_org.organization_id,
         "organization_type": (
             organization_type[:MAX_EVENT_ORGANIZATION_TYPE_LENGTH] if organization_type else None
         ),
         "school": (event.get("school") or "")[:MAX_EVENT_SCHOOL_LENGTH] or None,
         "category": category,
         "organization": organization_name[:MAX_EVENT_ORGANIZATION_LENGTH],
-        "ig_handle": ig_handle[:MAX_EVENT_HANDLE_LENGTH] if ig_handle else None,
+        "ig_handle": effective_ig[:MAX_EVENT_HANDLE_LENGTH] if effective_ig else None,
+        "cancelled": bool(event.get("cancelled", False)),
     }
 
-    if match is not None and match.kind == "same_organization":
-        existing_id = match.event.get("id")
-        log.info(
-            "[%s] same-organization update on event id=%s for %r",
-            ig_handle,
+    existing_id = event.get("id")
+    if isinstance(existing_id, int):
+        return _overwrite_event(
             existing_id,
-            title,
+            event_row,
+            future_occurrences,
+            ig_handle=ig_handle,
+            title=title,
         )
-        get_sb().table(EVENTS).update(event_row).eq("id", existing_id).execute()
-        event_date_service.replace_occurrences(existing_id, future_occurrences)
-        event_feed_revalidation_service.revalidate_school(event_row.get("school"))
-        return "updated"
 
     inserted = get_sb().table(EVENTS).insert(event_row).execute()
     if not inserted.data:
@@ -155,9 +143,6 @@ def write_event(
     try:
         event_date_service.create_occurrences(new_id, future_occurrences)
     except Exception:
-        # Clean up the orphan event row — without occurrences it would
-        # be invisible to the listing query (LEFT JOIN row with NULL
-        # date columns) but still pollute the table.
         get_sb().table(EVENTS).delete().eq("id", new_id).execute()
         raise
 
@@ -170,6 +155,108 @@ def write_event(
     )
     event_feed_revalidation_service.revalidate_school(event_row.get("school"))
     return "inserted"
+
+
+def _overwrite_event(
+    existing_id: int,
+    event_row: dict,
+    future_occurrences: list[OccurrenceCreate],
+    *,
+    ig_handle: str | None,
+    title: str,
+) -> str:
+    """Overwrite an existing event and notify savers on material changes."""
+    old_event = event_service.get_event(existing_id)
+    if old_event is None:
+        log.warning(
+            "[%s] Pass 2 id=%s not found for %r - inserting instead",
+            ig_handle,
+            existing_id,
+            title,
+        )
+        inserted = get_sb().table(EVENTS).insert(event_row).execute()
+        if not inserted.data:
+            return "skipped"
+        new_id = inserted.data[0]["id"]
+        try:
+            event_date_service.create_occurrences(new_id, future_occurrences)
+        except Exception:
+            get_sb().table(EVENTS).delete().eq("id", new_id).execute()
+            raise
+        event_feed_revalidation_service.revalidate_school(event_row.get("school"))
+        return "inserted"
+
+    incoming_org_id = event_row.get("organization_id")
+    old_org_id = old_event.organization_id
+    if (
+        isinstance(incoming_org_id, int)
+        and isinstance(old_org_id, int)
+        and incoming_org_id != old_org_id
+    ):
+        log.warning(
+            "[%s] refusing cross-org overwrite id=%s (old_org=%s new_org=%s) for %r - inserting",
+            ig_handle,
+            existing_id,
+            old_org_id,
+            incoming_org_id,
+            title,
+        )
+        insert_row = dict(event_row)
+        inserted = get_sb().table(EVENTS).insert(insert_row).execute()
+        if not inserted.data:
+            return "skipped"
+        new_id = inserted.data[0]["id"]
+        try:
+            event_date_service.create_occurrences(new_id, future_occurrences)
+        except Exception:
+            get_sb().table(EVENTS).delete().eq("id", new_id).execute()
+            raise
+        event_feed_revalidation_service.revalidate_school(insert_row.get("school"))
+        return "inserted"
+
+    merged = _merge_overwrite_payload(event_row, old_event)
+
+    log.info(
+        "[%s] overwriting event id=%s for %r",
+        ig_handle,
+        existing_id,
+        title,
+    )
+    get_sb().table(EVENTS).update(merged).eq("id", existing_id).execute()
+    event_date_service.replace_occurrences(existing_id, future_occurrences)
+    event_feed_revalidation_service.revalidate_school(merged.get("school"))
+
+    updated = event_service.get_event(existing_id)
+    if updated is not None:
+        diff = event_service.compute_event_diff(old_event, updated)
+        if diff:
+            try:
+                enqueue_event_change(existing_id, diff)
+            except Exception as e:
+                log.warning(
+                    "enqueue_event_change failed for scraped overwrite id=%s: %s",
+                    existing_id,
+                    e,
+                )
+    return "updated"
+
+
+def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
+    """Field-merge provenance so null/empty incoming cannot wipe ownership."""
+    merged = dict(incoming)
+
+    if merged.get("ig_handle") is None and old_event.ig_handle:
+        merged["ig_handle"] = old_event.ig_handle
+    if merged.get("organization_id") is None and old_event.organization_id is not None:
+        merged["organization_id"] = old_event.organization_id
+    if merged.get("organization_type") is None and old_event.organization_type:
+        merged["organization_type"] = old_event.organization_type
+    if not merged.get("source_url") and old_event.source_url:
+        merged["source_url"] = old_event.source_url
+    if not merged.get("source_image_url") and old_event.source_image_url:
+        merged["source_image_url"] = old_event.source_image_url
+
+    return merged
 
 
 def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
@@ -201,7 +288,7 @@ def _ensure_organization_by_ig(
 
     school_slug = (school or "").strip()
     if not school_slug:
-        log.warning("[%s] skipping organization auto-create — school slug is required", cleaned)
+        log.warning("[%s] skipping organization auto-create - school slug is required", cleaned)
         return None
 
     organization_name = ((preferred_name or "").strip() or f"@{cleaned}")[
@@ -235,24 +322,23 @@ def _ensure_organization_by_ig(
 
 
 def _resolve_organization_name(
-    event: dict, *, ig_handle: str | None, organization: dict | None
+    event: dict,
+    *,
+    ig_handle: str | None,
+    organization_name: str | None = None,
 ) -> str:
     """Pick a non-empty organization string for the events row.
 
-    Order: registered organization name → extractor's ``organization`` → raw IG
-    handle. ``organization_id`` is the canonical ownership link when the handle maps
-    to a known organization.
+    Order: resolved organization name → extractor's ``organization`` → raw IG
+    handle. ``organization_id`` is the canonical ownership link when known.
     """
-    if organization:
-        organization_name = (organization.get("organization_name") or "").strip()
-        if organization_name:
-            return organization_name
+    if organization_name and organization_name.strip():
+        return organization_name.strip()
 
     org = (event.get("organization") or "").strip()
     if org:
         return org
 
-    # If it falls back to the IG handle, format it as a handle (e.g. @username)
     if ig_handle:
         return f"@{ig_handle.lstrip('@')}"
     return "Unknown Organization"
@@ -283,12 +369,7 @@ def _clean_food(value: object) -> list | None:
 def _coerce_future_occurrences(
     occurrences: list[dict], allow_past_events: bool = False
 ) -> list[OccurrenceCreate]:
-    """Filter to future occurrences and return validated OccurrenceCreate models.
-
-    Past occurrences are dropped because scraped events with a ``dtstart_utc``
-    earlier than ``now()`` are usually noise from misparsed captions. Invalid
-    dates are skipped; the extractor layer logs the JSON parsing error.
-    """
+    """Filter to future occurrences and return validated OccurrenceCreate models."""
     now = datetime.now(timezone.utc)
     out: list[OccurrenceCreate] = []
     for occ in occurrences:
@@ -310,9 +391,6 @@ def _coerce_future_occurrences(
                 )
             )
         except Exception as e:
-            # OccurrenceCreate's validators reject dtend <= dtstart and a
-            # few other shapes; one bad occurrence shouldn't drop the
-            # whole event.
             log.warning("Skipping invalid occurrence %r: %s", occ, e)
     return out
 

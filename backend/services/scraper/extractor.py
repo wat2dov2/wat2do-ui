@@ -1,4 +1,4 @@
-"""OpenAI vision-based event extraction for scraped Instagram posts.
+"""OpenAI vision-based event extraction for scraped posts and directory pages.
 
 Each ``image_url`` block in the user-message content is preceded by an
 ``{"type": "text", "text": "Image N:"}`` marker. The vision model keys off
@@ -34,11 +34,10 @@ _SYSTEM_MESSAGE = (
 
 
 def _client() -> OpenAI | None:
-    """Return a configured OpenAI client, or None if no key is set.
+    """Return a configured OpenAI client, or None if ``OPENAI_API_KEY`` is unset.
 
-    The dry-run path bypasses extraction entirely, so tests/CI can run
-    the pipeline without an API key. A None return at runtime causes
-    ``extract_events_from_post`` to log + return ``[]``.
+    A None return causes ``extract_events_from_post`` to log and return ``[]``.
+    Dry-run does not bypass extraction; it still needs a key to call the model.
     """
     if not settings.openai_api_key:
         return None
@@ -70,7 +69,7 @@ def extract_events_from_post(
 
     Returns the cleaned list of event dicts (each with title, description,
     location, occurrences, categories, image_index, etc.). Returns an
-    empty list on any failure — never raises so the pipeline can keep
+    empty list on any failure - never raises so the pipeline can keep
     processing the next post.
     """
     client = _client()
@@ -84,7 +83,7 @@ def extract_events_from_post(
     except Exception:
         # resolve_school_timezone falls back to "UTC" for unknown schools
         # so this branch only fires if the IANA database is somehow missing
-        # the resolved zone — paranoid fallback to UTC.
+        # the resolved zone - paranoid fallback to UTC.
         local_tz = ZoneInfo("UTC")
 
     now_local = datetime.now(local_tz)
@@ -117,7 +116,7 @@ def extract_events_from_post(
     user_content: list[dict] = [{"type": "text", "text": prompt}]
     valid_urls = [u for u in (image_urls or []) if u]
     # Inline ``Image N:`` text markers before each image_url block.
-    # See module docstring — preserving this is a hard requirement.
+    # See module docstring - preserving this is a hard requirement.
     for i, url in enumerate(valid_urls):
         user_content.append({"type": "text", "text": f"Image {i}:"})
         user_content.append({"type": "image_url", "image_url": {"url": url}})
@@ -167,8 +166,8 @@ def _parse_model_json(raw: str):
 
     Strips ``json`` and bare ` ``` ` code fences, then attempts a strict
     parse. On failure, falls back to extracting the first JSON value
-    (``[ ... ]`` or ``{ ... }``) in the string — handles the case where
-    the model appended a trailing "Note: …" sentence despite the prompt
+    (``[ ... ]`` or ``{ ... }``) in the string - handles the case where
+    the model appended a trailing "Note: ..." sentence despite the prompt
     asking for JSON only. Returns ``None`` if nothing parses.
     """
     s = raw
@@ -352,7 +351,7 @@ class ExtractedEvent(BaseModel):
 def _clean_event(event: dict) -> dict:
     """Validate and normalize one extracted event dict using Pydantic.
 
-    Idempotent — running this twice on the same input is a no-op. The
+    Idempotent - running this twice on the same input is a no-op. The
     pipeline depends on this for safety after JSON parsing of arbitrary
     model output.
     """

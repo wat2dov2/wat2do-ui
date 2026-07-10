@@ -62,13 +62,11 @@ def get_content_scores(
     user_school = user.school or ""
     is_first_year = user.is_first_year or False
 
-    # Map interests to event categories
     matched_categories: set[str] = set()
     for interest in interests:
         cats = INTEREST_TO_CATEGORIES.get(interest, [])
         matched_categories.update(cats)
 
-    # Build org affinity from past interactions
     org_affinity = _compute_org_affinity(user_scores, candidate_events)
 
     now = datetime.now(timezone.utc)
@@ -157,8 +155,7 @@ def _compute_org_affinity(
         if org:
             id_to_org[e.id] = org
 
-    # Load organization data only for interacted events NOT already in the
-    # candidate set — avoids a redundant DB call when the overlap is complete.
+    # Load org data only for interacted events not already in the candidate set.
     missing_ids = [eid for eid in user_scores if eid not in id_to_org]
     if missing_ids:
         try:
@@ -169,7 +166,6 @@ def _compute_org_affinity(
         except Exception as e:
             log.warning("Failed to load org data for interacted events: %s", e)
 
-    # Aggregate scores per org
     org_scores: dict[str, float] = {}
     total = 0.0
     for eid, score in user_scores.items():

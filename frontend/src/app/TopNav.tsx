@@ -1,7 +1,3 @@
-/**
- * TopNav Component
- */
-
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -66,9 +62,7 @@ export function TopNav() {
     } catch (err) {
       console.error("Logout API call failed, clearing local state anyway:", err);
     }
-    // logoutAPI → clearAllAuthData fires AUTH_STATE_REFRESH_EVENT which the
-    // useAuthState snapshot subscribes to — the UI flips back to signed-out
-    // automatically. No manual setters needed.
+    // logoutAPI → clearAllAuthData fires AUTH_STATE_REFRESH_EVENT; useAuthState flips UI to signed-out.
   }, []);
 
   const handleSignIn = useCallback(() => {
@@ -110,7 +104,6 @@ export function TopNav() {
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        {/* Admin Button – only visible to admins */}
         {profileCompleted && isAdmin && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -130,7 +123,6 @@ export function TopNav() {
           </Tooltip>
         )}
 
-        {/* Organization switcher – only visible when the user has associated organizations */}
         {canOpenOrganizationPanel && (
           <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
             <PopoverTrigger asChild>
@@ -196,13 +188,10 @@ export function TopNav() {
           </Popover>
         )}
 
-        {/* Language Selector */}
         <LanguageSelector className="min-w-0 px-2" />
 
-        {/* Dark Mode Toggle */}
         <AnimatedThemeToggler />
 
-        {/* Auth Button */}
         {profileCompleted ? (
           <Tooltip>
             <TooltipTrigger asChild>

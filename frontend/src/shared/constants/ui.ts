@@ -26,5 +26,5 @@ export const JSON_EDITOR_DEBOUNCE_MS = 300;
 export const SCROLL_INTO_VIEW_DELAY_MS = 100;
 
 
-/** Height of the scan-locations map on the posters page. Used by admin and club-panel. */
+/** Height of the scan-locations map on the posters page. Used by admin and organization-panel. */
 export const POSTER_MAP_HEIGHT = "600px";

@@ -348,7 +348,7 @@ def apply(xlsx_path: Path, *, enrich: bool) -> None:
         row=1,
         column=1,
         value=(
-            f"Master list — {row_count:,} student clubs. "
+            f"Master list - {row_count:,} student clubs. "
             f"Instagram URLs: {ig_count:,}. Categories: {cat_count:,}. "
             f"Discord URLs: {discord_count:,}. "
             f"SPA merge sources: {'enrichment' if enrich else 'web_search'}."

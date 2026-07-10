@@ -25,15 +25,11 @@ export function useIntegrations() {
     setError,
   } = data;
 
-  // Saving state (for connect/disconnect operations)
   const [saving, setSaving] = useState(false);
 
-  // Simple platform states (WhatsApp, Instagram)
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [instagramModalOpen, setInstagramModalOpen] = useState(false);
   const [instagramHandle, setInstagramHandle] = useState("");
-
-  // --- Shared connect/disconnect logic ---
 
   const applyConnectedIntegration = useCallback(
     (
@@ -88,7 +84,6 @@ export function useIntegrations() {
     }
   };
 
-  // --- Shared apply callback factory (eliminates per-platform wrappers) ---
   const makeApplyConnection = useCallback(
     (platform: IntegrationPlatform) =>
       (name: string, metadata: Record<string, string>) => {
@@ -97,14 +92,12 @@ export function useIntegrations() {
     [applyConnectedIntegration]
   );
 
-  // --- Discord (extracted hook) ---
   const discord = useDiscordIntegration(
     options.discordServers,
     options.discordOauthUrl,
     makeApplyConnection("discord")
   );
 
-  // --- Platform-specific connection payload configs ---
   type GenericPlatform = "slack" | "telegram" | "linkedin" | "facebook";
 
   type PayloadBuilder = (
@@ -166,7 +159,6 @@ export function useIntegrations() {
     },
   };
 
-  // --- Generic platform hooks (driven by config, not separate code paths) ---
   const platformConnects = {
     slack: usePlatformConnect({
       servers: platformConfigs.slack.servers,
@@ -194,7 +186,6 @@ export function useIntegrations() {
     }),
   };
 
-  // --- Platform connect dispatcher ---
   const platformConnectHandlers: Record<IntegrationPlatform, () => void> = {
     discord: discord.openFlow,
     whatsapp: () => setWhatsappModalOpen(true),
@@ -209,8 +200,6 @@ export function useIntegrations() {
     setError(null);
     platformConnectHandlers[platform]();
   };
-
-  // --- Simple platform handlers (WhatsApp, Instagram) ---
 
   const handleWhatsAppDone = () => {
     applyConnectedIntegration("whatsapp", { name: t("integrations.defaultWhatsAppGroupName") });
@@ -227,7 +216,6 @@ export function useIntegrations() {
   };
 
   return {
-    // Core data (from useIntegrationData)
     integrations,
     selectedClubId: data.selectedClubId,
     loading: data.loading,
@@ -235,26 +223,21 @@ export function useIntegrations() {
     error: data.error,
     getIntegration: data.getIntegration,
 
-    // Top-level handlers
     handleConnect,
     handleDisconnect,
 
-    // Discord (extracted hook)
     discord,
 
-    // WhatsApp
     whatsappModalOpen,
     setWhatsappModalOpen,
     handleWhatsAppDone,
 
-    // Instagram
     instagramModalOpen,
     setInstagramModalOpen,
     instagramHandle,
     setInstagramHandle,
     handleInstagramConnect,
 
-    // Generic platform hooks
     platformConnects,
   };
 }

@@ -21,17 +21,14 @@ export interface EventFormContextValue {
   setFoodInput: (value: string) => void;
   addFood: () => void;
   removeFood: (index: number) => void;
-  // JSON Editor state
   jsonValue: string;
   jsonError: string;
   handleJsonChange: (value: string | undefined) => void;
   syncToJSON: () => void;
-  // Image upload
   imagePreview: string;
   imageFile: File | null;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
-  // AI Generation state
   aiPrompt: string;
   setAiPrompt: (prompt: string) => void;
   aiGenerating: boolean;
@@ -57,9 +54,6 @@ export function EventFormProvider({
   );
 }
 
-// This file intentionally exports the provider and its colocated hook together
-// to avoid touching the in-progress event form consumers during cleanup.
-// (Updated: renamed club references to organization to align naming system).
 export function useEventFormContext() {
   const context = useContext(EventFormContext);
   if (!context) {

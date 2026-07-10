@@ -1,7 +1,7 @@
 -- Migration: add_workflow_runs_table
 -- Created: 2026-04-27
 --
--- Per-Instagram-username workflow tracking for services/wat2do.
+-- Per-Instagram-username workflow tracking for services/scraper.
 --
 -- One row per (username, github_run) attempt. Rows progress through the
 -- status states defined in core/constants.WORKFLOW_RUN_STATUSES. Dry-run

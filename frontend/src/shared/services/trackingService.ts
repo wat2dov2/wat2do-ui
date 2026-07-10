@@ -4,7 +4,7 @@
  *
  * Uses fetch() with keepalive instead of sendBeacon so we can attach the
  * Authorization header.  sendBeacon cannot set custom headers, which previously
- * forced the access token into the JSON body — a credential-exposure risk
+ * forced the access token into the JSON body - a credential-exposure risk
  * (POST bodies are logged by proxies, WAFs, and APM tools).
  */
 
@@ -101,7 +101,7 @@ class Tracker {
     }
 
     // fetch + keepalive survives page unload (like sendBeacon) but supports
-    // custom headers, so the token travels in the Authorization header — not
+    // custom headers, so the token travels in the Authorization header - not
     // in the request body where it could be logged by intermediaries.
     fetch(url, {
       method: "POST",

@@ -36,9 +36,7 @@ export const AnimatedThemeToggler = ({
   const toggleTheme = useCallback(async () => {
     if (!buttonRef.current) return
 
-    // Check if View Transitions API is supported
     if (!document.startViewTransition) {
-      // Fallback for unsupported browsers
       const newTheme = !isDark
       setIsDark(newTheme)
       document.documentElement.classList.toggle("dark")

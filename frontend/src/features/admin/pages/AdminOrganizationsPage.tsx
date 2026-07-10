@@ -75,8 +75,7 @@ export function AdminOrganizationsPage({
   } = useAdminOrganizationsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
   const [activeTab, setActiveTab] = useState<"organizations" | "claims">("organizations");
-  
-  // Load claims from Zustand store
+
   const allClaims = useAdminStore((s) => s.claims);
   const fetchClaims = useAdminStore((s) => s.fetchClaims);
   const approveClaimAction = useAdminStore((s) => s.approveClaim);
@@ -85,8 +84,7 @@ export function AdminOrganizationsPage({
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  
-  // Claims Filter State
+
   const [claimSearchQuery, setClaimSearchQuery] = useState("");
   const [claimStatusFilter, setClaimStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
@@ -124,8 +122,7 @@ export function AdminOrganizationsPage({
     items: filteredClaims,
     itemsPerPage: ITEMS_PER_PAGE,
   });
-  
-  // Rejection Dialog State
+
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [submittingResolution, setSubmittingResolution] = useState(false);
@@ -364,7 +361,6 @@ export function AdminOrganizationsPage({
 
       {activeTab === "organizations" ? (
         <>
-          {/* Organizations Table */}
           {isLoading ? (
             <LoadingPage />
           ) : totalItems > 0 ? (
@@ -456,8 +452,6 @@ export function AdminOrganizationsPage({
               description={t("admin.noClubsMatchFilters")}
             />
           )}
-
-          {/* Pagination moved above the table */}
         </>
       ) : (
         <>
@@ -552,8 +546,6 @@ export function AdminOrganizationsPage({
                   </TableRow>
                 ))}
               </AdminTable>
-
-              {/* Pagination moved above the table */}
             </>
           ) : (
             <AdminEmptyState
@@ -581,7 +573,6 @@ export function AdminOrganizationsPage({
         initialData={editingOrganization || undefined}
       />
 
-      {/* Reject Claim Dialog */}
       <Dialog open={rejectClaimId !== null} onOpenChange={(open) => !open && setRejectClaimId(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>

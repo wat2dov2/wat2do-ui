@@ -46,7 +46,7 @@ def enqueue_event_change(event_id: int, diff: dict[str, dict[str, Any]]) -> int:
     event_row = (
         get_sb()
         .table(EVENTS)
-        .select("title, location, status")
+        .select("title, location, cancelled")
         .eq("id", event_id)
         .limit(1)
         .execute()

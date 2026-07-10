@@ -1,8 +1,3 @@
-/**
- * Pagination Component
- * Reusable pagination controls shared across features.
- */
-
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";

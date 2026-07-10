@@ -1,6 +1,5 @@
 /**
- * Admin Routes Configuration
- * Centralized admin route handlers and props to reduce duplication.
+ * Admin route handlers.
  *
  * Heavy admin page components are lazy-loaded so they are split into a
  * separate chunk that only admin users ever download.
@@ -12,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { ROUTES, ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
-// Lazy-loaded admin page components — only fetched when an admin route renders.
 const AdminPanel = lazy(() =>
   import("@/features/admin/pages/AdminPanel").then((m) => ({ default: m.AdminPanel }))
 );
@@ -28,9 +26,6 @@ const AdminPostersPage = lazy(() =>
   }))
 );
 
-/**
- * Admin panel navigation handler
- */
 function useAdminNavigation() {
   const router = useRouter();
 
@@ -42,7 +37,6 @@ function useAdminNavigation() {
   );
 }
 
-/** Suspense wrapper for lazy-loaded admin pages. */
 function AdminSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
@@ -51,9 +45,6 @@ function AdminSuspense({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Admin Panel Route Component
- */
 export function AdminPanelRoute() {
   const handleNavigate = useAdminNavigation();
 
@@ -64,9 +55,6 @@ export function AdminPanelRoute() {
   );
 }
 
-/**
- * Admin Events Route Component
- */
 export function AdminEventsRoute() {
   const router = useRouter();
   const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
@@ -80,9 +68,6 @@ export function AdminEventsRoute() {
   );
 }
 
-/**
- * Admin Organizations Route Component
- */
 export function AdminOrganizationsRoute() {
   const router = useRouter();
   const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
@@ -96,11 +81,6 @@ export function AdminOrganizationsRoute() {
   );
 }
 
-
-
-/**
- * Admin Posters Route Component
- */
 export function AdminPostersRoute() {
   return (
     <AdminSuspense>

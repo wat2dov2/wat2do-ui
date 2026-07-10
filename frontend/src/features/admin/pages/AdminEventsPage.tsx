@@ -29,7 +29,6 @@ import { QP } from "@/shared/constants/queryParams";
 import { formatCardDate } from "@/shared/utils/date";
 import { useUIStore } from "@/shared/store/ui.store";
 
-// Submissions sub-view imports
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
 import { SubmissionDetailsDialog } from "@/features/admin/components/submissions/SubmissionDetailsDialog";
 import { RejectSubmissionDialog } from "@/features/admin/components/submissions/RejectSubmissionDialog";
@@ -59,12 +58,10 @@ export function AdminEventsPage({
   const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useMutableSearchParams();
 
-  // Tab Setup
   const submissionIdParam = searchParams.get(QP.SUBMISSION_ID);
   const initialTab = (searchParams.get("tab") === "submissions" || submissionIdParam) ? "submissions" : "events";
   const [activeTab, setActiveTab] = useState<"events" | "submissions">(initialTab);
 
-  // Events setup
   const events = useEventsStore((s) => s.events);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
@@ -107,7 +104,6 @@ export function AdminEventsPage({
     }
   };
 
-  // Submissions setup
   const fetchSubmissions = useAdminStore((s) => s.fetchSubmissions);
   const allSubmissions = useAdminStore((s) => s.submissions);
 
@@ -160,7 +156,6 @@ export function AdminEventsPage({
         onBack={onBack}
       />
 
-      {/* Tabs toggle */}
       <div className="flex gap-2 border-b border-border pb-3">
         <button
           onClick={() => setActiveTab("events")}
@@ -193,7 +188,6 @@ export function AdminEventsPage({
 
       {activeTab === "events" ? (
         <>
-          {/* Search and Filters */}
           <div className="flex gap-3">
             <AdminSearchBar
               value={searchQuery}
@@ -239,7 +233,6 @@ export function AdminEventsPage({
             pluralLabel={t("common.events")}
           />
 
-          {/* Events Table */}
           {filteredEvents.length > 0 ? (
             <AdminTable
               headers={[
@@ -335,7 +328,6 @@ export function AdminEventsPage({
             />
           )}
 
-          {/* Event Details Modal */}
           <EventDetailsModal
             event={selectedEvent}
             onClose={() => {
@@ -370,7 +362,6 @@ export function AdminEventsPage({
         </>
       ) : (
         <>
-          {/* Submissions Section */}
           <div className="flex gap-3">
             <AdminSearchBar
               value={submissionFilters.searchQuery}

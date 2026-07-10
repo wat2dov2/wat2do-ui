@@ -22,19 +22,14 @@ router = APIRouter(tags=["credits"])
 log = logging.getLogger(__name__)
 
 
-# C8: sensitive credit mutations get a dedicated per-user rate limiter.
-# 10 requests / 60 s matches other sensitive paths (ai_rate_limiter) and is
-# tight enough to cap abuse while leaving plenty of headroom for legitimate
-# retries.  Keyed by user ID so one bad IP cannot DoS others on the same
-# network.
+# Per-user rate limit on credit mutations (10/min), matching other sensitive
+# paths (e.g. ai_generate_*_rate_limiter). Keyed by user ID so one bad IP
+# cannot DoS others on the same network.
 credit_mutation_rate_limiter = RateLimiter(max_requests=10, window_seconds=60)
 
 
 def _user_id_key(user: dict = Depends(get_current_user)) -> str:
     return user["id"]
-
-
-# ── Credits ──────────────────────────────────────────────────────────
 
 
 @router.get("/credits/", response_model=CreditBalanceResponse)
@@ -49,12 +44,8 @@ def add_credits(
     _: dict = Depends(get_admin_user),
     _rl: None = Depends(credit_mutation_rate_limiter.dependency(key_func=_user_id_key)),
 ):
-    """Admin-only: add credits to a target user's balance."""
     new_balance = credit_service.add_credits(str(data.user_id), data.amount)
     return CreditBalanceResponse(balance=new_balance)
-
-
-# ── Promotions ───────────────────────────────────────────────────────
 
 
 @router.get("/promotions/", response_model=list[PromotionResponse])
@@ -97,5 +88,4 @@ def create_promotion(
 
 @router.get("/promotions/active-ids", response_model=list[int])
 def get_active_promoted_ids():
-    """Public endpoint — returns event IDs with active promotions."""
     return credit_service.get_active_promoted_event_ids()

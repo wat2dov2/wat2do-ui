@@ -1,11 +1,11 @@
 """Scrape pipeline orchestrator.
 
 Stages:
-    1. Filter — drop posts already in the DB (skipped in dry-run).
-    2. Upload — push each post's images to Supabase Storage.
-    3. Extract — run vision-based extraction per post.
-    4. Save — insert one events row per logical event and one event_dates
-       row per occurrence.
+    1. Filter - drop posts already in the DB (skipped in dry-run).
+    2. Upload - push each post's images to Supabase Storage.
+    3. Extract - run vision-based extraction per post.
+    4. Reconcile - Pass 2 match/update against existing candidates.
+    5. Save - insert or update events and their event_dates rows.
 
 Public entry point: ``run_pipeline``. ``backend/jobs/scrape.py`` prefetches
 posts via Apify, then hands them here for processing.
@@ -24,10 +24,12 @@ from core.constants import (
 )
 from schemas.workflow_run import WorkflowRunCreate
 from services import workflow_run_service
-from services.scraper.dedup import _extract_shortcode, existing_shortcodes
+from services.scraper.dedup import _extract_shortcode, existing_shortcodes, find_candidates
 from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
+from services.scraper.org_resolve import resolve_organization_for_scrape
+from services.scraper.reconciler import reconcile_events
 
 log = logging.getLogger(__name__)
 
@@ -177,10 +179,10 @@ def _process_one_post(
             idx = 0
         if uploaded:
             event["source_image_url"] = uploaded[idx if 0 <= idx < len(uploaded) else 0]
-
         event["school"] = school
 
-        if dry_run:
+    if dry_run:
+        for event in events:
             log.info(
                 "[%s] DRY-RUN would save %r with %d occurrence(s)",
                 handle,
@@ -188,18 +190,65 @@ def _process_one_post(
                 len(event.get("occurrences", [])),
             )
             result.events_saved += 1
-            continue
+        return
 
+    resolved_orgs = [
+        resolve_organization_for_scrape(
+            ig_handle=handle,
+            school=school,
+            organization_name=(event.get("organization") or "").strip() or None,
+            create_stub_if_missing=True,
+        )
+        for event in events
+    ]
+    candidates_by_index = [
+        find_candidates(
+            title=event.get("title") or "",
+            location=event.get("location") or "",
+            description=event.get("description") or "",
+            occurrences=event.get("occurrences") or [],
+            ig_handle=resolved.ig_handle or handle,
+            organization_id=resolved.organization_id,
+            organization_name=resolved.organization_name
+            or ((event.get("organization") or "").strip() or None),
+        )
+        for event, resolved in zip(events, resolved_orgs, strict=True)
+    ]
+    reconciled = reconcile_events(
+        extracted_events=events,
+        candidates_by_index=candidates_by_index,
+        caption_text=caption,
+        school=school,
+        resolved_organization_ids=[r.organization_id for r in resolved_orgs],
+        resolved_ig_handles=[r.ig_handle or handle for r in resolved_orgs],
+    )
+    # Pass 2 failure → insert-only Pass 1 events (strip any accidental ids).
+    to_write = reconciled if reconciled is not None else [{**e, "id": None} for e in events]
+    if reconciled is None:
+        log.warning("[%s] Pass 2 failed; falling back to insert-only Pass 1 events", handle)
+
+    for i, event in enumerate(to_write):
+        if len(to_write) == len(resolved_orgs):
+            resolved = resolved_orgs[i]
+        else:
+            resolved = resolve_organization_for_scrape(
+                ig_handle=handle,
+                school=school,
+                organization_name=(event.get("organization") or "").strip() or None,
+                create_stub_if_missing=True,
+            )
         outcome = write_event(
-            event, ig_handle=handle, source_url=source_url, allow_past_events=allow_past_events
+            event,
+            ig_handle=handle,
+            source_url=source_url,
+            allow_past_events=allow_past_events,
+            resolved_org=resolved,
         )
         if outcome == "inserted":
             result.events_saved += 1
         elif outcome == "updated":
             result.events_updated += 1
             result.events_saved += 1
-        elif outcome == "duplicate":
-            result.events_duplicates += 1
 
 
 def _finalize(result: ScrapeResult) -> None:

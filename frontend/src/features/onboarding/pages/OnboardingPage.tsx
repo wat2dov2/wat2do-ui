@@ -118,9 +118,8 @@ export function OnboardingPage() {
         organizationName: null,
       };
 
-      // Sync to localStorage first so `isProfileCompleted()` returns true
-      // before the next render triggered by `navigate`. This replaces the old
-      // monotonic-flip workaround in UserContext.
+      // Persist to localStorage before navigate so `useAuthState` sees
+      // `profileCompleted` (mirrors authenticated session) on the next render.
       persistProfile(profile);
       if (data.dailyNewEventsOptIn) {
         setDailyNewEventsEmailPreferenceAPI(true).catch((err) =>

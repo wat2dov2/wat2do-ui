@@ -10,14 +10,14 @@
  * classes stay in sync through these two parallel definitions.
  *
  * Layer hierarchy (lowest to highest):
- *   BASE        (0)   — default stacking context
- *   SIDEBAR     (30)  — side navigation panel
- *   NAV         (40)  — top navigation bar (above sidebar)
- *   DROPDOWN    (50)  — dropdowns, selects, popovers, tooltips
- *   MODAL       (60)  — dialog overlays and content
- *   TOAST       (70)  — toast notifications (above modals)
- *   EASTER_EGG  (80)  — full-screen fun overlays
- *   MAX         (100) — highest layer: easter-egg toasts
+ *   BASE        (0)   - default stacking context
+ *   SIDEBAR     (30)  - side navigation panel
+ *   NAV         (40)  - top navigation bar (above sidebar)
+ *   DROPDOWN    (50)  - dropdowns, selects, popovers, tooltips
+ *   MODAL       (60)  - dialog overlays and content
+ *   TOAST       (70)  - toast notifications (above modals)
+ *   EASTER_EGG  (80)  - full-screen fun overlays
+ *   MAX         (100) - highest layer: easter-egg toasts
  */
 
 export const Z_INDEX = {
@@ -36,7 +36,7 @@ export const Z_INDEX = {
   /** Dialog / modal overlays and content. */
   MODAL: 60,
 
-  /** Toast notifications — should float above modals. */
+  /** Toast notifications - should float above modals. */
   TOAST: 70,
 
   /** Full-screen easter-egg animations. */

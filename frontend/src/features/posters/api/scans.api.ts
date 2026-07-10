@@ -1,5 +1,5 @@
 /**
- * Scans API — data-fetching functions for QR code scans.
+ * Scans API - data-fetching functions for QR code scans.
  */
 
 import type { QRCodeScan } from "@/features/posters/types";

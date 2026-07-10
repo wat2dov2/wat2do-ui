@@ -1,6 +1,6 @@
-"""Supabase only — no SQLAlchemy. Use this client for all table access.
+"""Supabase only - no SQLAlchemy. Use this client for all table access.
 
-Export contract (D19):
+Export contract:
   * :func:`get_sb` returns the service-role client for backend DB access
     (bypasses RLS).  **Use this for every table read/write.**
   * :data:`supabase_admin` is the same client, exposed for call sites that
@@ -10,7 +10,7 @@ Export contract (D19):
     RLS-bound and must **not** be used for PostgREST table access; doing
     so will silently return empty results (or 403) in production.
 
-Direct ``from core.database import supabase`` imports are discouraged —
+Direct ``from core.database import supabase`` imports are discouraged -
 every table path should go through ``get_sb()``.  The lone legitimate
 consumer is ``services/auth_service.py``, which imports ``supabase``
 lazily so a typo elsewhere fails fast at call time rather than silently
@@ -23,7 +23,7 @@ from supabase import Client, create_client
 # --- Fail-fast: service-role key is required for backend operation ----------
 # Every table has RLS enabled with no permissive policies.  Without the
 # service-role key the backend would silently use the anon client, which
-# is blocked by RLS on every query — returning empty results or 403s.
+# is blocked by RLS on every query - returning empty results or 403s.
 if not settings.supabase_secret_key:
     raise RuntimeError(
         "SUPABASE_SECRET_KEY is not set. The backend requires the service-role "
@@ -34,7 +34,7 @@ if not settings.supabase_secret_key:
 # Anon client: RLS-bound, for Supabase Auth endpoints only.  Kept at module
 # scope for the one caller that needs it (auth_service), but not re-exported
 # via ``__all__`` to discourage accidental adoption elsewhere.  New code
-# should not import this — use ``get_sb()``.
+# should not import this - use ``get_sb()``.
 supabase: Client = create_client(settings.supabase_url, settings.supabase_key)
 
 # Service-role client for backend table access (bypasses RLS).

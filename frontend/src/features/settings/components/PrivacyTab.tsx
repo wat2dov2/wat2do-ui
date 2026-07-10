@@ -1,8 +1,3 @@
-/**
- * PrivacyTab Component
- * UI component for privacy preferences
- */
-
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "@/shared/ui/doodle-icons";
 import { Card, CardContent } from "@/shared/ui/card";

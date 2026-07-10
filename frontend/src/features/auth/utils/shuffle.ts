@@ -1,4 +1,4 @@
-/** Fisher-Yates shuffle — returns a new array. */
+/** Fisher-Yates shuffle - returns a new array. */
 export function shuffle<T>(arr: T[]): T[] {
   const out = [...arr];
   for (let i = out.length - 1; i > 0; i--) {

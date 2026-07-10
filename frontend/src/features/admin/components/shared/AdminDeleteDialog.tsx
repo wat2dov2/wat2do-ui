@@ -1,8 +1,3 @@
-/**
- * AdminDeleteDialog Component
- * Reusable delete confirmation dialog for admin pages
- */
-
 import { useTranslation } from "react-i18next";
 import {
   Dialog,

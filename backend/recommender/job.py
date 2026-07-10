@@ -17,14 +17,13 @@ import os
 import sys
 import time
 
-# Add backend root to path so imports work when run from repo root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-import core.logging  # noqa: F401 — triggers basicConfig for standalone execution
+import core.logging  # noqa: F401 - triggers basicConfig for standalone execution
 from recommender.config import DEFAULT_LAMBDA, DEFAULT_LIMIT, EVAL_K
 from recommender.evaluation import evaluate_all_users
 from recommender.service import batch_runner
@@ -53,7 +52,6 @@ def main():
     log.info("  limit:  %s", args.limit)
     log.info("  lambda: %s", args.lambda_param)
 
-    # --- Compute ---
     start = time.time()
     stats = batch_runner.compute_all_users(limit=args.limit, lambda_param=args.lambda_param)
     elapsed = time.time() - start
@@ -65,14 +63,12 @@ def main():
         log.info("  Failed IDs:      %s", ", ".join(stats["failed_ids"][:10]))
     log.info("  Elapsed:         %.1fs", elapsed)
 
-    # --- Fail if too many users errored ---
     if stats["total_users"] > 0:
         failure_rate = stats["failed"] / stats["total_users"]
         if failure_rate > 0.5:
-            log.error("Failure rate %.0f%% exceeds 50%% threshold — aborting", failure_rate * 100)
+            log.error("Failure rate %.0f%% exceeds 50%% threshold - aborting", failure_rate * 100)
             sys.exit(1)
 
-    # --- Evaluate ---
     if not args.skip_eval:
         log.info("Running evaluation...")
         eval_start = time.time()
@@ -84,7 +80,7 @@ def main():
             log.info("  NDCG@%s:         %s", metrics["k"], metrics["ndcg_at_k"])
             log.info("  Eval elapsed:     %.1fs", eval_elapsed)
         except Exception as e:
-            log.error("Evaluation failed — recommendation quality unknown: %s", e, exc_info=True)
+            log.error("Evaluation failed - recommendation quality unknown: %s", e, exc_info=True)
 
     log.info("=" * 60)
     log.info("Done.")

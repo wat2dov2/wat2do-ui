@@ -12,7 +12,7 @@ of IPs or CIDR ranges, e.g. ``["172.16.0.0/12", "127.0.0.1"]``).
 **Why rightmost untrusted IP?**  ``X-Forwarded-For`` is a chain where
 each proxy appends the address it received the request from.  Entries
 to the left can be forged by the client, but the *rightmost* entry was
-appended by the last proxy we trust — so the rightmost IP that is NOT
+appended by the last proxy we trust - so the rightmost IP that is NOT
 one of our own proxies is the most reliable client address.
 """
 
@@ -54,7 +54,7 @@ def get_client_ip(request: Request) -> str:
     Resolution order:
 
     1. If the direct peer (``request.client.host``) is **not** a trusted
-       proxy, return it directly — the headers cannot be trusted.
+       proxy, return it directly - the headers cannot be trusted.
     2. ``X-Forwarded-For``: walk the comma-separated list from right to
        left and return the first (rightmost) IP that is not a trusted
        proxy.  This is the address appended by the outermost trusted
@@ -68,8 +68,6 @@ def get_client_ip(request: Request) -> str:
     # If the direct peer is not a trusted proxy, headers may be forged.
     if not peer or not _is_trusted(peer):
         return peer or "unknown"
-
-    # --- Trusted proxy path ---
 
     # X-Forwarded-For: rightmost untrusted entry.
     xff = request.headers.get("x-forwarded-for")
@@ -87,5 +85,5 @@ def get_client_ip(request: Request) -> str:
     if x_real:
         return x_real.strip()
 
-    # Nothing usable in headers — fall back to the peer address (the proxy).
+    # Nothing usable in headers - fall back to the peer address (the proxy).
     return peer

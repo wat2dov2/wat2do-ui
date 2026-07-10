@@ -23,7 +23,6 @@ export function OrganizationPanelIntegrationsPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Button
           variant="secondary"
@@ -46,7 +45,6 @@ export function OrganizationPanelIntegrationsPage() {
 
       {integrations.error && <p className="text-xs text-error">{integrations.error}</p>}
 
-      {/* Integration Cards */}
       <div className="space-y-4">
         <IntegrationCard
           integration={integrations.getIntegration("whatsapp")}
@@ -133,21 +131,18 @@ export function OrganizationPanelIntegrationsPage() {
         />
       </div>
 
-      {/* Discord Connection Modal */}
       <DiscordConnectSection
         discord={integrations.discord}
         saving={integrations.saving}
         selectedClubId={integrations.selectedClubId}
       />
 
-      {/* WhatsApp Connection Modal */}
       <WhatsAppConnectModal
         open={integrations.whatsappModalOpen}
         onOpenChange={integrations.setWhatsappModalOpen}
         onDone={integrations.handleWhatsAppDone}
       />
 
-      {/* Instagram Connection Modal */}
       <InstagramIntegrationModal
         open={integrations.instagramModalOpen}
         onOpenChange={integrations.setInstagramModalOpen}
@@ -156,7 +151,6 @@ export function OrganizationPanelIntegrationsPage() {
         onConnect={integrations.handleInstagramConnect}
       />
 
-      {/* Slack Connection Modal (has secondary selection, so wired individually) */}
       <SlackIntegrationModal
         open={integrations.platformConnects.slack.modalOpen}
         onOpenChange={integrations.platformConnects.slack.setModalOpen}
@@ -172,7 +166,6 @@ export function OrganizationPanelIntegrationsPage() {
         onActivate={integrations.platformConnects.slack.handleActivate}
       />
 
-      {/* Telegram / LinkedIn / Facebook — share the same modal prop shape */}
       {([
         ["telegram", TelegramIntegrationModal],
         ["linkedin", LinkedInIntegrationModal],

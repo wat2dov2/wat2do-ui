@@ -34,6 +34,35 @@ def _normalize_organization_name(name: str | None) -> str:
     return " ".join((name or "").casefold().split())
 
 
+def lookup_organization_by_school_and_name(school: str, name: str) -> dict | None:
+    """Return the organization matching ``school`` + normalized display name.
+
+    Exact normalized match only (casefold + whitespace collapse). When multiple
+    rows normalize to the same name, pick the lowest id so callers stay
+    deterministic. Returns ``None`` on miss or empty inputs.
+    """
+    school_slug = (school or "").strip()
+    target = _normalize_organization_name(name)
+    if not school_slug or not target:
+        return None
+
+    rows = (
+        get_sb()
+        .table(ORGANIZATIONS)
+        .select("id,organization_name,organization_type,ig,school")
+        .eq("school", school_slug)
+        .order("id", desc=False)
+        .execute()
+    ).data or []
+
+    matches = [
+        row for row in rows if _normalize_organization_name(row.get("organization_name")) == target
+    ]
+    if not matches:
+        return None
+    return matches[0]
+
+
 def _fetch_owner_email(user_id: str | None) -> str | None:
     if not user_id:
         return None
@@ -54,7 +83,6 @@ def list_organizations_by_owner(owner_id: str) -> list[OrganizationResponse]:
     """Return all organizations where the user is a member/manager."""
     organizations_dict = {}
 
-    # Query via organization_members junction table
     try:
         r_members = (
             get_sb()
@@ -244,7 +272,6 @@ def create_organization(data: OrganizationCreate, *, created_by: str) -> Organiz
     r = get_sb().table(ORGANIZATIONS).insert(payload).execute()
     email = _fetch_owner_email(created_by)
     organization = OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
-    # Auto-add the creator/owner as a member
     try:
         add_organization_member(organization.id, UUID(created_by))
     except Exception as e:
@@ -274,7 +301,7 @@ def delete_organization(organization_id: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Integration platform config — data-driven dispatch replaces if/elif chain.
+# Integration platform config - data-driven dispatch replaces if/elif chain.
 # To add a new platform: add an entry here and to the IntegrationPlatform
 # Literal in schemas/organization.py.  No service code needs to change.
 # ---------------------------------------------------------------------------
@@ -384,7 +411,7 @@ def get_discord_options() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Metadata column mapping — single source of truth for DB columns, platform
+# Metadata column mapping - single source of truth for DB columns, platform
 # aliases, and the bidirectional transformations between them.
 # ---------------------------------------------------------------------------
 
@@ -557,11 +584,8 @@ def disconnect_platform_integration(
     if organization is None:
         return None
     now = datetime.now(timezone.utc).isoformat()
-    # Set connected=false and clear data columns.
-    # If no row exists the UPDATE returns empty data — we return the empty
-    # integration response in that case (no separate SELECT needed).
-    # Null-payload is derived from _METADATA_COLUMNS so new fields are
-    # automatically cleared on disconnect.
+    # Clear connected state and metadata columns (derived from _METADATA_COLUMNS).
+    # Empty UPDATE result means no row existed - return the disconnected placeholder.
     update_payload: dict = {
         "connected": False,
         "name": None,
@@ -588,7 +612,6 @@ def disconnect_platform_integration(
 
 def create_invitation(organization_id: int, email: str, invited_by: UUID) -> dict:
     """Create or renew an invitation for an email to join a organization, and send the email."""
-    # 1. Verify organization exists
     organization = get_organization(organization_id)
     if not organization:
         raise NotFoundError("Organization not found")
@@ -599,7 +622,6 @@ def create_invitation(organization_id: int, email: str, invited_by: UUID) -> dic
     if not inviter:
         raise NotFoundError("Inviting user not found")
 
-    # 2. Restrict emails to match the inviter's school domain (except for admins)
     if inviter.role != "admin":
         from core.allowed_emails import get_school_for_email
 
@@ -613,12 +635,10 @@ def create_invitation(organization_id: int, email: str, invited_by: UUID) -> dic
                 f"You can only invite emails matching your school domain ({inviter.school or 'Unknown'})."
             )
 
-    # 3. Check if already a member
     existing_user = user_service.get_user_by_email(email)
     if existing_user and is_organization_member(organization_id, str(existing_user.id)):
         raise ConflictError("User is already a member of this organization")
 
-    # 3. Generate token & expiry (7 days)
     import uuid
     from datetime import timedelta
 
@@ -651,7 +671,6 @@ def create_invitation(organization_id: int, email: str, invited_by: UUID) -> dic
         log.error("Failed to create/upsert invitation: %s", e)
         raise
 
-    # 4. Dispatch the invitation email
     try:
         from core.config import settings
         from services.email_service import EmailMessage, email_service
@@ -736,7 +755,6 @@ def accept_invitation(token: str, user_id: UUID) -> bool:
     """Accept an invitation by token and add the user to the organization."""
     now = datetime.now(timezone.utc).isoformat()
 
-    # 1. Fetch and validate invitation
     r = (
         get_sb()
         .table(ORGANIZATION_INVITATIONS)
@@ -752,13 +770,11 @@ def accept_invitation(token: str, user_id: UUID) -> bool:
     inv = r.data[0]
     organization_id = inv["organization_id"]
 
-    # 2. Add user to organization members
     try:
         add_organization_member(organization_id, user_id)
     except ConflictError:
         pass
 
-    # 3. Mark invitation as accepted
     get_sb().table(ORGANIZATION_INVITATIONS).update({"status": "accepted"}).eq(
         "id", inv["id"]
     ).execute()
@@ -818,11 +834,9 @@ def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = Non
 
     claim = r.data[0]
     if status == "approved":
-        # Set organization creator (internal users.id UUID)
         get_sb().table("organizations").update({"created_by": claim["user_id"]}).eq(
             "id", claim["organization_id"]
         ).execute()
-        # Add to organization members
         try:
             add_organization_member(claim["organization_id"], UUID(claim["user_id"]))
         except ConflictError:

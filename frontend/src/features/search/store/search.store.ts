@@ -8,7 +8,7 @@
  * filter option lists, filter counts) stays in useSearch where it can
  * depend on the events array passed in by the caller.
  *
- * Never use `useSearchStore()` without a selector — an unselected
+ * Never use `useSearchStore()` without a selector - an unselected
  * subscription re-renders on every keystroke.
  */
 
@@ -30,6 +30,7 @@ interface FilterValues {
   priceRange: { min: string; max: string };
   registration: boolean;
   freeFoodFilter: boolean;
+  cancelledFilter: boolean;
   savedFilter: boolean;
   selectedOrganizations: string[];
   sortBy: string;
@@ -52,6 +53,7 @@ const emptyFilters: FilterValues = {
   priceRange: { min: "", max: "" },
   registration: false,
   freeFoodFilter: false,
+  cancelledFilter: false,
   savedFilter: false,
   selectedOrganizations: [],
   sortBy: DEFAULT_FILTER_SORT_BY,
@@ -75,13 +77,14 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       priceRange: normalized.priceRange,
       registration: normalized.registration,
       freeFoodFilter: normalized.freeFood,
+      cancelledFilter: normalized.cancelled,
       savedFilter: normalized.saved,
       sortBy: normalized.sortBy,
       sortOrder: normalized.sortOrder,
       addedWithin24h: normalized.addedWithin24h,
     });
   },
-  // startTransition keeps the UI responsive when clearing — both
+  // startTransition keeps the UI responsive when clearing - both
   // command-palette and dropdown paths share this one implementation.
   clearAllFilters: () => startTransition(() => set(emptyFilters)),
 }));

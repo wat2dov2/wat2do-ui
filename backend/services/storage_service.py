@@ -117,7 +117,7 @@ class StorageService:
 
         # SVG detection: inspect actual file bytes, not the client-declared
         # Content-Type.  An attacker could upload a malicious SVG as
-        # "image/png" to skip sanitization — so we check content regardless.
+        # "image/png" to skip sanitization - so we check content regardless.
         is_svg = looks_like_svg(data)
 
         if is_svg:
@@ -132,14 +132,14 @@ class StorageService:
                 raise ValidationError(f"Invalid SVG file: {exc}") from exc
             return data, "image/svg+xml"
 
-        # Client claims SVG but content is not actually SVG — reject.
+        # Client claims SVG but content is not actually SVG - reject.
         if content_type == "image/svg+xml":
             raise ValidationError("File declared as SVG but content is not valid SVG.")
 
         # Strip EXIF / XMP metadata from raster images so user-uploaded
         # photos don't leak GPS coordinates, device serials, or capture
         # timestamps (audit U9).  If Pillow can't decode the bytes, the
-        # upload is rejected as invalid — a legitimate image always
+        # upload is rejected as invalid - a legitimate image always
         # round-trips through Pillow.
         if content_type in _EXIF_STRIP_MIMES:
             data = _strip_image_metadata(data, content_type)
@@ -182,7 +182,7 @@ class StorageService:
         # For SVGs, force ``Content-Disposition: attachment`` so the
         # browser downloads the file instead of rendering it inline on a
         # top-level navigation.  Combined with the sanitizer this is
-        # defense-in-depth — even if a bypass is found later, the file
+        # defense-in-depth - even if a bypass is found later, the file
         # won't execute scripts in the Supabase origin (audit U8).
         if content_type == "image/svg+xml":
             file_options["content-disposition"] = "attachment"
@@ -195,7 +195,7 @@ class StorageService:
         """Delete a file by its path within a bucket.
 
         Rejects paths containing ``..`` or absolute path prefixes after
-        normalization — prevents an attacker who controls
+        normalization - prevents an attacker who controls
         ``source_image_url`` / ``logo_url`` / ``avatar_url`` from
         deleting unrelated objects in the same bucket via path
         traversal (audit U10).
@@ -234,7 +234,7 @@ def _is_safe_storage_path(path: str) -> bool:
         - absolute paths ("/foo", "\\foo")
         - traversal via ``..``
         - empty / whitespace-only paths
-    After normalization the path must not escape the bucket root — i.e.
+    After normalization the path must not escape the bucket root - i.e.
     ``os.path.normpath`` must leave it alone (no ``..`` or ``.`` segments
     that would collapse).  This is a belt-and-suspenders check on top
     of the URL prefix match in ``path_from_url``.
@@ -245,7 +245,7 @@ def _is_safe_storage_path(path: str) -> bool:
     if path.startswith("/") or path.startswith("\\"):
         return False
     # Reject any traversal segment.  Check both the raw string and the
-    # normalized form — normpath alone will happily collapse ``a/../b``
+    # normalized form - normpath alone will happily collapse ``a/../b``
     # to ``b`` which isn't what we want.
     if ".." in path.split("/") or ".." in path.split("\\"):
         return False
@@ -278,7 +278,7 @@ def _strip_image_metadata(data: bytes, content_type: str) -> bytes:
     try:
         with Image.open(BytesIO(data)) as im:
             im.load()  # force decode to catch truncated files early
-            # Build a fresh image from pixel data only — this discards
+            # Build a fresh image from pixel data only - this discards
             # ``info`` (APP1/EXIF, XMP, iTXt/tEXt) without risking
             # metadata being re-attached by the encoder.
             pil_format = im.format

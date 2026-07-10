@@ -69,14 +69,13 @@ def update_user_role(
 ):
     """Admin-only: rotate a user's role ('user' <-> 'admin').
 
-    Separate from ``PATCH /users/{id}`` so the role is only mutable through
-    an explicitly-admin endpoint — keeps the trust boundary bright and
-    closes audit I16.  ``user_service.set_role`` invalidates the
-    supabase-auth-id cache so the change is immediately visible in
-    subsequent role checks.
+    Separate from ``PATCH /users/{id}`` so role is only mutable through an
+    explicitly-admin endpoint - keeps the trust boundary bright.
+    ``user_service.set_role`` invalidates the supabase-auth-id cache so the
+    change is immediately visible in subsequent role checks.
 
-    A26: if the target is currently an admin and the new role is not
-    ``admin``, refuse the demotion when it would leave zero admins.
+    If the target is currently an admin and the new role is not ``admin``,
+    refuse the demotion when it would leave zero admins.
     """
     if data.role != ROLE_ADMIN:
         target = user_service.get_user(user_id)
@@ -90,16 +89,13 @@ def delete_user(
     user_id: UUID,
     admin: UserResponse = Depends(get_admin_user),
 ):
-    """Admin-only user deletion with A26 guardrails.
+    """Admin-only user deletion with quorum guardrails.
 
-    - **Self-delete block:** admins cannot delete their own account via
-      this endpoint.  Account deletion for the caller must be done through
-      an explicit "delete my account" flow (not implemented here) so that
-      the operation is intentional and separate from moderation.
-    - **Admin quorum:** if the target is currently an admin, refuse the
-      delete when the system would end up with zero admins.  A bored or
-      compromised admin could otherwise demote/delete every other admin
-      and lock the system into an un-administered state.
+    - **Self-delete block:** admins cannot delete their own account here.
+      Account deletion for the caller must use an explicit "delete my
+      account" flow (not implemented here).
+    - **Admin quorum:** if the target is an admin, refuse when the system
+      would end up with zero admins.
     """
     if admin.id == user_id:
         raise AuthorizationError(CANNOT_DELETE_SELF)

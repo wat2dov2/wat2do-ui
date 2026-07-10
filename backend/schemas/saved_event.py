@@ -21,11 +21,6 @@ class UserEventPair(BaseModel):
 
 
 class SaveEventStatusResponse(BaseModel):
-    """Response for ``PUT /saved-events/{id}`` / ``DELETE /saved-events/{id}``.
-
-    Typed explicitly (audit S7) so the response contract is locked at the
-    OpenAPI boundary — future refactors that add fields to the dict will
-    be caught by the frontend type generator.
-    """
+    """Locks the save/unsave status contract at the OpenAPI boundary."""
 
     status: Literal["saved", "unsaved"]

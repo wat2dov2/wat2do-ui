@@ -1,4 +1,4 @@
-"""Unit tests for the parts of services/wat2do/extractor that don't
+"""Unit tests for the parts of services/scraper/extractor that don't
 need the OpenAI client.
 
 The full ``extract_events_from_post`` round-trip is exercised by the
@@ -45,7 +45,7 @@ def test_parse_model_json_returns_none_on_garbage():
 
 
 def test_parse_model_json_handles_null_response():
-    """The prompt says ``return null`` when no event is in the post —
+    """The prompt says ``return null`` when no event is in the post -
     json.loads("null") returns None, and the caller drops it."""
     assert _parse_model_json("null") is None
 

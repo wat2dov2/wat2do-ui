@@ -1,10 +1,10 @@
 """CRUD for event_dates rows.
 
 Used by event_service.create_event / update_event when a payload carries
-nested occurrences, and by services/wat2do/event_writer when the scraper
+nested occurrences, and by services/scraper/event_writer when the scraper
 extracts a multi-occurrence event from one Instagram post.
 
-Functions are intentionally thin — the events row is created/updated by
+Functions are intentionally thin - the events row is created/updated by
 event_service first, then the occurrence list is bulk-inserted here.
 PostgREST has no cross-table transaction support, so the orchestrator
 in event_service is responsible for cleaning up an orphan event row if
@@ -51,7 +51,7 @@ def replace_occurrences(
     failure we re-insert the snapshot and re-raise so the caller knows
     the operation didn't take effect. The window between DELETE and
     re-INSERT-of-snapshot is tiny, but at least the event ends up
-    either with the new occurrences or with the original ones — never
+    either with the new occurrences or with the original ones - never
     silently empty.
     """
     snapshot = list_for_event(event_id)
@@ -61,7 +61,7 @@ def replace_occurrences(
         return create_occurrences(event_id, occurrences)
     except Exception:
         # Best-effort restore from snapshot. If this also fails the
-        # event is left empty — but at least we logged loudly.
+        # event is left empty - but at least we logged loudly.
         if snapshot:
             try:
                 payload = []
@@ -107,7 +107,7 @@ def list_for_event(event_id: int) -> list[OccurrenceResponse]:
 
 
 def list_for_events(event_ids: list[int]) -> dict[int, list[OccurrenceResponse]]:
-    """Batched fetch — returns a dict keyed by event_id.
+    """Batched fetch - returns a dict keyed by event_id.
 
     Used by list_events and the calendar feed to attach occurrences to
     a page of event rows without an N+1 query. Empty input returns
@@ -142,7 +142,7 @@ def list_for_events(event_ids: list[int]) -> dict[int, list[OccurrenceResponse]]
 def delete_for_event(event_id: int) -> None:
     """Drop every occurrence row for ``event_id``.
 
-    Normally not needed — the FK on event_dates.event_id has ON DELETE
+    Normally not needed - the FK on event_dates.event_id has ON DELETE
     CASCADE, so deleting an events row drops its occurrences. Exposed
     here for the rare case where we want to clear occurrences without
     deleting the event (event_service.update_event with empty

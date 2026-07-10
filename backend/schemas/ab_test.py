@@ -1,4 +1,4 @@
-"""Response schemas for the A/B test endpoints (audit S7).
+"""Response schemas for the A/B test endpoints.
 
 The previous handlers returned bare ``dict`` shapes with no ``response_model``,
 so OpenAPI type generation could not describe them and any future addition
@@ -18,8 +18,6 @@ ABVariant = Literal[AB_VARIANT_CONTROL, AB_VARIANT_TREATMENT]
 
 
 class ABVariantResponse(BaseModel):
-    """GET /ab/variant response."""
-
     variant: ABVariant
 
 
@@ -32,7 +30,7 @@ class ABVariantCTR(BaseModel):
 
 
 class ABMetricsResponse(BaseModel):
-    """GET /ab/metrics response — CTR per variant.
+    """CTR per variant.
 
     Keyed by variant name; the backend guarantees entries for both
     ``control`` and ``treatment`` even when one has zero traffic.

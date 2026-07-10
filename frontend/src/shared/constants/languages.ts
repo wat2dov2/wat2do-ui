@@ -1,8 +1,3 @@
-/**
- * Translation Constants
- * Centralized language definitions for the application
- */
-
 export interface Language {
   code: string;
   label: string;

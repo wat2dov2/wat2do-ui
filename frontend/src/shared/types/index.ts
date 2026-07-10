@@ -1,8 +1,3 @@
-/**
- * Shared types index
- * Re-exports all shared types
- */
-
 export * from "./event.types";
 export * from "./filter.types";
 export * from "./promotion.types";

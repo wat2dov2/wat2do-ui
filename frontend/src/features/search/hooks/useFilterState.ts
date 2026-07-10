@@ -88,6 +88,7 @@ export function useFilterState(profileCompleted: boolean) {
     priceRange,
     registration,
     freeFoodFilter,
+    cancelledFilter,
     selectedOrganizations,
     savedFilter,
     sortBy,
@@ -103,6 +104,7 @@ export function useFilterState(profileCompleted: boolean) {
       priceRange: s.priceRange,
       registration: s.registration,
       freeFoodFilter: s.freeFoodFilter,
+      cancelledFilter: s.cancelledFilter,
       selectedOrganizations: s.selectedOrganizations,
       savedFilter: s.savedFilter,
       sortBy: s.sortBy,
@@ -152,6 +154,10 @@ export function useFilterState(profileCompleted: boolean) {
   );
   const setFreeFoodFilter = useCallback(
     (value: boolean) => updateFilterState({ freeFood: value }),
+    [updateFilterState],
+  );
+  const setCancelledFilter = useCallback(
+    (value: boolean) => updateFilterState({ cancelled: value }),
     [updateFilterState],
   );
   const setSavedFilter = useCallback(
@@ -229,6 +235,7 @@ export function useFilterState(profileCompleted: boolean) {
           registration,
           selectedOrganizations,
           freeFoodFilter,
+          cancelledFilter,
           savedFilter,
           sortBy,
           sortOrder,
@@ -245,6 +252,7 @@ export function useFilterState(profileCompleted: boolean) {
       registration,
       selectedOrganizations,
       freeFoodFilter,
+      cancelledFilter,
       savedFilter,
       sortBy,
       sortOrder,
@@ -275,6 +283,7 @@ export function useFilterState(profileCompleted: boolean) {
         registration: filters.registration || false,
         organizations: filters.organizations || [],
         freeFood: filters.freeFood || false,
+        cancelled: filters.cancelled || false,
         saved: filters.saved || false,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
@@ -350,6 +359,8 @@ export function useFilterState(profileCompleted: boolean) {
     setSelectedOrganizations,
     freeFoodFilter,
     setFreeFoodFilter,
+    cancelledFilter,
+    setCancelledFilter,
     savedFilter,
     setSavedFilter,
     addedWithin24h,

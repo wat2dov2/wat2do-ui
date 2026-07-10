@@ -69,7 +69,6 @@ def get_submissions(
     if status:
         q = q.eq("status", status)
     if school:
-        # Get all organization IDs for the selected school
         org_rows = get_sb().table("organizations").select("id").eq("school", school).execute()
         org_ids = [row["id"] for row in org_rows.data or []]
         if org_ids:

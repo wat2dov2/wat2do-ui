@@ -9,7 +9,6 @@ from core.rate_limit import (
 )
 
 
-# Key function for per-user rate limiting: extracts user ID from the auth token.
 def _user_id_key(user: dict = Depends(get_current_user)) -> str:
     return user["id"]
 
@@ -46,8 +45,6 @@ def generate_filters(
     _rl: None = Depends(ai_generate_filters_rate_limiter.dependency(key_func=_user_id_key)),
 ):
     client = _get_openai_client()
-    # Pass user_id so the service can enforce the daily per-user AI budget
-    # (M8) on top of the per-minute sliding-window limit.
     result = svc_generate_filters(body.prompt, client=client, user_id=user["id"])
     return FilterStateResponse(**result)
 

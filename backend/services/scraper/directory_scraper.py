@@ -16,9 +16,12 @@ from pydantic import BaseModel
 
 from core.database import get_sb
 from core.tables import EVENTS
+from services.scraper.dedup import find_candidates
 from services.scraper.event_writer import write_event
 from services.scraper.extractor import extract_events_from_post
 from services.scraper.image_uploader import upload_post_images
+from services.scraper.org_resolve import resolve_organization_for_scrape
+from services.scraper.reconciler import reconcile_events
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +64,6 @@ class DirectoryScrapeResult:
 def is_url_scraped(url: str) -> bool:
     """Check if an event page URL has already been scraped and written to the database."""
     try:
-        # Check source_url column in events table
         res = get_sb().table(EVENTS).select("id").eq("source_url", url).limit(1).execute()
         return bool(res.data)
     except Exception as e:
@@ -90,20 +92,17 @@ def crawl_directory_links(config: DirectoryConfig, max_pages: int = 5) -> list[s
             pages_crawled += 1
             soup = BeautifulSoup(resp.text, "html.parser")
 
-            # Extract all matching event links
             links = soup.find_all("a", href=True)
             for link in links:
                 href = link["href"].strip()
                 absolute_url = urljoin(current_url, href)
-                # Ensure the link belongs to the same domain and matches the event pattern
+                # Match by URL substring pattern only (not a same-domain check).
                 if config.event_url_contains in absolute_url:
                     # Strip query strings/fragments for clean deduplication
                     clean_url = absolute_url.split("?")[0].split("#")[0].rstrip("/")
-                    # Do not add entry_url itself to event links
                     if clean_url != config.entry_url.rstrip("/"):
                         event_urls.add(clean_url)
 
-            # Find next page link
             next_url = None
             if config.next_page_selector:
                 next_link = soup.select_one(config.next_page_selector)
@@ -133,7 +132,6 @@ def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # 1. Content Text Extraction
     content_text = ""
     if config.content_selector:
         content_element = soup.select_one(config.content_selector)
@@ -141,21 +139,17 @@ def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]
             content_text = content_element.get_text(separator="\n", strip=True)
 
     if not content_text:
-        # Fallback to general content selectors
         for selector in [".entry-content", "article", "#content", "main", "body"]:
             element = soup.select_one(selector)
             if element:
                 content_text = element.get_text(separator="\n", strip=True)
                 break
 
-    # Clean up whitespace
     content_lines = [line.strip() for line in content_text.splitlines() if line.strip()]
     cleaned_content = "\n".join(content_lines)
 
-    # 2. Image Extraction
     images: set[str] = set()
 
-    # Try custom selector first
     if config.image_selector:
         img_elements = soup.select(config.image_selector)
         for img in img_elements:
@@ -163,7 +157,6 @@ def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]
             if src:
                 images.add(urljoin(url, src.strip()))
 
-    # Fallback/Union: grab images inside the body/content area
     content_area = None
     if config.content_selector:
         content_area = soup.select_one(config.content_selector)
@@ -177,10 +170,9 @@ def scrape_event_page(url: str, config: DirectoryConfig) -> tuple[str, list[str]
             src = img.get("src") or img.get("data-src")
             if src:
                 src_abs = urljoin(url, src.strip())
-                # Filter out tracking pixels / tiny icons
                 parsed_src = urlparse(src_abs)
                 if parsed_src.scheme in ("http", "https"):
-                    # Basic heuristics to avoid spacer gifs, icons, and avatars
+                    # Skip icons/avatars/trackers by URL substring heuristic.
                     src_lower = src_abs.lower()
                     if not any(
                         x in src_lower
@@ -198,7 +190,6 @@ def run_directory_pipeline(
     log.info("Starting pipeline for directory: %s (%s)", config.name, config.school)
     result = DirectoryScrapeResult(directory_name=config.name)
 
-    # 1. Crawl list pages for event detail links
     try:
         event_urls = crawl_directory_links(config, max_pages=max_pages)
         result.pages_crawled = min(max_pages, len(event_urls) + 1)  # Approximate count
@@ -209,19 +200,17 @@ def run_directory_pipeline(
         result.errors.append(err_msg)
         return result
 
-    # 2. Process each URL
     for url in event_urls:
         log.info("[%s] Processing URL: %s", config.id, url)
 
-        # Check if already scraped in DB (skipped in dry-run to test parsing)
+        # Dry-run re-parses already-scraped URLs so parsing can be tested end-to-end.
         if not dry_run and is_url_scraped(url):
-            log.info("[%s] URL already scraped — skipping: %s", config.id, url)
+            log.info("[%s] URL already scraped - skipping: %s", config.id, url)
             continue
 
         result.urls_new += 1
 
         try:
-            # 3. Extract text & images
             text, images = scrape_event_page(url, config)
             if not text:
                 log.warning(
@@ -229,13 +218,12 @@ def run_directory_pipeline(
                 )
                 continue
 
-            # 4. Upload images (allow general domains)
             uploaded_images = []
             if images:
                 log.info("[%s] Found %d candidate images. Uploading...", config.id, len(images))
+                # Directory hosts are not Instagram CDN; open the host allowlist.
                 uploaded_images = upload_post_images(images, allow_all_domains=True)
 
-            # 5. Extract events using AI vision/text service
             log.info(
                 "[%s] Sending content to AI for extraction (%d images)",
                 config.id,
@@ -244,7 +232,7 @@ def run_directory_pipeline(
             extracted_events = extract_events_from_post(
                 caption_text=text,
                 image_urls=uploaded_images,
-                post_created_at=None,  # Handled inside extractor relative to current time
+                post_created_at=None,  # Extractor falls back to "now" in school TZ
                 school=config.school,
             )
             result.events_extracted += len(extracted_events)
@@ -253,9 +241,7 @@ def run_directory_pipeline(
                 log.info("[%s] No events extracted by AI from: %s", config.id, url)
                 continue
 
-            # 6. Save events to database
             for event in extracted_events:
-                # Map source image URL based on image_index returned by AI
                 try:
                     idx = int(event.get("image_index") or 0)
                 except (TypeError, ValueError):
@@ -264,21 +250,71 @@ def run_directory_pipeline(
                     event["source_image_url"] = uploaded_images[
                         idx if 0 <= idx < len(uploaded_images) else 0
                     ]
+                event["school"] = config.school
 
-                if dry_run:
+            if dry_run:
+                for event in extracted_events:
                     log.info("[%s] [DRY-RUN] Would save event: %r", config.id, event.get("title"))
                     result.events_saved += 1
-                    continue
+                continue
 
-                # Pass ig_handle=None since it is a web directory source
-                outcome = write_event(event, ig_handle=None, source_url=url)
+            resolved_orgs = [
+                resolve_organization_for_scrape(
+                    ig_handle=None,
+                    school=config.school,
+                    organization_name=(event.get("organization") or "").strip() or None,
+                    create_stub_if_missing=False,
+                )
+                for event in extracted_events
+            ]
+            candidates_by_index = [
+                find_candidates(
+                    title=event.get("title") or "",
+                    location=event.get("location") or "",
+                    description=event.get("description") or "",
+                    occurrences=event.get("occurrences") or [],
+                    ig_handle=resolved.ig_handle,
+                    organization_id=resolved.organization_id,
+                    organization_name=resolved.organization_name
+                    or ((event.get("organization") or "").strip() or None),
+                )
+                for event, resolved in zip(extracted_events, resolved_orgs, strict=True)
+            ]
+            reconciled = reconcile_events(
+                extracted_events=extracted_events,
+                candidates_by_index=candidates_by_index,
+                caption_text=text,
+                school=config.school,
+                resolved_organization_ids=[r.organization_id for r in resolved_orgs],
+                resolved_ig_handles=[r.ig_handle for r in resolved_orgs],
+            )
+            to_write = (
+                reconciled
+                if reconciled is not None
+                else [{**e, "id": None} for e in extracted_events]
+            )
+            if reconciled is None:
+                log.warning(
+                    "[%s] Pass 2 failed; falling back to insert-only Pass 1 events",
+                    config.id,
+                )
+
+            for i, event in enumerate(to_write):
+                if len(to_write) == len(resolved_orgs):
+                    resolved = resolved_orgs[i]
+                else:
+                    resolved = resolve_organization_for_scrape(
+                        ig_handle=None,
+                        school=config.school,
+                        organization_name=(event.get("organization") or "").strip() or None,
+                        create_stub_if_missing=False,
+                    )
+                outcome = write_event(event, ig_handle=None, source_url=url, resolved_org=resolved)
                 if outcome == "inserted":
                     result.events_saved += 1
                 elif outcome == "updated":
                     result.events_updated += 1
                     result.events_saved += 1
-                elif outcome == "duplicate":
-                    result.events_duplicates += 1
 
         except Exception as e:
             err_msg = f"Failed to process URL {url}: {e}"

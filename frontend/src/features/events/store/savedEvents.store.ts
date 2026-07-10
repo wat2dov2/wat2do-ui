@@ -22,11 +22,11 @@ interface SavedEventsState {
   isLoading: boolean;
   hasLoaded: boolean;
 
-  /** Fetch saved event IDs from backend. Idempotent — skips if already loaded successfully. */
+  /** Fetch saved event IDs from backend. Idempotent - skips if already loaded successfully. */
   fetchSavedEvents: () => Promise<void>;
   /** Clear per-user state (called on logout / user switch). */
   reset: () => void;
-  /** Pure local toggle — no backend sync, no analytics. Useful for hydration and tests. */
+  /** Pure local toggle - no backend sync, no analytics. Useful for hydration and tests. */
   _toggleLocal: (eventId: number) => void;
   /** Full toggle: local mutation + backend sync + analytics. */
   toggleSaveEvent: (eventId: number) => void;
@@ -103,14 +103,11 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
     const shouldSave = !wasSaved;
     const authenticated = isAuthenticated();
 
-    // 1. Optimistic local update
     get()._toggleLocal(eventId);
 
     if (authenticated) {
-      // 2. Register optimistic intent
       _optimisticToggles.set(eventId, shouldSave);
 
-      // 3. Sync to backend
       const backendCall = shouldSave
         ? saveEventToBackend(eventId)
         : unsaveEventFromBackend(eventId);
@@ -125,7 +122,6 @@ export const useSavedEventsStore = create<SavedEventsState>((set, get) => ({
             err,
           );
           _optimisticToggles.delete(eventId);
-          // Rollback local change
           get()._toggleLocal(eventId);
           toast({
             description: shouldSave

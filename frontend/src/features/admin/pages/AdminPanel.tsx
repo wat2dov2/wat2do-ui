@@ -38,7 +38,6 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
   const router = useRouter();
   const { recentActivities, recentActivityLoading } = useAdminPanel();
 
-  // Pre-map activity data to display objects so the JSX doesn't traverse nested structures
   const displayActivities = useMemo(
     () => recentActivities.map((activity) => mapActivityDisplay(activity, t)),
     [recentActivities, t]
@@ -53,7 +52,6 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
           <Shield className="size-6 text-primary" />
@@ -66,7 +64,6 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
         </div>
       </div>
 
-      {/* Navigation Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <AdminCard
           icon={Calendar}
@@ -88,7 +85,6 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
         />
       </div>
 
-      {/* Recent Activity Feed */}
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-1">{t("admin.recentActivity")}</h2>

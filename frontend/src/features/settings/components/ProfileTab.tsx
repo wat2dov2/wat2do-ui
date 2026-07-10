@@ -1,8 +1,3 @@
-/**
- * ProfileTab Component
- * UI component for profile settings
- */
-
 import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Mail, Camera } from "@/shared/ui/doodle-icons";

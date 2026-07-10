@@ -44,12 +44,12 @@ class InteractionBatch(BaseModel):
     **Trust boundary note on ``user_id``**: this field models the client's
     *claim* of which user the batch belongs to.  The server verifies the
     claim against the authenticated identity in ``interaction_service._validate_batch``
-    and 403s on mismatch (see S11).  The field is **advisory / diagnostic** —
+    and 403s on mismatch.  The field is **advisory / diagnostic** -
     never trust it for authorization or identity resolution in new code;
     use the value resolved from the Bearer token instead.
 
     Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
-    opaque strings (e.g. ``"admin"``) at parse time — if the router-side
+    opaque strings (e.g. ``"admin"``) at parse time - if the router-side
     ownership check is ever removed during a refactor, impersonation
     still cannot succeed because the payload won't even deserialise.
     """
@@ -77,10 +77,6 @@ class EventPopularity(BaseModel):
 
 
 class RecordInteractionsResponse(BaseModel):
-    """Response for ``POST /interactions/batch`` — number of rows recorded.
-
-    Typed explicitly (audit S7) so future additions to the dict do not
-    silently leak internals to the client.
-    """
+    """Number of interaction rows recorded from a batch submit."""
 
     recorded: int

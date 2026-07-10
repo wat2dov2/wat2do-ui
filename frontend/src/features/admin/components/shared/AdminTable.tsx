@@ -1,8 +1,3 @@
-/**
- * AdminTable Component
- * Reusable table wrapper for admin pages with consistent styling
- */
-
 import React from "react";
 import {
   Table,

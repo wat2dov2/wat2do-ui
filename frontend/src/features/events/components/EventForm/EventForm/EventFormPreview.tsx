@@ -22,7 +22,6 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
   const { formData, imagePreview, selectedOrganizationName } = useEventFormContext();
   const categoryClasses = getCategoryClasses(formData.category);
 
-  // Generate badges matching EventCard structure
   const badges = useMemo(
     () => computeEventBadges(formData, t),
     [formData, t],
@@ -38,7 +37,6 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
     [formData.occurrences],
   );
 
-  // Format date and time for preview (matching EventCard format)
   const cardDate = useMemo(
     () => formatCardDate(previewEvent, i18n.language || 'en-US'),
     [previewEvent, i18n.language],
@@ -62,13 +60,10 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
         </span>
       </div>
 
-      {/* Preview Card - Matches EventCard styling exactly */}
       <article
         className="mx-auto flex w-full max-w-[16.5rem] flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/80"
       >
-        {/* Event Image */}
         <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-          {/* Background - using LazyImage with fallback */}
           <LazyImage
             src={imagePreview || undefined}
             alt={formData.title || t("events.eventTitle")}
@@ -83,7 +78,6 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
             }
           />
           
-          {/* Category Badge - Top Left */}
           {formData.category && (
             <BadgeMask variant="top-left">
               <Badge
@@ -101,7 +95,6 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
             </BadgeMask>
           )}
 
-          {/* Club/Organization Badge - Bottom Left */}
           <BadgeMask variant="bottom-left">
             <OrganizationBadgeDropdown
               organizationName={selectedOrganizationName}

@@ -3,7 +3,7 @@ const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
 
 interface FormatRelativeTimeOptions {
-  /** When true, never fall back to a calendar date — always "N minutes/hours/days ago". */
+  /** When true, never fall back to a calendar date - always "N minutes/hours/days ago". */
   alwaysAgo?: boolean;
 }
 

@@ -20,11 +20,11 @@ interface SavedOrganizationsState {
   isLoading: boolean;
   hasLoaded: boolean;
 
-  /** Fetch saved organization IDs from backend. Idempotent — skips if already loaded successfully. */
+  /** Fetch saved organization IDs from backend. Idempotent - skips if already loaded successfully. */
   fetchSavedOrganizations: () => Promise<void>;
   /** Clear per-user state (called on logout / user switch). */
   reset: () => void;
-  /** Pure local toggle — no backend sync. */
+  /** Pure local toggle - no backend sync. */
   _toggleLocal: (organizationId: number) => void;
   /** Full toggle: local mutation + backend sync. */
   toggleSaveOrganization: (organizationId: number) => void;
@@ -101,14 +101,11 @@ export const useSavedOrganizationsStore = create<SavedOrganizationsState>((set, 
     const shouldSave = !wasSaved;
     const authenticated = isAuthenticated();
 
-    // 1. Optimistic local update
     get()._toggleLocal(organizationId);
 
     if (authenticated) {
-      // 2. Register optimistic intent
       _optimisticToggles.set(organizationId, shouldSave);
 
-      // 3. Sync to backend
       const backendCall = shouldSave
         ? saveOrganizationToBackend(organizationId)
         : unsaveOrganizationToBackend(organizationId);
@@ -123,7 +120,6 @@ export const useSavedOrganizationsStore = create<SavedOrganizationsState>((set, 
             err,
           );
           _optimisticToggles.delete(organizationId);
-          // Rollback local change
           get()._toggleLocal(organizationId);
           toast({
             description: shouldSave
@@ -133,7 +129,6 @@ export const useSavedOrganizationsStore = create<SavedOrganizationsState>((set, 
           });
         });
     } else {
-      // If not authenticated, roll back and show sign-in toast
       get()._toggleLocal(organizationId);
       toast({
         description: i18n.t("auth.signInToUnlockFeatures") || "Please sign in to follow organizations",

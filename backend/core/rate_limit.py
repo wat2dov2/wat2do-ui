@@ -3,11 +3,11 @@
 Uses a sliding-window counter stored in a plain dict.  Suitable for
 single-process deployments.  For multi-worker setups, replace the
 in-memory dict with a Redis-backed store (SORTED SET + ZRANGEBYSCORE)
-without changing the public API — only ``_cleanup`` and ``_check``
+without changing the public API - only ``_cleanup`` and ``_check``
 need a new backend.
 
 ============================================================================
-**CRITICAL — SINGLE-PROCESS ONLY (P1).**
+**CRITICAL - SINGLE-PROCESS ONLY.**
 ============================================================================
 Every ``RateLimiter`` instance keeps its state in process-local memory
 guarded by a ``threading.Lock``.  The limiter is *NOT SAFE* under any of
@@ -27,7 +27,7 @@ and ``check`` need a new implementation.
 
 A startup warning is emitted below if ``UVICORN_WORKERS`` (or gunicorn's
 ``WEB_CONCURRENCY`` / ``GUNICORN_CMD_ARGS``) indicates >1 worker.  The
-warning is *best-effort* — it only detects well-known env conventions.
+warning is *best-effort* - it only detects well-known env conventions.
 ============================================================================
 
 Usage (authenticated, keyed by user ID)::
@@ -61,7 +61,7 @@ The ``dependency()`` method reads the user dict injected by
 
 The ``ip_dependency()`` method resolves the real client IP via
 ``core.client_ip.get_client_ip()`` (proxy-aware) and tracks calls
-per IP — suitable for unauthenticated endpoints like login, signup,
+per IP - suitable for unauthenticated endpoints like login, signup,
 and QR scans.
 """
 
@@ -114,7 +114,7 @@ def _warn_on_multiworker_deploy() -> None:
             log.warning(
                 "%s=%d detected, but the in-memory rate limiter only shares "
                 "state within a single process. With >1 worker the effective "
-                "cap is multiplied by N_workers — swap to a Redis-backed "
+                "cap is multiplied by N_workers - swap to a Redis-backed "
                 "store before scaling (see core/rate_limit.py docstring).",
                 key,
                 workers,
@@ -141,7 +141,7 @@ class RateLimiter:
     expired.  This keeps memory proportional to *active* clients rather
     than *all-time unique* clients.
 
-    **Single-process only** — see module docstring for details.
+    **Single-process only** - see module docstring for details.
     """
 
     # How often (seconds) to do a full sweep of all keys.  Trades a
@@ -162,10 +162,6 @@ class RateLimiter:
         self._lock = Lock()
         self._last_prune: float = time.monotonic()
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
     def _cleanup(self, key: str, now: float) -> None:
         """Remove timestamps outside the current window (must hold lock).
 
@@ -175,7 +171,7 @@ class RateLimiter:
         """
         timestamps = self._requests.get(key)
         if not timestamps:
-            # Key absent or empty — nothing to clean.  Avoid touching
+            # Key absent or empty - nothing to clean.  Avoid touching
             # the defaultdict so we don't create a phantom empty entry.
             self._requests.pop(key, None)
             return
@@ -186,7 +182,7 @@ class RateLimiter:
             if ts > cutoff:
                 break
         else:
-            # All entries are expired — remove the key entirely.
+            # All entries are expired - remove the key entirely.
             del self._requests[key]
             return
         if idx:
@@ -226,7 +222,7 @@ class RateLimiter:
             self._maybe_prune_all(now)
             self._cleanup(key, now)
             if len(self._requests[key]) >= self.max_requests:
-                # Earliest request still in window — time until it expires
+                # Earliest request still in window - time until it expires
                 oldest = self._requests[key][0]
                 retry_after = max(1, math.ceil((oldest + self.window_seconds) - now))
                 log.warning(
@@ -242,10 +238,6 @@ class RateLimiter:
                     retry_after=retry_after,
                 )
             self._requests[key].append(now)
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def dependency(self, key_func=None):
         """Return a FastAPI dependency that enforces the rate limit.
@@ -291,7 +283,7 @@ class RateLimiter:
 # ---------------------------------------------------------------------------
 # Pre-built limiters (importable singletons)
 # ---------------------------------------------------------------------------
-# P3: each endpoint gets its OWN limiter instance.  Using the same instance
+# Each endpoint gets its OWN limiter instance.  Using the same instance
 # for multiple endpoints (e.g. login + signup sharing one bucket) causes
 # legitimate users at shared IPs (corporate NAT, mobile carriers) to be
 # blocked across unrelated endpoints: a signup brute-force from another user
@@ -316,13 +308,13 @@ auth_refresh_rate_limiter = RateLimiter(
     window_seconds=AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
 )
 # Anonymous interaction batches (POST /interactions/batch without auth).
-# Legitimate frontends fire view/impression events on scroll — generous limit
+# Legitimate frontends fire view/impression events on scroll - generous limit
 # but stops bots from flooding the interactions table.
 anon_interaction_rate_limiter = RateLimiter(
     max_requests=ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS,
 )
-# QR scan recording (GET /qr/{id}).  Normal usage is one scan per poster;
+# QR scan recording (GET /qr/{id}).  Normal usage is one scan per QR code;
 # repeated rapid scans from the same IP are clearly automated.
 qr_scan_rate_limiter = RateLimiter(
     max_requests=QR_SCAN_RATE_LIMIT_MAX_REQUESTS,

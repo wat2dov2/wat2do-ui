@@ -24,7 +24,6 @@ export function InviteLandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // 1. Fetch invitation details on mount
   useEffect(() => {
     if (!token) {
       setError("No invitation token provided.");
@@ -47,7 +46,6 @@ export function InviteLandingPage() {
     void loadInvite();
   }, [token]);
 
-  // 2. Handle Accept Invitation
   const handleAccept = async () => {
     if (!token || accepting) return;
     setAccepting(true);
@@ -56,15 +54,13 @@ export function InviteLandingPage() {
     try {
       await acceptInvitationByToken(token);
       setSuccess(true);
-      
-      // Trigger confetti celebration
+
       confetti({
         particleCount: 150,
         spread: 80,
         origin: { y: 0.6 }
       });
 
-      // Redirect to organization panel after 2 seconds
       setTimeout(() => {
         router.push(ROUTES.ORGANIZATION_PANEL);
       }, 2000);
@@ -75,10 +71,8 @@ export function InviteLandingPage() {
     }
   };
 
-  // 3. Handle redirect to signup or login
   const handleAuthRedirect = (mode: "signup" | "login") => {
     if (!inviteInfo) return;
-    // Redirect to login/signup page with query params
     const searchParams = new URLSearchParams({
       token: token || "",
       email: inviteInfo.email,
@@ -100,17 +94,14 @@ export function InviteLandingPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* Background blobs for premium glassmorphism effect */}
       <div className="absolute top-1/4 left-1/4 size-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 size-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
       <Card className="max-w-md w-full border border-border/80 bg-card/60 backdrop-blur-md shadow-2xl relative z-10 overflow-hidden">
-        {/* Decorative accent line */}
         <div className="h-1.5 w-full bg-gradient-to-r from-primary via-blue-500 to-indigo-600" />
 
         <CardContent className="pt-8 px-6 pb-6 text-center space-y-6">
           {error ? (
-            /* ERROR STATE */
             <div className="space-y-4 animate-in fade-in zoom-in duration-200">
               <div className="size-16 rounded-full bg-error/10 border border-error/20 flex items-center justify-center mx-auto text-error">
                 <ShieldAlert className="size-8" />
@@ -124,7 +115,6 @@ export function InviteLandingPage() {
               </Button>
             </div>
           ) : success ? (
-            /* SUCCESS STATE */
             <div className="space-y-4 animate-in fade-in zoom-in duration-200">
               <div className="size-16 rounded-full bg-success/10 border border-success/20 flex items-center justify-center mx-auto text-success">
                 <CheckCircle className="size-8" />
@@ -138,12 +128,11 @@ export function InviteLandingPage() {
               </p>
             </div>
           ) : (
-            /* MAIN INVITE CONTENT */
             <div className="space-y-5 animate-in fade-in zoom-in duration-200">
               <div className="size-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary">
                 <MailOpen className="size-8" />
               </div>
-              
+
               <div className="space-y-2">
                 <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
                   {t("inviteLanding.manageTitle", { organizationName: inviteInfo?.organization_name })}
@@ -153,13 +142,11 @@ export function InviteLandingPage() {
                 </CardDescription>
               </div>
 
-              {/* Invited Email badge */}
               <div className="p-3 bg-secondary/40 border border-border rounded-xl">
                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">{t("inviteLanding.emailBadgeLabel")}</p>
                 <p className="text-sm font-semibold text-foreground break-all">{inviteInfo?.email}</p>
               </div>
 
-              {/* Email match warning if logged in with different email */}
               {isAuthenticated && userEmail && inviteInfo && userEmail.toLowerCase() !== inviteInfo.email.toLowerCase() && (
                 <div className="p-3 bg-warning/10 border border-warning/20 rounded-xl text-left flex gap-3 text-warning">
                   <ShieldAlert className="size-5 shrink-0 mt-0.5" />
@@ -172,7 +159,6 @@ export function InviteLandingPage() {
                 </div>
               )}
 
-              {/* Dynamic Action Buttons depending on login state */}
               <div className="space-y-3 pt-2">
                 {isAuthenticated ? (
                   <Button onMouseDown={handleAccept} className="w-full h-11 text-sm font-medium" disabled={accepting}>

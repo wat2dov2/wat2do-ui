@@ -17,9 +17,12 @@ export interface BadgeInput {
   price?: number | null;
   food?: string[];
   registration?: boolean;
+  cancelled?: boolean;
 }
 
 export interface BadgeStyleOverrides {
+  cancelledBg?: string;
+  cancelledText?: string;
   freeBg?: string;
   freeText?: string;
   priceBg?: string;
@@ -41,6 +44,14 @@ export function computeEventBadges(
   overrides?: BadgeStyleOverrides,
 ): EventBadge[] {
   const badges: EventBadge[] = [];
+
+  if (event.cancelled) {
+    badges.push({
+      text: t("common.cancelled"),
+      bgClass: overrides?.cancelledBg ?? "bg-destructive/15",
+      textClass: overrides?.cancelledText ?? "text-destructive",
+    });
+  }
 
   const price = event.price ?? 0;
   if (price === 0) {

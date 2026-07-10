@@ -12,18 +12,18 @@ import { cn } from "@/shared/lib/utils";
 interface TagInputProps {
   label: string;
   labelIcon?: ReactNode;
-  value: string[]; // Array of tags
-  inputValue: string; // Current input value
+  value: string[];
+  inputValue: string;
   onInputChange: (value: string) => void;
   onAdd: () => void;
   onRemove: (index: number) => void;
   placeholder?: string;
   error?: string;
   touched?: boolean;
-  tagColor?: "warning" | "primary" | "secondary"; // Default: "warning"
+  tagColor?: "warning" | "primary" | "secondary";
   className?: string;
-  allowDuplicates?: boolean; // Default: false
-  required?: boolean; // Show required indicator
+  allowDuplicates?: boolean;
+  required?: boolean;
 }
 
 const tagColorClasses = {
@@ -32,10 +32,6 @@ const tagColorClasses = {
   secondary: "bg-primary/80 text-primary-foreground",
 };
 
-/**
- * Reusable tag input component
- * Supports adding tags via input field and removing them via buttons
- */
 export function TagInput({
   label,
   labelIcon,

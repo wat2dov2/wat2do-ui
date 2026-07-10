@@ -10,7 +10,7 @@ import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function sanitizeAuthError(err: ApiError, t: TFunction): string {
-  // Allow domain-restriction messages (403) through — they don't
+  // Allow domain-restriction messages (403) through - they don't
   // reveal whether an individual account exists, only school eligibility.
   if (err.status === 403) {
     return err.message;

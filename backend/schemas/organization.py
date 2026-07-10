@@ -21,7 +21,7 @@ from core.constants import (
 )
 
 # ---------------------------------------------------------------------------
-# Safe-URL validator — mirrors schemas.qr_code._is_safe_url so organization fields
+# Safe-URL validator - mirrors schemas.qr_code._is_safe_url so organization fields
 # that accept user-supplied URLs (organization_page, logo_url) reject dangerous
 # schemes (javascript:, data:, file:) before they reach storage or FE.
 # ---------------------------------------------------------------------------
@@ -191,7 +191,7 @@ class DiscordIntegrationOptionsResponse(BaseModel):
 
 
 class PlatformIntegrationOptionsResponse(BaseModel):
-    """Generic options for any integration platform (audit S7).
+    """Generic options for any integration platform.
 
     The Discord-specific response above keeps the tightest types for the
     ``/integrations/discord/options`` endpoint; this looser model lets

@@ -18,23 +18,23 @@ class ServiceError(Exception):
 
 
 class NotFoundError(ServiceError):
-    """Resource does not exist."""
+    pass
 
 
 class AuthenticationError(ServiceError):
-    """Credentials invalid or session expired."""
+    pass
 
 
 class AuthorizationError(ServiceError):
-    """Caller lacks permission (e.g. email not allowed)."""
+    pass
 
 
 class ConflictError(ServiceError):
-    """Resource already exists or unique constraint violated."""
+    pass
 
 
 class ValidationError(ServiceError):
-    """Input failed a business rule (bad package, insufficient credits, …)."""
+    pass
 
 
 class RateLimitExceeded(Exception):
@@ -71,9 +71,9 @@ class AIServiceError(Exception):
 
     *error_kind* classifies the failure so the global error handler can
     map it to the right HTTP status without substring-matching the message:
-    - ``"config"`` — missing API key / misconfiguration  (503)
-    - ``"parse"``  — AI returned unparseable JSON        (502)
-    - ``"api"``    — empty/bad response from upstream API (502)
+    - ``"config"`` - missing API key / misconfiguration  (503)
+    - ``"parse"``  - AI returned unparseable JSON        (502)
+    - ``"api"``    - empty/bad response from upstream API (502)
     """
 
     def __init__(

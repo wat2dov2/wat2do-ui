@@ -15,7 +15,7 @@ import { toFacultyTranslationKey } from "@/shared/utils/string";
 
 const SELECT_PLACEHOLDER_VALUE = "__placeholder__";
 
-/** Faculty-specific colors (from onboarding branch origin) — single color per faculty for blob splash */
+/** Faculty-specific colors (from onboarding branch origin) - single color per faculty for blob splash */
 const FACULTY_COLORS: Record<string, string> = {
   Arts: "var(--faculty-arts-splash)",
   Engineering: "var(--faculty-engineering-splash)",

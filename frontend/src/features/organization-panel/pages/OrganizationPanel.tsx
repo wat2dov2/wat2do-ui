@@ -14,7 +14,6 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
           <Building2 className="size-6 text-primary" />
@@ -27,7 +26,6 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
         </div>
       </div>
 
-      {/* Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <AdminCard
           icon={Megaphone}
@@ -49,7 +47,6 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
         />
       </div>
 
-      {/* Recent Activity Feed */}
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-1">{t("organizationPanel.recentActivity")}</h2>

@@ -21,7 +21,7 @@ app = FastAPI(
 )
 register_error_handlers(app)
 
-# Block wildcard origins with credentials — this combination lets any site
+# Block wildcard origins with credentials - this combination lets any site
 # make authenticated requests.  Starlette "reflects" the caller's Origin
 # header when allow_origins=["*"] + allow_credentials=True, which is even
 # worse than a plain wildcard because the browser sees a valid match.
@@ -51,7 +51,7 @@ app.add_middleware(
 # Auto-discover routers: every module in `routers/` that exports an
 # `APIRouter` attribute named `router` is wired automatically, in
 # deterministic alphabetical order. Adding a new endpoint set is a single
-# file drop — no edit to this file required.
+# file drop - no edit to this file required.
 #
 # See .claude/rules/backend-architecture.md → "New router checklist".
 _registered: list[str] = []

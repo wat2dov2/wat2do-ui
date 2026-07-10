@@ -1,9 +1,4 @@
 /**
- * Filter Utilities
- * Helper functions for filter operations
- */
-
-/**
  * Get filter counts for UI display.
  *
  * Counts fields that narrow the event result set. Sort is an ordering
@@ -19,6 +14,7 @@ export function getFilterCounts(filters: {
   registration: boolean;
   selectedOrganizations?: string[];
   freeFoodFilter: boolean;
+  cancelledFilter: boolean;
   savedFilter: boolean;
   addedWithin24h?: boolean;
   viewMode?: "grid" | "calendar" | "map";
@@ -36,6 +32,7 @@ export function getFilterCounts(filters: {
     (filters.registration ? 1 : 0) +
     (filters.selectedOrganizations?.length ?? 0) +
     (filters.freeFoodFilter ? 1 : 0) +
+    (filters.cancelledFilter ? 1 : 0) +
     (filters.savedFilter ? 1 : 0) +
     (filters.addedWithin24h ? 1 : 0) +
     (hasActiveViewMode ? 1 : 0)

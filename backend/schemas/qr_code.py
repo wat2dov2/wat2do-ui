@@ -14,20 +14,20 @@ QrDestinationType = Literal["event", "events-list", "custom-url"]
 
 # ---------------------------------------------------------------------------
 # Per-field caps on QrCodeCreate.  Prevents a single authenticated user from
-# ballooning a row to >100 MB (see audit U11).  Values chosen to comfortably
+# ballooning a row to >100 MB.  Values chosen to comfortably
 # fit the UI's inputs while rejecting clearly-abusive sizes.
 # ---------------------------------------------------------------------------
 _MAX_QR_ID_LENGTH = 128  # QR id is usually a short slug / UUID
-_MAX_QR_NAME_LENGTH = 200  # poster name (shown in dashboard cards)
+_MAX_QR_NAME_LENGTH = 200  # QR code name (shown in dashboard cards)
 _MAX_QR_DESCRIPTION_LENGTH = 5_000  # free-text description
-# Reuse MAX_URL_LENGTH (2048) for image_url — it's a storage URL, not a
+# Reuse MAX_URL_LENGTH (2048) for image_url - it's a storage URL, not a
 # data: blob.  Data-URL images (base64 PNGs) would blow past this cap and
 # that's intentional: they should be uploaded via /uploads/qr-asset.
 _MAX_QR_IMAGE_URL_LENGTH = MAX_URL_LENGTH
-# Max serialised size for the ``filters`` JSONB value (audit S17).  4 KB
+# Max serialised size for the ``filters`` JSONB value.  4 KB
 # is generous for any legitimate filter spec (categories + date range +
-# a handful of other flags) while rejecting the deeply-nested payloads
-# and megabyte key dumps flagged in the audit.
+# a handful of other flags) while rejecting deeply-nested payloads
+# and megabyte key dumps.
 _MAX_QR_FILTERS_BYTES = 4 * 1024
 
 # Protocols considered safe for custom-url redirects.
@@ -44,7 +44,7 @@ def _is_safe_url(url: str) -> bool:
 
 
 class QrCodeRedirect(BaseModel):
-    """Public response for GET /qr/{id}: redirect config only. Scan is recorded server-side."""
+    """Redirect config for a QR scan; the scan itself is recorded server-side."""
 
     destination_type: QrDestinationType
     destination_id: str | int | None = None
@@ -52,10 +52,10 @@ class QrCodeRedirect(BaseModel):
 
 
 class QrCodeCreate(BaseModel):
-    """Payload to create or update a QR code.
+    """Create/update a QR code.
 
     Server-owned fields such as ``created_by`` and ``is_active`` are not
-    accepted from clients. New posters always start inactive and are activated
+    accepted from clients. New QR codes always start inactive and are activated
     by their first scan.
     """
 
@@ -64,7 +64,7 @@ class QrCodeCreate(BaseModel):
     # ``id`` is an opaque slug used as both the DB primary key and the URL
     # path segment in ``GET /qr/{id}``.  Restricting to URL-safe characters
     # prevents path traversal / control-character injection at the
-    # boundary (audit S4).  Hyphens and underscores cover most slugify
+    # boundary.  Hyphens and underscores cover most slugify
     # outputs; dots/slashes/question-marks are rejected.
     id: str = Field(
         min_length=1,
@@ -82,8 +82,8 @@ class QrCodeCreate(BaseModel):
     image_url: str | None = Field(default=None, max_length=_MAX_QR_IMAGE_URL_LENGTH)
     # Latitude/longitude bounded to the valid geographic ranges.  Matches
     # the ``ge/le`` guards already applied to the scan-time query params
-    # in ``GET /qr/{id}`` — so create and scan agree on what a valid
-    # coordinate looks like (audit S4).
+    # in ``GET /qr/{id}`` - so create and scan agree on what a valid
+    # coordinate looks like.
     latitude: float = Field(default=0.0, ge=-90, le=90)
     longitude: float = Field(default=0.0, ge=-180, le=180)
 
@@ -97,7 +97,7 @@ class QrCodeCreate(BaseModel):
             if not _is_safe_url(url):
                 raise ValueError("custom-url destination_id must be a valid http or https URL")
         # For non-custom-url types, destination_id may be a short string or
-        # int — cap its string form to MAX_URL_LENGTH as a safety net.
+        # int - cap its string form to MAX_URL_LENGTH as a safety net.
         elif self.destination_id is not None:
             if len(str(self.destination_id)) > MAX_URL_LENGTH:
                 raise ValueError(f"destination_id exceeds {MAX_URL_LENGTH} chars")
@@ -108,7 +108,7 @@ class QrCodeCreate(BaseModel):
         """Reject non-http(s) ``image_url`` values.
 
         Prevents ``javascript:``, ``data:``, ``file:`` schemes from being
-        persisted and later rendered in the dashboard (audit S4).
+        persisted and later rendered in the dashboard.
         """
         if self.image_url is None:
             return self
@@ -119,7 +119,7 @@ class QrCodeCreate(BaseModel):
     @field_validator("filters")
     @classmethod
     def _filters_size_limit(cls, v):
-        """Cap serialised ``filters`` at ``_MAX_QR_FILTERS_BYTES`` (audit S17).
+        """Cap serialised ``filters`` at ``_MAX_QR_FILTERS_BYTES``.
 
         The column accepts ``dict | list | None``; attackers can otherwise
         post deeply-nested or megabyte-sized structures that bloat JSONB
@@ -137,8 +137,6 @@ class QrCodeCreate(BaseModel):
 
 
 class QrCodeResponse(BaseModel):
-    """Full QR code for list/dashboard."""
-
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -156,8 +154,6 @@ class QrCodeResponse(BaseModel):
 
 
 class QrCodeScanResponse(BaseModel):
-    """Single scan for dashboard."""
-
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID

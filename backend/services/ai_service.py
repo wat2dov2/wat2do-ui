@@ -1,4 +1,4 @@
-"""AI service — business logic for AI-powered filter and event generation.
+"""AI service - business logic for AI-powered filter and event generation.
 
 Extracts prompt templates, JSON parsing, validation, and normalization
 from the router so they can be called from CLI / background jobs without
@@ -22,26 +22,15 @@ log = logging.getLogger(__name__)
 
 AI_MAX_TOKENS = 500
 
-# ---------------------------------------------------------------------------
-# Daily per-user AI budget cap (M8)
-# ---------------------------------------------------------------------------
-# Per-user per-day request count stored in a TTL cache with a 25-hour TTL.
-# The key is ``(YYYY-MM-DD, user_id)`` so calendar-day rollover resets the
-# counter naturally.  A 25 h TTL is enough slack for the date rollover
-# check without double-counting: when the UTC date changes, the
-# date-prefixed key is simply no longer queried and ages out.
-#
-# Shares the single-process limitation noted in the rate-limit module
-# (see ``core/rate_limit.py`` docstring): for multi-worker deployments,
-# swap this in-memory cache for a Redis-backed counter.
+# Daily per-user AI budget (M8): key ``(YYYY-MM-DD, user_id)`` in a 25 h TTL
+# cache so calendar-day rollover resets without double-counting. Process-local
+# like ``core/rate_limit.py``; multi-worker needs Redis.
 DAILY_AI_LIMIT = 100
 
 _daily_ai_cache = TTLCache(default_ttl=25 * 60 * 60)
 _daily_ai_lock = threading.Lock()
 
-# ---------------------------------------------------------------------------
-# Domain lists shared across prompt templates (DRY — H9/H10)
-# ---------------------------------------------------------------------------
+# Domain lists shared across prompt templates (DRY - H9/H10)
 LOCATIONS = (
     "SLC",
     "PAC",
@@ -80,10 +69,6 @@ _FOODS_SET = frozenset(FOODS)
 _CATEGORIES_CSV = ", ".join(f'"{c}"' for c in EVENT_CATEGORIES)
 _LOCATIONS_CSV = ", ".join(f'"{loc}"' for loc in LOCATIONS)
 _FOODS_CSV = ", ".join(f'"{f}"' for f in FOODS)
-
-# ---------------------------------------------------------------------------
-# Prompt templates
-# ---------------------------------------------------------------------------
 
 _FILTER_SYSTEM_PROMPT = f"""You are a filter generator for a university events app. Given a natural language description, generate a JSON filter object.
 
@@ -165,11 +150,6 @@ Examples:
 - "hackathon this weekend with registration" -> title: "Weekend Hackathon", registration: true, category: "Technology\""""
 
 
-# ---------------------------------------------------------------------------
-# Category normalization
-# ---------------------------------------------------------------------------
-
-
 def _normalize_categories(raw_list: list) -> list[str]:
     """Normalize a list of AI-produced categories, dropping unknowns."""
     out: list[str] = []
@@ -182,12 +162,7 @@ def _normalize_categories(raw_list: list) -> list[str]:
     return out
 
 
-# ---------------------------------------------------------------------------
-# JSON parsing
-# ---------------------------------------------------------------------------
-
-
-from core.exceptions import AIServiceError  # noqa: E402 — re-exported for callers
+from core.exceptions import AIServiceError  # noqa: E402 - re-exported for callers
 
 
 def _safe_get(d: dict, key: str, expected_type: type, default):
@@ -217,11 +192,6 @@ def parse_json_response(content: str) -> dict:
         raise AIServiceError("AI returned invalid JSON. Please try again.", error_kind="parse")
 
 
-# ---------------------------------------------------------------------------
-# OpenAI client
-# ---------------------------------------------------------------------------
-
-
 def get_openai_client() -> OpenAI:
     """Return a configured OpenAI client.
 
@@ -245,7 +215,7 @@ def _call_chat_completion(
     """Invoke the OpenAI chat completion endpoint with JSON-mode enforced.
 
     Wraps the SDK call so we can:
-    * force ``response_format={"type": "json_object"}`` (M6) — the model
+    * force ``response_format={"type": "json_object"}`` (M6) - the model
       is contractually obliged to return valid JSON when this flag is
       set, so parse failures become truly exceptional instead of a
       routine waste of tokens;
@@ -282,11 +252,6 @@ def _call_chat_completion(
         raise AIServiceError("AI service error.", error_kind="api")
 
 
-# ---------------------------------------------------------------------------
-# Daily budget gating (M8)
-# ---------------------------------------------------------------------------
-
-
 def _today_key() -> str:
     """UTC calendar day key used to scope the per-user daily counter."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -295,15 +260,8 @@ def _today_key() -> str:
 def enforce_daily_ai_budget(user_id: str, limit: int = DAILY_AI_LIMIT) -> None:
     """Raise ``AIServiceError`` if *user_id* has exceeded the daily AI budget.
 
-    The per-minute ``ai_rate_limiter`` stops short bursts; this function
-    adds a daily ceiling so a determined account can't sustain abuse for
-    hours at a time (audit M8).  Counter is in-memory and lives in a
-    25-hour TTL cache, so it auto-cleans on the next day's first request.
-
-    Note: like the sliding-window rate limiter in ``core/rate_limit.py``,
-    this counter is process-local.  Multi-worker deployments would need a
-    Redis-backed shared counter (single-process limitation flagged in
-    P1).
+    Complements the per-minute ``ai_generate_*_rate_limiter`` with a daily ceiling (M8).
+    Counter is process-local (same limitation as ``core/rate_limit.py``).
     """
     if not user_id:
         return
@@ -322,11 +280,6 @@ def enforce_daily_ai_budget(user_id: str, limit: int = DAILY_AI_LIMIT) -> None:
                 error_kind="api",
             )
         _daily_ai_cache.set(key, current + 1)
-
-
-# ---------------------------------------------------------------------------
-# Filter generation
-# ---------------------------------------------------------------------------
 
 
 def validate_filter_response(parsed: dict) -> dict:
@@ -394,11 +347,6 @@ def generate_filters(
     return validate_filter_response(parsed)
 
 
-# ---------------------------------------------------------------------------
-# Event generation
-# ---------------------------------------------------------------------------
-
-
 def _default_local_datetime() -> str:
     next_hour = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
     return next_hour.strftime("%Y-%m-%dT%H:%M")
@@ -447,7 +395,7 @@ def validate_event_response(parsed: dict) -> dict:
       * ``price`` clamped to >= 0 so a negative literal from the model
         can't propagate into the form prefill;
       * ``occurrences`` validated against ``YYYY-MM-DDTHH:MM`` via ``strptime``;
-      * ``location`` reduced to the canonical ``LOCATIONS`` set — unknown
+      * ``location`` reduced to the canonical ``LOCATIONS`` set - unknown
         values are dropped, mirroring the behaviour for categories;
       * ``food`` filtered against ``FOODS``.
     """
@@ -457,7 +405,6 @@ def validate_event_response(parsed: dict) -> dict:
     else:
         price = 0.0
 
-    # Normalize category and drop unrecognized values.
     raw_category = _safe_get(parsed, "category", str, "")
     if raw_category.strip():
         category = normalize_category(raw_category) or ""
@@ -539,14 +486,11 @@ def parse_event_image(
     if user_id is not None:
         enforce_daily_ai_budget(user_id)
 
-    # Encode the image bytes to base64
     base64_data = base64.b64encode(file_contents).decode("utf-8")
     image_url = f"data:{content_type};base64,{base64_data}"
 
     school = user_school or "uwaterloo"
 
-    # Call the existing extractor service
-    # extract_events_from_post accepts caption_text, image_urls, post_created_at, school
     extracted_events = extract_events_from_post(
         caption_text=None,
         image_urls=[image_url],
@@ -555,7 +499,6 @@ def parse_event_image(
     )
 
     if not extracted_events:
-        # Return default empty event form response
         return {
             "title": "",
             "description": "",
@@ -567,10 +510,9 @@ def parse_event_image(
             "registration": False,
         }
 
-    # Grab the first extracted event
     event = extracted_events[0]
 
-    # Convert UTC occurrences to local occurrences for the frontend form prefill
+    # Convert UTC occurrences to local strings for the frontend form prefill
     local_occurrences = []
     for occ in event.get("occurrences", []):
         dtstart_utc_str = occ.get("dtstart_utc")
@@ -587,7 +529,6 @@ def parse_event_image(
 
         if dtstart_utc_str:
             try:
-                # Remove Z and parse
                 clean_start = dtstart_utc_str.replace("Z", "+00:00")
                 dtstart_utc = datetime.fromisoformat(clean_start)
                 dtstart_local = dtstart_utc.astimezone(local_tz)
@@ -612,7 +553,6 @@ def parse_event_image(
                 }
             )
 
-    # Validate and sanitize other fields
     validated = validate_event_response(
         {
             "title": event.get("title", ""),
@@ -625,7 +565,6 @@ def parse_event_image(
         }
     )
 
-    # Overwrite validated occurrences with converted local occurrences
     if local_occurrences:
         validated["occurrences"] = local_occurrences
 

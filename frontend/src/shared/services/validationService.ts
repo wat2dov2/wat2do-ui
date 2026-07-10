@@ -1,11 +1,6 @@
 import type { EventFormData, ValidationErrors } from "@/shared/types";
 import i18n from "@/shared/lib/i18n";
 
-/**
- * Validation Service
- * Handles form validation logic
- */
-
 const VALIDATION_MESSAGE_KEYS = {
   titleRequired: "forms.titleRequired",
   clubRequired: "forms.clubRequired",

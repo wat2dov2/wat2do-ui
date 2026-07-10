@@ -1,7 +1,7 @@
 """Pydantic models for the workflow_runs table.
 
-Used by services.workflow_run_service and the services/wat2do pipeline.
-The table is admin/internal — there is no public-facing router, so only
+Used by services.workflow_run_service and the services/scraper pipeline.
+The table is admin/internal - there is no public-facing router, so only
 the create/update/response shapes are exposed here.
 """
 

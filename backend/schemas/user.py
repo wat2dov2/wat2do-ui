@@ -51,8 +51,8 @@ class UserRoleUpdate(BaseModel):
     """Admin-only payload for rotating a user's role.
 
     Separate from ``UserUpdate`` so ``role`` never leaks into a self-service
-    update path — having one shared model across trust boundaries is the
-    exact defense-in-depth gap flagged in the schema audit (S2).
+    update path - one shared model across trust boundaries would be a
+    defense-in-depth gap.
     """
 
     model_config = ConfigDict(extra="forbid")

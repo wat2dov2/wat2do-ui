@@ -77,7 +77,7 @@ def create_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
 
     Raises ``ConflictError`` (mapped to 409) if *data.id* already exists.
 
-    D18: the explicit pre-check + INSERT is TOCTOU-vulnerable — two
+    D18: the explicit pre-check + INSERT is TOCTOU-vulnerable - two
     parallel POSTs with the same client-supplied ``id`` both see no
     existing row and both proceed to INSERT.  The second insert raises
     ``APIError`` with ``PG_UNIQUE_VIOLATION``.  We catch that and map it
@@ -109,7 +109,7 @@ def update_qr_code(data: QrCodeCreate, *, created_by: str) -> QrCodeResponse:
 
     Caller MUST have verified ownership (or admin status) before calling
     this.  *created_by* is the trusted value that will be written to the
-    row — the PATCH router passes ``existing.created_by`` so the
+    row - the PATCH router passes ``existing.created_by`` so the
     original owner cannot be overwritten.  Raises ``NotFoundError`` if
     the row does not exist.
     """
@@ -149,7 +149,7 @@ def activate_poster_and_record_scan(
         .execute()
     )
     if not r.data:
-        # Another request won the race — this poster was already activated.
+        # Another request won the race - this poster was already activated.
         return None
     sb.table(QR_CODE_SCANS).insert(
         {
@@ -255,7 +255,6 @@ def list_qr_codes(
     if created_by:
         q = q.eq("created_by", created_by)
     if school:
-        # Get users belonging to the school
         user_rows = get_sb().table("users").select("id").eq("school", school).execute()
         user_ids = [str(row["id"]) for row in user_rows.data or []]
         if user_ids:

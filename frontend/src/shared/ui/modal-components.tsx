@@ -1,14 +1,10 @@
 /**
- * Reusable Modal Components
- * Reduces Tailwind class duplication across modals
+ * Shared modal layout primitives to reduce Tailwind class duplication.
  */
 
 import React from "react";
 import { cn } from "@/shared/lib/utils";
 
-/**
- * Modal Section - Common section wrapper
- */
 export function ModalSection({
   className,
   children,
@@ -24,9 +20,6 @@ export function ModalSection({
   );
 }
 
-/**
- * Info Row - Common info display pattern
- */
 export function InfoRow({
   label,
   value,
@@ -51,9 +44,6 @@ export function InfoRow({
   );
 }
 
-/**
- * Modal Content Wrapper - Standardized content padding
- */
 export function ModalContentWrapper({
   className,
   children,
@@ -69,9 +59,6 @@ export function ModalContentWrapper({
   );
 }
 
-/**
- * Modal Header Wrapper - Standardized header padding
- */
 export function ModalHeaderWrapper({
   className,
   children,
@@ -87,9 +74,6 @@ export function ModalHeaderWrapper({
   );
 }
 
-/**
- * Empty State - Common empty state pattern
- */
 export function EmptyState({
   icon: Icon,
   title,
@@ -117,9 +101,6 @@ export function EmptyState({
   );
 }
 
-/**
- * Info Section - Standardized info section with border separator
- */
 export function InfoSection({
   children,
   className,
@@ -142,9 +123,6 @@ export function InfoSection({
   );
 }
 
-/**
- * Section Title - Standardized section title
- */
 export function SectionTitle({
   children,
   className,
@@ -163,9 +141,6 @@ export function SectionTitle({
   );
 }
 
-/**
- * Centered Icon Container - Standardized icon container for success/status states
- */
 export function CenteredIconContainer({
   icon: Icon,
   size = "md",
@@ -202,9 +177,6 @@ export function CenteredIconContainer({
   );
 }
 
-/**
- * Food Tags Container - Standardized food tags display
- */
 export function FoodTagsContainer({
   children,
   className,
@@ -223,9 +195,6 @@ export function FoodTagsContainer({
   );
 }
 
-/**
- * Food Tag - Individual food tag
- */
 export function FoodTag({
   children,
   className,
@@ -244,9 +213,6 @@ export function FoodTag({
   );
 }
 
-/**
- * Flex Row - Standardized flex row with gap
- */
 export function FlexRow({
   children,
   className,
@@ -269,9 +235,6 @@ export function FlexRow({
   );
 }
 
-/**
- * Flex Col - Standardized flex column with gap
- */
 export function FlexCol({
   children,
   className,

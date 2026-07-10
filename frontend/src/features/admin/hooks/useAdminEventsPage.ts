@@ -1,8 +1,3 @@
-/**
- * Admin Events Page Hook
- * Manages state and logic for AdminEventsPage.
- */
-
 import { useMemo, useEffect, useState } from "react";
 import {
   filterAdminEvents,
@@ -40,7 +35,6 @@ export function useAdminEventsPage({
     );
   }, [fetchReportedEventIds]);
 
-  // Get eventId from URL
   const eventIdParam = searchParams.get(QP.EVENT_ID);
   const selectedEvent = useMemo(() => {
     if (eventIdParam) {
@@ -52,7 +46,6 @@ export function useAdminEventsPage({
     return null;
   }, [eventIdParam, events]);
 
-  // Check URL parameters on mount for highlighting
   useEffect(() => {
     if (!eventIdParam) return;
     const eventId = parseInt(eventIdParam, 10);
@@ -74,12 +67,10 @@ export function useAdminEventsPage({
     };
   }, [eventIdParam]);
 
-  // Get unique categories using API
   const categories = useMemo(() => {
     return getEventCategories(events);
   }, [events]);
 
-  // Filter events
   const filteredEvents = useMemo(() => {
     return filterAdminEvents(events, {
       searchQuery,
@@ -89,7 +80,6 @@ export function useAdminEventsPage({
     });
   }, [events, searchQuery, selectedCategory, showReportedOnly, reportedEventIds]);
 
-  // Pagination
   const {
     currentPage,
     setCurrentPage,
@@ -105,7 +95,6 @@ export function useAdminEventsPage({
   };
 
   return {
-    // State
     searchQuery,
     selectedCategory,
     showReportedOnly,
@@ -119,7 +108,6 @@ export function useAdminEventsPage({
     totalPages,
     searchParams,
     setSearchParams,
-    // Actions
     setSearchQuery: (query: string) => {
       setSearchQueryState(query);
       setCurrentPage(1);

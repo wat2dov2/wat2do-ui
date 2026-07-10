@@ -39,11 +39,11 @@ export interface UserProfile {
   school: string;
   /** Mirrors the backend ``role`` column ("user" | "admin"). Defaults to "user". */
   role: "user" | "admin";
-  /** True when the user owns at least one club. */
+  /** True when the user owns at least one organization. */
   hasOrganization: boolean;
-  /** Clubs associated with the user. */
+  /** Organizations associated with the user. */
   clubs: UserOrganizationSummary[];
-  /** Currently selected associated club, if any. */
+  /** Currently selected associated organization, if any. */
   organizationId: number | null;
   organizationName: string | null;
 }
@@ -51,7 +51,7 @@ export interface UserProfile {
 // ── In-memory caches ────────────────────────────────────────────────
 // Avoid re-parsing localStorage JSON on every read (ProtectedRoute,
 // readAuthFlags, getUserId on every EventsPage render, etc.). `undefined`
-// means "not loaded" — the next read will populate from localStorage.
+// means "not loaded" - the next read will populate from localStorage.
 // Writes invalidate immediately; cross-tab "storage" events invalidate
 // the cache lazily so the next reader sees the new value.
 

@@ -62,7 +62,7 @@ def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
 def _load_events_meta(event_ids: list[int]) -> dict[int, EventTimeMeta]:
     """Load minimal event metadata for decay calculation.
 
-    Only ``added_at`` is read — the comment in the scoring loop above
+    Only ``added_at`` is read - the comment in the scoring loop above
     documents why decay keys off catalog age, not ``dtstart_utc``.
     Dropping the column from the select also avoids touching event_dates
     when the decay model doesn't actually need an event's date.

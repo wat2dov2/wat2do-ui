@@ -2,7 +2,7 @@ import { API_BASE_URL } from "@/shared/config/api";
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 
-// In-memory access token — never stored in localStorage
+// In-memory access token - never stored in localStorage
 let accessToken: string | null = null;
 let authSessionInvalid = false;
 let authFailureNotified = false;
@@ -80,7 +80,7 @@ export function getApiErrorMessage(
 //
 // When a request returns 401, we attempt a single token refresh via the
 // httpOnly cookie and retry the original request. A shared promise
-// prevents concurrent refresh calls — all in-flight 401s wait on the
+// prevents concurrent refresh calls - all in-flight 401s wait on the
 // same refresh attempt.
 
 let refreshPromise: Promise<boolean> | null = null;
@@ -104,7 +104,7 @@ interface TokenRefreshResponse {
  * if the backend still rejects the fresh token, re-fetching /users/me here
  * would recursively create another refresh cycle.
  *
- * Lives here (not in auth.api.ts) to avoid an import cycle — auth.api.ts
+ * Lives here (not in auth.api.ts) to avoid an import cycle - auth.api.ts
  * already depends on apiClient.
  */
 let onAfterRefresh: (() => void) | null = null;
@@ -155,14 +155,14 @@ export function refreshAccessToken(): Promise<boolean> {
 }
 
 /**
- * Called when token refresh fails — clears stale local auth state and notifies
+ * Called when token refresh fails - clears stale local auth state and notifies
  * subscribers. ProtectedRoute handles navigation for protected pages; public
  * pages should not be yanked to login by a background/auth-gated request.
  * Exported for use by uploadService which makes raw fetch calls.
  *
  * Skips the redirect when there's no cached email, since that means the
  * user was never logged in (or was already cleared by initializeAuth's
- * refresh failure) — bouncing an anonymous visitor from a public page to
+ * refresh failure) - bouncing an anonymous visitor from a public page to
  * /login on the first auth-gated fetch is a bad UX.
  */
 export function handleAuthFailure(): void {
@@ -215,7 +215,7 @@ async function request<T>(
 
   // Include credentials on every endpoint that sets, reads, or clears the
   // refresh cookie. For cross-origin requests the browser drops Set-Cookie
-  // from the response unless credentials is "include" — so login/signup
+  // from the response unless credentials is "include" - so login/signup
   // need this to *receive* the cookie, refresh needs it to send+rotate,
   // and logout/reset-password need it for the Set-Cookie that clears it.
   // The cookie's path=/auth/refresh scope still prevents it from being

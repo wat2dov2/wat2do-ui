@@ -18,15 +18,13 @@ import os
 import sys
 from pathlib import Path
 
-# Add backend root to path so service imports resolve when invoked as a
-# script from inside backend/.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
 
-import core.logging  # noqa: F401, E402  — triggers basicConfig for standalone execution
+import core.logging  # noqa: F401, E402  - triggers basicConfig for standalone execution
 from services.scraper.directory_scraper import (  # noqa: E402
     DirectoryConfig,
     run_directory_pipeline,

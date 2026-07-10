@@ -1,7 +1,7 @@
 /**
  * All localStorage / sessionStorage key strings used by the app.
  *
- * Single source of truth — prevents silent key drift and makes it easy
+ * Single source of truth - prevents silent key drift and makes it easy
  * to audit what the app persists on the device.
  *
  * Allowed per AGENTS.md localStorage policy:
@@ -11,7 +11,7 @@
  */
 
 export const STORAGE_KEYS = {
-  // Auth (cache only — backend is source of truth)
+  // Auth (cache only - backend is source of truth)
   USER_EMAIL: "userEmail",
   USER_PROFILE: "userProfile",
 

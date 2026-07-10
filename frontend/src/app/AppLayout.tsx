@@ -86,7 +86,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </div>
 
-      {/* Floating Dock — bottom center */}
       <div className="fixed bottom-4 left-1/2 z-50 w-fit max-w-[calc(100vw-16px)] -translate-x-1/2">
         <FloatingDock items={dockItems} />
       </div>

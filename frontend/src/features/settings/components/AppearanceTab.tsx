@@ -1,8 +1,3 @@
-/**
- * AppearanceTab Component
- * UI component for appearance preferences
- */
-
 import { useTranslation } from "react-i18next";
 import { Grid3x3, Calendar, MapPin } from "@/shared/ui/doodle-icons";
 import { Card, CardContent } from "@/shared/ui/card";

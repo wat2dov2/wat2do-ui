@@ -8,11 +8,8 @@ import { translateCategory } from "@/shared/utils/event";
 import type { Event, ViewMode } from "@/shared/types";
 
 /**
- * Hook for search and filtering orchestration.
- *
- * - State management → useFilterState (shallow-subscribed to the store)
- * - Business logic → searchService
- * - UI state (expanded sections) lives in components
+ * Search/filter orchestration: useFilterState for store state, searchService for logic.
+ * UI expand/collapse state lives in components.
  */
 export interface UseSearchOptions {
   events: Event[];
@@ -31,8 +28,6 @@ export function useSearch({
 
   const filterState = useFilterState(profileCompleted);
 
-  // Clearing filters goes through the URL-backed action returned by
-  // useFilterState so the address bar and store stay in lockstep.
   const handleClearAllFilters = filterState.clearAllFilters;
 
   const availableOrganizations = useMemo(() => {
@@ -46,12 +41,12 @@ export function useSearch({
     return Array.from(orgs).sort();
   }, [events]);
 
-  // Filter + sort events.
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
       searchQuery: filterState.searchQuery,
       savedFilter: filterState.savedFilter,
       freeFoodFilter: filterState.freeFoodFilter,
+      cancelledFilter: filterState.cancelledFilter,
       selectedDays: filterState.selectedDays,
       priceRange: filterState.priceRange,
       selectedLocations: filterState.selectedLocations,
@@ -68,6 +63,7 @@ export function useSearch({
     events,
     filterState.searchQuery,
     filterState.freeFoodFilter,
+    filterState.cancelledFilter,
     filterState.selectedDays,
     filterState.priceRange,
     filterState.selectedLocations,
@@ -83,7 +79,6 @@ export function useSearch({
     filterState.addedWithin24h,
   ]);
 
-  // Calculate filter count
   const filterCount = useMemo(
     () =>
       getFilterCounts({
@@ -96,6 +91,7 @@ export function useSearch({
         registration: filterState.registration,
         selectedOrganizations: filterState.selectedOrganizations,
         freeFoodFilter: filterState.freeFoodFilter,
+        cancelledFilter: filterState.cancelledFilter,
         savedFilter: filterState.savedFilter,
         addedWithin24h: filterState.addedWithin24h,
         viewMode,
@@ -110,6 +106,7 @@ export function useSearch({
       filterState.registration,
       filterState.selectedOrganizations,
       filterState.freeFoodFilter,
+      filterState.cancelledFilter,
       filterState.savedFilter,
       filterState.addedWithin24h,
       viewMode,
@@ -153,24 +150,13 @@ export function useSearch({
   );
 
   return {
-    // Filter state from useFilterState
     ...filterState,
-
-    // Filter option lists (data only)
     categoryOptions,
     foodOptions,
     dayOptions,
-
-    // Filtered and sorted events
     filteredEvents,
-
-    // Filter count
     filterCount,
-
-    // Clear all filters
     handleClearAllFilters,
-
-    // Available organizations
     availableOrganizations,
   };
 }

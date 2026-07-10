@@ -2,12 +2,12 @@
 
 ``GET /calendar/feed/{token}.ics`` emits a VCALENDAR containing every
 event the user has saved.  Subscribed calendar clients (Google, Apple,
-Outlook) poll this URL and render VEVENTs as calendar entries — time
+Outlook) poll this URL and render VEVENTs as calendar entries - time
 changes and new saves propagate on the client's next poll.
 
 The token is stored as an opaque column on ``users`` and generated
 lazily on the first ``GET /calendar/token`` call.  ``regenerate_token``
-rotates — any existing subscriptions break until the user re-adds the
+rotates - any existing subscriptions break until the user re-adds the
 new URL (that's the point of rotation).
 """
 
@@ -52,7 +52,7 @@ def regenerate_token(user_id: str) -> str:
     """Rotate the user's calendar-feed token.
 
     Any existing calendar subscriptions break until the user re-adds
-    the new URL — intentional leak containment.
+    the new URL - intentional leak containment.
     """
     return _generate_and_store_token(user_id)
 
@@ -96,7 +96,7 @@ def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
 
     PostgREST ``in_`` has practical length limits, so chunk the ids.
     Occurrences are batched separately (one query per chunk) and joined
-    in Python — avoids an N+1 fetch for a feed with many saved events.
+    in Python - avoids an N+1 fetch for a feed with many saved events.
     """
     if not event_ids:
         return []
@@ -114,9 +114,8 @@ def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
     for eid in event_ids:
         row = rows_by_id.get(eid)
         if row is not None:
-            # Calendar feed only iterates ``occurrences``; the primary date
-            # convenience fields are unused, so hydrate_event leaving them
-            # None (no _pick_primary) is fine here.
+            # Calendar feed only iterates ``occurrences``; hydrate_event
+            # attaches that list and does not invent a primary date.
             ordered.append(event_query.hydrate_event(row, occ_by_event.get(eid, []), EventResponse))
     return ordered
 
@@ -124,7 +123,7 @@ def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
 def _event_to_vevents(event: EventResponse, dtstamp: datetime) -> list[ICalEvent]:
     """Emit one VEVENT per occurrence on the event.
 
-    Events with zero occurrences are skipped — RFC 5545 requires DTSTART
+    Events with zero occurrences are skipped - RFC 5545 requires DTSTART
     on every VEVENT, and a calendar entry with no time is nonsensical.
     Each VEVENT carries a UID that combines the event id with the
     occurrence id so calendar clients distinguish recurrences without
@@ -138,7 +137,7 @@ def _event_to_vevents(event: EventResponse, dtstamp: datetime) -> list[ICalEvent
     try:
         tzinfo = ZoneInfo(tzid)
     except ZoneInfoNotFoundError:
-        log.warning("ZoneInfo database missing %r — using UTC for event %d", tzid, event.id)
+        log.warning("ZoneInfo database missing %r - using UTC for event %d", tzid, event.id)
         tzinfo = timezone.utc
 
     frontend = _frontend_base_url()

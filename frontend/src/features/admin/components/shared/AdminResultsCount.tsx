@@ -1,8 +1,3 @@
-/**
- * Admin Results Count Component
- * Displays filtered results count using the same heading style as events/org pages.
- */
-
 import type { ReactNode } from "react";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 

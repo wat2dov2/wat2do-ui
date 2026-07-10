@@ -8,7 +8,7 @@ _DEV_ORIGINS = [
 
 
 class Settings(BaseSettings):
-    # `extra="ignore"` — .env holds some shell-only vars (e.g. DATABASE_URL,
+    # `extra="ignore"` - .env holds some shell-only vars (e.g. DATABASE_URL,
     # read by the Supabase CLI) that the Python runtime doesn't need as
     # typed fields. Ignoring them keeps Settings focused on what the app
     # actually reads.
@@ -26,11 +26,11 @@ class Settings(BaseSettings):
     openai_timeout: int = 15
     openai_temperature_precise: float = 0.3
     openai_temperature_creative: float = 0.7
-    # Apify token for the Instagram scraper (services/wat2do).
+    # Apify token for the Instagram scraper (services/scraper).
     # Empty string => the scraping pipeline raises at startup.  Set in
     # GitHub repo secrets for the process-single-user workflow.
     apify_api_token: str = ""
-    # OpenAI model used for vision-based event extraction in services/wat2do.
+    # OpenAI model used for vision-based event extraction in services/scraper.
     # Kept separate from ``openai_model`` so we can swap the extraction model
     # (vision-capable) without affecting non-vision call sites.
     openai_extraction_model: str = "gpt-4o-mini"
@@ -50,11 +50,11 @@ class Settings(BaseSettings):
     # ``X-Forwarded-For`` / ``X-Real-IP`` headers instead of
     # ``request.client.host``.
     #
-    # **Security warning (P2):** The default is *loopback only*.  A broad
+    # **Security warning:** The default is *loopback only*.  A broad
     # CIDR range (e.g. the whole Docker bridge ``172.16.0.0/12``) is a
     # spoofing vector: any co-tenant / side-car container with an IP in
     # that range can forge ``X-Forwarded-For`` and impersonate an
-    # arbitrary client — bypassing every rate-limit keyed on IP.
+    # arbitrary client - bypassing every rate-limit keyed on IP.
     # Deployers **must** explicitly list the proxy's IP (ideally a ``/32``)
     # via the ``TRUSTED_PROXIES`` env var (JSON list); never add a range
     # that shares peers with untrusted workloads.

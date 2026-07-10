@@ -1,4 +1,4 @@
-"""End-to-end pipeline integration tests for services/wat2do.
+"""End-to-end pipeline integration tests for services/scraper.
 
 These complement the per-helper unit tests by exercising the full
 ``run_pipeline`` orchestrator with mocked Apify, OpenAI, storage, and DB.
@@ -10,7 +10,8 @@ Mocks installed:
       (skip the storage round-trip).
     * ``extract_events_from_post``     -> returns canned events with
       multiple occurrences.
-    * ``find_match``                   -> returns None (no dedup hits).
+    * ``find_candidates``              -> returns [] (no candidates).
+    * ``reconcile_events``             -> returns Pass 1 events unchanged.
     * ``get_sb()`` on event_writer + event_date_service + workflow_run_service
       -> patched to ``fake_sb``; the test asserts on the recorded
       builder calls afterwards.
@@ -21,7 +22,6 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
-from services.scraper import event_writer
 from services.scraper import pipeline as pipeline_module
 
 
@@ -34,7 +34,7 @@ def _apify_post(handle: str = "uwteaorganization") -> dict:
     return {
         "url": "https://www.instagram.com/p/ABC123/",
         "ownerUsername": handle,
-        "caption": "Tea tasting series — Mondays in December",
+        "caption": "Tea tasting series - Mondays in December",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "displayUrl": "https://cdn/uwteaorganization-1.jpg",
     }
@@ -44,7 +44,7 @@ def _extracted_event_with_three_occurrences() -> list[dict]:
     return [
         {
             "title": "Tea Tasting Series",
-            "description": "Tea tasting series — Mondays in December",
+            "description": "Tea tasting series - Mondays in December",
             "location": "SLC 3223",
             "organization": "UW Tea Organization",
             "category": "Arts & Culture",
@@ -95,7 +95,12 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
         "extract_events_from_post",
         lambda **_kw: _extracted_event_with_three_occurrences(),
     )
-    monkeypatch.setattr(event_writer, "find_match", lambda **_kw: None)
+    monkeypatch.setattr(pipeline_module, "find_candidates", lambda **_kw: [])
+    monkeypatch.setattr(
+        pipeline_module,
+        "reconcile_events",
+        lambda **kw: kw["extracted_events"],
+    )
 
     # Smart side_effect: dispatch on the latest builder method called.
     # ``insert`` returns a row that satisfies whichever Pydantic model
@@ -106,7 +111,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
     def _smart_execute():
         # Walk back through the recent fake_sb calls to figure out what
         # the active query is doing. The most recent insert/update/etc.
-        # call records its arg in fake_sb.<method>.call_args_list — we
+        # call records its arg in fake_sb.<method>.call_args_list - we
         # check those rather than trying to thread state through queue.
         if fake_sb.insert.call_count > len(inserts):
             payload = fake_sb.insert.call_args_list[-1][0][0]
@@ -135,7 +140,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
                 # events row insert
                 return MagicMock(data=[{**payload, "id": 7}], count=0)
             elif isinstance(payload, list):
-                # event_dates bulk insert — echo with fabricated ids/times.
+                # event_dates bulk insert - echo with fabricated ids/times.
                 rows = [
                     {
                         "id": i,
@@ -171,7 +176,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
                 ],
                 count=0,
             )
-        # Pure read (existing_shortcodes, organizations lookup) — empty result.
+        # Pure read (existing_shortcodes, organizations lookup) - empty result.
         return MagicMock(data=[], count=0)
 
     fake_sb.execute.side_effect = _smart_execute

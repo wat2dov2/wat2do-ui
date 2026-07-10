@@ -57,12 +57,10 @@ export function CommandPalette({
       <CommandList>
         <CommandEmpty>{t("events.noResults")}</CommandEmpty>
 
-        {/* Search Section */}
         <CommandGroup heading={t("common.search")}>
           <CommandItem
             onSelect={() => {
               onOpenChange(false);
-              // Focus the main search input
               const searchInput = document.querySelector(
                 `input[placeholder="${t("search.placeholder")}"]`
               ) as HTMLInputElement;
@@ -77,7 +75,6 @@ export function CommandPalette({
 
         <CommandSeparator />
 
-        {/* Commands Section */}
         <CommandGroup heading={t("commands.commands")}>
           <CommandItem
             onSelect={() => {
@@ -114,7 +111,6 @@ export function CommandPalette({
 
         <CommandSeparator />
 
-        {/* Actions Section */}
         <CommandGroup heading={t("common.actions")}>
           {canSubmitEvents && (
             <CommandItem
@@ -141,14 +137,12 @@ export function CommandPalette({
 
         <CommandSeparator />
 
-        {/* Personal Section */}
         <CommandGroup heading={t("commands.personal")}>
           {personalItems}
         </CommandGroup>
 
         <CommandSeparator />
 
-        {/* Personal Settings Section */}
         <CommandGroup heading={t("commands.personalSettings")}>
           <CommandItem
             onSelect={() => {

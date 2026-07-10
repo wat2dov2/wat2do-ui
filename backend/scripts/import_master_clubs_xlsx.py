@@ -3,7 +3,7 @@
 Supabase ``organizations`` table.
 
 Only rows whose ``IG Source`` is one of ``{found, confirmed, profile_page}``
-(prefix-matched against ``|``-separated annotations) are imported — the rest
+(prefix-matched against ``|``-separated annotations) are imported - the rest
 are speculative matches and will be re-imported once their handles are
 verified.
 
@@ -193,7 +193,6 @@ def _validate_rows(
             )
             continue
 
-        # Filter out invalid categories, keep the valid ones
         valid_categories = []
         for category in row["categories"]:
             if category in ORGANIZATION_CATEGORIES:
@@ -207,7 +206,6 @@ def _validate_rows(
                 "Row %s: organization_name truncated to %s chars", idx, ORGANIZATION_NAME_MAX
             )
 
-        # Dedup dynamically to maintain idempotency and avoid aborting
         key = (canonical_school, organization_name)
         if key in seen:
             skipped["duplicate_school_name"] += 1
@@ -246,8 +244,7 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
     if not schools:
         return {}
     existing: dict[tuple[str, str], dict] = {}
-    # Supabase / postgrest doesn't paginate by default — explicit limit + range
-    # keeps this safe past the default 1000-row cap.
+    # Explicit limit + range: PostgREST defaults to a 1000-row cap.
     page_size = 1000
     offset = 0
     while True:
@@ -276,7 +273,6 @@ def _diff(planned: dict, existing: dict) -> dict | None:
     for field in fields:
         old = existing.get(field)
         new = planned[field]
-        # categories: order-insensitive equality
         if field == "categories":
             old_set = set(old or [])
             new_set = set(new or [])
@@ -314,7 +310,7 @@ def main() -> int:
     if errors:
         for err in errors:
             log.error(err)
-        log.error("Aborting — fix the xlsx (or the schools migration) and re-run.")
+        log.error("Aborting - fix the xlsx (or the schools migration) and re-run.")
         return 2
 
     log.info("xlsx rows kept after IG-source filter: %s", len(kept))
@@ -354,7 +350,6 @@ def main() -> int:
 
     if not args.apply:
         log.info("Dry run only.  Pass --apply to write.")
-        # Show first few example diffs to help the operator sanity-check.
         for cid, planned, diff in to_update[:5]:
             log.info(
                 "update example id=%s school=%r name=%r diff=%s",
@@ -365,8 +360,8 @@ def main() -> int:
             )
         return 0
 
-    # Apply.  Insert in batches; update one row at a time (Supabase doesn't
-    # batch updates with different field values cleanly).
+    # Insert in batches; update one row at a time (Supabase doesn't batch
+    # updates with different field values cleanly).
     inserted = 0
     if to_insert:
         batch_size = 200

@@ -17,7 +17,7 @@ Strategy:
    ``expression()``, ``-moz-binding``, ``behavior:``).
 6. Re-serialize the cleaned tree.
 
-This runs at upload time — the stored file is always the sanitized
+This runs at upload time - the stored file is always the sanitized
 version, so the attack surface is eliminated regardless of how
 Supabase storage serves the file.
 """
@@ -86,11 +86,11 @@ _URI_ATTRS: set[str] = {
 # expressions, or trigger XSS.  Applied to both <style> element text
 # and inline style="..." attributes.
 #
-# @import url(...)       — loads external stylesheets (data exfil)
-# url(...)               — loads external resources (fonts, backgrounds)
-# expression(...)        — IE CSS expression (arbitrary JS)
-# -moz-binding: url(...) — old Firefox XBL bindings (arbitrary JS)
-# behavior: url(...)     — IE DHTML behaviors (arbitrary JS)
+# @import url(...)       - loads external stylesheets (data exfil)
+# url(...)               - loads external resources (fonts, backgrounds)
+# expression(...)        - IE CSS expression (arbitrary JS)
+# -moz-binding: url(...) - old Firefox XBL bindings (arbitrary JS)
+# behavior: url(...)     - IE DHTML behaviors (arbitrary JS)
 #
 # We strip lines/declarations matching these rather than removing the
 # entire <style>, because legitimate SVGs (Illustrator, Inkscape) rely
@@ -112,10 +112,10 @@ _CSS_DANGEROUS_RE = re.compile(
 # dangerous schemes or encoding tricks cannot bypass it.
 #
 # Allowed:
-#   - http: / https:  — normal links
-#   - data:image/<raster> — inline raster images (png, jpeg, webp, gif)
-#     (data:image/svg+xml is NOT allowed — nested SVGs can contain <script>)
-#   - Fragment-only (#id) and relative paths — safe, no scheme at all
+#   - http: / https:  - normal links
+#   - data:image/<raster> - inline raster images (png, jpeg, webp, gif)
+#     (data:image/svg+xml is NOT allowed - nested SVGs can contain <script>)
+#   - Fragment-only (#id) and relative paths - safe, no scheme at all
 #
 # The scheme is extracted *after* stripping all ASCII whitespace from the
 # value prefix, defeating attacks like "java\nscript:" or "java&#9;script:"
@@ -131,7 +131,7 @@ _SAFE_URI_SCHEME_RE = re.compile(
 _SCHEME_WHITESPACE_RE = re.compile(r"[\t\n\r ]+")
 
 # Maximum prefix length to inspect when extracting the scheme.
-# "data:image/svg+xml;..." is ~22 chars — 40 is generous.
+# "data:image/svg+xml;..." is ~22 chars - 40 is generous.
 _SCHEME_PREFIX_LEN = 40
 
 # Namespace-unaware local-name extraction: "{http://...}tagname" -> "tagname"
@@ -152,7 +152,7 @@ def _decode_head(raw: bytes, byte_limit: int) -> str | None:
     """Decode ``raw[:byte_limit]`` to text, detecting BOM / UTF-16.
 
     Returns ``None`` if the bytes cannot be decoded under any plausible
-    encoding.  SVG files are XML and therefore valid UTF-8 or UTF-16 —
+    encoding.  SVG files are XML and therefore valid UTF-8 or UTF-16 -
     binary formats (PNG, JPEG, WebP, GIF) fail decoding with ``strict``
     and are correctly rejected.
     """
@@ -196,8 +196,8 @@ def _decode_head(raw: bytes, byte_limit: int) -> str | None:
 # single preamble token:
 #   * whitespace run  (\s+)
 #   * XML comment     (<!-- ... -->)
-#   * processing-instruction (<? ... ?>) — INCLUDING the XML declaration
-#   * CDATA section   (<![CDATA[ ... ]]>)  — not typical at top of SVG
+#   * processing-instruction (<? ... ?>) - INCLUDING the XML declaration
+#   * CDATA section   (<![CDATA[ ... ]]>)  - not typical at top of SVG
 #     but present in some exporters
 _PREAMBLE_TOKEN_RE = re.compile(
     r"""
@@ -216,7 +216,7 @@ def _strip_doctype(text: str, pos: int) -> int:
     *pos* unchanged if no DOCTYPE is present.
 
     The naive implementation ``text.find(">")`` is fooled by a DOCTYPE
-    whose internal subset contains ``<!ENTITY x "foo">`` — the first
+    whose internal subset contains ``<!ENTITY x "foo">`` - the first
     ``>`` encountered is the entity close, not the DOCTYPE close.  We
     count ``[``/``]`` depth so the real DOCTYPE close is identified.
     """
@@ -235,7 +235,7 @@ def _strip_doctype(text: str, pos: int) -> int:
         elif c == ">" and depth == 0:
             return i + 1
         i += 1
-    # No closing '>' in the inspected window — treat as "malformed,
+    # No closing '>' in the inspected window - treat as "malformed,
     # still consume the rest so the fallback isn't stuck".
     return n
 
@@ -303,7 +303,7 @@ def looks_like_svg(raw: bytes) -> bool:
         # sanitizer (which will reject it with a clearer error).
         return True
     except ET.ParseError:
-        # Truncated head, non-XML prefix, or malformed document — fall
+        # Truncated head, non-XML prefix, or malformed document - fall
         # back to the byte-level heuristic below.
         pass
 
@@ -423,7 +423,7 @@ def _clean_element(el: ET.Element) -> None:
             continue
 
         # URI attributes: only allow known-safe schemes.  Strip
-        # whitespace from the scheme prefix first — browsers ignore
+        # whitespace from the scheme prefix first - browsers ignore
         # whitespace in schemes, so "java\nscript:" executes as
         # "javascript:" but would bypass a naive regex.
         if attr_lower in _URI_ATTRS:

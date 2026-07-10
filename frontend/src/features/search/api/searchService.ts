@@ -3,17 +3,14 @@ import { getPrimaryOccurrence } from "@/shared/utils/date";
 import { getEventCategory } from "@/shared/utils/event";
 
 /**
- * Search Service
- * Core search, filter, and sort operations
- *
- * This service is domain-agnostic and can filter any collection
- * that matches the Event interface structure.
+ * Search, filter, and sort operations for Event collections.
  */
 
 export interface SearchFilters {
   searchQuery: string;
   savedFilter: boolean;
   freeFoodFilter: boolean;
+  cancelledFilter: boolean;
   selectedDays: string[];
   priceRange: { min: string; max: string };
   selectedLocations: string[];
@@ -51,22 +48,23 @@ export function filterEvents(
     const dayOfWeek = getEventDayOfWeek(event);
     const needsRegistration = event.registration ?? false;
 
-    // Search query filter
     if (q && !event.title.toLowerCase().includes(q)) {
       return false;
     }
 
-    // Saved filter
     if (savedSet && !savedSet.has(event.id)) {
       return false;
     }
 
-    // Free-food quick filter
     if (filters.freeFoodFilter && (food.length === 0 || price > 0)) {
       return false;
     }
 
-    // Added within 24 hours quick filter
+    // Cancelled quick filter - opt-in; default feed still shows cancelled events.
+    if (filters.cancelledFilter && !event.cancelled) {
+      return false;
+    }
+
     if (filters.addedWithin24h) {
       const addedTime = new Date(event.added_at).getTime();
       const cutoff = Date.now() - 24 * 60 * 60 * 1000;
@@ -75,12 +73,11 @@ export function filterEvents(
       }
     }
 
-    // Day-of-week filter
     if (filters.selectedDays.length > 0 && !filters.selectedDays.includes(dayOfWeek)) {
       return false;
     }
 
-    // Price range — only applies when the freeFood quick filter is off.
+    // Price range only applies when the freeFood quick filter is off.
     if (!filters.freeFoodFilter) {
       if (filters.priceRange.min && price < parseFloat(filters.priceRange.min)) {
         return false;
@@ -90,7 +87,6 @@ export function filterEvents(
       }
     }
 
-    // Location substring filter
     if (
       filters.selectedLocations.length > 0 &&
       !filters.selectedLocations.some((loc) => (event.location ?? "").includes(loc))
@@ -98,7 +94,6 @@ export function filterEvents(
       return false;
     }
 
-    // Food filter
     if (
       filters.selectedFoods.length > 0 &&
       !food.some((f) => filters.selectedFoods.includes(f))
@@ -106,7 +101,6 @@ export function filterEvents(
       return false;
     }
 
-    // Category filter
     if (
       filters.selectedCategories.length > 0 &&
       !filters.selectedCategories.includes(category)
@@ -114,12 +108,10 @@ export function filterEvents(
       return false;
     }
 
-    // Registration filter
     if (filters.registration && !needsRegistration) {
       return false;
     }
 
-    // Organization filter
     if (
       filters.selectedOrganizations &&
       filters.selectedOrganizations.length > 0 &&
@@ -187,7 +179,7 @@ export function sortEvents(
   return sorted;
 }
 
-// Canonical home: shared/utils/filter.ts — re-exported for feature consumers
+// Canonical home: shared/utils/filter.ts - re-exported for feature consumers
 export { getFilterCounts } from "@/shared/utils/filter";
 function getEventDayOfWeek(event: Event): string {
   const primary = getPrimaryOccurrence(event);

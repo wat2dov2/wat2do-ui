@@ -1,7 +1,7 @@
-"""Unit tests for services/wat2do/image_uploader.
+"""Unit tests for services/scraper/image_uploader.
 
 Focus on the SSRF allowlist (``_is_safe_image_url``). The download +
-upload path is intentionally not exercised here — that wires through
+upload path is intentionally not exercised here - that wires through
 real httpx + Supabase Storage and is covered by the pipeline integration
 test instead.
 """
@@ -94,6 +94,6 @@ def test_garbage_url_rejected():
 
 def test_upload_returns_none_for_unsafe_url():
     """End-to-end: ``upload_image_from_url`` short-circuits for unsafe URLs."""
-    # No need to mock httpx — _is_safe_image_url returns False before fetch.
+    # No need to mock httpx - _is_safe_image_url returns False before fetch.
     assert image_uploader.upload_image_from_url("https://attacker.example/x.jpg") is None
     assert image_uploader.upload_image_from_url("http://localhost:8000/admin") is None

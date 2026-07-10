@@ -12,7 +12,7 @@ interface UsePostersFiltersOptions {
 
 /**
  * Hook for managing filters on a posters page (time range, scan stats, QR code map).
- * Shared by admin and club-panel posters pages.
+ * Shared by admin and organization-panel posters pages.
  */
 export function usePostersFilters({
   backendPosters,
@@ -23,7 +23,6 @@ export function usePostersFilters({
   const qrCodes = backendPosters;
   const allScans = backendScans;
 
-  // Filter scans by time range
   const filteredScans = useMemo(() => {
     const now = new Date();
     let startDate: Date;
@@ -67,7 +66,6 @@ export function usePostersFilters({
     });
   }, [allScans, timeFilter]);
 
-  // Calculate stats for each QR code (from allScans, which may be backend or localStorage)
   const qrCodesWithStats = useMemo(() => {
     return qrCodes.map((qr) => {
       const scans = allScans.filter((s) => s.qrCodeId === qr.id);
@@ -80,13 +78,9 @@ export function usePostersFilters({
     });
   }, [qrCodes, allScans]);
 
-  // Return all QR codes with stats (no search filter)
   const filteredQRCodes = qrCodesWithStats;
-
-  // Return all filtered scans (no search filter)
   const scansMatchingPosterSearch = filteredScans;
 
-  // Get QR code names for scans table
   const qrCodeMap = useMemo(() => {
     const map = new Map<string, string>();
     qrCodes.forEach((qr) => map.set(qr.id, qr.name));

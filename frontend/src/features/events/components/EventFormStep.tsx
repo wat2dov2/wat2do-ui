@@ -145,9 +145,7 @@ export function EventFormStep({
   return (
     <EventFormProvider value={formContextValue}>
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Form Panel */}
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
-          {/* Header with Tabs */}
           <div className="mb-5 sm:mb-7">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
               <div className="flex min-h-9 min-w-0 flex-1 items-center gap-2 pr-10 sm:pr-0">
@@ -197,7 +195,6 @@ export function EventFormStep({
 
           {viewMode === "visual" ? (
             <FieldGroup>
-              {/* AI Generation Input */}
               <Field>
                 <AIGenerationInput
                   aiPrompt={eventFormAI.aiPrompt}
@@ -240,12 +237,10 @@ export function EventFormStep({
               </form>
             </FieldGroup>
           ) : (
-            /* JSON View */
             <EventFormJSON />
           )}
         </div>
 
-        {/* Live Preview Panel */}
         <EventFormPreview className="hidden lg:flex" />
       </div>
     </EventFormProvider>

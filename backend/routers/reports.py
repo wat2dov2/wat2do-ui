@@ -19,9 +19,9 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 log = logging.getLogger(__name__)
 
 
-# Per-user rate limit on report creation — complement to the event-exists
-# check in report_service.create_report (audit I2).  Together they close
-# the "fill the reports table with forged event IDs" attack.
+# Per-user rate limit on report creation - complements the event-exists
+# check in report_service.create_report. Together they close the
+# "fill the reports table with forged event IDs" attack.
 _report_create_limiter = RateLimiter(
     max_requests=REPORT_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=REPORT_RATE_LIMIT_WINDOW_SECONDS,

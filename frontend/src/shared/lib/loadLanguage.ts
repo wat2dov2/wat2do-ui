@@ -90,18 +90,15 @@ const localeLoaders: Record<
 };
 
 export async function loadLanguage(lang: string): Promise<void> {
-  // Check if language is already loaded
   if (i18n.hasResourceBundle(lang, 'translation')) {
     return;
   }
 
-  // Return existing promise if already loading
   const existingPromise = loadingPromises.get(lang);
   if (existingPromise) {
     return existingPromise;
   }
 
-  // Create and cache loading promise
   const loadPromise = (async () => {
     try {
       const loader = localeLoaders[lang];
@@ -117,7 +114,6 @@ export async function loadLanguage(lang: string): Promise<void> {
         i18n.changeLanguage('en');
       }
     } finally {
-      // Remove from cache after loading completes
       loadingPromises.delete(lang);
     }
   })();

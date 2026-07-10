@@ -23,9 +23,8 @@ interface UseOnboardingFlowOptions {
     dailyNewEventsOptIn: boolean;
   }) => void;
   /**
-   * School name to pre-populate on mount (e.g. derived from the signup
-   * email domain and handed over via router navigation state). Defaults
-   * to an empty string.
+   * School name to pre-populate on mount (e.g. from signup email domain via
+   * the `?school=` query param). Defaults to an empty string.
    */
   initialSchool?: string;
 }
@@ -44,7 +43,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     [selectedTopics]
   );
 
-  // All questions optional — user can always continue
+  // All questions optional - user can always continue
   const canContinue = true;
 
   const toggleTopic = useCallback((category: string) => {

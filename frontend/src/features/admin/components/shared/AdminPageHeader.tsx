@@ -1,8 +1,3 @@
-/**
- * Admin Page Header Component
- * Reusable page header with icon, title, and action button
- */
-
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";

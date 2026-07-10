@@ -1,10 +1,10 @@
-"""Duplicate-event detection for the scraping pipeline.
+"""Candidate-event detection for the scraping pipeline.
 
 Thresholds live in the SCRAPING_* constants in ``core/constants.py``.
 
-The detector exposes one public method, ``find_match``, returning either
-None or an existing-event row. Callers (event_writer) decide whether to
-treat the match as a same-organization update vs. a cross-organization duplicate.
+``find_candidates`` returns zero-or-more existing event rows that look
+similar enough to feed Pass 2 reconcile. Pass 2 owns insert/overwrite;
+this module only gathers candidates.
 """
 
 from __future__ import annotations
@@ -18,18 +18,33 @@ from urllib.parse import urlparse
 from core.constants import (
     SCRAPING_DESCRIPTION_SIMILARITY_THRESHOLD,
     SCRAPING_LOCATION_SIMILARITY_THRESHOLD,
+    SCRAPING_MAX_CANDIDATES,
+    SCRAPING_MAX_CROSS_ORG_CANDIDATES,
     SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD,
     SCRAPING_TITLE_SIMILARITY_THRESHOLD,
 )
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENT_DATES, EVENTS
+from services.organization_service import _normalize_organization_name
 
 log = logging.getLogger(__name__)
 
+_CANDIDATE_EVENT_SELECT = (
+    "id,title,description,location,price,food,registration,category,"
+    "organization,organization_id,ig_handle,school,cancelled,source_url,source_image_url,"
+    "event_dates(dtstart_utc,dtend_utc,duration,tz)"
+)
+
+_SAME_DAY_EVENT_EMBED = (
+    "id,title,description,location,price,food,registration,category,"
+    "organization,organization_id,ig_handle,school,cancelled,source_url,source_image_url,"
+    "event_dates(dtstart_utc,dtend_utc,duration,tz)"
+)
+
 
 def normalize(s: str) -> str:
-    """Lowercase + strip non-alphanumeric — used for substring duplicate checks."""
+    """Lowercase + strip non-alphanumeric - used for substring duplicate checks."""
     return re.sub(r"[^a-z0-9]", "", (s or "").lower())
 
 
@@ -48,7 +63,7 @@ def sequence_similarity(a: str, b: str) -> float:
 
 
 def title_similarity(a: str, b: str) -> float:
-    """Combined title similarity — max of Jaccard and SequenceMatcher.
+    """Combined title similarity - max of Jaccard and SequenceMatcher.
 
     Taking the max catches both word-overlap titles ("Movie Night Friday" vs
     "Friday Movie Night") and reordered-but-similar titles.
@@ -56,75 +71,124 @@ def title_similarity(a: str, b: str) -> float:
     return max(jaccard_similarity(a, b), sequence_similarity(a, b))
 
 
-class MatchResult:
-    """Result of a dedup lookup.
-
-    ``kind`` is one of:
-      * ``same_organization`` — caller should UPDATE the existing event
-        (location/dates/etc) and refresh ``added_at``.
-      * ``duplicate`` — caller should SKIP the insert (some other organization
-        already has this event on the same day, or location-based match).
-    """
-
-    __slots__ = ("kind", "event")
-
-    def __init__(self, kind: str, event: dict):
-        self.kind = kind
-        self.event = event
-
-
-def find_match(
+def find_candidates(
     *,
     title: str,
     location: str,
     description: str,
     occurrences: list[dict],
     ig_handle: str | None,
-) -> MatchResult | None:
-    """Return a match for the given event, or None.
+    organization_id: int | None = None,
+    organization_name: str | None = None,
+    limit: int = SCRAPING_MAX_CANDIDATES,
+    max_cross_org: int = SCRAPING_MAX_CROSS_ORG_CANDIDATES,
+) -> list[dict]:
+    """Return similar existing events for Pass 2 reconcile.
 
-    Two-stage check:
-        1. Same-organization update — any event from the same ``ig_handle`` whose
-           latest occurrence is in the future and whose title is >0.8
-           similar.
-        2. Same-day duplicate — any event whose ``dtstart_utc`` falls on
-           the same UTC day as the candidate's first occurrence and
-           passes the location/description/title threshold gauntlet.
+    Combines:
+      1. Same-organization future events with similar titles
+         (``organization_id`` first, else ``ig_handle``).
+      2. Same-day events that pass the location/description/title gauntlet,
+         plus soft normalized-name matches when org id is unresolved.
 
-    ``occurrences`` is the extractor's output shape. Empty / missing
-    first-occurrence start time means no match (we cannot compare).
+    Same-org candidates are ranked first; cross-org same-day rows are capped
+    tighter. Empty / missing first-occurrence start time means only
+    same-organization candidates can be returned.
     """
-    if not occurrences:
-        return None
-    target_start = _parse_iso8601_utc(occurrences[0].get("dtstart_utc"))
-    if target_start is None:
-        return None
+    same_org_ids: set[int] = set()
+    scored: dict[int, tuple[float, dict, bool]] = {}
 
-    same_organization = _check_same_organization_update(
+    for row in _same_organization_candidates(
+        organization_id=organization_id,
         ig_handle=ig_handle,
         candidate_title=title,
-    )
-    if same_organization is not None:
-        return MatchResult("same_organization", same_organization)
+    ):
+        eid = row.get("id")
+        if not isinstance(eid, int):
+            continue
+        score = title_similarity(row.get("title") or "", title)
+        same_org_ids.add(eid)
+        scored[eid] = (score, _normalize_candidate(row), True)
 
-    same_day = _check_same_day_duplicate(
-        target_start=target_start,
-        candidate_title=title,
-        candidate_location=location,
-        candidate_description=description,
-    )
-    if same_day is not None:
-        return MatchResult("duplicate", same_day)
+    target_start = None
+    if occurrences:
+        target_start = _parse_iso8601_utc(occurrences[0].get("dtstart_utc"))
+    if target_start is not None:
+        for row in _same_day_candidates(
+            target_start=target_start,
+            candidate_title=title,
+            candidate_location=location,
+            candidate_description=description,
+            organization_id=organization_id,
+            organization_name=organization_name,
+        ):
+            eid = row.get("id")
+            if not isinstance(eid, int):
+                continue
+            score = title_similarity(row.get("title") or "", title)
+            is_same_org = eid in same_org_ids or _is_same_org_row(
+                row,
+                organization_id=organization_id,
+                ig_handle=ig_handle,
+            )
+            existing = scored.get(eid)
+            if existing is None or score > existing[0]:
+                scored[eid] = (score, _normalize_candidate(row), is_same_org)
+            elif is_same_org and not existing[2]:
+                scored[eid] = (existing[0], existing[1], True)
 
-    return None
+    same_org = [(s, r) for s, r, same in scored.values() if same]
+    cross_org = [(s, r) for s, r, same in scored.values() if not same]
+    same_org.sort(key=lambda item: item[0], reverse=True)
+    cross_org.sort(key=lambda item: item[0], reverse=True)
+
+    out: list[dict] = [r for _, r in same_org[: max(limit, 0)]]
+    remaining = max(limit - len(out), 0)
+    cross_cap = min(max(max_cross_org, 0), remaining)
+    out.extend(r for _, r in cross_org[:cross_cap])
+    return out
+
+
+def _is_same_org_row(
+    row: dict,
+    *,
+    organization_id: int | None,
+    ig_handle: str | None,
+) -> bool:
+    if isinstance(organization_id, int) and row.get("organization_id") == organization_id:
+        return True
+    cleaned = (ig_handle or "").strip().lstrip("@")
+    if cleaned and (row.get("ig_handle") or "").strip().lstrip("@") == cleaned:
+        return True
+    return False
+
+
+def _normalize_candidate(row: dict) -> dict:
+    """Flatten embedded event_dates into ``occurrences`` for the Pass 2 prompt."""
+    out = dict(row)
+    dates = out.pop("event_dates", None) or []
+    occurrences: list[dict] = []
+    for occ in dates:
+        if not isinstance(occ, dict):
+            continue
+        occurrences.append(
+            {
+                "dtstart_utc": occ.get("dtstart_utc"),
+                "dtend_utc": occ.get("dtend_utc"),
+                "duration": occ.get("duration"),
+                "tz": occ.get("tz"),
+            }
+        )
+    out["occurrences"] = occurrences
+    out.setdefault("cancelled", False)
+    out.setdefault("organization_id", None)
+    return out
 
 
 def _parse_iso8601_utc(value: str | None) -> datetime | None:
     if not value:
         return None
     try:
-        # Python's ``fromisoformat`` accepts the trailing ``Z`` from 3.11+
-        # but we still normalise for older interpreters / extractor quirks.
         cleaned = value.replace("Z", "+00:00") if value.endswith("Z") else value
         dt = datetime.fromisoformat(cleaned)
     except ValueError:
@@ -134,89 +198,80 @@ def _parse_iso8601_utc(value: str | None) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
-def _check_same_organization_update(
+def _same_organization_candidates(
     *,
+    organization_id: int | None,
     ig_handle: str | None,
     candidate_title: str,
-) -> dict | None:
-    """Return an existing event from the same organization whose title is too similar.
+) -> list[dict]:
+    """Return future same-org events whose title clears the similarity threshold."""
 
-    The events row no longer carries dtstart_utc / dtend_utc — dates live
-    in the event_dates table. We embed the event_dates rows for each
-    candidate and check the latest end time to decide whether the event
-    is still in flight (any future occurrence keeps it alive).
-
-    Paginated via ``fetch_all_pages`` — long-lived organizations can accumulate
-    >1000 events and PostgREST silently caps the result at 1000. Without
-    pagination, dedup against older same-organization events would be invisible
-    (and the row order without ``.order()`` is undefined).
-    """
-    if not ig_handle:
-        return None
-
-    def _page(offset: int, page_size: int) -> list[dict]:
+    def _page_by_org_id(offset: int, page_size: int) -> list[dict]:
         return (
             get_sb()
             .table(EVENTS)
-            .select("id,title,ig_handle,location,description,event_dates(dtstart_utc,dtend_utc)")
+            .select(_CANDIDATE_EVENT_SELECT)
+            .eq("organization_id", organization_id)
+            .order("id", desc=True)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        ).data or []
+
+    def _page_by_ig(offset: int, page_size: int) -> list[dict]:
+        return (
+            get_sb()
+            .table(EVENTS)
+            .select(_CANDIDATE_EVENT_SELECT)
             .eq("ig_handle", ig_handle)
             .order("id", desc=True)
             .range(offset, offset + page_size - 1)
             .execute()
         ).data or []
 
-    rows = fetch_all_pages(_page)
+    if isinstance(organization_id, int):
+        rows = fetch_all_pages(_page_by_org_id)
+    elif ig_handle:
+        rows = fetch_all_pages(_page_by_ig)
+    else:
+        return []
 
     now = datetime.now(timezone.utc)
+    out: list[dict] = []
     for row in rows:
         occurrences = row.get("event_dates") or []
         if not occurrences:
             continue
         latest_end = _latest_occurrence_end(occurrences)
-        # Skip past events — a same-named event in the past is a new
-        # occurrence of a recurring series, not an update.
         if latest_end is None or latest_end < now:
             continue
-
         if (
             title_similarity(row.get("title") or "", candidate_title)
             > SCRAPING_SAME_ORGANIZATION_TITLE_THRESHOLD
         ):
-            log.info(
-                "Same-organization update candidate: %r matches existing event id=%s (%r)",
-                candidate_title,
-                row.get("id"),
-                row.get("title"),
-            )
-            return row
-    return None
+            out.append(row)
+    return out
 
 
-def _check_same_day_duplicate(
+def _same_day_candidates(
     *,
     target_start: datetime,
     candidate_title: str,
     candidate_location: str,
     candidate_description: str,
-) -> dict | None:
-    """Return an existing event on the same UTC day that fails the duplicate gauntlet.
-
-    Queries event_dates first (one row per occurrence), then embeds the
-    parent event metadata. Multiple occurrences of the same event on the
-    same day collapse to one event-row check via the ``seen`` set.
-
-    Paginated via ``fetch_all_pages`` — peak days can have >1000
-    occurrences across all schools and PostgREST silently truncates at
-    1000 rows.
-    """
+    organization_id: int | None,
+    organization_name: str | None,
+) -> list[dict]:
+    """Return same-UTC-day events that pass the duplicate similarity gauntlet."""
     day_start = target_start.replace(hour=0, minute=0, second=0, microsecond=0)
     day_end = day_start + timedelta(days=1)
+    soft_name = _normalize_organization_name(organization_name)
+    allow_soft_name = soft_name and not isinstance(organization_id, int)
 
     def _page(offset: int, page_size: int) -> list[dict]:
         return (
             get_sb()
             .table(EVENT_DATES)
-            .select("event_id,events(id,title,ig_handle,location,description)")
+            .select(f"event_id,events({_SAME_DAY_EVENT_EMBED})")
             .gte("dtstart_utc", day_start.isoformat())
             .lt("dtstart_utc", day_end.isoformat())
             .order("id", desc=False)
@@ -225,9 +280,9 @@ def _check_same_day_duplicate(
         ).data or []
 
     rows = fetch_all_pages(_page)
-
     norm_candidate_title = normalize(candidate_title)
     seen_event_ids: set[int] = set()
+    out: list[dict] = []
 
     for date_row in rows:
         event = date_row.get("events")
@@ -249,8 +304,8 @@ def _check_same_day_duplicate(
 
         if substring_match:
             if loc_sim > SCRAPING_LOCATION_SIMILARITY_THRESHOLD:
-                return event
-            continue
+                out.append(event)
+                continue
 
         title_sim = title_similarity(existing_title, candidate_title)
         desc_sim = jaccard_similarity(existing_description, candidate_description)
@@ -265,9 +320,16 @@ def _check_same_day_duplicate(
         )
 
         if title_and_loc or loc_and_desc:
-            return event
+            out.append(event)
+            continue
 
-    return None
+        # Soft name signal for candidate gathering only when org_id unresolved.
+        if allow_soft_name and title_sim > SCRAPING_TITLE_SIMILARITY_THRESHOLD:
+            existing_name = _normalize_organization_name(event.get("organization"))
+            if existing_name and existing_name == soft_name:
+                out.append(event)
+
+    return out
 
 
 def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
@@ -281,18 +343,11 @@ def _latest_occurrence_end(occurrences: list[dict]) -> datetime | None:
 
 
 def existing_shortcodes() -> set[str]:
-    """Return the set of shortcodes already present in the events table.
+    """Return Instagram shortcodes already present on ``events.source_url``.
 
-    Used by the pipeline's filter stage to skip posts we have already
-    processed. The shortcode is the post-id segment of an Instagram
-    post URL — e.g. for ``https://www.instagram.com/p/AbCDeF1/?utm=...``
-    it is ``AbCDeF1``.
-
-    Paginated via ``fetch_all_pages`` because PostgREST silently caps
-    the response at 1000 rows by default — without pagination, an
-    events table with >1000 rows would only dedupe against the first
-    1000 returned (and the order without ``.order()`` is undefined),
-    causing previously-scraped posts to be re-inserted as duplicates.
+    Used by the pipeline filter stage. Paginated via ``fetch_all_pages``
+    because PostgREST caps responses at 1000 rows; without pagination,
+    posts beyond the first page would be re-scraped as "new".
     """
 
     def _page(offset: int, page_size: int) -> list[dict]:
@@ -318,26 +373,12 @@ def existing_shortcodes() -> set[str]:
     return seen
 
 
-# Instagram post / reel URL pattern — captures the shortcode (alphanumeric
-# + dashes / underscores). Used by both ``_extract_shortcode`` and the
-# pipeline's per-post filter so a URL with a query string or trailing
-# fragment doesn't disagree on what the canonical shortcode is.
+# Captures the shortcode from /p/, /reel/, or /tv/ paths (query/fragment-safe).
 _SHORTCODE_RE = re.compile(r"/(?:p|reel|tv)/([A-Za-z0-9_-]+)")
 
 
 def _extract_shortcode(source_url: str) -> str | None:
-    """Pull the post shortcode out of an Instagram URL.
-
-    Handles trailing slashes, query strings, fragments, and reel/tv
-    paths. Returns ``None`` when no shortcode can be extracted (e.g. the
-    URL is from a different domain or the URL is a profile link).
-
-    Examples:
-        https://www.instagram.com/p/AbCDeF1/                 -> "AbCDeF1"
-        https://www.instagram.com/p/AbCDeF1/?utm_source=x    -> "AbCDeF1"
-        https://instagram.com/reel/XYZ7/                     -> "XYZ7"
-        https://instagram.com/uwteaorganization                      -> None
-    """
+    """Pull the Instagram post shortcode from a URL, or ``None`` if absent."""
     if not source_url:
         return None
     try:

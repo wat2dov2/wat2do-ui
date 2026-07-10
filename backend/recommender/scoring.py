@@ -14,12 +14,10 @@ from recommender.config import (
     WEIGHTS_WARM_NO_COLLAB,
 )
 
-# ---------------------------------------------------------------------------
 # Temperature-tier table for select_weights.
 # Each entry is (predicate, weights) evaluated in order; the first matching
-# predicate wins.  Adding a new tier requires only a new row here — the
+# predicate wins.  Adding a new tier requires only a new row here - the
 # function body never changes (Open/Closed).
-# ---------------------------------------------------------------------------
 _TEMP_TIERS: list[tuple] = [
     # (predicate(interaction_count, has_profile), weights)
     (lambda count, profile, hot, warm: count >= hot, WEIGHTS_HOT),
@@ -62,17 +60,16 @@ def blend_scores(
     When a scorer dict is empty, the corresponding weight is redistributed
     across the remaining non-empty scorers (proportional renormalization) so
     that a failed or skipped scorer does not scale the final score down.
-    (R9)
 
     Zero-scored items are retained in the blend as long as at least one
     scorer produced data; only when all scorers are empty do we drop items.
     This preserves candidates with zero preference signal rather than
-    silently collapsing the blend. (R10)
+    silently collapsing the blend.
     """
     w_content, w_collab, w_pop = weights
     skip = exclude or set()
 
-    # R9: renormalize weights across scorers that actually produced data.
+    # Renormalize weights across scorers that actually produced data.
     scorer_present = (
         bool(content_scores),
         bool(collab_scores),
@@ -100,7 +97,7 @@ def blend_scores(
             + w_collab * collab_scores.get(eid, 0)
             + w_pop * pop_scores.get(eid, 0)
         )
-        # R10: keep zero-scored items when any scorer produced data so the
+        # Keep zero-scored items when any scorer produced data so the
         # blend doesn't silently go empty (which triggers a fallback path).
         if score > 0 or any_scorer_present:
             blended[eid] = score

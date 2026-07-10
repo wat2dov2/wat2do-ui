@@ -1596,6 +1596,11 @@ export interface components {
             organization_id: number;
             /** Ig Handle */
             ig_handle?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
         };
         /**
          * EventFeedResponse
@@ -1709,6 +1714,11 @@ export interface components {
             /** Ig Handle */
             ig_handle?: string | null;
             /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+            /**
              * Added At
              * Format: date-time
              */
@@ -1767,6 +1777,11 @@ export interface components {
             organization?: string | null;
             /** Ig Handle */
             ig_handle?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
             /**
              * Added At
              * Format: date-time
@@ -1832,6 +1847,11 @@ export interface components {
             /** School */
             school?: string | null;
             /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+            /**
              * Added At
              * Format: date-time
              */
@@ -1868,6 +1888,8 @@ export interface components {
             organization_id?: number | null;
             /** Ig Handle */
             ig_handle?: string | null;
+            /** Cancelled */
+            cancelled?: boolean | null;
         };
         /** FilterStateResponse */
         FilterStateResponse: {

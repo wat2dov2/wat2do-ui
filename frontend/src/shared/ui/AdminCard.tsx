@@ -1,8 +1,3 @@
-/**
- * AdminCard Component
- * Reusable card component for admin navigation and activity items
- */
-
 import type { LucideIcon } from "@/shared/ui/doodle-icons";
 import { ArrowRight } from "@/shared/ui/doodle-icons";
 

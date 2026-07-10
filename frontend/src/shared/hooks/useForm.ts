@@ -86,7 +86,6 @@ export function useForm<T extends object>(
     setTouched({});
   }, [getInitialFormData]);
 
-  // Check if form is valid
   const isValid = Object.keys(errors).length === 0;
 
   return {

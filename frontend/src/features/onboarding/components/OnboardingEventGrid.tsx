@@ -1,6 +1,6 @@
 /**
- * Onboarding event grid: 2×4 grid of event cards from Supabase.
- * Uses the same card style as the auth page right-side (hero) section.
+ * Onboarding event grid: 2×4 grid of event cards from the events store.
+ * Uses the same card style as the auth page hero section.
  * User can multi-select (optional).
  */
 
@@ -28,15 +28,13 @@ export function OnboardingEventGrid({
 }: OnboardingEventGridProps) {
   const { t, i18n } = useTranslation();
 
-  // Read from store (same data as events page — no duplicate fetch)
+  // Same store data as the events page - no duplicate fetch.
   const allEvents = useEventsStore((s) => s.events);
   const loading = useEventsStore((s) => s.isLoading);
 
   const locale = i18n.language || "en-US";
 
-  // Memoize the "pick top 8 random events" step so it only recomputes when
-  // the underlying events array changes — not on every locale/translation
-  // change. Documents intent: only the first 8 shuffled events are needed.
+  // Recompute only when events change, not on locale/translation updates.
   const topEvents = useMemo(() => shuffle(allEvents).slice(0, 8), [allEvents]);
 
   const previewEvents = useMemo(

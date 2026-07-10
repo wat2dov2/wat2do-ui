@@ -29,9 +29,9 @@ from schemas.interaction import InteractionCreate
 log = logging.getLogger(__name__)
 
 
-# Anonymous interactions are accepted for ``view``, ``click``, and ``unsave``.
-# ``save``/``share``/``detail_view`` still feed popularity + collaborative-
-# filtering scoring and would let a rotating-IP attacker inflate rankings.
+# Anonymous callers may record ``view``/``click``/``unsave``. ``save``,
+# ``share``, and ``detail_view`` are blocked: they feed popularity and CF
+# scores, so unauthenticated rotating-IP traffic could inflate rankings.
 _ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
     {
         INTERACTION_SAVE,
@@ -131,7 +131,7 @@ def record_interactions_batch(
     - If the payload contains a ``user_id`` it must match the authenticated
       user.  Unauthenticated requests may not send a ``user_id``.
     - Authenticated users get deduplication; anonymous users get session dedup.
-    - DB errors propagate — the global APIError handler returns 502 so
+    - DB errors propagate - the global APIError handler returns 502 so
       clients can retry rather than silently receiving ``{"recorded": 0}``
       (which is indistinguishable from "successfully deduped to empty").
       See audit finding D11.
@@ -142,13 +142,7 @@ def record_interactions_batch(
     """
     _validate_batch(user_id, payload_user_id, interactions)
 
-    # ── Anonymous: filter out high-signal interaction types (audit I18) ──
-    # Anonymous callers can still record ``view`` impressions for basic
-    # telemetry, but ``save``/``click``/``share``/``detail_view`` feed
-    # popularity + collaborative-filtering scores; letting them through
-    # unauthenticated would allow a rotating-IP attacker to inflate any
-    # event's ranking.  Dedup is also skipped for anonymous users, so the
-    # only defensible posture is to reject these types outright.
+    # Drop anonymous interactions in ``_ANON_DISALLOWED_INTERACTION_TYPES`` (I18).
     if user_id is None:
         filtered = [
             item
@@ -303,7 +297,7 @@ def check_duplicate_interactions(
         # Global per-user cap across all events/types
         if total_in_window >= MAX_USER_INTERACTIONS_PER_WINDOW:
             log.warning(
-                "Dropping interaction user=%s event=%s type=%s — global cap reached (%d/%d)",
+                "Dropping interaction user=%s event=%s type=%s - global cap reached (%d/%d)",
                 user_id,
                 item.event_id,
                 item.interaction_type,
@@ -376,7 +370,7 @@ def check_duplicate_interactions_for_session(
     for item in interactions:
         if total_in_window >= MAX_USER_INTERACTIONS_PER_WINDOW:
             log.warning(
-                "Dropping anonymous interaction session=%s event=%s type=%s — global cap reached (%d/%d)",
+                "Dropping anonymous interaction session=%s event=%s type=%s - global cap reached (%d/%d)",
                 session_id,
                 item.event_id,
                 item.interaction_type,

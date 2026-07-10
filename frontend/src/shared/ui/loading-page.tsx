@@ -10,7 +10,7 @@ export interface LoadingPageProps {
 
 /**
  * Standardized full-page or section loading UI.
- * Use wherever a page or section is loading (events, clubs, admin, Suspense fallback, etc.).
+ * Use wherever a page or section is loading (events, organizations, admin, Suspense fallback, etc.).
  */
 export function LoadingPage({
   className,

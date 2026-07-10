@@ -60,7 +60,6 @@ export const InteractiveHoverButton = React.forwardRef<
       className={cn("interactive-hover-button", interactiveHoverButtonVariants({ variant, size, className }))}
       {...props}
     >
-      {/* Default state - visible on non-hover */}
       <span className="inline-flex items-center justify-center gap-1.5 transition-all duration-300 [.interactive-hover-button:hover_&]:translate-x-12 [.interactive-hover-button:hover_&]:opacity-0">
         {!hideDot && (
           <div className="bg-primary size-2 rounded-full transition-all duration-300 [.interactive-hover-button:hover_&]:scale-[100.8] shrink-0" />
@@ -68,7 +67,6 @@ export const InteractiveHoverButton = React.forwardRef<
         {children}
       </span>
       
-      {/* Hover state - slides in from right */}
       <span className="absolute inset-0 inline-flex translate-x-12 items-center justify-center gap-1.5 opacity-0 transition-all duration-300 [.interactive-hover-button:hover_&]:translate-x-0 [.interactive-hover-button:hover_&]:opacity-100">
         {children}
         <ArrowRight className="size-4 shrink-0" />

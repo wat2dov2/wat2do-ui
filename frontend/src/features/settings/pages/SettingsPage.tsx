@@ -1,11 +1,3 @@
-/**
- * SettingsPage
- * Orchestration layer for settings feature
- * 
- * This page composes the settings tabs and manages routing between them.
- * All business logic is delegated to hooks and components.
- */
-
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { ProfileTab } from "@/features/settings/components/ProfileTab";

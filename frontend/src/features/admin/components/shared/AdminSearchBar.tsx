@@ -1,8 +1,3 @@
-/**
- * Admin Search Bar Component
- * Reusable search input aligned with events/org SubmittedSearchInput styling.
- */
-
 import { Search, X } from "@/shared/ui/doodle-icons";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 import { useEnterKeySubmit } from "@/shared/hooks";

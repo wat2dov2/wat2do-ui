@@ -1,12 +1,4 @@
-/**
- * Storage Service
- * Provides type-safe localStorage abstraction
- */
-
 export class StorageService {
-  /**
-   * Get item from localStorage with type safety
-   */
   static getItem<T>(key: string, defaultValue: T): T {
     if (typeof document === "undefined") {
       return defaultValue;
@@ -24,9 +16,6 @@ export class StorageService {
     }
   }
 
-  /**
-   * Set item in localStorage
-   */
   static setItem<T>(key: string, value: T): void {
     if (typeof document === "undefined") {
       return;
@@ -39,9 +28,6 @@ export class StorageService {
     }
   }
 
-  /**
-   * Remove item from localStorage
-   */
   static removeItem(key: string): void {
     if (typeof document === "undefined") {
       return;

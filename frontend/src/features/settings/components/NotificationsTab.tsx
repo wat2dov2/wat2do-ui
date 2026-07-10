@@ -1,8 +1,3 @@
-/**
- * NotificationsTab Component
- * UI component for notification preferences
- */
-
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";

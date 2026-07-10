@@ -107,7 +107,7 @@ function EventCardsGrid({
  *
  * The server returns upcoming-only events, so there is no "past" section. A
  * timezone-skew straggler can still map to "past" (which has no bucket); those
- * are dropped from the grid here — the one place this list decides what's
+ * are dropped from the grid here - the one place this list decides what's
  * shown, so callers can bucket unconditionally.
  */
 function groupEventsByDateSection(events: Event[]): Record<EventDateCategory, Event[]> {

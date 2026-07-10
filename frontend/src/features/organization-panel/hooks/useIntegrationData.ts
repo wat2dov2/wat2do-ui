@@ -14,8 +14,6 @@ import {
   type PlatformIntegrationResponse,
 } from "@/features/organization-panel/api/integrations.api";
 
-// --- Platform options state ---
-
 interface PlatformOptions {
   slackServers: IntegrationServerOption[];
   telegramServers: IntegrationServerOption[];
@@ -97,16 +95,13 @@ export function useIntegrationData() {
   const router = useRouter();
   const activeOrganizationId = useAuthState().organizationId;
 
-  // Core data
   const [integrations, setIntegrations] = useState<Integration[]>(buildInitialIntegrations);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const selectedOrganizationId =
     organizations.find((org) => org.id === activeOrganizationId)?.id ?? organizations[0]?.id ?? null;
 
-  // Platform options (loaded once at boot)
   const [options, setOptions] = useState<PlatformOptions>(initialPlatformOptions);
 
-  // Loading / error
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,7 +116,6 @@ export function useIntegrationData() {
     [router]
   );
 
-  // --- Boot data (organizations + platform options) ---
   useEffect(() => {
     let cancelled = false;
     const loadBootData = async () => {
@@ -171,7 +165,6 @@ export function useIntegrationData() {
     };
   }, [redirectIfUnauthorized, t]);
 
-  // --- Load integrations for selected organization ---
   useEffect(() => {
     if (!selectedOrganizationId) {
       setIntegrations(buildInitialIntegrations());

@@ -16,7 +16,6 @@ log = logging.getLogger(__name__)
 
 @router.get("/", response_model=list[int])
 def list_saved_events(user=Depends(get_db_user)):
-    """Return event IDs saved by the current user."""
     try:
         return saved_event_service.get_saved_event_ids(str(user.id))
     except APIError as e:
@@ -32,18 +31,14 @@ def list_saved_events(user=Depends(get_db_user)):
 def save_event(event_id: int, user=Depends(get_db_user)):
     """Save (bookmark) an event.
 
-    - 404 if the referenced event does not exist (audit I9).
-    - 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER`` —
-      prevents a single account from growing an unbounded bookmark list
-      and OOM'ing the listing endpoint (audit I8).
+    - 404 if the event does not exist.
+    - 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER``.
     """
     if event_service.get_event(event_id) is None:
         raise NotFoundError(EVENT_NOT_FOUND)
 
-    # Check cap BEFORE inserting.  The cap is a soft-safety-net; the
-    # unique(user_id, event_id) constraint means an existing save for
-    # this event is idempotent and therefore should not count toward
-    # the cap — but for simplicity we only check cap on fresh inserts.
+    # Cap check is pre-insert only; re-save of the same event is not
+    # idempotent at the cap layer (unique constraint still makes the write safe).
     count = saved_event_service.count_saved_events(str(user.id))
     if count >= MAX_SAVED_EVENTS_PER_USER:
         raise ValidationError(SAVED_EVENTS_CAP_REACHED)
@@ -58,6 +53,5 @@ def save_event(event_id: int, user=Depends(get_db_user)):
     response_model=SaveEventStatusResponse,
 )
 def unsave_event(event_id: int, user=Depends(get_db_user)):
-    """Remove a saved event."""
     saved_event_service.unsave_event(str(user.id), event_id)
     return {"status": "unsaved"}

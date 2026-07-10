@@ -90,8 +90,6 @@ export async function verifyOtpAPI(
   await fetchProfileAPI();
   const school = res.school?.trim() || DEFAULT_SCHOOL;
 
-  // Broadcast login so per-user stores (saved events, promotions) can
-  // refetch — mirrors the auth-user-logout event dispatched from logoutAPI.
   dispatchAuthUserLogin(school);
 
   return {
@@ -170,12 +168,12 @@ export function getLastProfileFetchAt(): number {
 
 export async function fetchProfileAPI(): Promise<UserProfile | null> {
   try {
-    // Fetch profile and club ownership in parallel.
-    // Club fetch failures degrade gracefully to hasOrganization=false.
+    // Fetch profile and organization ownership in parallel.
+    // Organization fetch failures degrade gracefully to hasOrganization=false.
     const [data, clubs] = await Promise.all([
       api.get<ApiUserResponse>("/users/me"),
       api.get<ApiOrganizationResponse[]>("/organizations/mine").catch((err) => {
-        console.error("Failed to fetch user clubs, defaulting hasOrganization to false:", err);
+        console.error("Failed to fetch user organizations, defaulting hasOrganization to false:", err);
         return [] as ApiOrganizationResponse[];
       }),
     ]);
@@ -220,7 +218,7 @@ export async function updateProfileAPI(profile: UserProfile): Promise<void> {
   });
   // Caller is expected to sync localStorage (via updateUserProfile) before
   // invoking us. The PATCH does not return a new shape, so there is nothing
-  // to reconcile here — re-saving would just fire another redundant
+  // to reconcile here - re-saving would just fire another redundant
   // auth-state-refresh event.
 }
 

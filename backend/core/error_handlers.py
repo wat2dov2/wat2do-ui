@@ -2,9 +2,9 @@
 
 These handlers catch exceptions that escape route/service code.
 If a route needs custom behavior for an exception (e.g., graceful
-degradation), catch it locally — local catches always take priority.
+degradation), catch it locally - local catches always take priority.
 
-**Log-injection defence (E21).** Upstream error payloads can contain raw
+**Log-injection defence.** Upstream error payloads can contain raw
 user input (email, URL, free-text).  Before interpolating any
 ``exc.message`` / ``exc.details`` / ``exc.hint`` into a log line we pass
 it through :func:`_safe` which strips CR/LF so a malicious input cannot
@@ -81,7 +81,7 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ValidationError)
     async def handle_validation_error(request: Request, exc: ValidationError) -> JSONResponse:
-        # C11: expose ``code`` in the error body so clients can branch on a
+        # Expose ``code`` in the error body so clients can branch on a
         # stable machine-readable field instead of substring-matching the
         # human-readable ``detail``.  Empty code is omitted for exceptions
         # that only carry a detail message.
@@ -92,8 +92,8 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ServiceError)
     async def handle_service_error(request: Request, exc: ServiceError) -> JSONResponse:
-        # E21: ``exc.detail`` can carry caller-supplied content when the
-        # service re-raises with context — sanitize before logging.
+        # ``exc.detail`` can carry caller-supplied content when the
+        # service re-raises with context - sanitize before logging.
         logger.warning(
             "Unhandled ServiceError on %s %s: %s",
             request.method,
@@ -109,9 +109,9 @@ def register_error_handlers(app: FastAPI) -> None:
     async def handle_auth_api_error(request: Request, exc: AuthApiError) -> JSONResponse:
         status_code = exc.status or 400
         # Log the real Supabase message server-side for debugging, but never
-        # send it to the client — raw messages like "User already registered"
+        # send it to the client - raw messages like "User already registered"
         # or "Email not confirmed" enable user-enumeration attacks.
-        # E21: sanitize the upstream message (CR/LF) before interpolation
+        # Sanitize the upstream message (CR/LF) before interpolation
         # so a compromised/hostile upstream cannot forge log lines.
         logger.warning(
             "AuthApiError on %s %s [code=%s]: %s",
@@ -137,7 +137,7 @@ def register_error_handlers(app: FastAPI) -> None:
         else:
             status_code = 502
             detail = DB_OPERATION_FAILED
-            # E8: the high-level identifier is safe at ERROR level for alerting,
+            # The high-level identifier is safe at ERROR level for alerting,
             # but PostgREST's ``hint`` and ``details`` frequently embed raw row
             # data (including PII / the conflicting column value).  Downgrade
             # those fields to DEBUG so they never land in shared log sinks by

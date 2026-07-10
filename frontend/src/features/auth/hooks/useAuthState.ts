@@ -1,12 +1,11 @@
 /**
  * useAuthState
  * ------------
- * React binding over the auth module's localStorage-backed caches. Replaces
- * the old `UserContext`/`UserProvider` fat-context with a narrow set of
- * `useSyncExternalStore` hooks so each consumer re-renders only when the
- * specific slice it reads changes.
+ * React binding over the auth module's localStorage-backed caches via
+ * `useSyncExternalStore`, so each consumer re-renders only when the slice
+ * it reads changes.
  *
- * Source of truth is `userRepository.ts`; this file only subscribes to the
+ * Source of truth is `userRepository.ts`; this file subscribes to the
  * same-tab `AUTH_STATE_REFRESH_EVENT` and native cross-tab `storage` events,
  * then returns a cached frozen snapshot that invalidates when either fires.
  */
@@ -24,26 +23,23 @@ export interface AuthState {
   userEmail: string | null;
   /** Mirrors `isAuthenticated()`: has access token AND cached email. */
   isAuthenticated: boolean;
+  /** Same as `isAuthenticated`; UI gates treat a valid session as "profile ready". */
   profileCompleted: boolean;
   isAdmin: boolean;
   hasOrganization: boolean;
   clubs: UserOrganizationSummary[];
   organizationId: number | null;
   organizationName: string | null;
-  /** Mirrors `getUserRole()`. */
+  /** Role from the cached profile; defaults to `"user"`. */
   role: "user" | "admin";
 }
 
 /**
- * Compute the live snapshot from the auth caches. Kept in sync with the
- * semantics of `isAuthenticated()` / `isProfileCompleted()` / `getUserRole()`
- * / `getUserHasOrganization()` in `auth.api.ts`.
+ * Live snapshot from the auth caches.
  *
- * `profileCompleted` reflects "user has a valid authenticated session" — the
- * concept UI gates (LogOut button, save-event, saved-filter visibility) need.
- * It is not gated on having filled specific preference fields because
- * onboarding makes faculty/interests optional; gating on them left freshly
- * signed-up users appearing logged out on the home route.
+ * `profileCompleted` mirrors `isAuthenticated` (access token + cached email).
+ * Preference fields from onboarding are optional, so UI gates (LogOut, save-event,
+ * saved-filter visibility) key off session validity, not filled preferences.
  */
 function computeSnapshot(): AuthState {
   const email = loadUserEmail();
@@ -85,7 +81,7 @@ function markDirty(): void {
 }
 
 // Module-level listeners so auth events fired BEFORE any component subscribes
-// (e.g. during initializeAuth() in main.tsx, which awaits the /auth/refresh
+// (e.g. during initializeAuth() in client-providers.tsx, which awaits the /auth/refresh
 // round-trip and saveUserProfile() before React mounts) still invalidate the
 // cached snapshot. Without this, the first render reads the stale snapshot
 // that was computed at module load time with no access token → UI flashes
@@ -108,12 +104,12 @@ function subscribe(onStoreChange: () => void): () => void {
   };
 }
 
-/** Full auth snapshot — use only when a component reads ≥2 fields. */
+/** Full auth snapshot - use only when a component reads ≥2 fields. */
 export function useAuthState(): AuthState {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-/** Primitive selector — re-renders only when the email changes. */
+/** Primitive selector - re-renders only when the email changes. */
 export function useUserEmail(): string | null {
   return useSyncExternalStore(
     subscribe,
@@ -122,7 +118,7 @@ export function useUserEmail(): string | null {
   );
 }
 
-/** Primitive selector — re-renders only when `profileCompleted` changes. */
+/** Primitive selector - re-renders only when `profileCompleted` changes. */
 export function useProfileCompleted(): boolean {
   return useSyncExternalStore(
     subscribe,
@@ -131,7 +127,7 @@ export function useProfileCompleted(): boolean {
   );
 }
 
-/** Primitive selector — re-renders only when admin status changes. */
+/** Primitive selector - re-renders only when admin status changes. */
 export function useIsAdmin(): boolean {
   return useSyncExternalStore(
     subscribe,

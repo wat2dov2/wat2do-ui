@@ -5425,6 +5425,11 @@
               }
             ],
             "title": "Ig Handle"
+          },
+          "cancelled": {
+            "type": "boolean",
+            "title": "Cancelled",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -5718,6 +5723,11 @@
             ],
             "title": "Ig Handle"
           },
+          "cancelled": {
+            "type": "boolean",
+            "title": "Cancelled",
+            "default": false
+          },
           "added_at": {
             "type": "string",
             "format": "date-time",
@@ -5894,6 +5904,11 @@
               }
             ],
             "title": "Ig Handle"
+          },
+          "cancelled": {
+            "type": "boolean",
+            "title": "Cancelled",
+            "default": false
           },
           "added_at": {
             "type": "string",
@@ -6083,6 +6098,11 @@
             ],
             "title": "School"
           },
+          "cancelled": {
+            "type": "boolean",
+            "title": "Cancelled",
+            "default": false
+          },
           "added_at": {
             "type": "string",
             "format": "date-time",
@@ -6256,6 +6276,17 @@
               }
             ],
             "title": "Ig Handle"
+          },
+          "cancelled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled"
           }
         },
         "additionalProperties": false,

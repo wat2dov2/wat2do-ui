@@ -6,7 +6,7 @@ import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 /**
  * How long a `/users/me` fetch remains fresh before Settings will re-fetch.
  * Paired with `initializeAuth()` + the silent-refresh `onAfterRefresh` hook
- * in `main.tsx`, most Settings mounts hit the cache.
+ * in `client-providers.tsx`, most Settings mounts hit the cache.
  */
 const PROFILE_STALE_TTL_MS = 60_000;
 

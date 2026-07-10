@@ -1,6 +1,6 @@
 /**
  * Credits API
- * Public API for the credits feature — all operations hit the backend.
+ * Public API for the credits feature - all operations hit the backend.
  */
 
 import {
@@ -19,7 +19,7 @@ export async function loadCredits(): Promise<number> {
 
 /**
  * Grant credits to `userId`. Backend requires both user_id and amount and
- * is admin-only — non-admin callers will receive a 403.
+ * is admin-only - non-admin callers will receive a 403.
  */
 export async function addCreditsAPI(
   userId: string,

@@ -102,7 +102,7 @@ def _load_spa_rows(input_dir: Path, schools: list[str]) -> list[dict[str, str | 
     for school in schools:
         path = input_dir / SPA_FILES[school]
         if not path.exists():
-            log.warning("Missing %s — skipping %s", path, school)
+            log.warning("Missing %s - skipping %s", path, school)
             continue
         payload = json.loads(path.read_text())
         if not isinstance(payload, list):
@@ -154,7 +154,7 @@ def _merge_row(
 def merge(input_dir: Path, schools: list[str], xlsx_path: Path) -> tuple[int, int, int]:
     spa_rows = _load_spa_rows(input_dir, schools)
     if not spa_rows:
-        raise RuntimeError("No spa rows loaded — run spa_scrape.py first")
+        raise RuntimeError("No spa rows loaded - run spa_scrape.py first")
 
     wb = openpyxl.load_workbook(xlsx_path)
     ws = wb.active
@@ -223,20 +223,18 @@ def merge(input_dir: Path, schools: list[str], xlsx_path: Path) -> tuple[int, in
                 existing_by_school_name[school_name_key] = len(sheet_rows) - 1
             appended += 1
 
-    # Rewrite data rows from row 3 onward.
     if ws.max_row >= 3:
         ws.delete_rows(3, ws.max_row - 2)
     for row in sheet_rows:
         ws.append(_dict_to_row(row))
 
-    # Refresh the summary line with current totals.
     ig_count = sum(1 for row in sheet_rows if row.get("Instagram URL"))
     discord_count = sum(1 for row in sheet_rows if row.get("Discord URL"))
     ws.cell(
         row=1,
         column=1,
         value=(
-            f"Master list — {len(sheet_rows):,} student clubs. "
+            f"Master list - {len(sheet_rows):,} student clubs. "
             f"Instagram URLs: {ig_count:,}. Discord URLs: {discord_count:,}. "
             f"SPA merge sources: {', '.join(schools)}."
         ),

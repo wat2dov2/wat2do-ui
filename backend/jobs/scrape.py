@@ -18,16 +18,13 @@ import logging
 import os
 import sys
 
-# Add backend root to path so service imports resolve when invoked as a
-# script from inside backend/. Mirrors the pattern in
-# recommender/job.py and jobs/send_notifications.py.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
 
-import core.logging  # noqa: F401, E402  — triggers basicConfig for standalone execution
+import core.logging  # noqa: F401, E402  - triggers basicConfig for standalone execution
 from core.constants import WORKFLOW_RUN_ERROR  # noqa: E402
 from services.scraper.instagram_scraper import get_scraper  # noqa: E402
 from services.scraper.pipeline import ScrapeResult, run_pipeline  # noqa: E402

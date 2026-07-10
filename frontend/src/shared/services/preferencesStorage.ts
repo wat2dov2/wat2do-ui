@@ -2,7 +2,7 @@
  * Preferences Storage
  * Thin localStorage wrappers for device-level preferences (theme, language).
  * Lives in shared/ because these are consumed by shared infrastructure
- * (i18n, dark mode hook, theme toggler) — not feature-specific logic.
+ * (i18n, dark mode hook, theme toggler) - not feature-specific logic.
  */
 
 import { StorageService } from "@/shared/services/storageService";

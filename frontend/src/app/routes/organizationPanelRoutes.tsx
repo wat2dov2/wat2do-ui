@@ -1,6 +1,5 @@
 /**
- * Organization Panel Routes Configuration
- * Centralized organization panel route handlers and props.
+ * Organization panel route handlers.
  *
  * Heavy organization-panel page components are lazy-loaded so they are split into a
  * separate chunk that only organization managers ever download.
@@ -12,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { ROUTES, ORGANIZATION_PANEL_ROUTE_MAP, type OrganizationPanelRouteKey } from "@/shared/constants/routes";
 import { LoadingPage } from "@/shared/ui/loading-page";
 
-// Lazy-loaded organization-panel page components.
 const OrganizationPanel = lazy(() =>
   import("@/features/organization-panel").then((m) => ({ default: m.OrganizationPanel }))
 );
@@ -26,9 +24,6 @@ const OrganizationPanelMembersPage = lazy(() =>
   import("@/features/organization-panel").then((m) => ({ default: m.OrganizationPanelMembersPage }))
 );
 
-/**
- * Organization panel navigation handler
- */
 function useOrganizationPanelNavigation() {
   const router = useRouter();
 
@@ -40,7 +35,6 @@ function useOrganizationPanelNavigation() {
   );
 }
 
-/** Suspense wrapper for lazy-loaded organization-panel pages. */
 function OrganizationPanelSuspense({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<LoadingPage className="min-h-[400px]" />}>
@@ -49,9 +43,6 @@ function OrganizationPanelSuspense({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Organization Panel Route Component
- */
 export function OrganizationPanelRoute() {
   const handleNavigate = useOrganizationPanelNavigation();
 
@@ -62,9 +53,6 @@ export function OrganizationPanelRoute() {
   );
 }
 
-/**
- * Organization Panel Posters Route Component
- */
 export function OrganizationPanelPostersRoute() {
   const router = useRouter();
 
@@ -79,9 +67,6 @@ export function OrganizationPanelPostersRoute() {
   );
 }
 
-/**
- * Organization Panel Integrations Route Component
- */
 export function OrganizationPanelIntegrationsRoute() {
   return (
     <OrganizationPanelSuspense>
@@ -90,9 +75,6 @@ export function OrganizationPanelIntegrationsRoute() {
   );
 }
 
-/**
- * Organization Panel Members Route Component
- */
 export function OrganizationPanelMembersRoute() {
   return (
     <OrganizationPanelSuspense>

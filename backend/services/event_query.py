@@ -2,8 +2,8 @@
 
 Two callers need the same thing and must not drift apart:
 
-- ``event_service.list_events`` — the public browse list for a school.
-- ``recommender`` — the candidate pool for recommendations.
+- ``event_service.list_events`` - the public browse list for a school.
+- ``recommender`` - the candidate pool for recommendations.
 
 Both want events that still have an occurrence at or after some instant,
 deduped to one row per event, hydrated with their occurrence list. That query
@@ -75,7 +75,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     """Combine a raw ``events`` row with its occurrences into a response model.
 
     The one place that knows how an events row + occurrence list become an API
-    model — shared by the browse list, recommender candidates, and the calendar
+    model - shared by the browse list, recommender candidates, and the calendar
     feed so the shape never drifts between them.
 
     When the row carries an embedded ``organizations`` object (from

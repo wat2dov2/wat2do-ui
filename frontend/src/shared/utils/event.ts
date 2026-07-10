@@ -43,10 +43,6 @@ export function eventToFormData(event: Event): EventFormData {
   };
 }
 
-/**
- * Deduplicate events by ID to prevent duplicate key warnings in React
- * Returns only the first occurrence of each event ID
- */
 export function getUniqueEvents(events: Event[]): Event[] {
   const seen = new Set<number>();
   return events.filter((event) => {
@@ -76,7 +72,7 @@ const CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
 
 /**
  * Translate category names to localized strings.
- * Source of truth for options: create event modal (availableCategories in data/events).
+ * Options source of truth: `shared/data/eventCategories.ts`.
  */
 export function translateCategory(category: string, t: (key: string) => string): string {
   if (!category) return t("navigation.events");

@@ -5,7 +5,7 @@
  * optional view-only fields populated on the frontend (isLive, addedDate). The
  * public list returns `ApiEventSummaryResponse`; detail/edit flows return
  * `ApiEventPublicResponse`/`ApiEventResponse`. Do NOT hand-write new API fields
- * here — add them to the backend Pydantic model and regenerate via
+ * here - add them to the backend Pydantic model and regenerate via
  * `npm run generate-types`.
  */
 
@@ -43,8 +43,8 @@ export interface EventFormOccurrence {
 }
 
 // Event creation/edit form data (matches EventFormData from SubmitEventModal).
-// The owning club (organization_id) is the single source of truth for the event's
-// organization/organization_type/school — those are derived server-side, never entered.
+// The owning organization (organization_id) is the single source of truth for the event's
+// organization/organization_type/school - those are derived server-side, never entered.
 export interface EventFormData {
   organization_id: number | null;
   title: string;

@@ -74,7 +74,7 @@ export const SOCIAL_OPTIONS = [
   { value: "meet_people" as const, label: "Looking to meet people" },
 ];
 
-/** Hardcoded demo events — labeled as preview content in the UI. */
+/** Hardcoded demo events - labeled as preview content in the UI. */
 export const DEMO_EVENTS: (PreviewEventData & { id: number })[] = [
   {
     id: 1,

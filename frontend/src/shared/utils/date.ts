@@ -1,8 +1,3 @@
-/**
- * Date/Time Utilities
- * Consolidates date formatting and parsing functions
- */
-
 export type EventDateCategory =
   | "today"
   | "tomorrow"

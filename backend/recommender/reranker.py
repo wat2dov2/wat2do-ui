@@ -34,24 +34,17 @@ from recommender.config import (
     TIME_BUCKET_MORNING_END,
 )
 
-# One-hot dimension for categories.
 CATEGORY_INDEX = {cat: i for i, cat in enumerate(EVENT_CATEGORIES)}
 NUM_CATEGORIES = len(EVENT_CATEGORIES)
 
-# Time buckets for diversity.
 TIME_BUCKETS = ("morning", "afternoon", "evening", "weekend")
 _TIME_BUCKET_INDEX = {b: i for i, b in enumerate(TIME_BUCKETS)}
 
-# Total feature-vector dimensionality (for reference; not used at runtime).
 _VECTOR_DIM = NUM_CATEGORIES + 1 + len(TIME_BUCKETS)  # 27
 
 
-# ---------------------------------------------------------------------------
-# Sparse vector representation
-# ---------------------------------------------------------------------------
-# Instead of a dense list[float] we store only the non-zero entries and the
-# pre-computed magnitude.  This makes dot-product O(min(|nz_a|, |nz_b|))
-# instead of O(dim) and eliminates redundant magnitude calculations.
+# Sparse vectors store only non-zero entries plus a pre-computed magnitude so
+# dot-product is O(min(|nz_a|, |nz_b|)) instead of O(dim).
 
 
 class _SparseVec:
@@ -68,7 +61,6 @@ def _sparse_cosine_sim(a: _SparseVec, b: _SparseVec) -> float:
     """Cosine similarity using pre-computed magnitudes and sparse dot product."""
     if a.mag == 0.0 or b.mag == 0.0:
         return 0.0
-    # Iterate over the smaller set for minimal work.
     if len(a.nz) > len(b.nz):
         a, b = b, a
     dot = 0.0
@@ -80,11 +72,6 @@ def _sparse_cosine_sim(a: _SparseVec, b: _SparseVec) -> float:
     if dot == 0.0:
         return 0.0
     return dot / (a.mag * b.mag)
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
 
 
 def mmr_rerank(
@@ -118,8 +105,8 @@ def mmr_rerank(
         vectors[eid] = _build_sparse_vector(meta, user_timezone=user_timezone)
 
     score_map = dict(scored_events)
-    # R19: detect duplicate event_ids. dict(scored_events) silently collapses
-    # duplicates (last-write-wins); surface this so upstream bugs are visible.
+    # dict(scored_events) silently collapses duplicates (last-write-wins);
+    # surface this so upstream bugs are visible.
     if len(score_map) != len(scored_events):
         log.warning(
             "mmr_rerank received %d scored events but only %d unique event_ids -- duplicates dropped",
@@ -134,15 +121,12 @@ def mmr_rerank(
         best_eid = None
         best_mmr = -float("inf")
 
-        # R3: iterate in deterministic order so ties resolve consistently.
-        # Sort by (-relevance, event_id) so the highest-relevance item with the
-        # lowest event_id wins a tie. Using a plain `set` iteration here
-        # produces hash-order output that varies across processes.
+        # Deterministic order so ties resolve consistently: (-relevance, event_id).
+        # Plain set iteration would produce hash-order output that varies across processes.
         for eid in sorted(remaining, key=lambda x: (-score_map[x], x)):
             relevance = score_map[eid]
             vec_eid = vectors[eid]
 
-            # Max similarity to already selected items
             max_sim = 0.0
             for sel_eid in selected:
                 sim = _sparse_cosine_sim(vec_eid, vectors[sel_eid])
@@ -164,11 +148,6 @@ def mmr_rerank(
     return selected
 
 
-# ---------------------------------------------------------------------------
-# Feature vector construction (sparse)
-# ---------------------------------------------------------------------------
-
-
 def _build_sparse_vector(
     meta: EventResponse | None,
     *,
@@ -187,18 +166,15 @@ def _build_sparse_vector(
 
     nz: dict[int, float] = {}
 
-    # Category one-hot
     cat = meta.category or ""
     idx = CATEGORY_INDEX.get(cat)
     if idx is not None:
         nz[idx] = 1.0
 
-    # Normalized price (0 = free, 1 = expensive)
     price = meta.price or 0
     if price:
         nz[NUM_CATEGORIES] = min(price / PRICE_NORMALIZATION_CAP, 1.0)
 
-    # Time bucket
     dtstart = None
     if meta.occurrences:
         now_utc = datetime.now(timezone.utc)
@@ -228,11 +204,10 @@ def _build_sparse_vector(
 def _get_time_bucket(dtstart: str, *, user_timezone: str | None = None) -> str:
     """Determine time bucket from ISO datetime string.
 
-    R13: when *user_timezone* is supplied (IANA name) the event start is
-    converted to the user's local time before bucketing so 8 AM PST events
-    land in "morning" for PST users instead of "afternoon" (16:00 UTC).
-    Falls back to UTC when no timezone is provided (preserves prior
-    behaviour) or when the timezone string is invalid.
+    When *user_timezone* is supplied (IANA name) the event start is converted
+    to the user's local time before bucketing so 8 AM PST events land in
+    "morning" for PST users instead of "afternoon" (16:00 UTC).
+    Falls back to UTC when no timezone is provided or the timezone is invalid.
     """
     if not dtstart:
         return "afternoon"

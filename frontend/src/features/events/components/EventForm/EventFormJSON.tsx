@@ -11,7 +11,7 @@ import { useEventFormContext } from "@/features/events/components/EventForm/Even
 import { useProfileCompleted } from "@/features/auth";
 import { JSON_EDITOR_FONT_SIZE } from "@/shared/constants/ui";
 
-// Lazy load Monaco Editor
+// Monaco is heavy; load only when the JSON tab mounts.
 const Editor = lazy(() => import("@monaco-editor/react"));
 
 export function EventFormJSON() {

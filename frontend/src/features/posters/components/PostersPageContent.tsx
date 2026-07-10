@@ -1,5 +1,5 @@
 /**
- * PostersPageContent -- shared posters page UI used by both admin and club-panel.
+ * PostersPageContent -- shared posters page UI used by both admin and organization-panel.
  *
  * Feature-specific components (QR scan map, QR details modal, QR asset wizard)
  * are passed in via props so this module has zero feature imports.
@@ -115,7 +115,6 @@ export function PostersPageContent({
     itemsPerPage: SCANS_PER_PAGE,
   });
 
-  // Get qrCodeId from URL
   const qrCodeIdParam = searchParams.get(QP.QR_CODE_ID);
   const selectedQRCode = qrCodeIdParam
     ? filters.qrCodes.find((q) => q.id === qrCodeIdParam) || null
@@ -132,7 +131,6 @@ export function PostersPageContent({
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="secondary" size="icon" onMouseDown={onBack}>
           <ArrowLeft className="size-4" />
@@ -148,7 +146,6 @@ export function PostersPageContent({
         </div>
       </div>
 
-      {/* Map and QR Code Scans Table Side by Side */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">{t("admin.scanLocations")}</h2>
@@ -172,7 +169,6 @@ export function PostersPageContent({
           </Select>
         </div>
         <div className="grid grid-cols-2 gap-5">
-          {/* Map Section - Left Side */}
           <div ref={mapContainerRef} className="space-y-3">
             {hasIntersected ? (
               <Suspense
@@ -213,7 +209,6 @@ export function PostersPageContent({
             )}
           </div>
 
-          {/* QR Code Scans Table - Right Side */}
           <div className="space-y-3">
             <div className="border border-border rounded-lg overflow-hidden">
               <Table>
@@ -265,7 +260,6 @@ export function PostersPageContent({
               </Table>
             </div>
 
-            {/* Pagination for Scans */}
             {sortedScans.length > 0 && (
               <Pagination
                 currentPage={scansPagination.currentPage}
@@ -277,12 +271,10 @@ export function PostersPageContent({
         </div>
       </div>
 
-      {/* Generate QR Assets Wizard */}
       <div className="border border-border rounded-xl p-4 bg-card">
         <AssetWizardComponent userEmail={userEmail} />
       </div>
 
-      {/* QR Code Details Modal */}
       {selectedQRCode && (
         <DetailsModalComponent
           isOpen={showDetailsModal}

@@ -40,7 +40,7 @@ def _event_exists(event_id: int) -> bool:
 def create_report(user_id: str, event_id: int, reason: str) -> ReportResponse:
     """Create a new event report.
 
-    Verifies the referenced event exists before inserting — stops the
+    Verifies the referenced event exists before inserting - stops the
     forged-event-id DoS vector flagged in audit I2.  The FK migration
     DB foreign keys enforce this at the storage layer as well; this check keeps the error message clean
     (404 instead of opaque ``Referenced resource does not exist``).
@@ -119,7 +119,7 @@ def update_report(report_id: str, status: str) -> ReportResponse | None:
 
     payload: dict = {"status": status}
     # Only stamp resolved_at when transitioning *out of* pending for the
-    # first time — preserves the original resolution timestamp across any
+    # first time - preserves the original resolution timestamp across any
     # (defensive, now-rejected) re-openings.
     if existing.status == REPORT_PENDING and status != REPORT_PENDING:
         payload["resolved_at"] = datetime.now(timezone.utc).isoformat()

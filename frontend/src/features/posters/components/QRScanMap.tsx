@@ -15,34 +15,21 @@ interface QRScanMapProps {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
-// Color scale based on scan count
-// Industry standard: Green (low) -> Yellow (medium) -> Red (high)
-// Hardcoded HSL values from Tailwind variables for reliability
+// Green (low) -> yellow (mid) -> red (high) by scan-count ratio; HSL from Tailwind greens/yellows/reds.
 function getColorForScanCount(count: number, maxCount: number): string {
-  if (maxCount === 0) return "hsl(216, 100%, 42%)"; // Default primary blue
+  if (maxCount === 0) return "hsl(216, 100%, 42%)";
   
-  // Normalize count to 0-1 range
   const ratio = count / maxCount;
   
-  // Industry standard traffic light system:
-  // Green (low/good) -> Yellow (medium/warning) -> Red (high/alert)
-  // Using hardcoded HSL values from Tailwind variables:
-  // green-500: hsl(142, 71%, 45%)
-  // yellow-500: hsl(38, 92%, 50%)
-  // red-500: hsl(0, 84%, 60%)
   if (ratio < 0.33) {
-    // Low scans: Green
     return "hsl(142, 71%, 45%)";
   } else if (ratio < 0.67) {
-    // Medium scans: Yellow
     return "hsl(38, 92%, 50%)";
   } else {
-    // High scans: Red
     return "hsl(0, 84%, 60%)";
   }
 }
 
-// Custom branded marker component
 function PosterMarker({ 
   posterData, 
   scanCount, 
@@ -88,7 +75,6 @@ function PosterMarker({
         animationDelay: `${index * 50}ms`,
       }}
     >
-      {/* Pulse animation ring */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div 
           className="rounded-full animate-ping"
@@ -101,10 +87,8 @@ function PosterMarker({
         />
       </div>
       
-      {/* Main marker */}
       <div className="relative flex items-center justify-center">
         <div className="relative">
-          {/* Outer glow - reduced opacity */}
           <div 
             className="absolute inset-0 rounded-full blur-md"
             style={{
@@ -118,7 +102,6 @@ function PosterMarker({
             }}
           />
           
-          {/* Marker dot - size based on scan count */}
           <div 
             className="relative rounded-full border-2 border-background shadow-lg transform transition-all duration-200 group-hover:scale-125"
             style={{
@@ -127,7 +110,6 @@ function PosterMarker({
               backgroundColor: color,
             }}
           >
-            {/* Inner highlight */}
             <div 
               className="absolute rounded-full bg-white/40"
               style={{
@@ -138,7 +120,6 @@ function PosterMarker({
               }}
             />
             
-            {/* Scan count badge for larger markers */}
             {scanCount > 0 && size > 20 && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <span 
@@ -153,7 +134,6 @@ function PosterMarker({
         </div>
       </div>
 
-      {/* Tooltip on hover */}
       {isHovered && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-card border border-border rounded-lg shadow-xl text-xs z-dropdown pointer-events-none min-w-[160px]">
           <div className="flex flex-col gap-1">
@@ -181,7 +161,6 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
   const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Detect dark mode
   useEffect(() => {
     const checkDarkMode = () => {
       setIsDarkMode(document.documentElement.classList.contains("dark"));
@@ -197,10 +176,8 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
     return () => observer.disconnect();
   }, []);
 
-  // Group FILTERED scans by QR code (poster) to get scan counts for the time period
-  // Use poster locations from QRCode (not from scans)
+  // Group filtered scans by poster; marker positions come from QRCode, not scans.
   const posterLocations = useMemo(() => {
-    // Group filtered scans by qrCodeId to count scans in the time period
     const grouped = scans.reduce((acc, scan) => {
       if (!acc[scan.qrCodeId]) {
         acc[scan.qrCodeId] = [];
@@ -209,11 +186,9 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
       return acc;
     }, {} as Record<string, QRCodeScan[]>);
 
-    // Use poster locations from QRCode and filtered scan counts
     return Object.entries(grouped).flatMap(([qrCodeId, posterScans]) => {
       const qrCode = posters.find(qr => qr.id === qrCodeId);
 
-      // Skip if QR code not found or doesn't have location
       if (!qrCode || qrCode.latitude === undefined || qrCode.longitude === undefined) {
         return [];
       }
@@ -228,12 +203,10 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
     });
   }, [scans, posters, t]);
 
-  // Find max scan count for color scaling
   const maxScanCount = useMemo(() => {
     return Math.max(...posterLocations.map(p => p.scanCount), 1);
   }, [posterLocations]);
 
-  // Calculate center point from all poster locations
   const center = useMemo(() => {
     if (posterLocations.length === 0) {
       return { latitude: 43.4723, longitude: -80.5449 }; // University of Waterloo
@@ -245,7 +218,6 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
     return { latitude: avgLat, longitude: avgLng };
   }, [posterLocations]);
 
-  // Choose map style based on theme
   const mapStyle = isDarkMode
     ? "mapbox://styles/mapbox/dark-v11"
     : "mapbox://styles/mapbox/light-v11";
@@ -275,7 +247,6 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
 
   return (
     <div className="relative w-full rounded-xl border border-border overflow-hidden shadow-lg bg-card" style={{ height }}>
-      {/* Header overlay */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-card/95 via-card/80 to-transparent p-4 pointer-events-none">
         <div className="flex items-center justify-between pointer-events-auto">
           <div className="flex items-center gap-2">
@@ -293,7 +264,6 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
         </div>
       </div>
 
-      {/* Map container */}
       <div className="w-full h-full">
         <Map
           mapboxAccessToken={MAPBOX_TOKEN}
@@ -325,7 +295,6 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
         </Map>
       </div>
 
-      {/* Legend/Stats overlay at bottom */}
       {posterLocations.length > 0 && (
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-card/95 via-card/80 to-transparent p-4 pointer-events-none">
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pointer-events-auto flex-wrap">

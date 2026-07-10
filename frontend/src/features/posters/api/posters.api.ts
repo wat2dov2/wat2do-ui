@@ -1,5 +1,5 @@
 /**
- * Poster API — data-fetching functions for QR code posters.
+ * Poster API - data-fetching functions for QR code posters.
  */
 
 import type { QRCode } from "@/features/posters/types";

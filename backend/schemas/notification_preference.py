@@ -17,7 +17,7 @@ from core.constants import (
     NOTIFICATION_TYPE_WEEKLY_DIGEST,
 )
 
-# Literal alias — canonical set of valid notification_type values.
+# Literal alias - canonical set of valid notification_type values.
 # Add a new member here AND in core/constants.NOTIFICATION_TYPES in the
 # same change. Pydantic enforces this at the API boundary; the DB
 # column stays plain text so adding a type is a code change only.
@@ -30,8 +30,6 @@ NotificationType = Literal[
 
 
 class NotificationPreferenceResponse(BaseModel):
-    """Single preference row as returned from the API."""
-
     notification_type: NotificationType
     enabled: bool
     updated_at: datetime | None = None
@@ -62,7 +60,7 @@ class NotificationPreferencesBulkUpdate(BaseModel):
 
 
 class NotificationPreferencesListResponse(BaseModel):
-    """GET response: every type's current resolved state for the user.
+    """Every notification type's resolved enabled state for the user.
 
     Includes types for which the user has no row (default-on); the
     ``enabled`` value is the resolved default in that case. Clients

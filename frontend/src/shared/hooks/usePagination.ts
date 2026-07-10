@@ -6,10 +6,6 @@ interface UsePaginationOptions<T> {
   initialPage?: number;
 }
 
-/**
- * usePagination Hook
- * Generic hook for managing in-memory (client-side) pagination.
- */
 export function usePagination<T>({
   items,
   itemsPerPage,

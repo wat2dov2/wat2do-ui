@@ -22,15 +22,12 @@ from services.storage_service import storage
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
-# Per-user rate limit: 30 uploads per hour.  Sized for normal usage
-# (a user editing multiple events / organizations in one session) while
-# preventing storage-flooding attacks where a single account uploads
-# thousands of orphaned assets (audit U6 / U12).
+# Per-user rate limit: 30 uploads/hour. Sized for normal multi-edit sessions
+# while blocking storage-flooding via orphaned assets.
 _upload_rate_limiter = RateLimiter(max_requests=30, window_seconds=3600)
 
 
 def _upload_rate_key(user: dict = Depends(get_current_user)) -> str:
-    """Key the upload rate limiter by the authenticated user's ID."""
     return f"uploads:{user['id']}"
 
 
@@ -38,19 +35,12 @@ _rate_limit_dep = _upload_rate_limiter.dependency(key_func=_upload_rate_key)
 
 
 def _enforce_content_length(bucket: str):
-    """Return a FastAPI dependency that rejects oversized requests by header.
+    """Reject oversized requests by Content-Length before multipart parsing.
 
-    Runs *before* ``UploadFile = File(...)`` parses the multipart body,
-    so a 1 GiB POST is rejected before any allocation.  The multipart
-    boundary / form framing adds a handful of bytes of overhead, so we
-    compare ``Content-Length`` against ``bucket_limit + _MULTIPART_SLACK``
-    — lenient enough that a legitimate upload of an at-limit file still
-    succeeds.
+    Multipart framing adds a few KiB, so compare against
+    ``bucket_limit + _MULTIPART_SLACK`` - lenient enough that an at-limit
+    file still succeeds.
     """
-    # Multipart encoding adds framing (boundary lines, headers per part,
-    # terminator).  A few KiB of slack on top of the raw file size lets
-    # a payload exactly at the bucket limit pass without triggering 413
-    # solely on multipart overhead.
     _MULTIPART_SLACK = 4 * 1024
 
     def _check(request: Request) -> None:
@@ -74,10 +64,9 @@ def _enforce_content_length(bucket: str):
 async def _validated_upload(file: UploadFile, bucket: str) -> tuple[bytes, str]:
     """Validate and read an upload, returning (cleaned_bytes, final_content_type).
 
-    Callers must pair this with the ``_enforce_content_length(bucket)``
-    dependency on the route so oversized bodies are rejected *before*
-    FastAPI parses the multipart form (audit U6).  validate_and_prepare
-    re-checks the actual decoded size as a defensive lower bound.
+    Pair with ``_enforce_content_length(bucket)`` so oversized bodies are
+    rejected before FastAPI parses multipart. ``validate_and_prepare``
+    re-checks decoded size as a defensive lower bound.
     """
     data = await file.read()
     try:
@@ -97,17 +86,12 @@ async def _replace_image(
     old_url: str | None,
     update_fn,
 ) -> str:
-    """Validate file, delete old image if present, upload new, and update the resource.
-
-    *update_fn* receives the new URL and persists it (e.g. via service.update_*).
-    Returns the new public URL.
-    """
+    """Validate, delete old image if present, upload new, and persist via *update_fn*."""
     data, content_type = await _validated_upload(file, bucket)
     if old_url:
-        # path_from_url returns None for URLs outside our bucket prefix
-        # or with traversal sequences — those are silently ignored (we
-        # don't want to delete an unrelated object on another user's
-        # behalf).  See StorageService.path_from_url (audit U10).
+        # path_from_url returns None for URLs outside our bucket prefix or
+        # with traversal sequences - those are ignored so we never delete
+        # an unrelated object. See StorageService.path_from_url.
         old_path = storage.path_from_url(old_url, bucket)
         if old_path:
             await asyncio.to_thread(storage.delete_file, bucket, old_path)
@@ -128,7 +112,6 @@ async def upload_event_image_unsigned(
     _rl: None = Depends(_rate_limit_dep),
     _cl: None = Depends(_enforce_content_length(BUCKET_EVENT_IMAGES)),
 ):
-    """Upload an event flyer image and return its public URL."""
     data, content_type = await _validated_upload(file, BUCKET_EVENT_IMAGES)
     url = await asyncio.to_thread(
         storage.upload_file,
@@ -205,10 +188,9 @@ async def upload_qr_asset(
     _rl: None = Depends(_rate_limit_dep),
     _cl: None = Depends(_enforce_content_length(BUCKET_QR_ASSETS)),
 ):
-    # TODO(audit U12): track qr-asset ownership + lifecycle so previously
-    # uploaded orphaned assets can be reaped when a poster's image_url
-    # changes.  Today there is no replace-logic here, so every upload
-    # accumulates in the public bucket.
+    # TODO: track qr-asset ownership + lifecycle so orphaned assets can be
+    # reaped when a poster's image_url changes. No replace-logic today, so
+    # every upload accumulates in the public bucket.
     data, content_type = await _validated_upload(file, BUCKET_QR_ASSETS)
     url = await asyncio.to_thread(
         storage.upload_file,

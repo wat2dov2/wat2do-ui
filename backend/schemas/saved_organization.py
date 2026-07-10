@@ -14,10 +14,6 @@ class SavedOrganizationResponse(BaseModel):
 
 
 class SaveOrganizationStatusResponse(BaseModel):
-    """Response for ``PUT /saved-organizations/{id}`` / ``DELETE /saved-organizations/{id}``.
-
-    Typed explicitly so the response contract is locked at the
-    OpenAPI boundary.
-    """
+    """Locks the save/unsave status contract at the OpenAPI boundary."""
 
     status: Literal["saved", "unsaved"]

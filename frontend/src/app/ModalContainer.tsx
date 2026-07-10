@@ -1,21 +1,7 @@
 /**
- * ModalContainer
- *
- * Owns the global modal subscriptions and rendering. Isolating the
- * modal-store subscriptions here prevents modal toggles from
- * re-rendering route page content.
- *
- * Subscribes to:
- *   - showSubmitEvent / setShowSubmitEvent
- *   - showCommandPalette / setShowCommandPalette
- *   - setShowFilterDropdown (passed to CommandPalette)
- *
- * Owns local state:
- *   - showBuyCredits (only consumed by BuyCreditsModal + SubmitEventModal)
- *
- * Modal-only handlers (promote-with-credit-fallback, submit-close,
- * open-onboarding, clear-filters) live here because nothing outside
- * the modals needs them.
+ * Owns global modal subscriptions and rendering so modal toggles do not
+ * re-render route page content. Modal-only handlers (promote fallback,
+ * submit close, onboarding open, clear filters) live here.
  */
 
 import { useCallback, useState, lazy, Suspense } from "react";
@@ -52,7 +38,6 @@ export function ModalContainer() {
   const { profileCompleted, isAdmin, hasOrganization } = useAuthState();
   const canCreateEvents = hasOrganization || isAdmin;
 
-  // ── UI-store subscriptions (isolated from route pages) ─────
   const showSubmitEvent = useUIStore((s) => s.showSubmitEvent);
   const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
   const showCommandPalette = useUIStore((s) => s.showCommandPalette);
@@ -61,18 +46,15 @@ export function ModalContainer() {
   const editingEvent = useUIStore((s) => s.editingEvent);
   const clearEditingEvent = useUIStore((s) => s.clearEditingEvent);
 
-  // ── Events store actions ─────────────────────────────────────
   const addEvent = useEventsStore((s) => s.addEvent);
   const updateEvent = useEventsStore((s) => s.updateEvent);
 
-  // ── Credits / promotions ─────────────────────────────────────
   const userCredits = useCreditsStore((s) => s.userCredits);
   const storeAddCredits = useCreditsStore((s) => s.addCredits);
   const storePromoteEvent = useCreditsStore((s) => s.promoteEvent);
 
   const { clearAllFilters } = useFilterActions();
 
-  // ── Buy credits modal (local UI state) ───────────────────────
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const promoteEvent = useCallback(

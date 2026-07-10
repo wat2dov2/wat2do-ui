@@ -1,8 +1,6 @@
 /**
- * Hook for managing navigation, routing, URL params, and QR redirects
- *
- * - Combined URL param handling into a single useEffect
- * - QR redirect handled by QRRedirectPage at /qr/:id
+ * Navigation, URL params, and initial-route handling.
+ * QR redirect is handled by QRRedirectPage at /qr/:id.
  */
 
 import { useEffect, useRef } from "react";
@@ -19,9 +17,6 @@ interface UseAppNavigationOptions {
   setSchoolFilter: (school: string) => void;
 }
 
-/**
- * Hook for managing navigation, routing, URL params, and QR redirects
- */
 export function useAppNavigation({
   events,
   setSchoolFilter,

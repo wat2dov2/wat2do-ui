@@ -186,6 +186,8 @@ def _render_event_change_text(summary: dict, diff: dict) -> str:
     for field, change in diff.items():
         if field == "occurrences":
             lines.extend(_render_occurrence_diff_text(change))
+        elif field == "cancelled":
+            lines.append(_render_cancelled_diff_text(change))
         else:
             lines.append(f"  {field}: {change.get('old')} -> {change.get('new')}")
     lines.append("")
@@ -198,6 +200,8 @@ def _render_event_change_html(summary: dict, diff: dict) -> str:
     for field, change in diff.items():
         if field == "occurrences":
             parts.append(_render_occurrence_diff_html(change))
+        elif field == "cancelled":
+            parts.append(_render_cancelled_diff_html(change))
         else:
             parts.append(
                 f"<li><strong>{field}</strong>: {change.get('old')} &rarr; {change.get('new')}</li>"
@@ -208,6 +212,22 @@ def _render_event_change_html(summary: dict, diff: dict) -> str:
         f"<ul>{rows}</ul>"
         f"<p>Location: {summary.get('location', '')}</p>"
     )
+
+
+def _render_cancelled_diff_text(change: dict) -> str:
+    if change.get("new") is True:
+        return "  status: cancelled"
+    if change.get("old") is True and change.get("new") is False:
+        return "  status: no longer cancelled"
+    return f"  cancelled: {change.get('old')} -> {change.get('new')}"
+
+
+def _render_cancelled_diff_html(change: dict) -> str:
+    if change.get("new") is True:
+        return "<li><strong>status</strong>: cancelled</li>"
+    if change.get("old") is True and change.get("new") is False:
+        return "<li><strong>status</strong>: no longer cancelled</li>"
+    return f"<li><strong>cancelled</strong>: {change.get('old')} &rarr; {change.get('new')}</li>"
 
 
 def _occurrence_set(items: list[dict] | None) -> set[str]:

@@ -14,14 +14,13 @@ import os
 import sys
 from datetime import datetime, timezone
 
-# Add backend root to path so imports work when run from repo root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-import core.logging  # noqa: F401 — triggers basicConfig for standalone execution
+import core.logging  # noqa: F401 - triggers basicConfig for standalone execution
 from core.database import get_sb
 from core.tables import USERS
 from services.notifications.digests import (
@@ -94,7 +93,7 @@ def main() -> None:
             )
 
     log.info(
-        "Notifications cron done — daily_new_events=%d morning=%d weekly=%d",
+        "Notifications cron done - daily_new_events=%d morning=%d weekly=%d",
         sent_daily_new_events,
         sent_morning,
         sent_weekly,

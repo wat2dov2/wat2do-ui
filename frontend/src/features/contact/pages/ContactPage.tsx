@@ -42,7 +42,6 @@ export function ContactPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-[800px] mx-auto px-0 py-12 sm:px-6 md:py-20 pb-32 space-y-16">
         
-        {/* HERO SECTION */}
         <m.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -55,41 +54,33 @@ export function ContactPage() {
             className="w-full h-full object-cover select-none pointer-events-none"
           />
           
-          {/* Double-step bottom-left cutout */}
           <div className="absolute bottom-0 left-0 flex flex-col items-start z-10 select-none">
-            {/* Top Step ("MEET") */}
             <div className="relative bg-background pl-4 pr-5 pt-3 pb-1 md:pl-6 md:pr-8 md:pt-4 md:pb-1 rounded-tr-[16px] md:rounded-tr-[24px] w-fit">
-              {/* Inner corner curve on the top-left */}
               <CornerMask className="absolute left-0 bottom-full size-4 md:size-6 text-background pointer-events-none" />
               
               <h1 className="font-sans font-bold text-3xl sm:text-5xl text-foreground leading-none tracking-tight uppercase">
                 {t("contact.hero.meet")}
               </h1>
               
-              {/* Inner corner curve on the right, resting on the bottom step */}
               <CornerMask className="absolute left-full bottom-0 size-4 md:size-6 text-background pointer-events-none" />
             </div>
 
-            {/* Bottom Step ("WAT2DO") */}
             <div className="relative bg-background pl-4 pr-6 pt-2 pb-4 md:pl-6 md:pr-10 md:pt-3 md:pb-6 rounded-tr-[16px] md:rounded-tr-[24px] w-fit">
               <h1 className="font-sans font-bold text-3xl sm:text-5xl text-foreground leading-none tracking-tight uppercase">
                 {t("contact.hero.wat2do")}
               </h1>
               
-              {/* Inner corner curve on the right */}
               <CornerMask className="absolute left-full bottom-0 size-4 md:size-6 text-background pointer-events-none" />
             </div>
           </div>
         </m.div>
 
-        {/* CONTENT UNDER HERO SECTION */}
         <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
           className="space-y-10 text-foreground/90 animate-fade-in"
         >
-          {/* About Wat2Do */}
           <div className="space-y-4">
             <h2 className="text-3xl font-extrabold text-foreground tracking-tight font-sans">
               {t("contact.about.title")}
@@ -166,7 +157,6 @@ export function ContactPage() {
             </p>
           </div>
 
-          {/* Funding Support */}
           <div className="space-y-6 pt-4">
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans">
               {t("contact.funding.text")}
@@ -191,13 +181,11 @@ export function ContactPage() {
 
           <hr className="border-t border-border/85 my-10" />
 
-          {/* Tips Section */}
           <div className="space-y-8">
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed font-sans italic">
               {t("contact.tips.intro")}
             </p>
 
-            {/* Expanding Your Professional Network */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
                 {t("contact.tips.networking.title")}
@@ -234,7 +222,6 @@ export function ContactPage() {
               </p>
             </div>
 
-            {/* Random Events You Didn't Know Existed */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
                 {t("contact.tips.random.title")}
@@ -265,7 +252,6 @@ export function ContactPage() {
               </p>
             </div>
 
-            {/* Search Tips */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
                 {t("contact.tips.search.title")}
@@ -299,7 +285,6 @@ export function ContactPage() {
               </p>
             </div>
 
-            {/* Start Exploring */}
             <div className="space-y-3">
               <h3 className="text-2xl font-bold tracking-tight text-foreground font-sans">
                 {t("contact.tips.explore.title")}
@@ -313,7 +298,6 @@ export function ContactPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 pt-6">
             <button
               onMouseDown={() => router.push(ROUTES.HOME)}
@@ -330,7 +314,6 @@ export function ContactPage() {
           </div>
         </m.div>
 
-        {/* Footer */}
         <footer className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <p className="text-xs text-muted-foreground leading-relaxed max-w-[500px]">
             {t("contact.footer.about")}

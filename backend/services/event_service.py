@@ -1,10 +1,8 @@
 """Events via Supabase. Sync so no asyncpg/SQLAlchemy.
 
 Events store metadata (title, location, image, etc.); occurrence dates
-live in event_dates and are managed via event_date_service. The
-``primary occurrence`` fields ``dtstart_utc`` / ``dtend_utc`` on response
-models are computed by ``_pick_primary`` — earliest future occurrence, or
-earliest occurrence if all are in the past.
+live in ``event_dates`` (via ``event_date_service``) and are returned on
+response models as the ``occurrences`` list.
 """
 
 import logging
@@ -36,7 +34,7 @@ log = logging.getLogger(__name__)
 
 # Mirrors the recommender's _candidates_cache pattern: one in-process TTLCache
 # per cached query, cleared on write. Short TTL is the real freshness guarantee
-# — an in-process write (create/update/delete) clears the cache immediately via
+# - an in-process write (create/update/delete) clears the cache immediately via
 # invalidate_events_cache(), but an out-of-process writer (the scraper job)
 # can't reach it, so those writes self-heal within this window. Cheap because
 # the keyspace is one entry per school.
@@ -53,7 +51,7 @@ def invalidate_events_cache() -> None:
     _events_cache.clear()
 
 
-# Event fields whose changes constitute a "material" update — the ones
+# Event fields whose changes constitute a "material" update - the ones
 # worth notifying saved-by users about. Description/title/handle edits
 # are deliberately excluded so routine cleanup does not fire alerts.
 #
@@ -63,6 +61,7 @@ def invalidate_events_cache() -> None:
 MATERIAL_FIELDS: tuple[str, ...] = (
     "occurrences",
     "location",
+    "cancelled",
 )
 
 
@@ -82,7 +81,7 @@ def _resolve_organization_fields(organization_id: int) -> dict[str, str | None]:
     """Derive the event's denormalized fields from its owning organization.
 
     The organization is the single source of truth for an event's display name,
-    type, and school — callers never set these directly, so both the
+    type, and school - callers never set these directly, so both the
     direct-create path and the submission-approval path stay in agreement.
     """
     from services import organization_service  # local import avoids an import cycle
@@ -164,7 +163,7 @@ def get_event(event_id: int) -> EventResponse | None:
 def _today_start_utc(school: str | None) -> datetime:
     """Start of the current day, in the school's timezone, as a UTC instant.
 
-    "Upcoming" means "starts today or later" — using the school's local day
+    "Upcoming" means "starts today or later" - using the school's local day
     boundary (not UTC midnight) so events earlier today don't drop out for
     users a few hours off UTC.
     """
@@ -266,7 +265,7 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
     try:
         event_date_service.create_occurrences(new_id, data.occurrences)
     except Exception:
-        # Roll back the orphan event row if occurrence insert failed —
+        # Roll back the orphan event row if occurrence insert failed -
         # PostgREST has no transaction surface, so we clean up manually.
         get_sb().table(EVENTS).delete().eq("id", new_id).execute()
         raise
@@ -282,7 +281,7 @@ def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
     """Return True if every occurrence on the event is strictly in the past.
 
     For multi-occurrence events, we use the LATEST occurrence's end time
-    as the "event still in flight" boundary — an event with one occurrence
+    as the "event still in flight" boundary - an event with one occurrence
     last week and one next week is not yet "ended". Events with no
     occurrences are treated as already ended because current events are
     required to have at least one occurrence.
@@ -297,7 +296,7 @@ def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
 def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
     """Update an event, refusing edits to already-past events.
 
-    Past-event freezing (audit I12) — once every occurrence has passed,
+    Past-event freezing (audit I12) - once every occurrence has passed,
     mutations are rejected. This prevents owners from silently rewriting
     title / dtstart / organization on an event users already saved.
     """
@@ -334,13 +333,9 @@ def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
 
 
 def delete_event(event_id: int) -> bool:
-    # C6: event_promotions.event_id has ON DELETE CASCADE, so any active
-    # paid promotion on this event would silently disappear when the row
-    # is deleted. Prorate-refund the unused portion first (via the ledger
-    # so the audit trail stays correct) before dropping the event. The
-    # refund helper logs per-row failures and never raises, so a single
-    # bad promotion row cannot block the deletion. event_dates also
-    # cascade-delete via FK, so we don't have to clean them up manually.
+    # C6: refund active promotions before delete - ON DELETE CASCADE would
+    # otherwise drop them without a ledger refund. Helper never raises.
+    # event_dates cascade via FK.
     from services import credit_service  # local import to avoid cycle
 
     try:
@@ -366,7 +361,7 @@ def compute_event_diff(
 ) -> dict[str, dict[str, object | None]]:
     """Diff the subset of fields whose changes warrant a user-facing alert.
 
-    Only ``MATERIAL_FIELDS`` are compared — routine title/description
+    Only ``MATERIAL_FIELDS`` are compared - routine title/description
     edits should not fire notifications. The ``occurrences`` field
     compares old vs new as ordered lists of dtstart/dtend/duration/tz
     tuples; the lists arrive sorted by ``dtstart_utc`` (because

@@ -74,7 +74,7 @@ function toEventSubmission(row: SubmissionResponse): EventSubmission {
   };
 }
 
-// ── Club mutations ─────────────────────────────────────────────────
+// ── Organization mutations ─────────────────────────────────────────
 
 export async function adminCreateOrganization(club: Organization): Promise<Organization> {
   return createOrganizationAPI({

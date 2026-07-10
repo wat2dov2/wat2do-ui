@@ -9,8 +9,6 @@ PromotionPackage = str
 
 
 class CreditRow(BaseModel):
-    """Internal representation of a user_credits row."""
-
     id: str
     user_id: str
     balance: int
@@ -21,7 +19,7 @@ class CreditBalanceResponse(BaseModel):
 
 
 class AddCreditsRequest(BaseModel):
-    # C13: use UUID for type-safe validation so malformed strings are rejected
+    # UUID for type-safe validation so malformed strings are rejected
     # at the Pydantic boundary (422) instead of surfacing as opaque Postgres
     # errors deeper down.
     user_id: UUID = Field(..., description="Target user ID to receive credits")
@@ -40,7 +38,7 @@ class PromotionResponse(BaseModel):
     event_id: int
     package: PromotionPackage
     credits_spent: int
-    # Datetimes parsed via Pydantic v2 (audit S9).  Column types in the
+    # Datetimes parsed via Pydantic v2.  Column types in the
     # DB are TIMESTAMPTZ so ISO-8601 strings round-trip cleanly.
     start_date: datetime
     end_date: datetime

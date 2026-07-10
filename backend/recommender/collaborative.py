@@ -18,13 +18,9 @@ from services import saved_event_service
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Cached CF matrices: rebuilding user vectors {user_id: {event_id: score}}
-# and item vectors {event_id: {user_id: score}} from the raw interaction
-# matrix + saves is O(rows) and identical for every caller within the same
-# cache window.  Cache both so the work is done once per TTL period instead
-# of once per live-fallback request.
-# ---------------------------------------------------------------------------
+# Cached CF matrices: rebuilding user/item vectors from the interaction matrix
+# + saves is O(rows) and identical for every caller within the same cache
+# window. Cache both so the work is done once per TTL period.
 _cf_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 
 
@@ -51,7 +47,6 @@ def _build_cf_matrices() -> tuple[
             CF_MAX_USER_EVENT_SCORE,
         )
 
-    # Transpose: item_vectors[event_id][user_id] = score
     item_vectors: dict[int, dict[str, float]] = {}
     for uid, vec in user_vectors.items():
         for eid, score in vec.items():
@@ -59,7 +54,6 @@ def _build_cf_matrices() -> tuple[
                 item_vectors[eid] = {}
             item_vectors[eid][uid] = score
 
-    # Precompute vector magnitudes
     user_magnitudes: dict[str, float] = {}
     for uid, vec in user_vectors.items():
         user_magnitudes[uid] = math.sqrt(sum(v**2 for v in vec.values()))
@@ -104,10 +98,8 @@ def get_collaborative_scores(
     if not unseen:
         return {}
 
-    # Target user magnitude
     target_mag = user_magnitudes.get(user_id) or math.sqrt(sum(v**2 for v in target_vec.values()))
 
-    # User-based CF
     user_scores = _user_based_cf(
         user_id,
         target_vec,
@@ -117,10 +109,8 @@ def get_collaborative_scores(
         unseen,
     )
 
-    # Item-based CF
     item_scores = _item_based_cf(target_vec, item_vectors, item_magnitudes, unseen)
 
-    # Blend user-based and item-based CF
     all_eids = set(user_scores.keys()) | set(item_scores.keys())
     blended: dict[int, float] = {}
     for eid in all_eids:
@@ -184,7 +174,6 @@ def _item_based_cf(
     """Score unseen events by similarity to events the user has interacted with."""
     scores: dict[int, float] = {}
 
-    # Precalculate magnitudes of user's interacted events to avoid recalculations in inner loops
     user_event_mags = {
         user_eid: item_magnitudes.get(user_eid)
         or math.sqrt(sum(v**2 for v in item_vectors.get(user_eid, {}).values()))

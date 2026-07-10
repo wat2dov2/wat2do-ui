@@ -23,9 +23,6 @@ function subscribeToDarkMode(onStoreChange: () => void): () => void {
   };
 }
 
-/**
- * Custom hook for managing dark mode
- */
 export function useDarkMode() {
   const isDarkMode = useSyncExternalStore(
     subscribeToDarkMode,

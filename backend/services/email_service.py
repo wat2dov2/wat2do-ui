@@ -1,7 +1,7 @@
 """Email-sending gateway for transactional app email.
 
 Class-based because it wraps an external client (per the layered
-architecture convention — see backend-architecture.md). The module-level
+architecture convention - see backend-architecture.md). The module-level
 singleton ``email_service`` is what callers import; tests monkeypatch
 the instance directly.
 
@@ -32,7 +32,7 @@ class EmailMessage:
     subject: str
     body_html: str
     body_text: str
-    # Stable per-send key — the provider (when configured) uses it for
+    # Stable per-send key - the provider (when configured) uses it for
     # its own idempotency; inside our own log the (user, type, target, channel)
     # UNIQUE constraint already protects us, so this is purely belt-and-
     # suspenders in case a cron restart re-hits the provider before our
@@ -53,7 +53,7 @@ class EmailService:
         """Send one email. Returns True if accepted by the provider.
 
         In dry-run mode (``settings.email_provider`` empty) we log and
-        return True. Callers treat True as "provider accepted" — actual
+        return True. Callers treat True as "provider accepted" - actual
         delivery is the provider's responsibility.
         """
         provider = (settings.email_provider or "").strip().lower()

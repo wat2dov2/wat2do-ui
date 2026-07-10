@@ -16,10 +16,6 @@ log = logging.getLogger(__name__)
 
 @router.get("/", response_model=list[int])
 def list_saved_organizations(user=Depends(get_db_user)):
-    """Return organization IDs saved by the current user.
-
-    - 401 if unauthenticated.
-    """
     try:
         return saved_organization_service.get_saved_organization_ids(str(user.id))
     except APIError as e:
@@ -33,11 +29,10 @@ def list_saved_organizations(user=Depends(get_db_user)):
     response_model=SaveOrganizationStatusResponse,
 )
 def save_organization(organization_id: int, user=Depends(get_db_user)):
-    """Save (bookmark) a organization.
+    """Save (bookmark) an organization.
 
-    - 401 if unauthenticated.
-    - 404 if the referenced organization does not exist.
-    - 400 if the user has already hit the ``MAX_SAVED_ORGANIZATIONS_PER_USER`` cap.
+    - 404 if the organization does not exist.
+    - 400 if the user has already hit ``MAX_SAVED_ORGANIZATIONS_PER_USER``.
     """
     if organization_service.get_organization(organization_id) is None:
         raise NotFoundError(ORGANIZATION_NOT_FOUND)
@@ -56,9 +51,5 @@ def save_organization(organization_id: int, user=Depends(get_db_user)):
     response_model=SaveOrganizationStatusResponse,
 )
 def unsave_organization(organization_id: int, user=Depends(get_db_user)):
-    """Remove a saved organization.
-
-    - 401 if unauthenticated.
-    """
     saved_organization_service.unsave_organization(str(user.id), organization_id)
     return {"status": "unsaved"}

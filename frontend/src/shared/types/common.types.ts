@@ -1,10 +1,5 @@
-/**
- * Common shared types
- */
-
 export type ViewMode = "grid" | "calendar" | "map";
 
-// Organization interface
 export interface Organization {
   id: number;
   organization_name: string;

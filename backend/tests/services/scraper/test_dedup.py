@@ -1,10 +1,10 @@
-"""Unit tests for services/wat2do/dedup."""
+"""Unit tests for services/scraper/dedup."""
 
 from datetime import datetime, timedelta, timezone
 
 from services.scraper.dedup import (
     _extract_shortcode,
-    find_match,
+    find_candidates,
     jaccard_similarity,
     normalize,
     sequence_similarity,
@@ -35,10 +35,10 @@ def test_sequence_similarity_identical_is_one():
 
 
 def test_title_similarity_picks_max_of_jaccard_and_sequence():
-    """Reordered titles must still match — that's the whole point of taking the max."""
+    """Reordered titles must still match - that's the whole point of taking the max."""
     a = "Friday Movie Night"
     b = "Movie Night Friday"
-    # Jaccard on word sets is 1.0 here — same words, different order.
+    # Jaccard on word sets is 1.0 here - same words, different order.
     assert title_similarity(a, b) == 1.0
 
 
@@ -78,7 +78,7 @@ def test_extract_shortcode_tv_path():
 
 
 def test_extract_shortcode_profile_url_returns_none():
-    """A profile link (/uwteaorganization) is NOT a post — returns None."""
+    """A profile link (/uwteaorganization) is NOT a post - returns None."""
     assert _extract_shortcode("https://instagram.com/uwteaorganization") is None
     assert _extract_shortcode("https://instagram.com/uwteaorganization/") is None
 
@@ -88,7 +88,7 @@ def test_extract_shortcode_unrelated_url_returns_none():
         _extract_shortcode("https://example.com/p/hello/") is None
         or _extract_shortcode("https://example.com/p/hello/") == "hello"
     )
-    # The current regex matches any /p/<id>/ path — that's intentional
+    # The current regex matches any /p/<id>/ path - that's intentional
     # (the seen set holds shortcodes regardless of host); the dedup
     # tolerates false positives because they only cause a real IG post
     # to be skipped, not duplicated. Confirm with a sentinel test that
@@ -96,37 +96,32 @@ def test_extract_shortcode_unrelated_url_returns_none():
     assert _extract_shortcode("https://example.com/uwteaorganization") is None
 
 
-# ── find_match ────────────────────────────────────────────────────────
+# ── find_candidates ───────────────────────────────────────────────────
 
 
 def _occ(start_iso: str) -> dict:
     return {"dtstart_utc": start_iso, "dtend_utc": "", "duration": "", "tz": "UTC"}
 
 
-def test_find_match_returns_none_without_occurrences():
-    """No occurrence -> no match (we have nothing to compare temporally)."""
-    result = find_match(
+def test_find_candidates_returns_empty_without_occurrences_or_handle():
+    """No occurrence and no handle -> nothing to compare."""
+    result = find_candidates(
         title="Foo",
         location="Bar",
         description="",
         occurrences=[],
-        ig_handle="x",
+        ig_handle=None,
     )
-    assert result is None
+    assert result == []
 
 
-def test_find_match_same_organization_update(fake_sb, patch_sb):
-    """Same IG handle + future event + similar title -> same_organization match.
-
-    The same-organization query embeds event_dates rows in the events response, and
-    the dedup helper checks the latest end across embedded occurrences.
-    """
+def test_find_candidates_same_organization(fake_sb, patch_sb):
+    """Same IG handle + future event + similar title -> candidate list."""
     patch_sb("services.scraper.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     fake_sb.queue_responses(
         [
-            # Same-organization lookup — events row with embedded event_dates list.
             [
                 {
                     "id": 42,
@@ -134,33 +129,34 @@ def test_find_match_same_organization_update(fake_sb, patch_sb):
                     "ig_handle": "uwteaorganization",
                     "location": "SLC",
                     "description": "...",
+                    "cancelled": False,
                     "event_dates": [{"dtstart_utc": future, "dtend_utc": future}],
                 }
             ],
+            [],  # same-day lookup
         ]
     )
 
-    result = find_match(
-        title="Tea Tasting Evening",  # similarity > 0.8
+    result = find_candidates(
+        title="Tea Tasting Evening",
         location="SLC",
         description="",
         occurrences=[_occ(future)],
         ig_handle="uwteaorganization",
     )
-    assert result is not None
-    assert result.kind == "same_organization"
-    assert result.event["id"] == 42
+    assert len(result) == 1
+    assert result[0]["id"] == 42
+    assert "occurrences" in result[0]
 
 
-def test_find_match_skips_past_same_organization_events(fake_sb, patch_sb):
-    """Past same-organization events are NOT updates — they're new occurrences of a recurring series."""
+def test_find_candidates_skips_past_same_organization_events(fake_sb, patch_sb):
+    """Past same-organization events are not candidates for update."""
     patch_sb("services.scraper.dedup")
 
     past = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     fake_sb.queue_responses(
         [
-            # Same-organization lookup returns past event only -> no match.
             [
                 {
                     "id": 99,
@@ -168,38 +164,32 @@ def test_find_match_skips_past_same_organization_events(fake_sb, patch_sb):
                     "ig_handle": "uwteaorganization",
                     "location": "SLC",
                     "description": "",
+                    "cancelled": False,
                     "event_dates": [{"dtstart_utc": past, "dtend_utc": past}],
                 }
             ],
-            # Same-day lookup returns nothing.
             [],
         ]
     )
 
-    result = find_match(
+    result = find_candidates(
         title="Tea Tasting Night",
         location="SLC",
         description="",
         occurrences=[_occ(future)],
         ig_handle="uwteaorganization",
     )
-    assert result is None
+    assert result == []
 
 
-def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
-    """Substring title match + similar location -> cross-organization duplicate.
-
-    The same-day query hits the event_dates table first and embeds the parent
-    ``events`` row.
-    """
+def test_find_candidates_same_day_substring_plus_location(fake_sb, patch_sb):
+    """Substring title match + similar location -> same-day candidate."""
     patch_sb("services.scraper.dedup")
 
     future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
     fake_sb.queue_responses(
         [
-            # Same-organization lookup returns nothing (different ig_handle in DB).
             [],
-            # Same-day lookup: each row is one event_date with embedded events.
             [
                 {
                     "event_id": 17,
@@ -207,21 +197,188 @@ def test_find_match_substring_plus_location_is_duplicate(fake_sb, patch_sb):
                         "id": 17,
                         "title": "Movie Night",
                         "ig_handle": "otherorganization",
+                        "organization_id": 99,
                         "location": "DC Library",
                         "description": "Free popcorn",
+                        "cancelled": False,
+                        "event_dates": [{"dtstart_utc": future, "dtend_utc": None}],
                     },
                 }
             ],
         ]
     )
 
-    result = find_match(
-        title="Friday Movie Night",  # contains "Movie Night"
-        location="DC Library 1568",  # similar location
+    result = find_candidates(
+        title="Friday Movie Night",
+        location="DC Library 1568",
         description="popcorn provided",
         occurrences=[_occ(future)],
         ig_handle="uwteaorganization",
     )
-    assert result is not None
-    assert result.kind == "duplicate"
-    assert result.event["id"] == 17
+    assert len(result) == 1
+    assert result[0]["id"] == 17
+
+
+def test_find_candidates_same_org_by_organization_id(fake_sb, patch_sb):
+    """organization_id match finds same-org candidates even without ig_handle."""
+    patch_sb("services.scraper.dedup")
+
+    future = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 42,
+                    "title": "Tea Tasting Night",
+                    "organization_id": 7,
+                    "ig_handle": None,
+                    "organization": "UW Tea Organization",
+                    "location": "SLC",
+                    "description": "...",
+                    "cancelled": False,
+                    "event_dates": [{"dtstart_utc": future, "dtend_utc": future}],
+                }
+            ],
+            [],
+        ]
+    )
+
+    result = find_candidates(
+        title="Tea Tasting Evening",
+        location="SLC",
+        description="",
+        occurrences=[_occ(future)],
+        ig_handle=None,
+        organization_id=7,
+    )
+    assert len(result) == 1
+    assert result[0]["id"] == 42
+    assert result[0]["organization_id"] == 7
+
+
+def test_find_candidates_ranks_same_org_before_cross_org(fake_sb, patch_sb):
+    """Same-org rows rank ahead of cross-org same-day rows."""
+    patch_sb("services.scraper.dedup")
+
+    future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 10,
+                    "title": "Tea Social Hour",
+                    "organization_id": 7,
+                    "ig_handle": "uwtea",
+                    "organization": "UW Tea",
+                    "location": "SLC",
+                    "description": "tea",
+                    "cancelled": False,
+                    "event_dates": [{"dtstart_utc": future, "dtend_utc": future}],
+                }
+            ],
+            [
+                {
+                    "event_id": 20,
+                    "events": {
+                        "id": 20,
+                        "title": "Tea Social Hour",
+                        "organization_id": 99,
+                        "ig_handle": "other",
+                        "organization": "Other Club",
+                        "location": "SLC 1000",
+                        "description": "tea social",
+                        "cancelled": False,
+                        "event_dates": [{"dtstart_utc": future, "dtend_utc": None}],
+                    },
+                }
+            ],
+        ]
+    )
+
+    result = find_candidates(
+        title="Tea Social Hour",
+        location="SLC 1000",
+        description="tea social",
+        occurrences=[_occ(future)],
+        ig_handle="uwtea",
+        organization_id=7,
+    )
+    assert [r["id"] for r in result] == [10, 20]
+
+
+def test_find_candidates_caps_cross_org_same_day(fake_sb, patch_sb):
+    """Cross-org same-day candidates are capped tighter than same-org."""
+    patch_sb("services.scraper.dedup")
+
+    future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+    same_day = []
+    for i in range(5):
+        same_day.append(
+            {
+                "event_id": 100 + i,
+                "events": {
+                    "id": 100 + i,
+                    "title": "Campus Mixer Night",
+                    "organization_id": 50 + i,
+                    "ig_handle": f"club{i}",
+                    "organization": f"Club {i}",
+                    "location": "SLC Ballroom",
+                    "description": "campus mixer night free food",
+                    "cancelled": False,
+                    "event_dates": [{"dtstart_utc": future, "dtend_utc": None}],
+                },
+            }
+        )
+    fake_sb.queue_responses([[], same_day])
+
+    result = find_candidates(
+        title="Campus Mixer Night",
+        location="SLC Ballroom",
+        description="campus mixer night free food",
+        occurrences=[_occ(future)],
+        ig_handle="uwtea",
+        organization_id=7,
+        max_cross_org=3,
+    )
+    assert len(result) == 3
+    assert all(r["organization_id"] != 7 for r in result)
+
+
+def test_find_candidates_soft_name_match_when_org_id_missing(fake_sb, patch_sb):
+    """Unresolved org_id can still gather same-day rows by normalized org name."""
+    patch_sb("services.scraper.dedup")
+
+    future = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+    # No same-org DB call when both organization_id and ig_handle are missing.
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "event_id": 55,
+                    "events": {
+                        "id": 55,
+                        "title": "Tea Tasting Night",
+                        "organization_id": None,
+                        "ig_handle": None,
+                        "organization": "UW Tea Organization",
+                        "location": "Remote",
+                        "description": "unrelated location text",
+                        "cancelled": False,
+                        "event_dates": [{"dtstart_utc": future, "dtend_utc": None}],
+                    },
+                }
+            ],
+        ]
+    )
+
+    result = find_candidates(
+        title="Tea Tasting Night",
+        location="SLC 3223",
+        description="weekly tasting",
+        occurrences=[_occ(future)],
+        ig_handle=None,
+        organization_id=None,
+        organization_name="uw tea   organization",
+    )
+    assert len(result) == 1
+    assert result[0]["id"] == 55
