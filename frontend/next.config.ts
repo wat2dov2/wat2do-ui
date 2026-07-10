@@ -9,7 +9,7 @@ const apiCollectionPaths = [
   "promotions",
   "qr",
   "reports",
-  "saved-events",
+  "going-events",
   "saved-organizations",
   "submissions",
   "users",

@@ -22,7 +22,7 @@ WEIGHTS_COLD: tuple[float, float, float] = (0.0, 0.0, 1.0)
 CF_MIN_INTERACTIONS: int = 3  # cold-start guard
 CF_NEIGHBOR_K: int = 20  # k-nearest neighbours for user-based CF
 CF_BLEND_WEIGHT: float = 0.5  # user-based vs item-based 50/50
-CF_SAVE_WEIGHT: float = 5.0  # weight for a "save" in the CF matrix
+CF_GOING_WEIGHT: float = 5.0  # weight for a "going" in the CF matrix
 
 CB_CATEGORY_MATCH: float = 0.4  # category matches user interests
 CB_CATEGORY_NO_PROFILE: float = 0.2  # fallback when user has no interests
@@ -91,10 +91,10 @@ CANDIDATE_EVENTS_CACHE_TTL: int = 60  # 1-minute TTL for candidate events
 from core.constants import (
     INTERACTION_CLICK,
     INTERACTION_DETAIL_VIEW,
-    INTERACTION_SAVE,
+    INTERACTION_GOING,
     INTERACTION_SHARE,
     INTERACTION_TYPES,
-    INTERACTION_UNSAVE,
+    INTERACTION_UNGOING,
     INTERACTION_VIEW,
 )
 
@@ -102,8 +102,8 @@ INTERACTION_WEIGHTS: dict[str, float] = {
     INTERACTION_VIEW: 1.0,
     INTERACTION_CLICK: 2.0,
     INTERACTION_DETAIL_VIEW: 3.0,
-    INTERACTION_SAVE: 5.0,
-    INTERACTION_UNSAVE: -3.0,
+    INTERACTION_GOING: 5.0,
+    INTERACTION_UNGOING: -3.0,
     INTERACTION_SHARE: 3.0,
 }
 

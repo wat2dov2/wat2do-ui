@@ -1,9 +1,9 @@
 """Calendar subscription feed: per-user ICS.
 
 ``GET /calendar/feed/{token}.ics`` emits a VCALENDAR containing every
-event the user has saved.  Subscribed calendar clients (Google, Apple,
+event the user is going to.  Subscribed calendar clients (Google, Apple,
 Outlook) poll this URL and render VEVENTs as calendar entries - time
-changes and new saves propagate on the client's next poll.
+changes and new goings propagate on the client's next poll.
 
 The token is stored as an opaque column on ``users`` and generated
 lazily on the first ``GET /calendar/token`` call.  ``regenerate_token``
@@ -24,13 +24,13 @@ from core.database import get_sb
 from core.tables import EVENTS, USERS
 from schemas.event import EventResponse
 from schemas.event_date import OccurrenceResponse
-from services import event_date_service, event_query, saved_event_service
+from services import event_date_service, event_query, going_event_service
 from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
 
 # 32 bytes -> ~43 URL-safe characters.  Far above the 128-bit minimum
-# for opaque bearer tokens; a leak only exposes the user's saved-event
+# for opaque bearer tokens; a leak only exposes the user's going-event
 # list to the holder, and rotation is one endpoint call away.
 _TOKEN_BYTES = 32
 
@@ -72,8 +72,8 @@ def get_user_id_by_token(token: str) -> str | None:
 
 
 def build_ics_for_user(user_id: str) -> bytes:
-    """Render the user's saved events as a VCALENDAR document."""
-    event_ids = saved_event_service.get_saved_event_ids(user_id)
+    """Render the user's going events as a VCALENDAR document."""
+    event_ids = going_event_service.get_going_event_ids(user_id)
     events = _fetch_events_by_ids(event_ids)
 
     cal = Calendar()

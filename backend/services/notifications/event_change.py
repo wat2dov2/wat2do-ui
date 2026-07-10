@@ -1,4 +1,4 @@
-"""Saved-event change notification fanout."""
+"""Going-event change notification fanout."""
 
 import hashlib
 import json
@@ -7,7 +7,7 @@ from typing import Any
 
 from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
 from core.database import get_sb
-from core.tables import EVENTS, USER_SAVED_EVENTS, USERS
+from core.tables import EVENTS, USER_GOING_EVENTS, USERS
 from services.email_service import EmailMessage, email_service
 from services.notifications.delivery_log import (
     _mark_log_failed,
@@ -35,7 +35,7 @@ def _compute_change_hash(diff: dict[str, dict[str, Any]]) -> str:
 
 
 def enqueue_event_change(event_id: int, diff: dict[str, dict[str, Any]]) -> int:
-    """Fanout an event_change alert to everyone who saved the event.
+    """Fanout an event_change alert to everyone going to the event.
 
     Returns the number of emails actually sent (after prefs + dedup).
     No-op on empty diff. Safe to call on missing events.
@@ -56,10 +56,10 @@ def enqueue_event_change(event_id: int, diff: dict[str, dict[str, Any]]) -> int:
         return 0
     event_summary = event_row[0]
 
-    saved_rows = (
-        get_sb().table(USER_SAVED_EVENTS).select("user_id").eq("event_id", event_id).execute()
+    going_rows = (
+        get_sb().table(USER_GOING_EVENTS).select("user_id").eq("event_id", event_id).execute()
     ).data or []
-    user_ids = [r["user_id"] for r in saved_rows]
+    user_ids = [r["user_id"] for r in going_rows]
     if not user_ids:
         return 0
 
@@ -105,7 +105,7 @@ def _send_event_change(
     )
     if row_id is None:
         return False
-    subject = f"Update: {event_summary.get('title', 'an event you saved')}"
+    subject = f"Update: {event_summary.get('title', "an event you're going to")}"
     try:
         email_service.send(
             EmailMessage(

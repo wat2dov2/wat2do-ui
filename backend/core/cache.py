@@ -1,7 +1,7 @@
 """Minimal thread-safe TTL cache for expensive shared queries.
 
 Provides the get/set/expired pattern used by interaction_service,
-saved_event_service, and recommendation_service so the double-check
+going_event_service, and recommendation_service so the double-check
 locking boilerplate lives in one place.
 """
 

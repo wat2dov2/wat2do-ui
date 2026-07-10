@@ -128,7 +128,7 @@ def test_batch_anonymous_records_clicks(client, monkeypatch):
     assert mock_record.call_args.kwargs["interactions"][0].event_id == 7
 
 
-def test_batch_anonymous_still_rejects_save(client, monkeypatch):
+def test_batch_anonymous_still_rejects_going(client, monkeypatch):
     """Anonymous save interactions remain blocked."""
     from services import interaction_service
 
@@ -138,7 +138,7 @@ def test_batch_anonymous_still_rejects_save(client, monkeypatch):
     resp = client.post(
         "/interactions/batch",
         json=_batch_payload(
-            interactions=[{"event_id": 7, "interaction_type": "save"}],
+            interactions=[{"event_id": 7, "interaction_type": "going"}],
         ),
     )
     assert resp.status_code == 202

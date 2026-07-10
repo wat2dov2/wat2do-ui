@@ -73,7 +73,7 @@ USER_ID_MISMATCH = "Cannot submit interactions on behalf of another user"
 DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same event"
 INVALID_STATUS_TRANSITION = "Invalid status transition"
 EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted"
-SAVED_EVENTS_CAP_REACHED = "Maximum saved events limit reached"
+GOING_EVENTS_CAP_REACHED = "Maximum going events limit reached"
 SAVED_ORGANIZATIONS_CAP_REACHED = "Maximum saved organizations limit reached"
 
 INVALID_ROLE = "Role must be 'user' or 'admin'"

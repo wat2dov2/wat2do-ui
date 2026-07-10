@@ -177,8 +177,8 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   });
 
-  // Mock GET /saved-events/
-  await page.route(url => apiPath(url) === "/saved-events", async (route) => {
+  // Mock GET /going-events/
+  await page.route(url => apiPath(url) === "/going-events", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -223,7 +223,7 @@ test.describe("Followed Organizations Flow", () => {
       });
     });
 
-    await page.route(url => apiPath(url) === "/saved-events", async (route) => {
+    await page.route(url => apiPath(url) === "/going-events", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",

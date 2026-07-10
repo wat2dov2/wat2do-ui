@@ -7,19 +7,19 @@ from core.cache import TTLCache
 from recommender.config import (
     CACHE_TTL_SECONDS,
     CF_BLEND_WEIGHT,
+    CF_GOING_WEIGHT,
     CF_MAX_USER_EVENT_SCORE,
     CF_MIN_INTERACTIONS,
     CF_NEIGHBOR_K,
-    CF_SAVE_WEIGHT,
 )
 from recommender.interaction_scores import get_interaction_matrix
 from recommender.utils import normalize_scores
-from services import saved_event_service
+from services import going_event_service
 
 log = logging.getLogger(__name__)
 
 # Cached CF matrices: rebuilding user/item vectors from the interaction matrix
-# + saves is O(rows) and identical for every caller within the same cache
+# + goings is O(rows) and identical for every caller within the same cache
 # window. Cache both so the work is done once per TTL period.
 _cf_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 
@@ -27,9 +27,9 @@ _cf_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 def _build_cf_matrices() -> tuple[
     dict[str, dict[int, float]], dict[str, float], dict[int, dict[str, float]], dict[int, float]
 ]:
-    """Build (user_vectors, user_magnitudes, item_vectors, item_magnitudes) from interaction matrix and saves."""
+    """Build (user_vectors, user_magnitudes, item_vectors, item_magnitudes) from interaction matrix and goings."""
     matrix = get_interaction_matrix()
-    saves = saved_event_service.get_all_user_saves()
+    goings = going_event_service.get_all_user_goings()
 
     user_vectors: dict[str, dict[int, float]] = {}
     for row in matrix:
@@ -38,12 +38,12 @@ def _build_cf_matrices() -> tuple[
             user_vectors[uid] = {}
         user_vectors[uid][row.event_id] = row.score
 
-    for s in saves:
-        uid, eid = s.user_id, s.event_id
+    for g in goings:
+        uid, eid = g.user_id, g.event_id
         if uid not in user_vectors:
             user_vectors[uid] = {}
         user_vectors[uid][eid] = min(
-            user_vectors[uid].get(eid, 0) + CF_SAVE_WEIGHT,
+            user_vectors[uid].get(eid, 0) + CF_GOING_WEIGHT,
             CF_MAX_USER_EVENT_SCORE,
         )
 

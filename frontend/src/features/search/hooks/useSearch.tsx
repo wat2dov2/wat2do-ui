@@ -14,14 +14,14 @@ import type { Event, ViewMode } from "@/shared/types";
 export interface UseSearchOptions {
   events: Event[];
   profileCompleted: boolean;
-  savedEventIds: number[];
+  goingEventIds: number[];
   viewMode: ViewMode;
 }
 
 export function useSearch({
   events,
   profileCompleted,
-  savedEventIds,
+  goingEventIds,
   viewMode,
 }: UseSearchOptions) {
   const { t } = useTranslation();
@@ -44,9 +44,8 @@ export function useSearch({
   const filteredEvents = useMemo(() => {
     const filtered = filterEvents(events, {
       searchQuery: filterState.searchQuery,
-      savedFilter: filterState.savedFilter,
+      goingFilter: filterState.goingFilter,
       freeFoodFilter: filterState.freeFoodFilter,
-      cancelledFilter: filterState.cancelledFilter,
       selectedDays: filterState.selectedDays,
       priceRange: filterState.priceRange,
       selectedLocations: filterState.selectedLocations,
@@ -54,7 +53,7 @@ export function useSearch({
       selectedCategories: filterState.selectedCategories,
       registration: filterState.registration,
       profileCompleted,
-      savedEventIds,
+      goingEventIds,
       selectedOrganizations: filterState.selectedOrganizations,
       addedWithin24h: filterState.addedWithin24h,
     });
@@ -63,7 +62,6 @@ export function useSearch({
     events,
     filterState.searchQuery,
     filterState.freeFoodFilter,
-    filterState.cancelledFilter,
     filterState.selectedDays,
     filterState.priceRange,
     filterState.selectedLocations,
@@ -71,8 +69,8 @@ export function useSearch({
     filterState.selectedCategories,
     filterState.registration,
     profileCompleted,
-    filterState.savedFilter,
-    savedEventIds,
+    filterState.goingFilter,
+    goingEventIds,
     filterState.sortBy,
     filterState.sortOrder,
     filterState.selectedOrganizations,
@@ -91,8 +89,7 @@ export function useSearch({
         registration: filterState.registration,
         selectedOrganizations: filterState.selectedOrganizations,
         freeFoodFilter: filterState.freeFoodFilter,
-        cancelledFilter: filterState.cancelledFilter,
-        savedFilter: filterState.savedFilter,
+        goingFilter: filterState.goingFilter,
         addedWithin24h: filterState.addedWithin24h,
         viewMode,
       }),
@@ -106,8 +103,7 @@ export function useSearch({
       filterState.registration,
       filterState.selectedOrganizations,
       filterState.freeFoodFilter,
-      filterState.cancelledFilter,
-      filterState.savedFilter,
+      filterState.goingFilter,
       filterState.addedWithin24h,
       viewMode,
     ],

@@ -11,7 +11,7 @@
           "ab-test"
         ],
         "summary": "Get Variant",
-        "description": "Get the current user's A/B test variant.\n\nIf the authenticated user has no DB row yet (race between signup and\nprofile creation), we still want a stable variant rather than locking\neveryone into control and biasing the treatment share downward (M5).\nHashing on ``auth_user[\"id\"]`` gives a deterministic assignment that\nwill match once a DB row exists only if the two IDs agree \u2014 but since\nthey typically don't, we instead use the auth ID directly so the\nfallback is random-by-hash, not hard-coded to control.",
+        "description": "Return the user's A/B variant.\n\nIf the auth user has no DB row yet (signup race), hash on\n``auth_user[\"id\"]`` for a stable assignment instead of locking everyone\ninto control and biasing treatment share downward.",
         "operationId": "get_variant_ab_variant_get",
         "responses": {
           "200": {
@@ -38,7 +38,7 @@
           "ab-test"
         ],
         "summary": "Get Metrics",
-        "description": "Get CTR metrics by variant (admin only).\n\nResponse is cached in-process for 60 s (see\n``ABTestService.get_ctr_by_variant``) so polling dashboards don't\ntrigger a full table scan per poll.",
+        "description": "CTR metrics by variant (admin only).\n\nCached in-process for 60 s (see ``ABTestService.get_ctr_by_variant``)\nso polling dashboards do not full-scan per poll.",
         "operationId": "get_metrics_ab_metrics_get",
         "responses": {
           "200": {
@@ -306,7 +306,7 @@
           "auth"
         ],
         "summary": "Logout",
-        "description": "Log the user out.\n\nA11: Bearer is optional \u2014 if the access token has expired, the refresh\ncookie is still cleared so the browser doesn't hold a replayable token.\nEven if upstream revocation fails, the cookie is still cleared; we\nsurface the error via a JSONResponse that carries Set-Cookie for\n``refresh_token``.",
+        "description": "Log the user out.\n\nBearer is optional: if the access token has expired, the refresh cookie\nis still cleared so the browser does not hold a replayable token.\nEven if upstream revocation fails, the cookie is cleared via a\nJSONResponse that carries Set-Cookie for ``refresh_token``.",
         "operationId": "logout_auth_logout_post",
         "responses": {
           "200": {
@@ -333,7 +333,6 @@
           "calendar"
         ],
         "summary": "Get Calendar Token",
-        "description": "Return the user's feed token, generating one on first call.",
         "operationId": "get_calendar_token_calendar_token_get",
         "responses": {
           "200": {
@@ -360,7 +359,6 @@
           "calendar"
         ],
         "summary": "Regenerate Calendar Token",
-        "description": "Rotate the user's feed token; existing subscriptions break.",
         "operationId": "regenerate_calendar_token_calendar_token_regenerate_post",
         "responses": {
           "200": {
@@ -387,7 +385,7 @@
           "calendar"
         ],
         "summary": "Get Calendar Feed",
-        "description": "Public: return the VCALENDAR for the token's owner.\n\nCalendar clients (Google, Apple, Outlook) poll this URL and render\neach VEVENT as a calendar entry.  Rate-limited per token.",
+        "description": "Public VCALENDAR for the token's owner. Rate-limited per token.",
         "operationId": "get_calendar_feed_calendar_feed__token__ics_get",
         "parameters": [
           {
@@ -449,7 +447,6 @@
           "credits"
         ],
         "summary": "Add Credits",
-        "description": "Admin-only: add credits to a target user's balance.",
         "operationId": "add_credits_credits_add_post",
         "requestBody": {
           "content": {
@@ -623,7 +620,6 @@
           "credits"
         ],
         "summary": "Get Active Promoted Ids",
-        "description": "Public endpoint \u2014 returns event IDs with active promotions.",
         "operationId": "get_active_promoted_ids_promotions_active_ids_get",
         "responses": {
           "200": {
@@ -649,7 +645,7 @@
           "events"
         ],
         "summary": "List Promoted Events",
-        "description": "Public browse list: only promoted events for a school.",
+        "description": "Public list of promoted events for a school.",
         "operationId": "list_promoted_events_events_promoted_get",
         "parameters": [
           {
@@ -704,7 +700,7 @@
           "events"
         ],
         "summary": "List Events",
-        "description": "Public browse list for a school.\n\nBy default this returns the current upcoming set. ``start_utc`` and\n``end_utc`` expose the same occurrence-window read path for clients that\nneed a wider or narrower date range. The response omits ``created_by`` via\n``EventSummaryResponse`` (audit I10 / S16).",
+        "description": "Public school feed; optional ``start_utc``/``end_utc`` window. Omits ``created_by``.",
         "operationId": "list_events_events__get",
         "parameters": [
           {
@@ -1095,7 +1091,7 @@
           "events"
         ],
         "summary": "Get Event",
-        "description": "Public event detail.  ``created_by`` is stripped via\n``EventPublicResponse`` (audit I10 / S16); owners / admins see the\nfull shape through their dashboards via the dedicated service call.",
+        "description": "Public event detail; ``created_by`` omitted via ``EventPublicResponse``.",
         "operationId": "get_event_events__event_id__get",
         "parameters": [
           {
@@ -1225,13 +1221,184 @@
         }
       }
     },
+    "/going-events/": {
+      "get": {
+        "tags": [
+          "going-events"
+        ],
+        "summary": "List Going Events",
+        "operationId": "list_going_events_going_events__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array",
+                  "title": "Response List Going Events Going Events  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/going-events/counts": {
+      "get": {
+        "tags": [
+          "going-events"
+        ],
+        "summary": "Get Going Counts",
+        "description": "Public school-scoped going counts for the browse overlay.",
+        "operationId": "get_going_counts_going_events_counts_get",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "School"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Get Going Counts Going Events Counts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/going-events/{event_id}": {
+      "put": {
+        "tags": [
+          "going-events"
+        ],
+        "summary": "Mark Going",
+        "description": "Mark an event as going.\n\n- 404 if the event does not exist.\n- 400 if the user has already hit ``MAX_GOING_EVENTS_PER_USER``.",
+        "operationId": "mark_going_going_events__event_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoingEventStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "going-events"
+        ],
+        "summary": "Unmark Going",
+        "operationId": "unmark_going_going_events__event_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoingEventStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/interactions/batch": {
       "post": {
         "tags": [
           "interactions"
         ],
         "summary": "Record Interactions",
-        "description": "Record a batch of user-event interactions.\n\nAuth is via the standard ``Authorization: Bearer <token>`` header.\nThe frontend uses ``fetch()`` with ``keepalive: true`` (instead of\n``sendBeacon``) so it can set this header even during page unload.\n\nWhen a user is authenticated:\n- Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.\n- Duplicate interactions are deduplicated within a sliding time window.\n\nWhen ``user_id`` is present in the payload it MUST match the authenticated\nuser \u2014 submitting interactions on behalf of another user is rejected.\n\nAnonymous requests (no auth at all) are still allowed for basic\nview/click tracking, but without a ``user_id`` they cannot influence\nauthenticated analytics or personalization signals beyond public click\ncounts and low-signal impressions.\nAnonymous requests are IP-rate-limited to prevent abuse.",
+        "description": "Record a batch of user-event interactions.\n\nAuth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``\nso the header works on unload). Authenticated batches are size-capped and\ndeduped; payload ``user_id`` must match the authenticated user.\nAnonymous requests are allowed for basic view/click tracking and are\nIP-rate-limited; without ``user_id`` they cannot drive personalized signals.",
         "operationId": "record_interactions_interactions_batch_post",
         "requestBody": {
           "content": {
@@ -1278,7 +1445,7 @@
           "meta"
         ],
         "summary": "Get Constants",
-        "description": "Return shared domain constants for frontend consumption.\n\nThis endpoint is public (no auth required) and highly cacheable.\nSets an explicit ``Cache-Control: public, max-age=60`` header so\ncheap repeat scrapes hit the CDN / browser cache rather than the\napplication process (audit M13).  The cache window is deliberately\nshort (60 s) so that category / interest changes deployed via a\nbackend-only restart propagate within a minute.",
+        "description": "Return shared domain constants for frontend consumption.\n\nPublic and cacheable. ``Cache-Control: public, max-age=60`` so repeat\nscrapes hit CDN/browser cache; 60 s keeps category/interest deploys\nvisible within a minute.",
         "operationId": "get_constants_meta_constants_get",
         "responses": {
           "200": {
@@ -1300,7 +1467,7 @@
           "notifications"
         ],
         "summary": "Get My Preferences",
-        "description": "Return the resolved preferences for the authenticated user.\n\nAlways includes one entry per supported type \u2014 types the user has\nnever toggled come back with their default value and\n``updated_at=None`` so the client can distinguish \"default-on\" from\n\"explicitly opted in\".",
+        "description": "Return resolved preferences for the authenticated user.\n\nAlways one entry per supported type - untouched types come back with\ntheir default and ``updated_at=None`` so the client can distinguish\ndefault-on from explicitly opted in.",
         "operationId": "get_my_preferences_notification_preferences_get",
         "responses": {
           "200": {
@@ -1325,7 +1492,6 @@
           "notifications"
         ],
         "summary": "Update My Preferences",
-        "description": "Bulk-upsert preferences for the authenticated user.",
         "operationId": "update_my_preferences_notification_preferences_patch",
         "requestBody": {
           "content": {
@@ -1559,7 +1725,6 @@
           "organizations"
         ],
         "summary": "List My Organizations",
-        "description": "Return organizations owned by the authenticated user.",
         "operationId": "list_my_organizations_organizations_mine_get",
         "responses": {
           "200": {
@@ -1672,7 +1837,6 @@
           "organizations"
         ],
         "summary": "List Claims",
-        "description": "List claims (admin only).",
         "operationId": "list_claims_organizations_claims_get",
         "security": [
           {
@@ -2084,7 +2248,6 @@
           "organizations"
         ],
         "summary": "List Organization Members",
-        "description": "List all members of a organization. Admin or organization members only.",
         "operationId": "list_organization_members_organizations__organization_id__members_get",
         "security": [
           {
@@ -2134,7 +2297,7 @@
           "organizations"
         ],
         "summary": "Add Organization Member",
-        "description": "Add a member to the organization by email. Admin or organization members only.\n\nIf the user already has an account, they are added directly.\nOtherwise, a pending invitation is created and sent.",
+        "description": "Add by email: existing users join organization_members directly; otherwise invite.",
         "operationId": "add_organization_member_organizations__organization_id__members_post",
         "security": [
           {
@@ -2200,7 +2363,6 @@
           "organizations"
         ],
         "summary": "Remove Organization Member",
-        "description": "Remove a member from the organization. Admin or organization members only.",
         "operationId": "remove_organization_member_organizations__organization_id__members__user_id__delete",
         "security": [
           {
@@ -2250,7 +2412,6 @@
           "organizations"
         ],
         "summary": "Create Invitation",
-        "description": "Explicitly create and send an invitation.",
         "operationId": "create_invitation_organizations__organization_id__invitations_post",
         "security": [
           {
@@ -2306,7 +2467,6 @@
           "organizations"
         ],
         "summary": "List Invitations",
-        "description": "List pending invitations for the organization.",
         "operationId": "list_invitations_organizations__organization_id__invitations_get",
         "security": [
           {
@@ -2358,7 +2518,6 @@
           "organizations"
         ],
         "summary": "Revoke Invitation",
-        "description": "Revoke/delete an invitation.",
         "operationId": "revoke_invitation_organizations__organization_id__invitations__invitation_id__delete",
         "security": [
           {
@@ -2408,7 +2567,7 @@
           "organizations"
         ],
         "summary": "Get Invitation By Token",
-        "description": "Public route to validate an invitation token and fetch public details (organization name).",
+        "description": "Public: validate invitation token and return public details (organization name).",
         "operationId": "get_invitation_by_token_organizations_invitations__token__get",
         "parameters": [
           {
@@ -2451,7 +2610,6 @@
           "organizations"
         ],
         "summary": "Accept Invitation",
-        "description": "Accept an invitation token using the logged-in user's identity.",
         "operationId": "accept_invitation_organizations_invitations__token__accept_post",
         "security": [
           {
@@ -2492,7 +2650,6 @@
           "organizations"
         ],
         "summary": "Request To Join Organization",
-        "description": "Create a pending request to join the organization.",
         "operationId": "request_to_join_organization_organizations__organization_id__join_post",
         "security": [
           {
@@ -2540,7 +2697,6 @@
           "organizations"
         ],
         "summary": "Leave Organization Or Cancel Request",
-        "description": "Leave a organization or cancel a pending join request.",
         "operationId": "leave_organization_or_cancel_request_organizations__organization_id__membership_delete",
         "security": [
           {
@@ -2579,7 +2735,6 @@
           "organizations"
         ],
         "summary": "Get My Membership Status",
-        "description": "Get the current user's membership details for this organization.",
         "operationId": "get_my_membership_status_organizations__organization_id__membership_get",
         "security": [
           {
@@ -2635,7 +2790,6 @@
           "organizations"
         ],
         "summary": "List Organization Memberships",
-        "description": "Organization Admin/Owner: List student memberships and pending requests for the organization.",
         "operationId": "list_organization_memberships_organizations__organization_id__memberships_get",
         "security": [
           {
@@ -2703,7 +2857,6 @@
           "organizations"
         ],
         "summary": "Update Organization Membership",
-        "description": "Organization Admin/Owner: Approve/reject a request or change role of a student member.",
         "operationId": "update_organization_membership_organizations__organization_id__memberships__user_id__patch",
         "security": [
           {
@@ -2769,7 +2922,6 @@
           "organizations"
         ],
         "summary": "Remove Organization Membership",
-        "description": "Organization Admin/Owner: Remove a student member or request from the organization roster.",
         "operationId": "remove_organization_membership_organizations__organization_id__memberships__user_id__delete",
         "security": [
           {
@@ -2820,7 +2972,6 @@
           "organizations"
         ],
         "summary": "Create Claim",
-        "description": "Submit a claim for an unowned organization.",
         "operationId": "create_claim_organizations__organization_id__claims_post",
         "security": [
           {
@@ -2878,7 +3029,6 @@
           "organizations"
         ],
         "summary": "Update Claim",
-        "description": "Approve or reject a claim (admin only).",
         "operationId": "update_claim_organizations_claims__claim_id__patch",
         "security": [
           {
@@ -2937,7 +3087,7 @@
           "organizations"
         ],
         "summary": "Create Join Request",
-        "description": "Submit a request to join a organization's management team.",
+        "description": "Request to join the organization's management team (organization_members).",
         "operationId": "create_join_request_organizations__organization_id__join_requests_post",
         "security": [
           {
@@ -2993,7 +3143,6 @@
           "organizations"
         ],
         "summary": "List Join Requests",
-        "description": "List pending join requests for a organization (members only).",
         "operationId": "list_join_requests_organizations__organization_id__join_requests_get",
         "security": [
           {
@@ -3045,7 +3194,6 @@
           "organizations"
         ],
         "summary": "Update Join Request",
-        "description": "Approve or reject a join request (members only).",
         "operationId": "update_join_request_organizations__organization_id__join_requests__request_id__patch",
         "security": [
           {
@@ -3113,7 +3261,7 @@
           "qr"
         ],
         "summary": "List Qr Codes",
-        "description": "List QR codes.\n\nAdmins can list all QR codes. Non-admins (organization managers) can only list\nQR codes created by themselves.",
+        "description": "List QR codes.\n\nAdmins see all. Non-admins (org management members via\n``get_organization_owner_or_admin``) see only QR codes they created.",
         "operationId": "list_qr_codes_qr__get",
         "security": [
           {
@@ -3195,7 +3343,7 @@
           "qr"
         ],
         "summary": "Create Poster",
-        "description": "Create a QR code.\n\nINSERT-only: if the id already exists, ``create_qr_code`` raises\nConflictError -> 409.",
+        "description": "Create a QR code. INSERT-only: duplicate id raises ConflictError -> 409.",
         "operationId": "create_poster_qr__post",
         "security": [
           {
@@ -3242,7 +3390,7 @@
           "qr"
         ],
         "summary": "List Scans",
-        "description": "List QR-code scan events analytics.\n\nAdmins can list all scans. Non-admins (organization managers) can only list scans\nof QR codes created by themselves.",
+        "description": "List QR-code scan analytics.\n\nAdmins see all scans. Non-admins (org management members via\n``get_organization_owner_or_admin``) see only scans of QR codes they created.",
         "operationId": "list_scans_qr_scans_get",
         "security": [
           {
@@ -3446,7 +3594,6 @@
           "qr"
         ],
         "summary": "Update Poster",
-        "description": "Update a QR code.",
         "operationId": "update_poster_qr__qr_code_id__patch",
         "security": [
           {
@@ -3502,7 +3649,6 @@
           "qr"
         ],
         "summary": "Delete Poster",
-        "description": "Delete a QR code.",
         "operationId": "delete_poster_qr__qr_code_id__delete",
         "security": [
           {
@@ -3721,138 +3867,12 @@
         }
       }
     },
-    "/saved-events/": {
-      "get": {
-        "tags": [
-          "saved-events"
-        ],
-        "summary": "List Saved Events",
-        "description": "Return event IDs saved by the current user.",
-        "operationId": "list_saved_events_saved_events__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "type": "integer"
-                  },
-                  "type": "array",
-                  "title": "Response List Saved Events Saved Events  Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/saved-events/{event_id}": {
-      "put": {
-        "tags": [
-          "saved-events"
-        ],
-        "summary": "Save Event",
-        "description": "Save (bookmark) an event.\n\n- 404 if the referenced event does not exist (audit I9).\n- 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER`` \u2014\n  prevents a single account from growing an unbounded bookmark list\n  and OOM'ing the listing endpoint (audit I8).",
-        "operationId": "save_event_saved_events__event_id__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "event_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Event Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SaveEventStatusResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "saved-events"
-        ],
-        "summary": "Unsave Event",
-        "description": "Remove a saved event.",
-        "operationId": "unsave_event_saved_events__event_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "event_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Event Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SaveEventStatusResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/saved-organizations/": {
       "get": {
         "tags": [
           "saved-organizations"
         ],
         "summary": "List Saved Organizations",
-        "description": "Return organization IDs saved by the current user.\n\n- 401 if unauthenticated.",
         "operationId": "list_saved_organizations_saved_organizations__get",
         "responses": {
           "200": {
@@ -3883,7 +3903,7 @@
           "saved-organizations"
         ],
         "summary": "Save Organization",
-        "description": "Save (bookmark) a organization.\n\n- 401 if unauthenticated.\n- 404 if the referenced organization does not exist.\n- 400 if the user has already hit the ``MAX_SAVED_ORGANIZATIONS_PER_USER`` cap.",
+        "description": "Save (bookmark) an organization.\n\n- 404 if the organization does not exist.\n- 400 if the user has already hit ``MAX_SAVED_ORGANIZATIONS_PER_USER``.",
         "operationId": "save_organization_saved_organizations__organization_id__put",
         "security": [
           {
@@ -3929,7 +3949,6 @@
           "saved-organizations"
         ],
         "summary": "Unsave Organization",
-        "description": "Remove a saved organization.\n\n- 401 if unauthenticated.",
         "operationId": "unsave_organization_saved_organizations__organization_id__delete",
         "security": [
           {
@@ -4321,7 +4340,6 @@
           "uploads"
         ],
         "summary": "Upload Event Image Unsigned",
-        "description": "Upload an event flyer image and return its public URL.",
         "operationId": "upload_event_image_unsigned_uploads_event_image_post",
         "requestBody": {
           "content": {
@@ -4847,7 +4865,7 @@
           "users"
         ],
         "summary": "Delete User",
-        "description": "Admin-only user deletion with A26 guardrails.\n\n- **Self-delete block:** admins cannot delete their own account via\n  this endpoint.  Account deletion for the caller must be done through\n  an explicit \"delete my account\" flow (not implemented here) so that\n  the operation is intentional and separate from moderation.\n- **Admin quorum:** if the target is currently an admin, refuse the\n  delete when the system would end up with zero admins.  A bored or\n  compromised admin could otherwise demote/delete every other admin\n  and lock the system into an un-administered state.",
+        "description": "Admin-only user deletion with quorum guardrails.\n\n- **Self-delete block:** admins cannot delete their own account here.\n  Account deletion for the caller must use an explicit \"delete my\n  account\" flow (not implemented here).\n- **Admin quorum:** if the target is an admin, refuse when the system\n  would end up with zero admins.",
         "operationId": "delete_user_users__user_id__delete",
         "security": [
           {
@@ -4889,7 +4907,7 @@
           "users"
         ],
         "summary": "Update User Role",
-        "description": "Admin-only: rotate a user's role ('user' <-> 'admin').\n\nSeparate from ``PATCH /users/{id}`` so the role is only mutable through\nan explicitly-admin endpoint \u2014 keeps the trust boundary bright and\ncloses audit I16.  ``user_service.set_role`` invalidates the\nsupabase-auth-id cache so the change is immediately visible in\nsubsequent role checks.\n\nA26: if the target is currently an admin and the new role is not\n``admin``, refuse the demotion when it would leave zero admins.",
+        "description": "Admin-only: rotate a user's role ('user' <-> 'admin').\n\nSeparate from ``PATCH /users/{id}`` so role is only mutable through an\nexplicitly-admin endpoint - keeps the trust boundary bright.\n``user_service.set_role`` invalidates the supabase-auth-id cache so the\nchange is immediately visible in subsequent role checks.\n\nIf the target is currently an admin and the new role is not ``admin``,\nrefuse the demotion when it would leave zero admins.",
         "operationId": "update_user_role_users__user_id__role_patch",
         "security": [
           {
@@ -4976,7 +4994,7 @@
           "treatment"
         ],
         "title": "ABMetricsResponse",
-        "description": "GET /ab/metrics response \u2014 CTR per variant.\n\nKeyed by variant name; the backend guarantees entries for both\n``control`` and ``treatment`` even when one has zero traffic."
+        "description": "CTR per variant.\n\nKeyed by variant name; the backend guarantees entries for both\n``control`` and ``treatment`` even when one has zero traffic."
       },
       "ABVariantCTR": {
         "properties": {
@@ -5017,8 +5035,7 @@
         "required": [
           "variant"
         ],
-        "title": "ABVariantResponse",
-        "description": "GET /ab/variant response."
+        "title": "ABVariantResponse"
       },
       "AIPromptRequest": {
         "properties": {
@@ -5746,7 +5763,7 @@
           "added_at"
         ],
         "title": "EventPublicResponse",
-        "description": "Public response for GET /events/{id} \u2014 identical to EventResponse\nbut with ``created_by`` stripped to avoid leaking creator UUIDs to\nunauthenticated callers (see audit I10)."
+        "description": "Like EventResponse but without ``created_by``, so public detail\nviews do not leak creator UUIDs to unauthenticated callers."
       },
       "EventResponse": {
         "properties": {
@@ -6121,7 +6138,7 @@
           "added_at"
         ],
         "title": "EventSummaryResponse",
-        "description": "Lightweight payload for list/card views \u2014 omits large text fields\n(description) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\nThe owning organization's link/social fields (``organization_page``,\n``organization_ig``, ``organization_discord``) are embedded read-time from\nthe ``organizations`` row via the ``events.organization_id`` FK so the event\ncard's org badge can render its links without a second fetch.\n\n``created_by`` is intentionally omitted \u2014 this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers (see audit I10 / S16)."
+        "description": "Lightweight payload for list/card views - omits large text fields\n(description) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\nThe owning organization's link/social fields (``organization_page``,\n``organization_ig``, ``organization_discord``) are embedded read-time from\nthe ``organizations`` row via the ``events.organization_id`` FK so the event\ncard's org badge can render its links without a second fetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
       },
       "EventUpdate": {
         "properties": {
@@ -6362,6 +6379,29 @@
         "type": "object",
         "title": "FilterStateResponse"
       },
+      "GoingEventStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "going",
+              "not_going"
+            ],
+            "title": "Status"
+          },
+          "going_count": {
+            "type": "integer",
+            "title": "Going Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "going_count"
+        ],
+        "title": "GoingEventStatusResponse",
+        "description": "Locks the going/not_going status contract at the OpenAPI boundary."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -6411,7 +6451,7 @@
           "interactions"
         ],
         "title": "InteractionBatch",
-        "description": "Batch of interactions submitted from a single browser session.\n\n**Trust boundary note on ``user_id``**: this field models the client's\n*claim* of which user the batch belongs to.  The server verifies the\nclaim against the authenticated identity in ``interaction_service._validate_batch``\nand 403s on mismatch (see S11).  The field is **advisory / diagnostic** \u2014\nnever trust it for authorization or identity resolution in new code;\nuse the value resolved from the Bearer token instead.\n\nTyped as ``UUID | None`` so the Pydantic boundary rejects arbitrary\nopaque strings (e.g. ``\"admin\"``) at parse time \u2014 if the router-side\nownership check is ever removed during a refactor, impersonation\nstill cannot succeed because the payload won't even deserialise."
+        "description": "Batch of interactions submitted from a single browser session.\n\n**Trust boundary note on ``user_id``**: this field models the client's\n*claim* of which user the batch belongs to.  The server verifies the\nclaim against the authenticated identity in ``interaction_service._validate_batch``\nand 403s on mismatch.  The field is **advisory / diagnostic** -\nnever trust it for authorization or identity resolution in new code;\nuse the value resolved from the Bearer token instead.\n\nTyped as ``UUID | None`` so the Pydantic boundary rejects arbitrary\nopaque strings (e.g. ``\"admin\"``) at parse time - if the router-side\nownership check is ever removed during a refactor, impersonation\nstill cannot succeed because the payload won't even deserialise."
       },
       "InteractionCreate": {
         "properties": {
@@ -6511,8 +6551,7 @@
           "notification_type",
           "enabled"
         ],
-        "title": "NotificationPreferenceResponse",
-        "description": "Single preference row as returned from the API."
+        "title": "NotificationPreferenceResponse"
       },
       "NotificationPreferenceUpdate": {
         "properties": {
@@ -6575,7 +6614,7 @@
           "preferences"
         ],
         "title": "NotificationPreferencesListResponse",
-        "description": "GET response: every type's current resolved state for the user.\n\nIncludes types for which the user has no row (default-on); the\n``enabled`` value is the resolved default in that case. Clients\nrender one toggle per entry."
+        "description": "Every notification type's resolved enabled state for the user.\n\nIncludes types for which the user has no row (default-on); the\n``enabled`` value is the resolved default in that case. Clients\nrender one toggle per entry."
       },
       "OccurrenceCreate": {
         "properties": {
@@ -6627,7 +6666,7 @@
           "dtstart_utc"
         ],
         "title": "OccurrenceCreate",
-        "description": "One occurrence \u2014 start time + optional end / duration / timezone."
+        "description": "One occurrence: start time plus optional end / duration / timezone."
       },
       "OccurrenceResponse": {
         "properties": {
@@ -7897,7 +7936,7 @@
         },
         "type": "object",
         "title": "PlatformIntegrationOptionsResponse",
-        "description": "Generic options for any integration platform (audit S7).\n\nThe Discord-specific response above keeps the tightest types for the\n``/integrations/discord/options`` endpoint; this looser model lets\nthe ``/integrations/{platform}/options`` endpoint lock its OpenAPI\ncontract without over-constraining platforms whose OAuth URLs are\nstill placeholders."
+        "description": "Generic options for any integration platform.\n\nThe Discord-specific response above keeps the tightest types for the\n``/integrations/discord/options`` endpoint; this looser model lets\nthe ``/integrations/{platform}/options`` endpoint lock its OpenAPI\ncontract without over-constraining platforms whose OAuth URLs are\nstill placeholders."
       },
       "PromotionCreate": {
         "properties": {
@@ -8065,7 +8104,7 @@
           "destination_type"
         ],
         "title": "QrCodeCreate",
-        "description": "Payload to create or update a QR code.\n\nServer-owned fields such as ``created_by`` and ``is_active`` are not\naccepted from clients. New posters always start inactive and are activated\nby their first scan."
+        "description": "Create/update a QR code.\n\nServer-owned fields such as ``created_by`` and ``is_active`` are not\naccepted from clients. New QR codes always start inactive and are activated\nby their first scan."
       },
       "QrCodeRedirect": {
         "properties": {
@@ -8114,7 +8153,7 @@
           "destination_type"
         ],
         "title": "QrCodeRedirect",
-        "description": "Public response for GET /qr/{id}: redirect config only. Scan is recorded server-side."
+        "description": "Redirect config for a QR scan; the scan itself is recorded server-side."
       },
       "QrCodeResponse": {
         "properties": {
@@ -8221,8 +8260,7 @@
           "latitude",
           "longitude"
         ],
-        "title": "QrCodeResponse",
-        "description": "Full QR code for list/dashboard."
+        "title": "QrCodeResponse"
       },
       "QrCodeScanResponse": {
         "properties": {
@@ -8282,8 +8320,7 @@
           "conversion_actions",
           "user_agent"
         ],
-        "title": "QrCodeScanResponse",
-        "description": "Single scan for dashboard."
+        "title": "QrCodeScanResponse"
       },
       "RecordInteractionsResponse": {
         "properties": {
@@ -8297,7 +8334,7 @@
           "recorded"
         ],
         "title": "RecordInteractionsResponse",
-        "description": "Response for ``POST /interactions/batch`` \u2014 number of rows recorded.\n\nTyped explicitly (audit S7) so future additions to the dict do not\nsilently leak internals to the client."
+        "description": "Number of interaction rows recorded from a batch submit."
       },
       "ReportCreate": {
         "properties": {
@@ -8395,24 +8432,6 @@
         ],
         "title": "ReportUpdate"
       },
-      "SaveEventStatusResponse": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "saved",
-              "unsaved"
-            ],
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "SaveEventStatusResponse",
-        "description": "Response for ``PUT /saved-events/{id}`` / ``DELETE /saved-events/{id}``.\n\nTyped explicitly (audit S7) so the response contract is locked at the\nOpenAPI boundary \u2014 future refactors that add fields to the dict will\nbe caught by the frontend type generator."
-      },
       "SaveOrganizationStatusResponse": {
         "properties": {
           "status": {
@@ -8429,7 +8448,7 @@
           "status"
         ],
         "title": "SaveOrganizationStatusResponse",
-        "description": "Response for ``PUT /saved-organizations/{id}`` / ``DELETE /saved-organizations/{id}``.\n\nTyped explicitly so the response contract is locked at the\nOpenAPI boundary."
+        "description": "Locks the save/unsave status contract at the OpenAPI boundary."
       },
       "SendOtpRequest": {
         "properties": {
@@ -8639,8 +8658,7 @@
         "required": [
           "url"
         ],
-        "title": "UploadResponse",
-        "description": "Public URL of the freshly-uploaded object."
+        "title": "UploadResponse"
       },
       "UserMinResponse": {
         "properties": {
@@ -8864,7 +8882,7 @@
           "role"
         ],
         "title": "UserRoleUpdate",
-        "description": "Admin-only payload for rotating a user's role.\n\nSeparate from ``UserUpdate`` so ``role`` never leaks into a self-service\nupdate path \u2014 having one shared model across trust boundaries is the\nexact defense-in-depth gap flagged in the schema audit (S2)."
+        "description": "Admin-only payload for rotating a user's role.\n\nSeparate from ``UserUpdate`` so ``role`` never leaks into a self-service\nupdate path - one shared model across trust boundaries would be a\ndefense-in-depth gap."
       },
       "UserUpdate": {
         "properties": {

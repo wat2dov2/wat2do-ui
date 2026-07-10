@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Calendar, ImageOff, ExternalLink, Bookmark, MoreHorizontal } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, Check, UserCheck, MoreHorizontal } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -32,7 +32,9 @@ import {
   FoodTag,
 } from "@/shared/ui/modal-components";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
+import { EventLocationMap } from "@/features/events/components/EventLocationMap";
+import { useGoingCountActions, useGoingCounts } from "@/features/events/hooks/useGoingCounts";
 import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
 import { fetchEventById } from "@/features/events/api/events.api";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -74,8 +76,10 @@ export function EventDetailsModal({
 }: EventDetailsModalProps) {
   const { t, i18n } = useTranslation();
   const storeEvents = useEventsStore((s) => s.events);
-  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
-  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const goingEventIds = useGoingEventsStore((s) => s.goingEventIds);
+  const { data: goingCounts = {} } = useGoingCounts(schoolFilter);
+  const { toggleWithCounts } = useGoingCountActions(schoolFilter);
   const profileCompleted = useProfileCompleted();
   // Local override allows clicking a "similar event" without remounting the
   // modal. We reset it whenever the prop event changes by tracking the prop
@@ -104,8 +108,10 @@ export function EventDetailsModal({
   }
   const showSkeleton =
     drawerOpen && displayedEvent == null && !isFetchError && isFetchingEvent;
-  const isSaved = displayedEvent ? savedEventIds.includes(displayedEvent.id) : false;
-  const isSaveActive = profileCompleted && isSaved;
+  const isGoing = displayedEvent ? goingEventIds.includes(displayedEvent.id) : false;
+  const isGoingActive = profileCompleted && isGoing;
+  const goingCount = displayedEvent ? (goingCounts[String(displayedEvent.id)] ?? 0) : 0;
+  const GoingIcon = isGoingActive ? UserCheck : Check;
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
@@ -200,13 +206,20 @@ export function EventDetailsModal({
                     <DrawerTitle className="leading-tight text-left sm:text-center">
                       {displayedEvent.title}
                     </DrawerTitle>
-                    <DrawerDescription className="mt-1 flex items-center justify-start sm:justify-center">
+                    <DrawerDescription className="mt-1 flex flex-col items-start gap-0.5 sm:items-center">
                       <span className="inline-flex items-center gap-0.5">
                         <span>{displayedEvent.organization}</span>
                         {displayedEvent.organization_type?.toUpperCase() === "WUSA" && (
                           <OrganizationVerifiedBadge />
                         )}
                       </span>
+                      {goingCount > 0 ? (
+                        <span className="text-xs text-muted-foreground">
+                          {isGoingActive
+                            ? t("events.youreGoingCount", { count: goingCount })
+                            : t("events.goingCount", { count: goingCount })}
+                        </span>
+                      ) : null}
                     </DrawerDescription>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5 sm:absolute sm:right-0 sm:top-0">
@@ -214,36 +227,36 @@ export function EventDetailsModal({
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
-                        variant={isSaveActive ? "secondary" : "outline"}
+                        variant={isGoingActive ? "secondary" : "outline"}
                         size="icon-sm"
                         disabled={!profileCompleted}
-                        onClick={() => toggleSaveEvent(displayedEvent.id)}
-                        aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
+                        onClick={() => void toggleWithCounts(displayedEvent.id)}
+                        aria-label={isGoingActive ? t("common.going") : t("common.markGoing")}
                         title={
                           !profileCompleted
-                            ? t("events.saveRequiresLogin")
-                            : isSaveActive
-                              ? t("common.saved")
-                              : t("common.imInterested")
+                            ? t("events.goingRequiresLogin")
+                            : isGoingActive
+                              ? t("common.going")
+                              : t("common.markGoing")
                         }
                         className={
                           !profileCompleted
                             ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
-                            : isSaveActive
+                            : isGoingActive
                               ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
                               : ""
                         }
                       >
-                        <Bookmark className={`size-4 ${isSaveActive ? "fill-current" : ""}`} />
+                        <GoingIcon className={`size-4 ${isGoingActive ? "fill-current" : ""}`} />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
                         {!profileCompleted
-                          ? t("events.saveRequiresLogin")
-                          : isSaveActive
-                            ? t("common.saved")
-                            : t("common.imInterested")}
+                          ? t("events.goingRequiresLogin")
+                          : isGoingActive
+                            ? t("common.going")
+                            : t("common.markGoing")}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -320,6 +333,9 @@ export function EventDetailsModal({
                 />
 
                 <InfoRow label={t("filters.location")} value={displayedEvent.location} />
+                {displayedEvent.location ? (
+                  <EventLocationMap location={displayedEvent.location} school={schoolFilter} />
+                ) : null}
                 <InfoRow
                   label={t("filters.category")}
                   value={displayedEvent.category ? translateCategory(displayedEvent.category, t) : t("common.none")}

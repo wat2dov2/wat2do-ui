@@ -3,10 +3,11 @@ import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
 import {
-  Bookmark,
+  Check,
   Calendar,
   ImageOff,
   MoreHorizontal,
+  UserCheck,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -16,7 +17,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
 import { OrganizationBadgeDropdown } from "@/features/organizations";
-import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { useGoingCountActions } from "@/features/events/hooks/useGoingCounts";
+import { useEventsStore } from "@/features/events/store/events.store";
+import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
 import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
 import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
@@ -34,7 +37,8 @@ import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 interface EventCardProps {
   event: Event;
-  isSaved?: boolean;
+  /** Optional count overlay; defaults to 0 when omitted (e.g. similar events in drawer). */
+  goingCount?: number;
   onEventClick?: (event: Event) => void;
   /** Grid cards: open footer actions on click below the sm breakpoint or on touch. */
   mobileClickActivation?: boolean;
@@ -121,7 +125,7 @@ function EventImageBadges({
 
 interface EventFooterActionsProps {
   event: Event;
-  saveButton: ReactNode;
+  goingButton: ReactNode;
   profileCompleted: boolean;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
@@ -132,7 +136,7 @@ interface EventFooterActionsProps {
 
 function EventFooterActions({
   event,
-  saveButton,
+  goingButton,
   profileCompleted,
   categoryClasses,
   canDelete,
@@ -149,16 +153,16 @@ function EventFooterActions({
       className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
     >
       {profileCompleted ? (
-        saveButton
+        goingButton
       ) : (
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="block min-h-10 cursor-not-allowed" onClick={(e) => e.stopPropagation()}>
-              {saveButton}
+              {goingButton}
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{t("events.saveRequiresLogin")}</p>
+            <p>{t("events.goingRequiresLogin")}</p>
           </TooltipContent>
         </Tooltip>
       )}
@@ -195,54 +199,58 @@ function EventFooterActions({
   );
 }
 
-interface SaveEventButtonProps {
+interface GoingEventButtonProps {
   eventId: number;
   profileCompleted: boolean;
-  isSaveActive: boolean;
+  isGoingActive: boolean;
+  goingCount: number;
   categoryClasses: CategoryClasses;
   preferClickPress: boolean;
-  onToggleSaveEvent: (eventId: number) => void;
+  onToggleGoingEvent: (eventId: number) => void;
   t: TFunction;
 }
 
-function SaveEventButton({
+function GoingEventButton({
   eventId,
   profileCompleted,
-  isSaveActive,
+  isGoingActive,
+  goingCount,
   categoryClasses,
   preferClickPress,
-  onToggleSaveEvent,
+  onToggleGoingEvent,
   t,
-}: SaveEventButtonProps) {
+}: GoingEventButtonProps) {
   const pressHandlers = createAdaptivePressHandlers({
     preferClick: preferClickPress,
     disabled: !profileCompleted,
     onClick: () => {
       if (profileCompleted) {
-        onToggleSaveEvent(eventId);
+        onToggleGoingEvent(eventId);
       }
     },
   });
+
+  const GoingIcon = isGoingActive ? UserCheck : Check;
 
   return (
     <button
       type="button"
       {...pressHandlers}
       disabled={!profileCompleted}
-      aria-label={isSaveActive ? t("common.saved") : t("common.imInterested")}
-      title={isSaveActive ? t("common.saved") : t("common.imInterested")}
-      className={`flex min-h-10 w-full items-center justify-center px-2 transition-colors ${
+      aria-label={isGoingActive ? t("common.going") : t("common.markGoing")}
+      title={isGoingActive ? t("common.going") : t("common.markGoing")}
+      className={`flex min-h-10 w-full items-center justify-center gap-1 px-2 transition-colors ${
         !profileCompleted
           ? `pointer-events-none cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
-          : isSaveActive
+          : isGoingActive
           ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
           : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
       }`}
     >
-      <Bookmark
-        className={`size-4 ${isSaveActive ? "fill-current" : ""}`}
-        fill={isSaveActive ? "currentColor" : "none"}
-      />
+      <GoingIcon className={`size-4 ${isGoingActive ? "fill-current" : ""}`} />
+      {goingCount > 0 ? (
+        <span className="text-[11px] tabular-nums opacity-70">{goingCount}</span>
+      ) : null}
     </button>
   );
 }
@@ -306,11 +314,12 @@ interface EventCardBodyProps {
   time: string;
   badges: ReturnType<typeof useEventBadges>;
   profileCompleted: boolean;
-  isSaveActive: boolean;
+  isGoingActive: boolean;
+  goingCount: number;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
   preferClickPress: boolean;
-  onToggleSaveEvent: (eventId: number) => void;
+  onToggleGoingEvent: (eventId: number) => void;
   onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
 }
@@ -321,22 +330,24 @@ function EventCardBody({
   time,
   badges,
   profileCompleted,
-  isSaveActive,
+  isGoingActive,
+  goingCount,
   categoryClasses,
   canDelete,
   preferClickPress,
-  onToggleSaveEvent,
+  onToggleGoingEvent,
   onActionDialogOpen,
   t,
 }: EventCardBodyProps) {
-  const saveButton = (
-    <SaveEventButton
+  const goingButton = (
+    <GoingEventButton
       eventId={event.id}
       profileCompleted={profileCompleted}
-      isSaveActive={isSaveActive}
+      isGoingActive={isGoingActive}
+      goingCount={goingCount}
       categoryClasses={categoryClasses}
       preferClickPress={preferClickPress}
-      onToggleSaveEvent={onToggleSaveEvent}
+      onToggleGoingEvent={onToggleGoingEvent}
       t={t}
     />
   );
@@ -358,7 +369,7 @@ function EventCardBody({
 
       <EventFooterActions
         event={event}
-        saveButton={saveButton}
+        goingButton={goingButton}
         profileCompleted={profileCompleted}
         categoryClasses={categoryClasses}
         canDelete={canDelete}
@@ -391,7 +402,7 @@ function useEventCardNavigation({
 
 function EventCardComponent({
   event,
-  isSaved = false,
+  goingCount = 0,
   onEventClick,
   mobileClickActivation = true,
   onDelete,
@@ -415,11 +426,13 @@ function EventCardComponent({
   const isAdmin = useIsAdmin();
   const currentUserId = getUserId();
 
-  const toggleSaveEvent = useSavedEventsStore((s) => s.toggleSaveEvent);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const isGoing = useGoingEventsStore((s) => s.goingEventIds.includes(event.id));
+  const { toggleWithCounts } = useGoingCountActions(schoolFilter);
 
   const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
   const canManageEvent = isAdmin || isOwner;
-  const isSaveActive = profileCompleted && isSaved;
+  const isGoingActive = profileCompleted && isGoing;
   
   const cardRef = useViewTracking(event.id);
 
@@ -516,11 +529,12 @@ function EventCardComponent({
           time={cardTime}
           badges={badges}
           profileCompleted={profileCompleted}
-          isSaveActive={isSaveActive}
+          isGoingActive={isGoingActive}
+          goingCount={goingCount}
           categoryClasses={categoryClasses}
           canDelete={canManageEvent && Boolean(onDelete)}
           preferClickPress={preferClickPress}
-          onToggleSaveEvent={toggleSaveEvent}
+          onToggleGoingEvent={toggleWithCounts}
           onActionDialogOpen={handleActionDialogOpen}
           t={t}
         />

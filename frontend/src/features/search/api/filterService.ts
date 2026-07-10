@@ -20,8 +20,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   registration: false,
   organizations: [],
   freeFood: false,
-  cancelled: false,
-  saved: false,
+  going: false,
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
   addedWithin24h: false,
@@ -42,8 +41,7 @@ export interface SearchStoreFilterValues {
   registration: boolean;
   selectedOrganizations: string[];
   freeFoodFilter: boolean;
-  cancelledFilter: boolean;
-  savedFilter: boolean;
+  goingFilter: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
   addedWithin24h: boolean;
@@ -52,8 +50,7 @@ export interface SearchStoreFilterValues {
 type GeneratedFilterStateInput = Partial<ApiFilterStateResponse> & {
   organizations?: unknown;
   freeFood?: unknown;
-  cancelled?: unknown;
-  saved?: unknown;
+  going?: unknown;
   sortBy?: unknown;
   sortOrder?: unknown;
   addedWithin24h?: unknown;
@@ -88,8 +85,7 @@ export function normalizeFilterState(filters: Partial<FilterState>): FilterState
     registration: filters.registration === true,
     organizations: stringArray(filters.organizations),
     freeFood: filters.freeFood === true,
-    cancelled: filters.cancelled === true,
-    saved: filters.saved === true,
+    going: filters.going === true,
     sortBy: typeof filters.sortBy === "string" && filters.sortBy ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
     addedWithin24h: filters.addedWithin24h === true,
@@ -117,8 +113,7 @@ export function storeStatesToFilterState(
     registration: values.registration,
     organizations: values.selectedOrganizations,
     freeFood: values.freeFoodFilter,
-    cancelled: values.cancelledFilter,
-    saved: values.savedFilter,
+    going: values.goingFilter,
     sortBy: values.sortBy,
     sortOrder: values.sortOrder,
     addedWithin24h: values.addedWithin24h,
@@ -142,8 +137,7 @@ export function generatedFilterStateToFilterState(
       typeof filters.registration === "boolean" ? filters.registration : false,
     organizations: stringArray(filters.organizations),
     freeFood: filters.freeFood === true,
-    cancelled: filters.cancelled === true,
-    saved: filters.saved === true,
+    going: filters.going === true,
     sortBy: typeof filters.sortBy === "string" ? filters.sortBy : DEFAULT_FILTER_SORT_BY,
     sortOrder: sortOrderFrom(filters.sortOrder),
     addedWithin24h: filters.addedWithin24h === true,

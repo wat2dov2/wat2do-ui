@@ -10,8 +10,7 @@ export interface FilterState {
   registration: boolean;
   organizations: string[];
   freeFood: boolean;
-  cancelled: boolean;
-  saved: boolean;
+  going: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
   addedWithin24h: boolean;

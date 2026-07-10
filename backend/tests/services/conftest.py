@@ -147,7 +147,7 @@ def patch_sb(monkeypatch, fake_sb):
     service under test:
 
         def test_unsave_event(fake_sb, patch_sb):
-            patch_sb("services.saved_event_service")
+            patch_sb("services.going_event_service")
             ...
     """
 

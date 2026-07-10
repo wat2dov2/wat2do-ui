@@ -245,7 +245,7 @@ async function request<T>(
       }
       
       // Only call handleAuthFailure() for core/session-verifying endpoints.
-      // If a background/secondary endpoint (e.g. /credits/ or /saved-events/) fails with 401,
+      // If a background/secondary endpoint (e.g. /credits/ or /going-events/) fails with 401,
       // we still throw the ApiError normally but do NOT clear the user session.
       const isCoreSessionEndpoint =
         path === "/users/me" ||

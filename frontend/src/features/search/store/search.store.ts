@@ -30,8 +30,7 @@ interface FilterValues {
   priceRange: { min: string; max: string };
   registration: boolean;
   freeFoodFilter: boolean;
-  cancelledFilter: boolean;
-  savedFilter: boolean;
+  goingFilter: boolean;
   selectedOrganizations: string[];
   sortBy: string;
   sortOrder: "asc" | "desc";
@@ -53,8 +52,7 @@ const emptyFilters: FilterValues = {
   priceRange: { min: "", max: "" },
   registration: false,
   freeFoodFilter: false,
-  cancelledFilter: false,
-  savedFilter: false,
+  goingFilter: false,
   selectedOrganizations: [],
   sortBy: DEFAULT_FILTER_SORT_BY,
   sortOrder: DEFAULT_FILTER_SORT_ORDER,
@@ -77,8 +75,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
       priceRange: normalized.priceRange,
       registration: normalized.registration,
       freeFoodFilter: normalized.freeFood,
-      cancelledFilter: normalized.cancelled,
-      savedFilter: normalized.saved,
+      goingFilter: normalized.going,
       sortBy: normalized.sortBy,
       sortOrder: normalized.sortOrder,
       addedWithin24h: normalized.addedWithin24h,

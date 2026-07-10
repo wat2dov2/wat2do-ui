@@ -147,7 +147,7 @@ export function ModalContainer() {
               }}
             >
               <Heart className="mr-2 size-4" />
-              <span>{t("commands.savedEvents")}</span>
+              <span>{t("commands.goingEvents")}</span>
             </CommandItem>
           ) : (
             <CommandItem

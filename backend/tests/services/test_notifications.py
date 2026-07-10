@@ -272,14 +272,14 @@ def test_enqueue_event_change_missing_event_returns_zero(fake_sb, patch_sb):
     assert event_change.enqueue_event_change(9999, diff) == 0
 
 
-def test_enqueue_event_change_no_saved_users_returns_zero(fake_sb, patch_sb):
+def test_enqueue_event_change_no_going_users_returns_zero(fake_sb, patch_sb):
     """Event exists but no one saved it → no fanout."""
     patch_sb("services.notifications.event_change")
     fake_sb.queue_responses(
         [
             # 1: fetch event
             [{"title": "T", "location": "L", "dtstart_utc": None}],
-            # 2: user_saved_events lookup — empty
+            # 2: user_going_events lookup — empty
             [],
         ]
     )

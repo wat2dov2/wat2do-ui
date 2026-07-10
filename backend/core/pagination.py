@@ -33,7 +33,7 @@ _LOAD_PAGE_SIZE = 1000
 # a cap, a bot user who bookmarks every event (or a runaway join) can force
 # the helper to materialise an unbounded list in memory, crashing the process.
 # 100k rows ≈ a few MB for typical payloads - generous enough for legitimate
-# uses (saved-events, recommendation candidates) while catching anomalies.
+# uses (going-events, recommendation candidates) while catching anomalies.
 _DEFAULT_MAX_ROWS = 100_000
 
 

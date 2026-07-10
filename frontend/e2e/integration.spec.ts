@@ -90,7 +90,7 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(url => apiPath(url) === "/saved-events", async (route) => {
+  await page.route(url => apiPath(url) === "/going-events", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -313,7 +313,7 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
   });
 
   // Mock saved events
-  await page.route(url => apiPath(url) === "/saved-events", async (route) => {
+  await page.route(url => apiPath(url) === "/going-events", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",

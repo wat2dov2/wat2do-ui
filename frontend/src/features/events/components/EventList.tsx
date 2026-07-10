@@ -18,7 +18,7 @@ interface EventListProps {
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
-  savedEventIds: number[];
+  goingCounts: Record<string, number>;
   isLoading?: boolean;
   groupByDateSections?: boolean;
 }
@@ -61,7 +61,7 @@ interface EventCardListItemProps {
 
 interface EventCardsGridProps {
   events: Event[];
-  savedEventIds: Set<number>;
+  goingCounts: Record<string, number>;
   onEventClick?: (event: Event) => void;
   onDelete?: (eventId: number) => void;
   onActionDialogOpen: (type: EventCardDialog, event: Event) => void;
@@ -79,7 +79,7 @@ function EventCardListItem({
 
 function EventCardsGrid({
   events,
-  savedEventIds,
+  goingCounts,
   onEventClick,
   onDelete,
   onActionDialogOpen,
@@ -90,7 +90,7 @@ function EventCardsGrid({
         <EventCardListItem key={event.id}>
           <EventCard
             event={event}
-            isSaved={savedEventIds.has(event.id)}
+            goingCount={goingCounts[String(event.id)] ?? 0}
             onEventClick={onEventClick}
             mobileClickActivation
             onDelete={onDelete}
@@ -142,17 +142,12 @@ export function EventList({
   onDelete,
   onClearFilters,
   hasActiveFilters = false,
-  savedEventIds,
+  goingCounts,
   isLoading = false,
   groupByDateSections = true,
 }: EventListProps) {
   const { t } = useTranslation();
   const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
-  // Wrap id arrays in Sets for O(1) membership lookups per card.
-  const savedSet = useMemo(
-    () => new Set(savedEventIds),
-    [savedEventIds],
-  );
 
   // Filter out promoted events from the main feed date sections so they don't duplicate
   const regularEvents = useMemo(() => {
@@ -289,7 +284,7 @@ export function EventList({
             </h2>
             <EventCardsGrid
               events={promotedEvents}
-              savedEventIds={savedSet}
+              goingCounts={goingCounts}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}
@@ -309,7 +304,7 @@ export function EventList({
                 </h2>
                 <EventCardsGrid
                   events={sectionEvents}
-                  savedEventIds={savedSet}
+              goingCounts={goingCounts}
                   onEventClick={onEventClick}
                   onDelete={onDelete}
                   onActionDialogOpen={handleActionDialogOpen}
@@ -321,7 +316,7 @@ export function EventList({
           <section className="space-y-2.5" aria-label={t("events.upcoming")}>
             <EventCardsGrid
               events={sectionOrderedEvents}
-              savedEventIds={savedSet}
+              goingCounts={goingCounts}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}

@@ -14,7 +14,7 @@ from core.constants import (
     DEDUP_WINDOW_MINUTES,
     INTERACTION_CLICK,
     INTERACTION_DETAIL_VIEW,
-    INTERACTION_SAVE,
+    INTERACTION_GOING,
     INTERACTION_SHARE,
     MAX_DUPLICATE_INTERACTIONS,
     MAX_INTERACTION_BATCH_SIZE,
@@ -29,12 +29,12 @@ from schemas.interaction import InteractionCreate
 log = logging.getLogger(__name__)
 
 
-# Anonymous callers may record ``view``/``click``/``unsave``. ``save``,
+# Anonymous callers may record ``view``/``click``/``ungoing``. ``going``,
 # ``share``, and ``detail_view`` are blocked: they feed popularity and CF
 # scores, so unauthenticated rotating-IP traffic could inflate rankings.
 _ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
     {
-        INTERACTION_SAVE,
+        INTERACTION_GOING,
         INTERACTION_SHARE,
         INTERACTION_DETAIL_VIEW,
     }

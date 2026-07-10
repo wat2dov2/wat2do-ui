@@ -47,22 +47,38 @@ export async function deleteEventAPI(eventId: number): Promise<void> {
   await api.delete(`/events/${eventId}`);
 }
 
-export function toggleSaveEventAPI(eventId: number, currentSavedIds: number[]): number[] {
-  return currentSavedIds.includes(eventId)
-    ? currentSavedIds.filter((id) => id !== eventId)
-    : [...currentSavedIds, eventId];
+export type GoingEventStatusResponse = {
+  status: string;
+  going_count: number;
+};
+
+export function toggleGoingEventAPI(eventId: number, currentIds: number[]): number[] {
+  return currentIds.includes(eventId)
+    ? currentIds.filter((id) => id !== eventId)
+    : [...currentIds, eventId];
 }
 
-export async function fetchSavedEventIdsFromBackend(): Promise<number[]> {
-  return api.get<number[]>("/saved-events/");
+export async function fetchGoingEventIdsFromBackend(): Promise<number[]> {
+  return api.get<number[]>("/going-events/");
 }
 
-export async function saveEventToBackend(eventId: number): Promise<void> {
-  await api.put<void>(`/saved-events/${eventId}`);
+export async function markGoingOnBackend(
+  eventId: number,
+): Promise<GoingEventStatusResponse> {
+  return api.put<GoingEventStatusResponse>(`/going-events/${eventId}`);
 }
 
-export async function unsaveEventFromBackend(eventId: number): Promise<void> {
-  await api.delete(`/saved-events/${eventId}`);
+export async function unmarkGoingOnBackend(
+  eventId: number,
+): Promise<GoingEventStatusResponse> {
+  return api.delete<GoingEventStatusResponse>(`/going-events/${eventId}`);
+}
+
+export async function fetchGoingCountsFromBackend(
+  school: string,
+): Promise<Record<string, number>> {
+  const params = new URLSearchParams({ school });
+  return api.get<Record<string, number>>(`/going-events/counts?${params.toString()}`);
 }
 
 export async function reportEventToBackend(eventId: number, reason: string): Promise<void> {

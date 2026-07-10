@@ -1,7 +1,7 @@
 {
   "common": {
-    "imInterested": "保存",
-    "saved": "已保存",
+    "markGoing": "参加",
+    "going": "参加中",
     "cancel": "取消",
     "edit": "编辑",
     "delete": "删除",
@@ -146,7 +146,7 @@
     "max": "最大",
     "today": "今天",
     "forYou": "为你推荐",
-    "saved": "已保存",
+    "going": "参加中",
     "dateRange": "日期范围",
     "priceRange": "价格范围",
     "dayOfWeek": "星期",
@@ -186,7 +186,7 @@
     "calendarView": "日历视图",
     "openFilters": "打开筛选条件",
     "createNewEvent": "提交活动",
-    "savedEvents": "已保存的活动",
+    "goingEvents": "参加的活动",
     "notificationPreferences": "通知偏好设置",
     "themeAppearance": "主题与外观",
     "privacySettings": "隐私设置",

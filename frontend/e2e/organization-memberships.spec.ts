@@ -114,7 +114,7 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     });
 
     // Mock saved events list
-    await page.route(url => apiPath(url) === "/saved-events", async (route) => {
+    await page.route(url => apiPath(url) === "/going-events", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",

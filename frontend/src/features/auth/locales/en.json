@@ -40,7 +40,7 @@
     "stepProgress": "Step {{step}} of {{total}}",
     "safetyTitle": "Welcome to your campus events home.",
     "safetyDescription": "We help you discover what is happening around your school and connect with communities that match your interests.",
-    "safetySaveEvents": "Save events, track deadlines, and quickly filter by what matters to you.",
+    "safetyGoingEvents": "Mark events you're going to, track deadlines, and quickly filter by what matters to you.",
     "safetySafeguards": "Community and safety safeguards help keep events high quality and trustworthy.",
     "doneTitle": "You're all set!",
     "doneDescription": "Your personalized campus feed is ready. Time to discover what's happening around you.",

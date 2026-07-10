@@ -36,10 +36,10 @@
     "eventPromotedDesc": "is now promoted and will appear more prominently for students.",
     "noResults": "No results found.",
     "signInToView": "Sign in to view your events",
-    "signInToViewDesc": "Save events you're interested in and view them all in one place.",
+    "signInToViewDesc": "Mark events you're going to and view them all in one place.",
     "signIn": "Sign In",
     "upcoming": "Upcoming",
-    "emptyEventsDesc": "Save events you're interested in and they'll appear here. Tap the heart icon on any event to save it.",
+    "emptyEventsDesc": "Mark events you're going to and they'll appear here. Tap the going button on any event.",
     "noUpcomingEvents": "No upcoming events",
     "upcomingEventCount": "upcoming event",
     "upcomingEventCount_other": "upcoming events",
@@ -73,9 +73,9 @@
       "submittedDescription": "Thanks for flagging \"{{title}}\". We'll review it soon.",
       "submitFailed": "Couldn't submit report"
     },
-    "savedEvents": {
-      "saveFailed": "Couldn't save this event",
-      "unsaveFailed": "Couldn't unsave this event"
+    "goingEvents": {
+      "markFailed": "Couldn't mark this event as going",
+      "unmarkFailed": "Couldn't unmark this event as going"
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -98,7 +98,13 @@
     },
     "promoted": "PROMOTED",
     "new": "NEW",
-    "saveRequiresLogin": "Sign in to save events",
+    "goingRequiresLogin": "Sign in to mark events as going",
+    "goingCount": "{{count}} going",
+    "goingCount_one": "{{count}} going",
+    "goingCount_other": "{{count}} going",
+    "youreGoingCount": "You're going · {{count}} going",
+    "youreGoingCount_one": "You're going · {{count}} going",
+    "youreGoingCount_other": "You're going · {{count}} going",
     "verifiedOrganization": "Verified organization",
     "deleteEventTitle": "Delete Event",
     "deleteEventConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",

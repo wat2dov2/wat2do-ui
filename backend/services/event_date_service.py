@@ -115,7 +115,7 @@ def list_for_events(event_ids: list[int]) -> dict[int, list[OccurrenceResponse]]
 
     Chunked on the IDs because PostgREST sends ``in_(...)`` as a comma-
     separated value in a query string. Past ~1000 ids the URL exceeds
-    Supabase's ~8KB cap and the request fails with 414. ``MAX_SAVED_EVENTS_PER_USER``
+    Supabase's ~8KB cap and the request fails with 414. ``MAX_GOING_EVENTS_PER_USER``
     is 10000, so calendar feeds for power users would hit this otherwise.
     """
     if not event_ids:

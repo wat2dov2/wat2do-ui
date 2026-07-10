@@ -40,7 +40,7 @@
     "stepProgress": "第 {{step}} 步，共 {{total}} 步",
     "safetyTitle": "欢迎来到您的校园活动之家。",
     "safetyDescription": "我们帮助您发现学校周围正在发生的事情，并与符合您兴趣的社群建立联系。",
-    "safetySaveEvents": "保存活动、跟踪截止日期，并快速筛选您关心的内容。",
+    "safetyGoingEvents": "标记参加的活动、跟踪截止日期，并快速筛选您关心的内容。",
     "safetySafeguards": "社群和安全保护措施有助于保持活动的高质量和可信度。",
     "doneTitle": "您已准备就绪！",
     "doneDescription": "您的个性化校园订阅源已准备好。是时候探索您周围正在发生的事情了。",

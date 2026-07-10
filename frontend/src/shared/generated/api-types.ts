@@ -13,15 +13,11 @@ export interface paths {
         };
         /**
          * Get Variant
-         * @description Get the current user's A/B test variant.
+         * @description Return the user's A/B variant.
          *
-         *     If the authenticated user has no DB row yet (race between signup and
-         *     profile creation), we still want a stable variant rather than locking
-         *     everyone into control and biasing the treatment share downward (M5).
-         *     Hashing on ``auth_user["id"]`` gives a deterministic assignment that
-         *     will match once a DB row exists only if the two IDs agree — but since
-         *     they typically don't, we instead use the auth ID directly so the
-         *     fallback is random-by-hash, not hard-coded to control.
+         *     If the auth user has no DB row yet (signup race), hash on
+         *     ``auth_user["id"]`` for a stable assignment instead of locking everyone
+         *     into control and biasing treatment share downward.
          */
         get: operations["get_variant_ab_variant_get"];
         put?: never;
@@ -41,11 +37,10 @@ export interface paths {
         };
         /**
          * Get Metrics
-         * @description Get CTR metrics by variant (admin only).
+         * @description CTR metrics by variant (admin only).
          *
-         *     Response is cached in-process for 60 s (see
-         *     ``ABTestService.get_ctr_by_variant``) so polling dashboards don't
-         *     trigger a full table scan per poll.
+         *     Cached in-process for 60 s (see ``ABTestService.get_ctr_by_variant``)
+         *     so polling dashboards do not full-scan per poll.
          */
         get: operations["get_metrics_ab_metrics_get"];
         put?: never;
@@ -171,11 +166,10 @@ export interface paths {
          * Logout
          * @description Log the user out.
          *
-         *     A11: Bearer is optional — if the access token has expired, the refresh
-         *     cookie is still cleared so the browser doesn't hold a replayable token.
-         *     Even if upstream revocation fails, the cookie is still cleared; we
-         *     surface the error via a JSONResponse that carries Set-Cookie for
-         *     ``refresh_token``.
+         *     Bearer is optional: if the access token has expired, the refresh cookie
+         *     is still cleared so the browser does not hold a replayable token.
+         *     Even if upstream revocation fails, the cookie is cleared via a
+         *     JSONResponse that carries Set-Cookie for ``refresh_token``.
          */
         post: operations["logout_auth_logout_post"];
         delete?: never;
@@ -191,10 +185,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Calendar Token
-         * @description Return the user's feed token, generating one on first call.
-         */
+        /** Get Calendar Token */
         get: operations["get_calendar_token_calendar_token_get"];
         put?: never;
         post?: never;
@@ -213,10 +204,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Regenerate Calendar Token
-         * @description Rotate the user's feed token; existing subscriptions break.
-         */
+        /** Regenerate Calendar Token */
         post: operations["regenerate_calendar_token_calendar_token_regenerate_post"];
         delete?: never;
         options?: never;
@@ -233,10 +221,7 @@ export interface paths {
         };
         /**
          * Get Calendar Feed
-         * @description Public: return the VCALENDAR for the token's owner.
-         *
-         *     Calendar clients (Google, Apple, Outlook) poll this URL and render
-         *     each VEVENT as a calendar entry.  Rate-limited per token.
+         * @description Public VCALENDAR for the token's owner. Rate-limited per token.
          */
         get: operations["get_calendar_feed_calendar_feed__token__ics_get"];
         put?: never;
@@ -273,10 +258,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Add Credits
-         * @description Admin-only: add credits to a target user's balance.
-         */
+        /** Add Credits */
         post: operations["add_credits_credits_add_post"];
         delete?: never;
         options?: never;
@@ -309,10 +291,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Active Promoted Ids
-         * @description Public endpoint — returns event IDs with active promotions.
-         */
+        /** Get Active Promoted Ids */
         get: operations["get_active_promoted_ids_promotions_active_ids_get"];
         put?: never;
         post?: never;
@@ -331,7 +310,7 @@ export interface paths {
         };
         /**
          * List Promoted Events
-         * @description Public browse list: only promoted events for a school.
+         * @description Public list of promoted events for a school.
          */
         get: operations["list_promoted_events_events_promoted_get"];
         put?: never;
@@ -351,12 +330,7 @@ export interface paths {
         };
         /**
          * List Events
-         * @description Public browse list for a school.
-         *
-         *     By default this returns the current upcoming set. ``start_utc`` and
-         *     ``end_utc`` expose the same occurrence-window read path for clients that
-         *     need a wider or narrower date range. The response omits ``created_by`` via
-         *     ``EventSummaryResponse`` (audit I10 / S16).
+         * @description Public school feed; optional ``start_utc``/``end_utc`` window. Omits ``created_by``.
          */
         get: operations["list_events_events__get"];
         put?: never;
@@ -377,9 +351,7 @@ export interface paths {
         };
         /**
          * Get Event
-         * @description Public event detail.  ``created_by`` is stripped via
-         *     ``EventPublicResponse`` (audit I10 / S16); owners / admins see the
-         *     full shape through their dashboards via the dedicated service call.
+         * @description Public event detail; ``created_by`` omitted via ``EventPublicResponse``.
          */
         get: operations["get_event_events__event_id__get"];
         put?: never;
@@ -390,6 +362,67 @@ export interface paths {
         head?: never;
         /** Update Event */
         patch: operations["update_event_events__event_id__patch"];
+        trace?: never;
+    };
+    "/going-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Going Events */
+        get: operations["list_going_events_going_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Going Counts
+         * @description Public school-scoped going counts for the browse overlay.
+         */
+        get: operations["get_going_counts_going_events_counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark Going
+         * @description Mark an event as going.
+         *
+         *     - 404 if the event does not exist.
+         *     - 400 if the user has already hit ``MAX_GOING_EVENTS_PER_USER``.
+         */
+        put: operations["mark_going_going_events__event_id__put"];
+        post?: never;
+        /** Unmark Going */
+        delete: operations["unmark_going_going_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/interactions/batch": {
@@ -405,22 +438,11 @@ export interface paths {
          * Record Interactions
          * @description Record a batch of user-event interactions.
          *
-         *     Auth is via the standard ``Authorization: Bearer <token>`` header.
-         *     The frontend uses ``fetch()`` with ``keepalive: true`` (instead of
-         *     ``sendBeacon``) so it can set this header even during page unload.
-         *
-         *     When a user is authenticated:
-         *     - Batch size is capped at ``MAX_INTERACTION_BATCH_SIZE``.
-         *     - Duplicate interactions are deduplicated within a sliding time window.
-         *
-         *     When ``user_id`` is present in the payload it MUST match the authenticated
-         *     user — submitting interactions on behalf of another user is rejected.
-         *
-         *     Anonymous requests (no auth at all) are still allowed for basic
-         *     view/click tracking, but without a ``user_id`` they cannot influence
-         *     authenticated analytics or personalization signals beyond public click
-         *     counts and low-signal impressions.
-         *     Anonymous requests are IP-rate-limited to prevent abuse.
+         *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
+         *     so the header works on unload). Authenticated batches are size-capped and
+         *     deduped; payload ``user_id`` must match the authenticated user.
+         *     Anonymous requests are allowed for basic view/click tracking and are
+         *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
          */
         post: operations["record_interactions_interactions_batch_post"];
         delete?: never;
@@ -440,12 +462,9 @@ export interface paths {
          * Get Constants
          * @description Return shared domain constants for frontend consumption.
          *
-         *     This endpoint is public (no auth required) and highly cacheable.
-         *     Sets an explicit ``Cache-Control: public, max-age=60`` header so
-         *     cheap repeat scrapes hit the CDN / browser cache rather than the
-         *     application process (audit M13).  The cache window is deliberately
-         *     short (60 s) so that category / interest changes deployed via a
-         *     backend-only restart propagate within a minute.
+         *     Public and cacheable. ``Cache-Control: public, max-age=60`` so repeat
+         *     scrapes hit CDN/browser cache; 60 s keeps category/interest deploys
+         *     visible within a minute.
          */
         get: operations["get_constants_meta_constants_get"];
         put?: never;
@@ -465,12 +484,11 @@ export interface paths {
         };
         /**
          * Get My Preferences
-         * @description Return the resolved preferences for the authenticated user.
+         * @description Return resolved preferences for the authenticated user.
          *
-         *     Always includes one entry per supported type — types the user has
-         *     never toggled come back with their default value and
-         *     ``updated_at=None`` so the client can distinguish "default-on" from
-         *     "explicitly opted in".
+         *     Always one entry per supported type - untouched types come back with
+         *     their default and ``updated_at=None`` so the client can distinguish
+         *     default-on from explicitly opted in.
          */
         get: operations["get_my_preferences_notification_preferences_get"];
         put?: never;
@@ -478,10 +496,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /**
-         * Update My Preferences
-         * @description Bulk-upsert preferences for the authenticated user.
-         */
+        /** Update My Preferences */
         patch: operations["update_my_preferences_notification_preferences_patch"];
         trace?: never;
     };
@@ -510,10 +525,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List My Organizations
-         * @description Return organizations owned by the authenticated user.
-         */
+        /** List My Organizations */
         get: operations["list_my_organizations_organizations_mine_get"];
         put?: never;
         post?: never;
@@ -564,10 +576,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Claims
-         * @description List claims (admin only).
-         */
+        /** List Claims */
         get: operations["list_claims_organizations_claims_get"];
         put?: never;
         post?: never;
@@ -622,18 +631,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Organization Members
-         * @description List all members of a organization. Admin or organization members only.
-         */
+        /** List Organization Members */
         get: operations["list_organization_members_organizations__organization_id__members_get"];
         put?: never;
         /**
          * Add Organization Member
-         * @description Add a member to the organization by email. Admin or organization members only.
-         *
-         *     If the user already has an account, they are added directly.
-         *     Otherwise, a pending invitation is created and sent.
+         * @description Add by email: existing users join organization_members directly; otherwise invite.
          */
         post: operations["add_organization_member_organizations__organization_id__members_post"];
         delete?: never;
@@ -652,10 +655,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * Remove Organization Member
-         * @description Remove a member from the organization. Admin or organization members only.
-         */
+        /** Remove Organization Member */
         delete: operations["remove_organization_member_organizations__organization_id__members__user_id__delete"];
         options?: never;
         head?: never;
@@ -669,16 +669,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Invitations
-         * @description List pending invitations for the organization.
-         */
+        /** List Invitations */
         get: operations["list_invitations_organizations__organization_id__invitations_get"];
         put?: never;
-        /**
-         * Create Invitation
-         * @description Explicitly create and send an invitation.
-         */
+        /** Create Invitation */
         post: operations["create_invitation_organizations__organization_id__invitations_post"];
         delete?: never;
         options?: never;
@@ -696,10 +690,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * Revoke Invitation
-         * @description Revoke/delete an invitation.
-         */
+        /** Revoke Invitation */
         delete: operations["revoke_invitation_organizations__organization_id__invitations__invitation_id__delete"];
         options?: never;
         head?: never;
@@ -715,7 +706,7 @@ export interface paths {
         };
         /**
          * Get Invitation By Token
-         * @description Public route to validate an invitation token and fetch public details (organization name).
+         * @description Public: validate invitation token and return public details (organization name).
          */
         get: operations["get_invitation_by_token_organizations_invitations__token__get"];
         put?: never;
@@ -735,10 +726,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Accept Invitation
-         * @description Accept an invitation token using the logged-in user's identity.
-         */
+        /** Accept Invitation */
         post: operations["accept_invitation_organizations_invitations__token__accept_post"];
         delete?: never;
         options?: never;
@@ -755,10 +743,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Request To Join Organization
-         * @description Create a pending request to join the organization.
-         */
+        /** Request To Join Organization */
         post: operations["request_to_join_organization_organizations__organization_id__join_post"];
         delete?: never;
         options?: never;
@@ -773,17 +758,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get My Membership Status
-         * @description Get the current user's membership details for this organization.
-         */
+        /** Get My Membership Status */
         get: operations["get_my_membership_status_organizations__organization_id__membership_get"];
         put?: never;
         post?: never;
-        /**
-         * Leave Organization Or Cancel Request
-         * @description Leave a organization or cancel a pending join request.
-         */
+        /** Leave Organization Or Cancel Request */
         delete: operations["leave_organization_or_cancel_request_organizations__organization_id__membership_delete"];
         options?: never;
         head?: never;
@@ -797,10 +776,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Organization Memberships
-         * @description Organization Admin/Owner: List student memberships and pending requests for the organization.
-         */
+        /** List Organization Memberships */
         get: operations["list_organization_memberships_organizations__organization_id__memberships_get"];
         put?: never;
         post?: never;
@@ -820,17 +796,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * Remove Organization Membership
-         * @description Organization Admin/Owner: Remove a student member or request from the organization roster.
-         */
+        /** Remove Organization Membership */
         delete: operations["remove_organization_membership_organizations__organization_id__memberships__user_id__delete"];
         options?: never;
         head?: never;
-        /**
-         * Update Organization Membership
-         * @description Organization Admin/Owner: Approve/reject a request or change role of a student member.
-         */
+        /** Update Organization Membership */
         patch: operations["update_organization_membership_organizations__organization_id__memberships__user_id__patch"];
         trace?: never;
     };
@@ -843,10 +813,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create Claim
-         * @description Submit a claim for an unowned organization.
-         */
+        /** Create Claim */
         post: operations["create_claim_organizations__organization_id__claims_post"];
         delete?: never;
         options?: never;
@@ -867,10 +834,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /**
-         * Update Claim
-         * @description Approve or reject a claim (admin only).
-         */
+        /** Update Claim */
         patch: operations["update_claim_organizations_claims__claim_id__patch"];
         trace?: never;
     };
@@ -881,15 +845,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Join Requests
-         * @description List pending join requests for a organization (members only).
-         */
+        /** List Join Requests */
         get: operations["list_join_requests_organizations__organization_id__join_requests_get"];
         put?: never;
         /**
          * Create Join Request
-         * @description Submit a request to join a organization's management team.
+         * @description Request to join the organization's management team (organization_members).
          */
         post: operations["create_join_request_organizations__organization_id__join_requests_post"];
         delete?: never;
@@ -911,10 +872,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /**
-         * Update Join Request
-         * @description Approve or reject a join request (members only).
-         */
+        /** Update Join Request */
         patch: operations["update_join_request_organizations__organization_id__join_requests__request_id__patch"];
         trace?: never;
     };
@@ -929,17 +887,14 @@ export interface paths {
          * List Qr Codes
          * @description List QR codes.
          *
-         *     Admins can list all QR codes. Non-admins (organization managers) can only list
-         *     QR codes created by themselves.
+         *     Admins see all. Non-admins (org management members via
+         *     ``get_organization_owner_or_admin``) see only QR codes they created.
          */
         get: operations["list_qr_codes_qr__get"];
         put?: never;
         /**
          * Create Poster
-         * @description Create a QR code.
-         *
-         *     INSERT-only: if the id already exists, ``create_qr_code`` raises
-         *     ConflictError -> 409.
+         * @description Create a QR code. INSERT-only: duplicate id raises ConflictError -> 409.
          */
         post: operations["create_poster_qr__post"];
         delete?: never;
@@ -957,10 +912,10 @@ export interface paths {
         };
         /**
          * List Scans
-         * @description List QR-code scan events analytics.
+         * @description List QR-code scan analytics.
          *
-         *     Admins can list all scans. Non-admins (organization managers) can only list scans
-         *     of QR codes created by themselves.
+         *     Admins see all scans. Non-admins (org management members via
+         *     ``get_organization_owner_or_admin``) see only scans of QR codes they created.
          */
         get: operations["list_scans_qr_scans_get"];
         put?: never;
@@ -982,17 +937,11 @@ export interface paths {
         get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
         put?: never;
         post?: never;
-        /**
-         * Delete Poster
-         * @description Delete a QR code.
-         */
+        /** Delete Poster */
         delete: operations["delete_poster_qr__qr_code_id__delete"];
         options?: never;
         head?: never;
-        /**
-         * Update Poster
-         * @description Update a QR code.
-         */
+        /** Update Poster */
         patch: operations["update_poster_qr__qr_code_id__patch"];
         trace?: never;
     };
@@ -1031,55 +980,6 @@ export interface paths {
         patch: operations["update_report_reports__report_id__patch"];
         trace?: never;
     };
-    "/saved-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Saved Events
-         * @description Return event IDs saved by the current user.
-         */
-        get: operations["list_saved_events_saved_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/saved-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Save Event
-         * @description Save (bookmark) an event.
-         *
-         *     - 404 if the referenced event does not exist (audit I9).
-         *     - 400 if the user has already hit ``MAX_SAVED_EVENTS_PER_USER`` —
-         *       prevents a single account from growing an unbounded bookmark list
-         *       and OOM'ing the listing endpoint (audit I8).
-         */
-        put: operations["save_event_saved_events__event_id__put"];
-        post?: never;
-        /**
-         * Unsave Event
-         * @description Remove a saved event.
-         */
-        delete: operations["unsave_event_saved_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/saved-organizations/": {
         parameters: {
             query?: never;
@@ -1087,12 +987,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Saved Organizations
-         * @description Return organization IDs saved by the current user.
-         *
-         *     - 401 if unauthenticated.
-         */
+        /** List Saved Organizations */
         get: operations["list_saved_organizations_saved_organizations__get"];
         put?: never;
         post?: never;
@@ -1112,20 +1007,14 @@ export interface paths {
         get?: never;
         /**
          * Save Organization
-         * @description Save (bookmark) a organization.
+         * @description Save (bookmark) an organization.
          *
-         *     - 401 if unauthenticated.
-         *     - 404 if the referenced organization does not exist.
-         *     - 400 if the user has already hit the ``MAX_SAVED_ORGANIZATIONS_PER_USER`` cap.
+         *     - 404 if the organization does not exist.
+         *     - 400 if the user has already hit ``MAX_SAVED_ORGANIZATIONS_PER_USER``.
          */
         put: operations["save_organization_saved_organizations__organization_id__put"];
         post?: never;
-        /**
-         * Unsave Organization
-         * @description Remove a saved organization.
-         *
-         *     - 401 if unauthenticated.
-         */
+        /** Unsave Organization */
         delete: operations["unsave_organization_saved_organizations__organization_id__delete"];
         options?: never;
         head?: never;
@@ -1195,10 +1084,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Upload Event Image Unsigned
-         * @description Upload an event flyer image and return its public URL.
-         */
+        /** Upload Event Image Unsigned */
         post: operations["upload_event_image_unsigned_uploads_event_image_post"];
         delete?: never;
         options?: never;
@@ -1356,16 +1242,13 @@ export interface paths {
         post?: never;
         /**
          * Delete User
-         * @description Admin-only user deletion with A26 guardrails.
+         * @description Admin-only user deletion with quorum guardrails.
          *
-         *     - **Self-delete block:** admins cannot delete their own account via
-         *       this endpoint.  Account deletion for the caller must be done through
-         *       an explicit "delete my account" flow (not implemented here) so that
-         *       the operation is intentional and separate from moderation.
-         *     - **Admin quorum:** if the target is currently an admin, refuse the
-         *       delete when the system would end up with zero admins.  A bored or
-         *       compromised admin could otherwise demote/delete every other admin
-         *       and lock the system into an un-administered state.
+         *     - **Self-delete block:** admins cannot delete their own account here.
+         *       Account deletion for the caller must use an explicit "delete my
+         *       account" flow (not implemented here).
+         *     - **Admin quorum:** if the target is an admin, refuse when the system
+         *       would end up with zero admins.
          */
         delete: operations["delete_user_users__user_id__delete"];
         options?: never;
@@ -1390,14 +1273,13 @@ export interface paths {
          * Update User Role
          * @description Admin-only: rotate a user's role ('user' <-> 'admin').
          *
-         *     Separate from ``PATCH /users/{id}`` so the role is only mutable through
-         *     an explicitly-admin endpoint — keeps the trust boundary bright and
-         *     closes audit I16.  ``user_service.set_role`` invalidates the
-         *     supabase-auth-id cache so the change is immediately visible in
-         *     subsequent role checks.
+         *     Separate from ``PATCH /users/{id}`` so role is only mutable through an
+         *     explicitly-admin endpoint - keeps the trust boundary bright.
+         *     ``user_service.set_role`` invalidates the supabase-auth-id cache so the
+         *     change is immediately visible in subsequent role checks.
          *
-         *     A26: if the target is currently an admin and the new role is not
-         *     ``admin``, refuse the demotion when it would leave zero admins.
+         *     If the target is currently an admin and the new role is not ``admin``,
+         *     refuse the demotion when it would leave zero admins.
          */
         patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
@@ -1425,7 +1307,7 @@ export interface components {
     schemas: {
         /**
          * ABMetricsResponse
-         * @description GET /ab/metrics response — CTR per variant.
+         * @description CTR per variant.
          *
          *     Keyed by variant name; the backend guarantees entries for both
          *     ``control`` and ``treatment`` even when one has zero traffic.
@@ -1446,10 +1328,7 @@ export interface components {
             /** Ctr */
             ctr: number;
         };
-        /**
-         * ABVariantResponse
-         * @description GET /ab/variant response.
-         */
+        /** ABVariantResponse */
         ABVariantResponse: {
             /**
              * Variant
@@ -1673,9 +1552,8 @@ export interface components {
         };
         /**
          * EventPublicResponse
-         * @description Public response for GET /events/{id} — identical to EventResponse
-         *     but with ``created_by`` stripped to avoid leaking creator UUIDs to
-         *     unauthenticated callers (see audit I10).
+         * @description Like EventResponse but without ``created_by``, so public detail
+         *     views do not leak creator UUIDs to unauthenticated callers.
          */
         EventPublicResponse: {
             /** Id */
@@ -1797,7 +1675,7 @@ export interface components {
         };
         /**
          * EventSummaryResponse
-         * @description Lightweight payload for list/card views — omits large text fields
+         * @description Lightweight payload for list/card views - omits large text fields
          *     (description) that are only needed in detail views.
          *     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
          *
@@ -1806,9 +1684,9 @@ export interface components {
          *     the ``organizations`` row via the ``events.organization_id`` FK so the event
          *     card's org badge can render its links without a second fetch.
          *
-         *     ``created_by`` is intentionally omitted — this response is returned on
+         *     ``created_by`` is intentionally omitted - this response is returned on
          *     public GET /events/ and would otherwise leak the creator's Supabase
-         *     auth UID to anonymous callers (see audit I10 / S16).
+         *     auth UID to anonymous callers.
          */
         EventSummaryResponse: {
             /** Id */
@@ -1944,6 +1822,19 @@ export interface components {
              */
             registration: boolean;
         };
+        /**
+         * GoingEventStatusResponse
+         * @description Locks the going/not_going status contract at the OpenAPI boundary.
+         */
+        GoingEventStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "going" | "not_going";
+            /** Going Count */
+            going_count: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1956,12 +1847,12 @@ export interface components {
          *     **Trust boundary note on ``user_id``**: this field models the client's
          *     *claim* of which user the batch belongs to.  The server verifies the
          *     claim against the authenticated identity in ``interaction_service._validate_batch``
-         *     and 403s on mismatch (see S11).  The field is **advisory / diagnostic** —
+         *     and 403s on mismatch.  The field is **advisory / diagnostic** -
          *     never trust it for authorization or identity resolution in new code;
          *     use the value resolved from the Bearer token instead.
          *
          *     Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
-         *     opaque strings (e.g. ``"admin"``) at parse time — if the router-side
+         *     opaque strings (e.g. ``"admin"``) at parse time - if the router-side
          *     ownership check is ever removed during a refactor, impersonation
          *     still cannot succeed because the payload won't even deserialise.
          */
@@ -2002,10 +1893,7 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * NotificationPreferenceResponse
-         * @description Single preference row as returned from the API.
-         */
+        /** NotificationPreferenceResponse */
         NotificationPreferenceResponse: {
             /**
              * Notification Type
@@ -2044,7 +1932,7 @@ export interface components {
         };
         /**
          * NotificationPreferencesListResponse
-         * @description GET response: every type's current resolved state for the user.
+         * @description Every notification type's resolved enabled state for the user.
          *
          *     Includes types for which the user has no row (default-on); the
          *     ``enabled`` value is the resolved default in that case. Clients
@@ -2056,7 +1944,7 @@ export interface components {
         };
         /**
          * OccurrenceCreate
-         * @description One occurrence — start time + optional end / duration / timezone.
+         * @description One occurrence: start time plus optional end / duration / timezone.
          */
         OccurrenceCreate: {
             /**
@@ -2532,7 +2420,7 @@ export interface components {
         };
         /**
          * PlatformIntegrationOptionsResponse
-         * @description Generic options for any integration platform (audit S7).
+         * @description Generic options for any integration platform.
          *
          *     The Discord-specific response above keeps the tightest types for the
          *     ``/integrations/discord/options`` endpoint; this looser model lets
@@ -2584,10 +2472,10 @@ export interface components {
         };
         /**
          * QrCodeCreate
-         * @description Payload to create or update a QR code.
+         * @description Create/update a QR code.
          *
          *     Server-owned fields such as ``created_by`` and ``is_active`` are not
-         *     accepted from clients. New posters always start inactive and are activated
+         *     accepted from clients. New QR codes always start inactive and are activated
          *     by their first scan.
          */
         QrCodeCreate: {
@@ -2623,7 +2511,7 @@ export interface components {
         };
         /**
          * QrCodeRedirect
-         * @description Public response for GET /qr/{id}: redirect config only. Scan is recorded server-side.
+         * @description Redirect config for a QR scan; the scan itself is recorded server-side.
          */
         QrCodeRedirect: {
             /**
@@ -2638,10 +2526,7 @@ export interface components {
                 [key: string]: unknown;
             } | unknown[] | null;
         };
-        /**
-         * QrCodeResponse
-         * @description Full QR code for list/dashboard.
-         */
+        /** QrCodeResponse */
         QrCodeResponse: {
             /** Id */
             id: string;
@@ -2676,10 +2561,7 @@ export interface components {
             /** Longitude */
             longitude: number;
         };
-        /**
-         * QrCodeScanResponse
-         * @description Single scan for dashboard.
-         */
+        /** QrCodeScanResponse */
         QrCodeScanResponse: {
             /**
              * Id
@@ -2704,10 +2586,7 @@ export interface components {
         };
         /**
          * RecordInteractionsResponse
-         * @description Response for ``POST /interactions/batch`` — number of rows recorded.
-         *
-         *     Typed explicitly (audit S7) so future additions to the dict do not
-         *     silently leak internals to the client.
+         * @description Number of interaction rows recorded from a batch submit.
          */
         RecordInteractionsResponse: {
             /** Recorded */
@@ -2752,26 +2631,8 @@ export interface components {
             status: "pending" | "resolved" | "dismissed";
         };
         /**
-         * SaveEventStatusResponse
-         * @description Response for ``PUT /saved-events/{id}`` / ``DELETE /saved-events/{id}``.
-         *
-         *     Typed explicitly (audit S7) so the response contract is locked at the
-         *     OpenAPI boundary — future refactors that add fields to the dict will
-         *     be caught by the frontend type generator.
-         */
-        SaveEventStatusResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "saved" | "unsaved";
-        };
-        /**
          * SaveOrganizationStatusResponse
-         * @description Response for ``PUT /saved-organizations/{id}`` / ``DELETE /saved-organizations/{id}``.
-         *
-         *     Typed explicitly so the response contract is locked at the
-         *     OpenAPI boundary.
+         * @description Locks the save/unsave status contract at the OpenAPI boundary.
          */
         SaveOrganizationStatusResponse: {
             /**
@@ -2862,10 +2723,7 @@ export interface components {
              */
             onboarding_required: boolean;
         };
-        /**
-         * UploadResponse
-         * @description Public URL of the freshly-uploaded object.
-         */
+        /** UploadResponse */
         UploadResponse: {
             /** Url */
             url: string;
@@ -2941,8 +2799,8 @@ export interface components {
          * @description Admin-only payload for rotating a user's role.
          *
          *     Separate from ``UserUpdate`` so ``role`` never leaks into a self-service
-         *     update path — having one shared model across trust boundaries is the
-         *     exact defense-in-depth gap flagged in the schema audit (S2).
+         *     update path - one shared model across trust boundaries would be a
+         *     defense-in-depth gap.
          */
         UserRoleUpdate: {
             /**
@@ -3649,6 +3507,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_going_events_going_events__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    get_going_counts_going_events_counts_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_going_going_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unmark_going_going_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5048,88 +5021,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_saved_events_saved_events__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number[];
-                };
-            };
-        };
-    };
-    save_event_saved_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unsave_event_saved_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveEventStatusResponse"];
                 };
             };
             /** @description Validation Error */

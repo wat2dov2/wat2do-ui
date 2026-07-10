@@ -116,7 +116,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
       onStatusChange?.(organization.id, null);
     } catch (err) {
       console.error("Failed to leave/cancel organization request:", err);
-      toast({ description: t("events.savedEvents.unsaveFailed"), variant: "destructive" });
+      toast({ description: t("organizations.savedClubs.unsaveFailed"), variant: "destructive" });
     } finally {
       setActionLoading(false);
     }

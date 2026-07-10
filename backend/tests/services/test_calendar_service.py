@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 from core.tables import EVENTS, USERS
-from services import calendar_service, saved_event_service
+from services import calendar_service, going_event_service
 
 # ── resolve_school_timezone ─────────────────────────────────────────
 
@@ -186,8 +186,8 @@ def _occurrence_row(event_id: int, **overrides) -> dict:
 def test_build_ics_for_user_empty_saved_list(monkeypatch):
     """No saved events → valid empty VCALENDAR, no VEVENT components."""
     monkeypatch.setattr(
-        saved_event_service,
-        "get_saved_event_ids",
+        going_event_service,
+        "get_going_event_ids",
         MagicMock(return_value=[]),
     )
     body = calendar_service.build_ics_for_user(str(uuid4()))
@@ -209,8 +209,8 @@ def test_build_ics_for_user_renders_vevent(monkeypatch, fake_sb, patch_sb):
     patch_sb("services.calendar_service")
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
-        saved_event_service,
-        "get_saved_event_ids",
+        going_event_service,
+        "get_going_event_ids",
         MagicMock(return_value=[42]),
     )
     # Two queries land on fake_sb in sequence: events.select.in_, then
@@ -245,8 +245,8 @@ def test_build_ics_for_user_skips_events_without_occurrences(monkeypatch, fake_s
     patch_sb("services.calendar_service")
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
-        saved_event_service,
-        "get_saved_event_ids",
+        going_event_service,
+        "get_going_event_ids",
         MagicMock(return_value=[99]),
     )
     fake_sb.queue_responses(
@@ -274,8 +274,8 @@ def test_build_ics_for_user_renders_one_vevent_per_occurrence(monkeypatch, fake_
     patch_sb("services.calendar_service")
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
-        saved_event_service,
-        "get_saved_event_ids",
+        going_event_service,
+        "get_going_event_ids",
         MagicMock(return_value=[42]),
     )
     fake_sb.queue_responses(
@@ -331,8 +331,8 @@ def test_build_ics_for_user_unknown_school_renders_utc(monkeypatch, fake_sb, pat
     patch_sb("services.calendar_service")
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
-        saved_event_service,
-        "get_saved_event_ids",
+        going_event_service,
+        "get_going_event_ids",
         MagicMock(return_value=[1]),
     )
     fake_sb.queue_responses(

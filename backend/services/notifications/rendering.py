@@ -180,7 +180,7 @@ def _render_daily_new_events_html(
 
 def _render_event_change_text(summary: dict, diff: dict) -> str:
     lines = [
-        f"Update to an event you saved: {summary.get('title', '')}",
+        f"Update to an event you're going to: {summary.get('title', '')}",
         "",
     ]
     for field, change in diff.items():
@@ -208,7 +208,7 @@ def _render_event_change_html(summary: dict, diff: dict) -> str:
             )
     rows = "".join(parts)
     return (
-        f"<p>Update to an event you saved: <strong>{summary.get('title', '')}</strong></p>"
+        f"<p>Update to an event you're going to: <strong>{summary.get('title', '')}</strong></p>"
         f"<ul>{rows}</ul>"
         f"<p>Location: {summary.get('location', '')}</p>"
     )

@@ -5,7 +5,7 @@
 - ``POST /calendar/token/regenerate`` - rotates the token, breaking any
   existing subscriptions. Auth required.
 - ``GET /calendar/feed/{token}.ics`` - public VCALENDAR for the token's
-  saved events. Rate-limited per token.
+  going events. Rate-limited per token.
 """
 
 from fastapi import APIRouter, Depends, Request

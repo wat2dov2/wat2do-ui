@@ -8,9 +8,8 @@ import { getEventCategory } from "@/shared/utils/event";
 
 export interface SearchFilters {
   searchQuery: string;
-  savedFilter: boolean;
+  goingFilter: boolean;
   freeFoodFilter: boolean;
-  cancelledFilter: boolean;
   selectedDays: string[];
   priceRange: { min: string; max: string };
   selectedLocations: string[];
@@ -18,7 +17,7 @@ export interface SearchFilters {
   selectedCategories: string[];
   registration: boolean;
   profileCompleted: boolean;
-  savedEventIds: number[];
+  goingEventIds: number[];
   selectedOrganizations: string[];
   addedWithin24h: boolean;
 }
@@ -37,9 +36,9 @@ export function filterEvents(
 ): Event[] {
   // Lowercase query once (loop-invariant) instead of recomputing per event.
   const q = filters.searchQuery ? filters.searchQuery.toLowerCase() : "";
-  // Set lookup is O(1); .includes on an array is O(n). When savedFilter is
+  // Set lookup is O(1); .includes on an array is O(n). When goingFilter is
   // active this is run per-event, so hoist and wrap once.
-  const savedSet = filters.savedFilter ? new Set(filters.savedEventIds) : null;
+  const goingSet = filters.goingFilter ? new Set(filters.goingEventIds) : null;
 
   return events.filter((event) => {
     const food = event.food ?? [];
@@ -52,16 +51,11 @@ export function filterEvents(
       return false;
     }
 
-    if (savedSet && !savedSet.has(event.id)) {
+    if (goingSet && !goingSet.has(event.id)) {
       return false;
     }
 
     if (filters.freeFoodFilter && (food.length === 0 || price > 0)) {
-      return false;
-    }
-
-    // Cancelled quick filter - opt-in; default feed still shows cancelled events.
-    if (filters.cancelledFilter && !event.cancelled) {
       return false;
     }
 

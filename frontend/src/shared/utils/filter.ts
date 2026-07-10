@@ -14,8 +14,7 @@ export function getFilterCounts(filters: {
   registration: boolean;
   selectedOrganizations?: string[];
   freeFoodFilter: boolean;
-  cancelledFilter: boolean;
-  savedFilter: boolean;
+  goingFilter: boolean;
   addedWithin24h?: boolean;
   viewMode?: "grid" | "calendar" | "map";
 }): number {
@@ -32,8 +31,7 @@ export function getFilterCounts(filters: {
     (filters.registration ? 1 : 0) +
     (filters.selectedOrganizations?.length ?? 0) +
     (filters.freeFoodFilter ? 1 : 0) +
-    (filters.cancelledFilter ? 1 : 0) +
-    (filters.savedFilter ? 1 : 0) +
+    (filters.goingFilter ? 1 : 0) +
     (filters.addedWithin24h ? 1 : 0) +
     (hasActiveViewMode ? 1 : 0)
   );

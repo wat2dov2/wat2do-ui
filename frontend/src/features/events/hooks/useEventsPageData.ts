@@ -3,7 +3,8 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useSearch } from "@/features/search";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { useSavedEventsStore } from "@/features/events/store/savedEvents.store";
+import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
+import { useGoingCounts } from "@/features/events/hooks/useGoingCounts";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
@@ -40,14 +41,16 @@ function derivePromotedEvents(
 
 /**
  * Hook that aggregates data orchestration for the EventsPageContainer:
- * embedded browse snapshot, saved events, client-side search/filters, and
- * derived ordered events.
+ * embedded browse snapshot, going events, client-side counts overlay,
+ * search/filters, and derived ordered events.
  */
 export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageDataOptions) {
   const { t } = useTranslation();
   const router = useRouter();
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
-  const savedEventIds = useSavedEventsStore((s) => s.savedEventIds);
+  const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const goingEventIds = useGoingEventsStore((s) => s.goingEventIds);
+  const { data: goingCounts = {} } = useGoingCounts(schoolFilter);
   const activePromotedEventIds = useCreditsStore((s) => s.activePromotedEventIds);
 
   const events = useEventsStore((s) => s.events);
@@ -59,7 +62,7 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
   const filters = useSearch({
     events,
     profileCompleted,
-    savedEventIds,
+    goingEventIds,
     viewMode,
   });
 
@@ -101,7 +104,9 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     error,
     refreshEvents,
     totalEvents,
-    savedEventIds,
+    goingEventIds,
+    goingCounts,
+    schoolFilter,
     latestAddedEvent,
     promotedEvents,
     filters,

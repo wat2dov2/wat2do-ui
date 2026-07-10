@@ -4,11 +4,11 @@ from typing import Literal
 from pydantic import BaseModel
 
 
-class SavedEventResponse(BaseModel):
+class GoingEventResponse(BaseModel):
     id: str
     user_id: str
     event_id: int
-    saved_at: datetime
+    going_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -20,7 +20,8 @@ class UserEventPair(BaseModel):
     event_id: int
 
 
-class SaveEventStatusResponse(BaseModel):
-    """Locks the save/unsave status contract at the OpenAPI boundary."""
+class GoingEventStatusResponse(BaseModel):
+    """Locks the going/not_going status contract at the OpenAPI boundary."""
 
-    status: Literal["saved", "unsaved"]
+    status: Literal["going", "not_going"]
+    going_count: int
