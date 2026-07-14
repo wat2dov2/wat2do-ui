@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Calendar, ImageOff, ExternalLink, MoreHorizontal } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, MoreHorizontal, Plus } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -117,20 +117,11 @@ export function EventDetailsModal({
       ? (goingCounts[String(displayedEvent.id)] ?? 0)
       : undefined;
 
-  // Track detail_view on open, dwell time on close
-  const openTimeRef = useRef<number>(0);
+  // Card open already records a click; only track the detail impression here.
   useEffect(() => {
     if (displayedEvent) {
-      openTimeRef.current = Date.now();
       tracker.track(displayedEvent.id, "detail_view");
     }
-    return () => {
-      if (displayedEvent && openTimeRef.current > 0) {
-        const dwellMs = Date.now() - openTimeRef.current;
-        tracker.track(displayedEvent.id, "click", { dwell_time_ms: dwellMs });
-        openTimeRef.current = 0;
-      }
-    };
   }, [displayedEvent]);
 
   const similarEvents = useMemo(() => {
@@ -267,12 +258,14 @@ export function EventDetailsModal({
                     <Button
                       type="button"
                       variant="outline"
-                      size="icon-sm"
+                      size="sm"
                       data-slot="dropdown-menu-trigger"
                       aria-label={t("common.addToCalendar")}
                       title={t("common.addToCalendar")}
+                      className="h-8 gap-0.5 px-2"
                     >
                       <Calendar className="size-4" />
+                      <Plus className="size-3" />
                     </Button>
                   </EventCalendarDownloadMenu>
                   <EventOverflowMenu

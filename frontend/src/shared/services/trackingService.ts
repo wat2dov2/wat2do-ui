@@ -18,6 +18,9 @@ interface QueuedInteraction {
   metadata?: Record<string, unknown>;
 }
 
+/** High-signal types flush immediately so SPA navigations don't drop them. */
+const IMMEDIATE_FLUSH_TYPES = new Set(["click", "going", "ungoing", "share", "detail_view"]);
+
 function getSessionId(): string {
   let sid = sessionStorage.getItem(STORAGE_KEYS.SESSION_ID);
   if (!sid) {
@@ -45,17 +48,18 @@ function isExpectedLocalDevNetworkMiss(err: unknown): boolean {
   return process.env.NODE_ENV === "development" && localApi && message === "Failed to fetch";
 }
 
-// High-signal interactions should reach the server during normal browsing, not
-// only when the tab hides or the page unloads.
+// Low-signal leftovers still debounce; clicks/going flush immediately.
 const FLUSH_DEBOUNCE_MS = 1_000;
 
 class Tracker {
   private queue: QueuedInteraction[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private flushing = false;
 
   constructor() {
     if (typeof window !== "undefined") {
       window.addEventListener("beforeunload", () => this.flush());
+      window.addEventListener("pagehide", () => this.flush());
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") this.flush();
       });
@@ -64,6 +68,10 @@ class Tracker {
 
   track(eventId: number, type: string, metadata?: Record<string, unknown>) {
     this.queue.push({ event_id: eventId, interaction_type: type, metadata });
+    if (IMMEDIATE_FLUSH_TYPES.has(type)) {
+      this.flush();
+      return;
+    }
     this.scheduleFlush();
   }
 
@@ -84,7 +92,7 @@ class Tracker {
       this.flushTimer = null;
     }
 
-    if (this.queue.length === 0) return;
+    if (this.flushing || this.queue.length === 0) return;
     const batch = this.queue.splice(0);
     const payload = JSON.stringify({
       session_id: getSessionId(),
@@ -100,18 +108,39 @@ class Tracker {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
+    this.flushing = true;
+
     // fetch + keepalive survives page unload (like sendBeacon) but supports
     // custom headers, so the token travels in the Authorization header - not
     // in the request body where it could be logged by intermediaries.
-    fetch(url, {
+    void fetch(url, {
       method: "POST",
       headers,
       body: payload,
       keepalive: true,
-    }).catch((err: unknown) => {
-      if (isExpectedFlushAbort(err) || isExpectedLocalDevNetworkMiss(err)) return;
-      console.error("Failed to flush interaction batch:", err);
-    });
+    })
+      .then((response) => {
+        if (!response.ok) {
+          // Put the batch back so a later open/hide can retry.
+          this.queue.unshift(...batch);
+          console.error(
+            "Failed to flush interaction batch:",
+            response.status,
+            response.statusText,
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        if (isExpectedFlushAbort(err) || isExpectedLocalDevNetworkMiss(err)) return;
+        this.queue.unshift(...batch);
+        console.error("Failed to flush interaction batch:", err);
+      })
+      .finally(() => {
+        this.flushing = false;
+        if (this.queue.length > 0) {
+          this.scheduleFlush();
+        }
+      });
   }
 }
 

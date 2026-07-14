@@ -29,9 +29,9 @@ from schemas.interaction import InteractionCreate
 log = logging.getLogger(__name__)
 
 
-# Anonymous callers may record ``view``/``click``/``ungoing``. ``going``,
-# ``share``, and ``detail_view`` are blocked: they feed popularity and CF
-# scores, so unauthenticated rotating-IP traffic could inflate rankings.
+# Anonymous callers may record ``click``/``ungoing``. ``going``, ``share``,
+# and ``detail_view`` are blocked: they feed popularity and CF scores, so
+# unauthenticated rotating-IP traffic could inflate rankings.
 _ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
     {
         INTERACTION_GOING,

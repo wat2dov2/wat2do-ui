@@ -6,6 +6,7 @@ import {
   Calendar,
   ImageOff,
   MoreHorizontal,
+  Plus,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -171,9 +172,10 @@ function EventFooterActions({
         <button
           type="button"
           aria-label={t("common.addToCalendar")}
-          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 w-full items-center justify-center gap-0.5 border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
         >
           <Calendar className="size-4" />
+          <Plus className="size-3" />
         </button>
       </EventCalendarDownloadMenu>
 
@@ -365,7 +367,7 @@ function EventCardBody({
         time={time}
         location={event.location}
         badges={badges}
-        statsLabel={buildEventStatsLabel(t, event.click_count, goingCount)}
+        statsLabel={buildEventStatsLabel(t, event.click_count, goingCount) ?? ""}
         textClassName={categoryClasses.text}
         secondaryTextClassName={categoryClasses.text}
         badgeClassName={`border-current ${categoryClasses.text}`}

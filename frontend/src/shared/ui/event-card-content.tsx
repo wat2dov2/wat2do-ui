@@ -17,7 +17,11 @@ interface EventCardContentProps {
   time?: string;
   location?: string;
   badges?: readonly CardBadge[];
-  /** Optional popularity line, e.g. "12 clicks · 3 going". */
+  /**
+   * Popularity line, e.g. "12 clicks · 3 going".
+   * Pass `""` to reserve the same line height before counts load so cards don't
+   * stutter; omit the prop entirely when the slot should not exist.
+   */
   statsLabel?: string;
   className?: string;
   textClassName?: string;
@@ -44,9 +48,14 @@ export function EventCardContent({
           <h3 className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
             {title}
           </h3>
-          {statsLabel ? (
-            <span className={`mt-0.5 block text-[9px] font-medium ${badgeClassName}`}>
-              {statsLabel}
+          {statsLabel !== undefined ? (
+            <span
+              className={`mt-0.5 block text-[9px] font-medium leading-none ${badgeClassName}${
+                statsLabel ? "" : " invisible"
+              }`}
+              aria-hidden={statsLabel ? undefined : true}
+            >
+              {statsLabel || "\u00a0"}
             </span>
           ) : null}
         </div>
