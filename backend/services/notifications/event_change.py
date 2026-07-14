@@ -105,7 +105,8 @@ def _send_event_change(
     )
     if row_id is None:
         return False
-    subject = f"Update: {event_summary.get('title', "an event you're going to")}"
+    title = event_summary.get("title") or "an event you're going to"
+    subject = f"Update: {title}"
     try:
         email_service.send(
             EmailMessage(

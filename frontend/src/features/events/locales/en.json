@@ -102,7 +102,7 @@
     },
     "promoted": "PROMOTED",
     "new": "NEW",
-    "goingRequiresLogin": "Sign in to mark events as going",
+    "goingRequiresLogin": "You need to be logged in",
     "goingCount": "{{count}} going",
     "goingCount_one": "{{count}} going",
     "goingCount_other": "{{count}} going",

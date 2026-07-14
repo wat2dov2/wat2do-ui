@@ -19,7 +19,7 @@ export function OrganizationVerifiedBadge({ className }: OrganizationVerifiedBad
       aria-label={label}
       title={label}
       className={cn(
-        "inline-block h-3.5 w-[3.5rem] shrink-0 bg-current text-foreground",
+        "inline-block h-2.5 w-10 shrink-0 bg-current text-foreground",
         "[mask-image:url(/wusa-wordmark.png)] [mask-size:contain] [mask-repeat:no-repeat] [mask-position:left_center]",
         "[-webkit-mask-image:url(/wusa-wordmark.png)] [-webkit-mask-size:contain] [-webkit-mask-repeat:no-repeat] [-webkit-mask-position:left_center]",
         className,

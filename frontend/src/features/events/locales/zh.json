@@ -102,7 +102,7 @@
     },
     "promoted": "热门推广",
     "new": "新",
-    "goingRequiresLogin": "登录后标记参加的活动",
+    "goingRequiresLogin": "需要登录",
     "goingCount": "{{count}} 人参加",
     "goingCount_one": "{{count}} 人参加",
     "goingCount_other": "{{count}} 人参加",

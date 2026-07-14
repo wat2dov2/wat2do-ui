@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Calendar, ImageOff, ExternalLink, Users, UserCheck, MoreHorizontal } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, MoreHorizontal } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -87,6 +87,7 @@ export function EventDetailsModal({
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
   const [overrideForEventId, setOverrideForEventId] = useState<number | null>(null);
   const [activeDialog, setActiveDialog] = useState<ActiveEventDetailsDialog | null>(null);
+  const [goingLoginHintOpen, setGoingLoginHintOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const resolvedEventId = eventId ?? event?.id ?? null;
   const listEvent = event;
@@ -111,7 +112,6 @@ export function EventDetailsModal({
   const isGoing = displayedEvent ? goingEventIds.includes(displayedEvent.id) : false;
   const isGoingActive = profileCompleted && isGoing;
   const goingCount = displayedEvent ? (goingCounts[String(displayedEvent.id)] ?? 0) : 0;
-  const GoingIcon = isGoingActive ? UserCheck : Users;
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
@@ -223,43 +223,42 @@ export function EventDetailsModal({
                     </DrawerDescription>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5 sm:absolute sm:right-0 sm:top-0">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant={isGoingActive ? "secondary" : "outline"}
-                        size="icon-sm"
-                        disabled={!profileCompleted}
-                        onClick={() => void toggleWithCounts(displayedEvent.id)}
-                        aria-label={isGoingActive ? t("common.going") : t("common.markGoing")}
-                        title={
-                          !profileCompleted
-                            ? t("events.goingRequiresLogin")
-                            : isGoingActive
-                              ? t("common.going")
-                              : t("common.markGoing")
-                        }
-                        className={
-                          !profileCompleted
-                            ? "border-border bg-muted/40 text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
-                            : isGoingActive
-                              ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
-                              : ""
-                        }
-                      >
-                        <GoingIcon className={`size-4 ${isGoingActive ? "fill-current" : ""}`} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        {!profileCompleted
-                          ? t("events.goingRequiresLogin")
-                          : isGoingActive
-                            ? t("common.going")
-                            : t("common.markGoing")}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
+                  {profileCompleted ? (
+                    <Button
+                      type="button"
+                      variant={isGoingActive ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={() => void toggleWithCounts(displayedEvent.id)}
+                      aria-label={t("common.markGoing")}
+                      title={t("common.markGoing")}
+                      className={
+                        isGoingActive
+                          ? "border-primary/20 bg-primary/10 px-2.5 text-xs text-primary hover:bg-primary/15"
+                          : "px-2.5 text-xs"
+                      }
+                    >
+                      {t("common.markGoing")}
+                    </Button>
+                  ) : (
+                    <Tooltip open={goingLoginHintOpen} onOpenChange={setGoingLoginHintOpen}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setGoingLoginHintOpen(true)}
+                          aria-label={t("common.markGoing")}
+                          title={t("events.goingRequiresLogin")}
+                          className="border-border bg-muted/40 px-2.5 text-xs text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
+                        >
+                          {t("common.markGoing")}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("events.goingRequiresLogin")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                   <EventCalendarDownloadMenu event={displayedEvent}>
                     <Button
                       type="button"

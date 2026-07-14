@@ -1,7 +1,7 @@
 {
   "common": {
-    "markGoing": "Going",
-    "going": "Going",
+    "markGoing": "I'm going",
+    "going": "I'm going",
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",

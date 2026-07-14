@@ -3,11 +3,9 @@ import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
 import {
-  Users,
   Calendar,
   ImageOff,
   MoreHorizontal,
-  UserCheck,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -126,7 +124,6 @@ function EventImageBadges({
 interface EventFooterActionsProps {
   event: Event;
   goingButton: ReactNode;
-  profileCompleted: boolean;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
   preferClickPress: boolean;
@@ -137,7 +134,6 @@ interface EventFooterActionsProps {
 function EventFooterActions({
   event,
   goingButton,
-  profileCompleted,
   categoryClasses,
   canDelete,
   preferClickPress,
@@ -152,20 +148,7 @@ function EventFooterActions({
       onClick={(event) => event.stopPropagation()}
       className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
     >
-      {profileCompleted ? (
-        goingButton
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="block min-h-10 cursor-not-allowed" onClick={(e) => e.stopPropagation()}>
-              {goingButton}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{t("events.goingRequiresLogin")}</p>
-          </TooltipContent>
-        </Tooltip>
-      )}
+      {goingButton}
 
       <EventCalendarDownloadMenu
         event={event}
@@ -220,38 +203,51 @@ function GoingEventButton({
   onToggleGoingEvent,
   t,
 }: GoingEventButtonProps) {
+  const [loginHintOpen, setLoginHintOpen] = useState(false);
   const pressHandlers = createAdaptivePressHandlers({
     preferClick: preferClickPress,
-    disabled: !profileCompleted,
     onClick: () => {
-      if (profileCompleted) {
-        onToggleGoingEvent(eventId);
+      if (!profileCompleted) {
+        setLoginHintOpen(true);
+        return;
       }
+      onToggleGoingEvent(eventId);
     },
   });
 
-  const GoingIcon = isGoingActive ? UserCheck : Users;
-
-  return (
+  const label = t("common.markGoing");
+  const button = (
     <button
       type="button"
       {...pressHandlers}
-      disabled={!profileCompleted}
-      aria-label={isGoingActive ? t("common.going") : t("common.markGoing")}
-      title={isGoingActive ? t("common.going") : t("common.markGoing")}
-      className={`flex min-h-10 w-full items-center justify-center gap-1 px-2 transition-colors ${
+      aria-label={label}
+      title={profileCompleted ? label : t("events.goingRequiresLogin")}
+      className={`flex min-h-10 w-full items-center justify-center gap-1 px-2 text-xs font-medium transition-colors ${
         !profileCompleted
-          ? `pointer-events-none cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
+          ? `cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
           : isGoingActive
           ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
           : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
       }`}
     >
-      <GoingIcon className={`size-4 ${isGoingActive ? "fill-current" : ""}`} />
+      <span>{label}</span>
       {goingCount > 0 ? (
-        <span className="text-[11px] tabular-nums opacity-70">{goingCount}</span>
+        <span className="text-[11px] font-normal tabular-nums opacity-70">{goingCount}</span>
       ) : null}
     </button>
+  );
+
+  if (profileCompleted) {
+    return button;
+  }
+
+  return (
+    <Tooltip open={loginHintOpen} onOpenChange={setLoginHintOpen}>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent>
+        <p>{t("events.goingRequiresLogin")}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -371,7 +367,6 @@ function EventCardBody({
       <EventFooterActions
         event={event}
         goingButton={goingButton}
-        profileCompleted={profileCompleted}
         categoryClasses={categoryClasses}
         canDelete={canDelete}
         preferClickPress={preferClickPress}

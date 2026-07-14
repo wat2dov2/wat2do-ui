@@ -39,7 +39,7 @@ export const FilterSection = React.memo(function FilterSection({
             <Chip
               active
               size="sm"
-              icon={<X className="size-2.5" strokeWidth={3} />}
+              icon={<X className="size-2" strokeWidth={3} />}
               onClick={(e) => {
                 e.stopPropagation();
                 onClear?.();
