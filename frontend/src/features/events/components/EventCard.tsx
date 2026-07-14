@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
 import {
-  Check,
+  Users,
   Calendar,
   ImageOff,
   MoreHorizontal,
@@ -230,7 +230,7 @@ function GoingEventButton({
     },
   });
 
-  const GoingIcon = isGoingActive ? UserCheck : Check;
+  const GoingIcon = isGoingActive ? UserCheck : Users;
 
   return (
     <button
@@ -362,6 +362,7 @@ function EventCardBody({
         time={time}
         location={event.location}
         badges={badges}
+        statsLabel={`${t("events.clickCount", { count: event.click_count ?? 0 })} · ${t("events.viewCount", { count: event.view_count ?? 0 })}`}
         textClassName={categoryClasses.text}
         secondaryTextClassName={categoryClasses.text}
         badgeClassName={`border-current ${categoryClasses.text}`}

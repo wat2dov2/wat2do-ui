@@ -33,14 +33,7 @@ import type { Organization } from "@/shared/types";
 import { toast } from "@/shared/hooks/use-toast";
 import { useForm } from "@/shared/hooks/useForm";
 import { useModalState } from "@/shared/hooks/useModalState";
-import {
-  MultiSelect,
-  MultiSelectContent,
-  MultiSelectGroup,
-  MultiSelectItem,
-  MultiSelectTrigger,
-  MultiSelectValue,
-} from "@/shared/ui/multi-select";
+import { MultiSelect } from "@/shared/ui/multi-select";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { getOrganizationCategories } from "@/shared/data/organizationCategories";
@@ -124,8 +117,11 @@ export function AddOrganizationModal({
     resetFn: form.reset,
   });
 
-  const handleCategoriesChange = useCallback(
-    (categories: string[]) => {
+  const toggleCategory = useCallback(
+    (category: string) => {
+      const categories = form.formData.categories.includes(category)
+        ? form.formData.categories.filter((value) => value !== category)
+        : [...form.formData.categories, category];
       form.updateField("categories", categories);
       form.handleBlur("categories");
     },
@@ -252,22 +248,12 @@ export function AddOrganizationModal({
                       {t("forms.categories")} <span className="text-error">*</span>
                     </FieldLabel>
                     <MultiSelect
-                      values={form.formData.categories}
-                      onValuesChange={handleCategoriesChange}
-                    >
-                      <MultiSelectTrigger className="w-full">
-                        <MultiSelectValue placeholder={t("forms.selectCategories")} />
-                      </MultiSelectTrigger>
-                      <MultiSelectContent>
-                        <MultiSelectGroup>
-                          {getOrganizationCategories().map((category) => (
-                            <MultiSelectItem key={category} value={category}>
-                              {translateCategory(category, t)}
-                            </MultiSelectItem>
-                          ))}
-                        </MultiSelectGroup>
-                      </MultiSelectContent>
-                    </MultiSelect>
+                      options={getOrganizationCategories()}
+                      selected={form.formData.categories}
+                      onToggle={toggleCategory}
+                      className="justify-start"
+                      getLabel={(category) => translateCategory(category, t)}
+                    />
                     {form.touched.categories && form.errors.categories && (
                       <FieldError className="text-xs">{form.errors.categories}</FieldError>
                     )}

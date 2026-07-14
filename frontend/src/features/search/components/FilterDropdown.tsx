@@ -25,6 +25,7 @@ interface FilterDropdownFilters {
   selectedCategories: string[];
   setSelectedCategories: (categories: string[]) => void;
   categoryOptions: FilterOption[];
+  toggleCategory: (id: string) => void;
   // Location filters
   selectedLocations: string[];
   setSelectedLocations: (locations: string[]) => void;
@@ -32,10 +33,12 @@ interface FilterDropdownFilters {
   selectedFoods: string[];
   setSelectedFoods: (foods: string[]) => void;
   foodOptions: FilterOption[];
+  toggleFood: (id: string) => void;
   // Day of week filters
   selectedDays: string[];
   setSelectedDays: (days: string[]) => void;
   dayOptions: FilterOption[];
+  toggleDay: (id: string) => void;
   // Price & registration
   priceRange: { min: string; max: string };
   setPriceRange: (range: { min: string; max: string }) => void;
@@ -44,6 +47,7 @@ interface FilterDropdownFilters {
   // Organization
   selectedOrganizations: string[];
   setSelectedOrganizations: (value: string[]) => void;
+  toggleOrganization: (org: string) => void;
   availableOrganizations: string[];
 }
 

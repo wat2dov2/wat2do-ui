@@ -52,6 +52,12 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     );
   }, []);
 
+  const toggleTopic = useCallback((topic: string) => {
+    setSelectedTopics((prev) =>
+      prev.includes(topic) ? prev.filter((value) => value !== topic) : [...prev, topic]
+    );
+  }, []);
+
   const goNext = useCallback(() => {
     if (!canContinue) return;
 
@@ -98,6 +104,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     setIsFirstYear,
     setDailyNewEventsOptIn,
     setSelectedTopics,
+    toggleTopic,
     toggleEventId,
     goNext,
     goBack,

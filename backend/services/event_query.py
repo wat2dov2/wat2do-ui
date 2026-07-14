@@ -39,6 +39,7 @@ T = TypeVar("T", bound=BaseModel)
 _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
     "click_count",
+    "view_count",
     "organization_page",
     "organization_ig",
     "organization_discord",
@@ -97,25 +98,26 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
 
 
 def with_click_counts(rows: list[dict]) -> list[dict]:
-    """Return event rows enriched with their recorded click counts.
+    """Return event rows enriched with recorded click and view counts.
 
     Event rows are hydrated in several read paths. Keeping the enrichment here
-    makes ``click_count`` a single API contract instead of a frontend-only
-    guess or a per-route one-off.
+    makes ``click_count`` / ``view_count`` a single API contract instead of a
+    frontend-only guess or a per-route one-off.
     """
 
     event_ids = [row.get("id") for row in rows if row.get("id") is not None]
-    click_counts = _fetch_click_counts(event_ids)
+    interaction_counts = _fetch_interaction_counts(event_ids)
     return [
         {
             **row,
-            "click_count": click_counts.get(_int_or_none(row.get("id")), 0),
+            "click_count": interaction_counts.get(_int_or_none(row.get("id")), (0, 0))[0],
+            "view_count": interaction_counts.get(_int_or_none(row.get("id")), (0, 0))[1],
         }
         for row in rows
     ]
 
 
-def _fetch_click_counts(event_ids: list[object]) -> dict[int, int]:
+def _fetch_interaction_counts(event_ids: list[object]) -> dict[int, tuple[int, int]]:
     unique_ids = sorted(
         {event_id for raw_id in event_ids if (event_id := _int_or_none(raw_id)) is not None}
     )
@@ -124,21 +126,23 @@ def _fetch_click_counts(event_ids: list[object]) -> dict[int, int]:
 
     try:
         rows = (
-            get_sb().rpc("get_event_click_counts", {"p_event_ids": unique_ids}).execute().data or []
+            get_sb().rpc("get_event_interaction_counts", {"p_event_ids": unique_ids}).execute().data
+            or []
         )
     except Exception as exc:
-        log.warning("Failed to fetch event click counts: %s", exc)
+        log.warning("Failed to fetch event interaction counts: %s", exc)
         return {}
-    counts: dict[int, int] = {}
+    counts: dict[int, tuple[int, int]] = {}
     for row in rows:
         if not isinstance(row, dict):
             continue
         event_id = row.get("event_id")
         click_count = row.get("click_count")
-        if event_id is None or click_count is None:
+        view_count = row.get("view_count")
+        if event_id is None or click_count is None or view_count is None:
             continue
         try:
-            counts[int(event_id)] = int(click_count)
+            counts[int(event_id)] = (int(click_count), int(view_count))
         except (TypeError, ValueError):
             continue
     return counts

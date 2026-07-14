@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Calendar, ImageOff, ExternalLink, Check, UserCheck, MoreHorizontal } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, Users, UserCheck, MoreHorizontal } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -111,7 +111,7 @@ export function EventDetailsModal({
   const isGoing = displayedEvent ? goingEventIds.includes(displayedEvent.id) : false;
   const isGoingActive = profileCompleted && isGoing;
   const goingCount = displayedEvent ? (goingCounts[String(displayedEvent.id)] ?? 0) : 0;
-  const GoingIcon = isGoingActive ? UserCheck : Check;
+  const GoingIcon = isGoingActive ? UserCheck : Users;
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);

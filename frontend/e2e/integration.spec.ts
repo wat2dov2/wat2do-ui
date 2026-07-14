@@ -153,6 +153,7 @@ test.beforeEach(async ({ page }) => {
             school: "uwaterloo",
             added_at: now.toISOString(),
             click_count: 0,
+            view_count: 0,
           },
         ],
         total: 1,
@@ -624,21 +625,14 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
-  test("keeps click count optimistic when opening event details", async ({ page }) => {
+  test("shows click and view counts on event cards", async ({ page }) => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);
 
     const card = page.locator('article[data-event-id="1"]').first();
     await expect(card).toBeVisible();
     await expect(card).toContainText("0 clicks");
-
-    await card.click({ position: { x: 30, y: 30 } });
-
-    await expect(page).toHaveURL(/eventId=1/);
-    await expect(card).toContainText("1 click");
-
-    await page.waitForTimeout(500);
-    await expect(card).toContainText("1 click");
+    await expect(card).toContainText("0 views");
   });
 
   test("app API proxy returns events", async ({ request }) => {

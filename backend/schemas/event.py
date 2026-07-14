@@ -235,6 +235,7 @@ class EventSummaryResponse(BaseModel):
     cancelled: bool = False
     added_at: datetime
     click_count: int = 0
+    view_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -276,6 +277,7 @@ class EventResponse(BaseModel):
     cancelled: bool = False
     added_at: datetime
     click_count: int = 0
+    view_count: int = 0
     created_by: str | None = None
 
     model_config = {"from_attributes": True}
@@ -305,5 +307,6 @@ class EventPublicResponse(BaseModel):
     cancelled: bool = False
     added_at: datetime
     click_count: int = 0
+    view_count: int = 0
 
     model_config = {"from_attributes": True}

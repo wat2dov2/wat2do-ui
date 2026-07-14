@@ -87,7 +87,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <TopNav />
 
       <div
-        className="main-content-grid mt-12 flex-1 overflow-auto px-2 pt-4 pb-28 sm:p-4 sm:pb-24"
+        className="main-content-grid mt-12 flex-1 overflow-auto px-2 pt-4 pb-20 sm:p-4 sm:pb-16"
         style={{
           minHeight: "calc(100vh - 48px)",
         }}

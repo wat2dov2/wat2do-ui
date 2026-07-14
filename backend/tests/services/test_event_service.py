@@ -82,6 +82,7 @@ def test_summary_columns_exclude_computed_response_fields():
 
     assert "occurrences" not in event_query._SUMMARY_COLUMNS
     assert "click_count" not in event_query._SUMMARY_COLUMNS
+    assert "view_count" not in event_query._SUMMARY_COLUMNS
 
 
 # ---------------------------------------------------------------------------
@@ -338,7 +339,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
             ],
             count=0,
         ),
-        MagicMock(data=[{"event_id": 42, "click_count": 5}], count=0),
+        MagicMock(data=[{"event_id": 42, "click_count": 5, "view_count": 11}], count=0),
     ]
 
     now = datetime.now(timezone.utc)
@@ -361,6 +362,7 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     assert len(results) == 1
     assert total == 1
     assert results[0].click_count == 5
+    assert results[0].view_count == 11
     assert len(results[0].occurrences) == 3
     assert results[0].occurrences[0].dtstart_utc == future_1
 
@@ -608,7 +610,7 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
             ],
             count=0,
         ),
-        MagicMock(data=[{"event_id": 2, "click_count": 7}], count=0),
+        MagicMock(data=[{"event_id": 2, "click_count": 7, "view_count": 21}], count=0),
     ]
     list_for_events = MagicMock(
         return_value={
@@ -636,6 +638,7 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
     assert total == 2
     assert [event.id for event in items] == [2]
     assert items[0].click_count == 7
+    assert items[0].view_count == 21
     assert items[0].occurrences[0].id == 22
     list_for_events.assert_called_once_with([2])
     count_select = fake_sb.select.call_args_list[0].args[0]
@@ -657,7 +660,7 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
 
 def test_with_click_counts_fetches_counts_once(fake_sb, patch_sb):
     patch_sb("services.event_query")
-    fake_sb.set_response(data=[{"event_id": 1, "click_count": 9}])
+    fake_sb.set_response(data=[{"event_id": 1, "click_count": 9, "view_count": 4}])
 
     rows = event_query.with_click_counts(
         [
@@ -667,7 +670,8 @@ def test_with_click_counts_fetches_counts_once(fake_sb, patch_sb):
     )
 
     assert [row["click_count"] for row in rows] == [9, 0]
-    fake_sb.rpc.assert_called_once_with("get_event_click_counts", {"p_event_ids": [1, 2]})
+    assert [row["view_count"] for row in rows] == [4, 0]
+    fake_sb.rpc.assert_called_once_with("get_event_interaction_counts", {"p_event_ids": [1, 2]})
 
 
 def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):

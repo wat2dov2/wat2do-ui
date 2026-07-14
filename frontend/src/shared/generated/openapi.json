@@ -5754,6 +5754,11 @@
             "type": "integer",
             "title": "Click Count",
             "default": 0
+          },
+          "view_count": {
+            "type": "integer",
+            "title": "View Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -5935,6 +5940,11 @@
           "click_count": {
             "type": "integer",
             "title": "Click Count",
+            "default": 0
+          },
+          "view_count": {
+            "type": "integer",
+            "title": "View Count",
             "default": 0
           },
           "created_by": {
@@ -6128,6 +6138,11 @@
           "click_count": {
             "type": "integer",
             "title": "Click Count",
+            "default": 0
+          },
+          "view_count": {
+            "type": "integer",
+            "title": "View Count",
             "default": 0
           }
         },

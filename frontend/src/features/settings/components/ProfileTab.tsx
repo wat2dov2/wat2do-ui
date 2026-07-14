@@ -13,18 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import {
-  MultiSelect,
-  MultiSelectContent,
-  MultiSelectGroup,
-  MultiSelectItem,
-  MultiSelectTrigger,
-  MultiSelectValue,
-} from "@/shared/ui/multi-select";
+import { MultiSelect } from "@/shared/ui/multi-select";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { useProfile } from "@/features/settings/hooks/useProfile";
 import { getAvailableInterests } from "@/shared/data/interests";
-import { useTranslatedOptions } from "@/shared/hooks/useTranslatedOptions";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
 import { FACULTY_OPTIONS } from "@/features/onboarding";
 
@@ -35,7 +27,6 @@ interface ProfileTabProps {
 export function ProfileTab({ userEmail }: ProfileTabProps) {
   const { t } = useTranslation();
   const { profile, updateProfile } = useProfile();
-  const interestOptions = useTranslatedOptions(getAvailableInterests(), "categories");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -162,22 +153,16 @@ export function ProfileTab({ userEmail }: ProfileTabProps) {
               {t("settings.profile.selectInterests")}
             </p>
             <MultiSelect
-              values={profile.interests}
-              onValuesChange={(interests) => updateProfile({ interests })}
-            >
-              <MultiSelectTrigger className="w-full">
-                <MultiSelectValue placeholder={t("settings.profile.selectInterests")} />
-              </MultiSelectTrigger>
-              <MultiSelectContent>
-                <MultiSelectGroup>
-                  {interestOptions.map(({ value, label }) => (
-                    <MultiSelectItem key={value} value={value}>
-                      {label}
-                    </MultiSelectItem>
-                  ))}
-                </MultiSelectGroup>
-              </MultiSelectContent>
-            </MultiSelect>
+              options={getAvailableInterests()}
+              selected={profile.interests}
+              onToggle={(interest) => {
+                const next = profile.interests.includes(interest)
+                  ? profile.interests.filter((value) => value !== interest)
+                  : [...profile.interests, interest];
+                updateProfile({ interests: next });
+              }}
+              translationKeyPrefix="categories"
+            />
           </div>
         </CardContent>
       </Card>

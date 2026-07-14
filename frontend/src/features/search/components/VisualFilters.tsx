@@ -1,15 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, Grid3x3 } from "@/shared/ui/doodle-icons";
 import { FilterSection } from "@/features/search/components/FilterSection";
-import {
-  MultiSelect,
-  MultiSelectContent,
-  MultiSelectGroup,
-  MultiSelectItem,
-  MultiSelectTrigger,
-  MultiSelectValue,
-} from "@/shared/ui/multi-select";
+import { MultiSelect } from "@/shared/ui/multi-select";
 import { Switch } from "@/shared/ui/switch";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { Input } from "@/shared/ui/input";
@@ -46,30 +39,29 @@ function LocationFilterInput({ value, onChange, placeholder }: LocationFilterInp
   );
 }
 
-interface FilterOption {
-  id: string;
-  label: string;
-}
-
 interface VisualFiltersProps {
   filters: {
     selectedCategories: string[];
     setSelectedCategories: (categories: string[]) => void;
-    categoryOptions: FilterOption[];
+    categoryOptions: Array<{ id: string; label: string }>;
+    toggleCategory: (id: string) => void;
     selectedLocations: string[];
     setSelectedLocations: (locations: string[]) => void;
     selectedFoods: string[];
     setSelectedFoods: (foods: string[]) => void;
-    foodOptions: FilterOption[];
+    foodOptions: Array<{ id: string; label: string }>;
+    toggleFood: (id: string) => void;
     selectedDays: string[];
     setSelectedDays: (days: string[]) => void;
-    dayOptions: FilterOption[];
+    dayOptions: Array<{ id: string; label: string }>;
+    toggleDay: (id: string) => void;
     priceRange: { min: string; max: string };
     setPriceRange: (range: { min: string; max: string }) => void;
     registration: boolean;
     setRegistration: (value: boolean) => void;
     selectedOrganizations: string[];
     setSelectedOrganizations: (value: string[]) => void;
+    toggleOrganization: (org: string) => void;
     availableOrganizations: string[];
   };
   viewMode: ViewMode;
@@ -78,6 +70,31 @@ interface VisualFiltersProps {
 
 export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFiltersProps) {
   const { t } = useTranslation();
+
+  const categoryValues = useMemo(
+    () => filters.categoryOptions.map((o) => o.id),
+    [filters.categoryOptions],
+  );
+  const categoryLabels = useMemo(
+    () => new Map(filters.categoryOptions.map((o) => [o.id, o.label])),
+    [filters.categoryOptions],
+  );
+  const foodValues = useMemo(
+    () => filters.foodOptions.map((o) => o.id),
+    [filters.foodOptions],
+  );
+  const foodLabels = useMemo(
+    () => new Map(filters.foodOptions.map((o) => [o.id, o.label])),
+    [filters.foodOptions],
+  );
+  const dayValues = useMemo(
+    () => filters.dayOptions.map((o) => o.id),
+    [filters.dayOptions],
+  );
+  const dayLabels = useMemo(
+    () => new Map(filters.dayOptions.map((o) => [o.id, o.label])),
+    [filters.dayOptions],
+  );
 
   const viewModeOptions = useMemo(
     () => [
@@ -152,22 +169,11 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         onClear={() => filters.setSelectedCategories([])}
       >
         <MultiSelect
-          values={filters.selectedCategories}
-          onValuesChange={filters.setSelectedCategories}
-        >
-          <MultiSelectTrigger className="w-full">
-            <MultiSelectValue placeholder={t("forms.selectCategories")} />
-          </MultiSelectTrigger>
-          <MultiSelectContent>
-            <MultiSelectGroup>
-              {filters.categoryOptions.map((category) => (
-                <MultiSelectItem key={category.id} value={category.id}>
-                  {category.label}
-                </MultiSelectItem>
-              ))}
-            </MultiSelectGroup>
-          </MultiSelectContent>
-        </MultiSelect>
+          options={categoryValues}
+          selected={filters.selectedCategories}
+          onToggle={filters.toggleCategory}
+          getLabel={(id) => categoryLabels.get(id) ?? id}
+        />
       </FilterSection>
 
       {/* Location Filter (free-text: filter events by location substring) */}
@@ -196,22 +202,11 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         onClear={() => filters.setSelectedFoods([])}
       >
         <MultiSelect
-          values={filters.selectedFoods}
-          onValuesChange={filters.setSelectedFoods}
-        >
-          <MultiSelectTrigger className="w-full">
-            <MultiSelectValue placeholder={t("forms.selectFoods")} />
-          </MultiSelectTrigger>
-          <MultiSelectContent>
-            <MultiSelectGroup>
-              {filters.foodOptions.map((food) => (
-                <MultiSelectItem key={food.id} value={food.id}>
-                  {food.label}
-                </MultiSelectItem>
-              ))}
-            </MultiSelectGroup>
-          </MultiSelectContent>
-        </MultiSelect>
+          options={foodValues}
+          selected={filters.selectedFoods}
+          onToggle={filters.toggleFood}
+          getLabel={(id) => foodLabels.get(id) ?? id}
+        />
       </FilterSection>
 
       {/* Day of Week Filter */}
@@ -225,22 +220,11 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
         onClear={() => filters.setSelectedDays([])}
       >
         <MultiSelect
-          values={filters.selectedDays}
-          onValuesChange={filters.setSelectedDays}
-        >
-          <MultiSelectTrigger className="w-full">
-            <MultiSelectValue placeholder={t("forms.selectDays")} />
-          </MultiSelectTrigger>
-          <MultiSelectContent search={false}>
-            <MultiSelectGroup>
-              {filters.dayOptions.map((day) => (
-                <MultiSelectItem key={day.id} value={day.id}>
-                  {day.label}
-                </MultiSelectItem>
-              ))}
-            </MultiSelectGroup>
-          </MultiSelectContent>
-        </MultiSelect>
+          options={dayValues}
+          selected={filters.selectedDays}
+          onToggle={filters.toggleDay}
+          getLabel={(id) => dayLabels.get(id) ?? id}
+        />
       </FilterSection>
 
       {/* Organization Filter */}

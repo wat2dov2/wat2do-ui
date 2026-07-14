@@ -1606,6 +1606,8 @@ export interface components {
              * @default 0
              */
             click_count: number;
+            /** View Count */
+            view_count: number;
         };
         /**
          * EventResponse
@@ -1670,6 +1672,8 @@ export interface components {
              * @default 0
              */
             click_count: number;
+            /** View Count */
+            view_count: number;
             /** Created By */
             created_by?: string | null;
         };
@@ -1739,6 +1743,8 @@ export interface components {
              * @default 0
              */
             click_count: number;
+            /** View Count */
+            view_count: number;
         };
         /** EventUpdate */
         EventUpdate: {

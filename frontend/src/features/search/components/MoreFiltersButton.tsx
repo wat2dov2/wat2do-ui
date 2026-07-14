@@ -54,9 +54,9 @@ export function MoreFiltersButton({
                 onClearFilters?.();
               }
             }}
-            className="bg-background/18 text-background px-1.5 h-4 rounded-full text-[10px] ml-1 flex items-center gap-0.5 hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18 transition-colors cursor-pointer touch-manipulation pointer-coarse:h-6 pointer-coarse:px-2.5 pointer-coarse:gap-1 pointer-coarse:text-xs"
+            className="bg-background/18 text-background ml-1 flex h-3.5 items-center gap-0.5 rounded-full px-1 text-[10px] leading-none hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18 transition-colors cursor-pointer touch-manipulation"
           >
-            <X className="size-2 pointer-coarse:size-3" strokeWidth={3} />
+            <X className="size-2 shrink-0" strokeWidth={3} />
             {filterCount}
           </span>
         )}

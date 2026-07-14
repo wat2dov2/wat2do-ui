@@ -17,6 +17,8 @@ interface EventCardContentProps {
   time?: string;
   location?: string;
   badges?: readonly CardBadge[];
+  /** Optional popularity line, e.g. "12 clicks · 40 views". */
+  statsLabel?: string;
   className?: string;
   textClassName?: string;
   secondaryTextClassName?: string;
@@ -29,6 +31,7 @@ export function EventCardContent({
   time,
   location,
   badges = EMPTY_BADGES,
+  statsLabel,
   className,
   textClassName = "text-foreground",
   secondaryTextClassName = "text-muted-foreground",
@@ -37,9 +40,16 @@ export function EventCardContent({
   return (
     <div className={`relative flex flex-col flex-1 px-2.5 pt-3 pb-2.5 sm:px-3 sm:pt-4 sm:pb-3 ${className ?? ""}`}>
       <div className="flex flex-col gap-3 h-full flex-1">
-        <h3 className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
-          {title}
-        </h3>
+        <div className="min-w-0">
+          <h3 className={`font-semibold text-base leading-[1.1] line-clamp-2 ${textClassName}`}>
+            {title}
+          </h3>
+          {statsLabel ? (
+            <span className={`mt-0.5 block text-[9px] font-medium ${badgeClassName}`}>
+              {statsLabel}
+            </span>
+          ) : null}
+        </div>
 
         <div className="flex items-end justify-between gap-3 mt-auto min-w-0">
           <div className="space-y-0.5 min-w-0 flex-1">

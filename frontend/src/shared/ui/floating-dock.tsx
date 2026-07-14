@@ -20,7 +20,7 @@ export interface FloatingDockItem {
 }
 
 const dockItemHitboxClassName =
-  "flex items-center justify-center touch-manipulation [@media(pointer:coarse)]:size-14 sm:[@media(pointer:coarse)]:size-14";
+  "flex size-10 items-center justify-center touch-manipulation";
 
 export const FloatingDock = ({
   items,
@@ -56,7 +56,8 @@ const FloatingDockDesktop = ({
         onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
-          "relative z-10 flex h-[86px] max-w-full items-end justify-center gap-4 px-2 pb-1 sm:h-[80px] sm:px-6 sm:pb-1",
+          // Match EventsBackToTopButton (fixed bottom-4 + size-10 / icon-lg).
+          "relative z-10 flex h-10 max-w-full items-center justify-center gap-4 px-2 sm:px-6",
           className,
         )}
       >
@@ -87,14 +88,14 @@ function IconContainer({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthTransform = useTransform(distance, [-150, 0, 150], [36, 74, 36]);
-  const heightTransform = useTransform(distance, [-150, 0, 150], [36, 74, 36]);
+  const widthTransform = useTransform(distance, [-150, 0, 150], [36, 52, 36]);
+  const heightTransform = useTransform(distance, [-150, 0, 150], [36, 52, 36]);
 
-  const widthTransformIcon = useTransform(distance, [-150, 0, 150], [18, 37, 18]);
+  const widthTransformIcon = useTransform(distance, [-150, 0, 150], [18, 28, 18]);
   const heightTransformIcon = useTransform(
     distance,
     [-150, 0, 150],
-    [18, 37, 18],
+    [18, 28, 18],
   );
 
   const width = useSpring(widthTransform, {
@@ -132,7 +133,7 @@ function IconContainer({
       }}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "relative flex size-11 aspect-square items-center justify-center rounded-full sm:size-9",
+        "relative flex size-9 aspect-square items-center justify-center rounded-full",
         isActive
           ? "bg-primary text-white"
           : "border border-border bg-secondary text-foreground/80 hover:text-foreground hover:bg-secondary/80",
