@@ -1,4 +1,3 @@
-import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { useTranslatedOptions } from "@/shared/hooks/useTranslatedOptions";
 
@@ -32,13 +31,10 @@ export function MultiSelect({
           return (
             <Button
               key={value}
+              type="button"
               onMouseDown={() => onToggle(value)}
-              variant={isSelected ? "default" : "secondary"}
-              className={cn(
-                "rounded-full",
-                !isSelected &&
-                  "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-              )}
+              variant={isSelected ? "secondary" : "outline"}
+              aria-pressed={isSelected}
             >
               {label}
             </Button>
