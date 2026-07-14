@@ -18,7 +18,8 @@ interface EventListProps {
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
-  goingCounts: Record<string, number>;
+  /** `null` until the going-counts query succeeds; avoid fake zeros. */
+  goingCounts: Record<string, number> | null;
   isLoading?: boolean;
   groupByDateSections?: boolean;
 }
@@ -61,7 +62,7 @@ interface EventCardListItemProps {
 
 interface EventCardsGridProps {
   events: Event[];
-  goingCounts: Record<string, number>;
+  goingCounts: Record<string, number> | null;
   onEventClick?: (event: Event) => void;
   onDelete?: (eventId: number) => void;
   onActionDialogOpen: (type: EventCardDialog, event: Event) => void;
@@ -90,7 +91,9 @@ function EventCardsGrid({
         <EventCardListItem key={event.id}>
           <EventCard
             event={event}
-            goingCount={goingCounts[String(event.id)] ?? 0}
+            goingCount={
+              goingCounts == null ? undefined : (goingCounts[String(event.id)] ?? 0)
+            }
             onEventClick={onEventClick}
             mobileClickActivation
             onDelete={onDelete}

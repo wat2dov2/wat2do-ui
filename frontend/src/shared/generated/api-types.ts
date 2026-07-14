@@ -441,7 +441,7 @@ export interface paths {
          *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
          *     so the header works on unload). Authenticated batches are size-capped and
          *     deduped; payload ``user_id`` must match the authenticated user.
-         *     Anonymous requests are allowed for basic view/click tracking and are
+         *     Anonymous requests are allowed for basic click tracking and are
          *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
          */
         post: operations["record_interactions_interactions_batch_post"];
@@ -1606,8 +1606,6 @@ export interface components {
              * @default 0
              */
             click_count: number;
-            /** View Count */
-            view_count: number;
         };
         /**
          * EventResponse
@@ -1672,8 +1670,6 @@ export interface components {
              * @default 0
              */
             click_count: number;
-            /** View Count */
-            view_count: number;
             /** Created By */
             created_by?: string | null;
         };
@@ -1743,8 +1739,6 @@ export interface components {
              * @default 0
              */
             click_count: number;
-            /** View Count */
-            view_count: number;
         };
         /** EventUpdate */
         EventUpdate: {

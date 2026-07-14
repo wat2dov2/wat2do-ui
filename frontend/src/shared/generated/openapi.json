@@ -1398,7 +1398,7 @@
           "interactions"
         ],
         "summary": "Record Interactions",
-        "description": "Record a batch of user-event interactions.\n\nAuth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``\nso the header works on unload). Authenticated batches are size-capped and\ndeduped; payload ``user_id`` must match the authenticated user.\nAnonymous requests are allowed for basic view/click tracking and are\nIP-rate-limited; without ``user_id`` they cannot drive personalized signals.",
+        "description": "Record a batch of user-event interactions.\n\nAuth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``\nso the header works on unload). Authenticated batches are size-capped and\ndeduped; payload ``user_id`` must match the authenticated user.\nAnonymous requests are allowed for basic click tracking and are\nIP-rate-limited; without ``user_id`` they cannot drive personalized signals.",
         "operationId": "record_interactions_interactions_batch_post",
         "requestBody": {
           "content": {
@@ -5754,11 +5754,6 @@
             "type": "integer",
             "title": "Click Count",
             "default": 0
-          },
-          "view_count": {
-            "type": "integer",
-            "title": "View Count",
-            "default": 0
           }
         },
         "type": "object",
@@ -5940,11 +5935,6 @@
           "click_count": {
             "type": "integer",
             "title": "Click Count",
-            "default": 0
-          },
-          "view_count": {
-            "type": "integer",
-            "title": "View Count",
             "default": 0
           },
           "created_by": {
@@ -6138,11 +6128,6 @@
           "click_count": {
             "type": "integer",
             "title": "Click Count",
-            "default": 0
-          },
-          "view_count": {
-            "type": "integer",
-            "title": "View Count",
             "default": 0
           }
         },

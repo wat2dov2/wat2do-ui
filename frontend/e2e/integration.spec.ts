@@ -98,6 +98,14 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route(url => apiPath(url) === "/going-events/counts", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({}),
+    });
+  });
+
   await page.route(url => apiPath(url) === "/saved-organizations", async (route) => {
     await route.fulfill({
       status: 200,
@@ -153,7 +161,6 @@ test.beforeEach(async ({ page }) => {
             school: "uwaterloo",
             added_at: now.toISOString(),
             click_count: 0,
-            view_count: 0,
           },
         ],
         total: 1,
@@ -625,14 +632,14 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
-  test("shows click and view counts on event cards", async ({ page }) => {
+  test("shows click and going counts on event cards", async ({ page }) => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);
 
     const card = page.locator('article[data-event-id="1"]').first();
     await expect(card).toBeVisible();
     await expect(card).toContainText("0 clicks");
-    await expect(card).toContainText("0 views");
+    await expect(card).toContainText("0 going");
   });
 
   test("app API proxy returns events", async ({ request }) => {

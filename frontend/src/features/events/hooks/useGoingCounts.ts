@@ -23,6 +23,8 @@ function patchGoingCountEntry(
 ) {
   const key = queryKeys.going.counts(school);
   queryClient.setQueryData<Record<string, number>>(key, (prev) => {
+    // Seed the cache if the first fetch has not landed yet so toggles still
+    // feel instant; the eventual fetch / response overwrites with server truth.
     const current = prev?.[String(eventId)] ?? 0;
     const next = Math.max(0, updater(current));
     return {

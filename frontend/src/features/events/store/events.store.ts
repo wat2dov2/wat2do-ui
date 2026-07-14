@@ -34,6 +34,7 @@ interface EventsState {
     promotedEvents?: AppEvent[],
   ) => void;
   setSchoolFilter: (school: string) => void;
+  incrementClickCount: (eventId: number) => void;
   addEvent: (data: EventFormData) => Promise<number>;
   updateEvent: (eventId: number, data: EventFormData) => Promise<void>;
   deleteEvent: (eventId: number) => Promise<void>;
@@ -80,6 +81,18 @@ export const useEventsStore = create<EventsState>((set, get) => ({
     const nextSchool = resolveSchool(school);
     if (get().schoolFilter === nextSchool) return;
     set({ schoolFilter: nextSchool });
+  },
+
+  incrementClickCount: (eventId) => {
+    const bump = (event: AppEvent) =>
+      event.id === eventId
+        ? { ...event, click_count: (event.click_count ?? 0) + 1 }
+        : event;
+
+    set((state) => ({
+      events: state.events.map(bump),
+      promotedEvents: state.promotedEvents.map(bump),
+    }));
   },
 
   addEvent: async (data) => {

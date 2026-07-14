@@ -40,7 +40,7 @@ def _batch_payload(
         "session_id": session_id,
         "interactions": interactions
         or [
-            {"event_id": 1, "interaction_type": "view"},
+            {"event_id": 1, "interaction_type": "click"},
             {"event_id": 2, "interaction_type": "click"},
         ],
     }
@@ -205,7 +205,7 @@ def test_batch_authenticated_click_records_ab_clicks(authenticated_client, monke
         "/interactions/batch",
         json=_batch_payload(
             interactions=[
-                {"event_id": 10, "interaction_type": "view"},
+                {"event_id": 10, "interaction_type": "share"},
                 {"event_id": 11, "interaction_type": "click"},
                 {"event_id": 12, "interaction_type": "detail_view"},
             ],
@@ -225,7 +225,7 @@ def test_batch_authenticated_click_records_ab_clicks(authenticated_client, monke
 def test_batch_rejects_oversized_payload(client):
     """Batch exceeding MAX_INTERACTION_BATCH_SIZE is rejected at validation."""
     oversized = [
-        {"event_id": i, "interaction_type": "view"} for i in range(MAX_INTERACTION_BATCH_SIZE + 1)
+        {"event_id": i, "interaction_type": "click"} for i in range(MAX_INTERACTION_BATCH_SIZE + 1)
     ]
     resp = client.post("/interactions/batch", json=_batch_payload(interactions=oversized))
     # Pydantic's max_length on the list field rejects with 422 before the
@@ -244,7 +244,7 @@ def test_batch_accepts_max_size(client, monkeypatch):
     )
 
     at_limit = [
-        {"event_id": i, "interaction_type": "view"} for i in range(MAX_INTERACTION_BATCH_SIZE)
+        {"event_id": i, "interaction_type": "click"} for i in range(MAX_INTERACTION_BATCH_SIZE)
     ]
     resp = client.post("/interactions/batch", json=_batch_payload(interactions=at_limit))
     assert resp.status_code == 202
@@ -454,7 +454,7 @@ def test_batch_rejects_oversized_metadata(client):
     payload = {
         "session_id": "sess-1",
         "interactions": [
-            {"event_id": 1, "interaction_type": "view", "metadata": oversized_metadata},
+            {"event_id": 1, "interaction_type": "click", "metadata": oversized_metadata},
         ],
     }
     resp = client.post("/interactions/batch", json=payload)
@@ -471,7 +471,7 @@ def test_batch_accepts_small_metadata(client, monkeypatch):
     payload = {
         "session_id": "sess-1",
         "interactions": [
-            {"event_id": 1, "interaction_type": "view", "metadata": {"source": "home"}},
+            {"event_id": 1, "interaction_type": "click", "metadata": {"source": "home"}},
         ],
     }
     resp = client.post("/interactions/batch", json=payload)

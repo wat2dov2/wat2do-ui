@@ -50,8 +50,6 @@
     "backToTop": "Back to top",
     "clickCount": "{{count}} click",
     "clickCount_other": "{{count}} clicks",
-    "viewCount": "{{count}} view",
-    "viewCount_other": "{{count}} views",
     "noEventsFound": "No events found",
     "noEventsFoundDesc": "Couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.",
     "noEventsScheduled": "No events scheduled",

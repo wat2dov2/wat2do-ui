@@ -50,7 +50,8 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const goingEventIds = useGoingEventsStore((s) => s.goingEventIds);
-  const { data: goingCounts = {} } = useGoingCounts(schoolFilter);
+  const { data: goingCountsData, isSuccess: goingCountsReady } = useGoingCounts(schoolFilter);
+  const goingCounts = goingCountsReady ? (goingCountsData ?? {}) : null;
   const activePromotedEventIds = useCreditsStore((s) => s.activePromotedEventIds);
 
   const events = useEventsStore((s) => s.events);

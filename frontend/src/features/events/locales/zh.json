@@ -50,8 +50,6 @@
     "backToTop": "返回顶部",
     "clickCount": "{{count}} 次点击",
     "clickCount_other": "{{count}} 次点击",
-    "viewCount": "{{count}} 次浏览",
-    "viewCount_other": "{{count}} 次浏览",
     "noEventsFound": "未找到活动",
     "noEventsFoundDesc": "找不到符合您当前筛选条件的活动。请尝试调整搜索或清除某些筛选条件。",
     "noEventsScheduled": "暂无活动安排",

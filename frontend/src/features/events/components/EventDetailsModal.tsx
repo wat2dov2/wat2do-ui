@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Calendar, ImageOff, ExternalLink, MoreHorizontal, UserCheck, Users } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, MoreHorizontal } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -78,7 +78,8 @@ export function EventDetailsModal({
   const storeEvents = useEventsStore((s) => s.events);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const goingEventIds = useGoingEventsStore((s) => s.goingEventIds);
-  const { data: goingCounts = {} } = useGoingCounts(schoolFilter);
+  const { data: goingCountsData, isSuccess: goingCountsReady } = useGoingCounts(schoolFilter);
+  const goingCounts = goingCountsReady ? (goingCountsData ?? {}) : null;
   const { toggleWithCounts } = useGoingCountActions(schoolFilter);
   const profileCompleted = useProfileCompleted();
   // Local override allows clicking a "similar event" without remounting the
@@ -111,8 +112,10 @@ export function EventDetailsModal({
     drawerOpen && displayedEvent == null && !isFetchError && isFetchingEvent;
   const isGoing = displayedEvent ? goingEventIds.includes(displayedEvent.id) : false;
   const isGoingActive = profileCompleted && isGoing;
-  const goingCount = displayedEvent ? (goingCounts[String(displayedEvent.id)] ?? 0) : 0;
-  const GoingIcon = isGoingActive ? UserCheck : Users;
+  const goingCount =
+    displayedEvent && goingCounts != null
+      ? (goingCounts[String(displayedEvent.id)] ?? 0)
+      : undefined;
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
@@ -214,7 +217,7 @@ export function EventDetailsModal({
                           <OrganizationVerifiedBadge />
                         )}
                       </span>
-                      {goingCount > 0 ? (
+                      {typeof goingCount === "number" && goingCount > 0 ? (
                         <span className="text-xs text-muted-foreground">
                           {isGoingActive
                             ? t("events.youreGoingCount", { count: goingCount })
@@ -234,11 +237,10 @@ export function EventDetailsModal({
                       title={t("common.markGoing")}
                       className={
                         isGoingActive
-                          ? "border-primary/20 bg-primary/10 gap-1.5 px-2.5 text-xs text-primary hover:bg-primary/15"
-                          : "gap-1.5 px-2.5 text-xs"
+                          ? "border-primary/20 bg-primary/10 px-2.5 text-xs text-primary hover:bg-primary/15"
+                          : "px-2.5 text-xs"
                       }
                     >
-                      <GoingIcon className={`size-3.5 ${isGoingActive ? "fill-current" : ""}`} />
                       {t("common.markGoing")}
                     </Button>
                   ) : (
@@ -251,9 +253,8 @@ export function EventDetailsModal({
                           onClick={() => setGoingLoginHintOpen(true)}
                           aria-label={t("common.markGoing")}
                           title={t("events.goingRequiresLogin")}
-                          className="border-border bg-muted/40 gap-1.5 px-2.5 text-xs text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
+                          className="border-border bg-muted/40 px-2.5 text-xs text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
                         >
-                          <Users className="size-3.5" />
                           {t("common.markGoing")}
                         </Button>
                       </TooltipTrigger>
@@ -377,6 +378,11 @@ export function EventDetailsModal({
                         <EventCard
                           key={similarEvent.id}
                           event={similarEvent}
+                          goingCount={
+                            goingCounts == null
+                              ? undefined
+                              : (goingCounts[String(similarEvent.id)] ?? 0)
+                          }
                           onEventClick={handleSimilarEventClick}
                           onActionDialogOpen={handleActionDialogOpen}
                         />

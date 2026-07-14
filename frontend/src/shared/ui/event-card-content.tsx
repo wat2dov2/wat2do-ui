@@ -17,7 +17,7 @@ interface EventCardContentProps {
   time?: string;
   location?: string;
   badges?: readonly CardBadge[];
-  /** Optional popularity line, e.g. "12 clicks · 40 views". */
+  /** Optional popularity line, e.g. "12 clicks · 3 going". */
   statsLabel?: string;
   className?: string;
   textClassName?: string;

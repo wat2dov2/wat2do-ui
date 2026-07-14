@@ -30,7 +30,7 @@ def record_interactions(
     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
     so the header works on unload). Authenticated batches are size-capped and
     deduped; payload ``user_id`` must match the authenticated user.
-    Anonymous requests are allowed for basic view/click tracking and are
+    Anonymous requests are allowed for basic click tracking and are
     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
     """
     user_id: str | None = None

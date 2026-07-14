@@ -6,8 +6,6 @@ import {
   Calendar,
   ImageOff,
   MoreHorizontal,
-  UserCheck,
-  Users,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -30,14 +28,16 @@ import {
   wasAddedWithinLast24Hours,
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
-import { useViewTracking } from "@/features/events/hooks/useViewTracking";
 import { useMouseDownAction, createAdaptivePressHandlers, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 interface EventCardProps {
   event: Event;
-  /** Optional count overlay; defaults to 0 when omitted (e.g. similar events in drawer). */
+  /**
+   * School going-count for this event. Omit / leave undefined until the
+   * going-counts query has succeeded so the card does not flash fake zeros.
+   */
   goingCount?: number;
   onEventClick?: (event: Event) => void;
   /** Grid cards: open footer actions on click below the sm breakpoint or on touch. */
@@ -45,6 +45,17 @@ interface EventCardProps {
   /** Called when the user confirms deletion (shown only to owners/admins). */
   onDelete?: (eventId: number) => void;
   onActionDialogOpen: (dialog: EventCardDialog, event: Event) => void;
+}
+
+function buildEventStatsLabel(
+  t: TFunction,
+  clickCount: number | undefined,
+  goingCount: number | undefined,
+): string | undefined {
+  if (typeof clickCount !== "number" || typeof goingCount !== "number") {
+    return undefined;
+  }
+  return `${t("events.clickCount", { count: clickCount })} · ${t("events.goingCount", { count: goingCount })}`;
 }
 
 export type EventCardDialog = "delete" | "share" | "report";
@@ -188,7 +199,6 @@ interface GoingEventButtonProps {
   eventId: number;
   profileCompleted: boolean;
   isGoingActive: boolean;
-  goingCount: number;
   categoryClasses: CategoryClasses;
   preferClickPress: boolean;
   onToggleGoingEvent: (eventId: number) => void;
@@ -199,7 +209,6 @@ function GoingEventButton({
   eventId,
   profileCompleted,
   isGoingActive,
-  goingCount,
   categoryClasses,
   preferClickPress,
   onToggleGoingEvent,
@@ -218,14 +227,13 @@ function GoingEventButton({
   });
 
   const label = t("common.markGoing");
-  const GoingIcon = isGoingActive ? UserCheck : Users;
   const button = (
     <button
       type="button"
       {...pressHandlers}
       aria-label={label}
       title={profileCompleted ? label : t("events.goingRequiresLogin")}
-      className={`flex min-h-10 w-full items-center justify-center gap-1 px-2 text-xs font-medium transition-colors ${
+      className={`flex min-h-10 w-full items-center justify-center px-2 text-xs font-medium transition-colors ${
         !profileCompleted
           ? `cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
           : isGoingActive
@@ -233,11 +241,7 @@ function GoingEventButton({
           : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
       }`}
     >
-      <GoingIcon className={`size-3.5 shrink-0 ${isGoingActive ? "fill-current" : ""}`} />
-      <span>{label}</span>
-      {goingCount > 0 ? (
-        <span className="text-[11px] font-normal tabular-nums opacity-70">{goingCount}</span>
-      ) : null}
+      {label}
     </button>
   );
 
@@ -315,7 +319,7 @@ interface EventCardBodyProps {
   badges: ReturnType<typeof useEventBadges>;
   profileCompleted: boolean;
   isGoingActive: boolean;
-  goingCount: number;
+  goingCount: number | undefined;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
   preferClickPress: boolean;
@@ -344,7 +348,6 @@ function EventCardBody({
       eventId={event.id}
       profileCompleted={profileCompleted}
       isGoingActive={isGoingActive}
-      goingCount={goingCount}
       categoryClasses={categoryClasses}
       preferClickPress={preferClickPress}
       onToggleGoingEvent={onToggleGoingEvent}
@@ -362,7 +365,7 @@ function EventCardBody({
         time={time}
         location={event.location}
         badges={badges}
-        statsLabel={`${t("events.clickCount", { count: event.click_count ?? 0 })} · ${t("events.viewCount", { count: event.view_count ?? 0 })}`}
+        statsLabel={buildEventStatsLabel(t, event.click_count, goingCount)}
         textClassName={categoryClasses.text}
         secondaryTextClassName={categoryClasses.text}
         badgeClassName={`border-current ${categoryClasses.text}`}
@@ -391,6 +394,7 @@ function useEventCardNavigation({
   onEventClick,
 }: UseEventCardNavigationOptions) {
   const handleCardActivate = useCallback(() => {
+    useEventsStore.getState().incrementClickCount(event.id);
     tracker.track(event.id, "click");
     onEventClick?.(event);
   }, [event, onEventClick]);
@@ -402,7 +406,7 @@ function useEventCardNavigation({
 
 function EventCardComponent({
   event,
-  goingCount = 0,
+  goingCount,
   onEventClick,
   mobileClickActivation = true,
   onDelete,
@@ -433,8 +437,6 @@ function EventCardComponent({
   const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
   const canManageEvent = isAdmin || isOwner;
   const isGoingActive = profileCompleted && isGoing;
-  
-  const cardRef = useViewTracking(event.id);
 
   const badges = useEventBadges(event);
   const eventCategory = useMemo(() => getEventCategory(event), [event]);
@@ -495,7 +497,6 @@ function EventCardComponent({
   return (
     <>
       <article
-        ref={cardRef}
         data-event-card
         data-event-id={event.id}
         role="button"
