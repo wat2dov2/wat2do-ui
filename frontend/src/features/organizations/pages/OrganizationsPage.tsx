@@ -128,7 +128,6 @@ export function OrganizationsPage() {
               onValueChange={(value) => setActiveTab(value as OrganizationScope)}
             >
               <SelectTrigger
-                showIcon={false}
                 className="h-full data-[size=default]:h-full"
                 aria-label={activeTabOption.label}
               >

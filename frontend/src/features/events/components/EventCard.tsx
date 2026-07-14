@@ -6,6 +6,8 @@ import {
   Calendar,
   ImageOff,
   MoreHorizontal,
+  UserCheck,
+  Users,
 } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -216,6 +218,7 @@ function GoingEventButton({
   });
 
   const label = t("common.markGoing");
+  const GoingIcon = isGoingActive ? UserCheck : Users;
   const button = (
     <button
       type="button"
@@ -230,6 +233,7 @@ function GoingEventButton({
           : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
       }`}
     >
+      <GoingIcon className={`size-3.5 shrink-0 ${isGoingActive ? "fill-current" : ""}`} />
       <span>{label}</span>
       {goingCount > 0 ? (
         <span className="text-[11px] font-normal tabular-nums opacity-70">{goingCount}</span>

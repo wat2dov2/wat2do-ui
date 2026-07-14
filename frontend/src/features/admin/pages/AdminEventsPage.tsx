@@ -198,7 +198,7 @@ export function AdminEventsPage({
               value={selectedCategory || undefined}
               onValueChange={(value) => setSelectedCategory(value || "")}
             >
-              <SelectTrigger showIcon={false} className="h-11 w-[180px]">
+              <SelectTrigger className="h-11 w-[180px]">
                 <SelectValue placeholder={t("admin.allCategories")} />
               </SelectTrigger>
               <SelectContent>
@@ -378,7 +378,7 @@ export function AdminEventsPage({
                 submissionPagination.setCurrentPage(1);
               }}
             >
-              <SelectTrigger showIcon={false} className="h-11 w-[180px]">
+              <SelectTrigger className="h-11 w-[180px]">
                 <SelectValue placeholder={t("admin.allStatus")} />
               </SelectTrigger>
               <SelectContent>

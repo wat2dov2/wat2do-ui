@@ -1,7 +1,7 @@
 {
   "common": {
-    "markGoing": "我要去",
-    "going": "我要去",
+    "markGoing": "参加",
+    "going": "参加中",
     "cancel": "取消",
     "edit": "编辑",
     "delete": "删除",

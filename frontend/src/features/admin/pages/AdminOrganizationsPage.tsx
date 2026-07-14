@@ -282,7 +282,7 @@ export function AdminOrganizationsPage({
                   setSelectedOrganizationType(value === ALL_ORGANIZATION_TYPES_VALUE ? "" : value)
                 }
               >
-                <SelectTrigger showIcon={false} className="h-11 w-[180px]">
+                <SelectTrigger className="h-11 w-[180px]">
                   <SelectValue placeholder={t("admin.allTypes")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -330,7 +330,7 @@ export function AdminOrganizationsPage({
                   claimsPagination.setCurrentPage(1);
                 }}
               >
-                <SelectTrigger showIcon={false} className="h-11 w-[180px]">
+                <SelectTrigger className="h-11 w-[180px]">
                   <SelectValue placeholder={t("admin.allStatus")} />
                 </SelectTrigger>
                 <SelectContent>

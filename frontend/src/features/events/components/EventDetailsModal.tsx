@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
 import { sanitizeHref } from "@/shared/utils/url";
 import { formatOccurrence } from "@/shared/utils/date";
-import { Calendar, ImageOff, ExternalLink, MoreHorizontal } from "@/shared/ui/doodle-icons";
+import { Calendar, ImageOff, ExternalLink, MoreHorizontal, UserCheck, Users } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -112,6 +112,7 @@ export function EventDetailsModal({
   const isGoing = displayedEvent ? goingEventIds.includes(displayedEvent.id) : false;
   const isGoingActive = profileCompleted && isGoing;
   const goingCount = displayedEvent ? (goingCounts[String(displayedEvent.id)] ?? 0) : 0;
+  const GoingIcon = isGoingActive ? UserCheck : Users;
 
   // Track detail_view on open, dwell time on close
   const openTimeRef = useRef<number>(0);
@@ -207,7 +208,7 @@ export function EventDetailsModal({
                       {displayedEvent.title}
                     </DrawerTitle>
                     <DrawerDescription className="mt-1 flex flex-col items-start gap-0.5 sm:items-center">
-                      <span className="inline-flex items-center gap-0.5">
+                      <span className="inline-flex items-center gap-1.5">
                         <span>{displayedEvent.organization}</span>
                         {displayedEvent.organization_type?.toUpperCase() === "WUSA" && (
                           <OrganizationVerifiedBadge />
@@ -233,10 +234,11 @@ export function EventDetailsModal({
                       title={t("common.markGoing")}
                       className={
                         isGoingActive
-                          ? "border-primary/20 bg-primary/10 px-2.5 text-xs text-primary hover:bg-primary/15"
-                          : "px-2.5 text-xs"
+                          ? "border-primary/20 bg-primary/10 gap-1.5 px-2.5 text-xs text-primary hover:bg-primary/15"
+                          : "gap-1.5 px-2.5 text-xs"
                       }
                     >
+                      <GoingIcon className={`size-3.5 ${isGoingActive ? "fill-current" : ""}`} />
                       {t("common.markGoing")}
                     </Button>
                   ) : (
@@ -249,8 +251,9 @@ export function EventDetailsModal({
                           onClick={() => setGoingLoginHintOpen(true)}
                           aria-label={t("common.markGoing")}
                           title={t("events.goingRequiresLogin")}
-                          className="border-border bg-muted/40 px-2.5 text-xs text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
+                          className="border-border bg-muted/40 gap-1.5 px-2.5 text-xs text-muted-foreground opacity-60 saturate-0 hover:bg-muted/40"
                         >
+                          <Users className="size-3.5" />
                           {t("common.markGoing")}
                         </Button>
                       </TooltipTrigger>

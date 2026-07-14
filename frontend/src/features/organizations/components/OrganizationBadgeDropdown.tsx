@@ -67,7 +67,7 @@ export function OrganizationBadgeDropdown({
         asChild
         variant="outline"
         size="md"
-        className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-0.5 opacity-70"
+        className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-1.5 opacity-70"
         onMouseDown={onMouseDown}
         onClick={onClick}
       >
@@ -90,7 +90,7 @@ export function OrganizationBadgeDropdown({
           asChild
           variant="outline"
           size="md"
-          className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-0.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+          className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-1.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
           onMouseDown={onMouseDown}
           onClick={onClick}
         >
