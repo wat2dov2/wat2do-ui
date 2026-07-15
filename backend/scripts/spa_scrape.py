@@ -26,12 +26,7 @@ from playwright.async_api import BrowserContext, Page, async_playwright
 
 OUT_DIR = Path("/tmp/claude")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-XLSX_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "services"
-    / "scraper"
-    / "all_schools_student_clubs_master.xlsx"
-)
+XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "wat2do-clubs.xlsx"
 
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
@@ -458,7 +453,7 @@ async def scrape_ubc(ctx: BrowserContext, with_details: bool) -> list[dict]:
         return await _visit_details(ctx, clubs, school="UBC", campus="Vancouver", parallelism=8)
     return [
         {
-            "School": "UBC",
+            "School": "ubc",
             "Name": c["name"],
             "Category": c.get("category"),
             "Campus": "Vancouver",
@@ -477,7 +472,7 @@ async def scrape_concordia(ctx: BrowserContext, with_details: bool) -> list[dict
         return await _refresh_seeded_rows(ctx, clubs, school="Concordia", parallelism=1)
     return [
         {
-            "School": "Concordia",
+            "School": "concordia",
             "Name": c["name"],
             "Category": c.get("category"),
             "Campus": c.get("campus"),
@@ -496,7 +491,7 @@ async def scrape_memorial(ctx: BrowserContext, with_details: bool) -> list[dict]
         return await _refresh_seeded_rows(ctx, clubs, school="Memorial", parallelism=6)
     return [
         {
-            "School": "Memorial",
+            "School": "memorial",
             "Name": c["name"],
             "Category": c.get("category"),
             "Campus": c.get("campus"),
@@ -515,7 +510,7 @@ async def scrape_sfu(ctx: BrowserContext, with_details: bool) -> list[dict]:
         return await _refresh_seeded_rows(ctx, clubs, school="SFU", parallelism=8)
     return [
         {
-            "School": "SFU",
+            "School": "sfu",
             "Name": c["name"],
             "Category": c.get("category"),
             "Campus": c.get("campus"),
@@ -583,7 +578,7 @@ async def scrape_umanitoba(ctx: BrowserContext, with_details: bool) -> list[dict
         )
     return [
         {
-            "School": "UManitoba",
+            "School": "umanitoba",
             "Name": c["name"],
             "Category": c.get("category"),
             "Campus": c.get("campus"),
@@ -631,7 +626,7 @@ async def scrape_ucalgary(ctx: BrowserContext, with_details: bool) -> list[dict]
     else:
         results = [
             {
-                "School": "UCalgary",
+                "School": "ucalgary",
                 "Name": c["name"],
                 "Category": c.get("category"),
                 "Campus": "Calgary",
@@ -666,7 +661,7 @@ async def scrape_ualberta(ctx: BrowserContext, with_details: bool) -> list[dict]
     else:
         results = [
             {
-                "School": "UAlberta",
+                "School": "ualberta",
                 "Name": c["name"],
                 "Category": None,
                 "Campus": "Edmonton",

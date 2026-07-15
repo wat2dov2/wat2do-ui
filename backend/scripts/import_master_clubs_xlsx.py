@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bulk-import organizations from all_schools_student_clubs_master.xlsx into the
+"""Bulk-import organizations from wat2do-clubs.xlsx into the
 Supabase ``organizations`` table.
 
 Only rows whose ``IG Source`` is one of ``{found, confirmed, profile_page}``
@@ -37,38 +37,17 @@ from core.tables import ORGANIZATIONS
 
 log = logging.getLogger(__name__)
 
-XLSX_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "services"
-    / "scraper"
-    / "all_schools_student_clubs_master.xlsx"
-)
+XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "wat2do-clubs.xlsx"
 
 # Only rows with one of these IG Source values land in the DB.  The xlsx
 # sometimes annotates the source with a pipe ("found|main organization
 # account"); we match against the part before the pipe.
 HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 
-# Map xlsx School column short names -> canonical schools.name slug values.
-# These names must match exactly the rows in the hosted schools table.
-SCHOOL_NAME_MAP: dict[str, str] = {
-    "Brock": "brock",
-    "Carleton": "carleton",
-    "Cornell": "cornell",
-    "Laurier": "wlu",
-    "McGill": "mcgill",
-    "McMaster": "mcmaster",
-    "NYU": "nyu",
-    "OCAD": "ocad",
-    "Queen's": "queens",
-    "TMU": "tmu",
-    "UPenn": "upenn",
-    "UofT Scarborough": "utsc",
-    "UofT St. George": "utoronto",
-    "Western": "western",
-    "York": "york",
-    "uOttawa": "uottawa",
-}
+# The xlsx School column holds canonical schools.name slug values directly
+# (e.g. "wlu", "utsc", "utoronto"); rows whose slug is not registered in the
+# hosted schools table are skipped with a warning so the sheet can contain
+# schools that have not launched yet.
 
 # Default for the legacy required `organization_type` column.  Existing non-WUSA
 # seeds in backend/seeds/organizations.py use "Independent" for school organizations that
@@ -148,7 +127,7 @@ def _read_xlsx_rows() -> list[dict]:
             continue
         rows.append(
             {
-                "school_short": _normalize_str(raw_row[0]),
+                "school_slug": _normalize_str(raw_row[0]),
                 "name": _normalize_str(raw_row[1]),
                 "categories": _normalize_categories(raw_row[2]),
                 "campus": _normalize_str(raw_row[3]),
@@ -178,19 +157,13 @@ def _validate_rows(
         if not row["name"]:
             skipped["blank_name"] += 1
             continue
-        if not row["school_short"]:
+        if not row["school_slug"]:
             skipped["blank_school"] += 1
             continue
-        canonical_school = SCHOOL_NAME_MAP.get(row["school_short"])
-        if not canonical_school:
-            unknown_schools.add(row["school_short"])
-            skipped[f"unknown_school={row['school_short']}"] += 1
-            continue
+        canonical_school = row["school_slug"]
         if canonical_school not in db_schools:
-            errors.append(
-                f"Canonical school {canonical_school!r} (mapped from short name {row['school_short']!r}) "
-                "is not registered in the Supabase 'schools' table."
-            )
+            unknown_schools.add(canonical_school)
+            skipped[f"unknown_school={canonical_school}"] += 1
             continue
 
         valid_categories = []
@@ -227,7 +200,7 @@ def _validate_rows(
 
     if unknown_schools:
         log.warning(
-            "xlsx School values with no entry in SCHOOL_NAME_MAP skipped: "
+            "xlsx School slugs not registered in the Supabase 'schools' table skipped: "
             + ", ".join(sorted(unknown_schools))
         )
     if bad_categories:

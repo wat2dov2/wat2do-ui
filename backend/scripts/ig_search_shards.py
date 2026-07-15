@@ -36,12 +36,7 @@ from core.constants.organizations import ORGANIZATION_CATEGORIES
 
 log = logging.getLogger(__name__)
 
-XLSX_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "services"
-    / "scraper"
-    / "all_schools_student_clubs_master.xlsx"
-)
+XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "wat2do-clubs.xlsx"
 IG_SHARD_DIR = Path("/tmp/claude/ig_shards")
 IG_RESULT_DIR = Path("/tmp/claude/ig_results")
 ENRICH_SHARD_DIR = Path("/tmp/claude/enrich_shards")

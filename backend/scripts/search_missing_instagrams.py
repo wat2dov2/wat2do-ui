@@ -27,12 +27,7 @@ import openpyxl
 
 log = logging.getLogger(__name__)
 
-XLSX_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "services"
-    / "scraper"
-    / "all_schools_student_clubs_master.xlsx"
-)
+XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "wat2do-clubs.xlsx"
 OUT_PATH = Path("/tmp/claude/web-search-instagram-matches.json")
 
 IG_RE = re.compile(r"https?://(?:www\.)?instagram\.com/([A-Za-z0-9_.]+)", re.I)
@@ -423,7 +418,9 @@ def update_workbook(xlsx_path: Path, matches: list[Match]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--xlsx", type=Path, default=XLSX_PATH)
-    parser.add_argument("--schools", nargs="*", help="School names to include")
+    parser.add_argument(
+        "--schools", nargs="*", help="School slugs to include (e.g. ubc utoronto wlu)"
+    )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--delay", type=float, default=0.35)
     parser.add_argument("--timeout", type=int, default=20)

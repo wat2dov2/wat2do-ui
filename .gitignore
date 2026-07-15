@@ -37,3 +37,7 @@ verify-out/
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+
+# instagram follow script runtime state (backend/scripts/follow_from_xlsx.py)
+session_*.json
+progress_*.json

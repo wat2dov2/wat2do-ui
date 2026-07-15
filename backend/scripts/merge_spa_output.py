@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge ``spa_scrape.py`` JSON output into all_schools_student_clubs_master.xlsx.
+"""Merge ``spa_scrape.py`` JSON output into wat2do-clubs.xlsx.
 
 Matches existing rows on normalized Directory URL, updates social links from
 ``--with-details`` scrapes, and appends clubs that are not already present.
@@ -21,12 +21,7 @@ import openpyxl
 
 log = logging.getLogger(__name__)
 
-XLSX_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "services"
-    / "scraper"
-    / "all_schools_student_clubs_master.xlsx"
-)
+XLSX_PATH = Path(__file__).resolve().parent.parent / "services" / "scraper" / "wat2do-clubs.xlsx"
 DEFAULT_INPUT_DIR = Path("/tmp/claude")
 
 COLUMNS = [
