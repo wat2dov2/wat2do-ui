@@ -28,30 +28,36 @@ export function MoreFiltersButton({
   const { t } = useTranslation();
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <div className="flex items-center gap-1">
-        <Button
-          variant={open || filterCount > 0 ? "selected" : "secondary"}
-          size="sm"
-          onClick={() => onOpenChange(!open)}
-          aria-expanded={open}
-        >
-          {t("common.extraFilters")}
-        </Button>
+      <Button
+        variant={open || filterCount > 0 ? "selected" : "secondary"}
+        size="sm"
+        onClick={() => onOpenChange(!open)}
+        aria-expanded={open}
+      >
+        {t("common.extraFilters")}
         {filterCount > 0 && (
-          <Button
-            type="button"
-            variant="selected"
-            size="xs"
+          <span
+            role="button"
+            tabIndex={0}
             aria-label={t("common.clearFilters", "Clear filters")}
-            onClick={() => {
+            onClick={(event) => {
+              event.stopPropagation();
               onClearFilters?.();
             }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.stopPropagation();
+                onClearFilters?.();
+              }
+            }}
+            className="bg-background/18 text-background ml-1 flex h-3.5 items-center gap-0.5 rounded-full px-1 text-[10px] leading-none transition-colors hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18"
           >
             <X className="size-2 shrink-0" strokeWidth={3} />
             {filterCount}
-          </Button>
+          </span>
         )}
-      </div>
+      </Button>
       <DrawerContent className="max-h-[85dvh] max-w-sm! overflow-hidden p-0">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>

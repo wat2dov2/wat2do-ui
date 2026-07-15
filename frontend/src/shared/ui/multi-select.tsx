@@ -33,7 +33,7 @@ export function MultiSelect({
               key={value}
               type="button"
               onClick={() => onToggle(value)}
-              variant={isSelected ? "selected" : "outline"}
+              variant={isSelected ? "selected" : "secondary"}
               aria-pressed={isSelected}
             >
               {label}

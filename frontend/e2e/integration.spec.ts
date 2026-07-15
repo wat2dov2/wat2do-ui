@@ -722,6 +722,7 @@ test.describe("Events Page", () => {
 
     const strip = page.getByTestId("event-quick-filter-scroll");
     await expect(strip).toBeVisible();
+    await expect(strip.getByRole("button", { name: "Career", exact: true })).toBeVisible();
     const box = await strip.boundingBox();
     expect(box).not.toBeNull();
     if (!box) return;
@@ -733,6 +734,35 @@ test.describe("Events Page", () => {
 
     await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
     await expect(strip.locator('button[aria-pressed="true"]')).toHaveCount(0);
+  });
+
+  test("keeps the filter count inside the trigger and matches view button variants", async ({ page }) => {
+    await page.goto(BASE);
+    await expect(page.getByRole("button", { name: "Career", exact: true })).toBeVisible();
+
+    const extraFiltersButton = page.getByRole("button", { name: "Extra filters" });
+    await extraFiltersButton.click();
+
+    const drawer = page.getByRole("dialog", { name: "Extra filters" });
+    const gridButton = drawer.getByRole("button", { name: "Grid" });
+    const calendarButton = drawer.getByRole("button", { name: "Calendar" });
+    const categoryButton = drawer.getByRole("button", { name: "Career" });
+
+    await expect(calendarButton).toHaveClass(/bg-secondary/);
+    await expect(categoryButton).toHaveClass(/bg-secondary/);
+    await categoryButton.click();
+    await expect(gridButton).toHaveClass(/bg-slate-600/);
+    await expect(categoryButton).toHaveClass(/bg-slate-600/);
+
+    await page.keyboard.press("Escape");
+    const activeExtraFiltersButton = page.getByRole("button", { name: /Extra filters/ });
+    const clearFiltersButton = activeExtraFiltersButton.getByRole("button", {
+      name: "Clear filters",
+    });
+    await expect(clearFiltersButton).toContainText("1");
+    await expect(activeExtraFiltersButton.locator("svg")).toHaveCount(1);
+    await clearFiltersButton.click();
+    await expect(page.getByRole("button", { name: "Extra filters", exact: true })).not.toContainText("1");
   });
 
   test("app API proxy returns events", async ({ request }) => {
