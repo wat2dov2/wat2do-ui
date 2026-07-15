@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { QuickFilterChip } from "@/features/search";
 import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganizationsPage";
 import { translateCategory } from "@/shared/utils/event";
 import { useAuthState } from "@/features/auth";
@@ -76,6 +75,7 @@ export function OrganizationsPage() {
     showScrollFade: showCategoryScrollFade,
     syncScrollFade: syncCategoryScrollFade,
     syncScrollFadeAfterWheel: syncCategoryScrollFadeAfterWheel,
+    dragScrollProps: categoryDragScrollProps,
   } = useHorizontalScrollFade<HTMLDivElement>({
     refreshKey: allCategories.length,
   });
@@ -165,19 +165,23 @@ export function OrganizationsPage() {
           <div className="relative min-w-0 flex-1">
             <div
               ref={categoryScrollRef}
+              {...categoryDragScrollProps}
+              data-testid="organization-category-filter-scroll"
               onScroll={syncCategoryScrollFade}
               onWheel={syncCategoryScrollFadeAfterWheel}
               onTouchEnd={syncCategoryScrollFade}
-              className="no-visible-scrollbar flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1"
+              className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
             >
               {allCategories.map((category) => (
-                <QuickFilterChip
+                <Button
                   key={category}
-                  icon={null}
-                  label={translateCategory(category, t)}
-                  active={selectedCategories.includes(category)}
+                  variant={selectedCategories.includes(category) ? "selected" : "secondary"}
+                  size="sm"
                   onClick={() => toggleCategory(category)}
-                />
+                  aria-pressed={selectedCategories.includes(category)}
+                >
+                  {translateCategory(category, t)}
+                </Button>
               ))}
               <span
                 ref={categoryScrollEndRef}

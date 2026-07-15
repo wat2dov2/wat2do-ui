@@ -1,6 +1,14 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 
 const DEFAULT_SCROLL_END_TOLERANCE_PX = 8;
+const DRAG_THRESHOLD_PX = 4;
 
 interface UseHorizontalScrollFadeOptions {
   endTolerancePx?: number;
@@ -14,6 +22,13 @@ export function useHorizontalScrollFade<T extends HTMLElement = HTMLDivElement>(
   const scrollRef = useRef<T>(null);
   const scrollEndRef = useRef<HTMLSpanElement>(null);
   const [showScrollFade, setShowScrollFade] = useState(false);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startScrollLeft: number;
+    dragged: boolean;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
 
   const syncScrollFade = useCallback(() => {
     const scrollEl = scrollRef.current;
@@ -31,6 +46,59 @@ export function useHorizontalScrollFade<T extends HTMLElement = HTMLDivElement>(
     if (typeof window === "undefined") return;
     window.setTimeout(syncScrollFade, 0);
   }, [syncScrollFade]);
+
+  const handlePointerDown = useCallback((event: PointerEvent<T>) => {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: event.currentTarget.scrollLeft,
+      dragged: false,
+    };
+  }, []);
+
+  const handlePointerMove = useCallback(
+    (event: PointerEvent<T>) => {
+      const dragState = dragStateRef.current;
+      if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+      const deltaX = event.clientX - dragState.startX;
+      if (!dragState.dragged && Math.abs(deltaX) < DRAG_THRESHOLD_PX) return;
+
+      if (!dragState.dragged) {
+        dragState.dragged = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+
+      event.preventDefault();
+      event.currentTarget.scrollLeft = dragState.startScrollLeft - deltaX;
+      syncScrollFade();
+    },
+    [syncScrollFade],
+  );
+
+  const finishPointerDrag = useCallback((event: PointerEvent<T>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    if (dragState.dragged) {
+      suppressClickRef.current = true;
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
+    }
+    dragStateRef.current = null;
+  }, []);
+
+  const handleClickCapture = useCallback((event: MouseEvent<T>) => {
+    if (!suppressClickRef.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
 
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
@@ -86,5 +154,12 @@ export function useHorizontalScrollFade<T extends HTMLElement = HTMLDivElement>(
     showScrollFade,
     syncScrollFade,
     syncScrollFadeAfterWheel,
+    dragScrollProps: {
+      onClickCapture: handleClickCapture,
+      onPointerCancel: finishPointerDrag,
+      onPointerDown: handlePointerDown,
+      onPointerMove: handlePointerMove,
+      onPointerUp: finishPointerDrag,
+    },
   };
 }

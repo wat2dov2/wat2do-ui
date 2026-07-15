@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from core.cache import TTLCache
 from core.database import get_sb
 from core.pagination import fetch_all_pages
-from core.tables import EVENTS, USER_GOING_EVENTS
+from core.tables import USER_GOING_EVENTS
 from schemas.going_event import GoingEventResponse, UserEventPair
 
 # 30-minute TTL for shared recommendation data (matches recommender config)
@@ -71,26 +71,8 @@ def count_going_for_event(event_id: int) -> int:
     return r.count or 0
 
 
-def get_going_counts_for_school(school: str) -> dict[str, int]:
-    """Return ``{eventId: count}`` for all events at ``school``.
-
-    Public overlay for the browse feed. Keys are strings so the JSON map
-    stays stable across OpenAPI clients.
-    """
-    event_rows = fetch_all_pages(
-        lambda offset, ps: (
-            (
-                get_sb()
-                .table(EVENTS)
-                .select("id")
-                .eq("school", school)
-                .range(offset, offset + ps - 1)
-                .execute()
-            ).data
-            or []
-        ),
-    )
-    event_ids = [row["id"] for row in event_rows]
+def get_going_counts_for_events(event_ids: list[int]) -> dict[int, int]:
+    """Return going counts keyed by event ID."""
     if not event_ids:
         return {}
 
@@ -114,7 +96,7 @@ def get_going_counts_for_school(school: str) -> dict[str, int]:
         )
         counts.update(row["event_id"] for row in rows)
 
-    return {str(eid): counts[eid] for eid in event_ids if counts[eid] > 0}
+    return {event_id: counts[event_id] for event_id in event_ids if counts[event_id] > 0}
 
 
 def _get_going_row(user_id: str, event_id: int) -> GoingEventResponse | None:

@@ -53,26 +53,6 @@ def test_list_going_events_succeeds(authenticated_client, monkeypatch):
     assert resp.json() == [1, 3, 7]
 
 
-# ── GET /going-events/counts ────────────────────────────────────────
-
-
-def test_get_going_counts_public(client, monkeypatch):
-    monkeypatch.setattr(
-        going_event_service,
-        "get_going_counts_for_school",
-        MagicMock(return_value={"42": 3, "7": 1}),
-    )
-
-    resp = client.get("/going-events/counts", params={"school": "waterloo"})
-    assert resp.status_code == 200
-    assert resp.json() == {"42": 3, "7": 1}
-
-
-def test_get_going_counts_requires_school(client):
-    resp = client.get("/going-events/counts")
-    assert resp.status_code == 422
-
-
 # ── PUT /going-events/{event_id} ────────────────────────────────────
 
 

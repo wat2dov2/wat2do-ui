@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
+from postgrest.exceptions import APIError
 
 from core.constants import MAX_LIST_LIMIT
 from core.exceptions import NotFoundError
@@ -338,7 +339,6 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
             ],
             count=0,
         ),
-        MagicMock(data=[{"event_id": 42, "click_count": 5}], count=0),
     ]
 
     now = datetime.now(timezone.utc)
@@ -360,7 +360,6 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     results, total = event_service.list_events(school="uwaterloo")
     assert len(results) == 1
     assert total == 1
-    assert results[0].click_count == 5
     assert len(results[0].occurrences) == 3
     assert results[0].occurrences[0].dtstart_utc == future_1
 
@@ -608,7 +607,6 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
             ],
             count=0,
         ),
-        MagicMock(data=[{"event_id": 2, "click_count": 7}], count=0),
     ]
     list_for_events = MagicMock(
         return_value={
@@ -635,7 +633,6 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
 
     assert total == 2
     assert [event.id for event in items] == [2]
-    assert items[0].click_count == 7
     assert items[0].occurrences[0].id == 22
     list_for_events.assert_called_once_with([2])
     count_select = fake_sb.select.call_args_list[0].args[0]
@@ -655,20 +652,59 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
     fake_sb.range.assert_any_call(0, 49)
 
 
-def test_with_click_counts_fetches_counts_once(fake_sb, patch_sb):
-    patch_sb("services.event_query")
-    fake_sb.set_response(data=[{"event_id": 1, "click_count": 9}])
-
-    rows = event_query.with_click_counts(
-        [
-            {"id": 1, "title": "Clicked"},
-            {"id": 2, "title": "Quiet"},
-        ]
+def test_get_event_stats_for_school_combines_positive_counts(monkeypatch):
+    monkeypatch.setattr(
+        event_service,
+        "fetch_all_pages",
+        MagicMock(return_value=[{"id": 1}, {"id": 2}, {"id": 3}]),
+    )
+    monkeypatch.setattr(
+        event_service.interaction_service,
+        "get_click_counts_for_events",
+        MagicMock(return_value={1: 9}),
+    )
+    monkeypatch.setattr(
+        event_service.going_event_service,
+        "get_going_counts_for_events",
+        MagicMock(return_value={2: 4}),
     )
 
-    assert [row["click_count"] for row in rows] == [9, 0]
-    assert all("view_count" not in row for row in rows)
-    fake_sb.rpc.assert_called_once_with("get_event_click_counts", {"p_event_ids": [1, 2]})
+    stats = event_service.get_event_stats_for_school("uwaterloo")
+
+    assert {event_id: value.model_dump() for event_id, value in stats.items()} == {
+        "1": {"click_count": 9, "going_count": 0},
+        "2": {"click_count": 0, "going_count": 4},
+    }
+    event_service.interaction_service.get_click_counts_for_events.assert_called_once_with([1, 2, 3])
+    event_service.going_event_service.get_going_counts_for_events.assert_called_once_with([1, 2, 3])
+
+
+def test_get_event_stats_for_school_keeps_clicks_when_going_counts_fail(monkeypatch):
+    monkeypatch.setattr(
+        event_service,
+        "fetch_all_pages",
+        MagicMock(return_value=[{"id": 1}]),
+    )
+    monkeypatch.setattr(
+        event_service.interaction_service,
+        "get_click_counts_for_events",
+        MagicMock(return_value={1: 9}),
+    )
+    monkeypatch.setattr(
+        event_service.going_event_service,
+        "get_going_counts_for_events",
+        MagicMock(
+            side_effect=APIError(
+                {"message": "unavailable", "code": "08006", "details": "", "hint": ""}
+            )
+        ),
+    )
+
+    stats = event_service.get_event_stats_for_school("uwaterloo")
+
+    assert {event_id: value.model_dump() for event_id, value in stats.items()} == {
+        "1": {"click_count": 9, "going_count": 0},
+    }
 
 
 def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb):

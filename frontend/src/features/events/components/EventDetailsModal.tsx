@@ -34,7 +34,7 @@ import {
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
-import { useGoingCountActions, useGoingCounts } from "@/features/events/hooks/useGoingCounts";
+import { useEventStats, useEventStatsActions } from "@/features/events/hooks/useEventStats";
 import { useProfileCompleted } from "@/features/auth/hooks/useAuthState";
 import { fetchEventById } from "@/features/events/api/events.api";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -78,9 +78,9 @@ export function EventDetailsModal({
   const storeEvents = useEventsStore((s) => s.events);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const goingEventIds = useGoingEventsStore((s) => s.goingEventIds);
-  const { data: goingCountsData, isSuccess: goingCountsReady } = useGoingCounts(schoolFilter);
-  const goingCounts = goingCountsReady ? (goingCountsData ?? {}) : null;
-  const { toggleWithCounts } = useGoingCountActions(schoolFilter);
+  const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(schoolFilter);
+  const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
+  const { toggleWithStats } = useEventStatsActions(schoolFilter);
   const profileCompleted = useProfileCompleted();
   // Local override allows clicking a "similar event" without remounting the
   // modal. We reset it whenever the prop event changes by tracking the prop
@@ -113,8 +113,8 @@ export function EventDetailsModal({
   const isGoing = displayedEvent ? goingEventIds.includes(displayedEvent.id) : false;
   const isGoingActive = profileCompleted && isGoing;
   const goingCount =
-    displayedEvent && goingCounts != null
-      ? (goingCounts[String(displayedEvent.id)] ?? 0)
+    displayedEvent && eventStats != null
+      ? (eventStats[String(displayedEvent.id)]?.going_count ?? 0)
       : undefined;
 
   // Card open already records a click; only track the detail impression here.
@@ -223,7 +223,7 @@ export function EventDetailsModal({
                       type="button"
                       variant={isGoingActive ? "secondary" : "outline"}
                       size="sm"
-                      onClick={() => void toggleWithCounts(displayedEvent.id)}
+                      onClick={() => void toggleWithStats(displayedEvent.id)}
                       aria-label={t("common.markGoing")}
                       title={t("common.markGoing")}
                       className={
@@ -371,11 +371,7 @@ export function EventDetailsModal({
                         <EventCard
                           key={similarEvent.id}
                           event={similarEvent}
-                          goingCount={
-                            goingCounts == null
-                              ? undefined
-                              : (goingCounts[String(similarEvent.id)] ?? 0)
-                          }
+                          stats={eventStats?.[String(similarEvent.id)]}
                           onEventClick={handleSimilarEventClick}
                           onActionDialogOpen={handleActionDialogOpen}
                         />

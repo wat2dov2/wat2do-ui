@@ -98,7 +98,7 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(url => apiPath(url) === "/going-events/counts", async (route) => {
+  await page.route(url => apiPath(url) === "/events/stats", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -160,7 +160,6 @@ test.beforeEach(async ({ page }) => {
             organization: "UW Tech Club",
             school: "uwaterloo",
             added_at: now.toISOString(),
-            click_count: 0,
           },
         ],
         total: 1,
@@ -632,14 +631,108 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
-  test("shows click and going counts on event cards", async ({ page }) => {
+  test("omits zero stats and abbreviates card weekdays", async ({ page }) => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);
 
-    const card = page.locator('article[data-event-id="1"]').first();
+    const card = page.locator("article[data-event-id]").first();
     await expect(card).toBeVisible();
-    await expect(card).toContainText("0 clicks");
-    await expect(card).toContainText("0 going");
+    await expect(card).not.toContainText(/\b0 clicks?\b/);
+    await expect(card).not.toContainText(/\b0 going\b/);
+    await expect(
+      card.getByText(/^(?:Sun|Mon|Tues|Wed|Thur|Fri|Sat) [A-Z][a-z]{2} \d{1,2}$/),
+    ).toBeVisible();
+  });
+
+  test("persists optimistic click and going stats across refresh", async ({ page }) => {
+    await seedAuthenticatedSession(page);
+
+    let clickCount = 0;
+    let goingCount = 0;
+    let isGoing = false;
+    let eventId: number | null = null;
+
+    await page.route(url => apiPath(url) === "/events/stats", async (route) => {
+      const hasStats = clickCount > 0 || goingCount > 0;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          hasStats && eventId !== null
+            ? { [eventId]: { click_count: clickCount, going_count: goingCount } }
+            : {},
+        ),
+      });
+    });
+    await page.route(url => apiPath(url) === "/going-events", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(isGoing && eventId !== null ? [eventId] : []),
+      });
+    });
+    await page.route(url => apiPath(url)?.startsWith("/going-events/") === true, async (route) => {
+      isGoing = route.request().method() === "PUT";
+      goingCount = isGoing ? 1 : 0;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: isGoing ? "going" : "not_going",
+          going_count: goingCount,
+        }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/interactions/batch", async (route) => {
+      const payload = route.request().postDataJSON() as {
+        interactions?: Array<{ event_id: number; interaction_type: string }>;
+      };
+      clickCount +=
+        payload.interactions?.filter(
+          (interaction) =>
+            interaction.event_id === eventId && interaction.interaction_type === "click",
+        ).length ?? 0;
+      await route.fulfill({
+        status: 202,
+        contentType: "application/json",
+        body: JSON.stringify({ recorded: payload.interactions?.length ?? 0 }),
+      });
+    });
+
+    await page.goto(BASE);
+    const card = page.locator("article[data-event-id]").first();
+    await expect(card).toBeVisible();
+    eventId = Number(await card.getAttribute("data-event-id"));
+    expect(eventId).toBeGreaterThan(0);
+
+    await card.getByRole("button", { name: "Going" }).click();
+    await expect(card).toContainText("1 going");
+
+    await card.click();
+    await expect(card).toContainText("1 click · 1 going");
+
+    await page.reload();
+    const refreshedCard = page.locator(`article[data-event-id="${eventId}"]`).first();
+    await expect(refreshedCard).toContainText("1 click · 1 going");
+  });
+
+  test("drag-scrolls quick filters without selecting one", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE);
+
+    const strip = page.getByTestId("event-quick-filter-scroll");
+    await expect(strip).toBeVisible();
+    const box = await strip.boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) return;
+
+    await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 30, box.y + box.height / 2, { steps: 8 });
+    await page.mouse.up();
+
+    await expect.poll(() => strip.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    await expect(strip.locator('button[aria-pressed="true"]')).toHaveCount(0);
   });
 
   test("app API proxy returns events", async ({ request }) => {

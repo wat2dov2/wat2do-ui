@@ -5,7 +5,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/shared/ui/tooltip";
-import { Chip } from "@/shared/ui/chip";
+import { Button } from "@/shared/ui/button";
 
 interface FilterSectionProps {
   title: string;
@@ -36,18 +36,18 @@ export const FilterSection = React.memo(function FilterSection({
             </TooltipContent>
           </Tooltip>
           {indicator && (
-            <Chip
-              active
-              size="sm"
-              icon={<X className="size-2" strokeWidth={3} />}
+            <Button
+              variant="selected"
+              size="xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onClear?.();
               }}
               aria-label={`Clear ${title}`}
             >
+              <X className="size-2" strokeWidth={3} />
               {indicator}
-            </Chip>
+            </Button>
           )}
         </div>
       </div>

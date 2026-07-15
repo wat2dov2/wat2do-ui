@@ -38,7 +38,6 @@ T = TypeVar("T", bound=BaseModel)
 # ``organizations`` row (see ``_ORGANIZATION_EMBED``), not real events columns.
 _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
-    "click_count",
     "organization_page",
     "organization_ig",
     "organization_discord",
@@ -96,54 +95,6 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     return model.model_validate({**row, **org_fields, "occurrences": occurrences})
 
 
-def with_click_counts(rows: list[dict]) -> list[dict]:
-    """Return event rows enriched with recorded click counts.
-
-    Event rows are hydrated in several read paths. Keeping the enrichment here
-    makes ``click_count`` a single API contract instead of a frontend-only guess
-    or a per-route one-off.
-    """
-
-    event_ids = [row.get("id") for row in rows if row.get("id") is not None]
-    click_counts = _fetch_click_counts(event_ids)
-    return [
-        {
-            **row,
-            "click_count": click_counts.get(_int_or_none(row.get("id")), 0),
-        }
-        for row in rows
-    ]
-
-
-def _fetch_click_counts(event_ids: list[object]) -> dict[int, int]:
-    unique_ids = sorted(
-        {event_id for raw_id in event_ids if (event_id := _int_or_none(raw_id)) is not None}
-    )
-    if not unique_ids:
-        return {}
-
-    try:
-        rows = (
-            get_sb().rpc("get_event_click_counts", {"p_event_ids": unique_ids}).execute().data or []
-        )
-    except Exception as exc:
-        log.warning("Failed to fetch event click counts: %s", exc)
-        return {}
-    counts: dict[int, int] = {}
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        event_id = row.get("event_id")
-        click_count = row.get("click_count")
-        if event_id is None or click_count is None:
-            continue
-        try:
-            counts[int(event_id)] = int(click_count)
-        except (TypeError, ValueError):
-            continue
-    return counts
-
-
 def _int_or_none(value: object) -> int | None:
     try:
         return int(value) if value is not None else None
@@ -198,7 +149,7 @@ def load_events_in_window(
         q = q.eq("events.school", school)
     rows = _order_event_date_rows(q).range(0, cap * 5 - 1).execute().data or []
 
-    events = with_click_counts(_dedup_keeping_earliest(rows, cap))
+    events = _dedup_keeping_earliest(rows, cap)
     occ_by_event = event_date_service.list_for_events([row["id"] for row in events])
     return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in events]
 
@@ -318,7 +269,7 @@ def load_events_page(
     candidates = _sort_candidates(candidates, sort_by=sort_by, sort_order=sort_order)
     total = len(candidates)
     page_candidates = candidates[offset : offset + limit]
-    page_rows = with_click_counts([candidate.row for candidate in page_candidates])
+    page_rows = [candidate.row for candidate in page_candidates]
     occ_by_event = event_date_service.list_for_events([row["id"] for row in page_rows])
     return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in page_rows], total
 
@@ -408,9 +359,7 @@ def _load_lightweight_date_page(
         or []
     )
     row_by_id = {row.get("id"): row for row in event_rows}
-    page_rows = with_click_counts(
-        [row_by_id[event_id] for event_id in page_ids if event_id in row_by_id]
-    )
+    page_rows = [row_by_id[event_id] for event_id in page_ids if event_id in row_by_id]
     occ_by_event = event_date_service.list_for_events([row["id"] for row in page_rows])
     return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in page_rows], total
 

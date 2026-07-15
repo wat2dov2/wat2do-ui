@@ -23,9 +23,6 @@ export const queryKeys = {
   events: {
     all: ["events"] as const,
     detail: (eventId: number) => [...queryKeys.events.all, "detail", eventId] as const,
-  },
-  going: {
-    all: ["going"] as const,
-    counts: (school: string) => [...queryKeys.going.all, "counts", school] as const,
+    stats: (school: string) => [...queryKeys.events.all, "stats", school] as const,
   },
 } as const;

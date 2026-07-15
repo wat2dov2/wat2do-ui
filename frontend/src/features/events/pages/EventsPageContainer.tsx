@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
-import { SearchBar, QuickFilterChip, MoreFiltersButton, FilterDropdown } from "@/features/search";
+import { SearchBar, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
 import { useDarkMode, useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
+import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 import { QP } from "@/shared/constants/queryParams";
@@ -31,7 +32,7 @@ export function EventsPageContainer() {
     error,
     refreshEvents,
     totalEvents,
-    goingCounts,
+    eventStats,
     latestAddedEvent,
     promotedEvents,
     filters,
@@ -117,6 +118,7 @@ export function EventsPageContainer() {
     showScrollFade: showFilterScrollFade,
     syncScrollFade: syncFilterScrollFade,
     syncScrollFadeAfterWheel: syncFilterScrollFadeAfterWheel,
+    dragScrollProps: filterDragScrollProps,
   } = useHorizontalScrollFade<HTMLDivElement>({
     refreshKey: `${filterConfigs.length}:${filters.categoryOptions.length}`,
   });
@@ -142,28 +144,39 @@ export function EventsPageContainer() {
             <div className="relative min-w-0 flex-1">
               <div
                 ref={filterScrollRef}
+                {...filterDragScrollProps}
+                data-testid="event-quick-filter-scroll"
                 onScroll={syncFilterScrollFade}
                 onWheel={syncFilterScrollFadeAfterWheel}
                 onTouchEnd={syncFilterScrollFade}
-                className="no-visible-scrollbar flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-1"
+                className="no-visible-scrollbar flex min-w-0 cursor-grab flex-nowrap items-center gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
               >
                 {filterConfigs.map((config) => (
-                  <QuickFilterChip
+                  <Button
                     key={config.id}
-                    icon={config.icon}
-                    label={t(config.labelKey)}
-                    active={config.active}
+                    variant={config.active ? "selected" : "secondary"}
+                    size="sm"
                     onClick={config.onClick}
-                  />
+                    aria-pressed={config.active}
+                  >
+                    {config.icon}
+                    {t(config.labelKey)}
+                  </Button>
                 ))}
                 {filters.categoryOptions.map((category) => (
-                  <QuickFilterChip
+                  <Button
                     key={category.id}
-                    icon={null}
-                    label={category.label}
-                    active={filters.selectedCategories.includes(category.id)}
+                    variant={
+                      filters.selectedCategories.includes(category.id)
+                        ? "selected"
+                        : "secondary"
+                    }
+                    size="sm"
                     onClick={() => filters.toggleCategory(category.id)}
-                  />
+                    aria-pressed={filters.selectedCategories.includes(category.id)}
+                  >
+                    {category.label}
+                  </Button>
                 ))}
                 <span
                   ref={filterScrollEndRef}
@@ -216,7 +229,7 @@ export function EventsPageContainer() {
               onDelete={handleDeleteEvent}
               onClearFilters={filters.handleClearAllFilters}
               hasActiveFilters={filters.filterCount > 0}
-              goingCounts={goingCounts}
+              eventStats={eventStats}
               isLoading={isLoading}
               groupByDateSections={filters.sortBy === "date" && filters.sortOrder === "asc"}
             />

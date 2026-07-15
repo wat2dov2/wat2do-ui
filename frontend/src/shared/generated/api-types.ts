@@ -321,6 +321,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Stats
+         * @description Public uncached card stats for one school.
+         */
+        get: operations["get_event_stats_events_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/": {
         parameters: {
             query?: never;
@@ -373,26 +393,6 @@ export interface paths {
         };
         /** List Going Events */
         get: operations["list_going_events_going_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/going-events/counts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Going Counts
-         * @description Public school-scoped going counts for the browse overlay.
-         */
-        get: operations["get_going_counts_going_events_counts_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1601,11 +1601,6 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
-            /**
-             * Click Count
-             * @default 0
-             */
-            click_count: number;
         };
         /**
          * EventResponse
@@ -1665,13 +1660,24 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /** Created By */
+            created_by?: string | null;
+        };
+        /**
+         * EventStatsResponse
+         * @description Volatile public card stats loaded separately from the cached event feed.
+         */
+        EventStatsResponse: {
             /**
              * Click Count
              * @default 0
              */
             click_count: number;
-            /** Created By */
-            created_by?: string | null;
+            /**
+             * Going Count
+             * @default 0
+             */
+            going_count: number;
         };
         /**
          * EventSummaryResponse
@@ -1734,11 +1740,6 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
-            /**
-             * Click Count
-             * @default 0
-             */
-            click_count: number;
         };
         /** EventUpdate */
         EventUpdate: {
@@ -3341,6 +3342,39 @@ export interface operations {
             };
         };
     };
+    get_event_stats_events_stats_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["EventStatsResponse"];
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_events_events__get: {
         parameters: {
             query?: {
@@ -3536,39 +3570,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": number[];
-                };
-            };
-        };
-    };
-    get_going_counts_going_events_counts_get: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

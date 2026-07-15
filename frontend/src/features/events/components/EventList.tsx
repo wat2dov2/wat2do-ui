@@ -7,6 +7,7 @@ import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/dat
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
+import type { EventStats } from "@/features/events/api/events.api";
 
 interface EventListProps {
   events: Event[];
@@ -18,8 +19,8 @@ interface EventListProps {
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
-  /** `null` until the going-counts query succeeds; avoid fake zeros. */
-  goingCounts: Record<string, number> | null;
+  /** `null` until the live stats query succeeds. */
+  eventStats: Record<string, EventStats> | null;
   isLoading?: boolean;
   groupByDateSections?: boolean;
 }
@@ -62,7 +63,7 @@ interface EventCardListItemProps {
 
 interface EventCardsGridProps {
   events: Event[];
-  goingCounts: Record<string, number> | null;
+  eventStats: Record<string, EventStats> | null;
   onEventClick?: (event: Event) => void;
   onDelete?: (eventId: number) => void;
   onActionDialogOpen: (type: EventCardDialog, event: Event) => void;
@@ -80,7 +81,7 @@ function EventCardListItem({
 
 function EventCardsGrid({
   events,
-  goingCounts,
+  eventStats,
   onEventClick,
   onDelete,
   onActionDialogOpen,
@@ -91,9 +92,7 @@ function EventCardsGrid({
         <EventCardListItem key={event.id}>
           <EventCard
             event={event}
-            goingCount={
-              goingCounts == null ? undefined : (goingCounts[String(event.id)] ?? 0)
-            }
+            stats={eventStats?.[String(event.id)]}
             onEventClick={onEventClick}
             mobileClickActivation
             onDelete={onDelete}
@@ -145,7 +144,7 @@ export function EventList({
   onDelete,
   onClearFilters,
   hasActiveFilters = false,
-  goingCounts,
+  eventStats,
   isLoading = false,
   groupByDateSections = true,
 }: EventListProps) {
@@ -287,7 +286,7 @@ export function EventList({
             </h2>
             <EventCardsGrid
               events={promotedEvents}
-              goingCounts={goingCounts}
+              eventStats={eventStats}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}
@@ -307,7 +306,7 @@ export function EventList({
                 </h2>
                 <EventCardsGrid
                   events={sectionEvents}
-              goingCounts={goingCounts}
+                  eventStats={eventStats}
                   onEventClick={onEventClick}
                   onDelete={onDelete}
                   onActionDialogOpen={handleActionDialogOpen}
@@ -319,7 +318,7 @@ export function EventList({
           <section className="space-y-2.5" aria-label={t("events.upcoming")}>
             <EventCardsGrid
               events={sectionOrderedEvents}
-              goingCounts={goingCounts}
+              eventStats={eventStats}
               onEventClick={onEventClick}
               onDelete={onDelete}
               onActionDialogOpen={handleActionDialogOpen}

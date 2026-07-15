@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSearch } from "@/features/search";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
-import { useGoingCounts } from "@/features/events/hooks/useGoingCounts";
+import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
@@ -50,8 +50,8 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const goingEventIds = useGoingEventsStore((s) => s.goingEventIds);
-  const { data: goingCountsData, isSuccess: goingCountsReady } = useGoingCounts(schoolFilter);
-  const goingCounts = goingCountsReady ? (goingCountsData ?? {}) : null;
+  const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(schoolFilter);
+  const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
   const activePromotedEventIds = useCreditsStore((s) => s.activePromotedEventIds);
 
   const events = useEventsStore((s) => s.events);
@@ -106,7 +106,7 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     refreshEvents,
     totalEvents,
     goingEventIds,
-    goingCounts,
+    eventStats,
     schoolFilter,
     latestAddedEvent,
     promotedEvents,

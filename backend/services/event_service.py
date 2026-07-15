@@ -9,24 +9,28 @@ import logging
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+from postgrest.exceptions import APIError
+
 from core.cache import TTLCache
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST, ORGANIZATION_NOT_FOUND
 from core.exceptions import NotFoundError, ValidationError
+from core.pagination import fetch_all_pages
 from core.retry import supabase_retry
 from core.tables import EVENTS
 from recommender.service import invalidate_candidates_cache
 from schemas.event import (
     EventCreate,
     EventResponse,
+    EventStatsResponse,
     EventSummaryResponse,
     EventUpdate,
     LatestEventResponse,
 )
 from schemas.event_date import OccurrenceResponse
 from schemas.organization import OrganizationEventStats
-from services import event_date_service, event_query
+from services import event_date_service, event_query, going_event_service, interaction_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.school_context import resolve_school_timezone
 
@@ -156,8 +160,40 @@ def get_event(event_id: int) -> EventResponse | None:
     if not r.data or len(r.data) == 0:
         return None
     occurrences = event_date_service.list_for_event(event_id)
-    event_row = event_query.with_click_counts([r.data[0]])[0]
-    return event_query.hydrate_event(event_row, occurrences, EventResponse)
+    return event_query.hydrate_event(r.data[0], occurrences, EventResponse)
+
+
+def get_event_stats_for_school(school: str) -> dict[str, EventStatsResponse]:
+    """Return uncached click and going counts for cards at one school."""
+    event_rows = fetch_all_pages(
+        lambda offset, page_size: (
+            (
+                get_sb()
+                .table(EVENTS)
+                .select("id")
+                .eq("school", school)
+                .range(offset, offset + page_size - 1)
+                .execute()
+            ).data
+            or []
+        ),
+    )
+    event_ids = [int(row["id"]) for row in event_rows]
+    click_counts = interaction_service.get_click_counts_for_events(event_ids)
+    try:
+        going_counts = going_event_service.get_going_counts_for_events(event_ids)
+    except APIError as exc:
+        log.warning("Failed to fetch event going counts: %s", exc)
+        going_counts = {}
+
+    return {
+        str(event_id): EventStatsResponse(
+            click_count=click_counts.get(event_id, 0),
+            going_count=going_counts.get(event_id, 0),
+        )
+        for event_id in event_ids
+        if click_counts.get(event_id, 0) > 0 or going_counts.get(event_id, 0) > 0
+    }
 
 
 def _today_start_utc(school: str | None) -> datetime:

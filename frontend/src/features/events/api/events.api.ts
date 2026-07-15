@@ -7,6 +7,7 @@ import type { Event, EventFormData } from "@/shared/types";
 import type {
   ApiEventPublicResponse,
   ApiEventResponse,
+  ApiEventStatsResponse,
 } from "@/shared/generated";
 import { buildEventPayload } from "@/shared/api/eventPayload";
 import { api } from "@/shared/services/apiClient";
@@ -52,6 +53,8 @@ export type GoingEventStatusResponse = {
   going_count: number;
 };
 
+export type EventStats = ApiEventStatsResponse;
+
 export function toggleGoingEventAPI(eventId: number, currentIds: number[]): number[] {
   return currentIds.includes(eventId)
     ? currentIds.filter((id) => id !== eventId)
@@ -74,11 +77,11 @@ export async function unmarkGoingOnBackend(
   return api.delete<GoingEventStatusResponse>(`/going-events/${eventId}`);
 }
 
-export async function fetchGoingCountsFromBackend(
+export async function fetchEventStatsFromBackend(
   school: string,
-): Promise<Record<string, number>> {
+): Promise<Record<string, EventStats>> {
   const params = new URLSearchParams({ school });
-  return api.get<Record<string, number>>(`/going-events/counts?${params.toString()}`);
+  return api.get<Record<string, EventStats>>(`/events/stats?${params.toString()}`);
 }
 
 export async function reportEventToBackend(eventId: number, reason: string): Promise<void> {

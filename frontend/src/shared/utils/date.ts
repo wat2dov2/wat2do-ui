@@ -72,7 +72,10 @@ export function formatCardDate(
   const primary = getPrimaryOccurrence(event);
   if (primary && primary.dtstart_utc) {
     const date = new Date(primary.dtstart_utc);
-    const dayOfWeek = date.toLocaleDateString(locale, { weekday: 'long' });
+    const englishWeekdays = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
+    const dayOfWeek = locale.toLowerCase().startsWith("en")
+      ? englishWeekdays[date.getDay()]
+      : date.toLocaleDateString(locale, { weekday: "short" });
     const month = date.toLocaleDateString(locale, { month: 'short' });
     const day = date.getDate();
     return `${dayOfWeek} ${month} ${day}`;

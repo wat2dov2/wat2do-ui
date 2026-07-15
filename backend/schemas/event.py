@@ -234,7 +234,6 @@ class EventSummaryResponse(BaseModel):
     school: str | None = None
     cancelled: bool = False
     added_at: datetime
-    click_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -243,6 +242,13 @@ class EventFeedResponse(PaginatedResponse[EventSummaryResponse]):
     """Public school feed response with catalog-freshness metadata."""
 
     latest_added_event: LatestEventResponse | None = None
+
+
+class EventStatsResponse(BaseModel):
+    """Volatile public card stats loaded separately from the cached event feed."""
+
+    click_count: int = 0
+    going_count: int = 0
 
 
 class EventResponse(BaseModel):
@@ -275,7 +281,6 @@ class EventResponse(BaseModel):
     ig_handle: str | None = None
     cancelled: bool = False
     added_at: datetime
-    click_count: int = 0
     created_by: str | None = None
 
     model_config = {"from_attributes": True}
@@ -304,6 +309,5 @@ class EventPublicResponse(BaseModel):
     ig_handle: str | None = None
     cancelled: bool = False
     added_at: datetime
-    click_count: int = 0
 
     model_config = {"from_attributes": True}

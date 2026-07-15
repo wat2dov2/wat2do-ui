@@ -576,3 +576,23 @@ def test_list_promoted_events_endpoint(client, monkeypatch):
     assert len(body) == 1
     assert body[0]["title"] == "Promoted Event"
     mock_promoted.assert_called_once_with(school="uwaterloo")
+
+
+def test_get_event_stats_public(client, monkeypatch):
+    mock_stats = MagicMock(
+        return_value={
+            "42": {"click_count": 8, "going_count": 3},
+        }
+    )
+    monkeypatch.setattr(event_service, "get_event_stats_for_school", mock_stats)
+
+    response = client.get("/events/stats", params={"school": "uwaterloo"})
+
+    assert response.status_code == 200
+    assert response.json() == {"42": {"click_count": 8, "going_count": 3}}
+    mock_stats.assert_called_once_with("uwaterloo")
+
+
+def test_get_event_stats_requires_school(client):
+    response = client.get("/events/stats")
+    assert response.status_code == 422

@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/shared/ui/doodle-icons";
-import { Chip } from "@/shared/ui/chip";
+import { Button } from "@/shared/ui/button";
 import {
   Drawer,
   DrawerContent,
@@ -28,39 +28,30 @@ export function MoreFiltersButton({
   const { t } = useTranslation();
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <Chip
-        active={open || filterCount > 0}
-        size="md"
-        onClick={() => onOpenChange(!open)}
-        aria-expanded={open}
-      >
-        {t("common.extraFilters")}
+      <div className="flex items-center gap-1">
+        <Button
+          variant={open || filterCount > 0 ? "selected" : "secondary"}
+          size="sm"
+          onClick={() => onOpenChange(!open)}
+          aria-expanded={open}
+        >
+          {t("common.extraFilters")}
+        </Button>
         {filterCount > 0 && (
-          <span
-            role="button"
-            tabIndex={0}
+          <Button
+            type="button"
+            variant="selected"
+            size="xs"
             aria-label={t("common.clearFilters", "Clear filters")}
-            onMouseDown={(event) => {
-              if (event.button !== 0) {
-                return;
-              }
-              event.stopPropagation();
+            onClick={() => {
               onClearFilters?.();
             }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                event.stopPropagation();
-                onClearFilters?.();
-              }
-            }}
-            className="bg-background/18 text-background ml-1 flex h-3.5 items-center gap-0.5 rounded-full px-1 text-[10px] leading-none hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18 transition-colors cursor-pointer touch-manipulation"
           >
             <X className="size-2 shrink-0" strokeWidth={3} />
             {filterCount}
-          </span>
+          </Button>
         )}
-      </Chip>
+      </div>
       <DrawerContent className="max-h-[85dvh] max-w-sm! overflow-hidden p-0">
         <DrawerHeader className="sr-only">
           <DrawerTitle>{t("common.extraFilters")}</DrawerTitle>

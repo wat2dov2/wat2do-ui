@@ -694,6 +694,55 @@
         }
       }
     },
+    "/events/stats": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Get Event Stats",
+        "description": "Public uncached card stats for one school.",
+        "operationId": "get_event_stats_events_stats_get",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "School"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/EventStatsResponse"
+                  },
+                  "title": "Response Get Event Stats Events Stats Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/events/": {
       "get": {
         "tags": [
@@ -1249,54 +1298,6 @@
             "HTTPBearer": []
           }
         ]
-      }
-    },
-    "/going-events/counts": {
-      "get": {
-        "tags": [
-          "going-events"
-        ],
-        "summary": "Get Going Counts",
-        "description": "Public school-scoped going counts for the browse overlay.",
-        "operationId": "get_going_counts_going_events_counts_get",
-        "parameters": [
-          {
-            "name": "school",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "title": "School"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "title": "Response Get Going Counts Going Events Counts Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/going-events/{event_id}": {
@@ -5749,11 +5750,6 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
-          },
-          "click_count": {
-            "type": "integer",
-            "title": "Click Count",
-            "default": 0
           }
         },
         "type": "object",
@@ -5932,11 +5928,6 @@
             "format": "date-time",
             "title": "Added At"
           },
-          "click_count": {
-            "type": "integer",
-            "title": "Click Count",
-            "default": 0
-          },
           "created_by": {
             "anyOf": [
               {
@@ -5957,6 +5948,23 @@
         ],
         "title": "EventResponse",
         "description": "Full event payload returned from GET /events/{id} and used internally\nfor ownership checks.\n\n``created_by`` is retained here because the field is load-bearing for\nthe authorization layer (``get_authorized_resource`` reads it); the\npublic list endpoint hides it via ``EventSummaryResponse`` which\nomits the field entirely.\n\n``occurrences`` is the canonical date list."
+      },
+      "EventStatsResponse": {
+        "properties": {
+          "click_count": {
+            "type": "integer",
+            "title": "Click Count",
+            "default": 0
+          },
+          "going_count": {
+            "type": "integer",
+            "title": "Going Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "EventStatsResponse",
+        "description": "Volatile public card stats loaded separately from the cached event feed."
       },
       "EventSummaryResponse": {
         "properties": {
@@ -6124,11 +6132,6 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
-          },
-          "click_count": {
-            "type": "integer",
-            "title": "Click Count",
-            "default": 0
           }
         },
         "type": "object",

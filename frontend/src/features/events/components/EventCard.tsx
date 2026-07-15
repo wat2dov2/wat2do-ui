@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
 import { OrganizationBadgeDropdown } from "@/features/organizations";
-import { useGoingCountActions } from "@/features/events/hooks/useGoingCounts";
+import { useEventStatsActions } from "@/features/events/hooks/useEventStats";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
 import { getUserId } from "@/features/auth/api/auth.api";
@@ -31,15 +31,13 @@ import {
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useMouseDownAction, createAdaptivePressHandlers, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
+import type { EventStats } from "@/features/events/api/events.api";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 interface EventCardProps {
   event: Event;
-  /**
-   * School going-count for this event. Omit / leave undefined until the
-   * going-counts query has succeeded so the card does not flash fake zeros.
-   */
-  goingCount?: number;
+  /** Live card stats. Omit until the stats query succeeds. */
+  stats?: EventStats;
   onEventClick?: (event: Event) => void;
   /** Grid cards: open footer actions on click below the sm breakpoint or on touch. */
   mobileClickActivation?: boolean;
@@ -50,13 +48,16 @@ interface EventCardProps {
 
 function buildEventStatsLabel(
   t: TFunction,
-  clickCount: number | undefined,
-  goingCount: number | undefined,
+  stats: EventStats | undefined,
 ): string | undefined {
-  if (typeof clickCount !== "number" || typeof goingCount !== "number") {
-    return undefined;
-  }
-  return `${t("events.clickCount", { count: clickCount })} · ${t("events.goingCount", { count: goingCount })}`;
+  if (!stats) return undefined;
+
+  const parts = [
+    stats.click_count > 0 ? t("events.clickCount", { count: stats.click_count }) : null,
+    stats.going_count > 0 ? t("events.goingCount", { count: stats.going_count }) : null,
+  ].filter((part): part is string => part !== null);
+
+  return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
 export type EventCardDialog = "delete" | "share" | "report";
@@ -321,7 +322,7 @@ interface EventCardBodyProps {
   badges: ReturnType<typeof useEventBadges>;
   profileCompleted: boolean;
   isGoingActive: boolean;
-  goingCount: number | undefined;
+  stats: EventStats | undefined;
   categoryClasses: CategoryClasses;
   canDelete: boolean;
   preferClickPress: boolean;
@@ -337,7 +338,7 @@ function EventCardBody({
   badges,
   profileCompleted,
   isGoingActive,
-  goingCount,
+  stats,
   categoryClasses,
   canDelete,
   preferClickPress,
@@ -367,7 +368,7 @@ function EventCardBody({
         time={time}
         location={event.location}
         badges={badges}
-        statsLabel={buildEventStatsLabel(t, event.click_count, goingCount) ?? ""}
+        statsLabel={buildEventStatsLabel(t, stats)}
         textClassName={categoryClasses.text}
         secondaryTextClassName={categoryClasses.text}
         badgeClassName={`border-current ${categoryClasses.text}`}
@@ -389,17 +390,19 @@ function EventCardBody({
 interface UseEventCardNavigationOptions {
   event: Event;
   onEventClick?: (event: Event) => void;
+  onIncrementClickCount: (eventId: number) => void;
 }
 
 function useEventCardNavigation({
   event,
   onEventClick,
+  onIncrementClickCount,
 }: UseEventCardNavigationOptions) {
   const handleCardActivate = useCallback(() => {
-    useEventsStore.getState().incrementClickCount(event.id);
+    onIncrementClickCount(event.id);
     tracker.track(event.id, "click");
     onEventClick?.(event);
-  }, [event, onEventClick]);
+  }, [event, onEventClick, onIncrementClickCount]);
 
   return {
     handleCardActivate,
@@ -408,7 +411,7 @@ function useEventCardNavigation({
 
 function EventCardComponent({
   event,
-  goingCount,
+  stats,
   onEventClick,
   mobileClickActivation = true,
   onDelete,
@@ -434,7 +437,7 @@ function EventCardComponent({
 
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const isGoing = useGoingEventsStore((s) => s.goingEventIds.includes(event.id));
-  const { toggleWithCounts } = useGoingCountActions(schoolFilter);
+  const { incrementClickCount, toggleWithStats } = useEventStatsActions(schoolFilter);
 
   const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
   const canManageEvent = isAdmin || isOwner;
@@ -458,6 +461,7 @@ function EventCardComponent({
   const { handleCardActivate } = useEventCardNavigation({
     event,
     onEventClick,
+    onIncrementClickCount: incrementClickCount,
   });
 
   const mobileGridClickActivation = useMobileGridClickActivation();
@@ -533,11 +537,11 @@ function EventCardComponent({
           badges={badges}
           profileCompleted={profileCompleted}
           isGoingActive={isGoingActive}
-          goingCount={goingCount}
+          stats={stats}
           categoryClasses={categoryClasses}
           canDelete={canManageEvent && Boolean(onDelete)}
           preferClickPress={preferClickPress}
-          onToggleGoingEvent={toggleWithCounts}
+          onToggleGoingEvent={toggleWithStats}
           onActionDialogOpen={handleActionDialogOpen}
           t={t}
         />

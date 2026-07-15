@@ -26,6 +26,7 @@ export type ApiEventResponse = components["schemas"]["EventResponse"];
 export type ApiEventPublicResponse = components["schemas"]["EventPublicResponse"];
 export type ApiEventSummaryResponse = components["schemas"]["EventSummaryResponse"];
 export type ApiEventFeedResponse = components["schemas"]["EventFeedResponse"];
+export type ApiEventStatsResponse = components["schemas"]["EventStatsResponse"];
 export type ApiLatestEventResponse = components["schemas"]["LatestEventResponse"];
 
 // ── Event Submissions ───────────────────────────────────────────────

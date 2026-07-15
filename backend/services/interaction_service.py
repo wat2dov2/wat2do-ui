@@ -45,6 +45,35 @@ _AB_CLICK_INTERACTION_TYPES: frozenset[str] = frozenset(
 )
 
 
+def get_click_counts_for_events(event_ids: list[int]) -> dict[int, int]:
+    """Return recorded click counts keyed by event ID."""
+    unique_ids = sorted(set(event_ids))
+    if not unique_ids:
+        return {}
+
+    try:
+        rows = (
+            get_sb().rpc("get_event_click_counts", {"p_event_ids": unique_ids}).execute().data or []
+        )
+    except Exception as exc:
+        log.warning("Failed to fetch event click counts: %s", exc)
+        return {}
+
+    counts: dict[int, int] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        event_id = row.get("event_id")
+        click_count = row.get("click_count")
+        if event_id is None or click_count is None:
+            continue
+        try:
+            counts[int(event_id)] = int(click_count)
+        except (TypeError, ValueError):
+            continue
+    return counts
+
+
 def _record_ab_click_events(user_id: str | None, interactions: list[InteractionCreate]) -> None:
     """Mirror authenticated click/detail interactions into A/B CTR events."""
     if user_id is None:

@@ -10,8 +10,10 @@ strictly-per-user resource pattern by asserting on the chain directly.
 from uuid import uuid4
 
 from core.tables import USER_GOING_EVENTS
+from services import going_event_service
 from services.going_event_service import (
     count_going_events,
+    get_going_counts_for_events,
     get_going_event_ids,
     unmark_going,
 )
@@ -61,3 +63,18 @@ def test_count_going_events_returns_postgrest_count(fake_sb, patch_sb):
 
     assert count_going_events(user_id) == 37
     fake_sb.eq.assert_called_once_with("user_id", user_id)
+
+
+def test_get_going_counts_for_events_aggregates_rows(monkeypatch, fake_sb, patch_sb):
+    patch_sb("services.going_event_service")
+    fake_sb.set_response(data=[{"event_id": 1}, {"event_id": 1}, {"event_id": 2}])
+    monkeypatch.setattr(
+        going_event_service,
+        "fetch_all_pages",
+        lambda fetch_page: fetch_page(0, 1000),
+    )
+
+    counts = get_going_counts_for_events([1, 2, 3])
+
+    assert counts == {1: 2, 2: 1}
+    fake_sb.in_.assert_called_once_with("event_id", [1, 2, 3])

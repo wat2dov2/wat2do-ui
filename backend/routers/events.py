@@ -22,6 +22,7 @@ from schemas.event import (
     EventFeedResponse,
     EventPublicResponse,
     EventResponse,
+    EventStatsResponse,
     EventSummaryResponse,
     EventUpdate,
 )
@@ -67,6 +68,12 @@ def list_promoted_events(
     if school == "all":
         school = None
     return event_service.list_promoted_events(school=school)
+
+
+@router.get("/stats", response_model=dict[str, EventStatsResponse])
+def get_event_stats(school: str = Query(..., min_length=1, max_length=MAX_EVENT_SCHOOL_LENGTH)):
+    """Public uncached card stats for one school."""
+    return event_service.get_event_stats_for_school(school)
 
 
 @router.get("/", response_model=EventFeedResponse)

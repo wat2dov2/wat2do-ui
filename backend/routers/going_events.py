@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from postgrest.exceptions import APIError
 
 from core.auth import get_db_user
@@ -21,16 +21,6 @@ def list_going_events(user=Depends(get_db_user)):
     except APIError as e:
         log.warning("going_events table unavailable: %s", e)
         return []
-
-
-@router.get("/counts", response_model=dict[str, int])
-def get_going_counts(school: str = Query(..., min_length=1)):
-    """Public school-scoped going counts for the browse overlay."""
-    try:
-        return going_event_service.get_going_counts_for_school(school)
-    except APIError as e:
-        log.warning("going_events counts unavailable: %s", e)
-        return {}
 
 
 @router.put(

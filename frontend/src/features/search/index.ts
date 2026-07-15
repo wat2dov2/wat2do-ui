@@ -5,7 +5,6 @@
 export { SearchBar } from "./components/SearchBar";
 export { FilterDropdown } from "./components/FilterDropdown";
 export { MoreFiltersButton } from "./components/MoreFiltersButton";
-export { QuickFilterChip } from "./components/QuickFilterChip";
 
 export { useSearch } from "./hooks/useSearch";
 export { useFilterActions } from "./hooks/useFilterState";

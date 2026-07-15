@@ -6,7 +6,7 @@ import { MultiSelect } from "@/shared/ui/multi-select";
 import { Switch } from "@/shared/ui/switch";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { Input } from "@/shared/ui/input";
-import { Chip } from "@/shared/ui/chip";
+import { Button } from "@/shared/ui/button";
 import type { ViewMode } from "@/shared/types";
 
 interface LocationFilterInputProps {
@@ -142,17 +142,16 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             const active = viewMode === option.id;
 
             return (
-              <Chip
+              <Button
                 key={option.id}
-                active={active}
-                size="lg"
+                variant={active ? "selected" : "secondary"}
                 onClick={() => onViewModeChange(option.id)}
                 aria-pressed={active}
-                icon={<ViewIcon className="size-3.5" />}
                 className="w-full"
               >
+                <ViewIcon className="size-3.5" />
                 {option.label}
-              </Chip>
+              </Button>
             );
           })}
         </div>
