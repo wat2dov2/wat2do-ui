@@ -1,14 +1,18 @@
 # Project: Morning Email (Digest Consolidation + Going Reminders + Recommendations)
 
-Status: planned (roughly one week of work).
+Status: planned (roughly 1.5 weeks of work).
 Owner: Tony.
 
 ## Brief
 
 Replace the three existing digest flows (morning_digest, weekly_digest, daily_new_events) with one personalized morning email per user, sent at 9am in the user's school timezone.
-Section 1 is "Your events today" (events the user marked Going).
+Section 1 is "Your events today" (occurrences the user marked Going that happen today).
 Section 2 is "New events picked for you" (events added since the user's last email, ranked using the existing recommender pipeline).
 The event-change fanout to Going users is not a digest and stays untouched.
+
+This project also includes the prerequisite product change that makes section 1 precise: Going becomes occurrence-aware.
+For an event with multiple upcoming occurrences, the Going button opens a drawer with a multi-select of occurrences instead of toggling immediately.
+That drawer is a product feature in its own right, but it lives in this project because the reminder's correctness depends on knowing which occurrence the user actually plans to attend.
 
 ### Locked decisions
 
@@ -25,11 +29,18 @@ The event-change fanout to Going users is not a digest and stays untouched.
 7. Recommendations come from the precomputed `user_recommendations` table (nightly `recommender/job.py`), not from scoring at send time.
    Section 2 intersects precomputed recommendations with new-since-last-send events and fills any remainder with popularity-ranked new events.
    No new ML surface, no queues, no caching layers.
+8. Going is occurrence-aware.
+   Going rows link to a specific event occurrence (`event_dates` row), not just the event.
+   Events with one upcoming occurrence keep the current one-tap toggle.
+   Events with multiple upcoming occurrences open a drawer with a multi-select of occurrences; confirming the selection is the whole flow.
+   Existing event-level Going rows are backfilled to the event's next upcoming occurrence.
+   Public going counts stay aggregated at the event level.
 
 ### Success criteria
 
 Exactly one digest concept is left in the codebase.
-A user who marked Going gets their reminder at 9am local.
+A user who marked Going gets their reminder at 9am local, listing only the occurrences they actually selected.
+Multi-occurrence events never produce ambiguous reminders (no "which showing did I say yes to?").
 New-event recommendations dedupe correctly across days.
 Zero references to the deleted digests remain anywhere (code, prefs UI, locales, tests).
 Domain-authenticated sends land in inboxes, not spam.
@@ -48,20 +59,21 @@ Note: land this in the same change as 2.x so the dispatcher never ships with zer
 ### 1.2 Data-shape audit for the two sections
 
 Short written check before building.
-Confirm how Going rows link users to events and occurrences (the `going_events` tables/service).
+Confirm the current shape of Going rows (the `going_events` tables/service) and exactly what schema change 5.1 needs to link them to `event_dates` occurrences, including how the backfill to next-upcoming-occurrence handles events with no future occurrence.
 Confirm which timestamp marks an event as "added" for the high-water mark (created_at vs first-seen by the scraper).
 Confirm the shape of `user_recommendations` rows and what the read path (`get_recommendations`) filters at read time.
 Confirm the GitHub Actions schedule for `recommender/job.py` completes before the earliest 9am-local send, and document the scrape, then recompute, then send ordering as a stated dependency.
-Flag anything that forces a scope decision (e.g. recurring events with multiple occurrences today).
-Done when: one page states the exact queries both sections will use and the job-ordering dependency.
-Do first; this shapes everything in Category 2.
+Identify the existing drawer component used by the events feature so 5.2 reuses it rather than adding a second drawer pattern.
+Done when: one page states the exact queries both sections will use, the 5.1 migration plan, and the job-ordering dependency.
+Do first; this shapes everything in categories 2 and 5.
 
 ### 2.1 Going-today section
 
-Service function: given a user and their local date, return their Going events with an occurrence today, ordered by start time, with title, time, location, and event page URL.
+Service function: given a user and their local date, return the occurrences they marked Going that happen today, ordered by start time, with title, time, location, and event page URL.
+Because Going rows are occurrence-level (5.1), this is a direct join with no guessing about which occurrence the user meant.
 Reuses the existing event-fetch helpers in `digests.py` where they fit.
-Done when: unit tests cover a going event today, a going event on another day (excluded), a cancelled event (excluded, consistent with event_change behavior), and multiple occurrences.
-Depends: 1.2.
+Done when: unit tests cover a going occurrence today, a going occurrence on another day (excluded), an unselected occurrence of the same event today (excluded), and a cancelled event (excluded, consistent with event_change behavior).
+Depends: 1.2, 5.1.
 
 ### 2.2 Recommended-new-events section
 
@@ -114,12 +126,34 @@ Verify the production cron runs hourly on the hour, verify the recommender job f
 Done when: three consecutive clean morning runs happen with no duplicate sends and no orphaned failures.
 Depends: 4.1, 3.2.
 
+## Category 5: Occurrence-aware Going (prerequisite, runs first despite the number)
+
+### 5.1 Occurrence-level Going data model and API
+
+Migration: Going rows gain a reference to their `event_dates` occurrence, unique per (user, occurrence).
+Backfill existing event-level Going rows to the event's next upcoming occurrence; rows for events with no future occurrence are dropped (plan confirmed in 1.2).
+API: marking Going accepts one or more occurrence ids; unmarking removes per occurrence; the single-occurrence path stays a one-call toggle so existing call sites barely change.
+Going counts shown on cards stay aggregated at the event level (count distinct users), so the counts feature is unaffected.
+Audit both sides of the wire contract: request params, response shape, and generated API types must agree exactly.
+Done when: migration applies with backfill verified against production-shaped fixtures, API tests cover multi-occurrence mark/unmark and the one-occurrence fast path, and no event-level Going write path remains.
+Depends: 1.2.
+
+### 5.2 Occurrence picker drawer on the Going button
+
+For events with more than one upcoming occurrence, the Going button opens a drawer (reuse the events feature's existing drawer component, identified in 1.2) listing upcoming occurrences with date and time, each with a checkbox.
+Multi-select, confirm, done; that is the whole flow.
+Events with exactly one upcoming occurrence keep the current instant toggle with no drawer.
+The button reflects state: going to at least one occurrence renders as Going; reopening the drawer edits the selection.
+Optimistic updates follow the existing going-events store pattern; i18n keys in both locales.
+Done when: drawer flow works end-to-end against 5.1 in the browser (mark two of three occurrences, reminder-relevant state is queryable), the single-occurrence path is visually unchanged, and mobile layout is verified.
+Depends: 5.1.
+
 ## Sequencing
 
-1.2 first (half a day), then 2.1/2.2/2.3 in parallel, then 2.4 + 1.1 together as the swap commit, then 3.1.
+1.2 first (half a day), then 5.1 and 5.2 (the Going prerequisite ships as its own user-facing change, independent of any email), then 2.1/2.2/2.3 in parallel, then 2.4 + 1.1 together as the swap commit, then 3.1.
 3.2 runs anytime in parallel.
 4.1 then 4.2 gate the launch.
-The only ordering rule that matters: deletion (1.1) and the new send type (2.4) land together so there is never a state with zero or four digest concepts.
+Two ordering rules matter: deletion (1.1) and the new send type (2.4) land together so there is never a state with zero or four digest concepts, and 5.1 lands before 2.1 so the reminder query is occurrence-precise from day one.
 
 ## Related
 
