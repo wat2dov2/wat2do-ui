@@ -1,15 +1,26 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { Card, CardContent } from "@/shared/ui/card";
 import { ShineBorder } from "@/registry/magicui/shine-border";
+import type { Event } from "@/shared/types";
 
 interface AuthPageLayoutProps {
   heading: string;
   description: string;
+  previewEvents?: Event[];
   children: ReactNode;
 }
 
-export function AuthPageLayout({ heading, description, children }: AuthPageLayoutProps) {
+export function AuthPageLayout({
+  heading,
+  description,
+  previewEvents = [],
+  children,
+}: AuthPageLayoutProps) {
+  const { t } = useTranslation();
+
   return (
     <main className="min-h-screen bg-background">
       <div className="min-h-screen flex">
@@ -17,8 +28,14 @@ export function AuthPageLayout({ heading, description, children }: AuthPageLayou
           <Card className="relative w-full max-w-[440px] overflow-hidden gap-0">
             <ShineBorder shineColor="var(--primary)" />
             <CardContent className="space-y-6 p-8">
+              <img
+                alt={t("common.logo")}
+                className="h-7 w-[40px] object-contain"
+                src={imgLogo.src}
+              />
+
               <div className="space-y-2">
-                <h1 className="font-sans font-semibold text-[32px] text-foreground leading-tight">
+                <h1 className="font-sans font-semibold text-[28px] text-foreground leading-tight text-balance">
                   {heading}
                 </h1>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -31,7 +48,7 @@ export function AuthPageLayout({ heading, description, children }: AuthPageLayou
           </Card>
         </section>
 
-        <AuthHeroPanel />
+        <AuthHeroPanel events={previewEvents} />
       </div>
     </main>
   );

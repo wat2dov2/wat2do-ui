@@ -26,11 +26,12 @@ import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingP
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
 import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 import { ROLE_ADMIN, ROLE_ORGANIZATION } from "@/shared/constants/roles";
+import type { Event } from "@/shared/types";
 
-export function LoginRoute() {
+export function LoginRoute({ previewEvents = [] }: { previewEvents?: Event[] }) {
   return (
     <AppPage authFlow chrome={false}>
-      <AuthEntryPage />
+      <AuthEntryPage previewEvents={previewEvents} />
     </AppPage>
   );
 }

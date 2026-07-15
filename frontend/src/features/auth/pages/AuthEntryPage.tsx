@@ -7,8 +7,13 @@ import { AuthPageLayout } from "@/features/auth/components/AuthPageLayout";
 import { AuthEmailFormCard } from "@/features/auth/components/AuthEmailFormCard";
 import { useAuthEntryFlow } from "@/features/auth/hooks/useAuthEntryFlow";
 import { useAuthState } from "@/features/auth";
+import type { Event } from "@/shared/types";
 
-export function AuthEntryPage() {
+interface AuthEntryPageProps {
+  previewEvents?: Event[];
+}
+
+export function AuthEntryPage({ previewEvents = [] }: AuthEntryPageProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthState();
@@ -34,6 +39,7 @@ export function AuthEntryPage() {
     <AuthPageLayout
       heading={t("auth.heading")}
       description={t("auth.description")}
+      previewEvents={previewEvents}
     >
       <AuthEmailFormCard
         email={authEntry.email}
