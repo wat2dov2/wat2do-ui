@@ -92,6 +92,49 @@ jobs:
           BACKEND_API_URL: http://localhost:8000
         run: npm run build
 
+  commons:
+    name: Waterloo Commons checks
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
+      SUPABASE_SECRET_KEY: test-secret-key
+      OPENAI_API_KEY: test-openai-key
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      REQUEST_FINGERPRINT_SECRET: test-request-fingerprint-secret-at-least-32-bytes
+      CRON_SECRET: test-cron-secret-at-least-32-bytes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: waterloo-commons/package-lock.json
+
+      - name: Install dependencies
+        working-directory: waterloo-commons
+        run: npm ci
+
+      - name: Lint Waterloo Commons
+        working-directory: waterloo-commons
+        run: npm run lint
+
+      - name: Type check Waterloo Commons
+        working-directory: waterloo-commons
+        run: npm run type-check
+
+      - name: Test Waterloo Commons
+        working-directory: waterloo-commons
+        run: npm test
+
+      - name: Build Waterloo Commons
+        working-directory: waterloo-commons
+        run: npm run build
+
   deploy-backend:
     name: Deploy backend to Railway
     runs-on: ubuntu-latest
@@ -181,3 +224,37 @@ jobs:
         if: env.VERCEL_TOKEN != ''
         working-directory: frontend
         run: npx vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN"
+
+  deploy-commons:
+    name: Deploy Waterloo Commons to Vercel
+    runs-on: ubuntu-latest
+    needs:
+      - backend
+      - frontend
+      - commons
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_COMMONS_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_COMMONS_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_COMMONS_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Skip Commons deploy until credentials are configured
+        if: env.VERCEL_TOKEN == '' || env.VERCEL_ORG_ID == '' || env.VERCEL_PROJECT_ID == ''
+        run: echo "::notice::Set VERCEL_COMMONS_TOKEN, VERCEL_COMMONS_ORG_ID, and VERCEL_COMMONS_PROJECT_ID repository secrets to enable Waterloo Commons deploys."
+
+      # Commons must build remotely on Vercel: sharp needs binaries matching the
+      # Function runtime platform, and the poster imports shared source outside
+      # waterloo-commons/, which the project's Root Directory settings provide.
+      - name: Deploy Commons with a remote Vercel build
+        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
+        run: npx vercel deploy --prod --archive=tgz --token="$VERCEL_TOKEN"

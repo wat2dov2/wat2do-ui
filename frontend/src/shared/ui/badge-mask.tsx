@@ -1,6 +1,5 @@
 import React from "react";
-
-type BadgeMaskVariant = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+import { BADGE_MASK_PATHS, type BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
 
 interface BadgeMaskProps {
   variant: BadgeMaskVariant;
@@ -10,27 +9,16 @@ interface BadgeMaskProps {
   outlineClassName?: string;
 }
 
-const TOP_LEFT_FILL = "M64 0C28.65 0 0 28.65 0 64L0 0L64 0Z";
-const TOP_LEFT_CURVE = "M64 0C28.65 0 0 28.65 0 64";
-
-const TOP_RIGHT_FILL = "M64 64C64 28.65 35.35 0 0 0H64V64Z";
-const TOP_RIGHT_CURVE = "M0 0C35.35 0 64 28.65 64 64";
-
-const BOTTOM_LEFT_FILL = "M0 0C0 35.35 28.65 64 64 64H0V0Z";
-const BOTTOM_LEFT_CURVE = "M0 0C0 35.35 28.65 64 64 64";
-
-const BOTTOM_RIGHT_FILL = "M64 0C64 35.35 35.35 64 0 64H64V0Z";
-const BOTTOM_RIGHT_CURVE = "M64 0C64 35.35 35.35 64 0 64";
-
 interface MaskSvgProps {
-  fillPath: string;
-  curvePath: string;
+  variant: BadgeMaskVariant;
   className?: string;
   outlined?: boolean;
   outlineClassName?: string;
 }
 
-function MaskSvg({ fillPath, curvePath, className, outlined, outlineClassName }: MaskSvgProps) {
+function MaskSvg({ variant, className, outlined, outlineClassName }: MaskSvgProps) {
+  const { fillPath, curvePath } = BADGE_MASK_PATHS[variant];
+
   return (
     <svg
       width="64"
@@ -71,16 +59,14 @@ export function BadgeMask({
               {children}
             </div>
             <MaskSvg
-              fillPath={TOP_LEFT_FILL}
-              curvePath={TOP_LEFT_CURVE}
+              variant="top-left"
               className="size-2 text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
             />
           </div>
           <MaskSvg
-            fillPath={TOP_LEFT_FILL}
-            curvePath={TOP_LEFT_CURVE}
+            variant="top-left"
             className="size-2 text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
@@ -92,8 +78,7 @@ export function BadgeMask({
         <div className="absolute top-0 right-0 z-10 flex flex-col pointer-events-none">
           <div className="flex">
             <MaskSvg
-              fillPath={TOP_RIGHT_FILL}
-              curvePath={TOP_RIGHT_CURVE}
+              variant="top-right"
               className="size-2 text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
@@ -103,8 +88,7 @@ export function BadgeMask({
             </div>
           </div>
           <MaskSvg
-            fillPath={TOP_RIGHT_FILL}
-            curvePath={TOP_RIGHT_CURVE}
+            variant="top-right"
             className="size-2 ml-auto text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
@@ -115,8 +99,7 @@ export function BadgeMask({
       return (
         <div className="absolute bottom-0 left-0 z-10 flex flex-col pointer-events-none">
           <MaskSvg
-            fillPath={BOTTOM_LEFT_FILL}
-            curvePath={BOTTOM_LEFT_CURVE}
+            variant="bottom-left"
             className="size-2 text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
@@ -126,8 +109,7 @@ export function BadgeMask({
               {children}
             </div>
             <MaskSvg
-              fillPath={BOTTOM_LEFT_FILL}
-              curvePath={BOTTOM_LEFT_CURVE}
+              variant="bottom-left"
               className="size-2 mt-auto text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
@@ -139,16 +121,14 @@ export function BadgeMask({
       return (
         <div className="absolute bottom-0 right-0 z-10 flex flex-col pointer-events-none">
           <MaskSvg
-            fillPath={BOTTOM_RIGHT_FILL}
-            curvePath={BOTTOM_RIGHT_CURVE}
+            variant="bottom-right"
             className="size-2 ml-auto text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
           />
           <div className="flex">
             <MaskSvg
-              fillPath={BOTTOM_RIGHT_FILL}
-              curvePath={BOTTOM_RIGHT_CURVE}
+              variant="bottom-right"
               className="size-2 mt-auto text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
