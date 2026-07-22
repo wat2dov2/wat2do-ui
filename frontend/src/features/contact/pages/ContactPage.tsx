@@ -62,7 +62,7 @@ export function ContactPage() {
   const { t } = useTranslation();
 
   return (
-    <main className="min-h-screen bg-background py-8 sm:py-12">
+    <main className="min-h-screen py-8 sm:py-12">
       <Container size="sm">
         <Stack gap={12}>
           <m.div
