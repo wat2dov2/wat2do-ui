@@ -219,6 +219,33 @@ jobs:
             NEXT_PUBLIC_POSTHOG_HOST=${{ env.NEXT_PUBLIC_POSTHOG_HOST }}
             APP_VERSION=${{ github.sha }}
 
+      - name: Smoke test frontend image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          frontend_image="$ECR_REGISTRY/wat2do/frontend:${{ github.sha }}"
+          container_id="$(docker run --detach --platform linux/arm64 --publish 127.0.0.1::3000 "$frontend_image")"
+          cleanup() {
+            docker rm --force "$container_id" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          published_port="$(docker port "$container_id" 3000/tcp)"
+          published_port="${published_port##*:}"
+
+          for _ in $(seq 1 30); do
+            if curl --fail --silent "http://127.0.0.1:$published_port/" >/dev/null; then
+              exit 0
+            fi
+            if [ "$(docker inspect --format '{{.State.Running}}' "$container_id")" != 'true' ]; then
+              docker logs "$container_id"
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker logs "$container_id"
+          exit 1
+
       - name: Register one immutable ECS task revision
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}

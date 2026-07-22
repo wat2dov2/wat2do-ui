@@ -1,7 +1,7 @@
 # --- Dependency stage ---
 FROM node:22-slim AS dependencies
 
-WORKDIR /app
+WORKDIR /workspace/frontend
 
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
@@ -9,12 +9,12 @@ RUN npm ci
 # --- Build stage ---
 FROM node:22-slim AS build
 
-WORKDIR /app
+WORKDIR /workspace/frontend
 
-COPY --from=dependencies /app/node_modules ./node_modules
+COPY --from=dependencies /workspace/frontend/node_modules ./node_modules
 COPY frontend/package.json frontend/package-lock.json* ./
 COPY frontend/ .
-COPY product-control.json /product-control.json
+COPY product-control.json /workspace/product-control.json
 
 ARG NEXT_PUBLIC_API_URL=/api
 ARG API_REWRITE_URL=http://127.0.0.1:8000
@@ -38,7 +38,7 @@ RUN npm run build
 # --- Production stage ---
 FROM node:22-slim AS runtime
 
-WORKDIR /app
+WORKDIR /app/frontend
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -46,9 +46,9 @@ ENV HOSTNAME=0.0.0.0
 
 RUN groupadd --system nextjs && useradd --system --gid nextjs --create-home nextjs
 
-COPY --from=build --chown=nextjs:nextjs /app/public ./public
-COPY --from=build --chown=nextjs:nextjs /app/.next/standalone ./
-COPY --from=build --chown=nextjs:nextjs /app/.next/static ./.next/static
+COPY --from=build --chown=nextjs:nextjs /workspace/frontend/.next/standalone /app
+COPY --from=build --chown=nextjs:nextjs /workspace/frontend/public ./public
+COPY --from=build --chown=nextjs:nextjs /workspace/frontend/.next/static ./.next/static
 
 RUN mkdir -p .next/cache /tmp && chown -R nextjs:nextjs /app /tmp
 
