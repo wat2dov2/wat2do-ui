@@ -5,6 +5,8 @@ The tests assert on both layers via the fake_sb fixture.
 """
 
 from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
 
@@ -150,7 +152,7 @@ def test_ensure_organization_by_ig_returns_existing_without_insert(fake_sb, patc
                 {
                     "id": 9,
                     "organization_name": "UW Tea Organization",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                 }
             ]
         ]
@@ -165,7 +167,7 @@ def test_ensure_organization_by_ig_returns_existing_without_insert(fake_sb, patc
     assert result == {
         "id": 9,
         "organization_name": "UW Tea Organization",
-        "organization_type": "Independent",
+        "association_affiliated": False,
     }
     assert fake_sb.insert.call_count == 0
 
@@ -179,7 +181,7 @@ def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb):
                 {
                     "id": 42,
                     "organization_name": "UW Tea Organization",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                 }
             ],
         ]
@@ -197,7 +199,7 @@ def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb):
         "organization_name": "UW Tea Organization",
         "ig": "uwteaorganization",
         "school": "uwaterloo",
-        "organization_type": "Independent",
+        "association_affiliated": False,
     }
 
 
@@ -222,13 +224,13 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
                 {
                     "id": 5,
                     "organization_name": "UW Tea Organization",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                 }
             ],  # organization insert
             [{"id": 7}],  # events insert
             [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 7,
                     "dtstart_utc": _future(2),
                     "dtend_utc": None,
@@ -253,7 +255,7 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
     assert dict_inserts[0]["ig"] == "uwteaorganization"
     assert dict_inserts[1]["organization_id"] == 5
     assert dict_inserts[1]["organization"] == "UW Tea Organization"
-    assert dict_inserts[1]["organization_type"] == "Independent"
+    assert dict_inserts[1]["association_affiliated"] is False
 
 
 def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, monkeypatch):
@@ -270,7 +272,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
             # occurrences insert - return shape must satisfy OccurrenceResponse
             [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 7,
                     "dtstart_utc": _future(2),
                     "dtend_utc": None,
@@ -279,7 +281,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
                     "created_at": occ_now,
                 },
                 {
-                    "id": 2,
+                    "id": UUID(int=2),
                     "event_id": 7,
                     "dtstart_utc": _future(9),
                     "dtend_utc": None,
@@ -288,7 +290,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
                     "created_at": occ_now,
                 },
                 {
-                    "id": 3,
+                    "id": UUID(int=3),
                     "event_id": 7,
                     "dtstart_utc": _future(16),
                     "dtend_utc": None,
@@ -339,7 +341,7 @@ def test_write_event_drops_past_occurrences(fake_sb, patch_sb, monkeypatch):
             # occurrences insert - only one survives the past-event filter
             [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 11,
                     "dtstart_utc": _future(2),
                     "dtend_utc": None,
@@ -400,7 +402,7 @@ def test_write_event_keeps_past_occurrences_when_flag_set(fake_sb, patch_sb, mon
             # occurrences insert - past occurrence survives due to flag
             [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 12,
                     "dtstart_utc": past,
                     "dtend_utc": None,
@@ -426,12 +428,10 @@ def test_write_event_keeps_past_occurrences_when_flag_set(fake_sb, patch_sb, mon
 
 
 def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
-    """Pass 2 id present -> update path + replace_occurrences."""
+    """Pass 2 id present -> one transactional parent + occurrence update."""
     from schemas.event import EventResponse
-    from schemas.event_date import OccurrenceResponse
 
     patch_sb("services.scraper.event_writer")
-    patch_sb("services.event_date_service")
 
     future = datetime.now(timezone.utc) + timedelta(days=2)
     base = {
@@ -443,7 +443,7 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
         "added_at": datetime.now(timezone.utc),
         "occurrences": [
             {
-                "id": 1,
+                "id": UUID(int=1),
                 "event_id": 42,
                 "dtstart_utc": future,
                 "dtend_utc": None,
@@ -463,25 +463,12 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
 
     monkeypatch.setattr(event_writer.event_service, "get_event", _get_event)
     monkeypatch.setattr(event_writer, "enqueue_event_change", lambda *a, **k: 1)
+    update = MagicMock(return_value=[])
     monkeypatch.setattr(
-        event_writer.event_date_service,
-        "replace_occurrences",
-        lambda eid, occs: [
-            OccurrenceResponse.model_validate(
-                {
-                    "id": 1,
-                    "event_id": eid,
-                    "dtstart_utc": future,
-                    "dtend_utc": None,
-                    "duration": None,
-                    "tz": None,
-                    "created_at": datetime.now(timezone.utc),
-                }
-            )
-        ],
+        event_writer.event_service,
+        "update_event_and_occurrences",
+        update,
     )
-
-    fake_sb.queue_responses([[{"id": 42}]])  # events update
 
     result = write_event(
         _event(id=42, location="SLC 3223", cancelled=True),
@@ -489,10 +476,12 @@ def test_write_event_overwrites_by_id(fake_sb, patch_sb, monkeypatch):
         source_url="https://instagram.com/p/abc",
     )
     assert result == "updated"
-    assert fake_sb.update.call_count == 1
-    update_payload = fake_sb.update.call_args_list[0][0][0]
+    update.assert_called_once()
+    event_id, update_payload, occurrences = update.call_args.args
+    assert event_id == 42
     assert update_payload["cancelled"] is True
     assert update_payload["location"] == "SLC 3223"
+    assert len(occurrences) == 1
 
 
 def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch):
@@ -517,7 +506,7 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
             "added_at": datetime.now(timezone.utc),
             "occurrences": [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 42,
                     "dtstart_utc": future,
                     "dtend_utc": None,
@@ -535,7 +524,7 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
         lambda eid, occs: [
             OccurrenceResponse.model_validate(
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": eid,
                     "dtstart_utc": future,
                     "dtend_utc": None,
@@ -555,7 +544,7 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
         resolved_org=ResolvedOrganization(
             organization_id=99,
             organization_name="Other Club",
-            organization_type="Independent",
+            association_affiliated=False,
             ig_handle=None,
         ),
     )
@@ -567,17 +556,15 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
 def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, monkeypatch):
     """Directory-style overwrite must not wipe IG provenance fields."""
     from schemas.event import EventResponse
-    from schemas.event_date import OccurrenceResponse
     from services.scraper.org_resolve import ResolvedOrganization
 
     patch_sb("services.scraper.event_writer")
-    patch_sb("services.event_date_service")
 
     future = datetime.now(timezone.utc) + timedelta(days=2)
     base = {
         "id": 42,
         "organization_id": 7,
-        "organization_type": "Independent",
+        "association_affiliated": False,
         "title": "Tea Tasting",
         "location": "SLC 1000",
         "organization": "UW Tea Organization",
@@ -588,7 +575,7 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
         "added_at": datetime.now(timezone.utc),
         "occurrences": [
             {
-                "id": 1,
+                "id": UUID(int=1),
                 "event_id": 42,
                 "dtstart_utc": future,
                 "dtend_utc": None,
@@ -608,24 +595,12 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
 
     monkeypatch.setattr(event_writer.event_service, "get_event", _get_event)
     monkeypatch.setattr(event_writer, "enqueue_event_change", lambda *a, **k: 1)
+    update = MagicMock(return_value=[])
     monkeypatch.setattr(
-        event_writer.event_date_service,
-        "replace_occurrences",
-        lambda eid, occs: [
-            OccurrenceResponse.model_validate(
-                {
-                    "id": 1,
-                    "event_id": eid,
-                    "dtstart_utc": future,
-                    "dtend_utc": None,
-                    "duration": None,
-                    "tz": None,
-                    "created_at": datetime.now(timezone.utc),
-                }
-            )
-        ],
+        event_writer.event_service,
+        "update_event_and_occurrences",
+        update,
     )
-    fake_sb.queue_responses([[{"id": 42}]])
 
     result = write_event(
         _event(id=42, location="SLC 3223", source_image_url=None),
@@ -634,14 +609,15 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
         resolved_org=ResolvedOrganization(
             organization_id=7,
             organization_name="UW Tea Organization",
-            organization_type=None,
+            association_affiliated=False,
             ig_handle=None,
         ),
     )
     assert result == "updated"
-    update_payload = fake_sb.update.call_args_list[0][0][0]
+    update.assert_called_once()
+    update_payload = update.call_args.args[1]
     assert update_payload["ig_handle"] == "uwteaorganization"
     assert update_payload["organization_id"] == 7
-    assert update_payload["organization_type"] == "Independent"
+    assert update_payload["association_affiliated"] is False
     assert update_payload["source_url"] == "https://instagram.com/p/OLD"
     assert update_payload["source_image_url"] == "https://cdn/old.jpg"

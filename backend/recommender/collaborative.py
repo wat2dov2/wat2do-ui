@@ -2,10 +2,9 @@
 
 import logging
 import math
+from dataclasses import dataclass
 
-from core.cache import TTLCache
 from recommender.config import (
-    CACHE_TTL_SECONDS,
     CF_BLEND_WEIGHT,
     CF_GOING_WEIGHT,
     CF_MAX_USER_EVENT_SCORE,
@@ -18,16 +17,19 @@ from services import going_event_service
 
 log = logging.getLogger(__name__)
 
-# Cached CF matrices: rebuilding user/item vectors from the interaction matrix
-# + goings is O(rows) and identical for every caller within the same cache
-# window. Cache both so the work is done once per TTL period.
-_cf_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
+
+@dataclass(frozen=True)
+class CollaborativeModel:
+    """Immutable-by-convention collaborative model for one batch run."""
+
+    user_vectors: dict[str, dict[int, float]]
+    user_magnitudes: dict[str, float]
+    item_vectors: dict[int, dict[str, float]]
+    item_magnitudes: dict[int, float]
 
 
-def _build_cf_matrices() -> tuple[
-    dict[str, dict[int, float]], dict[str, float], dict[int, dict[str, float]], dict[int, float]
-]:
-    """Build (user_vectors, user_magnitudes, item_vectors, item_magnitudes) from interaction matrix and goings."""
+def build_collaborative_model() -> CollaborativeModel:
+    """Build one collaborative model from the current interaction and going data."""
     matrix = get_interaction_matrix()
     goings = going_event_service.get_all_user_goings()
 
@@ -68,26 +70,29 @@ def _build_cf_matrices() -> tuple[
         len(item_vectors),
         sum(len(v) for v in user_vectors.values()),
     )
-    return user_vectors, user_magnitudes, item_vectors, item_magnitudes
-
-
-def _get_cf_matrices() -> tuple[
-    dict[str, dict[int, float]], dict[str, float], dict[int, dict[str, float]], dict[int, float]
-]:
-    """Return (user_vectors, user_magnitudes, item_vectors, item_magnitudes), rebuilding if the TTL has expired."""
-    return _cf_cache.get_or_compute("cf_matrices", _build_cf_matrices)
+    return CollaborativeModel(
+        user_vectors=user_vectors,
+        user_magnitudes=user_magnitudes,
+        item_vectors=item_vectors,
+        item_magnitudes=item_magnitudes,
+    )
 
 
 def get_collaborative_scores(
     user_id: str,
     candidate_event_ids: list[int],
+    *,
+    model: CollaborativeModel,
 ) -> dict[int, float]:
     """
     Blend of user-based and item-based CF.
     Returns {event_id: score} for candidate events.
     Returns empty dict if user has too few interactions (cold start).
     """
-    user_vectors, user_magnitudes, item_vectors, item_magnitudes = _get_cf_matrices()
+    user_vectors = model.user_vectors
+    user_magnitudes = model.user_magnitudes
+    item_vectors = model.item_vectors
+    item_magnitudes = model.item_magnitudes
 
     target_vec = user_vectors.get(user_id, {})
     if len(target_vec) < CF_MIN_INTERACTIONS:

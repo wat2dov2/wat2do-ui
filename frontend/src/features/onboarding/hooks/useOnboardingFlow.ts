@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { isEventCategory } from "@/shared/data/eventCategories";
 
-const ONBOARDING_TOTAL_STEPS = 6;
+const ONBOARDING_TOTAL_STEPS = 5;
 
 export const FACULTY_OPTIONS = [
   "Engineering",
@@ -20,7 +20,6 @@ interface UseOnboardingFlowOptions {
     selectedEventIds: number[];
     faculty: string;
     isFirstYear: boolean;
-    dailyNewEventsOptIn: boolean;
   }) => void;
   /**
    * School name to pre-populate on mount (e.g. from signup email domain via
@@ -36,7 +35,6 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
   const [faculty, setFaculty] = useState("");
   const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
-  const [dailyNewEventsOptIn, setDailyNewEventsOptIn] = useState(false);
 
   const validTopics = useMemo(
     () => selectedTopics.filter((t) => isEventCategory(t)),
@@ -68,7 +66,6 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
         selectedEventIds,
         faculty,
         isFirstYear: isFirstYear ?? false,
-        dailyNewEventsOptIn,
       });
       return;
     }
@@ -82,7 +79,6 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     isFirstYear,
     step,
     selectedEventIds,
-    dailyNewEventsOptIn,
     onComplete,
   ]);
 
@@ -98,11 +94,9 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     selectedEventIds,
     faculty,
     isFirstYear,
-    dailyNewEventsOptIn,
     canContinue,
     setFaculty,
     setIsFirstYear,
-    setDailyNewEventsOptIn,
     setSelectedTopics,
     toggleTopic,
     toggleEventId,

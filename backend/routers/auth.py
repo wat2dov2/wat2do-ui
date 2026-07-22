@@ -8,6 +8,7 @@ from core.client_ip import get_client_ip
 from core.config import settings
 from core.errors import INVALID_OR_EXPIRED_TOKEN, NO_REFRESH_TOKEN
 from core.exceptions import AuthenticationError, ServiceError
+from core.product_control import product_control
 from core.rate_limit import (
     auth_refresh_rate_limiter,
     send_otp_rate_limiter,
@@ -23,7 +24,7 @@ from services.auth_service import auth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-COOKIE_MAX_AGE = 30 * 24 * 3600
+COOKIE_MAX_AGE = product_control.authentication.session_cookie_days * 24 * 3600
 
 
 # Fail fast in production without Secure cookies. The refresh token is a
@@ -45,7 +46,7 @@ _optional_bearer = HTTPBearer(auto_error=False)
 # Scope the refresh cookie to the browser-visible refresh endpoint only.
 # Narrower paths reduce CSRF / accidental-attach surface for the long-lived
 # credential. Path comes from settings.refresh_cookie_path (default
-# /auth/refresh; production Vercel rewrites use /api/auth/refresh).
+# /auth/refresh; production same-origin API rewrites use /api/auth/refresh).
 REFRESH_COOKIE_PATH = settings.refresh_cookie_path
 
 

@@ -56,11 +56,11 @@ export function OrganizationPanel({ onNavigate }: OrganizationPanelProps) {
         </div>
 
         {recentActivityLoading ? (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
             <LoadingPage />
           </div>
         ) : (
-          <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <div className="bg-surface border border-border rounded-xl p-8 text-center">
             <p className="text-sm text-muted-foreground">{t("organizationPanel.noRecentActivity")}</p>
           </div>
         )}

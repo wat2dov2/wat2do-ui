@@ -29,6 +29,7 @@ import { ROUTES } from "@/shared/constants/routes";
 import { sanitizeHref } from "@/shared/utils/url";
 import type { Organization } from "@/shared/types";
 import { OrganizationCategoryBadges } from "./OrganizationCategoryBadges";
+import { getSchoolDisplayName } from "@/shared/constants/schools";
 import {
   getMyMembershipStatus,
   requestToJoinOrganization,
@@ -170,15 +171,15 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
     if (membership.status === "pending") {
       return (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 rounded-lg text-sm">
+          <div className="flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/20 text-warning rounded-lg text-sm">
             <HelpCircle className="size-4 shrink-0" />
             <span>{t("organizationPanel.requestPending")}</span>
           </div>
           <Button
-            variant="outline"
+            variant="secondary"
             onMouseDown={handleLeaveOrCancel}
             disabled={actionLoading}
-            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-medium"
+            className="w-full border-destructive/30 text-destructive hover:bg-surface-hover font-medium"
           >
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
             {t("organizationPanel.cancelRequest")}
@@ -190,15 +191,15 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
     if (membership.status === "approved") {
       return (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 text-green-500 rounded-lg text-sm">
+          <div className="flex items-center gap-2 px-3 py-2 bg-success/10 border border-success/20 text-success rounded-lg text-sm">
             <CheckCircle2 className="size-4 shrink-0" />
             <span>{t("organizationPanel.memberBadge")}</span>
           </div>
           <Button
-            variant="outline"
+            variant="secondary"
             onMouseDown={handleLeaveOrCancel}
             disabled={actionLoading}
-            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 font-medium"
+            className="w-full border-destructive/30 text-destructive hover:bg-surface-hover font-medium"
           >
             {actionLoading && <Loader2 className="size-4 animate-spin mr-2" />}
             {t("organizationPanel.leaveClub")}
@@ -210,7 +211,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
     if (membership.status === "rejected") {
       return (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg text-sm">
+          <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-sm">
             <AlertCircle className="size-4 shrink-0" />
             <span>{t("organizationPanel.requestDeclined")}</span>
           </div>
@@ -245,7 +246,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
                   {organization.organization_name}
                 </DrawerTitle>
                 <DrawerDescription className="text-sm text-muted-foreground">
-                  {organization.organization_type}
+                  {getSchoolDisplayName(organization.school)}
                 </DrawerDescription>
               </div>
               <OrganizationCategoryBadges
@@ -259,7 +260,7 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
           <div className="mt-5 space-y-5">
             {/* Social Links */}
             <div className="p-4 bg-secondary/30 border border-border rounded-xl space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <h4 className="text-xs font-semibold text-muted-foreground">
                 {t("organizationPanel.linksAndSocials")}
               </h4>
               <div className="grid grid-cols-1 gap-2">
@@ -305,11 +306,11 @@ export function OrganizationDetailsModal({ organization, isOpen, onClose, onStat
                 {isAuthenticated && (
                   <Button
                     type="button"
-                    variant={isSaved ? "secondary" : "outline"}
+                    variant={isSaved ? "secondary" : "secondary"}
                     size="icon"
                     onMouseDown={() => toggleSave(organization.id)}
                     className={`border-border/80 shrink-0 ${
-                      isSaved ? "border-primary/25 bg-primary/10 text-primary hover:bg-primary/15" : ""
+                      isSaved ? "border-primary/25 bg-primary/10 text-primary hover:bg-surface-hover" : ""
                     }`}
                     title={isSaved ? t("organizations.saved") : t("organizations.save")}
                   >

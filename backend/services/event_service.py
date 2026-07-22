@@ -6,12 +6,13 @@ response models as the ``occurrences`` list.
 """
 
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from postgrest.exceptions import APIError
 
-from core.cache import TTLCache
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
 from core.errors import EVENT_ALREADY_PAST, ORGANIZATION_NOT_FOUND
@@ -19,7 +20,6 @@ from core.exceptions import NotFoundError, ValidationError
 from core.pagination import fetch_all_pages
 from core.retry import supabase_retry
 from core.tables import EVENTS
-from recommender.service import invalidate_candidates_cache
 from schemas.event import (
     EventCreate,
     EventResponse,
@@ -28,7 +28,7 @@ from schemas.event import (
     EventUpdate,
     LatestEventResponse,
 )
-from schemas.event_date import OccurrenceResponse
+from schemas.event_date import OccurrenceResponse, OccurrenceUpdate
 from schemas.organization import OrganizationEventStats
 from services import event_date_service, event_query, going_event_service, interaction_service
 from services.event_feed_revalidation import event_feed_revalidation_service
@@ -36,23 +36,11 @@ from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
 
-# Mirrors the recommender's _candidates_cache pattern: one in-process TTLCache
-# per cached query, cleared on write. Short TTL is the real freshness guarantee
-# - an in-process write (create/update/delete) clears the cache immediately via
-# invalidate_events_cache(), but an out-of-process writer (the scraper job)
-# can't reach it, so those writes self-heal within this window. Cheap because
-# the keyspace is one entry per school.
-_EVENTS_CACHE_TTL = 60
-_events_cache = TTLCache(default_ttl=_EVENTS_CACHE_TTL)
 
-
-def invalidate_events_cache() -> None:
-    """Drop the cached upcoming-events lists.
-
-    Called from every event write path so a freshly created / edited / deleted
-    event shows up on the next browse without waiting for the TTL.
-    """
-    _events_cache.clear()
+@dataclass(frozen=True)
+class EventUpdateResult:
+    event: EventResponse
+    recipient_ids: list[UUID]
 
 
 # Event fields whose changes constitute a "material" update - the ones
@@ -95,7 +83,7 @@ def _resolve_organization_fields(organization_id: int) -> dict[str, str | None]:
         raise NotFoundError(ORGANIZATION_NOT_FOUND)
     return {
         "organization": organization.organization_name,
-        "organization_type": organization.organization_type,
+        "association_affiliated": organization.association_affiliated,
         "school": organization.school,
     }
 
@@ -208,22 +196,6 @@ def _today_start_utc(school: str | None) -> datetime:
     return local_midnight.astimezone(timezone.utc)
 
 
-def _load_upcoming_events(school: str | None) -> list[EventSummaryResponse]:
-    """Browse-list binding of the shared upcoming-events loader.
-
-    "Upcoming" for the public list means "starts today or later" in the
-    school's local day; the rest (dedup, hydrate, cap) is the shared query in
-    ``event_query``. This all-upcoming loader is retained for promoted-event
-    filtering; the public browse route uses ``list_events`` for server paging.
-    """
-    return event_query.load_upcoming_events(
-        since=_today_start_utc(school),
-        school=school,
-        cap=MAX_LIST_LIMIT,
-        model=EventSummaryResponse,
-    )
-
-
 def list_events(
     school: str | None = None,
     skip: int = 0,
@@ -282,11 +254,12 @@ def list_promoted_events(school: str | None = None) -> list[EventSummaryResponse
     active_ids = credit_service.get_active_promoted_event_ids()
     if not active_ids:
         return []
-    all_upcoming = _events_cache.get_or_compute(
-        school or "_all",
-        lambda: _load_upcoming_events(school),
+    promoted, _ = list_events(
+        school=school,
+        limit=MAX_LIST_LIMIT,
+        ids=active_ids,
     )
-    return [e for e in all_upcoming if e.id in active_ids]
+    return promoted
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
@@ -307,8 +280,6 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
         raise
 
     occ_rows = event_date_service.list_for_event(new_id)
-    invalidate_candidates_cache()
-    invalidate_events_cache()
     event_feed_revalidation_service.revalidate_school(new_row.get("school"))
     return event_query.hydrate_event(new_row, occ_rows, EventResponse)
 
@@ -329,7 +300,7 @@ def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:
     return latest_end < current
 
 
-def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
+def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
     """Update an event, refusing edits to already-past events.
 
     Past-event freezing (audit I12) - once every occurrence has passed,
@@ -354,18 +325,49 @@ def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
     if payload.get("organization_id") is not None:
         payload.update(_resolve_organization_fields(payload["organization_id"]))
 
-    if payload:
-        get_sb().table(EVENTS).update(payload).eq("id", event_id).execute()
+    recipient_ids = update_event_and_occurrences(
+        event_id,
+        payload,
+        data.occurrences if new_occurrences is not None else None,
+    )
 
-    if new_occurrences is not None and data.occurrences is not None:
-        event_date_service.replace_occurrences(event_id, data.occurrences)
-
-    invalidate_candidates_cache()
-    invalidate_events_cache()
     updated = get_event(event_id)
     if updated is not None:
         event_feed_revalidation_service.revalidate_schools([existing.school, updated.school])
-    return updated
+        return EventUpdateResult(
+            event=updated,
+            recipient_ids=recipient_ids,
+        )
+    return None
+
+
+def update_event_and_occurrences(
+    event_id: int,
+    event_patch: dict,
+    occurrences: list[OccurrenceUpdate] | None,
+) -> list[UUID]:
+    """Apply an event patch and stable occurrence set through the transaction RPC."""
+    response = (
+        get_sb()
+        .rpc(
+            "update_event_with_occurrences",
+            {
+                "p_event_id": event_id,
+                "p_event_patch": event_patch,
+                "p_occurrences": (
+                    [
+                        occurrence.model_dump(mode="json", exclude_none=False)
+                        for occurrence in occurrences
+                    ]
+                    if occurrences is not None
+                    else None
+                ),
+            },
+        )
+        .execute()
+    )
+    result_row = response.data[0] if response.data else {}
+    return [UUID(str(user_id)) for user_id in result_row.get("recipient_ids") or []]
 
 
 def delete_event(event_id: int) -> bool:
@@ -385,8 +387,6 @@ def delete_event(event_id: int) -> bool:
 
     r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()
     if r.data:
-        invalidate_candidates_cache()
-        invalidate_events_cache()
         deleted = r.data[0] if isinstance(r.data[0], dict) else {}
         event_feed_revalidation_service.revalidate_school(deleted.get("school"))
     return bool(r.data)
@@ -439,10 +439,9 @@ def _jsonable(value: object) -> object | None:
 def _occurrence_jsonable(occ: OccurrenceResponse) -> dict:
     """Stable, comparable shape for occurrence diffs.
 
-    Strips ``id`` and ``created_at`` (DB metadata that changes on every
-    ``replace_occurrences`` regardless of whether the underlying date
-    moved). The remaining fields (dtstart_utc, dtend_utc, duration, tz)
-    are what users actually care about being notified on.
+    Strips ``id`` and ``created_at`` because they are database metadata.
+    The remaining fields (dtstart_utc, dtend_utc, duration, tz) are what
+    users actually care about being notified on.
     """
     return {
         "dtstart_utc": occ.dtstart_utc.isoformat(),

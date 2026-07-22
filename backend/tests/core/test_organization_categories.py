@@ -20,14 +20,14 @@ class TestOrganizationCreateCategoryValidation:
         with pytest.raises(ValueError, match="categories must be from"):
             OrganizationCreate(
                 organization_name="Test Org",
-                organization_type="WUSA",
+                association_affiliated=True,
                 categories=["NotACategory"],
             )
 
     def test_accepts_canonical_categories(self):
         organization = OrganizationCreate(
             organization_name="Test Org",
-            organization_type="WUSA",
+            association_affiliated=True,
             categories=[ORGANIZATION_CATEGORIES[0]],
         )
         assert organization.categories == [ORGANIZATION_CATEGORIES[0]]

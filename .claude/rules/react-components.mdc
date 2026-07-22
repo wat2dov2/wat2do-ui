@@ -13,3 +13,5 @@ alwaysApply: false
 - For list items or heavier, frequently-rendered components, wrap in `React.memo` when props are stable (see `EventCard` and sidebar button components).
 - Co-locate modal-related pieces: if you add a complex modal, follow the `SubmitEventModal` pattern with `[Name]Modal.tsx` plus optional `[Name]Modal.context.tsx` and `[Name]Modal.reducer.ts` right next to it.
 - Do not mix default and named exports for the same component unless there is a strong reason; prefer a single, clear export style per file.
+- Section headings that sit above a divider use the shared spacing convention: 8px (`space-y-2`) between heading and divider, 12px (`space-y-3`) from divider to content.
+  Reuse `EventSectionHeader` (`src/features/events/components/EventDetailsSections.tsx`) or mirror `modal-components` `InfoRow`/`InfoSection` spacing – never hand-roll ad-hoc margins around `Separator`.

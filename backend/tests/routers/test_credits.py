@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
+from uuid import UUID
 
 from core.constants import MAX_CREDITS_PER_ADD, ROLE_ADMIN
 from schemas.credit import PromotionResponse
@@ -40,7 +41,7 @@ def _mock_event(**overrides) -> EventResponse:
         "created_by": FAKE_USER["id"],
         "occurrences": [
             {
-                "id": 1,
+                "id": str(UUID(int=1)),
                 "event_id": 1,
                 "dtstart_utc": start,
                 "dtend_utc": end,

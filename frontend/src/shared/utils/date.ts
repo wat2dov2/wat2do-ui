@@ -33,6 +33,19 @@ export function getPrimaryOccurrence(event: { occurrences?: Occurrence[] }): Occ
   return sorted[0] || null;
 }
 
+/** Compact time-until label ("3d 4h", "15h 34m", "12m"); null once the start has passed. */
+export function formatCountdown(startMs: number, nowMs: number): string | null {
+  const diff = startMs - nowMs;
+  if (diff <= 0) return null;
+  const totalMinutes = Math.floor(diff / 60_000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
 export function isEventHappeningNow(
   event: { occurrences?: Occurrence[] },
   currentDate: Date = new Date()

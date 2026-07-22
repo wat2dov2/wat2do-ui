@@ -19,7 +19,7 @@ function Command({
     <CommandPrimitive
       data-slot="command"
       className={cn(
-        "text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-xl",
+        "text-foreground flex h-full w-full flex-col overflow-hidden rounded-xl",
         className
       )}
       {...props}
@@ -170,7 +170,6 @@ function CommandShortcut({
 }
 
 export {
-  Command,
   CommandDialog,
   CommandInput,
   CommandList,

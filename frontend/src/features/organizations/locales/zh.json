@@ -1,5 +1,6 @@
 {
   "organizations": {
+    "associationAffiliated": "隶属于 {{association}}",
     "claimOwnership": "认领组织所有权",
     "claimOwnershipDesc": "请求成为该组织的主要管理员和创建者：",
     "executiveRole": "您的执行职位",

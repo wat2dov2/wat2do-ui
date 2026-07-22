@@ -40,7 +40,7 @@ export function RejectSubmissionDialog({
         <div className="space-y-4 mt-4">
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">
-              {t("admin.rejectionReason")} <span className="text-error">*</span>
+              {t("admin.rejectionReason")} <span className="text-destructive">*</span>
             </label>
             <textarea
               value={rejectionReason}
@@ -51,7 +51,7 @@ export function RejectSubmissionDialog({
             />
           </div>
           <div className="flex gap-2 justify-end pt-2">
-            <Button variant="outline" onClick={onClose} disabled={isRejecting}>
+            <Button variant="secondary" onClick={onClose} disabled={isRejecting}>
               {t("common.cancel")}
             </Button>
             <LoadingButton

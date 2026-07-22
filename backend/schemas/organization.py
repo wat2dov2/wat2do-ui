@@ -14,7 +14,6 @@ from core.constants import (
     MAX_ORGANIZATION_CATEGORY_COUNT,
     MAX_ORGANIZATION_CATEGORY_LENGTH,
     MAX_ORGANIZATION_NAME_LENGTH,
-    MAX_ORGANIZATION_TYPE_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_URL_LENGTH,
     ORGANIZATION_CATEGORIES,
@@ -89,11 +88,11 @@ class OrganizationCreate(BaseModel):
     organization_page: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     ig: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    organization_type: str = Field(..., min_length=1, max_length=MAX_ORGANIZATION_TYPE_LENGTH)
+    association_affiliated: bool = False
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     school: str = Field(default="uwaterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH)
 
-    @field_validator("organization_name", "organization_type", "school")
+    @field_validator("organization_name", "school")
     @classmethod
     def _strip_non_blank(cls, v: str) -> str:
         v = (v or "").strip()
@@ -122,11 +121,11 @@ class OrganizationUpdate(BaseModel):
     organization_page: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     ig: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    organization_type: str | None = Field(default=None, max_length=MAX_ORGANIZATION_TYPE_LENGTH)
+    association_affiliated: bool | None = None
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     school: str | None = Field(default=None, max_length=MAX_SCHOOL_LENGTH)
 
-    @field_validator("organization_name", "organization_type", "school")
+    @field_validator("organization_name", "school")
     @classmethod
     def _not_blank(cls, v: str | None) -> str | None:
         if v is None:
@@ -162,7 +161,7 @@ class OrganizationResponse(BaseModel):
     organization_page: str | None = None
     ig: str | None = None
     discord: str | None = None
-    organization_type: str
+    association_affiliated: bool = False
     logo_url: str | None = None
     created_by: str | None = None
     school: str | None = None

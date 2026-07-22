@@ -4,17 +4,19 @@ import hashlib
 import json
 import logging
 from typing import Any
+from uuid import UUID
 
 from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
 from core.database import get_sb
-from core.tables import EVENTS, USER_GOING_EVENTS, USERS
+from core.tables import USERS
+from schemas.event import EventResponse
 from services.email_service import EmailMessage, email_service
 from services.notifications.delivery_log import (
     _mark_log_failed,
     _mark_log_sent,
-    _try_insert_log_row,
+    claim_delivery,
 )
-from services.notifications.preferences import is_enabled
+from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     _render_event_change_html,
     _render_event_change_text,
@@ -34,7 +36,11 @@ def _compute_change_hash(diff: dict[str, dict[str, Any]]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
-def enqueue_event_change(event_id: int, diff: dict[str, dict[str, Any]]) -> int:
+def enqueue_event_change(
+    event: EventResponse,
+    diff: dict[str, dict[str, Any]],
+    recipient_ids: list[UUID],
+) -> int:
     """Fanout an event_change alert to everyone going to the event.
 
     Returns the number of emails actually sent (after prefs + dedup).
@@ -43,28 +49,23 @@ def enqueue_event_change(event_id: int, diff: dict[str, dict[str, Any]]) -> int:
     if not diff:
         return 0
 
-    event_row = (
-        get_sb()
-        .table(EVENTS)
-        .select("title, location, cancelled")
-        .eq("id", event_id)
-        .limit(1)
-        .execute()
-    ).data or []
-    if not event_row:
-        log.warning("enqueue_event_change: event %s not found", event_id)
-        return 0
-    event_summary = event_row[0]
-
-    going_rows = (
-        get_sb().table(USER_GOING_EVENTS).select("user_id").eq("event_id", event_id).execute()
-    ).data or []
-    user_ids = [r["user_id"] for r in going_rows]
+    event_id = event.id
+    event_summary = event.model_dump(mode="json")
+    user_ids = list(dict.fromkeys(str(user_id) for user_id in recipient_ids))
     if not user_ids:
         return 0
 
-    users = (get_sb().table(USERS).select("id, email").in_("id", user_ids).execute()).data or []
+    users: list[dict] = []
+    for start in range(0, len(user_ids), 500):
+        chunk = user_ids[start : start + 500]
+        users.extend(
+            (get_sb().table(USERS).select("id,email").in_("id", chunk).execute()).data or []
+        )
     by_id = {u["id"]: u for u in users}
+    enabled_user_ids = get_enabled_user_ids(
+        user_ids,
+        NOTIFICATION_TYPE_EVENT_CHANGE,
+    )
 
     change_hash = _compute_change_hash(diff)
     target_id = f"{event_id}:{change_hash}"
@@ -74,7 +75,7 @@ def enqueue_event_change(event_id: int, diff: dict[str, dict[str, Any]]) -> int:
         user = by_id.get(user_id)
         if not user or not user.get("email"):
             continue
-        if not is_enabled(user_id, NOTIFICATION_TYPE_EVENT_CHANGE):
+        if user_id not in enabled_user_ids:
             continue
         if _send_event_change(
             user_id=user_id,
@@ -97,7 +98,7 @@ def _send_event_change(
     diff: dict,
     target_id: str,
 ) -> bool:
-    row_id = _try_insert_log_row(
+    row_id = claim_delivery(
         user_id=user_id,
         notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
         target_id=target_id,

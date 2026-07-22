@@ -87,20 +87,20 @@ export function PromotionUpsell({
                 </span>
               </div>
               {!canAfford && (
-                <p className="text-xs text-error">{t("promotion.notEnoughCredits")}</p>
+                <p className="text-xs text-destructive">{t("promotion.notEnoughCredits")}</p>
               )}
             </div>
 
             <DrawerFooter className="p-0 sm:flex-row">
               <DrawerClose asChild>
-                <Button variant="outline" className="flex-1">
+                <Button variant="secondary" className="flex-1">
                   {t("promotion.maybeLater")}
                 </Button>
               </DrawerClose>
               <Button
                 onMouseDown={onPromote}
                 disabled={!canAfford}
-                className="flex-1 bg-primary hover:bg-primary/90"
+                className="flex-1 bg-primary hover:bg-primary-hover"
               >
                 <span className="flex items-center gap-1.5">
                   <Coins className="size-4" />

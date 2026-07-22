@@ -78,3 +78,29 @@ def is_enabled(user_id: str, notification_type: str) -> bool:
     if r.data:
         return bool(r.data[0]["enabled"])
     return NOTIFICATION_DEFAULT_ENABLED.get(notification_type, False)
+
+
+def get_enabled_user_ids(
+    user_ids: list[str],
+    notification_type: str,
+) -> set[str]:
+    """Resolve one notification preference for many users in chunked reads."""
+    unique_ids = list(dict.fromkeys(user_ids))
+    if not unique_ids:
+        return set()
+
+    explicit: dict[str, bool] = {}
+    for start in range(0, len(unique_ids), 500):
+        chunk = unique_ids[start : start + 500]
+        rows = (
+            get_sb()
+            .table(NOTIFICATION_PREFERENCES)
+            .select("user_id,enabled")
+            .eq("notification_type", notification_type)
+            .in_("user_id", chunk)
+            .execute()
+        ).data or []
+        explicit.update({str(row["user_id"]): bool(row["enabled"]) for row in rows})
+
+    default_enabled = NOTIFICATION_DEFAULT_ENABLED.get(notification_type, False)
+    return {user_id for user_id in unique_ids if explicit.get(user_id, default_enabled)}

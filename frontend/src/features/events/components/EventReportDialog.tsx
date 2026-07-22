@@ -5,13 +5,16 @@ import {
   Drawer,
   DrawerContent,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Textarea } from "@/shared/ui/textarea";
+import { Field, FieldLabel } from "@/shared/ui/field";
 import { toast } from "@/shared/hooks/use-toast";
+import { DrawerBody } from "@/shared/layout";
 import { reportEventToBackend } from "@/features/events/api/events.api";
 
 interface EventReportDialogProps {
@@ -60,10 +63,10 @@ export function EventReportDialog({
   return (
     <Drawer open={open} onOpenChange={(nextOpen) => !isSubmitting && onOpenChange(nextOpen)}>
       <DrawerContent className="overflow-hidden p-0">
-        <div className="mx-auto w-full max-w-md space-y-4 px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
-          {isSubmitted ? (
-            <>
-              <DrawerHeader className="items-start p-0 text-left">
+        {isSubmitted ? (
+          <>
+            <DrawerBody className="mx-auto w-full max-w-md">
+              <DrawerHeader className="p-0 text-left">
                 <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <CheckCircle2 className="size-5" />
                 </div>
@@ -72,15 +75,16 @@ export function EventReportDialog({
                   {t("events.reportDialog.submittedDescription", { title: eventTitle })}
                 </DrawerDescription>
               </DrawerHeader>
-
-              <div className="flex justify-end">
-                <Button type="button" onMouseDown={() => onOpenChange(false)}>
-                  {t("common.done")}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
+            </DrawerBody>
+            <DrawerFooter className="flex-row justify-end">
+              <Button type="button" onMouseDown={() => onOpenChange(false)}>
+                {t("common.done")}
+              </Button>
+            </DrawerFooter>
+          </>
+        ) : (
+          <>
+            <DrawerBody className="mx-auto w-full max-w-md">
               <DrawerHeader className="p-0 text-left">
                 <DrawerTitle>{t("events.reportDialog.title")}</DrawerTitle>
                 <DrawerDescription>
@@ -88,38 +92,43 @@ export function EventReportDialog({
                 </DrawerDescription>
               </DrawerHeader>
 
-              <Textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={t("events.reportDialog.placeholder")}
-                maxLength={500}
-                className="min-h-28"
-                disabled={isSubmitting}
-                autoFocus
-              />
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onMouseDown={() => onOpenChange(false)}
+              <Field>
+                <FieldLabel htmlFor="event-report-reason">
+                  {t("events.reportDialog.placeholder")}
+                </FieldLabel>
+                <Textarea
+                  id="event-report-reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={t("events.reportDialog.placeholder")}
+                  maxLength={500}
+                  className="min-h-28"
                   disabled={isSubmitting}
-                >
-                  {t("common.cancel")}
-                </Button>
-                <LoadingButton
-                  type="button"
-                  onMouseDown={handleSubmit}
-                  disabled={!trimmedReason}
-                  isLoading={isSubmitting}
-                  loadingText={t("common.submitting")}
-                >
-                  {t("events.reportDialog.submit")}
-                </LoadingButton>
-              </div>
-            </>
-          )}
-        </div>
+                  autoFocus
+                />
+              </Field>
+            </DrawerBody>
+            <DrawerFooter className="flex-row justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onMouseDown={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                {t("common.cancel")}
+              </Button>
+              <LoadingButton
+                type="button"
+                onMouseDown={handleSubmit}
+                disabled={!trimmedReason}
+                isLoading={isSubmitting}
+                loadingText={t("common.submitting")}
+              >
+                {t("events.reportDialog.submit")}
+              </LoadingButton>
+            </DrawerFooter>
+          </>
+        )}
       </DrawerContent>
     </Drawer>
   );

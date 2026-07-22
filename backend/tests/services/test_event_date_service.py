@@ -1,22 +1,13 @@
-"""Service-level tests for event_date_service.
+"""Service-level tests for chunked occurrence reads."""
 
-The interesting paths are:
-- ``replace_occurrences`` snapshot+restore on INSERT failure.
-- ``list_for_events`` chunking when given >chunk_size ids.
-"""
+from uuid import UUID
 
-from datetime import datetime, timezone
-from unittest.mock import MagicMock
-
-import pytest
-
-from schemas.event_date import OccurrenceCreate
 from services import event_date_service
 
 
 def _occ_row(event_id: int, dtstart: str, occ_id: int = 1) -> dict:
     return {
-        "id": occ_id,
+        "id": str(UUID(int=occ_id)),
         "event_id": event_id,
         "dtstart_utc": dtstart,
         "dtend_utc": None,
@@ -26,63 +17,15 @@ def _occ_row(event_id: int, dtstart: str, occ_id: int = 1) -> dict:
     }
 
 
-def _occ_create(dtstart_iso: str) -> OccurrenceCreate:
-    return OccurrenceCreate(dtstart_utc=datetime.fromisoformat(dtstart_iso))
-
-
-def test_replace_occurrences_restores_snapshot_on_insert_failure(fake_sb, patch_sb):
-    """If create_occurrences raises, the snapshot is re-inserted.
-
-    Pre-fix: a DELETE-then-INSERT with no rollback meant a failed INSERT
-    left the event with zero occurrences (invisible in date-filtered
-    listings AND treated as always-mutable by ``has_ended``). The fix
-    snapshots the existing rows, then re-inserts them on failure.
-    """
+def test_list_by_ids_fetches_only_selected_occurrences(fake_sb, patch_sb):
     patch_sb("services.event_date_service")
-    # Sequence:
-    #   1. list_for_event(event_id=42) -> snapshot row
-    #   2. delete eq("event_id", 42)   -> [] (delete returns [])
-    #   3. insert(new_payload)         -> RAISES
-    #   4. insert(snapshot_payload)    -> [restored row]
-    fake_sb.queue_responses(
-        [
-            [_occ_row(42, "2026-05-01T18:00:00+00:00", 99)],  # snapshot fetch
-            [],  # delete
-        ]
-    )
-    # The third execute (the insert that should fail) — set up via raise_on_execute
-    # but queue_responses owns the side_effect, so swap to a smarter side_effect.
-    state = {"call": 0}
-    snapshot_resp = MagicMock(data=[_occ_row(42, "2026-05-01T18:00:00+00:00", 99)], count=0)
-    delete_resp = MagicMock(data=[], count=0)
-    restored_resp = MagicMock(data=[_occ_row(42, "2026-05-01T18:00:00+00:00", 99)], count=0)
+    occurrence_id = str(UUID(int=99))
+    fake_sb.set_response(data=[_occ_row(42, "2026-05-01T18:00:00+00:00", 99)])
 
-    def _smart():
-        state["call"] += 1
-        n = state["call"]
-        if n == 1:
-            return snapshot_resp
-        if n == 2:
-            return delete_resp
-        if n == 3:
-            raise RuntimeError("simulated INSERT failure")
-        if n == 4:
-            return restored_resp
-        return MagicMock(data=[], count=0)
+    result = event_date_service.list_by_ids([occurrence_id])
 
-    fake_sb.execute.side_effect = _smart
-
-    with pytest.raises(RuntimeError, match="simulated INSERT failure"):
-        event_date_service.replace_occurrences(42, [_occ_create("2026-06-01T18:00:00+00:00")])
-
-    # Confirm the restore-insert ran (call #4).
-    assert state["call"] == 4
-
-    # Confirm the restore payload contains the snapshot's dtstart, NOT the new one.
-    restore_call = fake_sb.insert.call_args_list[-1]
-    restore_payload = restore_call[0][0]
-    assert isinstance(restore_payload, list)
-    assert restore_payload[0]["dtstart_utc"] == "2026-05-01T18:00:00+00:00"
+    assert result[0].id == UUID(occurrence_id)
+    fake_sb.in_.assert_called_once_with("id", [occurrence_id])
 
 
 def test_list_for_events_chunks_large_id_lists(fake_sb, patch_sb):

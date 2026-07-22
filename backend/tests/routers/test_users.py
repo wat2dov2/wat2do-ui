@@ -35,7 +35,7 @@ def test_get_me_returns_user(authenticated_client, monkeypatch):
     resp = authenticated_client.get("/users/me")
     assert resp.status_code == 200
     assert resp.json()["email"] == FAKE_USER["email"]
-    get_user_by_supabase_id.assert_called_once_with(FAKE_USER["id"], bypass_cache=True)
+    get_user_by_supabase_id.assert_called_once_with(FAKE_USER["id"])
 
 
 # ── PATCH /users/me ─────────────────────────────────────────────────

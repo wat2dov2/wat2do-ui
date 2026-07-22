@@ -19,9 +19,19 @@ export interface FloatingDockItem {
   isActive?: boolean;
 }
 
-const dockItemHitboxClassName =
-  "flex size-10 items-center justify-center touch-manipulation";
+/** Resting icon circle matches BackToTopButton (`size-9` / 36px). */
+const DOCK_ICON_SIZE = 36;
+const DOCK_ICON_SIZE_ZOOMED = 72;
+const DOCK_GLYPH_SIZE = 18;
+const DOCK_GLYPH_SIZE_ZOOMED = 36;
 
+/**
+ * Aceternity Floating Dock magnification pattern:
+ * https://ui.aceternity.com/components/floating-dock
+ * Mouse X drives per-icon distance → spring width/height. The growing
+ * icon must own layout (no fixed hitbox size); the row uses items-end so
+ * icons scale upward from a shared baseline.
+ */
 export const FloatingDock = ({
   items,
   desktopClassName,
@@ -56,8 +66,8 @@ const FloatingDockDesktop = ({
         onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => mouseX.set(Infinity)}
         className={cn(
-          // Match EventsBackToTopButton (fixed bottom-4 + size-10 / icon-lg).
-          "relative z-10 flex h-10 max-w-full items-center justify-center gap-4 px-2 sm:px-6",
+          // Height/baseline come from AppLayout bottom chrome; items-end grows upward.
+          "relative z-10 flex max-w-full items-end justify-center gap-4 px-2 sm:px-6",
           className,
         )}
       >
@@ -84,18 +94,29 @@ function IconContainer({
   const distance = useTransform(mouseX, (val) => {
     if (!canMagnify) return Infinity;
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthTransform = useTransform(distance, [-150, 0, 150], [36, 52, 36]);
-  const heightTransform = useTransform(distance, [-150, 0, 150], [36, 52, 36]);
+  const widthTransform = useTransform(
+    distance,
+    [-150, 0, 150],
+    [DOCK_ICON_SIZE, DOCK_ICON_SIZE_ZOOMED, DOCK_ICON_SIZE],
+  );
+  const heightTransform = useTransform(
+    distance,
+    [-150, 0, 150],
+    [DOCK_ICON_SIZE, DOCK_ICON_SIZE_ZOOMED, DOCK_ICON_SIZE],
+  );
 
-  const widthTransformIcon = useTransform(distance, [-150, 0, 150], [18, 28, 18]);
+  const widthTransformIcon = useTransform(
+    distance,
+    [-150, 0, 150],
+    [DOCK_GLYPH_SIZE, DOCK_GLYPH_SIZE_ZOOMED, DOCK_GLYPH_SIZE],
+  );
   const heightTransformIcon = useTransform(
     distance,
     [-150, 0, 150],
-    [18, 28, 18],
+    [DOCK_GLYPH_SIZE, DOCK_GLYPH_SIZE_ZOOMED, DOCK_GLYPH_SIZE],
   );
 
   const width = useSpring(widthTransform, {
@@ -133,10 +154,11 @@ function IconContainer({
       }}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "relative flex size-9 aspect-square items-center justify-center rounded-full",
+        "relative flex aspect-square items-center justify-center rounded-full",
+        !canMagnify && "size-9",
         isActive
-          ? "bg-primary text-white"
-          : "border border-border bg-secondary text-foreground/80 hover:text-foreground hover:bg-secondary/80",
+          ? "bg-primary text-primary-foreground"
+          : "border border-border bg-secondary text-foreground/80 hover:text-foreground hover:bg-secondary-hover",
       )}
     >
       <AnimatePresence>
@@ -145,7 +167,7 @@ function IconContainer({
             initial={{ opacity: 0, y: 10, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 2, x: "-50%" }}
-            className="absolute -top-9 left-1/2 w-fit rounded-md border border-border bg-popover px-2 py-0.5 text-xs whitespace-pre text-popover-foreground shadow-sm"
+            className="absolute -top-9 left-1/2 w-fit rounded-md border border-border bg-surface-elevated px-2 py-0.5 text-xs whitespace-pre text-foreground shadow-sm"
           >
             {title}
           </m.div>
@@ -160,12 +182,16 @@ function IconContainer({
     </m.div>
   );
 
+  // No fixed size on the wrapper - the animated icon must drive layout width
+  // or neighbors will not part and magnification looks broken.
+  const hitboxClassName = "flex items-end justify-center touch-manipulation";
+
   if (onMouseDown) {
     return (
       <button
         type="button"
         onMouseDown={onMouseDown}
-        className={cn(dockItemHitboxClassName, "cursor-pointer")}
+        className={cn(hitboxClassName, "cursor-pointer")}
       >
         {content}
       </button>
@@ -174,7 +200,7 @@ function IconContainer({
 
   if (href) {
     return (
-      <Link href={href} className={dockItemHitboxClassName}>
+      <Link href={href} className={hitboxClassName}>
         {content}
       </Link>
     );

@@ -41,22 +41,22 @@ _get_openai_client = get_openai_client
 @router.post("/generate-filters", response_model=FilterStateResponse)
 def generate_filters(
     body: AIPromptRequest,
-    user: dict = Depends(get_current_user),
+    _user: dict = Depends(get_current_user),
     _rl: None = Depends(ai_generate_filters_rate_limiter.dependency(key_func=_user_id_key)),
 ):
     client = _get_openai_client()
-    result = svc_generate_filters(body.prompt, client=client, user_id=user["id"])
+    result = svc_generate_filters(body.prompt, client=client)
     return FilterStateResponse(**result)
 
 
 @router.post("/generate-event", response_model=EventFormDataResponse)
 def generate_event(
     body: AIPromptRequest,
-    user: dict = Depends(get_current_user),
+    _user: dict = Depends(get_current_user),
     _rl: None = Depends(ai_generate_event_rate_limiter.dependency(key_func=_user_id_key)),
 ):
     client = _get_openai_client()
-    result = svc_generate_event(body.prompt, client=client, user_id=user["id"])
+    result = svc_generate_event(body.prompt, client=client)
     return EventFormDataResponse(**result)
 
 
@@ -73,7 +73,6 @@ async def parse_event_image(
         contents,
         file.content_type or "image/jpeg",
         client=client,
-        user_id=user["id"],
         user_school=school,
     )
 

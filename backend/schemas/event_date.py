@@ -41,8 +41,17 @@ class OccurrenceCreate(BaseModel):
         return self
 
 
+class OccurrenceUpdate(OccurrenceCreate):
+    """Occurrence payload for event edits.
+
+    An ID retains an existing occurrence. A missing ID creates a new one.
+    """
+
+    id: UUID | None = None
+
+
 class OccurrenceResponse(BaseModel):
-    id: UUID | int
+    id: UUID
     event_id: int
     dtstart_utc: datetime
     dtend_utc: datetime | None = None

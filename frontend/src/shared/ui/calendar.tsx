@@ -54,7 +54,7 @@ function Calendar({
         month_caption: "flex items-center justify-center h-(--cell-size) w-full px-(--cell-size)",
         dropdowns: "w-full flex items-center text-sm font-medium justify-center h-(--cell-size) gap-1.5",
         dropdown_root: "relative cn-calendar-dropdown-root rounded-(--cell-radius)",
-        dropdown: "absolute bg-popover inset-0 opacity-0",
+        dropdown: "absolute bg-surface-elevated inset-0 opacity-0",
         caption_label: cn(
           "select-none font-medium",
           captionLayout === "label"

@@ -12,7 +12,6 @@ import { useAppReady } from "@/app/client-providers";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { getRouteDocumentTitle } from "@/shared/constants/routes";
 import type { Role } from "@/shared/constants/roles";
@@ -86,7 +85,6 @@ function AppPageContent({
 
   useEffect(() => {
     if (!ready || authFlow) return;
-    useGoingEventsStore.getState().fetchGoingEvents();
     useSavedOrganizationsStore.getState().fetchSavedOrganizations();
     useCreditsStore.getState().fetchBalance();
     useCreditsStore.getState().fetchActivePromotedEventIds();

@@ -71,7 +71,7 @@ export function SubmittedSearchInput({
           event.preventDefault();
           onSubmit();
         }}
-        className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border/60 bg-secondary text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/60"
+        className="absolute right-0 top-0 flex h-full w-11 items-center justify-center rounded-l-none rounded-r-xl border-l border-border/60 bg-secondary text-muted-foreground transition-colors hover:bg-muted-hover hover:text-foreground"
         aria-label={submitLabel}
       >
         <Search className="size-4" />

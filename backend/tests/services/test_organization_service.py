@@ -102,14 +102,14 @@ def test_lookup_organization_by_school_and_name_exact_match(fake_sb, patch_sb):
                 {
                     "id": 3,
                     "organization_name": "UW Tea Organization",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                     "ig": "uwtea",
                     "school": "uwaterloo",
                 },
                 {
                     "id": 9,
                     "organization_name": "Other Club",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                     "ig": None,
                     "school": "uwaterloo",
                 },
@@ -132,7 +132,7 @@ def test_lookup_organization_by_school_and_name_miss(fake_sb, patch_sb):
                 {
                     "id": 3,
                     "organization_name": "UW Tea Organization",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                     "ig": "uwtea",
                     "school": "uwaterloo",
                 }
@@ -154,14 +154,14 @@ def test_lookup_organization_by_school_and_name_picks_lowest_id_on_dupes(fake_sb
                 {
                     "id": 5,
                     "organization_name": "tea   club",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                     "ig": "b",
                     "school": "uwaterloo",
                 },
                 {
                     "id": 12,
                     "organization_name": "Tea Club",
-                    "organization_type": "Independent",
+                    "association_affiliated": False,
                     "ig": "a",
                     "school": "uwaterloo",
                 },

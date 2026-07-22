@@ -30,15 +30,14 @@ describe("abuse protection", () => {
     const request = new Request("https://commons.example/api/submissions", {
       headers: {
         "x-forwarded-for": "198.51.100.4, 10.0.0.1",
-        "x-vercel-forwarded-for": "203.0.113.8",
       },
     });
 
-    expect(requestClientAddress(request)).toBe("203.0.113.8");
+    expect(requestClientAddress(request)).toBe("198.51.100.4");
     const key = requestRateLimitKey(request, " PERSON@Example.com ");
     expect(key).toMatch(/^[a-f0-9]{64}$/);
-    expect(key).toBe(hashAbuseProtectionKey(["203.0.113.8", "person@example.com"]));
-    expect(key).not.toContain("203.0.113.8");
+    expect(key).toBe(hashAbuseProtectionKey(["198.51.100.4", "person@example.com"]));
+    expect(key).not.toContain("198.51.100.4");
   });
 
   it("maps the atomic database rate-limit decision", async () => {

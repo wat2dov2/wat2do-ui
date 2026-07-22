@@ -20,10 +20,10 @@ export function OnboardingYearStep({
         onMouseDown={() => onChange(true)}
         className={cn(
           "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-all duration-300",
-          "hover:border-primary hover:bg-primary/5 hover:scale-[1.02]",
+          "hover:border-primary hover:bg-surface-hover hover:scale-[1.02]",
           isFirstYear === true
             ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary"
-            : "border-border bg-card text-card-foreground"
+            : "border-border bg-surface text-foreground"
         )}
       >
         <div className={cn(
@@ -47,10 +47,10 @@ export function OnboardingYearStep({
         onMouseDown={() => onChange(false)}
         className={cn(
           "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-all duration-300",
-          "hover:border-primary hover:bg-primary/5 hover:scale-[1.02]",
+          "hover:border-primary hover:bg-surface-hover hover:scale-[1.02]",
           isFirstYear === false
             ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary"
-            : "border-border bg-card text-card-foreground"
+            : "border-border bg-surface text-foreground"
         )}
       >
         <div className={cn(

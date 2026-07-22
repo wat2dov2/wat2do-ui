@@ -74,6 +74,8 @@ DUPLICATE_INTERACTION_LIMIT = "Too many duplicate interactions for the same even
 INVALID_STATUS_TRANSITION = "Invalid status transition"
 EVENT_ALREADY_PAST = "Event has already ended and cannot be modified or promoted"
 GOING_EVENTS_CAP_REACHED = "Maximum going events limit reached"
+INVALID_EVENT_OCCURRENCE = "One or more occurrences do not belong to this event"
+OCCURRENCE_NOT_SELECTABLE = "One or more occurrences can no longer be selected"
 SAVED_ORGANIZATIONS_CAP_REACHED = "Maximum saved organizations limit reached"
 
 INVALID_ROLE = "Role must be 'user' or 'admin'"

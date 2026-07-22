@@ -36,8 +36,6 @@ export interface PlatformConnectConfig {
   authorizedTextKey: string;
   /** Authorize button text (not yet authorized) translation key */
   authorizeTextKey: string;
-  /** Brand color classes for the authorize button, e.g. "bg-sky-600 hover:bg-sky-700" */
-  brandColorClass: string;
   /** Select step header label translation key */
   selectLabelKey: string;
   /** Primary select field label translation key */
@@ -124,7 +122,7 @@ export function PlatformConnectModal({
                     {t(config.connectDescKey)}
                   </p>
                   <Button
-                    className={`w-full ${config.brandColorClass}`}
+                    className="w-full"
                     onMouseDown={onAuthorize}
                     disabled={authorized}
                   >
@@ -180,7 +178,7 @@ export function PlatformConnectModal({
 
             <Field orientation="horizontal">
               <DialogClose asChild>
-                <Button variant="outline" type="button">
+                <Button variant="secondary" type="button">
                   {t("common.cancel")}
                 </Button>
               </DialogClose>

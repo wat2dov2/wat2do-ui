@@ -74,7 +74,7 @@ NEXT_PUBLIC_API_URL=/api npm run build
 ## 4. Waterloo Commons checks
 
 From repo root:
-Use Node.js 22.x so the local runtime matches CI and Vercel.
+Use Node.js 22.x so the local runtime matches CI and the AWS container build.
 
 ```bash
 cd waterloo-commons
@@ -100,9 +100,21 @@ npm test
 npm run build
 ```
 
+## 5. Terraform checks
+
+Run these checks whenever `infra/terraform/` or the Terraform workflow changes.
+
+```bash
+terraform fmt -check -recursive infra/terraform
+(cd infra/terraform/foundation && terraform init -backend=false && terraform validate)
+(cd infra/terraform/production && terraform init -backend=false && terraform validate)
+```
+
+Run `tflint` in each root when it is installed locally or rely on the Terraform workflow's dedicated TFLint job.
+
 ---
 
-## 5. Commit
+## 6. Commit
 
 Only commit when the user asked you to, or when your task explicitly includes landing on `main`.
 
@@ -119,15 +131,16 @@ Follow the repo's existing commit message style (`git log -5`).
 
 ---
 
-## 6. Push
+## 7. Push
 
 ```bash
 git push origin main
 ```
 
-After push, CI/CD runs the same backend, frontend, and Waterloo Commons jobs.
-It then deploys the backend to Railway and each Next.js application to its separate Vercel project when that deployment's secrets are configured.
-A green local run means those check jobs should pass; deploy steps depend on repository secrets.
+After push, CI/CD runs the backend, frontend, and Waterloo Commons checks.
+The primary Wat2Do frontend and backend then deploy together to ECS through GitHub OIDC, ECR, and immutable task-definition images.
+Waterloo Commons source remains in the repository but has no active hosting deployment.
+A green local run means those check jobs should pass; the AWS deployment requires the repository variables and Secrets Manager values documented in the Terraform roots.
 
 ---
 

@@ -173,7 +173,7 @@ export function ClaimOrganizationModal({ isOpen, onClose, organization }: ClaimO
 
             <DialogFooter className="pt-4 gap-2 flex justify-end">
               <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isSubmitting}>
+                <Button type="button" variant="secondary" disabled={isSubmitting}>
                   {t("common.cancel")}
                 </Button>
               </DialogClose>

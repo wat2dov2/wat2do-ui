@@ -16,27 +16,23 @@ export interface EventBadge {
 export interface BadgeInput {
   price?: number | null;
   food?: string[];
-  registration?: boolean;
   cancelled?: boolean;
 }
 
 export interface BadgeStyleOverrides {
   cancelledBg?: string;
   cancelledText?: string;
-  freeBg?: string;
-  freeText?: string;
   priceBg?: string;
   priceText?: string;
   foodBg?: string;
   foodText?: string;
-  registrationBg?: string;
-  registrationText?: string;
-  registrationLabel?: string;
 }
 
 /**
  * Pure function: compute badges for an event-like object.
  * Accepts optional style overrides for contexts that use different badge colors.
+ * Free events do not get a price badge; only positive prices show `$N`.
+ * Registration is not shown as a card badge.
  */
 export function computeEventBadges(
   event: BadgeInput,
@@ -53,14 +49,8 @@ export function computeEventBadges(
     });
   }
 
-  const price = event.price ?? 0;
-  if (price === 0) {
-    badges.push({
-      text: t("common.free"),
-      bgClass: overrides?.freeBg ?? "bg-secondary",
-      textClass: overrides?.freeText ?? "text-primary",
-    });
-  } else if (price !== null) {
+  const price = event.price;
+  if (price != null && price > 0) {
     badges.push({
       text: `$${price}`,
       bgClass: overrides?.priceBg ?? "bg-primary/20",
@@ -77,20 +67,12 @@ export function computeEventBadges(
     });
   }
 
-  if (event.registration) {
-    badges.push({
-      text: overrides?.registrationLabel ?? t("common.registrationRequired"),
-      bgClass: overrides?.registrationBg ?? "bg-purple-500/20",
-      textClass: overrides?.registrationText ?? "text-purple-500",
-    });
-  }
-
   return badges;
 }
 
 /**
- * Hook to generate badges for an event (price, food, registration).
- * Wraps computeEventBadges with useMemo for React components.
+ * Hook to generate badges for an event (paid price, food).
+ * Wraps computeEventBadges for React components.
  */
 export function useEventBadges(event: Event): EventBadge[] {
   const { t } = useTranslation();

@@ -15,11 +15,12 @@ API key.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import httpx
 
 from core.config import settings
+from core.product_control import product_control
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ class EmailMessage:
     # suspenders in case a cron restart re-hits the provider before our
     # ``UPDATE status='sent'`` commits.
     idempotency_key: str | None = None
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 class EmailService:
@@ -93,9 +95,10 @@ class EmailService:
                 "subject": msg.subject,
                 "html": msg.body_html,
                 "text": msg.body_text,
+                "headers": msg.headers,
             },
             headers=headers,
-            timeout=10,
+            timeout=product_control.email_delivery.provider_timeout_seconds,
         )
         response.raise_for_status()
         return True

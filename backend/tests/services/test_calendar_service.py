@@ -12,9 +12,10 @@ Covers:
 """
 
 from unittest.mock import MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from core.tables import EVENTS, USERS
+from schemas.going_event import GoingEventSelection
 from services import calendar_service, going_event_service
 
 # ── resolve_school_timezone ─────────────────────────────────────────
@@ -171,7 +172,7 @@ def _event_row(**overrides) -> dict:
 def _occurrence_row(event_id: int, **overrides) -> dict:
     """One event_dates row, shaped to satisfy OccurrenceResponse."""
     defaults = {
-        "id": 1,
+        "id": str(UUID(int=1)),
         "event_id": event_id,
         "dtstart_utc": "2026-05-01T23:00:00+00:00",
         "dtend_utc": "2026-05-02T01:30:00+00:00",
@@ -180,14 +181,26 @@ def _occurrence_row(event_id: int, **overrides) -> dict:
         "created_at": "2026-04-15T10:00:00+00:00",
     }
     defaults.update(overrides)
+    raw_id = defaults["id"]
+    try:
+        defaults["id"] = str(UUID(str(raw_id)))
+    except ValueError:
+        defaults["id"] = str(UUID(int=int(raw_id)))
     return defaults
+
+
+def _selection(event_id: int, *occurrence_ids: int) -> GoingEventSelection:
+    return GoingEventSelection(
+        event_id=event_id,
+        occurrence_ids=[UUID(int=value) for value in occurrence_ids],
+    )
 
 
 def test_build_ics_for_user_empty_saved_list(monkeypatch):
     """No saved events → valid empty VCALENDAR, no VEVENT components."""
     monkeypatch.setattr(
         going_event_service,
-        "get_going_event_ids",
+        "get_going_event_selections",
         MagicMock(return_value=[]),
     )
     body = calendar_service.build_ics_for_user(str(uuid4()))
@@ -210,8 +223,8 @@ def test_build_ics_for_user_renders_vevent(monkeypatch, fake_sb, patch_sb):
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
         going_event_service,
-        "get_going_event_ids",
-        MagicMock(return_value=[42]),
+        "get_going_event_selections",
+        MagicMock(return_value=[_selection(42, 1)]),
     )
     # Two queries land on fake_sb in sequence: events.select.in_, then
     # event_dates.select.in_. Queue both responses.
@@ -229,7 +242,7 @@ def test_build_ics_for_user_renders_vevent(monkeypatch, fake_sb, patch_sb):
     # UID combines event id with the occurrence id so a multi-occurrence
     # event renders distinct VEVENTs that calendar clients can track
     # independently.
-    assert "UID:event-42-1@wat2do.app" in text
+    assert f"UID:event-42-{UUID(int=1)}@wat2do.app" in text
     assert "SUMMARY:Jazz Night" in text
     # 23:00 UTC = 19:00 America/Toronto in EDT (May)
     assert "DTSTART;TZID=America/Toronto:20260501T190000" in text
@@ -246,8 +259,8 @@ def test_build_ics_for_user_skips_events_without_occurrences(monkeypatch, fake_s
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
         going_event_service,
-        "get_going_event_ids",
-        MagicMock(return_value=[99]),
+        "get_going_event_selections",
+        MagicMock(return_value=[_selection(99, 1)]),
     )
     fake_sb.queue_responses(
         [
@@ -275,8 +288,8 @@ def test_build_ics_for_user_renders_one_vevent_per_occurrence(monkeypatch, fake_
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
         going_event_service,
-        "get_going_event_ids",
-        MagicMock(return_value=[42]),
+        "get_going_event_selections",
+        MagicMock(return_value=[_selection(42, 111, 222, 333)]),
     )
     fake_sb.queue_responses(
         [
@@ -312,9 +325,9 @@ def test_build_ics_for_user_renders_one_vevent_per_occurrence(monkeypatch, fake_
     assert text.count("END:VEVENT") == 3
 
     # Each occurrence has a distinct UID combining event + occurrence id.
-    assert "UID:event-42-111@wat2do.app" in text
-    assert "UID:event-42-222@wat2do.app" in text
-    assert "UID:event-42-333@wat2do.app" in text
+    assert f"UID:event-42-{UUID(int=111)}@wat2do.app" in text
+    assert f"UID:event-42-{UUID(int=222)}@wat2do.app" in text
+    assert f"UID:event-42-{UUID(int=333)}@wat2do.app" in text
 
     # The three DTSTARTs (in America/Toronto local time, May 1/8/15 UTC
     # 23:00 == May 1/8/15 19:00 EDT) are all present.
@@ -332,8 +345,8 @@ def test_build_ics_for_user_unknown_school_renders_utc(monkeypatch, fake_sb, pat
     patch_sb("services.event_date_service")
     monkeypatch.setattr(
         going_event_service,
-        "get_going_event_ids",
-        MagicMock(return_value=[1]),
+        "get_going_event_selections",
+        MagicMock(return_value=[_selection(1, 1)]),
     )
     fake_sb.queue_responses(
         [

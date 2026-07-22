@@ -4,97 +4,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Satoshi Font */
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/WEB/fonts/Satoshi-Variable.woff2") format("woff2");
-  font-display: swap;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/WEB/fonts/Satoshi-VariableItalic.woff2") format("woff2");
-  font-display: swap;
-  font-style: italic;
-}
-
 @theme inline {
-  /* Base colors */
+  /* Functional colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-surface-elevated: var(--surface-elevated);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-active: var(--secondary-active);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
+  --color-muted-hover: var(--muted-hover);
+  --color-muted-active: var(--muted-active);
   --color-muted-foreground: var(--muted-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-active: var(--destructive-active);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
 
   /* Status colors */
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-error: var(--error);
-  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
 
-  /* Gray scale */
-  --color-gray-50: var(--gray-50);
-  --color-gray-100: var(--gray-100);
-  --color-gray-200: var(--gray-200);
-  --color-gray-300: var(--gray-300);
-  --color-gray-400: var(--gray-400);
-  --color-gray-500: var(--gray-500);
-  --color-gray-600: var(--gray-600);
-  --color-gray-700: var(--gray-700);
-  --color-gray-800: var(--gray-800);
-  --color-gray-900: var(--gray-900);
-
-  /* Category colors */
-  --color-category-events-bg: var(--category-events-bg);
-  --color-category-events-text: var(--category-events-text);
-  --color-category-clubs-bg: var(--category-clubs-bg);
-  --color-category-clubs-text: var(--category-clubs-text);
-  --color-category-academic-bg: var(--category-academic-bg);
-  --color-category-academic-text: var(--category-academic-text);
-  --color-category-religious-bg: var(--category-religious-bg);
-  --color-category-religious-text: var(--category-religious-text);
-  --color-category-cultural-bg: var(--category-cultural-bg);
-  --color-category-cultural-text: var(--category-cultural-text);
-  --color-category-social-bg: var(--category-social-bg);
-  --color-category-social-text: var(--category-social-text);
-  --color-category-sports-bg: var(--category-sports-bg);
-  --color-category-sports-text: var(--category-sports-text);
-  --color-category-career-bg: var(--category-career-bg);
-  --color-category-career-text: var(--category-career-text);
-  --color-category-technology-bg: var(--category-technology-bg);
-  --color-category-technology-text: var(--category-technology-text);
-  --color-category-arts-bg: var(--category-arts-bg);
-  --color-category-arts-text: var(--category-arts-text);
-  --color-category-health-bg: var(--category-health-bg);
-  --color-category-health-text: var(--category-health-text);
-  --color-category-music-bg: var(--category-music-bg);
-  --color-category-music-text: var(--category-music-text);
-  --color-category-entrepreneurship-bg: var(--category-entrepreneurship-bg);
-  --color-category-entrepreneurship-text: var(--category-entrepreneurship-text);
-  --color-category-default-bg: var(--category-default-bg);
-  --color-category-default-text: var(--category-default-text);
-
-  /* Brand colors */
+  /* Brand / decorative colors - resting only, never *-hover */
   --color-blue-400: var(--blue-400);
   --color-blue-500: var(--blue-500);
   --color-blue-600: var(--blue-600);
@@ -106,18 +53,18 @@
   --color-green-900: var(--green-900);
   --color-red-50: var(--red-50);
   --color-red-200: var(--red-200);
-  --color-red-500: var(--red-500);
+  --color-red-500: var(--destructive);
   --color-red-800: var(--red-800);
   --color-red-900: var(--red-900);
   --color-yellow-50: var(--yellow-50);
-  --color-yellow-100: var(--yellow-100);
-  --color-yellow-400: var(--yellow-400);
-  --color-yellow-500: var(--yellow-500);
+  --color-yellow-100: var(--amber-100);
+  --color-yellow-400: var(--amber-400);
+  --color-yellow-500: var(--warning);
   --color-purple-500: var(--purple-500);
   --color-purple-600: var(--purple-600);
   --color-amber-100: var(--amber-100);
   --color-amber-400: var(--amber-400);
-  --color-amber-500: var(--amber-500);
+  --color-amber-500: var(--warning);
   --color-amber-600: var(--amber-600);
   --color-amber-700: var(--amber-700);
   --color-amber-900: var(--amber-900);
@@ -128,25 +75,27 @@
   --font-sans: var(--font-family-sans);
   --font-mono: var(--font-family-mono);
 
-  /* Radius scale mapped from 4 design tokens */
-  --radius-xs: var(--app-radius-1);
-  --radius-sm: var(--app-radius-1);
-  --radius-md: var(--app-radius-2);
-  --radius-lg: var(--app-radius-3);
-  --radius-xl: var(--app-radius-4);
-  --radius-2xl: var(--app-radius-4);
-  --radius-3xl: var(--app-radius-4);
-  --radius-4xl: var(--app-radius-4);
+  /* Radius - generously rounded */
+  --radius-xs: 6px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 12px;
+  --radius-3xl: 12px;
+  --radius-4xl: 12px;
 
-  /* Shadow scale mapped from design tokens */
-  --shadow-xs: var(--app-shadow-xs);
-  --shadow-sm: var(--app-shadow-sm);
-  --shadow-md: var(--app-shadow-md);
-  --shadow-lg: var(--app-shadow-lg);
-  --shadow-xl: var(--app-shadow-xl);
-  --shadow-control: var(--app-shadow-control);
+  /* Shadow scale */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.12);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.16);
+  --shadow-md: 0 4px 16px -2px rgb(0 0 0 / 0.24);
+  --shadow-lg: 0 8px 32px -4px rgb(0 0 0 / 0.32);
+  --shadow-xl: 0 16px 48px -8px rgb(0 0 0 / 0.4);
+  --shadow-control:
+    0 1px 2px 0 rgb(0 0 0 / 0.12),
+    0 4px 12px -4px rgb(0 0 0 / 0.28);
 
-  /* Z-index scale — keep in sync with shared/constants/zIndex.ts */
+  /* Z-index scale - keep in sync with shared/constants/zIndex.ts */
   --z-index-sidebar: 30;
   --z-index-nav: 40;
   --z-index-dropdown: 50;
@@ -157,43 +106,62 @@
 
   --animate-aurora: aurora 8s ease-in-out infinite alternate;
   @keyframes aurora {
-  0% {
-    background-position: 0% 50%;
-    transform: rotate(-5deg) scale(0.9);
+    0% {
+      background-position: 0% 50%;
+      transform: rotate(-5deg) scale(0.9);
     }
-  25% {
-    background-position: 50% 100%;
-    transform: rotate(5deg) scale(1.1);
+    25% {
+      background-position: 50% 100%;
+      transform: rotate(5deg) scale(1.1);
     }
-  50% {
-    background-position: 100% 50%;
-    transform: rotate(-3deg) scale(0.95);
+    50% {
+      background-position: 100% 50%;
+      transform: rotate(-3deg) scale(0.95);
     }
-  75% {
-    background-position: 50% 0%;
-    transform: rotate(3deg) scale(1.05);
+    75% {
+      background-position: 50% 0%;
+      transform: rotate(3deg) scale(1.05);
     }
-  100% {
-    background-position: 0% 50%;
-    transform: rotate(-5deg) scale(0.9);
+    100% {
+      background-position: 0% 50%;
+      transform: rotate(-5deg) scale(0.9);
     }
   }
   --animate-shine: shine var(--duration) infinite linear;
   @keyframes shine {
-  0% {
-    background-position: 0% 0%;}
-  50% {
-    background-position: 100% 100%;}
-  to {
-    background-position: 0% 0%;}}
-
+    0% {
+      background-position: 0% 0%;
+    }
+    50% {
+      background-position: 100% 100%;
+    }
+    to {
+      background-position: 0% 0%;
+    }
+  }
 }
 
-/* View Transitions for animated theme toggle */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+/*
+ * Page background decoration. Colours, spacing, and size come from the
+ * --page-* tokens in styles/decorative-tokens.css - never hardcode them here
+ * or in components.
+ */
+@utility bg-page-dots {
+  background-image: radial-gradient(
+    circle,
+    var(--page-dot-color) var(--page-dot-size),
+    transparent calc(var(--page-dot-size) + 0.5px)
+  );
+  background-size: var(--page-dot-spacing) var(--page-dot-spacing);
+}
+
+@utility bg-page-glow {
+  background-image: radial-gradient(
+    circle at bottom left,
+    var(--page-glow-inner) 0%,
+    var(--page-glow-middle) 28%,
+    transparent 68%
+  );
 }
 
 @layer base {
@@ -204,7 +172,6 @@
   .animate-pulse-live {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.89);
   }
-  /* Allow subtle elevation on floating surfaces (popovers, dropdowns, dialogs). */
   [data-slot="popover-content"],
   [data-slot="dropdown-menu-content"],
   [data-slot="dialog-content"],
@@ -218,7 +185,7 @@
     box-shadow: var(--app-shadow-control) !important;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
   button,
   [role="button"] {
@@ -231,13 +198,11 @@
     cursor: not-allowed;
   }
 
-  /* Scrollbar styling - Firefox */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 
-  /* Scrollbar styling - WebKit browsers */
   *::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -253,14 +218,12 @@
     border: 2px solid var(--scrollbar-track);
   }
 
-  /* Theme transition lock - disables all transitions during theme change */
   .no-transitions *,
   .no-transitions *::before,
   .no-transitions *::after {
     transition: none !important;
   }
 
-  /* Hide scrollbar for Aceternity tabs */
   .no-visible-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -270,11 +233,8 @@
   .no-visible-scrollbar::-webkit-scrollbar {
     display: none;
   }
-
-
 }
 
-/* Faster drawer close so background scroll unlocks sooner on mobile. */
 [data-vaul-drawer],
 [data-vaul-overlay] {
   animation-duration: 280ms !important;
@@ -301,7 +261,6 @@ html[data-drawer-scroll-release] [data-slot="drawer-close"] button,
   z-index: var(--z-index-toast);
 }
 
-/* Pulsating animation for live badge */
 @keyframes pulse-live {
   0% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.89);

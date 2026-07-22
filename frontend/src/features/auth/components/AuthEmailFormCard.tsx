@@ -76,7 +76,7 @@ export function AuthEmailFormCard({
 
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={onSkipToOnboarding}
             disabled={isLoading}
             className="w-full"

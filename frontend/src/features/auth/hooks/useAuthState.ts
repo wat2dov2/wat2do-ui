@@ -21,6 +21,10 @@ import { ROLE_ADMIN } from "@/shared/constants/roles";
 
 export interface AuthState {
   userEmail: string | null;
+  /** Cached ``users.full_name``; null when unset or signed out. */
+  userFullName: string | null;
+  /** Cached ``users.avatar_url``; null when unset or signed out. */
+  userAvatarUrl: string | null;
   /** Mirrors `isAuthenticated()`: has access token AND cached email. */
   isAuthenticated: boolean;
   /** Same as `isAuthenticated`; UI gates treat a valid session as "profile ready". */
@@ -50,6 +54,8 @@ function computeSnapshot(): AuthState {
   const clubs = authed ? profile?.clubs ?? [] : [];
   return Object.freeze({
     userEmail: email,
+    userFullName: authed ? profile?.fullName ?? null : null,
+    userAvatarUrl: authed ? profile?.avatarUrl ?? null : null,
     isAuthenticated: authed,
     profileCompleted,
     isAdmin: authed && role === ROLE_ADMIN,
@@ -124,14 +130,5 @@ export function useProfileCompleted(): boolean {
     subscribe,
     () => getSnapshot().profileCompleted,
     () => getSnapshot().profileCompleted,
-  );
-}
-
-/** Primitive selector - re-renders only when admin status changes. */
-export function useIsAdmin(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => getSnapshot().isAdmin,
-    () => getSnapshot().isAdmin,
   );
 }

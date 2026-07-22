@@ -144,7 +144,7 @@ export function VisualFilters({ filters, viewMode, onViewModeChange }: VisualFil
             return (
               <Button
                 key={option.id}
-                variant={active ? "selected" : "secondary"}
+                variant={active ? "primary" : "secondary"}
                 onClick={() => onViewModeChange(option.id)}
                 aria-pressed={active}
                 className="w-full"

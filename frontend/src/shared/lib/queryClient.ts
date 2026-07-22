@@ -1,15 +1,14 @@
 import { QueryClient } from "@tanstack/react-query";
 
-const FIVE_MINUTES_MS = 1000 * 60 * 5;
-const THIRTY_MINUTES_MS = 1000 * 60 * 30;
+import { productControl } from "@/shared/config/productControl";
 
 function createAppQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
-        staleTime: FIVE_MINUTES_MS,
-        gcTime: THIRTY_MINUTES_MS,
+        staleTime: productControl.clientCache.defaultQueryStaleMs,
+        gcTime: productControl.clientCache.defaultQueryGarbageCollectionMs,
       },
     },
   });

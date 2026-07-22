@@ -1,42 +1,30 @@
-"""Service-level tests for the notifications package.
-
-Covers the pieces router tests can't reach:
-- Preference resolution (default fallback, explicit rows).
-- Dedup via ``_try_insert_log_row`` — the UNIQUE constraint is the
-  whole safety argument; assert the exception → None branch works.
-- Fanout skips (no diff / no event / no saves / opt-out).
-- Time-of-day dispatcher helpers — the cron's correctness depends on
-  these returning the right date in the right timezone.
-"""
-
-from __future__ import annotations
-
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
-import pytest
+import httpx
 
+from core.config import settings
 from core.constants import (
-    NOTIFICATION_TYPE_DAILY_NEW_EVENTS,
     NOTIFICATION_TYPE_EVENT_CHANGE,
-    NOTIFICATION_TYPE_MORNING_DIGEST,
-    NOTIFICATION_TYPE_WEEKLY_DIGEST,
-    PG_UNIQUE_VIOLATION,
+    NOTIFICATION_TYPE_MORNING_EMAIL,
 )
+from schemas.notification_preference import NotificationPreferenceUpdate
 from services.notifications import (
     delivery_log,
-    digests,
     event_change,
+    morning_email,
     preferences,
     rendering,
-    schedule,
+    unsubscribe,
 )
+
+USER_ID = "11111111-1111-1111-1111-111111111111"
 
 
 def _user(**overrides) -> dict:
     defaults = {
-        "id": "11111111-1111-1111-1111-111111111111",
+        "id": USER_ID,
         "email": "alice@uwaterloo.ca",
         "school": "uwaterloo",
     }
@@ -44,401 +32,286 @@ def _user(**overrides) -> dict:
     return defaults
 
 
-# ---------------------------------------------------------------------------
-# Preferences — is_enabled / get_preferences / set_preferences
-# ---------------------------------------------------------------------------
+def _event(**overrides) -> dict:
+    defaults = {
+        "id": 42,
+        "title": "Tea Tasting",
+        "location": "SLC",
+        "dtstart_utc": "2026-05-01T15:00:00+00:00",
+        "added_at": "2026-05-01T12:00:00+00:00",
+    }
+    defaults.update(overrides)
+    return defaults
 
 
-def test_is_enabled_missing_row_returns_default(fake_sb, patch_sb):
-    """No row in prefs table uses the current code defaults."""
-    patch_sb("services.notifications.preferences")
-    fake_sb.set_response(data=[])
-
-    assert preferences.is_enabled("user-uuid", NOTIFICATION_TYPE_EVENT_CHANGE) is True
-    assert preferences.is_enabled("user-uuid", NOTIFICATION_TYPE_DAILY_NEW_EVENTS) is False
-    fake_sb.eq.assert_any_call("user_id", "user-uuid")
-    fake_sb.eq.assert_any_call("notification_type", NOTIFICATION_TYPE_EVENT_CHANGE)
-
-
-def test_is_enabled_explicit_row_returns_value(fake_sb, patch_sb):
-    """Explicit row overrides the default (opt-out stays opt-out)."""
-    patch_sb("services.notifications.preferences")
-    fake_sb.set_response(data=[{"enabled": False}])
-
-    assert preferences.is_enabled("user-uuid", NOTIFICATION_TYPE_MORNING_DIGEST) is False
-
-
-def test_set_preferences_upserts_with_conflict_key(fake_sb, patch_sb):
-    """Upsert must target the (user_id, notification_type) uniqueness key."""
-    from schemas.notification_preference import NotificationPreferenceUpdate
-
-    patch_sb("services.notifications.preferences")
-    fake_sb.set_response(data=[])
-
-    updates = [
-        NotificationPreferenceUpdate(
-            notification_type=NOTIFICATION_TYPE_MORNING_DIGEST, enabled=False
-        ),
-    ]
-    preferences.set_preferences("user-uuid", updates)
-
-    fake_sb.upsert.assert_called_once()
-    payload, kwargs = fake_sb.upsert.call_args
-    assert kwargs.get("on_conflict") == "user_id,notification_type"
-    assert payload[0][0]["user_id"] == "user-uuid"
-    assert payload[0][0]["enabled"] is False
-
-
-def test_get_preferences_merges_default_for_missing_types(fake_sb, patch_sb):
-    """Types with no row in the table come back as defaults, not omitted."""
+def test_preferences_resolve_only_active_defaults(fake_sb, patch_sb):
     patch_sb("services.notifications.preferences")
     fake_sb.set_response(
         data=[
             {
-                "notification_type": NOTIFICATION_TYPE_MORNING_DIGEST,
+                "notification_type": NOTIFICATION_TYPE_EVENT_CHANGE,
                 "enabled": False,
                 "updated_at": None,
-            },
-        ]
-    )
-
-    prefs = preferences.get_preferences("user-uuid")
-
-    types = [p.notification_type for p in prefs]
-    assert NOTIFICATION_TYPE_MORNING_DIGEST in types
-    assert NOTIFICATION_TYPE_WEEKLY_DIGEST in types
-    assert NOTIFICATION_TYPE_EVENT_CHANGE in types
-    assert NOTIFICATION_TYPE_DAILY_NEW_EVENTS in types
-    morning = next(p for p in prefs if p.notification_type == NOTIFICATION_TYPE_MORNING_DIGEST)
-    assert morning.enabled is False  # explicit opt-out
-    weekly = next(p for p in prefs if p.notification_type == NOTIFICATION_TYPE_WEEKLY_DIGEST)
-    assert weekly.enabled is True  # default
-    daily_new = next(p for p in prefs if p.notification_type == NOTIFICATION_TYPE_DAILY_NEW_EVENTS)
-    assert daily_new.enabled is False  # opt-in only
-
-
-# ---------------------------------------------------------------------------
-# Dedup — _try_insert_log_row
-# ---------------------------------------------------------------------------
-
-
-def test_try_insert_log_row_returns_id_on_success(fake_sb, patch_sb):
-    patch_sb("services.notifications.delivery_log")
-    fake_sb.set_response(data=[{"id": "log-row-uuid"}])
-
-    row_id = delivery_log._try_insert_log_row(
-        user_id="user-uuid",
-        notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
-        target_id="42:abc123",
-    )
-    assert row_id == "log-row-uuid"
-
-
-def test_try_insert_log_row_returns_none_on_unique_violation(fake_sb, patch_sb):
-    """Dedup: unique-violation on the INSERT must collapse to None, not raise."""
-    patch_sb("services.notifications.delivery_log")
-    fake_sb.raise_on_execute(Exception(f"duplicate key value ... {PG_UNIQUE_VIOLATION}"))
-
-    row_id = delivery_log._try_insert_log_row(
-        user_id="user-uuid",
-        notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
-        target_id="42:abc123",
-    )
-    assert row_id is None
-
-
-def test_try_insert_log_row_reraises_other_errors(fake_sb, patch_sb):
-    """Non-uniqueness errors must not be swallowed."""
-    patch_sb("services.notifications.delivery_log")
-    fake_sb.raise_on_execute(RuntimeError("connection refused"))
-
-    with pytest.raises(RuntimeError, match="connection refused"):
-        delivery_log._try_insert_log_row(
-            user_id="user-uuid",
-            notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
-            target_id="42:abc123",
-        )
-
-
-# ---------------------------------------------------------------------------
-# enqueue_event_change — early-exit branches
-# ---------------------------------------------------------------------------
-
-
-def test_enqueue_event_change_empty_diff_noop():
-    """Empty diff = nothing to notify. No DB calls, no-op return 0."""
-    assert event_change.enqueue_event_change(42, {}) == 0
-
-
-# ---------------------------------------------------------------------------
-# Occurrence-list diff rendering: ``occurrences`` carries full old/new lists
-# of occurrence dicts. Rendering must produce a human-readable bullet list,
-# not the raw Python repr.
-# ---------------------------------------------------------------------------
-
-
-def _occ(dtstart_iso: str) -> dict:
-    return {
-        "dtstart_utc": dtstart_iso,
-        "dtend_utc": None,
-        "duration": None,
-        "tz": None,
-    }
-
-
-def test_render_event_change_text_renders_added_occurrence():
-    """Adding a date renders as ``+ added 2026-06-01 18:00 UTC``."""
-    diff = {
-        "occurrences": {
-            "old": [_occ("2026-05-01T18:00:00+00:00")],
-            "new": [_occ("2026-05-01T18:00:00+00:00"), _occ("2026-06-01T18:00:00+00:00")],
-        },
-    }
-    summary = {"title": "Tea Tasting", "location": "SLC"}
-    text = rendering._render_event_change_text(summary, diff)
-    assert "+ added 2026-06-01 18:00 UTC" in text
-    # The unchanged date should NOT appear under added/removed.
-    assert "+ added 2026-05-01" not in text
-    # No raw Python repr leakage.
-    assert "{'dtstart_utc'" not in text
-
-
-def test_render_event_change_text_renders_removed_occurrence():
-    diff = {
-        "occurrences": {
-            "old": [_occ("2026-05-01T18:00:00+00:00"), _occ("2026-06-01T18:00:00+00:00")],
-            "new": [_occ("2026-05-01T18:00:00+00:00")],
-        },
-    }
-    summary = {"title": "Tea Tasting", "location": "SLC"}
-    text = rendering._render_event_change_text(summary, diff)
-    assert "- removed 2026-06-01 18:00 UTC" in text
-
-
-def test_render_event_change_html_lists_added_and_removed():
-    """HTML rendering uses <li> bullets nested under a <strong>dates</strong> heading."""
-    diff = {
-        "occurrences": {
-            "old": [_occ("2026-05-01T18:00:00+00:00")],
-            "new": [_occ("2026-06-01T18:00:00+00:00")],
-        },
-    }
-    summary = {"title": "Tea Tasting", "location": "SLC"}
-    html = rendering._render_event_change_html(summary, diff)
-    assert "<strong>dates</strong>" in html
-    assert "added <strong>2026-06-01 18:00 UTC</strong>" in html
-    assert "removed <strong>2026-05-01 18:00 UTC</strong>" in html
-    # No Python list repr.
-    assert "{'dtstart_utc'" not in html
-
-
-def test_render_event_change_falls_back_to_edited_when_only_metadata_changed():
-    """If nothing was added or removed (e.g. tz/duration changed but
-    dtstart stayed the same), the diff still surfaces a generic
-    ``dates: edited`` line rather than nothing.
-    """
-    diff = {
-        "occurrences": {
-            "old": [{"dtstart_utc": "2026-05-01T18:00:00+00:00", "tz": "UTC"}],
-            "new": [{"dtstart_utc": "2026-05-01T18:00:00+00:00", "tz": "America/Toronto"}],
-        },
-    }
-    summary = {"title": "Tea Tasting", "location": "SLC"}
-    text = rendering._render_event_change_text(summary, diff)
-    assert "dates: edited" in text
-
-
-def test_render_event_change_text_handles_malformed_iso_gracefully():
-    """Malformed dtstart strings round-trip without crashing — fall back
-    to the raw value."""
-    diff = {
-        "occurrences": {
-            "old": [],
-            "new": [_occ("not-a-date")],
-        },
-    }
-    summary = {"title": "X", "location": "Y"}
-    # Should not raise.
-    text = rendering._render_event_change_text(summary, diff)
-    assert "not-a-date" in text  # raw value preserved
-
-
-def test_enqueue_event_change_missing_event_returns_zero(fake_sb, patch_sb):
-    """Event row fetched but empty → log warn, return 0."""
-    patch_sb("services.notifications.event_change")
-    fake_sb.set_response(data=[])
-
-    diff = {"location": {"old": "Here", "new": "There"}}
-    assert event_change.enqueue_event_change(9999, diff) == 0
-
-
-def test_enqueue_event_change_no_going_users_returns_zero(fake_sb, patch_sb):
-    """Event exists but no one saved it → no fanout."""
-    patch_sb("services.notifications.event_change")
-    fake_sb.queue_responses(
-        [
-            # 1: fetch event
-            [{"title": "T", "location": "L", "dtstart_utc": None}],
-            # 2: user_going_events lookup — empty
-            [],
-        ]
-    )
-
-    diff = {"location": {"old": "Here", "new": "There"}}
-    assert event_change.enqueue_event_change(42, diff) == 0
-
-
-# ---------------------------------------------------------------------------
-# Cron dispatcher helpers
-# ---------------------------------------------------------------------------
-
-
-def test_is_morning_digest_time_returns_date_at_9am_local():
-    """Waterloo (America/Toronto) at 13:00 UTC is 09:00 local (EDT in May)."""
-    user = _user(school="uwaterloo")
-    now_utc = datetime(2026, 5, 1, 13, 0, tzinfo=timezone.utc)
-    result = schedule.is_morning_digest_time(user, now_utc)
-    assert result == date(2026, 5, 1)
-
-
-def test_is_morning_digest_time_returns_none_off_hour():
-    user = _user(school="uwaterloo")
-    now_utc = datetime(2026, 5, 1, 16, 0, tzinfo=timezone.utc)  # noon local
-    assert schedule.is_morning_digest_time(user, now_utc) is None
-
-
-def test_is_weekly_digest_time_returns_next_monday_on_sunday_6pm():
-    """Sunday 6pm local → returns tomorrow (Monday) as the preview week start."""
-    user = _user(school="uwaterloo")
-    # 2026-05-03 is a Sunday; 18:00 EDT = 22:00 UTC
-    now_utc = datetime(2026, 5, 3, 22, 0, tzinfo=timezone.utc)
-    result = schedule.is_weekly_digest_time(user, now_utc)
-    assert result == date(2026, 5, 4)  # Monday
-    assert result.weekday() == 0  # Monday
-
-
-def test_is_weekly_digest_time_returns_none_not_sunday():
-    """Monday 6pm local → None."""
-    user = _user(school="uwaterloo")
-    # 2026-05-04 is a Monday; 18:00 EDT = 22:00 UTC
-    now_utc = datetime(2026, 5, 4, 22, 0, tzinfo=timezone.utc)
-    assert schedule.is_weekly_digest_time(user, now_utc) is None
-
-
-def test_is_weekly_digest_time_returns_none_sunday_off_hour():
-    user = _user(school="uwaterloo")
-    # 2026-05-03 is Sunday; 15:00 UTC = 11am local, not 6pm
-    now_utc = datetime(2026, 5, 3, 15, 0, tzinfo=timezone.utc)
-    assert schedule.is_weekly_digest_time(user, now_utc) is None
-
-
-def test_unknown_school_falls_back_to_utc():
-    """User with an unrecognised school gets UTC — digest still fires, just on UTC clock."""
-    user = _user(email="person@example.edu", school="Some Unknown University")
-    # 9am UTC directly
-    now_utc = datetime(2026, 5, 1, 9, 0, tzinfo=timezone.utc)
-    assert schedule.is_morning_digest_time(user, now_utc) == date(2026, 5, 1)
-
-
-def test_is_daily_new_events_time_returns_local_timestamp_at_1030():
-    """Waterloo (America/Toronto) at 14:30 UTC is 10:30 local (EDT in May)."""
-    user = _user(school="uwaterloo")
-    now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
-    result = schedule.is_daily_new_events_time(user, now_utc)
-    assert result is not None
-    assert result.date() == date(2026, 5, 1)
-    assert result.hour == 10
-    assert result.minute == 30
-
-
-def test_is_daily_new_events_time_returns_none_off_minute():
-    user = _user(school="uwaterloo")
-    now_utc = datetime(2026, 5, 1, 14, 0, tzinfo=timezone.utc)
-    assert schedule.is_daily_new_events_time(user, now_utc) is None
-
-
-def test_send_daily_new_events_digest_sends_since_last_email(monkeypatch):
-    user = _user(id="user-uuid", school="uwaterloo")
-    now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
-    previous_sent_at = datetime(2026, 4, 30, 14, 30, tzinfo=timezone.utc)
-    event = {
-        "id": 123,
-        "title": "Tea Tasting",
-        "location": "SLC",
-        "dtstart_utc": "2026-05-03T18:00:00+00:00",
-        "source_image_url": "https://example.com/tea.jpg",
-        "category": "Arts & Culture",
-        "organization": "Tea Organization",
-        "added_at": "2026-05-01T12:00:00+00:00",
-    }
-    sent = MagicMock()
-    mark_sent = MagicMock()
-    captured = {}
-
-    monkeypatch.setattr(digests, "is_enabled", lambda *_: True)
-    monkeypatch.setattr(
-        digests,
-        "_last_successful_send_at",
-        lambda *_: previous_sent_at,
-    )
-
-    def fake_fetch(*, school, start_utc, end_utc):
-        captured.update({"school": school, "start_utc": start_utc, "end_utc": end_utc})
-        return [event]
-
-    monkeypatch.setattr(digests, "_fetch_new_events_added_since", fake_fetch)
-    monkeypatch.setattr(digests, "_try_insert_log_row", lambda **_: "row-1")
-    monkeypatch.setattr(digests, "_mark_log_sent", mark_sent)
-    monkeypatch.setattr(digests.email_service, "send", sent)
-
-    assert digests.send_daily_new_events_digest(user, now_utc) is True
-
-    assert captured == {
-        "school": "uwaterloo",
-        "start_utc": previous_sent_at,
-        "end_utc": now_utc,
-    }
-    sent.assert_called_once()
-    msg = sent.call_args.args[0]
-    assert msg.to == "alice@uwaterloo.ca"
-    assert msg.subject == "1 new event at University of Waterloo"
-    assert "Tea Tasting" in msg.body_text
-    assert "Tea Tasting" in msg.body_html
-    assert "https://example.com/tea.jpg" in msg.body_html
-    assert msg.idempotency_key == "daily_new_events:user-uuid:2026-05-01"
-    mark_sent.assert_called_once_with("row-1")
-
-
-def test_send_daily_new_events_digest_skips_without_events(monkeypatch):
-    user = _user(id="user-uuid", school="uwaterloo")
-    monkeypatch.setattr(digests, "is_enabled", lambda *_: True)
-    monkeypatch.setattr(digests, "_last_successful_send_at", lambda *_: None)
-    monkeypatch.setattr(digests, "_fetch_new_events_added_since", lambda **_: [])
-    insert = MagicMock()
-    monkeypatch.setattr(digests, "_try_insert_log_row", insert)
-
-    now_utc = datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc)
-    assert digests.send_daily_new_events_digest(user, now_utc) is False
-    insert.assert_not_called()
-
-
-def test_render_daily_new_events_html_escapes_event_text():
-    html = rendering._render_daily_new_events_html(
-        subject="1 new event at University of Waterloo",
-        school="uwaterloo",
-        events=[
-            {
-                "title": "<script>alert(1)</script>",
-                "location": "SLC & DC",
-                "dtstart_utc": "2026-05-03T18:00:00+00:00",
-                "category": "Media & Web",
-                "organization": "Hack Organization",
             }
-        ],
-        tz=ZoneInfo("America/Toronto"),
-        window_start=datetime(2026, 4, 30, 14, 30, tzinfo=timezone.utc),
-        window_end=datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc),
+        ]
     )
+
+    result = preferences.get_preferences(USER_ID)
+
+    assert [item.notification_type for item in result] == [
+        NOTIFICATION_TYPE_MORNING_EMAIL,
+        NOTIFICATION_TYPE_EVENT_CHANGE,
+    ]
+    assert result[0].enabled is True
+    assert result[1].enabled is False
+
+
+def test_set_preferences_uses_user_type_conflict_key(fake_sb, patch_sb):
+    patch_sb("services.notifications.preferences")
+    preferences.set_preferences(
+        USER_ID,
+        [
+            NotificationPreferenceUpdate(
+                notification_type=NOTIFICATION_TYPE_MORNING_EMAIL,
+                enabled=False,
+            )
+        ],
+    )
+
+    _payload, kwargs = fake_sb.upsert.call_args
+    assert kwargs["on_conflict"] == "user_id,notification_type"
+
+
+def test_claim_delivery_returns_only_claimed_rows(fake_sb, patch_sb):
+    patch_sb("services.notifications.delivery_log")
+    fake_sb.set_response(data=[{"id": "row-1", "claimed": True}])
+
+    assert (
+        delivery_log.claim_delivery(
+            user_id=USER_ID,
+            notification_type=NOTIFICATION_TYPE_MORNING_EMAIL,
+            target_id="2026-05-01",
+        )
+        == "row-1"
+    )
+    fake_sb.rpc.assert_called_once()
+
+    fake_sb.set_response(data=[{"id": "row-1", "claimed": False}])
+    assert (
+        delivery_log.claim_delivery(
+            user_id=USER_ID,
+            notification_type=NOTIFICATION_TYPE_MORNING_EMAIL,
+            target_id="2026-05-01",
+        )
+        is None
+    )
+
+
+def test_event_change_empty_diff_is_noop():
+    assert event_change.enqueue_event_change(None, {}, []) == 0
+
+
+def test_morning_subject_matrix():
+    assert rendering.morning_email_subject(2, 4) == "2 events today + 4 new picks"
+    assert rendering.morning_email_subject(1, 0) == "1 event today"
+    assert rendering.morning_email_subject(0, 1) == "1 new pick for you"
+
+
+def test_morning_html_escapes_event_values(monkeypatch):
+    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
+    html = rendering.render_morning_email_html(
+        subject="1 event today",
+        today=[_event(title="<script>alert(1)</script>", location="SLC & DC")],
+        picks=[],
+        tz=ZoneInfo("America/Toronto"),
+        preferences_url="https://wat2do.app/settings",
+        unsubscribe_url="https://wat2do.app/unsubscribe",
+    )
+
     assert "<script>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
     assert "SLC &amp; DC" in html
+    assert "/?eventId=42" in html
+
+
+def test_unsubscribe_token_round_trip_and_tamper(monkeypatch):
+    monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
+    token = unsubscribe.create_unsubscribe_token(USER_ID)
+
+    assert unsubscribe.verify_unsubscribe_token(token) == USER_ID
+    assert unsubscribe.verify_unsubscribe_token(f"{token}x") is None
+
+
+def test_dispatch_batch_loaders_do_not_scale_per_user(monkeypatch):
+    users = [_user(id=f"11111111-1111-1111-1111-{index:012d}") for index in range(20)]
+    calls = {
+        "preferences": 0,
+        "today": 0,
+        "candidates": 0,
+        "stored": 0,
+        "exclusions": 0,
+    }
+
+    monkeypatch.setattr(morning_email, "_fetch_users", lambda: users)
+    monkeypatch.setattr(morning_email, "_eligible_users", lambda loaded, _now: loaded)
+
+    def enabled(user_ids, _notification_type):
+        calls["preferences"] += 1
+        return set(user_ids)
+
+    monkeypatch.setattr(morning_email, "get_enabled_user_ids", enabled)
+    monkeypatch.setattr(
+        morning_email,
+        "_load_going_today",
+        lambda _users, _now: calls.__setitem__("today", calls["today"] + 1) or {},
+    )
+    monkeypatch.setattr(
+        morning_email,
+        "_load_candidates_by_school",
+        lambda _users, _now: calls.__setitem__("candidates", calls["candidates"] + 1) or {},
+    )
+    monkeypatch.setattr(
+        morning_email,
+        "get_stored_recommendations_for_users",
+        lambda _ids: calls.__setitem__("stored", calls["stored"] + 1) or {},
+    )
+    monkeypatch.setattr(
+        morning_email,
+        "_load_going_exclusions",
+        lambda _users, _events: calls.__setitem__("exclusions", calls["exclusions"] + 1) or {},
+    )
+    stats = morning_email.dispatch_morning_emails(datetime(2026, 5, 1, 13, tzinfo=timezone.utc))
+
+    assert stats["eligible"] == 20
+    assert stats["prepared"] == 0
+    assert calls == {
+        "preferences": 1,
+        "today": 1,
+        "candidates": 1,
+        "stored": 1,
+        "exclusions": 1,
+    }
+
+
+def test_candidate_loader_uses_fixed_previous_24_hours(fake_sb, patch_sb):
+    patch_sb("services.notifications.morning_email")
+    fake_sb.set_response(data=[])
+
+    result = morning_email._load_candidates_by_school(
+        [_user()],
+        datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
+    )
+
+    assert result == {"uwaterloo": []}
+    fake_sb.gt.assert_called_once_with("added_at", "2026-04-30T13:00:00+00:00")
+
+
+def test_select_picks_uses_threshold_without_email_cap():
+    candidates = [_event(id=event_id) for event_id in range(1, 13)]
+    stored = [
+        {
+            "event_id": event_id,
+            "predicted_score": 0.29 if event_id == 3 else 0.31,
+        }
+        for event_id in reversed(range(1, 13))
+    ]
+
+    result = morning_email._select_picks(
+        user=_user(),
+        candidates_by_school={"uwaterloo": candidates},
+        stored=stored,
+        excluded_event_ids={2},
+    )
+
+    assert [event["id"] for event in result] == [12, 11, 10, 9, 8, 7, 6, 5, 4, 1]
+
+
+def test_send_prepared_email_adds_unsubscribe_headers(monkeypatch):
+    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
+    monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
+    monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")
+    monkeypatch.setattr(morning_email, "_mark_log_sent", MagicMock())
+    send = MagicMock(return_value=True)
+    monkeypatch.setattr(morning_email.email_service, "send", send)
+
+    result = morning_email._send_prepared_email(
+        user=_user(),
+        today=[_event()],
+        picks=[],
+        window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
+    )
+
+    assert result is True
+    message = send.call_args.args[0]
+    assert message.headers["List-Unsubscribe"].startswith("<https://wat2do.app/")
+    assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+
+
+def test_send_prepared_email_skips_when_delivery_is_already_claimed(monkeypatch):
+    monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: None)
+    send = MagicMock()
+    monkeypatch.setattr(morning_email.email_service, "send", send)
+
+    result = morning_email._send_prepared_email(
+        user=_user(),
+        today=[_event()],
+        picks=[],
+        window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
+    )
+
+    assert result is None
+    send.assert_not_called()
+
+
+def test_send_prepared_email_retries_timeouts_then_marks_sent(monkeypatch):
+    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
+    monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
+    monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")
+    mark_sent = MagicMock()
+    mark_failed = MagicMock()
+    monkeypatch.setattr(morning_email, "_mark_log_sent", mark_sent)
+    monkeypatch.setattr(morning_email, "_mark_log_failed", mark_failed)
+    send = MagicMock(side_effect=[httpx.ReadTimeout("slow"), httpx.ReadTimeout("slow"), True])
+    monkeypatch.setattr(morning_email.email_service, "send", send)
+
+    result = morning_email._send_prepared_email(
+        user=_user(),
+        today=[_event()],
+        picks=[],
+        window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
+    )
+
+    assert result is True
+    assert send.call_count == 3
+    mark_sent.assert_called_once_with("row-1")
+    mark_failed.assert_not_called()
+
+
+def test_send_prepared_email_does_not_retry_terminal_provider_error(monkeypatch):
+    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.app")
+    monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
+    monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")
+    monkeypatch.setattr(morning_email, "_mark_log_sent", MagicMock())
+    mark_failed = MagicMock()
+    monkeypatch.setattr(morning_email, "_mark_log_failed", mark_failed)
+    request = httpx.Request("POST", "https://api.resend.com/emails")
+    response = httpx.Response(400, request=request)
+    send = MagicMock(
+        side_effect=httpx.HTTPStatusError(
+            "bad request",
+            request=request,
+            response=response,
+        )
+    )
+    monkeypatch.setattr(morning_email.email_service, "send", send)
+
+    result = morning_email._send_prepared_email(
+        user=_user(),
+        today=[_event()],
+        picks=[],
+        window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
+    )
+
+    assert result is False
+    send.assert_called_once()
+    mark_failed.assert_called_once_with("row-1", "provider_http_400")

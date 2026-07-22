@@ -97,13 +97,13 @@ export function InviteLandingPage() {
       <div className="absolute top-1/4 left-1/4 size-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 size-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
-      <Card className="max-w-md w-full border border-border/80 bg-card/60 backdrop-blur-md shadow-2xl relative z-10 overflow-hidden">
+      <Card className="max-w-md w-full border border-border/80 bg-surface/60 backdrop-blur-md shadow-2xl relative z-10 overflow-hidden">
         <div className="h-1.5 w-full bg-gradient-to-r from-primary via-blue-500 to-indigo-600" />
 
         <CardContent className="pt-8 px-6 pb-6 text-center space-y-6">
           {error ? (
             <div className="space-y-4 animate-in fade-in zoom-in duration-200">
-              <div className="size-16 rounded-full bg-error/10 border border-error/20 flex items-center justify-center mx-auto text-error">
+              <div className="size-16 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center mx-auto text-destructive">
                 <ShieldAlert className="size-8" />
               </div>
               <CardTitle className="text-xl font-bold tracking-tight text-foreground">{t("inviteLanding.errorTitle")}</CardTitle>
@@ -143,7 +143,7 @@ export function InviteLandingPage() {
               </div>
 
               <div className="p-3 bg-secondary/40 border border-border rounded-xl">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">{t("inviteLanding.emailBadgeLabel")}</p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">{t("inviteLanding.emailBadgeLabel")}</p>
                 <p className="text-sm font-semibold text-foreground break-all">{inviteInfo?.email}</p>
               </div>
 

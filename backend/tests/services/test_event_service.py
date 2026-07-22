@@ -4,15 +4,13 @@ Covers the pieces the router tests can't reach:
 1. ``compute_event_diff`` — a pure helper; assert on its return shape so
    a future refactor doesn't accidentally broaden ``MATERIAL_FIELDS`` to
    include routine edits.
-2. ``list_events`` — the browse list returns the upcoming (today-or-later)
-   event set for a school, hydrated with occurrences, and is cached
-   per-school until a write invalidates it. The router tests mock the
-   service entirely, so the query shape and cache behavior are only
-   exercised here.
+2. ``list_events`` - the browse list returns the upcoming (today-or-later)
+   event set for a school, hydrated with occurrences.
 """
 
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
 from postgrest.exceptions import APIError
@@ -42,7 +40,7 @@ def _occurrence(dtstart: datetime, dtend: datetime | None = None) -> OccurrenceR
     """Helper: build an OccurrenceResponse the diff helper can iterate."""
     return OccurrenceResponse.model_validate(
         {
-            "id": 0,
+            "id": str(UUID(int=0)),
             "event_id": 1,
             "dtstart_utc": dtstart,
             "dtend_utc": dtend,
@@ -98,7 +96,7 @@ def _organization(**overrides) -> OrganizationResponse:
         "organization_page": None,
         "ig": None,
         "discord": None,
-        "organization_type": "WUSA",
+        "association_affiliated": True,
         "logo_url": None,
         "created_by": "11111111-1111-1111-1111-111111111111",
         "school": "uwaterloo",
@@ -114,7 +112,7 @@ def test_resolve_organization_fields_derives_from_organization(monkeypatch):
 
     assert event_service._resolve_organization_fields(7) == {
         "organization": "UW Tea Organization",
-        "organization_type": "WUSA",
+        "association_affiliated": True,
         "school": "uwaterloo",
     }
 
@@ -250,7 +248,7 @@ def test_diff_reshuffle_with_same_dates_produces_no_diff():
     ts = datetime(2026, 5, 1, 18, 0, tzinfo=timezone.utc)
     old_occ = OccurrenceResponse.model_validate(
         {
-            "id": 999,
+            "id": str(UUID(int=999)),
             "event_id": 1,
             "dtstart_utc": ts,
             "dtend_utc": None,
@@ -261,7 +259,7 @@ def test_diff_reshuffle_with_same_dates_produces_no_diff():
     )
     new_occ = OccurrenceResponse.model_validate(
         {
-            "id": 888,
+            "id": str(UUID(int=888)),
             "event_id": 1,
             "dtstart_utc": ts,
             "dtend_utc": None,
@@ -311,8 +309,6 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     from services import event_date_service
 
     patch_sb("services.event_query")  # the upcoming-events query now lives here
-    event_service.invalidate_events_cache()  # isolate from other tests' cache
-
     # The default feed first scans lightweight event IDs, then loads full rows
     # only for the current page; occurrences are batched separately.
     fake_sb.execute.side_effect = [
@@ -375,32 +371,27 @@ def test_list_events_returns_upcoming_with_occurrences(monkeypatch, fake_sb, pat
     assert bound <= datetime.now(timezone.utc)  # the boundary is start-of-today, never future
 
 
-def test_list_events_is_cached_until_invalidated(monkeypatch):
-    """Promoted-event lookup serves the all-upcoming source from cache."""
-    event_service.invalidate_events_cache()
-    calls = {"n": 0}
-
-    def _fake_load(school):
-        calls["n"] += 1
-        return []
-
-    monkeypatch.setattr(event_service, "_load_upcoming_events", _fake_load)
+def test_list_promoted_events_queries_only_active_ids(monkeypatch):
+    """Promoted lookup routes active IDs through the canonical paged query."""
+    promoted = [EventSummaryResponse.model_validate(_event(id=1).model_dump())]
+    mock_list = MagicMock(return_value=(promoted, 1))
+    monkeypatch.setattr(event_service, "list_events", mock_list)
     monkeypatch.setattr(
         "services.credit_service.get_active_promoted_event_ids",
-        MagicMock(return_value=[1]),
+        MagicMock(return_value=[1, 2]),
     )
 
-    event_service.list_promoted_events(school="uwaterloo")
-    event_service.list_promoted_events(school="uwaterloo")
-    assert calls["n"] == 1  # second call is a cache hit
+    result = event_service.list_promoted_events(school="uwaterloo")
 
-    event_service.invalidate_events_cache()
-    event_service.list_promoted_events(school="uwaterloo")
-    assert calls["n"] == 2  # reloaded after invalidation
+    assert result == promoted
+    mock_list.assert_called_once_with(
+        school="uwaterloo",
+        limit=MAX_LIST_LIMIT,
+        ids=[1, 2],
+    )
 
 
 def test_list_events_pushes_filters_into_event_query(monkeypatch):
-    event_service.invalidate_events_cache()
     mock_page = MagicMock(return_value=([], 0))
     monkeypatch.setattr(event_service.event_query, "load_events_page", mock_page)
 
@@ -545,7 +536,7 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
 
     assert total == 2
     assert [event.id for event in items] == [2]
-    assert items[0].occurrences[0].id == 22
+    assert items[0].occurrences[0].id == UUID(int=22)
     list_for_events.assert_called_once_with([2])
     fake_sb.eq.assert_any_call("events.school", "uwaterloo")
     fake_sb.in_.assert_any_call("events.category", ["Technology"])
@@ -633,7 +624,7 @@ def test_load_events_page_default_date_uses_lightweight_candidate_scan(
 
     assert total == 2
     assert [event.id for event in items] == [2]
-    assert items[0].occurrences[0].id == 22
+    assert items[0].occurrences[0].id == UUID(int=22)
     list_for_events.assert_called_once_with([2])
     count_select = fake_sb.select.call_args_list[0].args[0]
     first_page_select = fake_sb.select.call_args_list[1].args[0]
@@ -761,7 +752,7 @@ def _occ_response(dtstart, dtend=None, occ_id=1, event_id=42):
     """Helper: build an OccurrenceResponse for the test above."""
     return OccurrenceResponse.model_validate(
         {
-            "id": occ_id,
+            "id": str(UUID(int=occ_id)),
             "event_id": event_id,
             "dtstart_utc": dtstart,
             "dtend_utc": dtend,

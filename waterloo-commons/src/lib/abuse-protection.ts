@@ -19,8 +19,7 @@ function abuseProtectionSecret() {
 }
 
 export function requestClientAddress(request: Request) {
-  const forwarded = request.headers.get("x-vercel-forwarded-for")
-    ?? request.headers.get("x-forwarded-for")
+  const forwarded = request.headers.get("x-forwarded-for")
     ?? request.headers.get("x-real-ip")
     ?? "unknown";
   return forwarded.split(",", 1)[0].trim().toLowerCase().slice(0, 128) || "unknown";

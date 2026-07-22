@@ -1,12 +1,16 @@
 """Interaction event constants and abuse-prevention bounds."""
 
-DEFAULT_INTERACTION_LIMIT = 50
-MAX_INTERACTION_BATCH_SIZE = 50
-MAX_INTERACTION_METADATA_BYTES = 2048
+from core.product_control import product_control
 
-MAX_DUPLICATE_INTERACTIONS = 3
-DEDUP_WINDOW_MINUTES = 60
-MAX_USER_INTERACTIONS_PER_WINDOW = 100
+_CONTROL = product_control.interaction_ingestion
+
+DEFAULT_INTERACTION_LIMIT = _CONTROL.default_query_limit
+MAX_INTERACTION_BATCH_SIZE = _CONTROL.maximum_batch_size
+MAX_INTERACTION_METADATA_BYTES = _CONTROL.maximum_metadata_bytes
+
+MAX_DUPLICATE_INTERACTIONS = _CONTROL.maximum_duplicates_per_window
+DEDUP_WINDOW_MINUTES = _CONTROL.deduplication_window_minutes
+MAX_USER_INTERACTIONS_PER_WINDOW = _CONTROL.maximum_user_interactions_per_window
 
 INTERACTION_CLICK = "click"
 INTERACTION_DETAIL_VIEW = "detail_view"

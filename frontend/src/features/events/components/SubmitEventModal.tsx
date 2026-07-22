@@ -273,7 +273,7 @@ function SubmitEventModalFormBody({
           <DrawerClose asChild>
             <button
               type="button"
-              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted-hover hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               aria-label={t("common.close")}
             >
               <X className="size-4" />
@@ -313,7 +313,7 @@ function SubmitEventModalFormBody({
                 <button
                   type="button"
                   onMouseDown={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center justify-center gap-3 rounded-xl bg-secondary px-4 py-8 text-center text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 cursor-pointer border-2 border-dashed border-border/80"
+                  className="flex w-full flex-col items-center justify-center gap-3 rounded-xl bg-secondary px-4 py-8 text-center text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none hover:bg-secondary-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 cursor-pointer border-2 border-dashed border-border/80"
                 >
                   <ImagePlus className="size-8 text-muted-foreground mb-0.5" />
                   <p className="text-sm font-semibold text-foreground">
@@ -339,7 +339,7 @@ function SubmitEventModalFormBody({
             <DrawerClose asChild>
               <button
                 type="button"
-                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted-hover hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 aria-label={t("common.close")}
               >
                 <X className="size-4" />
@@ -424,7 +424,7 @@ function SubmitEventModalContent({
           <DrawerClose asChild>
             <button
               type="button"
-              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted-hover hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               aria-label={t("common.close")}
             >
               <X className="size-4" />

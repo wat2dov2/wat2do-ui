@@ -1,13 +1,7 @@
 import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import { productControl } from "@/shared/config/productControl";
 import { resolveSchool } from "@/shared/constants/schools";
-
-const PRODUCTION_API_BASE_URL = "https://wat2do-api-production.up.railway.app";
-
-const EVENT_FEED_REVALIDATE_SECONDS = 3600;
-
-/** Backend `PaginationParams.page_size` maximum. */
-const SERVER_FEED_PAGE_SIZE = 100;
 
 export interface SchoolBrowseSnapshot {
   feed: PaginatedEventsResponse;
@@ -23,9 +17,7 @@ function getServerApiBaseUrl(): string {
     return configuredPublicApiUrl.replace(/\/$/, "");
   }
 
-  return process.env.NODE_ENV === "development"
-    ? "http://localhost:8000"
-    : PRODUCTION_API_BASE_URL;
+  return "http://127.0.0.1:8000";
 }
 
 export function eventFeedTag(school: string): string {
@@ -39,7 +31,7 @@ async function fetchEventsPage(
 ): Promise<PaginatedEventsResponse> {
   const params = new URLSearchParams({
     page: String(page),
-    page_size: String(SERVER_FEED_PAGE_SIZE),
+    page_size: String(productControl.eventDiscovery.serverFeedPageSize),
     school,
   });
   const response = await fetch(`${getServerApiBaseUrl()}/events/?${params.toString()}`, fetchOptions);
@@ -72,7 +64,10 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
   const resolvedSchool = resolveSchool(school);
   const fetchOptions: RequestInit = {
     next: {
-      revalidate: process.env.NODE_ENV === "development" ? 0 : EVENT_FEED_REVALIDATE_SECONDS,
+      revalidate:
+        process.env.NODE_ENV === "development"
+          ? 0
+          : productControl.eventDiscovery.feedRevalidateSeconds,
       tags: [eventFeedTag(resolvedSchool)],
     },
   };
@@ -89,7 +84,7 @@ export async function getSchoolBrowseSnapshot(school: string): Promise<SchoolBro
     items: allItems,
     total: firstPage.total,
     page: 1,
-    page_size: allItems.length || SERVER_FEED_PAGE_SIZE,
+    page_size: allItems.length || productControl.eventDiscovery.serverFeedPageSize,
     total_pages: 1,
     latest_added_event: firstPage.latest_added_event ?? null,
   };

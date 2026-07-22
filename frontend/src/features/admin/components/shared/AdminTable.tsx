@@ -19,7 +19,7 @@ interface AdminTableProps {
 
 export function AdminTable({ children, headers, className }: AdminTableProps) {
   return (
-    <div className={`bg-card border border-border rounded-xl overflow-hidden ${className || ""}`}>
+    <div className={`bg-surface border border-border rounded-xl overflow-hidden ${className || ""}`}>
       <Table>
         <TableHeader>
           <TableRow className="bg-secondary">

@@ -2,6 +2,7 @@
 
 import logging
 import math
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from core.database import get_sb
@@ -14,14 +15,31 @@ from schemas.event import EventTimeMeta
 log = logging.getLogger(__name__)
 
 
-def get_popularity_scores(candidate_event_ids: list[int]) -> dict[int, float]:
+@dataclass(frozen=True)
+class PopularityModel:
+    """Immutable-by-convention raw popularity reused across school batches."""
+
+    scores: dict[int, float]
+
+
+def build_popularity_model() -> PopularityModel:
+    """Aggregate interaction popularity once for a complete nightly run."""
+    popular = get_event_popularity(limit=POP_CANDIDATE_LIMIT)
+    return PopularityModel(scores={item.event_id: item.score for item in popular})
+
+
+def get_popularity_scores(
+    candidate_event_ids: list[int],
+    *,
+    model: PopularityModel | None = None,
+) -> dict[int, float]:
     """
     Score events by popularity (interaction count) with time-decay.
     Events with zero interactions fall back to recency of added_at.
     Returns {event_id: score} normalized to [0, 1].
     """
-    popular = get_event_popularity(limit=POP_CANDIDATE_LIMIT)
-    pop_map = {item.event_id: item.score for item in popular}
+    popularity_model = model or build_popularity_model()
+    pop_map = popularity_model.scores
 
     candidate_set = set(candidate_event_ids)
     events_meta = _load_events_meta(candidate_event_ids)

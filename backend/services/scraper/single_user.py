@@ -7,11 +7,12 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from core.constants.school_mappings import RECIPIENT_ID_TO_SCHOOL_SLUG
+from core.product_control import product_control
 from services.scraper.pipeline import parse_post_timestamp
 
 log = logging.getLogger(__name__)
 
-_RECENT_POST_WINDOW = timedelta(minutes=30)
+_RECENT_POST_WINDOW = timedelta(minutes=product_control.scraping.single_user_recent_post_minutes)
 
 
 class SchoolResolutionError(ValueError):

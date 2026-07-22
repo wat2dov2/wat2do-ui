@@ -21,7 +21,7 @@ export function Pagination({
     <div className="flex w-full justify-end">
       <div className="flex items-center gap-1.5">
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           aria-label={t("admin.previous")}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
@@ -37,7 +37,7 @@ export function Pagination({
           {currentPage}
         </span>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           aria-label={t("admin.next")}
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}

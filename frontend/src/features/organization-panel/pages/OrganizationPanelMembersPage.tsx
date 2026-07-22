@@ -51,7 +51,7 @@ function RosterTableHeader({ columns }: RosterTableHeaderProps) {
         {columns.map((col) => (
           <th
             key={col}
-            className="text-xs font-semibold text-muted-foreground px-6 py-4 uppercase tracking-wider"
+            className="text-xs font-semibold text-muted-foreground px-6 py-4"
           >
             {t(`organizationPanel.memberColumns.${col}`)}
           </th>
@@ -451,14 +451,14 @@ export function OrganizationPanelMembersPage() {
               <span className="text-muted-foreground text-sm">{t("organizationPanel.loadingRoster")}</span>
             </div>
           ) : activeTab === "members" ? (
-            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
               {activeMembers.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
                     <RosterTableHeader columns={["name", "email", "role", "joined"]} />
                     <tbody className="divide-y divide-border/60">
                       {activeMembers.map((member) => (
-                        <tr key={member.id} className="hover:bg-secondary/10 transition-colors">
+                        <tr key={member.id} className="hover:bg-surface-hover transition-colors">
                           <td className="px-6 py-4 text-sm font-medium text-foreground">
                             <div className="flex items-center gap-3">
                               <div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold uppercase overflow-hidden shrink-0">
@@ -493,7 +493,7 @@ export function OrganizationPanelMembersPage() {
                                 size="sm"
                                 onMouseDown={() => handleRemoveMembership(member.user.id)}
                                 disabled={actionLoading !== null}
-                                className="text-destructive hover:bg-destructive/10 shrink-0"
+                                className="text-destructive hover:bg-surface-hover shrink-0"
                               >
                                 {actionLoading === member.user.id ? (
                                   <Loader2 className="size-4 animate-spin mr-1" />
@@ -522,14 +522,14 @@ export function OrganizationPanelMembersPage() {
               )}
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
               {pendingRequests.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
                     <RosterTableHeader columns={["name", "email", "requested"]} />
                     <tbody className="divide-y divide-border/60">
                       {pendingRequests.map((request) => (
-                        <tr key={request.id} className="hover:bg-secondary/10 transition-colors">
+                        <tr key={request.id} className="hover:bg-surface-hover transition-colors">
                           <td className="px-6 py-4 text-sm font-medium text-foreground">
                             <div className="flex items-center gap-3">
                               <div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold uppercase overflow-hidden shrink-0">
@@ -559,11 +559,11 @@ export function OrganizationPanelMembersPage() {
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <Button
-                                variant="secondary"
+                                variant="primary"
                                 size="sm"
                                 onMouseDown={() => handleApproveMembership(request.user.id)}
                                 disabled={actionLoading !== null}
-                                className="bg-green-500/10 border border-green-500/20 text-green-500 hover:bg-green-500/20 shrink-0 font-semibold"
+                                className="shrink-0 font-semibold"
                               >
                                 {actionLoading === request.user.id ? (
                                   <Loader2 className="size-4 animate-spin mr-1" />
@@ -577,7 +577,7 @@ export function OrganizationPanelMembersPage() {
                                 size="sm"
                                 onMouseDown={() => handleRejectMembership(request.user.id)}
                                 disabled={actionLoading !== null}
-                                className="text-destructive hover:bg-destructive/10 shrink-0 font-semibold"
+                                className="text-destructive hover:bg-surface-hover shrink-0 font-semibold"
                               >
                                 {actionLoading === request.user.id ? (
                                   <Loader2 className="size-4 animate-spin mr-1" />
@@ -609,7 +609,7 @@ export function OrganizationPanelMembersPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <Card className="bg-card border border-border shadow-sm">
+          <Card className="bg-surface border border-border shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <UserPlus className="size-5 text-primary" />
@@ -643,7 +643,7 @@ export function OrganizationPanelMembersPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card border border-border shadow-sm">
+          <Card className="bg-surface border border-border shadow-sm">
             <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border/60">
               <div>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -679,7 +679,7 @@ export function OrganizationPanelMembersPage() {
                     <RosterTableHeader columns={["name", "email", "role", "joined"]} />
                     <tbody className="divide-y divide-border/60">
                       {filteredManagers.map((member) => (
-                        <tr key={member.user_id} className="hover:bg-secondary/10 transition-colors">
+                        <tr key={member.user_id} className="hover:bg-surface-hover transition-colors">
                           <td className="px-6 py-4 text-sm font-medium text-foreground">
                             <div className="flex items-center gap-3">
                               <div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold uppercase overflow-hidden shrink-0">
@@ -714,7 +714,7 @@ export function OrganizationPanelMembersPage() {
                                 size="sm"
                                 onMouseDown={() => handleRemoveManager(member.user_id, member.email)}
                                 disabled={actionLoading !== null}
-                                className="text-destructive hover:bg-destructive/10 shrink-0"
+                                className="text-destructive hover:bg-surface-hover shrink-0"
                               >
                                 {actionLoading === member.user_id ? (
                                   <Loader2 className="size-4 animate-spin mr-1" />
@@ -745,7 +745,7 @@ export function OrganizationPanelMembersPage() {
           </Card>
 
           {joinRequests.length > 0 && (
-            <Card className="bg-card border border-border shadow-sm mt-6">
+            <Card className="bg-surface border border-border shadow-sm mt-6">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <UserPlus className="size-5 text-primary" />
@@ -760,13 +760,13 @@ export function OrganizationPanelMembersPage() {
                   <table className="w-full border-collapse">
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
-                        <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                        <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-4">
                           {t("organizationPanel.studentNameEmail")}
                         </th>
-                        <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                        <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-4">
                           {t("organizationPanel.pitch")}
                         </th>
-                        <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                        <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-4">
                           {t("organizationPanel.invitedAt")}
                         </th>
                         <th className="px-6 py-4"></th>
@@ -774,7 +774,7 @@ export function OrganizationPanelMembersPage() {
                     </thead>
                     <tbody className="divide-y divide-border/60">
                       {joinRequests.map((req) => (
-                        <tr key={req.id} className="transition-colors hover:bg-secondary/10">
+                        <tr key={req.id} className="transition-colors hover:bg-surface-hover">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-semibold text-foreground">
                               {req.users?.full_name || "Student"}
@@ -792,11 +792,11 @@ export function OrganizationPanelMembersPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <div className="flex justify-end gap-2">
                               <Button
-                                variant="secondary"
+                                variant="primary"
                                 size="sm"
                                 disabled={actionLoading !== null}
                                 onMouseDown={() => handleResolveJoinRequest(req.id, "approved")}
-                                className="bg-green-500/10 border border-green-500/20 text-green-500 hover:bg-green-500/20 shrink-0 font-semibold"
+                                className="shrink-0 font-semibold"
                               >
                                 {actionLoading === req.id ? (
                                   <Loader2 className="size-4 animate-spin mr-1" />
@@ -810,7 +810,7 @@ export function OrganizationPanelMembersPage() {
                                 size="sm"
                                 disabled={actionLoading !== null}
                                 onMouseDown={() => handleResolveJoinRequest(req.id, "rejected")}
-                                className="text-destructive hover:bg-destructive/10 shrink-0 font-semibold"
+                                className="text-destructive hover:bg-surface-hover shrink-0 font-semibold"
                               >
                                 {actionLoading === req.id ? (
                                   <Loader2 className="size-4 animate-spin mr-1" />
@@ -831,7 +831,7 @@ export function OrganizationPanelMembersPage() {
           )}
 
           {invitations.length > 0 && (
-            <Card className="bg-card border border-border shadow-sm mt-6">
+            <Card className="bg-surface border border-border shadow-sm mt-6">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <MailOpen className="size-5 text-primary" />
@@ -846,13 +846,13 @@ export function OrganizationPanelMembersPage() {
                   <table className="w-full border-collapse">
                     <thead className="bg-secondary/35 border-b border-border">
                       <tr>
-                        <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                        <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-4">
                           {t("organizationPanel.emailAddress")}
                         </th>
-                        <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                        <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-4">
                           {t("organizationPanel.invitedAt")}
                         </th>
-                        <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-6 py-4">
+                        <th className="text-left text-xs font-semibold text-muted-foreground px-6 py-4">
                           {t("organizationPanel.expiresAt")}
                         </th>
                         <th className="px-6 py-4"></th>
@@ -860,7 +860,7 @@ export function OrganizationPanelMembersPage() {
                     </thead>
                     <tbody className="divide-y divide-border/60">
                       {invitations.map((invite) => (
-                        <tr key={invite.id} className="transition-colors hover:bg-secondary/10">
+                        <tr key={invite.id} className="transition-colors hover:bg-surface-hover">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground font-medium">
                             {invite.email}
                           </td>
@@ -884,7 +884,7 @@ export function OrganizationPanelMembersPage() {
                               size="sm"
                               disabled={actionLoading !== null}
                               onMouseDown={() => handleRevokeInvitation(invite.id, invite.email)}
-                              className="text-destructive hover:bg-destructive/10 shrink-0"
+                              className="text-destructive hover:bg-surface-hover shrink-0"
                             >
                               {actionLoading === invite.id ? (
                                 <Loader2 className="size-4 animate-spin mr-1" />

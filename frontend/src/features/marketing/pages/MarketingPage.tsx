@@ -82,7 +82,7 @@ export function MarketingPage({ events, userEmail }: MarketingPageProps) {
                   handleViewDetails(qr);
                 }
               }}
-              className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:opacity-80 transition-all cursor-pointer"
+              className="bg-surface border border-border rounded-xl overflow-hidden hover:shadow-md hover:opacity-80 transition-all cursor-pointer"
             >
               <div className="w-full h-64 bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                 {qr.imageUrl ? (

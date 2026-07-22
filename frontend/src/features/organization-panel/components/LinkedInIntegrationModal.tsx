@@ -8,7 +8,6 @@ const linkedInConfig: PlatformConnectConfig = {
   connectDescKey: "integrations.linkedinConnectDescription",
   authorizedTextKey: "integrations.accountConnected",
   authorizeTextKey: "integrations.connectWithLinkedIn",
-  brandColorClass: "bg-blue-700 hover:bg-blue-800",
   selectLabelKey: "integrations.step2SelectPage",
   primaryFieldLabelKey: "integrations.companyPage",
   primaryPlaceholderKey: "integrations.selectPage",

@@ -136,22 +136,35 @@ def load_events_in_window(
     keeping the earliest matching occurrence for ordering and capping.
     """
     columns = _SUMMARY_COLUMNS if model is EventSummaryResponse else "*"
-    q = (
-        get_sb()
-        .table(EVENT_DATES)
-        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{_ORGANIZATION_EMBED})")
+    event_ids = _load_lightweight_date_page_ids(
+        start_utc=start_utc,
+        end_utc=end_utc,
+        school=school,
+        offset=0,
+        limit=cap,
+        cap=cap,
+        total=cap,
     )
-    if start_utc is not None:
-        q = q.gte("dtstart_utc", start_utc.isoformat())
-    if end_utc is not None:
-        q = q.lte("dtstart_utc", end_utc.isoformat())
-    if school:
-        q = q.eq("events.school", school)
-    rows = _order_event_date_rows(q).range(0, cap * 5 - 1).execute().data or []
+    if not event_ids:
+        return []
 
-    events = _dedup_keeping_earliest(rows, cap)
-    occ_by_event = event_date_service.list_for_events([row["id"] for row in events])
-    return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in events]
+    rows_by_id: dict[int, dict] = {}
+    for start in range(0, len(event_ids), 500):
+        chunk = event_ids[start : start + 500]
+        rows = (
+            get_sb()
+            .table(EVENTS)
+            .select(f"{columns},{_ORGANIZATION_EMBED}")
+            .in_("id", chunk)
+            .execute()
+            .data
+            or []
+        )
+        rows_by_id.update({int(row["id"]): row for row in rows})
+
+    ordered_rows = [rows_by_id[event_id] for event_id in event_ids if event_id in rows_by_id]
+    occ_by_event = event_date_service.list_for_events(event_ids)
+    return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in ordered_rows]
 
 
 @supabase_retry
@@ -458,29 +471,6 @@ def _append_deduped_event_ids(
         ordered_ids.append(event_id)
         if len(ordered_ids) >= cap:
             break
-
-
-def _dedup_keeping_earliest(rows: list[dict], cap: int) -> list[dict]:
-    """One ``events`` row per id, keeping its earliest occurrence.
-
-    Rows arrive sorted by ``dtstart_utc`` ascending, so the first time we see an
-    event id it carries that event's soonest upcoming occurrence. Stops once
-    ``cap`` distinct events are collected.
-    """
-    seen: set[int] = set()
-    events: list[dict] = []
-    for row in rows:
-        event_row = row.get("events")
-        if not event_row:
-            continue
-        rid = event_row.get("id")
-        if rid is None or rid in seen:
-            continue
-        seen.add(rid)
-        events.append(event_row)
-        if len(events) >= cap:
-            break
-    return events
 
 
 def _dedup_candidates_keeping_earliest(rows: list[dict], cap: int) -> list[_EventCandidate]:

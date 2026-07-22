@@ -157,14 +157,14 @@ function CreateQRCodeModalContent({
                   <FieldGroup>
                     <Field>
                       <FieldLabel htmlFor="poster-name" className="text-sm font-medium text-foreground">
-                        {t("qrCode.posterName")} <span className="text-error">*</span>
+                        {t("qrCode.posterName")} <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input
                         id="poster-name"
                         value={form.formData.name}
                         onChange={(e) => form.updateField("name", e.target.value)}
                         placeholder={t("forms.posterNamePlaceholder")}
-                        className={form.errors.name ? "border-error" : ""}
+                        className={form.errors.name ? "border-destructive" : ""}
                       />
                       {form.errors.name && (
                         <FieldError className="text-xs">{form.errors.name}</FieldError>
@@ -183,7 +183,7 @@ function CreateQRCodeModalContent({
 
                     <Field>
                       <FieldLabel className="text-sm font-medium text-foreground">
-                        {t("qrCode.destination")} <span className="text-error">*</span>
+                        {t("qrCode.destination")} <span className="text-destructive">*</span>
                       </FieldLabel>
                       <RadioOptionGroup
                         options={destinationOptions}
@@ -201,7 +201,7 @@ function CreateQRCodeModalContent({
                     {form.formData.destinationType === "custom-url" && (
                       <Field>
                         <FieldLabel htmlFor="custom-url" className="text-sm font-medium text-foreground">
-                          {t("qrCode.url")} <span className="text-error">*</span>
+                          {t("qrCode.url")} <span className="text-destructive">*</span>
                         </FieldLabel>
                         <Input
                           id="custom-url"
@@ -209,7 +209,7 @@ function CreateQRCodeModalContent({
                           value={form.formData.customUrl}
                           onChange={(e) => form.updateField("customUrl", e.target.value)}
                           placeholder={t("forms.urlPlaceholder")}
-                          className={form.errors.url ? "border-error" : ""}
+                          className={form.errors.url ? "border-destructive" : ""}
                         />
                         {form.errors.url && (
                           <FieldError className="text-xs">{form.errors.url}</FieldError>
@@ -281,7 +281,7 @@ function CreateQRCodeModalContent({
 
                 <Field orientation="horizontal">
                   <DialogClose asChild>
-                    <Button variant="outline" type="button">
+                    <Button variant="secondary" type="button">
                       {t("common.cancel")}
                     </Button>
                   </DialogClose>
@@ -295,7 +295,7 @@ function CreateQRCodeModalContent({
                   </LoadingButton>
                 </Field>
                 {createError && (
-                  <FieldError className="text-xs text-error">{createError}</FieldError>
+                  <FieldError className="text-xs text-destructive">{createError}</FieldError>
                 )}
               </FieldGroup>
             </form>

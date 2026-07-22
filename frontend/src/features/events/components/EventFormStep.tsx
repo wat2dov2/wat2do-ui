@@ -216,7 +216,7 @@ export function EventFormStep({
                 <EventFormFields />
                 <Field orientation="horizontal" className="mt-6">
                   <DrawerClose asChild>
-                    <Button variant="outline" type="button">
+                    <Button variant="secondary" type="button">
                       {t("common.cancel")}
                     </Button>
                   </DrawerClose>

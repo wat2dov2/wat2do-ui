@@ -7,28 +7,19 @@ importing FastAPI.
 
 import json
 import logging
-import threading
 from datetime import datetime, timedelta, timezone
 
 import openai
 from openai import OpenAI
 
-from core.cache import TTLCache
 from core.config import settings
 from core.constants import EVENT_CATEGORIES
+from core.product_control import product_control
 from schemas.event import normalize_category
 
 log = logging.getLogger(__name__)
 
-AI_MAX_TOKENS = 500
-
-# Daily per-user AI budget (M8): key ``(YYYY-MM-DD, user_id)`` in a 25 h TTL
-# cache so calendar-day rollover resets without double-counting. Process-local
-# like ``core/rate_limit.py``; multi-worker needs Redis.
-DAILY_AI_LIMIT = 100
-
-_daily_ai_cache = TTLCache(default_ttl=25 * 60 * 60)
-_daily_ai_lock = threading.Lock()
+AI_MAX_TOKENS = product_control.ai_generation.maximum_output_tokens
 
 # Domain lists shared across prompt templates (DRY - H9/H10)
 LOCATIONS = (
@@ -252,36 +243,6 @@ def _call_chat_completion(
         raise AIServiceError("AI service error.", error_kind="api")
 
 
-def _today_key() -> str:
-    """UTC calendar day key used to scope the per-user daily counter."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-
-def enforce_daily_ai_budget(user_id: str, limit: int = DAILY_AI_LIMIT) -> None:
-    """Raise ``AIServiceError`` if *user_id* has exceeded the daily AI budget.
-
-    Complements the per-minute ``ai_generate_*_rate_limiter`` with a daily ceiling (M8).
-    Counter is process-local (same limitation as ``core/rate_limit.py``).
-    """
-    if not user_id:
-        return
-    key = f"ai:{_today_key()}:{user_id}"
-    with _daily_ai_lock:
-        current = _daily_ai_cache.get(key) or 0
-        if current >= limit:
-            log.warning(
-                "User %s exceeded daily AI budget (%d/%d)",
-                user_id,
-                current,
-                limit,
-            )
-            raise AIServiceError(
-                f"Daily AI request limit ({limit}) reached. Please try again tomorrow.",
-                error_kind="api",
-            )
-        _daily_ai_cache.set(key, current + 1)
-
-
 def validate_filter_response(parsed: dict) -> dict:
     """Validate and sanitize the parsed filter JSON into a dict matching FilterStateResponse."""
     price_raw = parsed.get("priceRange")
@@ -310,7 +271,6 @@ def generate_filters(
     prompt: str,
     *,
     client: OpenAI | None = None,
-    user_id: str | None = None,
 ) -> dict:
     """Generate filter state from a natural language prompt.
 
@@ -318,13 +278,7 @@ def generate_filters(
     Raises ``AIServiceError`` on configuration or parsing errors.
     *client* can be injected; defaults to ``get_openai_client()``.
 
-    *user_id* scopes the per-user daily budget counter (M8).  It's
-    optional so internal callers (CLI, jobs) can bypass the cap, but the
-    router always passes it.
     """
-    if user_id is not None:
-        enforce_daily_ai_budget(user_id)
-
     if client is None:
         client = get_openai_client()
 
@@ -433,7 +387,6 @@ def generate_event(
     prompt: str,
     *,
     client: OpenAI | None = None,
-    user_id: str | None = None,
 ) -> dict:
     """Generate event form data from a natural language prompt.
 
@@ -441,11 +394,7 @@ def generate_event(
     Raises ``AIServiceError`` on configuration or parsing errors.
     *client* can be injected; defaults to ``get_openai_client()``.
 
-    *user_id* scopes the per-user daily budget counter (M8).
     """
-    if user_id is not None:
-        enforce_daily_ai_budget(user_id)
-
     if client is None:
         client = get_openai_client()
 
@@ -473,7 +422,6 @@ def parse_event_image(
     content_type: str,
     *,
     client: OpenAI | None = None,
-    user_id: str | None = None,
     user_school: str | None = None,
 ) -> dict:
     """Extract event form data from an uploaded image file using OpenAI Vision."""
@@ -482,9 +430,6 @@ def parse_event_image(
 
     from services.school_context import resolve_school_timezone
     from services.scraper.extractor import extract_events_from_post
-
-    if user_id is not None:
-        enforce_daily_ai_budget(user_id)
 
     base64_data = base64.b64encode(file_contents).decode("utf-8")
     image_url = f"data:{content_type};base64,{base64_data}"

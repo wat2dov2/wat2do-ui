@@ -18,4 +18,3 @@ beautifulsoup4>=4.12.0
 python-dateutil>=2.9.0
 pytest>=8.3.0
 pytest-asyncio>=0.24.0
-cachetools>=5.5.0

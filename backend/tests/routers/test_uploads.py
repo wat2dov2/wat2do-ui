@@ -66,7 +66,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
     defaults = {
         "id": 1,
         "organization_name": "Test Organization",
-        "organization_type": "WUSA",
+        "association_affiliated": True,
         "created_by": FAKE_USER["id"],
     }
     defaults.update(overrides)
@@ -209,7 +209,16 @@ def test_upload_event_image_owner_allowed(authenticated_client, monkeypatch):
     """Owner can upload an image to their own event."""
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
+    monkeypatch.setattr(
+        event_service,
+        "update_event",
+        MagicMock(
+            return_value=event_service.EventUpdateResult(
+                event=event,
+                recipient_ids=[],
+            )
+        ),
+    )
     monkeypatch.setattr(
         storage, "upload_file", MagicMock(return_value="https://example.com/img.png")
     )

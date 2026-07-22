@@ -12,7 +12,6 @@ const facebookConfig: PlatformConnectConfig = {
   connectDescKey: "integrations.facebookConnectDescription",
   authorizedTextKey: "integrations.accountConnected",
   authorizeTextKey: "integrations.connectWithFacebook",
-  brandColorClass: "bg-blue-600 hover:bg-blue-700",
   selectLabelKey: "integrations.step2SelectDestination",
   primaryFieldLabelKey: "integrations.facebookPage",
   primaryPlaceholderKey: "integrations.selectPage",
@@ -46,7 +45,7 @@ export function FacebookIntegrationModal({
       <div className="flex gap-2">
         <Button
           type="button"
-          variant={connectionType === "page" ? "default" : "outline"}
+          variant={connectionType === "page" ? "primary" : "secondary"}
           className="flex-1"
           onMouseDown={() => handleConnectionTypeChange("page")}
         >
@@ -54,7 +53,7 @@ export function FacebookIntegrationModal({
         </Button>
         <Button
           type="button"
-          variant={connectionType === "group" ? "default" : "outline"}
+          variant={connectionType === "group" ? "primary" : "secondary"}
           className="flex-1"
           onMouseDown={() => handleConnectionTypeChange("group")}
         >

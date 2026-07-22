@@ -17,8 +17,6 @@ class TestTrustedNetworks:
     """P2: the default config is loopback only; 172.x must NOT be trusted."""
 
     def test_only_loopback_trusted_by_default(self):
-        # Clear the lru_cache so the assertion reflects current settings.
-        _trusted_networks.cache_clear()
         nets = _trusted_networks()
         str_nets = [str(n) for n in nets]
         assert "127.0.0.1/32" in str_nets
@@ -29,13 +27,11 @@ class TestTrustedNetworks:
 
 class TestGetClientIp:
     def test_untrusted_peer_returns_peer(self):
-        _trusted_networks.cache_clear()
         # Peer from the internet — don't trust XFF even if present.
         req = _make_request("8.8.8.8", headers={"x-forwarded-for": "1.2.3.4"})
         assert get_client_ip(req) == "8.8.8.8"
 
     def test_trusted_peer_reads_xff_rightmost(self):
-        _trusted_networks.cache_clear()
         req = _make_request(
             "127.0.0.1",
             headers={"x-forwarded-for": "5.5.5.5, 6.6.6.6"},
@@ -45,7 +41,6 @@ class TestGetClientIp:
 
     def test_docker_bridge_no_longer_trusted(self):
         """172.17.0.X is no longer in the trusted list; XFF is ignored."""
-        _trusted_networks.cache_clear()
         req = _make_request(
             "172.17.0.5",
             headers={"x-forwarded-for": "1.2.3.4"},
@@ -54,6 +49,5 @@ class TestGetClientIp:
         assert get_client_ip(req) == "172.17.0.5"
 
     def test_no_client_returns_unknown(self):
-        _trusted_networks.cache_clear()
         req = SimpleNamespace(client=None, headers={})
         assert get_client_ip(req) == "unknown"

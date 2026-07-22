@@ -17,7 +17,7 @@ export function HomeLandingStep({ flow }: HomeLandingStepProps) {
   return (
     <div className="w-full space-y-8">
       <div className="space-y-2">
-        <Badge variant="outline" className="text-primary border-primary">
+        <Badge variant="secondary" className="text-primary border-primary">
           {t("onboardingDemo.home.badge")}
         </Badge>
         <h1 className="font-sans font-semibold text-2xl sm:text-3xl text-foreground leading-tight">
@@ -68,9 +68,9 @@ export function HomeLandingStep({ flow }: HomeLandingStepProps) {
         </section>
       )}
 
-      <section className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-4">
+      <section className="rounded-xl border border-border bg-surface p-4 flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">
+          <p className="text-xs text-muted-foreground">
             {t("onboardingDemo.challenge.label")}
           </p>
           <p className="text-sm font-medium text-foreground">
@@ -84,7 +84,7 @@ export function HomeLandingStep({ flow }: HomeLandingStepProps) {
       </section>
 
       <div className="flex justify-center pt-4">
-        <Button type="button" variant="outline" onClick={flow.restart}>
+        <Button type="button" variant="secondary" onClick={flow.restart}>
           {t("onboardingDemo.actions.restartDemo")}
         </Button>
       </div>

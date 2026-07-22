@@ -18,7 +18,6 @@ const slackConfig: PlatformConnectConfig = {
   connectDescKey: "integrations.addSlackAppDescription",
   authorizedTextKey: "integrations.appAdded",
   authorizeTextKey: "integrations.addToSlack",
-  brandColorClass: "bg-purple-600 hover:bg-purple-700",
   selectLabelKey: "integrations.step2SelectChannel",
   primaryFieldLabelKey: "integrations.workspace",
   primaryPlaceholderKey: "integrations.selectWorkspace",

@@ -1,4 +1,5 @@
 import type { ApiEventCreate } from "@/shared/generated";
+import type { components } from "@/shared/generated/api-types";
 import type { EventFormData } from "@/shared/types";
 
 /** Map frontend EventFormData to the backend EventCreate payload shape. */
@@ -24,5 +25,24 @@ export function buildEventPayload(eventData: EventFormData): ApiEventCreate {
     organization_id: eventData.organization_id!,
     source_image_url: eventData.source_image_url || null,
     cancelled: false,
+  };
+}
+
+export function buildEventUpdatePayload(
+  eventData: EventFormData,
+): components["schemas"]["EventUpdate"] {
+  return {
+    ...buildEventPayload(eventData),
+    occurrences: eventData.occurrences
+      .filter((occurrence) => occurrence.dtstart_local)
+      .map((occurrence) => ({
+        id: occurrence.id,
+        dtstart_utc: new Date(occurrence.dtstart_local).toISOString(),
+        dtend_utc: occurrence.dtend_local
+          ? new Date(occurrence.dtend_local).toISOString()
+          : null,
+        duration: null,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+      })),
   };
 }

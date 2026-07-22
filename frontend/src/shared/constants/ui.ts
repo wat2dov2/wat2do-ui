@@ -25,6 +25,9 @@ export const JSON_EDITOR_DEBOUNCE_MS = 300;
 /** Small delay (ms) to allow DOM updates before scrolling to an element. */
 export const SCROLL_INTO_VIEW_DELAY_MS = 100;
 
+/** AppLayout main content scroller used by BackToTopButton and scroll helpers. */
+export const MAIN_CONTENT_SCROLL_ROOT_SELECTOR = ".main-content-grid";
+
 
 /** Height of the scan-locations map on the posters page. Used by admin and organization-panel. */
 export const POSTER_MAP_HEIGHT = "600px";

@@ -23,7 +23,7 @@ export function OnboardingDemoPill({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         selected
           ? "border-primary bg-primary/10 text-primary font-medium"
-          : "border-border bg-background text-foreground hover:bg-secondary",
+          : "border-border bg-background text-foreground hover:bg-secondary-hover",
         className
       )}
     >

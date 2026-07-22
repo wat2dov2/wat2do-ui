@@ -1,27 +1,17 @@
-import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
-import {
-  Calendar,
-  ImageOff,
-  MoreHorizontal,
-  Plus,
-} from "@/shared/ui/doodle-icons";
+import { ImageOff } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
+import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 import { Badge } from "@/shared/ui/badge";
-import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
-import { EventOverflowMenu } from "@/features/events/components/EventOverflowMenu";
 import { OrganizationBadgeDropdown } from "@/features/organizations";
 import { useEventStatsActions } from "@/features/events/hooks/useEventStats";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
-import { getUserId } from "@/features/auth/api/auth.api";
-import { useProfileCompleted, useIsAdmin } from "@/features/auth/hooks/useAuthState";
-import { translateCategory, getCategoryClasses, getEventCategory } from "@/shared/utils/event";
+import { getEventCategory } from "@/shared/utils/event";
+import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
 import {
   formatCardDate,
   formatCardTime,
@@ -29,7 +19,7 @@ import {
   wasAddedWithinLast24Hours,
 } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
-import { useMouseDownAction, createAdaptivePressHandlers, useMobileGridClickActivation } from "@/shared/hooks";
+import { useMouseDownAction, useMobileGridClickActivation } from "@/shared/hooks";
 import type { Event } from "@/shared/types";
 import type { EventStats } from "@/features/events/api/events.api";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
@@ -39,11 +29,8 @@ interface EventCardProps {
   /** Live card stats. Omit until the stats query succeeds. */
   stats?: EventStats;
   onEventClick?: (event: Event) => void;
-  /** Grid cards: open footer actions on click below the sm breakpoint or on touch. */
+  /** Grid cards: open details on click below the sm breakpoint or on touch. */
   mobileClickActivation?: boolean;
-  /** Called when the user confirms deletion (shown only to owners/admins). */
-  onDelete?: (eventId: number) => void;
-  onActionDialogOpen: (dialog: EventCardDialog, event: Event) => void;
 }
 
 function buildEventStatsLabel(
@@ -60,69 +47,60 @@ function buildEventStatsLabel(
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
-export type EventCardDialog = "delete" | "share" | "report";
-
 const CARD_ACTIVATE_IGNORE_SELECTOR =
-  "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate], [data-event-card-footer]";
-
-type CategoryClasses = ReturnType<typeof getCategoryClasses>;
+  "button, a, [role='menuitem'], input, textarea, select, [data-no-card-activate]";
 
 interface EventImageBadgesProps {
   event: Event;
   eventCategory: string;
-  categoryClasses: CategoryClasses;
   isLive: boolean;
   isNew: boolean;
   badgeHoverProps: {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
   };
+  registerCorner: ReturnType<typeof useEventImageCutouts>["registerCorner"];
   t: TFunction;
 }
 
 function EventImageBadges({
   event,
   eventCategory,
-  categoryClasses,
   isLive,
   isNew,
   badgeHoverProps,
+  registerCorner,
   t,
 }: EventImageBadgesProps) {
+
   return (
     <>
-      <BadgeMask variant="top-left">
-        <Badge
-          asChild
-          variant="outline"
-          size="md"
-          className={`block border-0 opacity-70 ${categoryClasses.bg} ${categoryClasses.text}`}
-        >
-          <span>{translateCategory(eventCategory, t)}</span>
-        </Badge>
+      <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
+        <OrganizationTypeBadge type={eventCategory} className="opacity-90" />
       </BadgeMask>
 
       {isLive && (
-        <BadgeMask variant="top-right">
-          <Badge variant="live" size="md" className="uppercase flex items-center">
+        <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
+          <Badge variant="live" size="md" className="flex items-center">
             {t("common.live")}
           </Badge>
         </BadgeMask>
       )}
 
       {isNew && (
-        <BadgeMask variant="bottom-right">
-          <Badge variant="new" size="md" className="uppercase flex items-center">
+        <BadgeMask variant="bottom-right" cutout containerRef={registerCorner("bottom-right")}>
+          <Badge variant="new" size="md" className="flex items-center">
             {t("events.new")}
           </Badge>
         </BadgeMask>
       )}
 
       {event.organization && (
-        <BadgeMask variant="bottom-left">
+        <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
           <OrganizationBadgeDropdown
             organizationName={event.organization}
-            organizationType={event.organization_type}
+            associationAffiliated={event.association_affiliated}
+            school={event.school}
             organizationPage={event.organization_page}
             organizationIg={event.organization_ig}
             organizationDiscord={event.organization_discord}
@@ -136,136 +114,9 @@ function EventImageBadges({
   );
 }
 
-interface EventFooterActionsProps {
-  event: Event;
-  goingButton: ReactNode;
-  categoryClasses: CategoryClasses;
-  canDelete: boolean;
-  preferClickPress: boolean;
-  onActionDialogOpen: (dialog: EventCardDialog) => void;
-  t: TFunction;
-}
-
-function EventFooterActions({
-  event,
-  goingButton,
-  categoryClasses,
-  canDelete,
-  preferClickPress,
-  onActionDialogOpen,
-  t,
-}: EventFooterActionsProps) {
-
-  return (
-    <div
-      data-event-card-footer
-      onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
-      onClick={(event) => event.stopPropagation()}
-      className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
-    >
-      {goingButton}
-
-      <EventCalendarDownloadMenu
-        event={event}
-        stopPropagation
-        triggerTooltip={t("common.addToCalendar")}
-      >
-        <button
-          type="button"
-          aria-label={t("common.addToCalendar")}
-          className={`flex min-h-10 w-full items-center justify-center gap-0.5 border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
-        >
-          <Calendar className="size-4" />
-          <Plus className="size-3" />
-        </button>
-      </EventCalendarDownloadMenu>
-
-      <EventOverflowMenu
-        canDelete={canDelete}
-        onAction={onActionDialogOpen}
-        stopPropagation
-        triggerTooltip={t("common.moreOptions")}
-      >
-        <button
-          type="button"
-          aria-label={t("common.moreOptions")}
-          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
-        >
-          <MoreHorizontal className="size-4" />
-        </button>
-      </EventOverflowMenu>
-    </div>
-  );
-}
-
-interface GoingEventButtonProps {
-  eventId: number;
-  profileCompleted: boolean;
-  isGoingActive: boolean;
-  categoryClasses: CategoryClasses;
-  preferClickPress: boolean;
-  onToggleGoingEvent: (eventId: number) => void;
-  t: TFunction;
-}
-
-function GoingEventButton({
-  eventId,
-  profileCompleted,
-  isGoingActive,
-  categoryClasses,
-  preferClickPress,
-  onToggleGoingEvent,
-  t,
-}: GoingEventButtonProps) {
-  const [loginHintOpen, setLoginHintOpen] = useState(false);
-  const pressHandlers = createAdaptivePressHandlers({
-    preferClick: preferClickPress,
-    onClick: () => {
-      if (!profileCompleted) {
-        setLoginHintOpen(true);
-        return;
-      }
-      onToggleGoingEvent(eventId);
-    },
-  });
-
-  const label = t("common.markGoing");
-  const button = (
-    <button
-      type="button"
-      {...pressHandlers}
-      aria-label={label}
-      title={profileCompleted ? label : t("events.goingRequiresLogin")}
-      className={`flex min-h-10 w-full items-center justify-center px-2 text-xs font-medium transition-colors ${
-        !profileCompleted
-          ? `cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
-          : isGoingActive
-          ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
-          : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
-      }`}
-    >
-      {label}
-    </button>
-  );
-
-  if (profileCompleted) {
-    return button;
-  }
-
-  return (
-    <Tooltip open={loginHintOpen} onOpenChange={setLoginHintOpen}>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent>
-        <p>{t("events.goingRequiresLogin")}</p>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
 interface EventCardImageProps {
   event: Event;
   eventCategory: string;
-  categoryClasses: CategoryClasses;
   isLive: boolean;
   isNew: boolean;
   badgeHoverProps: EventImageBadgesProps["badgeHoverProps"];
@@ -275,40 +126,42 @@ interface EventCardImageProps {
 function EventCardImage({
   event,
   eventCategory,
-  categoryClasses,
   isLive,
   isNew,
   badgeHoverProps,
   t,
 }: EventCardImageProps) {
+  const { surfaceRef, registerCorner: register, cutouts, box } = useEventImageCutouts();
+
   return (
-    <div className="relative" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-      <div className="absolute inset-0 overflow-hidden rounded-t-xl">
-        <LazyImage
-          src={event.source_image_url ?? undefined}
-          alt={event.title}
-          className="absolute inset-0 w-full h-full"
-          fallback={
-            <div
-              className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}
-            >
-              <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
-            </div>
-          }
-          placeholder={
-            <div
-              className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`}
-            />
-          }
-        />
-      </div>
+    <div
+      ref={surfaceRef}
+      className="relative shrink-0 overflow-hidden rounded-t-xl"
+      style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
+    >
+      {/* Masked face: notches are real holes, so the page backdrop shows through. */}
+      <EventImageCutout
+        backgroundColor="var(--surface-elevated)"
+        imageSrc={event.source_image_url}
+        imageAlt={event.title}
+        cutouts={cutouts}
+        width={box.width}
+        height={box.height}
+        className="absolute inset-0"
+      >
+        {!event.source_image_url && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ImageOff className="size-8 text-muted-foreground opacity-60" />
+          </div>
+        )}
+      </EventImageCutout>
       <EventImageBadges
         event={event}
         eventCategory={eventCategory}
-        categoryClasses={categoryClasses}
         isLive={isLive}
         isNew={isNew}
         badgeHoverProps={badgeHoverProps}
+        registerCorner={register}
         t={t}
       />
     </div>
@@ -320,14 +173,7 @@ interface EventCardBodyProps {
   date: string;
   time: string;
   badges: ReturnType<typeof useEventBadges>;
-  profileCompleted: boolean;
-  isGoingActive: boolean;
   stats: EventStats | undefined;
-  categoryClasses: CategoryClasses;
-  canDelete: boolean;
-  preferClickPress: boolean;
-  onToggleGoingEvent: (eventId: number) => void;
-  onActionDialogOpen: (dialog: EventCardDialog) => void;
   t: TFunction;
 }
 
@@ -336,31 +182,12 @@ function EventCardBody({
   date,
   time,
   badges,
-  profileCompleted,
-  isGoingActive,
   stats,
-  categoryClasses,
-  canDelete,
-  preferClickPress,
-  onToggleGoingEvent,
-  onActionDialogOpen,
   t,
 }: EventCardBodyProps) {
-  const goingButton = (
-    <GoingEventButton
-      eventId={event.id}
-      profileCompleted={profileCompleted}
-      isGoingActive={isGoingActive}
-      categoryClasses={categoryClasses}
-      preferClickPress={preferClickPress}
-      onToggleGoingEvent={onToggleGoingEvent}
-      t={t}
-    />
-  );
-
   return (
     <div
-      className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20 ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+      className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20 bg-surface text-foreground border-border`}
     >
       <EventCardContent
         title={event.title}
@@ -369,19 +196,9 @@ function EventCardBody({
         location={event.location}
         badges={badges}
         statsLabel={buildEventStatsLabel(t, stats)}
-        textClassName={categoryClasses.text}
-        secondaryTextClassName={categoryClasses.text}
-        badgeClassName={`border-current ${categoryClasses.text}`}
-      />
-
-      <EventFooterActions
-        event={event}
-        goingButton={goingButton}
-        categoryClasses={categoryClasses}
-        canDelete={canDelete}
-        preferClickPress={preferClickPress}
-        onActionDialogOpen={onActionDialogOpen}
-        t={t}
+        textClassName="text-foreground"
+        secondaryTextClassName="text-muted-foreground"
+        badgeClassName="border-border text-muted-foreground"
       />
     </div>
   );
@@ -414,8 +231,6 @@ function EventCardComponent({
   stats,
   onEventClick,
   mobileClickActivation = true,
-  onDelete,
-  onActionDialogOpen,
 }: EventCardProps) {
   const [isHoveringBadge, setIsHoveringBadge] = useState(false);
 
@@ -431,21 +246,11 @@ function EventCardComponent({
 
   const { t, i18n } = useTranslation();
 
-  const profileCompleted = useProfileCompleted();
-  const isAdmin = useIsAdmin();
-  const currentUserId = getUserId();
-
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const isGoing = useGoingEventsStore((s) => s.goingEventIds.includes(event.id));
-  const { incrementClickCount, toggleWithStats } = useEventStatsActions(schoolFilter);
-
-  const isOwner = Boolean(currentUserId && event.created_by && currentUserId === event.created_by);
-  const canManageEvent = isAdmin || isOwner;
-  const isGoingActive = profileCompleted && isGoing;
+  const { incrementClickCount } = useEventStatsActions(schoolFilter);
 
   const badges = useEventBadges(event);
   const eventCategory = useMemo(() => getEventCategory(event), [event]);
-  const categoryClasses = useMemo(() => getCategoryClasses(eventCategory), [eventCategory]);
 
   const cardDate = useMemo(
     () => formatCardDate(event, i18n.language || "en-US"),
@@ -466,13 +271,6 @@ function EventCardComponent({
 
   const mobileGridClickActivation = useMobileGridClickActivation();
   const preferClickPress = mobileClickActivation && mobileGridClickActivation;
-
-  const handleActionDialogOpen = useCallback(
-    (dialog: EventCardDialog) => {
-      onActionDialogOpen(dialog, event);
-    },
-    [event, onActionDialogOpen],
-  );
 
   const runMouseDownActivate = useMouseDownAction(handleCardActivate);
 
@@ -501,52 +299,42 @@ function EventCardComponent({
   );
 
   return (
-    <>
-      <article
-        data-event-card
-        data-event-id={event.id}
-        role="button"
-        tabIndex={0}
-        aria-label={`Event: ${event.title}`}
-        onMouseDown={handleCardMouseDown}
-        onClick={handleCardClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleCardActivate();
-          }
-        }}
-        className={`rounded-xl cursor-pointer transition-all duration-300 group flex flex-col h-full bg-card ${
-          isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
-        }`}
-      >
-        <EventCardImage
-          event={event}
-          eventCategory={eventCategory}
-          categoryClasses={categoryClasses}
-          isLive={isLive}
-          isNew={isNew}
-          badgeHoverProps={badgeHoverProps}
-          t={t}
-        />
+    <article
+      data-event-card
+      data-event-id={event.id}
+      role="button"
+      tabIndex={0}
+      aria-label={`Event: ${event.title}`}
+      onMouseDown={handleCardMouseDown}
+      onClick={handleCardClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleCardActivate();
+        }
+      }}
+      className={`rounded-xl cursor-pointer transition-all duration-300 group flex flex-col h-full ${
+        isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
+      }`}
+    >
+      <EventCardImage
+        event={event}
+        eventCategory={eventCategory}
+        isLive={isLive}
+        isNew={isNew}
+        badgeHoverProps={badgeHoverProps}
+        t={t}
+      />
 
-        <EventCardBody
-          event={event}
-          date={cardDate}
-          time={cardTime}
-          badges={badges}
-          profileCompleted={profileCompleted}
-          isGoingActive={isGoingActive}
-          stats={stats}
-          categoryClasses={categoryClasses}
-          canDelete={canManageEvent && Boolean(onDelete)}
-          preferClickPress={preferClickPress}
-          onToggleGoingEvent={toggleWithStats}
-          onActionDialogOpen={handleActionDialogOpen}
-          t={t}
-        />
-      </article>
-    </>
+      <EventCardBody
+        event={event}
+        date={cardDate}
+        time={cardTime}
+        badges={badges}
+        stats={stats}
+        t={t}
+      />
+    </article>
   );
 }
 

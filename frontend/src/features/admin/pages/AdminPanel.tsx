@@ -94,18 +94,18 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
         </div>
 
         {recentActivityLoading ? (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
             <LoadingPage />
           </div>
         ) : displayActivities.length > 0 ? (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
             <div className="divide-y divide-border">
               {displayActivities.map((display) => (
                 <div
                   key={`${display.type}-${display.id}`}
                   role="button"
                   tabIndex={0}
-                  className="w-full p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+                  className="w-full p-4 hover:bg-surface-hover transition-colors cursor-pointer"
                   onMouseDown={() => handleActivityClick(display)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -156,7 +156,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
             </div>
           </div>
         ) : (
-          <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <div className="bg-surface border border-border rounded-xl p-8 text-center">
             <p className="text-sm text-muted-foreground">{t("admin.noRecentActivity")}</p>
           </div>
         )}

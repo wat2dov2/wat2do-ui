@@ -2,7 +2,6 @@ import { useMemo, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
-import { EventsBackToTopButton } from "../components/EventsBackToTopButton";
 import { SearchBar, MoreFiltersButton, FilterDropdown } from "@/features/search";
 import { useUIStore } from "@/shared/store/ui.store";
 import { useProfileCompleted } from "@/features/auth";
@@ -38,7 +37,6 @@ export function EventsPageContainer() {
     filters,
     orderedEvents,
     allEvents,
-    handleDeleteEvent,
   } = useEventsPageData({ profileCompleted, viewMode });
 
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
@@ -154,7 +152,7 @@ export function EventsPageContainer() {
                 {filterConfigs.map((config) => (
                   <Button
                     key={config.id}
-                    variant={config.active ? "selected" : "secondary"}
+                    variant={config.active ? "primary" : "secondary"}
                     size="sm"
                     onClick={config.onClick}
                     aria-pressed={config.active}
@@ -168,7 +166,7 @@ export function EventsPageContainer() {
                     key={category.id}
                     variant={
                       filters.selectedCategories.includes(category.id)
-                        ? "selected"
+                        ? "primary"
                         : "secondary"
                     }
                     size="sm"
@@ -215,7 +213,7 @@ export function EventsPageContainer() {
               <button
                 type="button"
                 onMouseDown={() => refreshEvents()}
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary-hover transition-colors"
               >
                 {t("common.tryAgain")}
               </button>
@@ -226,7 +224,6 @@ export function EventsPageContainer() {
               promotedEvents={promotedEvents}
               viewMode={viewMode}
               onEventClick={handleEventClick}
-              onDelete={handleDeleteEvent}
               onClearFilters={filters.handleClearAllFilters}
               hasActiveFilters={filters.filterCount > 0}
               eventStats={eventStats}
@@ -236,7 +233,6 @@ export function EventsPageContainer() {
           )}
         </main>
       </div>
-      <EventsBackToTopButton />
       <EventDetailsModal
         eventId={selectedEventId}
         event={selectedEvent}

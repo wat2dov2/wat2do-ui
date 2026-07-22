@@ -27,7 +27,13 @@ export type ApiEventPublicResponse = components["schemas"]["EventPublicResponse"
 export type ApiEventSummaryResponse = components["schemas"]["EventSummaryResponse"];
 export type ApiEventFeedResponse = components["schemas"]["EventFeedResponse"];
 export type ApiEventStatsResponse = components["schemas"]["EventStatsResponse"];
+export type ApiEventAttendeesResponse = components["schemas"]["EventAttendeesResponse"];
 export type ApiLatestEventResponse = components["schemas"]["LatestEventResponse"];
+export type ApiGoingEventSelection = components["schemas"]["GoingEventSelection"];
+export type ApiGoingEventSelectionUpdate =
+  components["schemas"]["GoingEventSelectionUpdate"];
+export type ApiGoingEventStatusResponse =
+  components["schemas"]["GoingEventStatusResponse"];
 
 // ── Event Submissions ───────────────────────────────────────────────
 // export type ApiSubmissionCreate = components["schemas"]["SubmissionCreate"];

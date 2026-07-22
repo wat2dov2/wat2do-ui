@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENTS
-from recommender.collaborative import get_collaborative_scores
+from recommender.collaborative import build_collaborative_model, get_collaborative_scores
 from recommender.config import (
     DEFAULT_LAMBDA,
     EVAL_K,
@@ -120,6 +120,7 @@ def evaluate_all_users(
     # Popularity is identical for every user; profiles/counts are batch-fetched
     # (2 queries) instead of 2*N sequential round-trips.
     pop = get_popularity_scores(all_event_ids)
+    collaborative_model = build_collaborative_model()
 
     eligible_uids = list(eligible.keys())
     users_by_id = user_service.get_users_by_ids(eligible_uids)
@@ -165,7 +166,11 @@ def evaluate_all_users(
                 user=user,
                 user_scores=user_scores,
             )
-            collab = get_collaborative_scores(uid, all_event_ids)
+            collab = get_collaborative_scores(
+                uid,
+                all_event_ids,
+                model=collaborative_model,
+            )
 
             blended = blend_scores(
                 all_event_ids,

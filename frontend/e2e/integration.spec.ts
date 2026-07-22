@@ -11,7 +11,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 1,
     organization_name: "UW Tech Club",
-    organization_type: "Technology",
+    association_affiliated: false,
     organization_page: "https://example.com/tech",
     description: "A test organization",
     school: "uwaterloo",
@@ -23,7 +23,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 2,
     organization_name: "UW Board Games Club",
-    organization_type: "Social",
+    association_affiliated: false,
     organization_page: "https://example.com/board-games",
     description: "Board games organization",
     school: "uwaterloo",
@@ -35,7 +35,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 3,
     organization_name: "UW Computer Science Club",
-    organization_type: "Technology",
+    association_affiliated: false,
     organization_page: "https://csclub.uwaterloo.ca",
     description: "Computer science organization",
     school: "uwaterloo",
@@ -828,7 +828,7 @@ test.describe("Organizations Page", () => {
     const organizations = await res.json();
     expect(organizations.items.length).toBeGreaterThan(0);
     expect(organizations.items[0]).toHaveProperty("organization_name");
-    expect(organizations.items[0]).toHaveProperty("organization_type");
+    expect(organizations.items[0]).toHaveProperty("association_affiliated");
   });
 
   test("app API proxy preserves the organization paginated contract", async ({ request }) => {
@@ -837,9 +837,9 @@ test.describe("Organizations Page", () => {
     expect(organizations.total).toBeGreaterThanOrEqual(organizations.items.length);
     expect(
       organizations.items.every(
-        (organization: { organization_name?: string; organization_type?: string }) =>
+        (organization: { organization_name?: string; association_affiliated?: boolean }) =>
           typeof organization.organization_name === "string" &&
-          typeof organization.organization_type === "string",
+          typeof organization.association_affiliated === "boolean",
       ),
     ).toBeTruthy();
   });
@@ -884,7 +884,7 @@ test.describe("Auth-protected API endpoints", () => {
 
   test("POST /organizations/ requires authentication", async ({ request }) => {
     const res = await request.post(`${APP_API}/organizations/`, {
-      data: { organization_name: "Test", organization_type: "Test", categories: ["Technology"] },
+      data: { organization_name: "Test", association_affiliated: false, categories: ["Technology"] },
     });
     expect([401, 403]).toContain(res.status());
   });

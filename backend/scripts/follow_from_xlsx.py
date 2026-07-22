@@ -45,8 +45,8 @@ COL_HANDLE = "Instagram Handle"
 COL_URL = "Instagram URL"
 
 # Randomized spacing between follows. This is the only pacing.
-FOLLOW_MIN_DELAY = 5  # seconds
-FOLLOW_MAX_DELAY = 12
+FOLLOW_MIN_DELAY = 60  # seconds
+FOLLOW_MAX_DELAY = 90
 
 WEB_BASE = "https://www.instagram.com"
 WEB_APP_ID = "936619743392459"  # constant app id the instagram.com frontend sends
@@ -156,16 +156,78 @@ class IgWebClient:
         return body.get("form_data", {}).get("username", "(unknown)")
 
     def user_id(self, username: str) -> str:
-        """Resolve a handle to a user id via web search (exact match only)."""
+        """Resolve a handle to a user id via the exact profile lookup.
+
+        instagram.com profile pages use this endpoint; unlike topsearch it
+        always returns small accounts, so a miss really means the account is
+        gone (404) rather than just unranked in search results.
+
+        Some business profiles make this endpoint 400 server-side (Instagram
+        deleted internal schema assets like ig_business_category_subvertical
+        that old profiles still reference). Those accounts still resolve via
+        the fallback below.
+        """
+        resp = self._request(
+            "GET",
+            f"{WEB_BASE}/api/v1/users/web_profile_info/",
+            params={"username": username},
+        )
+        try:
+            user = (self._check(resp).get("data") or {}).get("user")
+        except (IgLoginRequired, IgUserNotFound):
+            raise
+        except IgError:
+            return self._user_id_fallback(username)
+        if not user:
+            raise IgUserNotFound(username)
+        return str(user["id"])
+
+    def _user_id_fallback(self, username: str) -> str:
+        """Resolve a handle whose web_profile_info is broken server-side.
+
+        Topsearch first: it is a plain API call, so it dodges the intermittent
+        cookie-consent redirect that document requests sometimes get. Small
+        accounts topsearch leaves unranked fall through to scraping the
+        profile HTML page.
+        """
         resp = self._request(
             "GET",
             f"{WEB_BASE}/api/v1/web/search/topsearch/",
             params={"query": username},
         )
-        for entry in self._check(resp).get("users", []):
-            if entry.get("user", {}).get("username", "").lower() == username:
-                return str(entry["user"]["pk"])
-        raise IgUserNotFound(username)
+        if resp.status_code == 200:
+            try:
+                entries = resp.json().get("users") or []
+            except ValueError:
+                entries = []
+            for entry in entries:
+                user = entry.get("user") or {}
+                if user.get("username") == username and user.get("pk"):
+                    return str(user["pk"])
+        return self._user_id_from_profile_page(username)
+
+    def _user_id_from_profile_page(self, username: str) -> str:
+        """Scrape the profile page HTML for the embedded user id."""
+        resp = self._request(
+            "GET",
+            f"{WEB_BASE}/{username}/",
+            headers={
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+            },
+        )
+        if resp.status_code == 404:
+            raise IgUserNotFound(username)
+        if resp.status_code in (301, 302):
+            location = resp.headers.get("location", "")
+            if "/accounts/login" in location:
+                raise IgLoginRequired(f"redirected to login: {location}")
+            raise IgError(f"unexpected redirect to {location}")
+        match = re.search(r'"profile_id":"(\d+)"', resp.text)
+        if not match:
+            raise IgError(f"profile page for {username} has no embedded profile_id")
+        return match.group(1)
 
     def follow(self, user_id: str) -> None:
         resp = self._request(

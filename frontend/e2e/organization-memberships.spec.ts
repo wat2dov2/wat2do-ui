@@ -13,7 +13,7 @@ const MOCK_ORGANIZATION = {
   organization_page: "https://csclub.uwaterloo.ca",
   ig: "uwcsc",
   discord: "https://discord.gg/csc",
-  organization_type: "WUSA",
+  association_affiliated: true,
   logo_url: null,
   created_by: "owner-user-id",
   school: "uwaterloo",

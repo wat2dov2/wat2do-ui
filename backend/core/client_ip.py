@@ -18,7 +18,6 @@ one of our own proxies is the most reliable client address.
 
 import ipaddress
 import logging
-from functools import lru_cache
 
 from fastapi import Request
 
@@ -27,9 +26,8 @@ from core.config import settings
 log = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=1)
 def _trusted_networks() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
-    """Parse ``settings.trusted_proxies`` into network objects (cached)."""
+    """Parse ``settings.trusted_proxies`` into network objects."""
     networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
     for entry in settings.trusted_proxies:
         try:

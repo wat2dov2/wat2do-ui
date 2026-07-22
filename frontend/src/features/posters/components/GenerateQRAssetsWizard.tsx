@@ -395,7 +395,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
             </FieldSet>
           </FieldGroup>
 
-          <div className="border border-border rounded-xl p-4 bg-card space-y-3">
+          <div className="border border-border rounded-xl p-4 bg-surface space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-foreground">
                 {t("admin.qrAssets.assetsGridTitle")}
@@ -480,7 +480,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
               </button>
             ))}
           </div>
-          <div className="border border-border rounded-xl p-4 bg-card">
+          <div className="border border-border rounded-xl p-4 bg-surface">
             {selectedAsset ? (
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">
@@ -530,7 +530,7 @@ export function GenerateQRAssetsWizard({ onClose, userEmail: userEmailProp }: Ge
 
       {step === 3 && (
         <div className="space-y-4">
-          <div className="border border-border rounded-xl p-4 bg-card space-y-3">
+          <div className="border border-border rounded-xl p-4 bg-surface space-y-3">
             <p className="text-sm text-muted-foreground">
               {t("admin.qrAssets.reviewSummary")}
             </p>

@@ -30,11 +30,11 @@ export function BuildMyWeekStep({ flow }: BuildMyWeekStepProps) {
         </div>
       }
       right={
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
           <div className="space-y-4">
             <div className="flex justify-between items-start border-b border-border pb-3">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                <p className="text-xs text-muted-foreground">
                   {t("onboardingDemo.buildWeek.tonight")}
                 </p>
                 <p className="text-sm font-medium text-foreground">
@@ -46,7 +46,7 @@ export function BuildMyWeekStep({ flow }: BuildMyWeekStepProps) {
             </div>
             <div className="flex justify-between items-start border-b border-border pb-3">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                <p className="text-xs text-muted-foreground">
                   {t("onboardingDemo.buildWeek.thisWeek")}
                 </p>
                 <p className="text-sm font-medium text-foreground">
@@ -56,7 +56,7 @@ export function BuildMyWeekStep({ flow }: BuildMyWeekStepProps) {
             </div>
             <div className="flex justify-between items-start border-b border-border pb-3">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                <p className="text-xs text-muted-foreground">
                   {t("onboardingDemo.buildWeek.clubsToFollow")}
                 </p>
                 <p className="text-sm font-medium text-foreground">
@@ -66,7 +66,7 @@ export function BuildMyWeekStep({ flow }: BuildMyWeekStepProps) {
             </div>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                <p className="text-xs text-muted-foreground">
                   {t("onboardingDemo.buildWeek.freeFoodAlerts")}
                 </p>
                 <p className="text-sm font-medium text-foreground">

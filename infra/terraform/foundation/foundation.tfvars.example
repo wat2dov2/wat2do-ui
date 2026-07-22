@@ -1,0 +1,20 @@
+# The initial foundation apply starts with local state:
+# temporarily move backend.tf outside this directory
+# terraform init
+# terraform apply -var-file=foundation.tfvars
+# restore backend.tf
+# Then migrate it to this bucket with terraform init -migrate-state and the
+# backend configuration documented in the root README.
+state_bucket_name = "wat2do-terraform-state-058264255918"
+
+# Keep Terraform state and global foundation management in us-west-2.
+# Application-specific ECR repositories and Secrets Manager containers run in Canada Central.
+application_region = "ca-central-1"
+
+# Add every MX, SPF, DKIM, DMARC, Resend, verification, Supabase custom-domain,
+# and unrelated record found in the current DNS inventory before changing the
+# registrar nameservers. Use fully qualified names.
+additional_dns_records = []
+
+# Optional local administrator principals that may assume the infrastructure role.
+local_administrator_principal_arns = []

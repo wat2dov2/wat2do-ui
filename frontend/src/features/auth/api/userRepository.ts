@@ -33,6 +33,10 @@ function notifyAuthStateChanged(): void {
 export interface UserProfile {
   /** Supabase user UUID (from backend `users.id`). */
   id: string;
+  /** Mirrors backend ``users.full_name``; null when the user never set one. */
+  fullName: string | null;
+  /** Mirrors backend ``users.avatar_url``. */
+  avatarUrl: string | null;
   faculty: string;
   interests: string[];
   isFirstYear: boolean;

@@ -28,12 +28,12 @@
     "notifications": {
       "title": "通知偏好",
       "description": "选择您希望接收活动和更新通知的方式",
-      "emailNotifications": "邮件通知",
-      "emailNotificationsDesc": "接收关于活动和校园事件的邮件更新",
-      "eventReminders": "活动提醒",
-      "eventRemindersDesc": "获取已保存和已报名活动的提醒",
-      "newEventAlerts": "新活动提醒",
-      "newEventAlertsDesc": "当有符合您兴趣的新活动添加时接收通知"
+      "morningEmail": "早间邮件",
+      "morningEmailDesc": "每天上午 9 点接收今日已选活动，以及过去 24 小时内新增的高匹配推荐。",
+      "eventChange": "活动变更提醒",
+      "eventChangeDesc": "已选活动发生变化时立即收到邮件。",
+      "loadFailed": "无法加载您的通知偏好。",
+      "retry": "重试"
     },
     "appearance": {
       "theme": "主题",

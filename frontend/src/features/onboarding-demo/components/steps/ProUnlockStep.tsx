@@ -57,7 +57,7 @@ export function ProUnlockStep() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-40 rounded-full border border-white/20" />
           </div>
           <div className="relative text-center space-y-3">
-            <p className="text-white/80 text-sm font-medium uppercase tracking-wider">
+            <p className="text-white/80 text-sm font-medium">
               {t("onboardingDemo.proUnlock.brand")}
             </p>
             <p className="text-white text-2xl sm:text-3xl font-semibold">

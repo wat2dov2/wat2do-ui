@@ -5,45 +5,6 @@
 import React from "react";
 import { cn } from "@/shared/lib/utils";
 
-export function ModalSection({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn("space-y-4", className)}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function InfoRow({
-  label,
-  value,
-  className,
-  ...props
-}: {
-  label: string;
-  value: React.ReactNode;
-  className?: string;
-} & React.ComponentProps<"div">) {
-  const isPlainTextValue = typeof value === "string" || typeof value === "number";
-
-  return (
-    <div className={cn("space-y-1", className)} {...props}>
-      <h3 className="font-semibold text-sm text-foreground">{label}</h3>
-      {isPlainTextValue ? (
-        <p className="text-sm text-muted-foreground">{value}</p>
-      ) : (
-        <div className="text-sm text-muted-foreground">{value}</div>
-      )}
-    </div>
-  );
-}
-
 export function ModalContentWrapper({
   className,
   children,
@@ -101,46 +62,6 @@ export function EmptyState({
   );
 }
 
-export function InfoSection({
-  children,
-  className,
-  showBorder = true,
-  ...props
-}: {
-  showBorder?: boolean;
-} & React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "space-y-4",
-        showBorder && "border-t border-border pt-4 mt-4",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function SectionTitle({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"h3">) {
-  return (
-    <h3
-      className={cn(
-        "font-semibold text-sm text-foreground mb-4",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </h3>
-  );
-}
-
 export function CenteredIconContainer({
   icon: Icon,
   size = "md",
@@ -166,7 +87,7 @@ export function CenteredIconContainer({
   return (
     <div
       className={cn(
-        "rounded-full bg-linear-to-br from-amber-400 to-amber-500 flex items-center justify-center mb-4 mx-auto",
+        "rounded-full bg-linear-to-br from-amber-400 to-warning flex items-center justify-center mb-4 mx-auto",
         sizeClasses[size],
         className
       )}
@@ -174,42 +95,6 @@ export function CenteredIconContainer({
     >
       <Icon className={cn("text-primary-foreground", iconSizeClasses[size])} strokeWidth={3} />
     </div>
-  );
-}
-
-export function FoodTagsContainer({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn(
-        "flex flex-wrap gap-2",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function FoodTag({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"span">) {
-  return (
-    <span
-      className={cn(
-        "text-xs px-2 py-1 bg-warning/20 text-warning rounded-full",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </span>
   );
 }
 

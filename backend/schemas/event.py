@@ -18,7 +18,7 @@ from core.constants import (
     MAX_URL_LENGTH,
 )
 from core.pagination import PaginatedResponse
-from schemas.event_date import OccurrenceCreate, OccurrenceResponse
+from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
 
 _log = logging.getLogger(__name__)
 
@@ -151,14 +151,14 @@ class EventUpdate(BaseModel):
     # ``None`` (the default) leaves occurrences unchanged. An empty list
     # is rejected - every event must have at least one occurrence - so
     # callers wanting to clear dates must instead delete the event.
-    occurrences: list[OccurrenceCreate] | None = Field(default=None, min_length=1)
+    occurrences: list[OccurrenceUpdate] | None = Field(default=None, min_length=1)
     price: PriceField | None = None
     food: list[FoodStr] | None = Field(default=None, max_length=MAX_EVENT_FOOD_COUNT)
     registration: bool | None = None
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    # Reassigning the organization re-derives organization/organization_type/school server-side.
+    # Reassigning the organization re-derives organization/association_affiliated/school server-side.
     organization_id: int | None = Field(default=None, ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
     cancelled: bool | None = None
@@ -226,7 +226,7 @@ class EventSummaryResponse(BaseModel):
     source_image_url: str | None = None
     category: str | None = None
     organization: str | None = None
-    organization_type: str | None = None
+    association_affiliated: bool = False
     organization_page: str | None = None
     organization_ig: str | None = None
     organization_discord: str | None = None
@@ -273,7 +273,7 @@ class EventResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    organization_type: str | None = None
+    association_affiliated: bool = False
     school: str | None = None
     source_url: str | None = None
     category: str | None = None
@@ -301,7 +301,7 @@ class EventPublicResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    organization_type: str | None = None
+    association_affiliated: bool = False
     school: str | None = None
     source_url: str | None = None
     category: str | None = None

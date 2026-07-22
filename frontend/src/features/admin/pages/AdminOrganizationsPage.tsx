@@ -40,7 +40,7 @@ import { OrganizationCategoryBadges } from "@/features/organizations/components/
 import { useEventsStore } from "@/features/events";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
-const ALL_ORGANIZATION_TYPES_VALUE = "__all_organization_types__";
+const ALL_AFFILIATIONS_VALUE = "__all_affiliations__";
 
 interface AdminOrganizationsPageProps {
   onBack: () => void;
@@ -52,12 +52,11 @@ export function AdminOrganizationsPage({
   const { t } = useTranslation();
   const {
     searchQuery,
-    selectedOrganizationType,
+    associationAffiliated,
     deleteConfirmId,
     showAddModal,
     editingOrganization,
     currentPage,
-    organizationTypes,
     organizations,
     totalItems,
     totalPages,
@@ -65,7 +64,7 @@ export function AdminOrganizationsPage({
     setSearchQuery,
     submitSearchQuery,
     clearSearchQuery,
-    setSelectedOrganizationType,
+    setAssociationAffiliated,
     setDeleteConfirmId,
     openAddModal,
     openEditModal,
@@ -126,8 +125,6 @@ export function AdminOrganizationsPage({
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [submittingResolution, setSubmittingResolution] = useState(false);
-
-  const visibleOrganizationTypes = organizationTypes.filter((type) => type.trim().length > 0);
 
   const loadClaimsData = useCallback(async () => {
     setLoadingClaims(true);
@@ -241,7 +238,7 @@ export function AdminOrganizationsPage({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
               activeTab === "organizations"
                 ? "bg-primary/80 text-primary-foreground font-semibold"
-                : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+                : "bg-secondary text-muted-foreground hover:bg-muted-hover"
             }`}
           >
             {t("admin.clubsList")}
@@ -252,7 +249,7 @@ export function AdminOrganizationsPage({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
               activeTab === "claims"
                 ? "bg-primary/80 text-primary-foreground font-semibold"
-                : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+                : "bg-secondary text-muted-foreground hover:bg-muted-hover"
             }`}
           >
             {t("admin.claimRequests")}
@@ -277,23 +274,22 @@ export function AdminOrganizationsPage({
                 clearLabel={t("organizations.clearSearch")}
               />
               <Select
-                value={selectedOrganizationType || ALL_ORGANIZATION_TYPES_VALUE}
+                value={associationAffiliated === undefined ? ALL_AFFILIATIONS_VALUE : String(associationAffiliated)}
                 onValueChange={(value) =>
-                  setSelectedOrganizationType(value === ALL_ORGANIZATION_TYPES_VALUE ? "" : value)
+                  setAssociationAffiliated(
+                    value === ALL_AFFILIATIONS_VALUE ? undefined : value === "true",
+                  )
                 }
               >
                 <SelectTrigger className="h-11 w-[180px]">
-                  <SelectValue placeholder={t("admin.allTypes")} />
+                  <SelectValue placeholder={t("admin.allAffiliations")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ALL_ORGANIZATION_TYPES_VALUE}>
-                    {t("admin.allTypes")}
+                  <SelectItem value={ALL_AFFILIATIONS_VALUE}>
+                    {t("admin.allAffiliations")}
                   </SelectItem>
-                  {visibleOrganizationTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="true">{t("admin.associationAffiliated")}</SelectItem>
+                  <SelectItem value="false">{t("admin.associationIndependent")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -368,7 +364,7 @@ export function AdminOrganizationsPage({
               headers={[
                 { label: t("forms.organizationName") },
                 { label: t("forms.categories") },
-                { label: t("forms.organizationType") },
+                { label: t("admin.affiliation") },
                 { label: t("forms.ownerEmail") },
                 { label: t("admin.instagram") },
                 { label: t("admin.discord") },
@@ -395,7 +391,9 @@ export function AdminOrganizationsPage({
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {org.organization_type}
+                      {org.association_affiliated
+                        ? t("admin.associationAffiliated")
+                        : t("admin.associationIndependent")}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -436,7 +434,7 @@ export function AdminOrganizationsPage({
                           e.stopPropagation();
                           setDeleteConfirmId(org.id);
                         }}
-                        className="hover:bg-error/10 hover:text-error"
+                        className="hover:bg-surface-hover hover:text-destructive"
                       >
                         {t("common.delete")}
                       </Button>
@@ -513,7 +511,7 @@ export function AdminOrganizationsPage({
                       <div className="flex flex-col gap-1 items-start">
                         <AdminStatusBadge status={claim.status as SubmissionStatus} />
                         {claim.status === "rejected" && claim.rejection_reason && (
-                          <span className="text-[10px] text-error font-medium max-w-[150px] truncate" title={claim.rejection_reason}>
+                          <span className="text-[10px] text-destructive font-medium max-w-[150px] truncate" title={claim.rejection_reason}>
                             {t("admin.rejectionReason")}: {claim.rejection_reason}
                           </span>
                         )}
@@ -527,7 +525,7 @@ export function AdminOrganizationsPage({
                               variant="secondary"
                               size="sm"
                               onClick={() => handleApproveClaim(claim.id)}
-                              className="text-primary hover:bg-primary/10 border border-transparent"
+                              className="text-primary hover:bg-surface-hover border border-transparent"
                             >
                               {t("admin.approve")}
                             </Button>
@@ -535,7 +533,7 @@ export function AdminOrganizationsPage({
                               variant="secondary"
                               size="sm"
                               onClick={() => setRejectClaimId(claim.id)}
-                              className="text-error hover:bg-error/10 border border-transparent"
+                              className="text-destructive hover:bg-surface-hover border border-transparent"
                             >
                               {t("admin.reject")}
                             </Button>
@@ -590,7 +588,7 @@ export function AdminOrganizationsPage({
             />
           </div>
           <DialogFooter className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setRejectClaimId(null)} disabled={submittingResolution}>
+            <Button variant="secondary" onClick={() => setRejectClaimId(null)} disabled={submittingResolution}>
               {t("common.cancel") || "Cancel"}
             </Button>
             <Button

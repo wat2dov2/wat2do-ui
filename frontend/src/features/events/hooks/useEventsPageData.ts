@@ -1,13 +1,10 @@
 import { useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
 import { useSearch } from "@/features/search";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
+import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { useCreditsStore } from "@/features/credits/store/credits.store";
-import { toast } from "@/shared/hooks/use-toast";
-import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { getUniqueEvents } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 import type { ViewMode } from "@/shared/types";
@@ -45,11 +42,13 @@ function derivePromotedEvents(
  * search/filters, and derived ordered events.
  */
 export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageDataOptions) {
-  const { t } = useTranslation();
   const router = useRouter();
-  const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
-  const goingEventIds = useGoingEventsStore((s) => s.goingEventIds);
+  const { data: goingSelections = [] } = useGoingEvents();
+  const goingEventIds = useMemo(
+    () => goingSelections.map((selection) => selection.event_id),
+    [goingSelections],
+  );
   const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(schoolFilter);
   const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
   const activePromotedEventIds = useCreditsStore((s) => s.activePromotedEventIds);
@@ -83,23 +82,6 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     router.refresh();
   }, [router]);
 
-  const handleDeleteEvent = useCallback(
-    async (eventId: number) => {
-      try {
-        await deleteEvent(eventId);
-      } catch (err) {
-        console.error("Failed to delete event:", err);
-        const message = getApiErrorMessage(err, t("events.deleteFailed"));
-        toast({
-          title: "Delete Failed",
-          description: message,
-          variant: "destructive",
-        });
-      }
-    },
-    [deleteEvent, t],
-  );
-
   return {
     isLoading,
     error,
@@ -113,6 +95,5 @@ export function useEventsPageData({ profileCompleted, viewMode }: UseEventsPageD
     filters,
     orderedEvents,
     allEvents: events,
-    handleDeleteEvent,
   };
 }

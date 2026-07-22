@@ -1,9 +1,6 @@
 import { useCallback, useState } from "react";
 import type { Organization } from "@/shared/types";
-import { getAllOrganizations, getOrganizationTypes } from "@/features/organizations/api/organizations.api";
 import { useEventsStore } from "@/features/events";
-import { useQuery } from "@tanstack/react-query";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import { useOrganizationsList } from "@/features/organizations/hooks/useOrganizationsList";
 
 interface UseAdminOrganizationsPageOptions {
@@ -18,10 +15,9 @@ type OrganizationModalState =
 export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganizationsPageOptions = {}) {
   const [searchQuery, setSearchQueryState] = useState("");
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
-  const [selectedOrganizationType, setSelectedOrganizationTypeState] = useState("");
+  const [associationAffiliated, setAssociationAffiliatedState] = useState<boolean | undefined>(undefined);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [organizationModal, setOrganizationModal] = useState<OrganizationModalState>(null);
-  const [refreshCounter, setRefreshCounter] = useState(0);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
 
   const showAddModal = organizationModal !== null;
@@ -39,18 +35,7 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     limit: itemsPerPage,
     school: schoolFilter ?? undefined,
     search: submittedSearchQuery,
-    organizationType: selectedOrganizationType,
-  });
-
-  const fetchTypes = useCallback(async () => {
-    const allOrgs = await getAllOrganizations(schoolFilter ?? undefined);
-    return getOrganizationTypes(allOrgs);
-  }, [schoolFilter]);
-
-  const { data: organizationTypes = [] } = useQuery({
-    queryKey: queryKeys.organizations.adminTypes(schoolFilter, refreshCounter),
-    queryFn: fetchTypes,
-    placeholderData: [],
+    associationAffiliated,
   });
 
   const setSearchQuery = useCallback((query: string) => {
@@ -68,19 +53,18 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     setCurrentPage(1);
   }, [setCurrentPage]);
 
-  const setSelectedOrganizationType = useCallback((type: string) => {
-    setSelectedOrganizationTypeState(type);
+  const setAssociationAffiliated = useCallback((value: boolean | undefined) => {
+    setAssociationAffiliatedState(value);
     setCurrentPage(1);
   }, [setCurrentPage]);
 
   return {
     searchQuery,
-    selectedOrganizationType,
+    associationAffiliated,
     deleteConfirmId,
     showAddModal,
     editingOrganization,
     currentPage,
-    organizationTypes,
     organizations,
     totalItems,
     totalPages,
@@ -88,7 +72,7 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     setSearchQuery,
     submitSearchQuery,
     clearSearchQuery,
-    setSelectedOrganizationType,
+    setAssociationAffiliated,
     setDeleteConfirmId,
     openAddModal: () => setOrganizationModal({ mode: "add" }),
     openEditModal: (org: Organization) => setOrganizationModal({ mode: "edit", organization: org }),
@@ -96,7 +80,6 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     setCurrentPage,
     refreshOrganizations: () => {
       void refreshOrganizationsList();
-      setRefreshCounter((c) => c + 1);
     },
   };
 }

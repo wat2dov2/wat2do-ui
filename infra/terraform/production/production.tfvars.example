@@ -1,0 +1,11 @@
+# Use the foundation outputs after its S3-state bootstrap is complete.
+route53_zone_id   = "Z0123456789EXAMPLE"
+runtime_secret_arn = "arn:aws:secretsmanager:ca-central-1:058264255918:secret:wat2do/production/runtime-EXAMPLE"
+
+# Build and push both ARM64 images first. The initial production apply creates
+# the ECS service from these immutable digests; subsequent releases are owned
+# by the GitHub application deployment workflow.
+frontend_image = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/frontend@sha256:replace-with-first-release-digest"
+backend_image  = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/backend@sha256:replace-with-first-release-digest"
+
+email_from = "wat2do <newsletter@wat2do.ca>"

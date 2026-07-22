@@ -12,7 +12,6 @@ from datetime import datetime, timedelta, timezone
 
 from core.constants import (
     DEDUP_WINDOW_MINUTES,
-    INTERACTION_CLICK,
     INTERACTION_DETAIL_VIEW,
     INTERACTION_GOING,
     INTERACTION_SHARE,
@@ -38,10 +37,6 @@ _ANON_DISALLOWED_INTERACTION_TYPES: frozenset[str] = frozenset(
         INTERACTION_SHARE,
         INTERACTION_DETAIL_VIEW,
     }
-)
-
-_AB_CLICK_INTERACTION_TYPES: frozenset[str] = frozenset(
-    {INTERACTION_CLICK, INTERACTION_DETAIL_VIEW}
 )
 
 
@@ -72,30 +67,6 @@ def get_click_counts_for_events(event_ids: list[int]) -> dict[int, int]:
         except (TypeError, ValueError):
             continue
     return counts
-
-
-def _record_ab_click_events(user_id: str | None, interactions: list[InteractionCreate]) -> None:
-    """Mirror authenticated click/detail interactions into A/B CTR events."""
-    if user_id is None:
-        return
-    event_ids = sorted(
-        {
-            item.event_id
-            for item in interactions
-            if item.interaction_type in _AB_CLICK_INTERACTION_TYPES
-        }
-    )
-    if not event_ids:
-        return
-
-    try:
-        from services.ab_test_service import ab_test
-
-        variant = ab_test.get_user_variant(user_id)
-        for event_id in event_ids:
-            ab_test.record_click(user_id, event_id, variant)
-    except Exception as e:
-        log.warning("A/B click tracking failed for user=%s events=%s: %s", user_id, event_ids, e)
 
 
 def record_interactions(
@@ -215,8 +186,6 @@ def record_interactions_batch(
         session_id=session_id,
         interactions=interactions,
     )
-    if recorded:
-        _record_ab_click_events(user_id, interactions)
     return recorded
 
 

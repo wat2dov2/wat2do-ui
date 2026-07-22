@@ -5,12 +5,11 @@ import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
-import { translateCategory, getCategoryClasses } from "@/shared/utils/event";
+import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { cn } from "@/shared/lib/utils";
-import { Badge } from "@/shared/ui/badge";
 import { OrganizationBadgeDropdown } from "@/features/organizations";
 
 interface EventFormPreviewProps {
@@ -20,7 +19,6 @@ interface EventFormPreviewProps {
 export function EventFormPreview({ className }: EventFormPreviewProps) {
   const { t, i18n } = useTranslation();
   const { formData, imagePreview, selectedOrganizationName } = useEventFormContext();
-  const categoryClasses = getCategoryClasses(formData.category);
 
   const badges = useMemo(
     () => computeEventBadges(formData, t),
@@ -61,37 +59,29 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
       </div>
 
       <article
-        className="mx-auto flex w-full max-w-[16.5rem] flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/80"
-      >
-        <div className="relative overflow-hidden" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
+        className="mx-auto flex w-full max-w-[16.5rem] flex-col overflow-hidden rounded-xl bg-surface shadow-sm ring-1 ring-border/80"
+        >
+        <div
+          className="relative shrink-0 overflow-hidden rounded-t-xl"
+          style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
+        >
           <LazyImage
             src={imagePreview || undefined}
             alt={formData.title || t("events.eventTitle")}
             className="absolute inset-0 w-full h-full"
             fallback={
-              <div className={`absolute inset-0 ${categoryClasses.bg} flex items-center justify-center`}>
-                <ImageOff className={`size-8 ${categoryClasses.text} opacity-40`} />
+              <div className={`absolute inset-0 bg-surface-elevated flex items-center justify-center`}>
+                <ImageOff className={`size-8 text-muted-foreground opacity-60`} />
               </div>
             }
             placeholder={
-              <div className={`absolute inset-0 ${categoryClasses.bg} animate-pulse`} />
+              <div className={`absolute inset-0 bg-surface-elevated animate-pulse`} />
             }
           />
           
           {formData.category && (
             <BadgeMask variant="top-left">
-              <Badge
-                asChild
-                variant="outline"
-                size="lg"
-                className={`block border-0 opacity-70 ${
-                  categoryClasses.bg
-                } ${categoryClasses.text}`}
-              >
-                <span>
-                  {translateCategory(formData.category, t)}
-                </span>
-              </Badge>
+              <OrganizationTypeBadge type={formData.category} className="opacity-90" />
             </BadgeMask>
           )}
 
@@ -104,7 +94,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
         </div>
 
         <div
-          className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20 ${categoryClasses.bg} ${categoryClasses.text} ${categoryClasses.border}`}
+          className={`flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20 bg-surface text-foreground border-border`}
         >
           <EventCardContent
             title={formData.title || t("events.eventTitle")}
@@ -112,19 +102,19 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
             time={cardTime || undefined}
             location={formData.location || undefined}
             badges={badges}
-            textClassName={categoryClasses.text}
-            secondaryTextClassName={categoryClasses.text}
-            badgeClassName={`border-current ${categoryClasses.text}`}
+            textClassName="text-muted-foreground"
+            secondaryTextClassName="text-muted-foreground"
+            badgeClassName="border-border text-muted-foreground"
           />
 
-          <div className={`grid grid-cols-3 border-t ${categoryClasses.border}`}>
-            <div className={`flex min-h-10 w-full items-center justify-center px-2 opacity-75 transition-colors ${categoryClasses.text}`}>
+          <div className={`grid grid-cols-3 border-t border-border`}>
+            <div className={`flex min-h-10 w-full items-center justify-center px-2 opacity-75 transition-colors text-muted-foreground`}>
               <Bookmark className="size-4" />
             </div>
-            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors ${categoryClasses.border} ${categoryClasses.text}`}>
+            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors border-border text-muted-foreground`}>
               <Calendar className="size-4" />
             </div>
-            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors ${categoryClasses.border} ${categoryClasses.text}`}>
+            <div className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors border-border text-muted-foreground`}>
               <MoreHorizontal className="size-4" />
             </div>
           </div>

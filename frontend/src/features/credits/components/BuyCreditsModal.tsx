@@ -150,7 +150,7 @@ export function BuyCreditsModal({
             disabled={form.selectedPackage === null}
             isLoading={form.isPurchasing}
             loadingText={t("credits.processing")}
-            className="w-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
+            className="w-full bg-linear-to-r from-warning to-amber-600 hover:from-amber-600 hover:to-amber-700"
             size="lg"
           >
             <span className="flex items-center gap-2">

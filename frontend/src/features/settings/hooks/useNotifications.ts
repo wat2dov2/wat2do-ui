@@ -1,62 +1,55 @@
-/**
- * useNotifications Hook
- * Manages notification preferences state and operations
- */
-
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getUserId } from "@/features/auth/api/auth.api";
 import {
   fetchNotificationPreferences,
-  getDefaultNotificationPreferences,
   saveNotificationPreference,
+  type NotificationPreferenceKey,
   type NotificationPreferences,
 } from "@/features/settings/api/notificationPreferences.api";
+import { queryKeys } from "@/shared/lib/queryKeys";
+
+interface PreferenceMutation {
+  key: NotificationPreferenceKey;
+  enabled: boolean;
+}
 
 export function useNotifications() {
-  const [preferences, setPreferences] = useState<NotificationPreferences>(() => {
-    return getDefaultNotificationPreferences();
+  const queryClient = useQueryClient();
+  const userId = getUserId() ?? "";
+  const queryKey = queryKeys.notificationPreferences.byUser(userId);
+  const query = useQuery({
+    queryKey,
+    queryFn: fetchNotificationPreferences,
+    enabled: Boolean(userId),
   });
-  const preferencesRef = useRef(preferences);
-
-  const applyPreferences = useCallback((next: NotificationPreferences) => {
-    preferencesRef.current = next;
-    setPreferences(next);
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    fetchNotificationPreferences()
-      .then((next) => {
-        if (isMounted) {
-          applyPreferences(next);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load notification preferences:", err);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [applyPreferences]);
-
-  const updatePreference = useCallback(
-    (key: keyof NotificationPreferences, value: boolean) => {
-      const previousValue = preferencesRef.current[key];
-      applyPreferences({ ...preferencesRef.current, [key]: value });
-
-      saveNotificationPreference(key, value).catch((err) => {
-        console.error("Failed to save notification preference:", err);
-        if (preferencesRef.current[key] === value) {
-          applyPreferences({ ...preferencesRef.current, [key]: previousValue });
-        }
-      });
+  const mutation = useMutation({
+    mutationFn: ({ key, enabled }: PreferenceMutation) =>
+      saveNotificationPreference(key, enabled),
+    onMutate: async ({ key, enabled }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<NotificationPreferences>(queryKey);
+      if (previous) {
+        queryClient.setQueryData<NotificationPreferences>(queryKey, {
+          ...previous,
+          [key]: enabled,
+        });
+      }
+      return { previous };
     },
-    [applyPreferences]
-  );
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous);
+      }
+    },
+  });
 
   return {
-    preferences,
-    updatePreference,
+    preferences: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    retry: query.refetch,
+    isSaving: mutation.isPending,
+    updatePreference: (key: NotificationPreferenceKey, enabled: boolean) =>
+      mutation.mutate({ key, enabled }),
   };
 }

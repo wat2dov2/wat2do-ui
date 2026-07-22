@@ -43,7 +43,7 @@ export function OrganizationPanelIntegrationsPage() {
         </div>
       </div>
 
-      {integrations.error && <p className="text-xs text-error">{integrations.error}</p>}
+      {integrations.error && <p className="text-xs text-destructive">{integrations.error}</p>}
 
       <div className="space-y-4">
         <IntegrationCard

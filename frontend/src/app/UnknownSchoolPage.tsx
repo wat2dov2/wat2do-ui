@@ -26,7 +26,7 @@ export function UnknownSchoolPage({ requestedSchool }: UnknownSchoolPageProps) {
     <main className="min-h-dvh bg-background text-foreground flex items-center justify-center p-6">
       <section className="w-full max-w-3xl text-center flex flex-col items-center">
         <Search className="w-44 h-44 sm:w-56 sm:h-56 text-primary mb-8" aria-hidden="true" />
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+        <p className="text-sm font-semibold tracking-[0.2em] text-muted-foreground mb-4">
           {t("schools.unknownSubdomainEyebrow")}
         </p>
         <h1 className="text-4xl sm:text-6xl font-semibold tracking-normal leading-tight mb-5">

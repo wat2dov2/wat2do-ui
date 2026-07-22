@@ -34,7 +34,7 @@ export function EventMatchStep({ flow }: EventMatchStepProps) {
   return (
     <div className="space-y-6 w-full">
       <div className="space-y-2 text-center lg:text-left">
-        <p className="text-[11px] tracking-wider uppercase text-muted-foreground font-medium">
+        <p className="text-[11px] text-muted-foreground font-medium">
           {t("onboardingDemo.eventMatch.eyebrow")}
         </p>
         <h1 className="font-sans font-semibold text-3xl sm:text-4xl text-foreground leading-tight">
@@ -74,7 +74,7 @@ export function EventMatchStep({ flow }: EventMatchStepProps) {
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       currentReaction === r.value
                         ? reactionButtonClass(r.value, true)
-                        : "border-border bg-background hover:bg-secondary"
+                        : "border-border bg-background hover:bg-secondary-hover"
                     )}
                   >
                     {t(r.labelKey)}
@@ -88,7 +88,7 @@ export function EventMatchStep({ flow }: EventMatchStepProps) {
 
       {reactionCount < 2 && (
         <div className="text-center">
-          <Button type="button" variant="link" onClick={flow.continueWithoutPicks}>
+          <Button type="button" variant="ghost" onClick={flow.continueWithoutPicks}>
             {t("onboardingDemo.actions.continueWithoutPicks")}
           </Button>
         </div>

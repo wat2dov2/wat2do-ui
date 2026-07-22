@@ -95,7 +95,7 @@ export function DateTimePicker({
           type="button"
           variant="secondary"
           className={cn(
-            "w-full min-w-0 justify-start border border-border px-3 text-left font-normal text-secondary-foreground hover:bg-muted/60 dark:hover:bg-muted/60",
+            "w-full min-w-0 justify-start border border-border px-3 text-left font-normal text-secondary-foreground hover:bg-muted-hover",
             !date && "text-muted-foreground",
             hasError && "ring-2 ring-destructive/50 bg-destructive/10",
             className
@@ -124,7 +124,7 @@ export function DateTimePicker({
                     key={hour}
                     type="button"
                     size="icon"
-                    variant={date && date.getHours() % 12 === hour % 12 ? "default" : "ghost"}
+                    variant={date && date.getHours() % 12 === hour % 12 ? "primary" : "ghost"}
                     className="sm:w-full shrink-0 aspect-square"
                     onMouseDown={() => handleTimeChange("hour", String(hour))}
                   >
@@ -140,7 +140,7 @@ export function DateTimePicker({
                     key={minute}
                     type="button"
                     size="icon"
-                    variant={date && date.getMinutes() === minute ? "default" : "ghost"}
+                    variant={date && date.getMinutes() === minute ? "primary" : "ghost"}
                     className="sm:w-full shrink-0 aspect-square"
                     onMouseDown={() => handleTimeChange("minute", String(minute))}
                   >
@@ -160,7 +160,7 @@ export function DateTimePicker({
                       date &&
                       ((period === "AM" && date.getHours() < 12) ||
                         (period === "PM" && date.getHours() >= 12))
-                        ? "default"
+                        ? "primary"
                         : "ghost"
                     }
                     className="sm:w-full shrink-0 aspect-square"

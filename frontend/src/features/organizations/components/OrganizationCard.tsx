@@ -7,11 +7,10 @@ import {
 } from "@/shared/ui/doodle-icons";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth";
-import { Badge } from "@/shared/ui/badge";
+import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
 import { useCardMouseDownActivate, useMobileGridClickActivation, createAdaptivePressHandlers } from "@/shared/hooks";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
 import {
@@ -29,8 +28,6 @@ interface OrganizationCardProps {
   onCategoryClick?: (category: string) => void;
 }
 
-type CategoryClasses = ReturnType<typeof getCategoryClasses>;
-
 function getOrganizationPrimaryCategory(organization: Organization): string {
   return organization.categories[0] ?? "";
 }
@@ -39,7 +36,6 @@ interface FollowOrganizationButtonProps {
   organizationId: number;
   profileCompleted: boolean;
   isSaved: boolean;
-  categoryClasses: CategoryClasses;
   preferClickPress: boolean;
   onToggleSave: (organizationId: number) => void;
   t: (key: string, options?: Record<string, unknown>) => string;
@@ -49,7 +45,6 @@ function FollowOrganizationButton({
   organizationId,
   profileCompleted,
   isSaved,
-  categoryClasses,
   preferClickPress,
   onToggleSave,
   t,
@@ -70,12 +65,10 @@ function FollowOrganizationButton({
       disabled={!profileCompleted}
       {...pressHandlers}
       aria-label={isSaved ? t("organizations.saved") : t("organizations.save")}
-      className={`flex min-h-10 w-full items-center justify-center px-2 transition-colors ${
+      className={`flex min-h-10 w-full items-center justify-center rounded-bl-xl px-2 transition-colors ${
         !profileCompleted
-          ? `pointer-events-none cursor-not-allowed bg-transparent ${categoryClasses.text} opacity-45 hover:bg-transparent hover:opacity-45`
-          : isSaved
-            ? `bg-transparent ${categoryClasses.text} hover:bg-background/40`
-            : `bg-transparent ${categoryClasses.text} opacity-75 hover:bg-background/40 hover:opacity-100`
+          ? `pointer-events-none cursor-not-allowed bg-transparent text-muted-foreground opacity-45`
+          : `bg-transparent text-muted-foreground hover:bg-surface-hover`
       }`}
     >
       <Bookmark
@@ -90,7 +83,6 @@ interface OrganizationFooterActionsProps {
   organization: Organization;
   followButton: React.ReactNode;
   profileCompleted: boolean;
-  categoryClasses: CategoryClasses;
   preferClickPress: boolean;
   t: (key: string, options?: Record<string, unknown>) => string;
 }
@@ -99,7 +91,6 @@ function OrganizationFooterActions({
   organization,
   followButton,
   profileCompleted,
-  categoryClasses,
   preferClickPress,
   t,
 }: OrganizationFooterActionsProps) {
@@ -111,7 +102,7 @@ function OrganizationFooterActions({
       data-organization-card-footer
       onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
-      className={`grid grid-cols-3 border-t ${categoryClasses.border}`}
+      className={`grid grid-cols-3 border-t border-border`}
     >
       {profileCompleted ? (
         followButton
@@ -139,14 +130,14 @@ function OrganizationFooterActions({
           onMouseDown={preferClickPress ? undefined : (event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           aria-label={t("organizations.instagram")}
-          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 items-center justify-center border-l px-2 transition-colors hover:bg-surface-hover border-border text-muted-foreground`}
         >
           <Instagram className="size-4" />
         </a>
       ) : (
         <span
           aria-hidden="true"
-          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-35 ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 items-center justify-center border-l px-2 opacity-35 border-border text-muted-foreground`}
         >
           <Instagram className="size-4" />
         </span>
@@ -158,7 +149,7 @@ function OrganizationFooterActions({
           aria-label={t("common.moreOptions")}
           title={t("common.moreOptions")}
           disabled={!hasOverflowLinks}
-          className={`flex min-h-10 w-full items-center justify-center border-l px-2 opacity-75 transition-colors hover:bg-background/40 hover:opacity-100 ${categoryClasses.border} ${categoryClasses.text}`}
+          className={`flex min-h-10 w-full items-center justify-center rounded-br-xl border-l px-2 transition-colors hover:bg-surface-hover border-border text-muted-foreground`}
         >
           <MoreHorizontal className="size-4" />
         </button>
@@ -183,10 +174,6 @@ function OrganizationCardComponent({
   const primaryCategory = useMemo(
     () => getOrganizationPrimaryCategory(organization),
     [organization],
-  );
-  const categoryClasses = useMemo(
-    () => getCategoryClasses(primaryCategory),
-    [primaryCategory],
   );
   const lastPostedLine = useMemo(
     () => formatOrganizationLastPosted(organization, t),
@@ -260,7 +247,6 @@ function OrganizationCardComponent({
       organizationId={organization.id}
       profileCompleted={profileCompleted}
       isSaved={isSaved}
-      categoryClasses={categoryClasses}
       preferClickPress={preferClickPress}
       onToggleSave={toggleSaveOrganization}
       t={t}
@@ -282,14 +268,14 @@ function OrganizationCardComponent({
           handleCardActivate();
         }
       }}
-      className={`relative flex flex-col h-full rounded-xl cursor-pointer transition-all duration-300 group ${categoryClasses.text} ${
+      className={`relative flex flex-col h-full rounded-xl cursor-pointer transition-all duration-300 group text-foreground ${
         isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
       }`}
       ref={cardRef}
     >
       {/* 1. Custom Background with clip-path (including -webkit support for Safari compatibility) */}
       <div
-        className={`absolute inset-0 rounded-xl ${categoryClasses.bg}`}
+        className="absolute inset-0 rounded-xl bg-surface"
         style={{
           clipPath: paths.clip ? `path('${paths.clip}')` : undefined,
           WebkitClipPath: paths.clip ? `path('${paths.clip}')` : undefined,
@@ -304,7 +290,7 @@ function OrganizationCardComponent({
             fill="none"
             stroke="currentColor"
             style={{ stroke: "currentColor", opacity: 0.25 }}
-            className={categoryClasses.text}
+            className="text-muted-foreground"
             strokeWidth={1}
           />
         </svg>
@@ -316,7 +302,7 @@ function OrganizationCardComponent({
             fill="none"
             stroke="currentColor"
             style={{ stroke: "currentColor", opacity: 0.38 }}
-            className={categoryClasses.text}
+            className="text-muted-foreground"
             strokeWidth={1}
           />
         </svg>
@@ -325,20 +311,18 @@ function OrganizationCardComponent({
       {/* 3. The Badge (rendered outside the clipped background, matching Event Card badge style) */}
       {primaryCategory && (
         <div ref={badgeRef} className="absolute top-0 left-0 z-30">
-          <Badge
-            asChild
-            variant="outline"
-            size="lg"
-            className={`block border-0 transition-[background-color,opacity] opacity-70 hover:opacity-100 active:scale-95 cursor-pointer ${categoryClasses.bg} ${categoryClasses.text}`}
-          >
-            <button
-              type="button"
-              onMouseDown={handleCategoryClick}
-              {...badgeHoverProps}
-            >
-              {translateCategory(primaryCategory, t)}
-            </button>
-          </Badge>
+          <OrganizationTypeBadge type={organization.type ?? primaryCategory}>
+            {(content) => (
+              <button
+                type="button"
+                onMouseDown={handleCategoryClick}
+                className="flex cursor-pointer active:scale-95"
+                {...badgeHoverProps}
+              >
+                {content}
+              </button>
+            )}
+          </OrganizationTypeBadge>
         </div>
       )}
 
@@ -350,17 +334,16 @@ function OrganizationCardComponent({
           location={socialHandle}
           badges={eventCountBadges}
           className="pt-8 sm:pt-9"
-          textClassName={categoryClasses.text}
-          secondaryTextClassName={categoryClasses.text}
-          badgeClassName={`border-current ${categoryClasses.text}`}
+          textClassName="text-foreground"
+          secondaryTextClassName="text-muted-foreground"
+          badgeClassName="border-border text-muted-foreground"
         />
 
         <OrganizationFooterActions
           organization={organization}
           followButton={followButton}
           profileCompleted={profileCompleted}
-          categoryClasses={categoryClasses}
-          preferClickPress={preferClickPress}
+            preferClickPress={preferClickPress}
           t={t}
         />
       </div>

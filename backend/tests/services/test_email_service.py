@@ -66,6 +66,7 @@ def test_resend_dispatch_posts_email(monkeypatch):
         "subject": "Wat2do update",
         "html": "<p>Hello</p>",
         "text": "Hello",
+        "headers": {},
     }
     assert captured["headers"] == {
         "Authorization": "Bearer re_test",

@@ -1,161 +1,932 @@
-# Project: Morning Email (Digest Consolidation + Going Reminders + Recommendations)
+# Project: Morning Email
 
-Status: planned (roughly 1.5 weeks of work).
+Status: implemented.
 Owner: Tony.
 
-## Brief
+## 1. Goal
 
-Replace the three existing digest flows (morning_digest, weekly_digest, daily_new_events) with one personalized morning email per user, sent at 9am in the user's school timezone.
-Section 1 is "Your events today" (occurrences the user marked Going that happen today).
-Section 2 is "New events picked for you" (events added since the user's last email, ranked using the existing recommender pipeline).
-The event-change fanout to Going users is not a digest and stays untouched.
+Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one `morning_email` sent around 9:00 AM in the user's school timezone.
 
-This project also includes the prerequisite product change that makes section 1 precise: Going becomes occurrence-aware.
-For an event with multiple upcoming occurrences, the Going button opens a drawer with a multi-select of occurrences instead of toggling immediately.
-That drawer is a product feature in its own right, but it lives in this project because the reminder's correctness depends on knowing which occurrence the user actually plans to attend.
+The email contains:
 
-### Locked decisions
+1. `Your events today`: only the event occurrences the user explicitly selected as Going.
+2. `New events picked for you`: events added in the previous 24 hours whose stored nightly recommendation score is at least `0.30`.
 
-1. All three existing digests are deleted, not deprecated: flows, timing helpers, notification types, preference toggles, templates, locale keys, and tests go in the same change.
-   No compatibility shims.
-2. One new notification type with a new name (`morning_email`), so old `notifications_log` rows from deleted types stay as inert history and can never collide with new sends.
-3. Reuse the existing machinery unchanged: the hourly dispatcher (`jobs/send_notifications.py`), school-derived timezone (`resolve_user_timezone`), the high-water mark pattern (`_last_successful_send_at`), `notifications_log` idempotency, the Resend gateway with dry-run default, and `is_enabled` preference checks.
-4. Send at 9am local, on the hour.
-   This kills the :30-minute cron-cadence trap that daily_new_events had.
-5. Default on for all users with one-click unsubscribe.
-   CASL applies: existing relationship, identification, working unsubscribe.
-6. Skip rules: no email if both sections are empty; send with one section if the other is empty.
-   The first-ever send caps the new-events lookback at 48h.
-7. Recommendations come from the precomputed `user_recommendations` table (nightly `recommender/job.py`), not from scoring at send time.
-   Section 2 intersects precomputed recommendations with new-since-last-send events and fills any remainder with popularity-ranked new events.
-   No new ML surface, no queues, no caching layers.
-8. Going is occurrence-aware.
-   Going rows link to a specific event occurrence (`event_dates` row), not just the event.
-   Events with one upcoming occurrence keep the current one-tap toggle.
-   Events with multiple upcoming occurrences open a drawer with a multi-select of occurrences; confirming the selection is the whole flow.
-   Existing event-level Going rows are backfilled to the event's next upcoming occurrence.
-   Public going counts stay aggregated at the event level.
+The project also makes Going occurrence-aware because a reminder cannot be correct until the system knows which occurrence the user intends to attend.
 
-### Success criteria
+`event_change` remains a separate immediate notification.
 
-Exactly one digest concept is left in the codebase.
-A user who marked Going gets their reminder at 9am local, listing only the occurrences they actually selected.
-Multi-occurrence events never produce ambiguous reminders (no "which showing did I say yes to?").
-New-event recommendations dedupe correctly across days.
-Zero references to the deleted digests remain anywhere (code, prefs UI, locales, tests).
-Domain-authenticated sends land in inboxes, not spam.
+## 2. Locked behavior
 
-## Issues
+- Delete the three old digest types and their code, settings, locales, workflows, and tests.
+- Keep old `notifications_log` rows as inert history.
+- Use `morning_email` as the new type.
+- Default `morning_email` to enabled.
+- Send one email when either section has content.
+- Send nothing when both sections are empty.
+- Use the user's school timezone.
+- Use the selected occurrence for reminders, calendar entries, and Going state.
+- Keep public Going counts at the event level using distinct users.
+- Read stored `user_recommendations` at send time.
+- Never run the recommendation pipeline while composing email.
+- Require a stored recommendation score of at least `0.30`.
+- Use a fixed 24-hour recent-event window.
+- Do not apply a separate email item cap.
+- Keep one preference shared by settings and unsubscribe.
+- Keep one canonical write path for Going selections.
+- Do not add compatibility shims or parallel APIs.
 
-### 1.1 Delete the three digest flows and all fallout
+## 3. Corrections found during implementation review
 
-Remove from `services/notifications/digests.py`: `send_morning_digest`, `send_weekly_digest`, `send_daily_new_events_digest`, and their now-unused private helpers.
-Remove from `services/notifications/schedule.py`: `is_morning_digest_time`, `is_weekly_digest_time`, `is_daily_new_events_time`, and their hour/weekday constants.
-Remove the three `NOTIFICATION_TYPE_*` constants, the dispatcher wiring and `--only` argparse choices in the job, digest-specific rendering functions in `rendering.py`, the three preference types in `preferences.py` and the notification-preferences API surface, the frontend settings toggles and their locale keys, and all orphaned tests.
-Keep: the `notifications_log` table and rows (history), `event_change.py`, `email_service.py`, the dispatcher skeleton, and timezone resolution.
-Done when: a repo-wide search for the three type names and function names returns nothing; typecheck, lint, and the test suite pass; and the settings UI shows no dead toggles.
-Note: land this in the same change as 2.x so the dispatcher never ships with zero send types.
+The original detailed plan had several designs that would not work safely in this repository.
+The implementation must use the corrected rules below.
 
-### 1.2 Data-shape audit for the two sections
+### 3.1 Do not require an exact minute match
 
-Short written check before building.
-Confirm the current shape of Going rows (the `going_events` tables/service) and exactly what schema change 5.1 needs to link them to `event_dates` occurrences, including how the backfill to next-upcoming-occurrence handles events with no future occurrence.
-Confirm which timestamp marks an event as "added" for the high-water mark (created_at vs first-seen by the scraper).
-Confirm the shape of `user_recommendations` rows and what the read path (`get_recommendations`) filters at read time.
-Confirm the GitHub Actions schedule for `recommender/job.py` completes before the earliest 9am-local send, and document the scrape, then recompute, then send ordering as a stated dependency.
-Identify the existing drawer component used by the events feature so 5.2 reuses it rather than adding a second drawer pattern.
-Done when: one page states the exact queries both sections will use, the 5.1 migration plan, and the job-ordering dependency.
-Do first; this shapes everything in categories 2 and 5.
+GitHub Actions scheduled jobs can start several minutes late.
+Checking `local.minute == 0` can skip the entire day's email.
 
-### 2.1 Going-today section
+The dispatcher should treat a user as due when the local hour is 9.
+The unique `(user_id, notification_type, local_date, channel)` delivery key prevents a delayed or repeated run from sending twice.
 
-Service function: given a user and their local date, return the occurrences they marked Going that happen today, ordered by start time, with title, time, location, and event page URL.
-Because Going rows are occurrence-level (5.1), this is a direct join with no guessing about which occurrence the user meant.
-Reuses the existing event-fetch helpers in `digests.py` where they fit.
-Done when: unit tests cover a going occurrence today, a going occurrence on another day (excluded), an unselected occurrence of the same event today (excluded), and a cancelled event (excluded, consistent with event_change behavior).
-Depends: 1.2, 5.1.
+GitHub Actions is an approximate scheduler.
+If exact 9:00:00 delivery becomes a hard product requirement, move the job to a scheduler with an execution SLA rather than adding increasingly complex catch-up logic.
 
-### 2.2 Recommended-new-events section
+### 3.2 Use one fixed 24-hour content window
 
-Service function:
-fetch events added since `_last_successful_send_at(user, morning_email)`, capped at 48h when there is no prior send;
-exclude events the user already marked Going;
-intersect with the user's precomputed `user_recommendations` rows;
-fill any remainder with the new events ranked by the existing popularity scorer (a cheap standalone call);
-cap at 6 and drop the section if empty.
-Cold-start users simply get popularity-ranked new events, matching the app's own fallback.
-Done when: unit tests cover an intersection hit, a thin intersection with popularity fill, a cold-start user, Going exclusion, the high-water mark advancing across sends, and the first-send 48h cap.
-Depends: 1.2.
+The morning email is a daily view, not a catch-up queue.
+Each run uses one captured UTC time and considers only events added during the immediately preceding 24 hours.
 
-### 2.3 Template and rendering
+Use:
 
-One template in `rendering.py`: a subject line reflecting content ("2 events today + 4 new picks" style), section 1 then section 2, either section omitted when empty, HTML plus plain-text parts, an unsubscribe link, and `List-Unsubscribe` / `List-Unsubscribe-Post` headers if the Resend payload does not already set them.
-Done when: rendered output is verified for all three occupancy states (both sections, only reminders, only picks) via snapshot or fixture tests, and passes a mail-tester spam check in staging.
-Depends: 2.1, 2.2 shapes (can stub data).
+```text
+window_end = one captured now_utc value
+window_start = window_end - 24 hours
+```
 
-### 2.4 Send flow and dispatcher wiring
+The local-date delivery key still prevents duplicate sends.
+A failed or missed day does not expand the next day's content window.
 
-New `send_morning_email(user, local_date)` composing 2.1 + 2.2 + 2.3 with the existing `_send_digest`-style guts: the `is_enabled` check, skip when both sections are empty, a `notifications_log` write with `target_id=local_date`, and a Resend idempotency key.
-New `is_morning_email_time` (9am local, on the hour), dispatcher registration, and `--only morning-email` support.
-Done when: running the job with `--now` at a matching hour sends exactly once (re-run is a no-op via the unique constraint), skips opted-out users, and logs skips with reasons.
-Depends: 2.1, 2.2, 2.3, 1.1.
+### 3.3 Failed and stale pending log rows must be retryable
 
-### 3.1 Preference toggle and settings UI
+The current unique delivery row permanently blocks retries after a failed send or a crash that leaves `pending` behind.
 
-One preference: `morning_email`, default on.
-Backend type registered in `preferences.py`; the frontend settings section replaces the removed toggles with this single one, locale keys included.
-Done when: toggling off in the UI stops the send (verified through the dispatcher path, not just the API), and the unsubscribe link in the email flips this same preference: one concept, both directions.
-Depends: 1.1.
+Add one atomic claim function that:
 
-### 3.2 Deliverability setup
+- Inserts a new pending row when none exists.
+- Returns no claim for an already-sent row.
+- Reclaims a failed row.
+- Reclaims a pending row only after a short stale threshold.
+- Increments `attempt_count` and updates `last_attempt_at`.
+- Preserves the same provider idempotency key for every retry of the same user, type, and local date.
 
-Resend domain authentication for the sending domain (SPF, DKIM, DMARC), a from-address decision (e.g. `hello@wat2do.ca`), and verification that one-click unsubscribe works from Gmail's native button.
-Done when: a real send to Gmail and Outlook lands in the inbox with authentication passing (check headers).
-Parallel with everything; needed before 4.2.
+Retry provider timeouts, HTTP 429, and HTTP 5xx responses a small bounded number of times using the same key.
+Do not retry permanent validation or authentication errors.
 
-### 4.1 End-to-end verification
+### 3.4 Occurrence updates must be transactional
 
-Seeded fixtures: a user with Going events today, new events since yesterday, an opted-out user, and a brand-new user (48h cap).
-Run the dispatcher in dry-run across a full simulated day of `--now` hours, then one real send-to-self.
-Done when: every fixture case behaves per the locked decisions and the send-to-self email reads correctly on mobile.
-Depends: 2.4, 3.1.
+The current Python snapshot rollback deletes occurrence rows and tries to recreate them later.
+It cannot restore the original IDs and cannot restore Going rows already removed by `ON DELETE CASCADE`.
 
-### 4.2 Production rollout
+Replace it with a PostgreSQL transaction exposed through one RPC.
+The transaction must update the parent event and its occurrences together so metadata cannot commit while occurrence updates fail.
 
-Verify the production cron runs hourly on the hour, verify the recommender job finishes before the earliest 9am-local send (from 1.2), enable the Resend key, watch `notifications_log` and skip-reason logs for the first three mornings, and confirm timezone firing looks right for the school.
-Done when: three consecutive clean morning runs happen with no duplicate sends and no orphaned failures.
-Depends: 4.1, 3.2.
+### 3.5 Never infer occurrence identity by list position
 
-## Category 5: Occurrence-aware Going (prerequisite, runs first despite the number)
+For authenticated event edits, the frontend and backend carry explicit occurrence IDs.
 
-### 5.1 Occurrence-level Going data model and API
+For scraper updates that do not have source occurrence IDs:
 
-Migration: Going rows gain a reference to their `event_dates` occurrence, unique per (user, occurrence).
-Backfill existing event-level Going rows to the event's next upcoming occurrence; rows for events with no future occurrence are dropped (plan confirmed in 1.2).
-API: marking Going accepts one or more occurrence ids; unmarking removes per occurrence; the single-occurrence path stays a one-call toggle so existing call sites barely change.
-Going counts shown on cards stay aggregated at the event level (count distinct users), so the counts feature is unaffected.
-Audit both sides of the wire contract: request params, response shape, and generated API types must agree exactly.
-Done when: migration applies with backfill verified against production-shaped fixtures, API tests cover multi-occurrence mark/unmark and the one-occurrence fast path, and no event-level Going write path remains.
-Depends: 1.2.
+- Preserve only exact occurrence-signature matches.
+- Treat unmatched old occurrences as removed.
+- Treat unmatched new occurrences as new.
+- Do not pair leftovers by index, date proximity, or array position.
 
-### 5.2 Occurrence picker drawer on the Going button
+Guessing can transfer a user's Going selection to a different showing.
+A new occurrence ID is safer than a false identity match.
 
-For events with more than one upcoming occurrence, the Going button opens a drawer (reuse the events feature's existing drawer component, identified in 1.2) listing upcoming occurrences with date and time, each with a checkbox.
-Multi-select, confirm, done; that is the whole flow.
-Events with exactly one upcoming occurrence keep the current instant toggle with no drawer.
-The button reflects state: going to at least one occurrence renders as Going; reopening the drawer edits the selection.
-Optimistic updates follow the existing going-events store pattern; i18n keys in both locales.
-Done when: drawer flow works end-to-end against 5.1 in the browser (mark two of three occurrences, reminder-relevant state is queryable), the single-occurrence path is visually unchanged, and mobile layout is verified.
-Depends: 5.1.
+### 3.6 Do not nest the Going picker Drawer inside event details
 
-## Sequencing
+The shared Drawer globally releases pointer and scroll state when a drawer closes.
+Closing a nested picker could disturb the still-open event-details drawer.
 
-1.2 first (half a day), then 5.1 and 5.2 (the Going prerequisite ships as its own user-facing change, independent of any email), then 2.1/2.2/2.3 in parallel, then 2.4 + 1.1 together as the swap commit, then 3.1.
-3.2 runs anytime in parallel.
-4.1 then 4.2 gate the launch.
-Two ordering rules matter: deletion (1.1) and the new send type (2.4) land together so there is never a state with zero or four digest concepts, and 5.1 lands before 2.1 so the reminder query is occurrence-precise from day one.
+Use one reusable picker-content component:
 
-## Related
+- From an event card, render it inside a normal Drawer.
+- Inside `EventDetailsModal`, replace the details body with the picker content.
+- Back or Cancel restores the details body.
 
-The default recommended-events view for logged-in users (separate effort) reads the same `user_recommendations` rows, so the email's picks and the app's picks stay consistent with one source of recommendation truth.
-If the recommender job cadence is increased for that view, re-verify the ordering dependency in 1.2 once.
+Do not rewrite the shared Drawer as part of this project.
+
+### 3.7 Do not optimistically calculate public Going counts
+
+Changing one selected occurrence to two selected occurrences does not add another attendee.
+The current `+1` and `-1` optimistic count math becomes wrong.
+
+Optimistically update only the current user's selection cache.
+Patch the public `going_count` from the authoritative mutation response.
+
+### 3.8 Do not compose email with per-user database reads
+
+A naive implementation would issue preferences, Going, recommendation, and event queries for every user.
+That is the main N+1 risk in this project.
+
+All read-side email data must be loaded in batches by eligible timezone, school, and bounded ID chunks.
+
+Per-recipient delivery-log claims and provider sends are intentional isolated side effects.
+They are not accidental read-side N+1 queries.
+
+## 4. Simplified target architecture
+
+## 4.1 Stable occurrences and occurrence-aware Going
+
+### Event occurrence contract
+
+Use separate create and update occurrence schemas:
+
+- Create occurrences never contain an ID.
+- Update occurrences may contain an existing UUID.
+- An existing UUID must belong to the event being updated.
+- A missing UUID means a new occurrence.
+- An omitted existing UUID means removal.
+- `OccurrenceResponse.id` is UUID only.
+
+The frontend must preserve the occurrence ID through:
+
+- API response.
+- Event-to-form conversion.
+- Form state.
+- Update payload construction.
+
+Do not use the create payload builder for event updates.
+
+### Transactional event update RPC
+
+Create one `update_event_with_occurrences` database function that:
+
+1. Locks the event row.
+2. Captures distinct pre-change Going user IDs.
+3. Validates the event patch and occurrence IDs already validated at the API boundary.
+4. Updates retained occurrences in place.
+5. Inserts new occurrences.
+6. Deletes omitted occurrences.
+7. Updates the parent event.
+8. Returns the updated occurrence rows and captured recipient IDs.
+
+Any failure rolls back every parent-event, occurrence, and cascading Going change.
+
+Authenticated edits use explicit IDs.
+Scraper edits pass IDs only for exact-signature matches.
+
+### Going table
+
+Keep `event_id` because every existing consumer needs event-level access.
+Add `event_date_id` as the selected occurrence reference.
+
+Use these constraints and indexes only:
+
+- `UNIQUE event_dates(event_id, id)` as the composite foreign-key target.
+- Composite foreign key `(event_id, event_date_id)` to `event_dates(event_id, id)`.
+- `UNIQUE (user_id, event_date_id)` for selection uniqueness.
+- `INDEX (event_date_id)` for occurrence cascades.
+- `INDEX (event_id, user_id)` for counts and fanout.
+- `INDEX (user_id, event_id)` for grouped reads and the distinct-event cap.
+
+Do not add redundant standalone indexes whose leading column is already covered.
+
+### Backfill
+
+In one migration:
+
+1. Add nullable `event_date_id`.
+2. Assign each existing row to its event's next future occurrence, ordered by start time and ID.
+3. Delete rows whose event has no future occurrence.
+4. Assert that no surviving row has a null occurrence.
+5. Replace unique `(user_id, event_id)` with unique `(user_id, event_date_id)`.
+6. Add the composite constraints and minimal indexes.
+7. Make `event_date_id` non-null.
+8. Add the Going mutation and event-count RPCs.
+9. Enable and verify RLS.
+10. Revoke RPC execution from `PUBLIC`, `anon`, and `authenticated`; grant it to `service_role` only.
+
+Do not edit historical migration files.
+
+### One Going mutation function
+
+Create one `set_user_going_occurrences` RPC used by both PUT and DELETE.
+
+The function must:
+
+1. Lock the user's row to serialize concurrent cap checks.
+2. Normalize and deduplicate the supplied UUID array.
+3. Validate that the event exists.
+4. Validate that every occurrence belongs to the event.
+5. Validate that every newly selected occurrence is selectable.
+6. Count distinct selected events for the cap.
+7. Allow editing an already-selected event while at the cap.
+8. Replace the event's complete selected-occurrence set atomically.
+9. Return selected occurrence IDs, status, and the distinct-user event count.
+
+`DELETE /going-events/{event_id}` calls the same RPC with an empty occurrence list.
+The router must not perform separate existence, count, insert, delete, and recount calls.
+
+### Going API
+
+`GET /going-events/` returns grouped selections:
+
+```json
+[
+  {
+    "event_id": 42,
+    "occurrence_ids": ["uuid-1", "uuid-2"]
+  }
+]
+```
+
+`PUT /going-events/{event_id}` accepts the complete desired selection:
+
+```json
+{
+  "occurrence_ids": ["uuid-1", "uuid-2"]
+}
+```
+
+The mutation response is:
+
+```json
+{
+  "status": "going",
+  "event_id": 42,
+  "occurrence_ids": ["uuid-1", "uuid-2"],
+  "going_count": 7
+}
+```
+
+Use generated OpenAPI types end to end.
+Delete handwritten frontend wire types.
+
+### Selectable and active state
+
+An occurrence is selectable when its start is at or after the operation's captured current time and the event is not cancelled.
+The backend is authoritative.
+
+The frontend derives active state from the intersection of:
+
+- Selected occurrence IDs returned by the Going query.
+- Selectable occurrence IDs embedded in the event response.
+
+A historical selection by itself must not make a future occurrence appear selected.
+
+### Event counts
+
+Add `get_event_going_counts(integer[])`, matching the existing click-count RPC pattern.
+Use `COUNT(DISTINCT user_id)` grouped by event.
+
+The event stats endpoint calls it once for a batch of event IDs.
+PUT and DELETE use the count returned by the mutation RPC.
+Delete the separate post-mutation count query.
+
+### Calendar
+
+Keep the existing batched calendar structure:
+
+1. Fetch the user's `(event_id, event_date_id)` rows with pagination.
+2. Fetch unique event rows in chunks.
+3. Fetch only selected occurrence IDs through a chunked `list_by_ids` helper.
+4. Group occurrences by event.
+5. Reuse the existing calendar renderer.
+
+Do not fetch every occurrence for a selected event.
+Do not issue a query per event.
+
+### Recommendation inputs and cache
+
+Collapse multiple occurrence selections into one `(user_id, event_id)` pair before collaborative filtering.
+Clear the existing Going cache after every successful selection mutation.
+
+### Event-change fanout
+
+Use the distinct pre-change user IDs returned by the transactional event update.
+This preserves recipients whose selected occurrence was removed.
+
+For one event change:
+
+- Fetch recipient users in chunks.
+- Fetch explicit `event_change` preferences for all recipients in chunks.
+- Apply default-enabled behavior in memory.
+- Pass the already-loaded event summary into fanout.
+- Do not re-fetch the event.
+- Do not call `is_enabled` once per recipient.
+
+Provider sends and delivery claims remain per recipient unless measured fanout volume later requires a batch provider path.
+
+## 4.2 Frontend Going flow
+
+### Query ownership
+
+Replace the Going Zustand server-state store with one user-scoped TanStack Query family:
+
+```text
+queryKeys.goingEvents.byUser(userId)
+```
+
+Requirements:
+
+- One GET for all Going selections.
+- One PUT for any non-empty complete selection.
+- One DELETE to clear an event selection.
+- No API request per card.
+- No API request per occurrence.
+- No occurrence-detail fetch because event responses already contain occurrences.
+- Remove the whole Going query family on logout.
+- Never reuse user A's cached selection under user B's key.
+- Remove the manual Going bootstrap fetch from `app-page.tsx`.
+
+### One behavior hook
+
+Use one events-feature hook for card and details triggers.
+It owns:
+
+- Selectable-occurrence derivation.
+- Active state.
+- Single-occurrence PUT or DELETE decision.
+- Opening multi-occurrence selection.
+- Per-event pending state.
+- Selection-cache optimism and rollback.
+- Authoritative stats patching.
+- Tracking.
+- Localized errors.
+
+Keep card and details buttons as separate presentation components.
+Do not create a universal button abstraction.
+
+### Picker content
+
+Create one presentation-first picker-content component:
+
+- Chronological selectable occurrences.
+- Local date and time.
+- Accessible checkboxes.
+- A local draft initialized from selected selectable IDs.
+- Confirm, Cancel, loading, and error states.
+- Confirm disabled during mutation.
+- Draft preserved after a failed save.
+
+Use it in:
+
+- A Drawer opened from an event card.
+- An inline replacement view inside the existing details Drawer.
+
+### Single-occurrence behavior
+
+- One selectable occurrence and not selected: PUT that ID.
+- One selectable occurrence and selected: DELETE the event selection.
+- Multiple selectable occurrences: open the picker.
+- No selectable occurrences: disable the action.
+
+Disable the event's Going action while its mutation is pending so requests cannot arrive out of order.
+
+### Public count behavior
+
+Optimistically update only the selection query.
+Do not predict `going_count`.
+Patch `going_count` from the mutation response.
+
+### Notification settings
+
+Keep `useNotifications`, but make it one user-scoped TanStack query and one mutation.
+
+- One GET loads both remaining preferences.
+- Render loading or disabled controls until preferences resolve.
+- Show a retryable error instead of misleading default-on switches after a load failure.
+- Optimistically patch one changed preference and roll back on failure.
+- One PATCH occurs only when the user changes a toggle.
+
+The settings UI contains:
+
+- Morning email.
+- Event-change alerts.
+
+Delete the generic email, new-event, daily digest, and weekly digest settings.
+
+### Onboarding cleanup
+
+Delete the daily-new-events opt-in step and all related state, API helpers, imports, copy, and tests.
+Reduce onboarding from six steps to five.
+
+## 4.3 Batched morning-email composition
+
+### Dispatcher eligibility
+
+1. Fetch all users with email and school using the existing pagination utilities.
+2. Resolve timezone in memory.
+3. Keep users whose local hour is 9.
+4. Group eligible users by timezone and school.
+
+The user loader must not silently stop at PostgREST's 1,000-row limit.
+
+Users with a missing school may receive Going reminders using the UTC fallback, but receive no cross-school recommendations.
+
+### Batch loaders
+
+For all eligible users, load:
+
+- Explicit `morning_email` preference rows in user-ID chunks.
+- Going-today rows by timezone boundary and user-ID chunk.
+- Stored recommendation rows by user-ID chunk.
+
+For each eligible school, load once:
+
+- Non-cancelled events added within the fixed 24-hour window.
+- The earliest future occurrence for each candidate event.
+
+After candidate IDs are known, load once per chunk:
+
+- Going exclusions only for those candidate event IDs and eligible users.
+
+Build per-user sections in memory from these maps.
+
+### Query-count invariant
+
+Database read count must scale with:
+
+```text
+user ID chunks + eligible timezones + eligible schools + candidate ID chunks
+```
+
+It must not scale as:
+
+```text
+eligible users x query families
+```
+
+Add a service test that composes one user and many same-school users and proves query calls grow only when a configured chunk boundary is crossed.
+
+### Going-today query
+
+For each eligible timezone:
+
+1. Create local midnight for the current local date.
+2. Create local midnight for the next local date.
+3. Convert both to UTC.
+4. Join Going rows to their selected occurrence and event.
+5. Filter selected start `>= start_utc` and `< next_start_utc`.
+6. Exclude cancelled events.
+7. Order by selected start and event ID.
+8. Group rows by user in memory.
+
+Use half-open boundaries.
+
+### New-event candidates
+
+Capture one `window_end` at the start of the dispatcher tick and derive:
+
+```text
+window_start = window_end - 24 hours
+```
+
+For each school, fetch candidate events once from that fixed start.
+
+Candidate requirements:
+
+- Same school as the user.
+- `added_at > window_start`.
+- `added_at <= window_end`.
+- Not cancelled.
+- At least one occurrence starts at or after `window_end`.
+- Hydrated with the earliest future occurrence.
+- Excluded when the user has any Going selection for that event.
+
+### Recommendation ranking
+
+Use one batch read helper owned by the recommender service that returns stored rows only.
+It must never fall back to live computation.
+
+For each user:
+
+1. Keep stored recommendation rows whose score is at least `0.30`.
+2. Intersect those rows with the user's candidate IDs.
+3. Preserve stored nightly rank order.
+4. Return every match without a separate email cap.
+
+The stored nightly snapshot currently has a natural upper bound of 20 rows per user.
+If stored recommendations are absent or stale, the recommendation section is empty while Going reminders still send.
+
+### Sending
+
+For each prepared non-empty email:
+
+1. Claim its delivery row immediately before provider submission.
+2. Skip when the claim reports already sent.
+3. Render from the already-prepared view model.
+4. Send with the stable per-recipient idempotency key.
+5. Mark sent with `sent_at`.
+6. Mark failed with an operator-safe error category after bounded retries fail.
+
+Keep individual provider sends initially because they preserve per-recipient isolation and stable idempotency.
+Do not add Resend batch sending unless measured runtime approaches the workflow timeout.
+
+## 4.4 Morning-email rendering
+
+### Subject matrix
+
+- Both sections: `2 events today + 4 new picks`
+- Today only: `2 events today`
+- Picks only: `4 new picks for you`
+- Use correct singular forms.
+
+### Body requirements
+
+- HTML and plain text.
+- `Your events today` before recommendations.
+- Omit empty sections.
+- Display local occurrence time.
+- Link events to `/?eventId={id}`.
+- Escape every event-controlled HTML value.
+- Include a visible manage-preferences link.
+- Include a visible unsubscribe link.
+- Include sender identification required for production email.
+- Use `FRONTEND_URL` from the job environment so links never fall back to localhost.
+
+Keep rendering functions in the existing notification rendering module.
+Create one morning-email orchestration module and delete the old digest module when no caller remains.
+
+## 4.5 Preferences and unsubscribe
+
+Keep only these active types:
+
+- `morning_email`
+- `event_change`
+
+Delete stale preference rows for old types in a new migration.
+Do not delete historical log rows and do not edit old migrations.
+
+Use a stateless signed unsubscribe token instead of storing another user token column.
+
+The token contains only:
+
+- User UUID.
+- Notification type.
+- Token version.
+- HMAC signature using a dedicated `EMAIL_UNSUBSCRIBE_SECRET`.
+
+Requirements:
+
+- Standard-library HMAC and URL-safe encoding.
+- Constant-time signature verification.
+- No expiry, so old email unsubscribe links keep working.
+- No email address or profile data in the token.
+- A future token-version change can invalidate the format deliberately.
+
+Endpoints:
+
+- GET displays a confirmation page and does not mutate state.
+- POST verifies the token and upserts `morning_email = false` idempotently.
+- Invalid tokens return a generic response without exposing account existence.
+
+Add provider headers:
+
+```text
+List-Unsubscribe: <https://wat2do.app/api/notification-preferences/unsubscribe?token=...>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+```
+
+Extend `EmailMessage` with custom headers and pass them through the Resend payload.
+
+## 4.6 Workflow ordering
+
+Replace `.github/workflows/daily-new-events-email.yml` with one hourly morning-email workflow.
+
+Use:
+
+```yaml
+schedule:
+  - cron: "0 * * * *"
+```
+
+The backend checks local hour, not exact minute.
+Keep manual `now` input for deterministic testing.
+Set `FRONTEND_URL`, email provider variables, and the unsubscribe secret explicitly.
+
+Keep the daily scrape schedule.
+Trigger recommendation computation after a successful scrape workflow completion.
+Retain manual recommendation dispatch.
+
+Email must degrade safely when recommendations are stale:
+
+- Going reminders still render.
+- The recommendation section may be thin or empty.
+- Freshness is logged and monitored.
+
+Do not make reminder delivery depend on a successful recommendation run.
+
+## 5. N+1 budget
+
+The following invariants are release requirements.
+
+### Going UI
+
+- One Going GET per authenticated user query key.
+- One stats GET per school.
+- Zero requests per event card.
+- Zero requests per occurrence.
+- One PUT for any non-empty selection.
+- One DELETE for an empty selection.
+
+### Going backend
+
+- One RPC per selection mutation.
+- One aggregate count RPC per event-stats batch.
+- Calendar queries scale by ID chunks, not events.
+- Event-change users and preferences load by chunks, not recipients.
+
+### Morning email
+
+- Users load with pagination.
+- Preferences load by chunks.
+- Going-today loads by timezone and user chunks.
+- Candidate events load by school.
+- Recommendation rows load by user chunks.
+- Going exclusions load only for candidate events.
+- No database read is issued from the per-user composition loop.
+
+### Intentional per-recipient work
+
+- Delivery claim.
+- Provider submission.
+- Final delivery status update.
+
+These writes and external side effects remain isolated for idempotency and failure handling.
+
+## 6. Implementation sequence
+
+## Phase 1: Baseline and data audit
+
+- Run current backend and frontend checks.
+- Count existing Going rows.
+- Count rows with no future occurrence.
+- Measure multi-occurrence events.
+- Inspect recommendation freshness and row volume.
+- Measure active user count per school.
+- Confirm production frontend URL and sending domain.
+- Record existing unrelated failures.
+
+Gate: migration assumptions use real production-shaped counts.
+
+## Phase 2: Transactional occurrence updates
+
+- Add explicit update occurrence IDs across backend schemas and frontend edit form data.
+- Split create and update payload builders.
+- Add transactional parent-event and occurrence RPC.
+- Change scraper matching to exact signatures only.
+- Return pre-change Going recipients.
+- Delete Python snapshot replacement.
+
+Gate: a forced failure rolls back event metadata, occurrences, and Going cascades together.
+
+## Phase 3: Occurrence-aware Going
+
+- Apply the backfill, constraints, indexes, and RPC migration.
+- Replace router orchestration with the single selection RPC.
+- Add grouped reads using pagination.
+- Add aggregate distinct-user counts.
+- Invalidate and deduplicate collaborative Going data.
+- Update selected-occurrence calendar hydration.
+- Batch event-change users and preferences.
+- Finalize Pydantic and generated OpenAPI contracts.
+
+Gate: no surviving Going row lacks a valid selected occurrence.
+
+## Phase 4: Going frontend
+
+- Add the user-scoped Going query and mutations.
+- Delete the Going Zustand store and manual bootstrap fetch.
+- Add the shared behavior hook.
+- Add picker content, card Drawer wrapper, and inline details view.
+- Use selection-only optimism and authoritative counts.
+- Update filters, cards, details, stats, auth cleanup, locales, and mocks.
+
+Gate: selecting two of three occurrences produces one PUT and one distinct attendee.
+
+## Phase 5: Batched morning-email composition
+
+- Add the retry-claim migration.
+- Add the batch preference loader.
+- Add batch Going-today, candidate-event, recommendation, and exclusion loaders.
+- Add precomputed-only recommendation reads.
+- Build per-user sections in memory.
+- Add the morning-email send flow and rendering.
+- Add stateless unsubscribe and custom email headers.
+
+Gate: database read-call count does not grow per eligible user.
+
+## Phase 6: Delete old digests and update settings
+
+- Replace notification constants and schema literals.
+- Delete old timing helpers, rendering functions, dispatcher branches, preferences, locales, onboarding state, tests, and workflow.
+- Add morning-email and event-change settings backed by a user-scoped query.
+- Regenerate API types once contracts are final.
+- Search the executable repository for deleted names.
+
+Gate: only `morning_email` and `event_change` remain active.
+
+## Phase 7: Workflow, staging, and deliverability
+
+- Add the hourly workflow and scrape-to-recommendation trigger.
+- Run a simulated 24-hour dispatcher day.
+- Verify daylight-saving boundaries.
+- Send real Gmail and Outlook messages.
+- Verify SPF, DKIM, DMARC, plain text, mobile layout, and native unsubscribe.
+- Verify retry behavior with simulated timeout, 429, 5xx, failed, and stale-pending cases.
+
+Gate: staging sends once per local date and links never point to localhost.
+
+## Phase 8: Production rollout
+
+Use a short announced Going-write maintenance window rather than compatibility code:
+
+1. Deploy transactional occurrence-update support.
+2. Pause Going mutations.
+3. Apply the occurrence-aware Going migration and RPCs.
+4. Deploy the backend and frontend contract release.
+5. Run Going, count, calendar, and event-change smoke tests.
+6. Re-enable Going mutations.
+7. Deploy morning-email code and workflow replacement.
+8. Run dry-run and send-to-self checks.
+9. Enable production sending.
+10. Monitor three consecutive mornings.
+
+Do not deploy a nullable compatibility period or dual Going API.
+
+## 7. Focused verification matrix
+
+### Transaction and migration
+
+- Backfill selects the next future occurrence deterministically.
+- Rows without future occurrences are removed.
+- Retained explicit-ID edits preserve occurrence IDs.
+- Exact scraper matches preserve IDs.
+- Unmatched scraper dates do not inherit attendee selections.
+- Transaction failure rolls back every related change.
+- Concurrent Going mutations cannot exceed the distinct-event cap.
+- Cross-event occurrence IDs are rejected.
+
+### Going behavior
+
+- Single occurrence toggles immediately.
+- Multiple occurrences use one complete-selection PUT.
+- Empty selection uses DELETE.
+- Changing one selected occurrence to two does not increase distinct-user count.
+- Past-only selection does not activate a future occurrence.
+- Cancelled and zero-selectable events cannot be newly selected.
+- Rapid repeated confirmation cannot create out-of-order state.
+- User A cache data never appears for user B.
+- Calendar emits only selected occurrence IDs.
+- Collaborative input contains one pair per user and event.
+
+### Email content
+
+- Today occurrence included.
+- Other-day and unselected same-event occurrences excluded.
+- Cancelled events excluded.
+- New candidates use exact fixed 24-hour boundaries.
+- Going events excluded from picks.
+- Stored intersection preserves rank.
+- Scores below `0.30` are excluded.
+- Every qualifying stored match is included.
+- Missing stored recommendations produce no recommendation section.
+- Both-empty skips.
+- Each one-section and two-section rendering state works.
+- HTML fields are escaped.
+- Local times and event links are correct.
+
+### Delivery
+
+- Delayed start within the local 9:00 hour still sends.
+- Repeated run is deduplicated.
+- Failed and stale-pending rows can be reclaimed.
+- Provider retries reuse the same idempotency key.
+- Opt-out blocks dispatcher delivery.
+- Settings and unsubscribe change the same preference.
+- Visible and native unsubscribe paths work.
+
+### Query-count tests
+
+- Many cards do not create additional Going GETs.
+- Multi-select does not create per-occurrence requests.
+- Event stats use one aggregate count RPC.
+- Event-change preferences do not query per recipient.
+- Morning-email reads grow by chunks and groups, not eligible-user count.
+
+## 8. Expected file impact
+
+### Backend and database
+
+- `backend/core/constants/notifications.py`
+- `backend/core/constants/__init__.py`
+- `backend/core/config.py`
+- `backend/schemas/event_date.py`
+- `backend/schemas/event.py`
+- `backend/schemas/going_event.py`
+- `backend/schemas/notification_preference.py`
+- `backend/routers/events.py`
+- `backend/routers/going_events.py`
+- `backend/routers/notification_preferences.py`
+- `backend/services/event_date_service.py`
+- `backend/services/event_service.py`
+- `backend/services/going_event_service.py`
+- `backend/services/calendar_service.py`
+- `backend/services/email_service.py`
+- `backend/services/notifications/delivery_log.py`
+- `backend/services/notifications/digests.py`, deleted
+- `backend/services/notifications/event_change.py`
+- `backend/services/notifications/preferences.py`
+- `backend/services/notifications/rendering.py`
+- `backend/services/notifications/schedule.py`
+- `backend/jobs/send_notifications.py`
+- `backend/recommender/service.py`
+- `backend/recommender/collaborative.py`
+- `backend/services/scraper/event_writer.py`
+- New forward-only Supabase migrations and related tests
+
+### Frontend
+
+- `frontend/src/shared/types/event.types.ts`
+- `frontend/src/shared/utils/event.ts`
+- `frontend/src/shared/api/eventPayload.ts`
+- `frontend/src/shared/lib/queryKeys.ts`
+- `frontend/src/shared/generated/*`, regenerated only
+- `frontend/src/app/app-page.tsx`
+- `frontend/src/app/client-providers.tsx`
+- `frontend/src/features/events/api/events.api.ts`
+- `frontend/src/features/events/components/EventCard.tsx`
+- `frontend/src/features/events/components/EventDetailsModal.tsx`
+- `frontend/src/features/events/hooks/useEventStats.ts`
+- `frontend/src/features/events/hooks/useEventsPageData.ts`
+- `frontend/src/features/events/store/goingEvents.store.ts`, deleted
+- New events-feature Going hook and picker content
+- Search Going consumers
+- Settings API, hook, component, and locales
+- Onboarding page, hook, locales, and tests
+- Focused Going and notification-settings Playwright tests
+- Existing Playwright fixtures that mock `/going-events`
+
+### Workflows and configuration
+
+- Delete `.github/workflows/daily-new-events-email.yml`.
+- Add one hourly morning-email workflow.
+- Update `.github/workflows/nightly-recs.yml` to follow successful scrape completion.
+- Add production `EMAIL_UNSUBSCRIBE_SECRET` and explicit `FRONTEND_URL`.
+- Configure and verify the Resend sending domain.
+
+## 9. Required checks
+
+```bash
+cd backend
+.venv/bin/ruff format --check .
+.venv/bin/ruff check .
+.venv/bin/mypy .
+.venv/bin/pytest -q
+```
+
+```bash
+cd frontend
+npm run generate-types
+npm run lint
+npm run audit:i18n
+npm run type-check
+npm run build
+npx playwright test
+```
+
+Also run:
+
+- Fresh local Supabase reset and migration.
+- Production-shaped migration rehearsal.
+- Repository-wide deleted-name search.
+- Query-count tests.
+- 24-hour simulated dispatcher run.
+- Real staging sends to Gmail and Outlook.
+- Mail authentication and unsubscribe verification.
+
+## 10. Definition of complete
+
+- `morning_email` and `event_change` are the only active notification types.
+- Every Going row references a valid occurrence.
+- Event and occurrence updates are transactional.
+- No inferred scraper identity can transfer a selection incorrectly.
+- Going writes use one atomic RPC.
+- Counts use distinct users in PostgreSQL.
+- Calendar emits only selected occurrences.
+- Event-change recipients survive occurrence removal.
+- Frontend Going state is user-scoped and has no duplicate server-state store.
+- Cards and occurrences do not create N+1 requests.
+- Morning-email reads are batched and bounded.
+- Morning-email candidates use one fixed previous-24-hour window.
+- Failed and stale claims can retry safely.
+- No email is sent twice for one user and local date.
+- Settings and unsubscribe control the same preference.
+- No production email link uses localhost.
+- SPF, DKIM, and DMARC pass.
+- Gmail and Outlook delivery is verified.
+- Three consecutive production mornings finish without duplicates or unexplained failures.

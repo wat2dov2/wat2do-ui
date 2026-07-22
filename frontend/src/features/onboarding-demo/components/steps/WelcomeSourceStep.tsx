@@ -17,7 +17,7 @@ export function WelcomeSourceStep({ flow }: WelcomeSourceStepProps) {
       left={
         <div className="space-y-6">
           <div className="space-y-2">
-            <p className="text-[11px] tracking-wider uppercase text-muted-foreground font-medium">
+            <p className="text-[11px] text-muted-foreground font-medium">
               {t("onboardingDemo.source.eyebrow")}
             </p>
             <h1 className="font-sans font-semibold text-3xl sm:text-4xl text-foreground leading-tight">

@@ -18,7 +18,7 @@ class ResolvedOrganization:
 
     organization_id: int | None
     organization_name: str | None
-    organization_type: str | None
+    association_affiliated: bool
     ig_handle: str | None
 
 
@@ -52,13 +52,13 @@ def resolve_organization_for_scrape(
             return ResolvedOrganization(
                 organization_id=org.get("id"),
                 organization_name=(org.get("organization_name") or "").strip() or preferred_name,
-                organization_type=(org.get("organization_type") or "").strip() or None,
+                association_affiliated=bool(org.get("association_affiliated")),
                 ig_handle=cleaned_handle,
             )
         return ResolvedOrganization(
             organization_id=None,
             organization_name=preferred_name,
-            organization_type=None,
+            association_affiliated=False,
             ig_handle=cleaned_handle,
         )
 
@@ -71,13 +71,13 @@ def resolve_organization_for_scrape(
             return ResolvedOrganization(
                 organization_id=org.get("id"),
                 organization_name=(org.get("organization_name") or "").strip() or preferred_name,
-                organization_type=(org.get("organization_type") or "").strip() or None,
+                association_affiliated=bool(org.get("association_affiliated")),
                 ig_handle=org_ig,
             )
 
     return ResolvedOrganization(
         organization_id=None,
         organization_name=preferred_name,
-        organization_type=None,
+        association_affiliated=False,
         ig_handle=None,
     )

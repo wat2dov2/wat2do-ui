@@ -4,53 +4,6 @@
  */
 
 export interface paths {
-    "/ab/variant": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Variant
-         * @description Return the user's A/B variant.
-         *
-         *     If the auth user has no DB row yet (signup race), hash on
-         *     ``auth_user["id"]`` for a stable assignment instead of locking everyone
-         *     into control and biasing treatment share downward.
-         */
-        get: operations["get_variant_ab_variant_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ab/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Metrics
-         * @description CTR metrics by variant (admin only).
-         *
-         *     Cached in-process for 60 s (see ``ABTestService.get_ctr_by_variant``)
-         *     so polling dashboards do not full-scan per poll.
-         */
-        get: operations["get_metrics_ab_metrics_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/ai/generate-filters": {
         parameters: {
             query?: never;
@@ -401,6 +354,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/going-events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Event Attendees
+         * @description Public who's-going summary for an event's details view.
+         */
+        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/going-events/{event_id}": {
         parameters: {
             query?: never;
@@ -409,13 +382,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /**
-         * Mark Going
-         * @description Mark an event as going.
-         *
-         *     - 404 if the event does not exist.
-         *     - 400 if the user has already hit ``MAX_GOING_EVENTS_PER_USER``.
-         */
+        /** Mark Going */
         put: operations["mark_going_going_events__event_id__put"];
         post?: never;
         /** Unmark Going */
@@ -498,6 +465,24 @@ export interface paths {
         head?: never;
         /** Update My Preferences */
         patch: operations["update_my_preferences_notification_preferences_patch"];
+        trace?: never;
+    };
+    "/notification-preferences/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Confirm Unsubscribe */
+        get: operations["confirm_unsubscribe_notification_preferences_unsubscribe_get"];
+        put?: never;
+        /** Apply Unsubscribe */
+        post: operations["apply_unsubscribe_notification_preferences_unsubscribe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/organizations/": {
@@ -1275,9 +1260,6 @@ export interface paths {
          *
          *     Separate from ``PATCH /users/{id}`` so role is only mutable through an
          *     explicitly-admin endpoint - keeps the trust boundary bright.
-         *     ``user_service.set_role`` invalidates the supabase-auth-id cache so the
-         *     change is immediately visible in subsequent role checks.
-         *
          *     If the target is currently an admin and the new role is not ``admin``,
          *     refuse the demotion when it would leave zero admins.
          */
@@ -1305,37 +1287,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * ABMetricsResponse
-         * @description CTR per variant.
-         *
-         *     Keyed by variant name; the backend guarantees entries for both
-         *     ``control`` and ``treatment`` even when one has zero traffic.
-         */
-        ABMetricsResponse: {
-            control: components["schemas"]["ABVariantCTR"];
-            treatment: components["schemas"]["ABVariantCTR"];
-        };
-        /**
-         * ABVariantCTR
-         * @description Per-variant click-through-rate breakdown.
-         */
-        ABVariantCTR: {
-            /** Impressions */
-            impressions: number;
-            /** Clicks */
-            clicks: number;
-            /** Ctr */
-            ctr: number;
-        };
-        /** ABVariantResponse */
-        ABVariantResponse: {
-            /**
-             * Variant
-             * @enum {string}
-             */
-            variant: "control" | "treatment";
-        };
         /** AIPromptRequest */
         AIPromptRequest: {
             /** Prompt */
@@ -1445,6 +1396,16 @@ export interface components {
             name: string;
             /** Channels */
             channels: components["schemas"]["DiscordChannelOption"][];
+        };
+        /**
+         * EventAttendeesResponse
+         * @description Public who's-going summary: count plus abbreviated display names.
+         */
+        EventAttendeesResponse: {
+            /** Going Count */
+            going_count: number;
+            /** Names */
+            names: string[];
         };
         /** EventCreate */
         EventCreate: {
@@ -1579,8 +1540,11 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
+            /**
+             * Association Affiliated
+             * @default false
+             */
+            association_affiliated: boolean;
             /** School */
             school?: string | null;
             /** Source Url */
@@ -1638,8 +1602,11 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
+            /**
+             * Association Affiliated
+             * @default false
+             */
+            association_affiliated: boolean;
             /** School */
             school?: string | null;
             /** Source Url */
@@ -1718,8 +1685,11 @@ export interface components {
             category?: string | null;
             /** Organization */
             organization?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
+            /**
+             * Association Affiliated
+             * @default false
+             */
+            association_affiliated: boolean;
             /** Organization Page */
             organization_page?: string | null;
             /** Organization Ig */
@@ -1750,7 +1720,7 @@ export interface components {
             /** Location */
             location?: string | null;
             /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceCreate"][] | null;
+            occurrences?: components["schemas"]["OccurrenceUpdate"][] | null;
             /** Price */
             price?: number | null;
             /** Food */
@@ -1823,6 +1793,18 @@ export interface components {
              */
             registration: boolean;
         };
+        /** GoingEventSelection */
+        GoingEventSelection: {
+            /** Event Id */
+            event_id: number;
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+        };
+        /** GoingEventSelectionUpdate */
+        GoingEventSelectionUpdate: {
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+        };
         /**
          * GoingEventStatusResponse
          * @description Locks the going/not_going status contract at the OpenAPI boundary.
@@ -1833,6 +1815,10 @@ export interface components {
              * @enum {string}
              */
             status: "going" | "not_going";
+            /** Event Id */
+            event_id: number;
+            /** Occurrence Ids */
+            occurrence_ids: string[];
             /** Going Count */
             going_count: number;
         };
@@ -1900,7 +1886,7 @@ export interface components {
              * Notification Type
              * @enum {string}
              */
-            notification_type: "morning_digest" | "weekly_digest" | "event_change" | "daily_new_events";
+            notification_type: "morning_email" | "event_change";
             /** Enabled */
             enabled: boolean;
             /** Updated At */
@@ -1915,7 +1901,7 @@ export interface components {
              * Notification Type
              * @enum {string}
              */
-            notification_type: "morning_digest" | "weekly_digest" | "event_change" | "daily_new_events";
+            notification_type: "morning_email" | "event_change";
             /** Enabled */
             enabled: boolean;
         };
@@ -1962,8 +1948,11 @@ export interface components {
         };
         /** OccurrenceResponse */
         OccurrenceResponse: {
-            /** Id */
-            id: string | number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
             /** Event Id */
             event_id: number;
             /**
@@ -1982,6 +1971,27 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * OccurrenceUpdate
+         * @description Occurrence payload for event edits.
+         *
+         *     An ID retains an existing occurrence. A missing ID creates a new one.
+         */
+        OccurrenceUpdate: {
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** OrganizationClaimCreate */
         OrganizationClaimCreate: {
@@ -2044,8 +2054,11 @@ export interface components {
             ig?: string | null;
             /** Discord */
             discord?: string | null;
-            /** Organization Type */
-            organization_type: string;
+            /**
+             * Association Affiliated
+             * @default false
+             */
+            association_affiliated: boolean;
             /** Logo Url */
             logo_url?: string | null;
             /**
@@ -2315,8 +2328,11 @@ export interface components {
             ig?: string | null;
             /** Discord */
             discord?: string | null;
-            /** Organization Type */
-            organization_type: string;
+            /**
+             * Association Affiliated
+             * @default false
+             */
+            association_affiliated: boolean;
             /** Logo Url */
             logo_url?: string | null;
             /** Created By */
@@ -2347,8 +2363,8 @@ export interface components {
             ig?: string | null;
             /** Discord */
             discord?: string | null;
-            /** Organization Type */
-            organization_type?: string | null;
+            /** Association Affiliated */
+            association_affiliated?: boolean | null;
             /** Logo Url */
             logo_url?: string | null;
             /** School */
@@ -2857,46 +2873,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_variant_ab_variant_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ABVariantResponse"];
-                };
-            };
-        };
-    };
-    get_metrics_ab_metrics_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ABMetricsResponse"];
-                };
-            };
-        };
-    };
     generate_filters_ai_generate_filters_post: {
         parameters: {
             query?: never;
@@ -3569,7 +3545,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": number[];
+                    "application/json": components["schemas"]["GoingEventSelection"][];
+                };
+            };
+        };
+    };
+    list_event_attendees_going_events__event_id__attendees_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAttendeesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3583,7 +3590,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoingEventSelectionUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -3740,10 +3751,72 @@ export interface operations {
             };
         };
     };
+    confirm_unsubscribe_notification_preferences_unsubscribe_get: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_unsubscribe_notification_preferences_unsubscribe_post: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_organizations_organizations__get: {
         parameters: {
             query?: {
-                organization_type?: string | null;
+                association_affiliated?: boolean | null;
                 school?: string | null;
                 search?: string | null;
                 categories?: string[] | null;
