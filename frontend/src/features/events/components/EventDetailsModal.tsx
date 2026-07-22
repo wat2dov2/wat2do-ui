@@ -180,12 +180,10 @@ export function EventDetailsModal({
                   className="flex-wrap"
                 >
                   <Stack direction="horizontal" gap={2} className="min-w-0 flex-wrap">
-                    {displayedEvent.category && (
-                      <OrganizationTypeBadge
-                        type={getEventCategory(displayedEvent)}
-                        className="px-3 py-1.5 text-sm"
-                      />
-                    )}
+                    <OrganizationTypeBadge
+                      type={getEventCategory(displayedEvent)}
+                      className="px-3 py-1.5 text-sm"
+                    />
                     {isEventHappeningNow(displayedEvent) && (
                       <Badge variant="live" size="lg">
                         {t("common.live")}
