@@ -1009,7 +1009,9 @@ On pull requests, run:
 - `terraform validate`
 - `tflint`
 
-Run a production Terraform plan through GitHub OIDC when the foundation already exists.
+Run a live production Terraform plan through manual dispatch from `main` when the foundation already exists.
+
+Do not let pull request refs assume the production Terraform administrator role.
 
 Store the plan as a workflow artifact only when an apply job will consume that exact plan.
 

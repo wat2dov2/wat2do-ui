@@ -63,7 +63,7 @@ jobs:
     name: Production Terraform plan
     needs: validate
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
     environment: production
     permissions:
       contents: read
@@ -115,7 +115,7 @@ jobs:
     name: Apply foundation
     needs: validate
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
     environment: production
     concurrency:
       group: terraform-foundation-production
@@ -156,7 +156,7 @@ jobs:
     name: Apply production infrastructure
     needs: apply-foundation
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
     environment: production
     concurrency:
       group: terraform-production
