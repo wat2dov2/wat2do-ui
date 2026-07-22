@@ -1,7 +1,7 @@
 import { EventRoutePage } from "@/app/event-route-page";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import type { SchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
-import { SCHOOL_SLUGS, isKnownSchool, resolveSchool } from "@/shared/constants/schools";
+import { isKnownSchool, resolveSchool } from "@/shared/constants/schools";
 
 interface SchoolHomePageProps {
   params: Promise<{
@@ -12,7 +12,7 @@ interface SchoolHomePageProps {
 export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return SCHOOL_SLUGS.map((school) => ({ school }));
+  return [];
 }
 
 async function loadInitialSnapshot(school: string): Promise<SchoolBrowseSnapshot | null> {
