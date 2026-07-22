@@ -298,7 +298,7 @@ Restrict the production trust policy to:
 The deployment role needs only:
 
 - ECR authorization-token access.
-- ECR image upload actions for the two wat2do repositories.
+- ECR image upload and pull actions for the two wat2do repositories so each pushed image can be smoke-tested before deployment.
 - Read access to the frontend-build secret.
 - ECS task-definition read and registration actions.
 - ECS service update and describe actions for the wat2do cluster and service.
