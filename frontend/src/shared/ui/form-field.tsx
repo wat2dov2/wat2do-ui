@@ -114,7 +114,7 @@ export function FormInput({
       >
         {labelIcon}
         {label}
-        {required && <span className="text-error">*</span>}
+        {required && <span className="text-destructive">*</span>}
       </FieldLabel>
       {prefix ? (
         <div className="relative">
@@ -158,7 +158,7 @@ export function FormSelect({
       >
         {labelIcon}
         {label}
-        {required && <span className="text-error">*</span>}
+        {required && <span className="text-destructive">*</span>}
       </FieldLabel>
       <Select
         value={value}
@@ -216,7 +216,7 @@ export function FormDateTimePicker({
       >
         {labelIcon}
         {label}
-        {required && <span className="text-error">*</span>}
+        {required && <span className="text-destructive">*</span>}
       </FieldLabel>
       <DateTimePicker
         id={id}
@@ -258,7 +258,7 @@ export function FormTextarea({
       >
         {labelIcon}
         {label}
-        {required && <span className="text-error">*</span>}
+        {required && <span className="text-destructive">*</span>}
       </FieldLabel>
       <Textarea
         id={id}

@@ -30,7 +30,7 @@ def organization_owner_client(authenticated_client, monkeypatch):
     mock_organization = OrganizationResponse(
         id=123,
         organization_name="Test Organization",
-        organization_type="tech",
+        association_affiliated=False,
         created_by=FAKE_USER["id"],
     )
     monkeypatch.setattr(

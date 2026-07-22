@@ -163,7 +163,7 @@ export function AdminEventsPage({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
             activeTab === "events"
               ? "bg-primary/80 text-primary-foreground font-semibold"
-              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+              : "bg-secondary text-muted-foreground hover:bg-muted-hover"
           }`}
         >
           {t("admin.eventsList")}
@@ -174,7 +174,7 @@ export function AdminEventsPage({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
             activeTab === "submissions"
               ? "bg-primary/80 text-primary-foreground font-semibold"
-              : "bg-secondary text-muted-foreground hover:bg-muted/60 dark:hover:bg-muted/60"
+              : "bg-secondary text-muted-foreground hover:bg-muted-hover"
           }`}
         >
           {t("admin.eventSubmissions")}
@@ -218,8 +218,8 @@ export function AdminEventsPage({
               className={cn(
                 "flex items-center gap-2 px-3 py-1 h-9 whitespace-nowrap [&_svg]:shrink-0 [&_svg]:size-4 transition-all",
                 showReportedOnly
-                  ? "bg-primary/80! text-primary-foreground! hover:bg-primary/80! hover:text-primary-foreground! [&_svg]:text-primary-foreground!"
-                  : "bg-secondary text-muted-foreground hover:bg-secondary"
+                  ? "bg-primary/80! text-primary-foreground! hover:bg-primary-hover! hover:text-primary-foreground! [&_svg]:text-primary-foreground!"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary-hover"
               )}
             >
               <AlertTriangle className="size-4" />
@@ -252,7 +252,7 @@ export function AdminEventsPage({
                   <TableRow
                     key={event.id}
                     id={`event-${event.id}`}
-                    className={`cursor-pointer hover:bg-secondary/50 ${isHighlighted ? "bg-primary/10" : ""}`}
+                    className={`cursor-pointer hover:bg-surface-hover ${isHighlighted ? "bg-primary/10" : ""}`}
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams.toString());
                       newParams.set(QP.EVENT_ID, event.id.toString());
@@ -310,7 +310,7 @@ export function AdminEventsPage({
                             e.stopPropagation();
                             setDeleteConfirmId(event.id);
                           }}
-                          className="hover:bg-error/10 hover:text-error"
+                          className="hover:bg-surface-hover hover:text-destructive"
                         >
                           {t("common.delete")}
                         </Button>
@@ -411,7 +411,7 @@ export function AdminEventsPage({
                 <TableRow
                   key={submission.id}
                   id={`submission-${submission.id}`}
-                  className={`cursor-pointer hover:bg-secondary/50 ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
+                  className={`cursor-pointer hover:bg-surface-hover ${submissionIdParam === submission.id ? "bg-primary/10" : ""}`}
                   onClick={() => {
                     const newParams = new URLSearchParams(searchParams.toString());
                     newParams.set(QP.SUBMISSION_ID, submission.id);
@@ -452,7 +452,7 @@ export function AdminEventsPage({
                               e.stopPropagation();
                               submissionActions.handleApprove(submission);
                             }}
-                            className="text-success hover:text-success hover:bg-success/10"
+                            className="text-success hover:text-success hover:bg-surface-hover"
                           >
                             {t("admin.approve")}
                           </Button>
@@ -463,7 +463,7 @@ export function AdminEventsPage({
                               e.stopPropagation();
                               submissionActions.handleRejectClick(submission);
                             }}
-                            className="text-error hover:text-error hover:bg-error/10"
+                            className="text-destructive hover:text-destructive hover:bg-surface-hover"
                           >
                             {t("admin.reject")}
                           </Button>

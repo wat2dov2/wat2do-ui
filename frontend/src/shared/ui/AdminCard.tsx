@@ -16,7 +16,7 @@ export function AdminCard({
   onMouseDown,
   className = "",
 }: AdminCardProps) {
-  const baseClasses = "bg-secondary hover:bg-secondary rounded-xl p-6 flex flex-col items-start gap-3 transition-colors text-left border border-border";
+  const baseClasses = "bg-secondary hover:bg-secondary-hover rounded-xl p-6 flex flex-col items-start gap-3 transition-colors text-left border border-border";
 
   const Component = onMouseDown ? "button" : "div";
 

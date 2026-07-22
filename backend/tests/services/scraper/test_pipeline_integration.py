@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
+from uuid import UUID
 
 from services.scraper import pipeline as pipeline_module
 
@@ -143,7 +144,7 @@ def test_pipeline_produces_one_event_row_per_logical_event(monkeypatch, fake_sb,
                 # event_dates bulk insert - echo with fabricated ids/times.
                 rows = [
                     {
-                        "id": i,
+                        "id": UUID(int=i + 1),
                         "event_id": row["event_id"],
                         "dtstart_utc": row["dtstart_utc"],
                         "dtend_utc": row.get("dtend_utc"),

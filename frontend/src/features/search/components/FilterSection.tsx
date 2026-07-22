@@ -37,8 +37,8 @@ export const FilterSection = React.memo(function FilterSection({
           </Tooltip>
           {indicator && (
             <Button
-              variant="selected"
-              size="xs"
+              variant="primary"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onClear?.();

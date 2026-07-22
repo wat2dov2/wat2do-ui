@@ -18,7 +18,9 @@ import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
 import { useUserEmail } from "@/features/auth";
 import { ContactPage } from "@/features/contact/pages/ContactPage";
 import { useEventsStore } from "@/features/events";
+import { EventDetailsPageContainer } from "@/features/events/pages/EventDetailsPageContainer";
 import { MarketingPage } from "@/features/marketing/pages/MarketingPage";
+import { DesignSystemPage } from "@/features/design-system";
 import { OnboardingDemoPage } from "@/features/onboarding-demo";
 import { OnboardingPage } from "@/features/onboarding/pages/OnboardingPage";
 import { OrganizationsPage } from "@/features/organizations/pages/OrganizationsPage";
@@ -56,6 +58,14 @@ export function OnboardingDemoRoute() {
   return (
     <AppPage authFlow chrome={false}>
       <OnboardingDemoPage />
+    </AppPage>
+  );
+}
+
+export function DesignSystemRoute() {
+  return (
+    <AppPage chrome={false}>
+      <DesignSystemPage />
     </AppPage>
   );
 }
@@ -163,6 +173,14 @@ export function OrganizationPanelMembersPageRoute() {
   return (
     <AppPage requiredRole={ROLE_ORGANIZATION}>
       <OrganizationPanelMembersRoute />
+    </AppPage>
+  );
+}
+
+export function EventDetailsPageRoute({ eventId }: { eventId: number }) {
+  return (
+    <AppPage>
+      <EventDetailsPageContainer eventId={eventId} />
     </AppPage>
   );
 }

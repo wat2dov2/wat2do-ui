@@ -4,7 +4,7 @@ import {
   fetchEventStatsFromBackend,
   type EventStats,
 } from "@/features/events/api/events.api";
-import { useGoingEventsStore } from "@/features/events/store/goingEvents.store";
+import { productControl } from "@/shared/config/productControl";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
 type EventStatsMap = Record<string, EventStats>;
@@ -21,7 +21,7 @@ export function useEventStats(school: string | null | undefined) {
     queryKey: queryKeys.events.stats(resolvedSchool),
     queryFn: () => fetchEventStatsFromBackend(resolvedSchool),
     enabled: Boolean(resolvedSchool),
-    staleTime: 60_000,
+    staleTime: productControl.clientCache.liveEventDataStaleMs,
   });
 }
 
@@ -39,7 +39,6 @@ function patchEventStats(
 
 export function useEventStatsActions(school: string | null | undefined) {
   const queryClient = useQueryClient();
-  const toggleGoingEvent = useGoingEventsStore((state) => state.toggleGoingEvent);
   const resolvedSchool = school ?? "";
 
   const incrementClickCount = useCallback(
@@ -53,38 +52,5 @@ export function useEventStatsActions(school: string | null | undefined) {
     [queryClient, resolvedSchool],
   );
 
-  const toggleWithStats = useCallback(
-    async (eventId: number) => {
-      const wasGoing = useGoingEventsStore.getState().goingEventIds.includes(eventId);
-
-      if (resolvedSchool) {
-        patchEventStats(queryClient, resolvedSchool, eventId, (current) => ({
-          ...current,
-          going_count: Math.max(0, current.going_count + (wasGoing ? -1 : 1)),
-        }));
-      }
-
-      try {
-        const response = await toggleGoingEvent(eventId);
-        if (response && resolvedSchool) {
-          patchEventStats(queryClient, resolvedSchool, eventId, (current) => ({
-            ...current,
-            going_count: response.going_count,
-          }));
-        }
-        return response;
-      } catch (error) {
-        if (resolvedSchool) {
-          patchEventStats(queryClient, resolvedSchool, eventId, (current) => ({
-            ...current,
-            going_count: Math.max(0, current.going_count + (wasGoing ? 1 : -1)),
-          }));
-        }
-        throw error;
-      }
-    },
-    [queryClient, resolvedSchool, toggleGoingEvent],
-  );
-
-  return { incrementClickCount, toggleWithStats };
+  return { incrementClickCount };
 }

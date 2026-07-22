@@ -74,7 +74,7 @@ export function OnboardingDemoPage() {
         <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto">
           <OnboardingDemoProgress currentStep={flow.currentStep} />
           <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden sm:inline text-[10px] text-muted-foreground uppercase tracking-wide">
+            <span className="hidden sm:inline text-[10px] text-muted-foreground">
               {t("onboardingDemo.chrome.demo")}
             </span>
             <LanguageSelector />

@@ -12,7 +12,7 @@ export function OrganizationCardSkeleton() {
     >
       {/* 1. Custom Background with clip-path (including -webkit support for Safari compatibility) */}
       <div
-        className="absolute inset-0 rounded-xl bg-card"
+        className="absolute inset-0 rounded-xl bg-surface"
         style={{
           clipPath: paths.clip ? `path('${paths.clip}')` : undefined,
           WebkitClipPath: paths.clip ? `path('${paths.clip}')` : undefined,

@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { usePathname, useRouter } from "next/navigation";
 import { useFilterActions } from "@/features/search";
-import { OrganizationVerifiedBadge } from "@/features/events/components/OrganizationVerifiedBadge";
+import { OrganizationAssociationBadge } from "@/shared/components/OrganizationAssociationBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,10 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Badge } from "@/shared/ui/badge";
+import { getStudentAssociation } from "@/shared/constants/schools";
 
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
-  organizationType?: string | null;
+  associationAffiliated?: boolean | null;
+  school?: string | null;
   /** Owning organization's link/social fields, embedded on the event response. */
   organizationPage?: string | null;
   organizationIg?: string | null;
@@ -29,7 +31,8 @@ interface OrganizationBadgeDropdownProps {
 
 export function OrganizationBadgeDropdown({
   organizationName,
-  organizationType,
+  associationAffiliated,
+  school,
   organizationPage,
   organizationIg,
   organizationDiscord,
@@ -44,7 +47,7 @@ export function OrganizationBadgeDropdown({
   const filterActions = useFilterActions();
   const [isOpen, setIsOpen] = useState(false);
 
-  const showVerified = organizationType?.toUpperCase() === "WUSA";
+  const showAssociation = Boolean(associationAffiliated) && Boolean(getStudentAssociation(school));
 
   const handleFilterSelect = useCallback(() => {
     setIsOpen(false);
@@ -67,16 +70,16 @@ export function OrganizationBadgeDropdown({
         asChild
         variant="outline"
         size="md"
-        className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-1.5 opacity-70"
+        className="tracking-normal bg-background border-foreground text-foreground flex max-w-full items-center gap-1.5 opacity-70"
         onMouseDown={onMouseDown}
         onClick={onClick}
       >
         <span>
-          <span className="font-bold truncate max-w-[128px]">
+          <span className="min-w-0 truncate font-bold">
             {organizationName || t("events.organization")}
           </span>
-          {organizationName && organizationName !== t("events.organization") && showVerified && (
-            <OrganizationVerifiedBadge />
+          {organizationName && organizationName !== t("events.organization") && showAssociation && (
+            <OrganizationAssociationBadge school={school} affiliated={associationAffiliated} />
           )}
         </span>
       </Badge>
@@ -90,7 +93,7 @@ export function OrganizationBadgeDropdown({
           asChild
           variant="outline"
           size="md"
-          className="tracking-normal bg-background border-foreground text-foreground flex items-center gap-1.5 transition-[background-color,opacity] opacity-70 hover:bg-muted/20 hover:opacity-100 active:scale-95 cursor-pointer"
+          className="tracking-normal bg-background border-foreground text-foreground flex max-w-full items-center gap-1.5 transition-[background-color,opacity] opacity-70 hover:bg-surface-hover hover:opacity-100 active:scale-95 cursor-pointer"
           onMouseDown={onMouseDown}
           onClick={onClick}
         >
@@ -99,10 +102,10 @@ export function OrganizationBadgeDropdown({
             onMouseEnter={badgeHoverProps?.onMouseEnter}
             onMouseLeave={badgeHoverProps?.onMouseLeave}
           >
-            <span className="font-bold truncate max-w-[128px]">
+            <span className="min-w-0 truncate font-bold">
               {organizationName}
             </span>
-            {showVerified && <OrganizationVerifiedBadge />}
+            {showAssociation && <OrganizationAssociationBadge school={school} affiliated={associationAffiliated} />}
           </button>
         </Badge>
       </DropdownMenuTrigger>

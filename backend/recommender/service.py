@@ -2,7 +2,8 @@
 
 Two modes:
 - get_recommendations(): live endpoint, reads pre-computed results from user_recommendations
-  and applies real-time filters (already actioned, past events, etc.)
+  and applies real-time filters (already actioned, past events, etc.). It never
+  computes or fills recommendations live.
 - compute_and_store(): offline nightly job, runs the full CF pipeline and writes results.
 """
 
@@ -10,17 +11,21 @@ import logging
 import threading
 from collections.abc import Iterator
 from concurrent.futures import Executor, ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from itertools import groupby
 from typing import Any, Callable
 
-from core.cache import TTLCache
 from core.database import get_sb
 from core.pagination import iter_all_pages
 from core.retry import supabase_retry
 from core.tables import EVENT_DATES, USER_INTERACTIONS, USER_RECOMMENDATIONS, USERS
-from recommender.collaborative import get_collaborative_scores
+from recommender.collaborative import (
+    CollaborativeModel,
+    build_collaborative_model,
+    get_collaborative_scores,
+)
 from recommender.config import (
-    CANDIDATE_EVENTS_CACHE_TTL,
     CANDIDATE_POOL_SIZE,
     DEFAULT_LAMBDA,
     DEFAULT_LIMIT,
@@ -29,31 +34,49 @@ from recommender.config import (
 )
 from recommender.content_based import get_content_scores
 from recommender.interaction_scores import get_user_event_scores
-from recommender.popularity import get_popularity_scores
+from recommender.popularity import (
+    PopularityModel,
+    build_popularity_model,
+    get_popularity_scores,
+)
 from recommender.reranker import mmr_rerank
 from recommender.schemas import RecommendationItem
 from recommender.scoring import blend_scores, select_weights
 from schemas.event import EventResponse
 from services import event_query, interaction_service, user_service
-from services.ab_test_service import ab_test
 
 log = logging.getLogger(__name__)
 
-# Short-lived TTL cache for candidate events (future events query).
-# Identical for all users within a time window - avoids redundant DB hits
-# during nightly batch processing (compute_all_users) and concurrent live
-# requests.
-_candidates_cache = TTLCache(default_ttl=CANDIDATE_EVENTS_CACHE_TTL)
+
+def get_stored_recommendations_for_users(
+    user_ids: list[str],
+) -> dict[str, list[dict]]:
+    """Load stored recommendation rows in user chunks without live fallback."""
+    grouped: dict[str, list[dict]] = {user_id: [] for user_id in user_ids}
+    for start in range(0, len(user_ids), 500):
+        chunk = user_ids[start : start + 500]
+        rows = (
+            get_sb()
+            .table(USER_RECOMMENDATIONS)
+            .select("user_id,event_id,rank,predicted_score,computed_at")
+            .in_("user_id", chunk)
+            .order("rank")
+            .execute()
+        ).data or []
+        for row in rows:
+            user_id = str(row["user_id"])
+            if user_id in grouped:
+                grouped[user_id].append(row)
+    return grouped
 
 
-def invalidate_candidates_cache() -> None:
-    """Invalidate the shared candidate-events cache.
+@dataclass(frozen=True)
+class RecommendationSnapshot:
+    """Shared recommendation inputs for one finite nightly batch run."""
 
-    Callers (event_service create/update/delete paths) should invoke this so
-    that newly-published or mutated events show up in recommendations before
-    the TTL expires.
-    """
-    _candidates_cache.clear()
+    candidates: tuple[EventResponse, ...]
+    popularity_scores: dict[int, float]
+    collaborative_model: CollaborativeModel | None
 
 
 # Per-user locks for the upsert-then-delete sequence inside _store_user_recs.
@@ -88,7 +111,7 @@ class RecommendationEngine:
         default_lambda: float = DEFAULT_LAMBDA,
     ):
         self._content_scorer = content_scorer or get_content_scores
-        self._collab_scorer = collab_scorer or get_collaborative_scores
+        self._collab_scorer = collab_scorer
         self._popularity_scorer = popularity_scorer or get_popularity_scores
         self._reranker = reranker or mmr_rerank
         self._executor_factory = executor_factory or (
@@ -106,16 +129,17 @@ class RecommendationEngine:
         self, user_id: str, limit: int = DEFAULT_LIMIT
     ) -> list[RecommendationItem]:
         """
-        Read pre-computed recs from user_recommendations.
-        Apply real-time filters: strip events the user has interacted with since
-        the last compute, past events, etc.
-        Falls back to live computation if no pre-computed recs exist.
+        Read only the nightly recommendation snapshot from user_recommendations.
+
+        Real-time reads only remove newly actioned or past events. Missing,
+        stale, or filtered snapshots return no recommendations until the next
+        GitHub runner completes.
         """
         try:
             recs = self._fetch_precomputed_recs(user_id)
         except Exception as e:
             log.warning("Failed to fetch pre-computed recs for user %s: %s", user_id, e)
-            recs = None
+            return []
 
         if recs and recs.data:
             computed_at = recs.data[0].get("computed_at")
@@ -141,11 +165,10 @@ class RecommendationEngine:
                     log.warning("Failed to check future events: %s", e)
                     future_lookup_failed = True
 
-            # Fail closed: if we couldn't verify which pre-computed events are
-            # still in the future, fall through to live computation rather than
-            # leak past events.
+            # Fail closed rather than leaking past events or computing a live
+            # substitute outside the nightly snapshot.
             if future_lookup_failed:
-                return self._compute_live(user_id, limit)
+                return []
 
             results: list[RecommendationItem] = []
             for rec in recs.data:
@@ -164,28 +187,9 @@ class RecommendationEngine:
                 if len(results) >= limit:
                     break
 
-            # Top up with live compute when pre-computed filtering left fewer
-            # than `limit` results. Dedup by event_id so we don't emit twice.
-            if results and len(results) < limit:
-                seen = {r.event_id for r in results}
-                try:
-                    topup = self._compute_live(user_id, limit)
-                except Exception as e:
-                    log.warning("Live top-up failed for user %s: %s", user_id, e)
-                    topup = []
-                for item in topup:
-                    if item.event_id in seen:
-                        continue
-                    results.append(item)
-                    seen.add(item.event_id)
-                    if len(results) >= limit:
-                        break
-                return results
+            return results
 
-            if results:
-                return results
-
-        return self._compute_live(user_id, limit)
+        return []
 
     @staticmethod
     @supabase_retry
@@ -231,76 +235,37 @@ class RecommendationEngine:
         )
         return {e["event_id"] for e in (r.data or [])}
 
-    def get_popular_recommendations(self, limit: int = DEFAULT_LIMIT) -> list[RecommendationItem]:
-        """Return popular upcoming events for anonymous or cold-start users."""
-        try:
-            candidates = self._get_candidate_events()
-        except Exception:
-            log.warning("Failed to load popular recommendation candidates", exc_info=True)
-            return []
-        if not candidates:
-            return []
-
-        pop_scores: dict[int, float] = {}
-        try:
-            pop_scores = self._popularity_scorer([e.id for e in candidates])
-            candidates.sort(key=lambda e: pop_scores.get(e.id, 0), reverse=True)
-            reason = "Popular on campus"
-        except Exception as e:
-            log.warning("Popularity scoring failed, falling back to recency: %s", e)
-            reason = "Happening soon"
-
-        # Emit the real popularity score so downstream analytics (AB test
-        # metrics, CTR) can rank/compare rather than seeing a uniform 0.0.
+    @staticmethod
+    def _format_popular_recommendations(
+        candidates: list[EventResponse],
+        popularity_scores: dict[int, float],
+        limit: int,
+        reason: str = "Popular on campus",
+    ) -> list[RecommendationItem]:
+        candidates.sort(key=lambda event: popularity_scores.get(event.id, 0), reverse=True)
         return [
             RecommendationItem(
                 event_id=e.id,
-                score=round(pop_scores.get(e.id, 0.0), 4),
+                score=round(popularity_scores.get(e.id, 0.0), 4),
                 reason=reason,
             )
             for e in candidates[:limit]
         ]
-
-    def get_personalized_recommendations(
-        self,
-        user_id: str,
-        limit: int = DEFAULT_LIMIT,
-    ) -> list[RecommendationItem]:
-        """Full personalized flow: get recs, resolve AB variant, record impressions.
-
-        Orchestrates the AB test integration so routers make a single call.
-        Falls back to popular recommendations on failure.
-        """
-        variant = ab_test.get_user_variant(user_id)
-        try:
-            recs = self.get_recommendations(user_id=user_id, limit=limit)
-        except Exception:
-            log.warning(
-                "Personalized recommendations failed for user %s; falling back to popular",
-                user_id,
-                exc_info=True,
-            )
-            recs = self.get_popular_recommendations(limit=limit)
-        try:
-            ab_test.record_impressions(user_id, [r.event_id for r in recs], variant)
-        except Exception:
-            log.warning("Failed to record AB impressions for user %s", user_id, exc_info=True)
-        return recs
 
     def compute_and_store(
         self,
         user_id: str,
         limit: int = DEFAULT_LIMIT,
         lambda_param: float | None = None,
+        *,
+        snapshot: RecommendationSnapshot,
     ) -> list[RecommendationItem]:
         """Run full recommendation pipeline and store results in user_recommendations."""
         lp = lambda_param if lambda_param is not None else self.default_lambda
-        results = self._compute_live(user_id, limit, lp)
-        if not results:
-            return []
+        results = self._compute_from_snapshot(user_id, snapshot, limit, lp)
 
         now = datetime.now(timezone.utc).isoformat()
-        rows = []
+        rows: list[dict] = []
         for i, rec in enumerate(results):
             rows.append(
                 {
@@ -346,15 +311,57 @@ class RecommendationEngine:
                 .execute()
             )
 
-    def _compute_live(
+    def build_snapshot(
+        self,
+        school: str,
+        collaborative_model: CollaborativeModel | None,
+        popularity_model: PopularityModel,
+    ) -> RecommendationSnapshot:
+        """Load one school's candidate and popularity inputs for a nightly batch."""
+        candidates = tuple(self._load_candidate_events(school))
+        foreign_event_ids = [event.id for event in candidates if (event.school or "") != school]
+        if foreign_event_ids:
+            raise RuntimeError(
+                f"School candidate query for {school!r} returned foreign events "
+                f"{foreign_event_ids[:10]}"
+            )
+        if not candidates:
+            return RecommendationSnapshot(
+                candidates=(),
+                popularity_scores={},
+                collaborative_model=collaborative_model,
+            )
+
+        candidate_ids = [event.id for event in candidates]
+        return RecommendationSnapshot(
+            candidates=candidates,
+            popularity_scores=self._popularity_scorer(
+                candidate_ids,
+                model=popularity_model,
+            ),
+            collaborative_model=collaborative_model,
+        )
+
+    @staticmethod
+    def build_shared_collaborative_model() -> CollaborativeModel:
+        """Build the immutable collaborative signal reused by every school."""
+        return build_collaborative_model()
+
+    @staticmethod
+    def build_shared_popularity_model() -> PopularityModel:
+        """Build the immutable popularity signal reused by every school."""
+        return build_popularity_model()
+
+    def _compute_from_snapshot(
         self,
         user_id: str,
+        snapshot: RecommendationSnapshot,
         limit: int = DEFAULT_LIMIT,
         lambda_param: float | None = None,
     ) -> list[RecommendationItem]:
-        """Full recommendation pipeline: score, blend, re-rank."""
+        """Score one user against the immutable inputs for this batch."""
         lp = lambda_param if lambda_param is not None else self.default_lambda
-        candidates = self._get_candidate_events()
+        candidates = list(snapshot.candidates)
         if not candidates:
             return []
 
@@ -390,11 +397,10 @@ class RecommendationEngine:
 
         content_scores: dict[int, float] = {}
         collab_scores: dict[int, float] = {}
-        pop_scores: dict[int, float] = {}
+        pop_scores = snapshot.popularity_scores
 
         with self.make_executor(max_workers=3) as pool:
             futures: dict[str, Any] = {}
-            futures["pop"] = pool.submit(self._popularity_scorer, candidate_ids)
 
             if has_profile:
                 futures["content"] = pool.submit(
@@ -405,13 +411,23 @@ class RecommendationEngine:
                     user_scores=user_scores,
                 )
 
-            if interaction_count >= self.warm_threshold:
-                futures["collab"] = pool.submit(self._collab_scorer, user_id, candidate_ids)
-
-            try:
-                pop_scores = futures["pop"].result()
-            except Exception as e:
-                log.warning("Popularity scoring failed for live recs: %s", e)
+            if (
+                interaction_count >= self.warm_threshold
+                and snapshot.collaborative_model is not None
+            ):
+                if self._collab_scorer is not None:
+                    futures["collab"] = pool.submit(
+                        self._collab_scorer,
+                        user_id,
+                        candidate_ids,
+                    )
+                else:
+                    futures["collab"] = pool.submit(
+                        get_collaborative_scores,
+                        user_id,
+                        candidate_ids,
+                        model=snapshot.collaborative_model,
+                    )
 
             if "content" in futures:
                 try:
@@ -440,14 +456,18 @@ class RecommendationEngine:
         )
 
         if not blended:
-            # Fall through to popular recommendations rather than returning
-            # dtstart-sorted candidates with score=0.0.
+            # Reuse the batch snapshot rather than issuing live fallback queries
+            # once per cold-start user.
             log.warning(
                 "Blend empty for user %s (candidates=%d); falling back to popular recs",
                 user_id,
                 len(candidate_ids),
             )
-            return self.get_popular_recommendations(limit)
+            return self._format_popular_recommendations(
+                candidates,
+                snapshot.popularity_scores,
+                limit,
+            )
 
         # Explicit tie-break by event_id so ordering is reproducible when
         # two events end up with identical blended scores.
@@ -475,23 +495,17 @@ class RecommendationEngine:
         return results
 
     @staticmethod
-    def _get_candidate_events() -> list[EventResponse]:
-        """Load future events as recommendation candidates.
+    def _load_candidate_events(school: str) -> list[EventResponse]:
+        """Load future events for one school as recommendation candidates.
 
         The query/dedup/hydrate is the shared ``event_query.load_upcoming_events``
-        - candidates are just "every upcoming event" (from now, no school filter)
-        capped at the pool size. Cached for CANDIDATE_EVENTS_CACHE_TTL seconds so
-        concurrent recommendation requests and nightly batch runs share one DB
-        round-trip; the TTL keeps live users off stale event data.
+        and is capped at the configured per-school pool size.
         """
-        return _candidates_cache.get_or_compute(
-            "candidates",
-            lambda: event_query.load_upcoming_events(
-                since=datetime.now(timezone.utc),
-                school=None,
-                cap=CANDIDATE_POOL_SIZE,
-                model=EventResponse,
-            ),
+        return event_query.load_upcoming_events(
+            since=datetime.now(timezone.utc),
+            school=school,
+            cap=CANDIDATE_POOL_SIZE,
+            model=EventResponse,
         )
 
     @staticmethod
@@ -526,7 +540,7 @@ engine = RecommendationEngine()
 
 
 class BatchRecommendationRunner:
-    """Batch orchestration: runs compute_and_store for all users in parallel.
+    """Batch orchestration: processes users school-by-school in parallel.
 
     Separated from RecommendationEngine so the engine stays focused on
     scoring/blending logic while the runner owns threading, progress
@@ -542,15 +556,15 @@ class BatchRecommendationRunner:
         lambda_param: float | None = None,
         max_workers: int = 6,
     ) -> dict:
-        """Run compute_and_store for every user in parallel. Returns stats dict.
+        """Run compute_and_store for every user, grouped by school.
 
-        Uses ThreadPoolExecutor to process users concurrently. Each user's
-        computation is independent (no shared mutable state, DB writes are
-        scoped by user_id). max_workers is kept moderate to respect Supabase
-        API rate limits - each worker issues multiple HTTP requests per user.
+        Each school loads one candidate/popularity snapshot and reuses it for
+        all users in that school. The collaborative model is global and
+        immutable, so it is built once and shared across school snapshots.
 
-        Streams users page-by-page from the DB and caps the number of
-        in-flight futures so memory is O(pool) rather than O(total_users).
+        Users are streamed in ``school,id`` order and each school is drained
+        before the next begins, bounding memory to one school snapshot plus
+        the in-flight worker pool.
         """
         processed = 0
         failed = 0
@@ -567,12 +581,14 @@ class BatchRecommendationRunner:
             in_flight_cap,
         )
 
-        user_iter: Iterator[dict] = self._iter_all_user_ids()
+        user_iter: Iterator[dict] = self._iter_all_users()
+        collaborative_model: CollaborativeModel | None = None
+        collaborative_model_built = False
+        popularity_model: PopularityModel | None = None
 
         with self._engine.make_executor(max_workers=max_workers) as pool:
-            future_to_uid: dict = {}
 
-            def _drain_one() -> None:
+            def _drain_one(future_to_uid: dict) -> None:
                 nonlocal processed, failed
                 done_iter = as_completed(future_to_uid)
                 done_future = next(done_iter)
@@ -595,19 +611,46 @@ class BatchRecommendationRunner:
                     if done % 100 == 0:
                         log.info("Batch progress: %d done (%d failed)", done, failed)
 
-            for user in user_iter:
-                if len(future_to_uid) >= in_flight_cap:
-                    _drain_one()
-                fut = pool.submit(
-                    self._engine.compute_and_store,
-                    user["id"],
-                    limit,
-                    lambda_param,
-                )
-                future_to_uid[fut] = user["id"]
+            for school, school_users in groupby(user_iter, key=self._user_school):
+                if school is None:
+                    snapshot = RecommendationSnapshot(
+                        candidates=(),
+                        popularity_scores={},
+                        collaborative_model=None,
+                    )
+                    log.warning("Users without a school will have stored recommendations cleared")
+                else:
+                    if not collaborative_model_built:
+                        collaborative_model = self._engine.build_shared_collaborative_model()
+                        popularity_model = self._engine.build_shared_popularity_model()
+                        collaborative_model_built = True
+                    assert popularity_model is not None
+                    snapshot = self._engine.build_snapshot(
+                        school,
+                        collaborative_model,
+                        popularity_model,
+                    )
+                    log.info(
+                        "School recommendation snapshot: school=%s candidates=%d",
+                        school,
+                        len(snapshot.candidates),
+                    )
 
-            while future_to_uid:
-                _drain_one()
+                future_to_uid: dict = {}
+                for user in school_users:
+                    if len(future_to_uid) >= in_flight_cap:
+                        _drain_one(future_to_uid)
+                    fut = pool.submit(
+                        self._engine.compute_and_store,
+                        user["id"],
+                        limit,
+                        lambda_param,
+                        snapshot=snapshot,
+                    )
+                    future_to_uid[fut] = user["id"]
+
+                while future_to_uid:
+                    _drain_one(future_to_uid)
 
         total = processed + failed
         stats = {
@@ -623,8 +666,8 @@ class BatchRecommendationRunner:
         return stats
 
     @staticmethod
-    def _iter_all_user_ids() -> Iterator[dict]:
-        """Yield users one page at a time to bound memory during batch runs.
+    def _iter_all_users() -> Iterator[dict]:
+        """Yield users in school groups while keeping pagination deterministic.
 
         Uses the existing `iter_all_pages` streaming helper from core.pagination
         so we never materialise the full user table at once.
@@ -634,7 +677,8 @@ class BatchRecommendationRunner:
                 (
                     get_sb()
                     .table(USERS)
-                    .select("id")
+                    .select("id,school")
+                    .order("school")
                     .order("id")
                     .range(offset, offset + ps - 1)
                     .execute()
@@ -642,6 +686,14 @@ class BatchRecommendationRunner:
                 or []
             ),
         )
+
+    @staticmethod
+    def _user_school(user: dict) -> str | None:
+        school = user.get("school")
+        if school is None:
+            return None
+        normalized = str(school).strip()
+        return normalized or None
 
 
 batch_runner = BatchRecommendationRunner()

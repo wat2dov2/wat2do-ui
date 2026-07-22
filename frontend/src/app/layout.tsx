@@ -1,25 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import { ClientProviders } from "@/app/client-providers";
+import { PageBackground } from "@/shared/layout";
 import "../index.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 const APP_DESCRIPTION =
   "Discover campus events, explore student organizations, and stay connected with what's happening around you.";
 
 const themeInitScript = `
 (function() {
-  try {
-    var raw = localStorage.getItem('theme');
-    var theme = null;
-    try { theme = raw !== null ? JSON.parse(raw) : null; } catch(e) { theme = raw; }
-    var isDark = theme !== null
-      ? theme === 'dark'
-      : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    }
-  } catch(e) {}
+  document.documentElement.classList.add('dark');
 })();
 `;
 
@@ -53,18 +50,18 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#3B82F6",
+  themeColor: "#0f0f0f",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className="no-transitions" suppressHydrationWarning>
+    <html lang="en" className={`dark no-transitions ${inter.variable}`} suppressHydrationWarning>
       <body>
-        <Script
+        <script
           id="theme-init"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
+        <PageBackground />
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>

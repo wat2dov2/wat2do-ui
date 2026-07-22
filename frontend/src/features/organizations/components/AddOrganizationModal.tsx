@@ -30,6 +30,7 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import type { Organization } from "@/shared/types";
+import { toOrganizationType } from "@/shared/data/organizationTypes";
 import { toast } from "@/shared/hooks/use-toast";
 import { useForm } from "@/shared/hooks/useForm";
 import { useModalState } from "@/shared/hooks/useModalState";
@@ -45,7 +46,7 @@ interface OrganizationFormData {
   organization_page: string;
   ig: string;
   discord: string;
-  organization_type: string;
+  association_affiliated: boolean;
   school: string;
 }
 
@@ -74,7 +75,7 @@ export function AddOrganizationModal({
     organization_page: "",
     ig: "",
     discord: "",
-    organization_type: "WUSA",
+    association_affiliated: false,
     school: DEFAULT_SCHOOL,
   }), []);
 
@@ -101,7 +102,7 @@ export function AddOrganizationModal({
           organization_page: initialData.organization_page,
           ig: initialData.ig || "",
           discord: initialData.discord || "",
-          organization_type: initialData.organization_type,
+          association_affiliated: Boolean(initialData.association_affiliated),
           school: initialData.school || DEFAULT_SCHOOL,
         }
       : undefined,
@@ -141,10 +142,11 @@ export function AddOrganizationModal({
       id: initialData?.id || Date.now(),
       organization_name: form.formData.organization_name.trim(),
       categories: form.formData.categories,
+      type: toOrganizationType(form.formData.categories[0]),
       organization_page: form.formData.organization_page.trim(),
       ig: form.formData.ig.trim() || null,
       discord: form.formData.discord.trim() || null,
-      organization_type: form.formData.organization_type,
+      association_affiliated: form.formData.association_affiliated,
       created_by: initialData?.created_by || null,
       school: form.formData.school,
     };
@@ -211,7 +213,7 @@ export function AddOrganizationModal({
                 <FieldGroup>
                   <Field>
                     <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
-                      {t("forms.organizationName")} <span className="text-error">*</span>
+                      {t("forms.organizationName")} <span className="text-destructive">*</span>
                     </FieldLabel>
                     <Input
                       id="club-name"
@@ -220,7 +222,7 @@ export function AddOrganizationModal({
                       onChange={(e) => form.updateField("organization_name", e.target.value)}
                       onBlur={() => form.handleBlur("organization_name")}
                       placeholder={t("forms.organizationNamePlaceholder")}
-                      className={form.errors.organization_name ? "border-error" : ""}
+                      className={form.errors.organization_name ? "border-destructive" : ""}
                     />
                     {form.errors.organization_name && (
                       <FieldError className="text-xs">{form.errors.organization_name}</FieldError>
@@ -229,7 +231,7 @@ export function AddOrganizationModal({
 
                   <Field>
                     <FieldLabel htmlFor="club-school" className="text-sm font-medium text-foreground">
-                      {t("schools.school")} <span className="text-error">*</span>
+                      {t("schools.school")} <span className="text-destructive">*</span>
                     </FieldLabel>
                     <SchoolCombobox
                       id="club-school"
@@ -245,7 +247,7 @@ export function AddOrganizationModal({
 
                   <Field>
                     <FieldLabel className="text-sm font-medium text-foreground">
-                      {t("forms.categories")} <span className="text-error">*</span>
+                      {t("forms.categories")} <span className="text-destructive">*</span>
                     </FieldLabel>
                     <MultiSelect
                       options={getOrganizationCategories()}
@@ -267,20 +269,19 @@ export function AddOrganizationModal({
               <FieldLegend>{t("forms.optionalDetails")}</FieldLegend>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="club-type" className="text-sm font-medium text-foreground">
-                    {t("forms.organizationType")}
+                  <FieldLabel htmlFor="club-affiliation" className="text-sm font-medium text-foreground">
+                    {t("forms.associationAffiliation")}
                   </FieldLabel>
                   <Select
-                    value={form.formData.organization_type}
-                    onValueChange={(value) => form.updateField("organization_type", value)}
+                    value={String(form.formData.association_affiliated)}
+                    onValueChange={(value) => form.updateField("association_affiliated", value === "true")}
                   >
-                    <SelectTrigger id="club-type" className="w-full">
+                    <SelectTrigger id="club-affiliation" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="WUSA">{t("forms.wusa")}</SelectItem>
-                      <SelectItem value="Independent">{t("forms.independent")}</SelectItem>
-                      <SelectItem value="Other">{t("forms.other")}</SelectItem>
+                      <SelectItem value="true">{t("forms.associationAffiliated")}</SelectItem>
+                      <SelectItem value="false">{t("forms.associationIndependent")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
@@ -334,7 +335,7 @@ export function AddOrganizationModal({
 
             <Field orientation="horizontal">
               <DrawerClose asChild>
-                <Button variant="outline" type="button">
+                <Button variant="secondary" type="button">
                   {t("common.cancel")}
                 </Button>
               </DrawerClose>
@@ -352,7 +353,7 @@ export function AddOrganizationModal({
 
           <DrawerFooter className="sr-only">
             <DrawerClose asChild>
-              <Button variant="outline">
+              <Button variant="secondary">
                 {t("common.cancel")}
               </Button>
             </DrawerClose>

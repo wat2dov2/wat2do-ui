@@ -82,7 +82,7 @@ export function DiscordConnectModal({
                     {t("integrations.addBotDescription")}
                   </p>
                   <Button
-                    className="w-full bg-primary hover:bg-primary/90"
+                    className="w-full bg-primary hover:bg-primary-hover"
                     onMouseDown={onAddBot}
                     disabled={botAdded || saving || !selectedClubId}
                   >
@@ -159,7 +159,7 @@ export function DiscordConnectModal({
 
             <Field orientation="horizontal">
               <DialogClose asChild>
-                <Button variant="outline" type="button">
+                <Button variant="secondary" type="button">
                   {t("common.cancel")}
                 </Button>
               </DialogClose>

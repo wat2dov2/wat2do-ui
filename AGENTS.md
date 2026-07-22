@@ -166,6 +166,21 @@ When cleaning frontend code:
 
 ---
 
+## Design system mandate
+
+- Build the design system around semantic tokens (`surface`, `primary`, `foreground`) instead of raw Tailwind colors like `bg-white` or `text-gray-500`, so the UI can be re-themed from one place.
+- Separate functional tokens (backgrounds, text, borders, buttons) from decorative tokens (gradients, glows, colorful badges, background orbs) so branding does not leak into core UI code.
+- Install shadcn/ui components as a starting point, but treat them as our own source code: customize them, remove unused variants, and evolve them instead of leaving them untouched.
+- Organize components into three layers: UI primitives (Button, Input, Card), layout primitives (Container, Stack, FormGrid), and feature components (EventCard, ClubCard).
+- Pages should compose existing components rather than restyling them with long `className` strings; if the same styling appears repeatedly, move it into the component itself.
+- Create small layout helpers like Container, Stack, FormSection, FormGrid, and FormActions so building pages and forms feels like assembling LEGO rather than rewriting spacing and grid classes.
+- Keep component APIs intentionally small by exposing meaningful variants (primary, secondary, ghost) instead of dozens of styling props that try to cover every visual possibility.
+- Define interaction tokens such as `surface-hover`, `primary-hover`, and `destructive-hover`; derive them from the base colors (typically by slightly reducing lightness) instead of choosing unrelated hover colors.
+- Use a dedicated design system showcase page (or Storybook) to preview every component and variant in one place, making it easy to maintain visual consistency as the system evolves.
+- Follow one guiding principle: design decisions should live in tokens and reusable components, while pages focus only on composing layouts and business logic, resulting in a codebase that is easy to maintain, extend, and rebrand.
+
+---
+
 ## Required workflow for every non-trivial task
 
 **Before you start, report:**

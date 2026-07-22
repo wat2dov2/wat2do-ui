@@ -22,7 +22,7 @@
   "promotion": {
     "promoteEvent": "Promote this event",
     "getMoreVisibility": "Promote \"{{title}}\" with a simple featured placement for official organization events.",
-    "bestValue": "BEST VALUE",
+    "bestValue": "Best value",
     "maybeLater": "Maybe Later",
     "notEnoughCredits": "Not enough credits",
     "promotedEventName": "Promoted Event",

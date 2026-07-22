@@ -1,21 +1,21 @@
-import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Search } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
-import { EventCard, type EventCardDialog } from "@/features/events/components/EventCard";
+import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
 import { getEventDateCategory, type EventDateCategory } from "@/shared/utils/date";
 import { DiaTextReveal } from "@/registry/magicui/dia-text-reveal";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import type { EventStats } from "@/features/events/api/events.api";
+import { EmptyState } from "@/shared/feedback";
+import { Button } from "@/shared/ui/button";
 
 interface EventListProps {
   events: Event[];
   promotedEvents?: Event[];
   viewMode: "grid" | "calendar" | "map";
   onEventClick?: (event: Event) => void;
-  /** Called when the user confirms deletion on an owned/admin event card. */
-  onDelete?: (eventId: number) => void;
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
@@ -36,27 +36,6 @@ const EVENT_DATE_SECTIONS: Array<{
   { category: "later", labelKey: "events.dateSections.later" },
 ];
 
-const DeleteEventDialog = lazy(() =>
-  import("@/features/events/components/DeleteEventDialog").then((module) => ({
-    default: module.DeleteEventDialog,
-  })),
-);
-const EventShareDialog = lazy(() =>
-  import("@/features/events/components/EventShareDialog").then((module) => ({
-    default: module.EventShareDialog,
-  })),
-);
-const EventReportDialog = lazy(() =>
-  import("@/features/events/components/EventReportDialog").then((module) => ({
-    default: module.EventReportDialog,
-  })),
-);
-
-interface ActiveEventDialog {
-  type: EventCardDialog;
-  event: Event;
-}
-
 interface EventCardListItemProps {
   children: ReactNode;
 }
@@ -65,8 +44,6 @@ interface EventCardsGridProps {
   events: Event[];
   eventStats: Record<string, EventStats> | null;
   onEventClick?: (event: Event) => void;
-  onDelete?: (eventId: number) => void;
-  onActionDialogOpen: (type: EventCardDialog, event: Event) => void;
 }
 
 function EventCardListItem({
@@ -83,8 +60,6 @@ function EventCardsGrid({
   events,
   eventStats,
   onEventClick,
-  onDelete,
-  onActionDialogOpen,
 }: EventCardsGridProps) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -95,8 +70,6 @@ function EventCardsGrid({
             stats={eventStats?.[String(event.id)]}
             onEventClick={onEventClick}
             mobileClickActivation
-            onDelete={onDelete}
-            onActionDialogOpen={onActionDialogOpen}
           />
         </EventCardListItem>
       ))}
@@ -141,7 +114,6 @@ export function EventList({
   promotedEvents = [],
   viewMode,
   onEventClick,
-  onDelete,
   onClearFilters,
   hasActiveFilters = false,
   eventStats,
@@ -149,7 +121,6 @@ export function EventList({
   groupByDateSections = true,
 }: EventListProps) {
   const { t } = useTranslation();
-  const [activeDialog, setActiveDialog] = useState<ActiveEventDialog | null>(null);
 
   // Filter out promoted events from the main feed date sections so they don't duplicate
   const regularEvents = useMemo(() => {
@@ -168,51 +139,6 @@ export function EventList({
     () => groupEventsByDateSection(sectionOrderedEvents),
     [sectionOrderedEvents],
   );
-  const handleActionDialogOpen = useCallback((type: EventCardDialog, event: Event) => {
-    setActiveDialog({ type, event });
-  }, []);
-
-  const handleActionDialogOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setActiveDialog(null);
-    }
-  }, []);
-
-  const actionDialogs = activeDialog ? (
-    <>
-      {activeDialog.type === "delete" && (
-        <Suspense fallback={null}>
-          <DeleteEventDialog
-            open
-            onOpenChange={handleActionDialogOpenChange}
-            eventTitle={activeDialog.event.title}
-            onConfirm={() => onDelete?.(activeDialog.event.id)}
-          />
-        </Suspense>
-      )}
-
-      {activeDialog.type === "share" && (
-        <Suspense fallback={null}>
-          <EventShareDialog
-            event={activeDialog.event}
-            open
-            onOpenChange={handleActionDialogOpenChange}
-          />
-        </Suspense>
-      )}
-
-      {activeDialog.type === "report" && (
-        <Suspense fallback={null}>
-          <EventReportDialog
-            eventId={activeDialog.event.id}
-            eventTitle={activeDialog.event.title}
-            open
-            onOpenChange={handleActionDialogOpenChange}
-          />
-        </Suspense>
-      )}
-    </>
-  ) : null;
 
   // Early returns AFTER all hooks
   if (isLoading) {
@@ -248,85 +174,78 @@ export function EventList({
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 px-4">
-        <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-          <Search className="size-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">
-          {hasActiveFilters ? t("events.noEventsFound") : t("events.noEventsScheduled")}
-        </h3>
-        <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-          {hasActiveFilters ? t("events.noEventsFoundDesc") : t("events.noEventsScheduledDesc")}
-        </p>
-        {hasActiveFilters && onClearFilters && (
-          <button
-            onMouseDown={onClearFilters}
-            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
-          >
-            {t("events.clearAllFilters")}
-          </button>
-        )}
-      </div>
+      <EmptyState
+        icon={<Search />}
+        title={
+          hasActiveFilters
+            ? t("events.noEventsFound")
+            : t("events.noEventsScheduled")
+        }
+        description={
+          hasActiveFilters
+            ? t("events.noEventsFoundDesc")
+            : t("events.noEventsScheduledDesc")
+        }
+        action={
+          hasActiveFilters && onClearFilters ? (
+            <Button variant="secondary" onMouseDown={onClearFilters}>
+              {t("events.clearAllFilters")}
+            </Button>
+          ) : undefined
+        }
+        className="py-24"
+      />
     );
   }
 
   return (
-    <>
-      <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
-        {/* Promoted Events Section */}
-        {promotedEvents && promotedEvents.length > 0 && (
-          <section className="space-y-2.5" aria-label={t("events.promotedEvents")}>
-            <h2 className="text-base font-normal tracking-normal text-foreground">
-              <DiaTextReveal
-                text={t("events.promotedEvents")}
-                className="text-base font-normal tracking-normal text-foreground"
-                textColor="var(--foreground)"
-                colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
+    <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
+      {/* Promoted Events Section */}
+      {promotedEvents && promotedEvents.length > 0 && (
+        <section className="space-y-2.5" aria-label={t("events.promotedEvents")}>
+          <h2 className="text-base font-normal tracking-normal text-foreground">
+            <DiaTextReveal
+              text={t("events.promotedEvents")}
+              className="text-base font-normal tracking-normal text-foreground"
+              textColor="var(--foreground)"
+              colors={["#A97CF8", "#F38CB8", "#FDCC92"]}
+            />
+          </h2>
+          <EventCardsGrid
+            events={promotedEvents}
+            eventStats={eventStats}
+            onEventClick={onEventClick}
+          />
+        </section>
+      )}
+
+      {groupByDateSections ? (
+        EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
+          const sectionEvents = groupedVisibleEvents[category];
+          if (sectionEvents.length === 0) return null;
+
+          return (
+            <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
+              <h2 className="text-base font-normal tracking-normal text-foreground">
+                {t(labelKey)}
+              </h2>
+              <EventCardsGrid
+                events={sectionEvents}
+                eventStats={eventStats}
+                onEventClick={onEventClick}
               />
-            </h2>
-            <EventCardsGrid
-              events={promotedEvents}
-              eventStats={eventStats}
-              onEventClick={onEventClick}
-              onDelete={onDelete}
-              onActionDialogOpen={handleActionDialogOpen}
-            />
-          </section>
-        )}
-
-        {groupByDateSections ? (
-          EVENT_DATE_SECTIONS.map(({ category, labelKey }) => {
-            const sectionEvents = groupedVisibleEvents[category];
-            if (sectionEvents.length === 0) return null;
-
-            return (
-              <section key={category} className="space-y-2.5" aria-label={t(labelKey)}>
-                <h2 className="text-base font-normal tracking-normal text-foreground">
-                  {t(labelKey)}
-                </h2>
-                <EventCardsGrid
-                  events={sectionEvents}
-                  eventStats={eventStats}
-                  onEventClick={onEventClick}
-                  onDelete={onDelete}
-                  onActionDialogOpen={handleActionDialogOpen}
-                />
-              </section>
-            );
-          })
-        ) : (
-          <section className="space-y-2.5" aria-label={t("events.upcoming")}>
-            <EventCardsGrid
-              events={sectionOrderedEvents}
-              eventStats={eventStats}
-              onEventClick={onEventClick}
-              onDelete={onDelete}
-              onActionDialogOpen={handleActionDialogOpen}
-            />
-          </section>
-        )}
-      </div>
-      {actionDialogs}
-    </>
+            </section>
+          );
+        })
+      ) : (
+        <section className="space-y-2.5" aria-label={t("events.upcoming")}>
+          <EventCardsGrid
+            events={sectionOrderedEvents}
+            eventStats={eventStats}
+            onEventClick={onEventClick}
+          />
+        </section>
+      )}
+    </div>
   );
 }

@@ -62,7 +62,7 @@ export function EventFormFields() {
               className="text-sm font-medium text-foreground flex items-center gap-1.5"
             >
               {t("events.organization")}
-              <span className="text-error">*</span>
+              <span className="text-destructive">*</span>
             </FieldLabel>
             <OrganizationCombobox
               id="field-organization_id"

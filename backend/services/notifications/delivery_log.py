@@ -1,50 +1,41 @@
-"""Notification delivery-log helpers.
-
-The UNIQUE (user_id, notification_type, target_id, channel) key is what makes
-email sends safe across worker restarts and concurrent runs.
-"""
+"""Retryable notification delivery claims and terminal status updates."""
 
 from datetime import datetime, timezone
 from typing import Any
 
 from core.constants import (
-    NOTIFICATION_CHANNEL_EMAIL,
     NOTIFICATION_STATUS_FAILED,
-    NOTIFICATION_STATUS_PENDING,
     NOTIFICATION_STATUS_SENT,
-    PG_UNIQUE_VIOLATION,
 )
 from core.database import get_sb
 from core.tables import NOTIFICATIONS_LOG
 
 
-def _try_insert_log_row(
+def claim_delivery(
     *,
     user_id: str,
     notification_type: str,
     target_id: str,
     changed_fields: dict | None = None,
-    channel: str = NOTIFICATION_CHANNEL_EMAIL,
 ) -> str | None:
-    """Insert a ``pending`` log row. Return the row id, or None on dedup."""
-    payload: dict[str, Any] = {
-        "user_id": user_id,
-        "notification_type": notification_type,
-        "target_id": target_id,
-        "channel": channel,
-        "status": NOTIFICATION_STATUS_PENDING,
-    }
-    if changed_fields is not None:
-        payload["changed_fields"] = changed_fields
-    try:
-        r = get_sb().table(NOTIFICATIONS_LOG).insert(payload).execute()
-    except Exception as e:
-        if PG_UNIQUE_VIOLATION in str(e):
-            return None
-        raise
-    if r.data:
-        return r.data[0]["id"]
-    return None
+    """Claim a new, failed, or stale delivery. Return None if already owned/sent."""
+    response = (
+        get_sb()
+        .rpc(
+            "claim_notification_delivery",
+            {
+                "p_user_id": user_id,
+                "p_notification_type": notification_type,
+                "p_target_id": target_id,
+                "p_changed_fields": changed_fields,
+            },
+        )
+        .execute()
+    )
+    if not response.data:
+        return None
+    row: Any = response.data[0]
+    return str(row["id"]) if row.get("claimed") else None
 
 
 def _mark_log_sent(row_id: str) -> None:
@@ -62,11 +53,16 @@ def _mark_log_sent(row_id: str) -> None:
     )
 
 
-def _mark_log_failed(row_id: str) -> None:
+def _mark_log_failed(row_id: str, failure_category: str = "provider_error") -> None:
     (
         get_sb()
         .table(NOTIFICATIONS_LOG)
-        .update({"status": NOTIFICATION_STATUS_FAILED})
+        .update(
+            {
+                "status": NOTIFICATION_STATUS_FAILED,
+                "failure_category": failure_category,
+            }
+        )
         .eq("id", row_id)
         .execute()
     )

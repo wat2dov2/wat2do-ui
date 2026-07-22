@@ -8,7 +8,6 @@ const telegramConfig: PlatformConnectConfig = {
   connectDescKey: "integrations.addTelegramBotDescription",
   authorizedTextKey: "integrations.botAdded",
   authorizeTextKey: "integrations.addTelegramBot",
-  brandColorClass: "bg-sky-600 hover:bg-sky-700",
   selectLabelKey: "integrations.step2SelectGroup",
   primaryFieldLabelKey: "integrations.group",
   primaryPlaceholderKey: "integrations.selectGroup",

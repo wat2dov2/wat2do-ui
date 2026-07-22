@@ -135,126 +135,122 @@ jobs:
         working-directory: waterloo-commons
         run: npm run build
 
-  deploy-backend:
-    name: Deploy backend to Railway
+  deploy-wat2do:
+    name: Deploy Wat2Do to AWS
     runs-on: ubuntu-latest
     needs:
       - backend
       - frontend
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
+    permissions:
+      contents: read
+      id-token: write
     env:
-      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      RAILWAY_PROJECT_ID: 6909c9a0-220a-4d6b-a22f-ae1686ea54d8
+      AWS_REGION: ca-central-1
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      ECS_CLUSTER: wat2do-production
+      ECS_SERVICE: wat2do-production-app
+      ECS_TASK_FAMILY: wat2do-production-app
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
-        if: env.RAILWAY_API_TOKEN != ''
-        uses: actions/setup-node@v4
+      - name: Verify AWS deployment configuration
+        run: |
+          test -n "$AWS_ACCOUNT_ID"
+          test -n "$AWS_DEPLOY_ROLE_ARN"
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          node-version: '22'
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install Railway CLI
-        if: env.RAILWAY_API_TOKEN != ''
-        run: npm install -g @railway/cli@4.57.5
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Skip Railway deploy until token is configured
-        if: env.RAILWAY_API_TOKEN == ''
-        run: echo "::notice::Set the RAILWAY_TOKEN repository secret to enable automatic Railway deploys."
+      - name: Set up QEMU for ARM64 builds
+        uses: docker/setup-qemu-action@v3
 
-      - name: Deploy backend
-        if: env.RAILWAY_API_TOKEN != ''
-        working-directory: backend
-        run: railway up --project "$RAILWAY_PROJECT_ID" --service wat2do-api --environment production --detach
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  deploy-frontend:
-    name: Deploy frontend to Vercel
-    runs-on: ubuntu-latest
-    needs:
-      - backend
-      - frontend
-      - deploy-backend
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: production
-    env:
-      VERCEL_ORG_ID: team_qHJlaMmeF0XtEpwDcDy8lBfW
-      VERCEL_PROJECT_ID: prj_QIr7YgIs8FYXQzSDT9wT2BKdG8tu
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node
-        if: env.VERCEL_TOKEN != ''
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        if: env.VERCEL_TOKEN != ''
-        working-directory: frontend
-        run: npm ci
-
-      - name: Skip Vercel deploy until token is configured
-        if: env.VERCEL_TOKEN == ''
-        run: echo "::notice::Set the VERCEL_TOKEN repository secret to enable automatic Vercel deploys."
-
-      - name: Pull Vercel environment
-        if: env.VERCEL_TOKEN != ''
-        working-directory: frontend
-        run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-
-      - name: Expose Vercel environment to Next
-        if: env.VERCEL_TOKEN != ''
-        working-directory: frontend
-        run: cp .vercel/.env.production.local .env.production.local
-
-      - name: Build Vercel output
-        if: env.VERCEL_TOKEN != ''
-        working-directory: frontend
+      - name: Read frontend build configuration
         env:
-          NEXT_PUBLIC_API_URL: /api
-        run: npx vercel build --prod --token="$VERCEL_TOKEN"
+          FRONTEND_BUILD_SECRET_ID: wat2do/production/frontend-build
+        run: |
+          secret_json="$(aws secretsmanager get-secret-value --secret-id "$FRONTEND_BUILD_SECRET_ID" --query SecretString --output text)"
+          for secret_key in NEXT_PUBLIC_MAPBOX_TOKEN NEXT_PUBLIC_GOOGLE_MAPS_API_KEY NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN NEXT_PUBLIC_POSTHOG_HOST; do
+            secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
+            echo "::add-mask::$secret_value"
+            echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
+          done
+          unset secret_json
 
-      - name: Deploy Vercel output
-        if: env.VERCEL_TOKEN != ''
-        working-directory: frontend
-        run: npx vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN"
-
-  deploy-commons:
-    name: Deploy Waterloo Commons to Vercel
-    runs-on: ubuntu-latest
-    needs:
-      - backend
-      - frontend
-      - commons
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: production
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_COMMONS_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_COMMONS_PROJECT_ID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_COMMONS_TOKEN }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node
-        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
-        uses: actions/setup-node@v4
+      - name: Build and push backend image
+        id: backend-image
+        uses: docker/build-push-action@v6
         with:
-          node-version: '22'
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/wat2do/backend:${{ github.sha }}
 
-      - name: Skip Commons deploy until credentials are configured
-        if: env.VERCEL_TOKEN == '' || env.VERCEL_ORG_ID == '' || env.VERCEL_PROJECT_ID == ''
-        run: echo "::notice::Set VERCEL_COMMONS_TOKEN, VERCEL_COMMONS_ORG_ID, and VERCEL_COMMONS_PROJECT_ID repository secrets to enable Waterloo Commons deploys."
+      - name: Build and push frontend image
+        id: frontend-image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/wat2do/frontend:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
+            API_REWRITE_URL=http://127.0.0.1:8000
+            BACKEND_API_URL=http://127.0.0.1:8000
+            NEXT_PUBLIC_MAPBOX_TOKEN=${{ env.NEXT_PUBLIC_MAPBOX_TOKEN }}
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+            NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${{ env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+            NEXT_PUBLIC_POSTHOG_HOST=${{ env.NEXT_PUBLIC_POSTHOG_HOST }}
+            APP_VERSION=${{ github.sha }}
 
-      # Commons must build remotely on Vercel: sharp needs binaries matching the
-      # Function runtime platform, and the poster imports shared source outside
-      # waterloo-commons/, which the project's Root Directory settings provide.
-      - name: Deploy Commons with a remote Vercel build
-        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
-        run: npx vercel deploy --prod --archive=tgz --token="$VERCEL_TOKEN"
+      - name: Register one immutable ECS task revision
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          FRONTEND_DIGEST: ${{ steps.frontend-image.outputs.digest }}
+          BACKEND_DIGEST: ${{ steps.backend-image.outputs.digest }}
+        run: |
+          frontend_image="$ECR_REGISTRY/wat2do/frontend@$FRONTEND_DIGEST"
+          backend_image="$ECR_REGISTRY/wat2do/backend@$BACKEND_DIGEST"
+          aws ecs describe-task-definition --task-definition "$ECS_TASK_FAMILY" --query taskDefinition --output json > task-definition.json
+          jq --arg frontend_image "$frontend_image" --arg backend_image "$backend_image" '
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+            | .containerDefinitions |= map(
+              if .name == "frontend" then .image = $frontend_image
+              elif .name == "backend" then .image = $backend_image
+              else . end
+            )
+          ' task-definition.json > rendered-task-definition.json
+          task_definition_arn="$(aws ecs register-task-definition --cli-input-json file://rendered-task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text)"
+          echo "TASK_DEFINITION_ARN=$task_definition_arn" >> "$GITHUB_ENV"
+
+      - name: Deploy task revision and wait for service stability
+        run: |
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --task-definition "$TASK_DEFINITION_ARN"
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+
+      - name: Surface stopped-task diagnostics
+        if: failure()
+        run: |
+          aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --output json
+          stopped_tasks="$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --desired-status STOPPED --query 'taskArns' --output text)"
+          if [ -n "$stopped_tasks" ]; then
+            aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks $stopped_tasks --output json
+          fi
+          aws logs tail /wat2do/production/frontend --since 30m || true
+          aws logs tail /wat2do/production/backend --since 30m || true

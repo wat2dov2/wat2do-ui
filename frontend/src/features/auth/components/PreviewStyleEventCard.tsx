@@ -7,7 +7,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { ImageOff } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
-import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
+import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -26,7 +26,8 @@ export interface PreviewEventData {
   badges: Array<{ text: string; bgClass: string; textClass: string }>;
   isLive?: boolean;
   isNew?: boolean;
-  organizationType?: string | null;
+  associationAffiliated?: boolean | null;
+  school?: string | null;
 }
 
 interface PreviewStyleEventCardProps {
@@ -44,7 +45,6 @@ export function PreviewStyleEventCard({
   "data-event-id": dataEventId,
 }: PreviewStyleEventCardProps) {
   const { t } = useTranslation();
-  const catClasses = getCategoryClasses(event.category);
 
   const interactiveProps = onMouseDown
     ? {
@@ -65,48 +65,36 @@ export function PreviewStyleEventCard({
       {...interactiveProps}
       data-event-id={dataEventId}
       className={cn(
-        "rounded-xl flex flex-col h-full bg-card transition-all duration-300",
+        "rounded-xl flex flex-col h-full bg-surface overflow-hidden transition-all duration-300",
         onMouseDown && "cursor-pointer group hover:opacity-90 hover:shadow-lg",
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl",
       )}
     >
-      <div className="relative" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
-        <div className="absolute inset-0 overflow-hidden rounded-t-xl">
-          <LazyImage
-            src={event.image}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full"
-            fallback={
-              <div className={cn("absolute inset-0 flex items-center justify-center", catClasses.bg)}>
-                <ImageOff className={cn("size-8 opacity-40", catClasses.text)} />
-              </div>
-            }
-            placeholder={
-              <div className={cn("absolute inset-0 animate-pulse", catClasses.bg)} />
-            }
-          />
-        </div>
+      <div
+        className="relative shrink-0 overflow-hidden rounded-t-xl"
+        style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
+      >
+        <LazyImage
+          src={event.image}
+          alt={event.title}
+          className="absolute inset-0 h-full w-full"
+          fallback={
+            <div className={cn("absolute inset-0 flex items-center justify-center", "bg-surface-elevated")}>
+              <ImageOff className={cn("size-8 opacity-40", "text-muted-foreground")} />
+            </div>
+          }
+          placeholder={
+            <div className={cn("absolute inset-0 animate-pulse", "bg-surface-elevated")} />
+          }
+        />
 
         <BadgeMask variant="top-left">
-          <Badge
-            asChild
-            variant="outline"
-            size="md"
-            className={cn(
-              "block border-0 opacity-70",
-              catClasses.bg,
-              catClasses.text,
-            )}
-          >
-            <span>
-              {translateCategory(event.category, t)}
-            </span>
-          </Badge>
+          <OrganizationTypeBadge type={event.category} className="opacity-90" />
         </BadgeMask>
 
         {event.isLive && (
           <BadgeMask variant="top-right">
-            <Badge variant="live" size="md" className="uppercase flex items-center">
+            <Badge variant="live" size="md" className="flex items-center">
               {t("common.live")}
             </Badge>
           </BadgeMask>
@@ -114,7 +102,7 @@ export function PreviewStyleEventCard({
 
         {event.isNew && (
           <BadgeMask variant="bottom-right">
-            <Badge variant="new" size="md" className="uppercase flex items-center">
+            <Badge variant="new" size="md" className="flex items-center">
               {t("events.new")}
             </Badge>
           </BadgeMask>
@@ -124,7 +112,8 @@ export function PreviewStyleEventCard({
           <BadgeMask variant="bottom-left">
             <OrganizationBadgeDropdown
               organizationName={event.org}
-              organizationType={event.organizationType}
+              associationAffiliated={event.associationAffiliated}
+              school={event.school}
               disabled={true}
             />
           </BadgeMask>
@@ -134,9 +123,7 @@ export function PreviewStyleEventCard({
       <div
         className={cn(
           "flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden relative z-20",
-          catClasses.bg,
-          catClasses.text,
-          catClasses.border,
+          "bg-surface text-foreground border-border",
         )}
       >
         <EventCardContent
@@ -145,9 +132,9 @@ export function PreviewStyleEventCard({
           time={event.time}
           location={event.location}
           badges={event.badges}
-          textClassName={catClasses.text}
-          secondaryTextClassName={catClasses.text}
-          badgeClassName={cn("border-current", catClasses.text)}
+          textClassName="text-muted-foreground"
+          secondaryTextClassName="text-muted-foreground"
+          badgeClassName={cn("border-current", "text-muted-foreground")}
         />
       </div>
     </div>

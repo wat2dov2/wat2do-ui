@@ -8,7 +8,6 @@ export default defineConfig([
   globalIgnores([
     "dist",
     ".next",
-    ".vercel",
     "node_modules",
     "coverage",
     "playwright-report",

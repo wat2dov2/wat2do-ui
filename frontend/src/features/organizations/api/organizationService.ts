@@ -34,11 +34,12 @@ export function filterOrganizationsByCategory(
 }
 
 /**
- * Filter organizations by type
+ * Filter organizations by whether they are affiliated with their school's
+ * student association.
  */
-export function filterOrganizationsByType(organizations: Organization[], organizationType: string): Organization[] {
-  if (!organizationType) {
-    return organizations;
-  }
-  return organizations.filter((org) => org.organization_type?.trim() === organizationType);
+export function filterOrganizationsByAffiliation(
+  organizations: Organization[],
+  associationAffiliated: boolean,
+): Organization[] {
+  return organizations.filter((org) => Boolean(org.association_affiliated) === associationAffiliated);
 }

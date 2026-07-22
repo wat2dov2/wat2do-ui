@@ -16,9 +16,9 @@ export function AdminStatusBadge({ status, label }: AdminStatusBadgeProps) {
 
   const statusConfig: Record<string, string> = {
     [SUBMISSION_APPROVED]: "bg-success/20 text-success",
-    [SUBMISSION_REJECTED]: "bg-error/20 text-error",
+    [SUBMISSION_REJECTED]: "bg-destructive/20 text-destructive",
     [SUBMISSION_PENDING]: "bg-warning/20 text-warning",
-    reported: "bg-error/20 text-error",
+    reported: "bg-destructive/20 text-destructive",
     live: "text-muted-foreground",
   };
 
@@ -34,7 +34,7 @@ export function AdminStatusBadge({ status, label }: AdminStatusBadgeProps) {
   const translatedLabel = label || statusTranslations[status] || status;
 
   if (status === "live") {
-    return <span className={`text-xs ${className}`}>{translatedLabel}</span>;
+    return <span className={`text-xs uppercase ${className}`}>{translatedLabel}</span>;
   }
 
   return (

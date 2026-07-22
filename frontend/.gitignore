@@ -31,7 +31,6 @@ dist-ssr
 
 # Cursor hooks state
 .cursor/hooks/state/
-.vercel
 
 # E2E test results
 test-results/

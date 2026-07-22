@@ -241,44 +241,6 @@ def test_openai_timeout_error_returns_502(authenticated_client, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# M8 — daily AI budget cap
-# ---------------------------------------------------------------------------
-
-
-def test_daily_ai_budget_exceeded_returns_502(authenticated_client, monkeypatch):
-    """Exceeding the daily per-user AI budget raises AIServiceError (audit M8)."""
-    from services import ai_service
-
-    ai_generate_filters_rate_limiter._requests.clear()
-    ai_service._daily_ai_cache.clear()
-
-    mock_client = MagicMock()
-    mock_client.chat.completions.create.return_value = _mock_openai_response(_FAKE_FILTER_JSON)
-    monkeypatch.setattr("routers.ai._get_openai_client", lambda: mock_client)
-
-    # Replace the budget gate with a version that rejects every call so
-    # we can validate the 502 path without hammering the counter up to
-    # the real DAILY_AI_LIMIT (100).
-    def _always_block(user_id: str, limit: int = ai_service.DAILY_AI_LIMIT) -> None:
-        from core.exceptions import AIServiceError
-
-        raise AIServiceError(
-            "Daily AI request limit reached. Please try again tomorrow.",
-            error_kind="api",
-        )
-
-    monkeypatch.setattr(ai_service, "enforce_daily_ai_budget", _always_block)
-
-    resp_blocked = authenticated_client.post("/ai/generate-filters", json={"prompt": "a"})
-    # AIServiceError with error_kind="api" maps to 502 via the global
-    # exception handler (the specific detail message is intentionally
-    # generic to avoid leaking budget-counter state to clients).
-    assert resp_blocked.status_code == 502
-    # Clean up so other tests aren't affected.
-    ai_service._daily_ai_cache.clear()
-
-
-# ---------------------------------------------------------------------------
 # Image parsing
 # ---------------------------------------------------------------------------
 

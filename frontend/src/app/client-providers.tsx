@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, lazy, Suspense, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
 import { LazyMotion, domMax } from "framer-motion";
 import "@/shared/lib/i18n";
 import i18n, { getStoredLanguage } from "@/shared/lib/i18n";
@@ -25,12 +25,6 @@ import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
 installBundledLocales();
-
-const Analytics = lazy(() =>
-  import("@vercel/analytics/react").then((module) => ({
-    default: module.Analytics,
-  })),
-);
 
 const DevClickToComponent =
   process.env.NODE_ENV === "development"
@@ -79,20 +73,9 @@ export function useAppReady() {
   return useContext(AppReadyContext);
 }
 
-function subscribeNoop() {
-  return () => {};
-}
-function getMountedTrue() {
-  return true;
-}
-function getMountedFalse() {
-  return false;
-}
-
 export function ClientProviders({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(() => i18n.hasResourceBundle("en", "translation"));
   const [queryClient] = useState(() => getQueryClient());
-  const mounted = useSyncExternalStore(subscribeNoop, getMountedTrue, getMountedFalse);
 
   useEffect(() => {
     const handleLogin = () => {
@@ -101,6 +84,10 @@ export function ClientProviders({ children }: { children: ReactNode }) {
     };
     const handleLogout = () => {
       queryClient.removeQueries({ queryKey: queryKeys.user.all });
+      queryClient.removeQueries({ queryKey: queryKeys.goingEvents.all });
+      queryClient.removeQueries({
+        queryKey: queryKeys.notificationPreferences.all,
+      });
       resetPostHogUser();
     };
     window.addEventListener("auth-user-login", handleLogin);
@@ -163,11 +150,6 @@ export function ClientProviders({ children }: { children: ReactNode }) {
                 </Suspense>
               ) : null}
               {children}
-              {mounted && !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) ? (
-                <Suspense fallback={null}>
-                  <Analytics />
-                </Suspense>
-              ) : null}
             </AppReadyContext.Provider>
           </TooltipProvider>
         </LazyMotion>

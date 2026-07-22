@@ -11,7 +11,6 @@ import { Button } from "@/shared/ui/button";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { AnimatedThemeToggler } from "@/shared/components/AnimatedThemeToggler";
 import { LanguageSelector } from "@/shared/ui/language-selector";
-import { InteractiveHoverButton } from "@/shared/ui/interactive-hover-button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
@@ -81,7 +80,7 @@ export function TopNav() {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-sidebar px-2 sm:gap-2 sm:px-4">
+    <header className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <button
           onMouseDown={handleLogoClick}
@@ -127,7 +126,7 @@ export function TopNav() {
           <Popover open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
             <PopoverTrigger asChild>
               <button
-                className="flex h-8 max-w-[24vw] items-center gap-1 overflow-hidden rounded-xl bg-transparent px-2 text-sm text-foreground transition-colors hover:bg-secondary sm:max-w-[180px] sm:px-3 md:max-w-[240px]"
+                className="flex h-8 max-w-[24vw] items-center gap-1 overflow-hidden rounded-xl bg-transparent px-2 text-sm text-foreground transition-colors hover:bg-secondary-hover sm:max-w-[180px] sm:px-3 md:max-w-[240px]"
                 aria-expanded={orgMenuOpen}
                 type="button"
               >
@@ -136,7 +135,7 @@ export function TopNav() {
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-[280px] p-0 bg-popover border-border"
+              className="w-[280px] p-0 bg-surface-elevated border-border"
               align="end"
               aria-label={t("navigation.clubPanelTooltip")}
             >
@@ -169,7 +168,7 @@ export function TopNav() {
                         "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                         activeOrganization.id === org.id
                           ? "bg-primary text-primary-foreground"
-                          : "hover:bg-secondary text-foreground"
+                          : "hover:bg-secondary-hover text-foreground"
                       )}
                       type="button"
                     >
@@ -188,7 +187,7 @@ export function TopNav() {
           </Popover>
         )}
 
-        <LanguageSelector className="min-w-0 px-2" />
+        <LanguageSelector />
 
         <AnimatedThemeToggler />
 
@@ -207,13 +206,9 @@ export function TopNav() {
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <InteractiveHoverButton
-                onMouseDown={handleSignIn}
-                className="flex h-8 items-center justify-center gap-1.5 border-primary bg-primary px-3 text-sm text-primary-foreground max-[359px]:max-w-16 sm:min-w-[120px] sm:px-6"
-                hideDot
-              >
+              <Button size="sm" onMouseDown={handleSignIn}>
                 {t("events.signIn")}
-              </InteractiveHoverButton>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>{t("modals.signIn.signInToSavePreferences")}</p>

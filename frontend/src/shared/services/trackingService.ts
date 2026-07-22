@@ -10,6 +10,7 @@
 
 import { getAccessToken } from "@/shared/services/apiClient";
 import { API_BASE_URL } from "@/shared/config/api";
+import { productControl } from "@/shared/config/productControl";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 
 interface QueuedInteraction {
@@ -49,8 +50,6 @@ function isExpectedLocalDevNetworkMiss(err: unknown): boolean {
 }
 
 // Low-signal leftovers still debounce; clicks/going flush immediately.
-const FLUSH_DEBOUNCE_MS = 1_000;
-
 class Tracker {
   private queue: QueuedInteraction[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -83,7 +82,7 @@ class Tracker {
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
       this.flush();
-    }, FLUSH_DEBOUNCE_MS);
+    }, productControl.interactionTracking.flushDebounceMs);
   }
 
   flush() {

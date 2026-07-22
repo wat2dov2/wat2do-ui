@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { loadProfile, saveProfile, type UserProfile } from "@/features/settings/api/settings.api";
 import { fetchProfileAPI, getLastProfileFetchAt, updateProfileAPI } from "@/features/auth";
+import { productControl } from "@/shared/config/productControl";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 
 /**
@@ -8,11 +9,10 @@ import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
  * Paired with `initializeAuth()` + the silent-refresh `onAfterRefresh` hook
  * in `client-providers.tsx`, most Settings mounts hit the cache.
  */
-const PROFILE_STALE_TTL_MS = 60_000;
-
-
 const DEFAULT_PROFILE: UserProfile = {
   id: "",
+  fullName: null,
+  avatarUrl: null,
   faculty: "",
   interests: [],
   isFirstYear: false,
@@ -44,7 +44,8 @@ export function useProfile() {
     // Skip the network round-trip if a recent fetchProfileAPI is cached.
     // initializeAuth + the silent-refresh hook already populate this on
     // startup, so most Settings mounts hit the cache.
-    const stale = Date.now() - getLastProfileFetchAt() > PROFILE_STALE_TTL_MS;
+    const stale =
+      Date.now() - getLastProfileFetchAt() > productControl.clientCache.profileStaleMs;
     if (!stale) return;
 
     let cancelled = false;

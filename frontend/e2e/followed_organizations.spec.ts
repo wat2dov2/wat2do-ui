@@ -9,7 +9,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 1,
     organization_name: "UW Tech Club",
-    organization_type: "Technology",
+    association_affiliated: false,
     organization_page: "https://example.com/tech",
     ig: null,
     discord: null,
@@ -25,7 +25,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 2,
     organization_name: "UW Board Games Club",
-    organization_type: "Social",
+    association_affiliated: false,
     organization_page: "https://example.com/board-games",
     ig: null,
     discord: null,

@@ -5,8 +5,6 @@ export const queryKeys = {
       [...queryKeys.organizations.all, "list", filters] as const,
     allForSchool: (school: string | null | undefined) =>
       [...queryKeys.organizations.all, "all", school ?? ""] as const,
-    adminTypes: (school: string | null | undefined, refreshCounter: number) =>
-      [...queryKeys.organizations.all, "admin-types", school ?? "", refreshCounter] as const,
   },
   posters: {
     all: ["posters"] as const,
@@ -23,6 +21,16 @@ export const queryKeys = {
   events: {
     all: ["events"] as const,
     detail: (eventId: number) => [...queryKeys.events.all, "detail", eventId] as const,
+    attendees: (eventId: number) => [...queryKeys.events.all, "attendees", eventId] as const,
     stats: (school: string) => [...queryKeys.events.all, "stats", school] as const,
+  },
+  goingEvents: {
+    all: ["going-events"] as const,
+    byUser: (userId: string) => [...queryKeys.goingEvents.all, userId] as const,
+  },
+  notificationPreferences: {
+    all: ["notification-preferences"] as const,
+    byUser: (userId: string) =>
+      [...queryKeys.notificationPreferences.all, userId] as const,
   },
 } as const;

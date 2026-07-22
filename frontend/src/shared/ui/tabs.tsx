@@ -24,7 +24,7 @@ const tabsListVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-secondary",
+        default: "bg-surface",
         line: "h-auto rounded-none bg-transparent p-0 border-b border-border",
       },
     },
@@ -61,8 +61,8 @@ const TabsTrigger = React.forwardRef<
     data-elevation="control-active"
     className={cn(
       "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium ring-offset-background transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      "aria-selected:bg-primary/80 aria-selected:text-primary-foreground",
-      "group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:border-b-2 group-data-[variant=line]/tabs-list:border-transparent group-data-[variant=line]/tabs-list:px-4 group-data-[variant=line]/tabs-list:py-2 group-data-[variant=line]/tabs-list:data-[state=active]:border-primary group-data-[variant=line]/tabs-list:data-[state=active]:text-foreground",
+      "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground hover:bg-surface-hover",
+      "group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:border-b-2 group-data-[variant=line]/tabs-list:border-transparent group-data-[variant=line]/tabs-list:px-4 group-data-[variant=line]/tabs-list:py-2 group-data-[variant=line]/tabs-list:data-[state=active]:border-primary group-data-[variant=line]/tabs-list:data-[state=active]:text-foreground group-data-[variant=line]/tabs-list:hover:bg-transparent",
       className
     )}
     {...props}

@@ -50,15 +50,12 @@
     "doneButton": "开始探索",
     "gooseName": "Mr. Goose",
     "doneNextLabel": "带我前往 Wat2Do！",
-    "emailDigestTitle": "我想接收新活动的电子邮件",
-    "emailDigestDescription": "当您的学校添加新活动时，在上午 10:30 接收汇总邮件。",
     "gooseStep0": "嗨，你好！",
     "gooseStep1": "欢迎加入 Wat2Do 大家庭！我们是一个有着共同目标的集体：在短暂的大学时光里创造尽可能多的回忆",
     "gooseStep2": "这里的每个人都有不同的兴趣。你对什么类型的活动感兴趣？",
     "gooseStep3WithSchool": "有另外 5 名学生和你的兴趣完全相同！现在，{{school}} 的哪些活动吸引了你的注意？",
     "gooseStep3Default": "太棒了，这正是我们寻找好活动的方法。哪些活动吸引了你的注意？",
     "gooseStep4": "明白，那你在哪个学院？",
-    "gooseStep5": "最后一件事：当你的学校有新活动上线时，想要每日速报吗？",
     "year": {
       "yesFirstYear": "是的，我是新生！",
       "noReturning": "不是，我已经在这里了"

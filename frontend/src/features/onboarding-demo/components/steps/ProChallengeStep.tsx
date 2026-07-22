@@ -26,9 +26,9 @@ export function ProChallengeStep({ flow }: ProChallengeStepProps) {
         </div>
       }
       right={
-        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs text-muted-foreground">
               {t("onboardingDemo.challenge.label")}
             </p>
             <p className="text-lg font-semibold text-foreground">

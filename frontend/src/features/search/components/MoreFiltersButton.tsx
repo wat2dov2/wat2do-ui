@@ -29,7 +29,7 @@ export function MoreFiltersButton({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <Button
-        variant={open || filterCount > 0 ? "selected" : "secondary"}
+        variant={open || filterCount > 0 ? "primary" : "secondary"}
         size="sm"
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
@@ -51,7 +51,7 @@ export function MoreFiltersButton({
                 onClearFilters?.();
               }
             }}
-            className="bg-background/18 text-background ml-1 flex h-3.5 items-center gap-0.5 rounded-full px-1 text-[10px] leading-none transition-colors hover:bg-background/24 dark:bg-[#1c1917]/12 dark:text-[#1c1917] dark:hover:bg-[#1c1917]/18"
+            className="bg-primary-foreground/18 text-primary-foreground ml-1 flex h-3.5 items-center gap-0.5 rounded-full px-1 text-[10px] leading-none transition-colors hover:bg-surface-hover"
           >
             <X className="size-2 shrink-0" strokeWidth={3} />
             {filterCount}

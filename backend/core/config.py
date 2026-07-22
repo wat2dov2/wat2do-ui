@@ -65,8 +65,9 @@ class Settings(BaseSettings):
     # via Resend, and populate ``email_provider_api_key`` + ``email_from``.
     email_provider: str = ""
     email_provider_api_key: str = ""
-    email_from: str = "wat2do <notifications@wat2do.app>"
+    email_from: str = "wat2do <notifications@wat2do.io>"
     frontend_url: str = "http://localhost:3000"
+    email_unsubscribe_secret: str = ""
     event_feed_revalidation_url: str = ""
     event_feed_revalidation_secret: str = ""
     event_feed_revalidation_timeout: float = 3.0

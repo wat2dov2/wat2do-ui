@@ -28,12 +28,12 @@
     "notifications": {
       "title": "Notification Preferences",
       "description": "Choose how you want to be notified about events and updates",
-      "emailNotifications": "Email Notifications",
-      "emailNotificationsDesc": "Receive email updates about events and activities",
-      "eventReminders": "Event Reminders",
-      "eventRemindersDesc": "Get reminders for saved and registered events",
-      "newEventAlerts": "New Event Alerts",
-      "newEventAlertsDesc": "Be notified when new events matching your interests are added"
+      "morningEmail": "Morning email",
+      "morningEmailDesc": "At 9 AM, get today's selected events and strong matches added in the last 24 hours.",
+      "eventChange": "Event-change alerts",
+      "eventChangeDesc": "Get an immediate email when a selected event changes.",
+      "loadFailed": "Couldn't load your notification preferences.",
+      "retry": "Retry"
     },
     "appearance": {
       "theme": "Theme",

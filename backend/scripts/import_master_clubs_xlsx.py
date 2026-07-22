@@ -49,10 +49,9 @@ HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 # hosted schools table are skipped with a warning so the sheet can contain
 # schools that have not launched yet.
 
-# Default for the legacy required `organization_type` column.  Existing non-WUSA
-# seeds in backend/seeds/organizations.py use "Independent" for school organizations that
-# aren't WUSA-affiliated; same convention here.
-DEFAULT_ORGANIZATION_TYPE = "Independent"
+# The sheet carries no student-association column, so imports never touch
+# `association_affiliated`; new rows fall back to the column default (false)
+# and admins flip it. Managing it here would clobber affiliated orgs on re-import.
 
 ORGANIZATION_NAME_MAX = 500
 
@@ -194,7 +193,6 @@ def _validate_rows(
                 "organization_page": row["directory"],
                 "ig": row["ig_handle"],
                 "discord": row["discord"],
-                "organization_type": DEFAULT_ORGANIZATION_TYPE,
             }
         )
 
@@ -223,9 +221,7 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
     while True:
         res = (
             sb.table(ORGANIZATIONS)
-            .select(
-                "id, organization_name, school, categories, organization_page, ig, discord, organization_type"
-            )
+            .select("id, organization_name, school, categories, organization_page, ig, discord")
             .in_("school", list(schools))
             .range(offset, offset + page_size - 1)
             .execute()
@@ -241,7 +237,7 @@ def _fetch_existing(sb, schools: set[str]) -> dict[tuple[str, str], dict]:
 
 def _diff(planned: dict, existing: dict) -> dict | None:
     """Return a dict of {field: (old, new)} for fields that differ, or None."""
-    fields = ("categories", "organization_page", "ig", "discord", "organization_type")
+    fields = ("categories", "organization_page", "ig", "discord")
     diff: dict[str, tuple] = {}
     for field in fields:
         old = existing.get(field)
@@ -345,7 +341,6 @@ def main() -> int:
                 "categories": row["categories"],
                 "organization_page": row["organization_page"],
                 "ig": row["ig"],
-                "organization_type": row["organization_type"],
             }
             for row in to_insert
         ]
@@ -363,7 +358,6 @@ def main() -> int:
                 "organization_page": planned["organization_page"],
                 "ig": planned["ig"],
                 "discord": planned["discord"],
-                "organization_type": planned["organization_type"],
             }
         ).eq("id", cid).execute()
         updated += 1

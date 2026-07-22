@@ -24,6 +24,7 @@ from core.database import get_sb
 from core.tables import EVENTS, USERS
 from schemas.event import EventResponse
 from schemas.event_date import OccurrenceResponse
+from schemas.going_event import GoingEventSelection
 from services import event_date_service, event_query, going_event_service
 from services.school_context import resolve_school_timezone
 
@@ -73,8 +74,8 @@ def get_user_id_by_token(token: str) -> str | None:
 
 def build_ics_for_user(user_id: str) -> bytes:
     """Render the user's going events as a VCALENDAR document."""
-    event_ids = going_event_service.get_going_event_ids(user_id)
-    events = _fetch_events_by_ids(event_ids)
+    selections = going_event_service.get_going_event_selections(user_id)
+    events = _fetch_selected_events(selections)
 
     cal = Calendar()
     cal.add("prodid", _PRODID)
@@ -91,13 +92,15 @@ def build_ics_for_user(user_id: str) -> bytes:
     return cal.to_ical()
 
 
-def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
-    """Chunked fetch preserving the caller's ordering, with occurrences attached.
+def _fetch_selected_events(
+    selections: list[GoingEventSelection],
+) -> list[EventResponse]:
+    """Fetch event rows and only the occurrences explicitly selected Going.
 
-    PostgREST ``in_`` has practical length limits, so chunk the ids.
-    Occurrences are batched separately (one query per chunk) and joined
-    in Python - avoids an N+1 fetch for a feed with many saved events.
+    Both table reads are chunked and joined in memory, so large calendars avoid
+    PostgREST URL limits without loading every occurrence for each event.
     """
+    event_ids = [selection.event_id for selection in selections]
     if not event_ids:
         return []
     chunk_size = 1000
@@ -108,7 +111,13 @@ def _fetch_events_by_ids(event_ids: list[int]) -> list[EventResponse]:
         for row in r.data or []:
             rows_by_id[row["id"]] = row
 
-    occ_by_event = event_date_service.list_for_events(list(rows_by_id.keys()))
+    occurrence_ids = [
+        str(occurrence_id) for selection in selections for occurrence_id in selection.occurrence_ids
+    ]
+    selected_occurrences = event_date_service.list_by_ids(occurrence_ids)
+    occ_by_event: dict[int, list[OccurrenceResponse]] = {}
+    for occurrence in selected_occurrences:
+        occ_by_event.setdefault(occurrence.event_id, []).append(occurrence)
 
     ordered: list[EventResponse] = []
     for eid in event_ids:
@@ -195,8 +204,8 @@ def _frontend_base_url() -> str:
 
     The backend only grants credentials to CORS-allowed origins, so the
     first entry is the frontend by construction.  Dev env serves from
-    localhost; prod from wat2do.app.
+    localhost; prod from wat2do.io.
     """
     if settings.cors_origins:
         return settings.cors_origins[0].rstrip("/")
-    return "https://wat2do.app"
+    return "https://wat2do.io"

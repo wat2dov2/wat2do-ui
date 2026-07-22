@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
+from uuid import UUID
 
 from core.constants import ROLE_ADMIN
 from schemas.event import EventResponse, LatestEventResponse
@@ -24,6 +25,10 @@ def _mock_event(**overrides) -> EventResponse:
     return EventResponse.model_validate(defaults)
 
 
+def _update_result(event: EventResponse) -> event_service.EventUpdateResult:
+    return event_service.EventUpdateResult(event=event, recipient_ids=[])
+
+
 def _mock_organization(**overrides) -> OrganizationResponse:
     defaults = {
         "id": 7,
@@ -32,7 +37,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
         "organization_page": None,
         "ig": None,
         "discord": None,
-        "organization_type": "WUSA",
+        "association_affiliated": True,
         "logo_url": None,
         "created_by": FAKE_USER["id"],
     }
@@ -56,11 +61,11 @@ def test_create_event_sets_created_by_for_organization_owner(authenticated_clien
     """Approved organization owners can create events for their organization.
 
     The router only authorizes organization ownership and forwards the raw payload;
-    organization/organization_type/school are derived from organization_id inside
+    organization/association_affiliated/school are derived from organization_id inside
     event_service.create_event (see test_resolve_organization_fields_*).
     """
     created_event = _mock_event(
-        organization_id=7, organization="Verified Organization", organization_type="WUSA"
+        organization_id=7, organization="Verified Organization", association_affiliated=True
     )
     mock_create = MagicMock(return_value=created_event)
     mock_get_organization = MagicMock(return_value=_mock_organization(id=7, school="uwaterloo"))
@@ -163,7 +168,9 @@ def test_update_event_owner_allowed(authenticated_client, monkeypatch):
     """Owner can update their own event."""
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
+    monkeypatch.setattr(
+        event_service, "update_event", MagicMock(return_value=_update_result(event))
+    )
 
     # is_admin check must return False for the non-admin user
     from services import user_service
@@ -187,7 +194,9 @@ def test_update_event_admin_allowed(admin_client, monkeypatch):
     """Admin can update any event regardless of ownership."""
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
+    monkeypatch.setattr(
+        event_service, "update_event", MagicMock(return_value=_update_result(event))
+    )
 
     from schemas.user import UserResponse
 
@@ -243,7 +252,9 @@ def test_update_event_material_diff_triggers_enqueue(authenticated_client, monke
     old = _mock_event(created_by=FAKE_USER["id"], location="Here")
     updated = _mock_event(created_by=FAKE_USER["id"], location="There")
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+    monkeypatch.setattr(
+        event_service, "update_event", MagicMock(return_value=_update_result(updated))
+    )
 
     mock_enqueue = MagicMock(return_value=0)
     monkeypatch.setattr(event_change, "enqueue_event_change", mock_enqueue)
@@ -252,8 +263,9 @@ def test_update_event_material_diff_triggers_enqueue(authenticated_client, monke
     assert resp.status_code == 200
     mock_enqueue.assert_called_once()
     args, _ = mock_enqueue.call_args
-    assert args[0] == 1
+    assert args[0] == updated
     assert "location" in args[1]
+    assert args[2] == []
 
 
 def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monkeypatch):
@@ -263,7 +275,9 @@ def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monk
     old = _mock_event(created_by=FAKE_USER["id"], title="Old Title")
     updated = _mock_event(created_by=FAKE_USER["id"], title="New Title")
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+    monkeypatch.setattr(
+        event_service, "update_event", MagicMock(return_value=_update_result(updated))
+    )
 
     mock_enqueue = MagicMock(return_value=0)
     monkeypatch.setattr(event_change, "enqueue_event_change", mock_enqueue)
@@ -280,7 +294,9 @@ def test_update_event_enqueue_failure_does_not_break_update(authenticated_client
     old = _mock_event(created_by=FAKE_USER["id"], location="Here")
     updated = _mock_event(created_by=FAKE_USER["id"], location="There")
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
-    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=updated))
+    monkeypatch.setattr(
+        event_service, "update_event", MagicMock(return_value=_update_result(updated))
+    )
     monkeypatch.setattr(
         event_change,
         "enqueue_event_change",
@@ -541,7 +557,7 @@ def test_update_past_event_rejected(authenticated_client, monkeypatch):
         created_by=FAKE_USER["id"],
         occurrences=[
             {
-                "id": 1,
+                "id": UUID(int=1),
                 "event_id": 1,
                 "dtstart_utc": past,
                 "dtend_utc": past,

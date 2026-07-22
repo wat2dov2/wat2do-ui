@@ -5,13 +5,16 @@ export function EventCardSkeleton() {
   return (
     <article
       data-event-card-skeleton
-      className="rounded-xl overflow-hidden flex flex-col h-full bg-card border border-border/50 shadow-sm animate-pulse"
+      className="rounded-xl overflow-hidden flex flex-col h-full bg-surface border border-border/50 shadow-sm animate-pulse"
     >
-      <div className="relative overflow-hidden bg-muted/30" style={{ height: EVENT_CARD_IMAGE_HEIGHT }}>
+      <div
+        className="relative shrink-0 overflow-hidden rounded-t-xl bg-muted/30"
+        style={{ height: EVENT_CARD_IMAGE_HEIGHT }}
+      >
         <Skeleton className="absolute inset-0 w-full h-full rounded-none" />
       </div>
 
-      <div className="flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden border-border/50 p-3 pb-2.5 bg-card gap-2.5 sm:p-4 sm:pb-3 sm:gap-3">
+      <div className="flex flex-col flex-1 border-l border-r border-b rounded-tl-xl rounded-b-xl overflow-hidden border-border/50 p-3 pb-2.5 bg-surface gap-2.5 sm:p-4 sm:pb-3 sm:gap-3">
         <div className="flex flex-col gap-2.5 h-full flex-1 sm:gap-3">
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-3/4 rounded-lg" />
@@ -25,10 +28,6 @@ export function EventCardSkeleton() {
               <Skeleton className="h-3 w-2/5 rounded-lg" />
             </div>
           </div>
-        </div>
-
-        <div className="w-full pt-3 border-t border-border/50 flex items-center justify-center">
-          <Skeleton className="h-4 w-28 rounded-lg" />
         </div>
       </div>
     </article>

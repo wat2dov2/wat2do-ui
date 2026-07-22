@@ -13,13 +13,15 @@ import {
   DrawerClose,
   DrawerContent,
   DrawerDescription,
+  DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { toast } from "@/shared/hooks/use-toast";
+import { DrawerBody } from "@/shared/layout";
 import { tracker } from "@/shared/services/trackingService";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
-import { QP } from "@/shared/constants/queryParams";
+import { buildEventShareUrl } from "@/features/events/lib/eventUrls";
 import type { Event } from "@/shared/types";
 
 interface EventShareDialogProps {
@@ -53,12 +55,6 @@ function openExternalShare(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function buildShareUrl(eventId: number) {
-  const eventPath = `/?${QP.EVENT_ID}=${eventId}`;
-  if (typeof window === "undefined") return eventPath;
-  return `${window.location.origin}${eventPath}`;
-}
-
 function XLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
@@ -74,7 +70,7 @@ export function EventShareDialog({
 }: EventShareDialogProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
-  const shareUrl = useMemo(() => buildShareUrl(event.id), [event.id]);
+  const shareUrl = useMemo(() => buildEventShareUrl(event.id), [event.id]);
   const cardDate = formatCardDate(event);
   const cardTime = formatCardTime(event);
   const shareBody = [
@@ -137,21 +133,22 @@ export function EventShareDialog({
         <DrawerClose asChild>
           <button
             type="button"
-            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted/60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-xl text-foreground opacity-80 transition-opacity hover:bg-muted-hover hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             aria-label={t("common.close")}
           >
             <X className="size-4" />
           </button>
         </DrawerClose>
-        <div className="mx-auto w-full max-w-sm p-4">
-          <DrawerTitle className="pr-10 text-lg font-bold">
-            {t("common.share")}
-          </DrawerTitle>
+
+        <DrawerHeader className="text-left">
+          <DrawerTitle>{t("common.share")}</DrawerTitle>
           <DrawerDescription className="sr-only">
             {t("events.shareDialog.description")}
           </DrawerDescription>
+        </DrawerHeader>
 
-          <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-secondary/50 p-1.5 pl-3">
+        <DrawerBody className="mx-auto w-full max-w-sm pt-0">
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary/50 p-1.5 pl-3">
             <span className="flex-1 truncate text-sm text-muted-foreground">
               {shareUrl}
             </span>
@@ -166,7 +163,7 @@ export function EventShareDialog({
             </Button>
           </div>
 
-          <div className="mt-2 grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-5 gap-1">
             {CHANNELS.map(({ id, labelKey, Icon, bgClass }) => {
               const label = t(labelKey);
               return (
@@ -174,7 +171,7 @@ export function EventShareDialog({
                   key={id}
                   type="button"
                   onMouseDown={() => handleShare(id)}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary"
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-secondary-hover"
                   aria-label={t("events.shareDialog.shareOn", { channel: label })}
                 >
                   <span
@@ -189,7 +186,7 @@ export function EventShareDialog({
               );
             })}
           </div>
-        </div>
+        </DrawerBody>
       </DrawerContent>
     </Drawer>
   );

@@ -3,8 +3,6 @@ import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server"
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import type { Event } from "@/shared/types";
 
-export const revalidate = 3600;
-
 async function loadPreviewEvents(): Promise<Event[]> {
   try {
     const snapshot = await getSchoolBrowseSnapshot(DEFAULT_SCHOOL);

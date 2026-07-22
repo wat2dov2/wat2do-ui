@@ -271,7 +271,7 @@ export function PostersPageContent({
         </div>
       </div>
 
-      <div className="border border-border rounded-xl p-4 bg-card">
+      <div className="border border-border rounded-xl p-4 bg-surface">
         <AssetWizardComponent userEmail={userEmail} />
       </div>
 

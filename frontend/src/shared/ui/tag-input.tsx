@@ -65,7 +65,7 @@ export function TagInput({
       >
         {labelIcon}
         {label}
-        {required && <span className="text-error">*</span>}
+        {required && <span className="text-destructive">*</span>}
       </FieldLabel>
       <div className="flex gap-2">
         <Input
@@ -77,7 +77,7 @@ export function TagInput({
           placeholder={placeholder}
           className={cn(
             "flex-1 text-xs",
-            hasError && "border-error bg-error/10"
+            hasError && "border-destructive bg-destructive/10"
           )}
         />
         <Button
@@ -104,7 +104,7 @@ export function TagInput({
               <button
                 type="button"
                 onMouseDown={() => onRemove(index)}
-                className="bg-foreground/30 text-primary-foreground rounded-full p-0.5 size-4 flex items-center justify-center hover:bg-foreground/40 transition-colors"
+                className="bg-foreground/30 text-primary-foreground rounded-full p-0.5 size-4 flex items-center justify-center hover:bg-primary-hover transition-colors"
               >
                 <X className="size-3" />
               </button>

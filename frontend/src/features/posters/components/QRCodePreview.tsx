@@ -47,7 +47,7 @@ export function QRCodePreview({
       {(onDownload || onDone) && (
         <div className="flex gap-2 justify-end">
           {onDone && (
-            <Button variant="outline" onMouseDown={onDone}>
+            <Button variant="secondary" onMouseDown={onDone}>
               {doneLabel || t("common.done")}
             </Button>
           )}

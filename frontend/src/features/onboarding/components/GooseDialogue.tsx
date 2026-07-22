@@ -26,7 +26,7 @@ export function GooseDialogue({
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm">
         <img
           src={GOOSE_IMAGE_PATH}
           alt={t("onboarding.gooseName")}

@@ -1,0 +1,75 @@
+/*
+ * Decorative design tokens - badges, categories, branding, easter eggs.
+ * Keep vibrant colour here; never use these for core UI surfaces.
+ */
+
+:root {
+
+  /* Brand accent palette */
+  --blue-400: hsl(214 95% 65%);
+  --blue-500: hsl(217 91% 60%);
+  --blue-600: hsl(221 83% 53%);
+  --green-100: hsl(142 76% 89%);
+  --green-400: hsl(142 71% 55%);
+  --green-500: hsl(142 71% 45%);
+  --green-600: hsl(142 70% 45%);
+  --green-700: hsl(142 65% 45%);
+  --green-900: hsl(142 61% 20%);
+  --red-50: hsl(0 100% 97%);
+  --red-200: hsl(0 93% 94%);
+  --red-800: hsl(0 70% 35%);
+  --red-900: hsl(0 63% 31%);
+  --yellow-50: hsl(48 96% 96%);
+  --purple-500: hsl(258 90% 66%);
+  --purple-600: hsl(262 83% 58%);
+  --amber-100: hsl(48 96% 89%);
+  --amber-400: hsl(43 96% 56%);
+  --amber-600: hsl(32 95% 44%);
+  --amber-700: hsl(26 90% 37%);
+  --amber-900: hsl(22 78% 26%);
+  --pink-500: hsl(330 81% 60%);
+  --orange-500: hsl(25 95% 53%);
+
+  /* Faculty accent colors */
+  --faculty-arts-splash: hsl(35 85% 62% / 0.25);
+  --faculty-engineering-splash: hsl(269 31% 63% / 0.25);
+  --faculty-environment-splash: hsl(64 100% 46% / 0.25);
+  --faculty-health-splash: hsl(185 100% 45% / 0.25);
+  --faculty-mathematics-splash: hsl(319 79% 62% / 0.25);
+  --faculty-science-splash: hsl(209 100% 55% / 0.25);
+  --faculty-applied-health-sciences-splash: hsl(174 84% 45% / 0.25);
+
+  /* Easter egg palettes */
+  --easter-party-1: hsl(217 91% 68%);
+  --easter-party-2: hsl(142 71% 52%);
+  --easter-party-3: hsl(38 92% 58%);
+  --easter-party-4: hsl(0 84% 68%);
+  --easter-party-5: hsl(258 90% 74%);
+  --easter-party-6: hsl(330 81% 68%);
+  --easter-uoft-1: hsl(213 100% 25%);
+  --easter-uoft-2: hsl(206 50% 32%);
+  --easter-uoft-3: hsl(211 65% 65%);
+  --easter-mcgill-1: hsl(355 85% 60%);
+  --easter-mcgill-2: hsl(0 0% 100%);
+  --easter-mcgill-3: hsl(0 100% 35%);
+  --easter-mcmaster-1: hsl(331 100% 32%);
+  --easter-mcmaster-2: hsl(45 100% 66%);
+  --easter-mcmaster-3: hsl(331 100% 24%);
+
+  /* Decorative gradients & glows */
+  --gradient-brand: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 12%));
+  --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(258 90% 66%));
+  --glow-primary: 0 0 24px hsl(0 0% 96% / 0.08);
+
+  /*
+   * Global page background decoration - consumed by the bg-page-dots and
+   * bg-page-glow utilities in index.css and mounted once via <PageBackground />.
+   * Tune the whole app's backdrop from here; nothing else should hardcode it.
+   */
+  --page-dot-color: oklch(0.970 0 0 / 0.055);
+  --page-dot-size: 1px;
+  --page-dot-spacing: 24px;
+  /* Neutral white glow: chroma 0 so it tints nothing, only lifts brightness. */
+  --page-glow-inner: oklch(1.0 0 0 / 0.16);
+  --page-glow-middle: oklch(1.0 0 0 / 0.07);
+}

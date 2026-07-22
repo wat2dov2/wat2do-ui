@@ -1,7 +1,6 @@
-import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
-import { getCategoryClasses, translateCategory } from "@/shared/utils/event";
+import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
 
 interface OrganizationCategoryBadgesProps {
   categories: readonly string[];
@@ -16,7 +15,6 @@ export function OrganizationCategoryBadges({
   className,
   badgeClassName,
 }: OrganizationCategoryBadgesProps) {
-  const { t } = useTranslation();
   const visibleCategories = categories.slice(0, maxVisible);
   const overflowCount = Math.max(categories.length - visibleCategories.length, 0);
 
@@ -24,26 +22,9 @@ export function OrganizationCategoryBadges({
 
   return (
     <div className={cn("flex min-w-0 flex-wrap items-center gap-1.5", className)}>
-      {visibleCategories.map((category) => {
-        const colors = getCategoryClasses(category);
-        const label = translateCategory(category, t);
-        return (
-          <Badge
-            key={category}
-            variant="outline"
-            size="md"
-            title={label}
-            className={cn(
-              "max-w-full border-0 font-medium leading-none",
-              colors.bg,
-              colors.text,
-              badgeClassName,
-            )}
-          >
-            <span className="truncate">{label}</span>
-          </Badge>
-        );
-      })}
+      {visibleCategories.map((category) => (
+        <OrganizationTypeBadge key={category} type={category} className={badgeClassName} />
+      ))}
       {overflowCount > 0 && (
         <Badge
           variant="secondary"

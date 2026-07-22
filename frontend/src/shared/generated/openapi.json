@@ -5,60 +5,6 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/ab/variant": {
-      "get": {
-        "tags": [
-          "ab-test"
-        ],
-        "summary": "Get Variant",
-        "description": "Return the user's A/B variant.\n\nIf the auth user has no DB row yet (signup race), hash on\n``auth_user[\"id\"]`` for a stable assignment instead of locking everyone\ninto control and biasing treatment share downward.",
-        "operationId": "get_variant_ab_variant_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ABVariantResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/ab/metrics": {
-      "get": {
-        "tags": [
-          "ab-test"
-        ],
-        "summary": "Get Metrics",
-        "description": "CTR metrics by variant (admin only).\n\nCached in-process for 60 s (see ``ABTestService.get_ctr_by_variant``)\nso polling dashboards do not full-scan per poll.",
-        "operationId": "get_metrics_ab_metrics_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ABMetricsResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/ai/generate-filters": {
       "post": {
         "tags": [
@@ -1284,7 +1230,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "type": "integer"
+                    "$ref": "#/components/schemas/GoingEventSelection"
                   },
                   "type": "array",
                   "title": "Response List Going Events Going Events  Get"
@@ -1300,13 +1246,55 @@
         ]
       }
     },
+    "/going-events/{event_id}/attendees": {
+      "get": {
+        "tags": [
+          "going-events"
+        ],
+        "summary": "List Event Attendees",
+        "description": "Public who's-going summary for an event's details view.",
+        "operationId": "list_event_attendees_going_events__event_id__attendees_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/going-events/{event_id}": {
       "put": {
         "tags": [
           "going-events"
         ],
         "summary": "Mark Going",
-        "description": "Mark an event as going.\n\n- 404 if the event does not exist.\n- 400 if the user has already hit ``MAX_GOING_EVENTS_PER_USER``.",
         "operationId": "mark_going_going_events__event_id__put",
         "security": [
           {
@@ -1324,6 +1312,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoingEventSelectionUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1526,6 +1524,88 @@
         ]
       }
     },
+    "/notification-preferences/unsubscribe": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Confirm Unsubscribe",
+        "operationId": "confirm_unsubscribe_notification_preferences_unsubscribe_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Apply Unsubscribe",
+        "operationId": "apply_unsubscribe_notification_preferences_unsubscribe_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organizations/": {
       "get": {
         "tags": [
@@ -1535,20 +1615,19 @@
         "operationId": "list_organizations_organizations__get",
         "parameters": [
           {
-            "name": "organization_type",
+            "name": "association_affiliated",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "maxLength": 100
+                  "type": "boolean"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Organization Type"
+              "title": "Association Affiliated"
             }
           },
           {
@@ -4908,7 +4987,7 @@
           "users"
         ],
         "summary": "Update User Role",
-        "description": "Admin-only: rotate a user's role ('user' <-> 'admin').\n\nSeparate from ``PATCH /users/{id}`` so role is only mutable through an\nexplicitly-admin endpoint - keeps the trust boundary bright.\n``user_service.set_role`` invalidates the supabase-auth-id cache so the\nchange is immediately visible in subsequent role checks.\n\nIf the target is currently an admin and the new role is not ``admin``,\nrefuse the demotion when it would leave zero admins.",
+        "description": "Admin-only: rotate a user's role ('user' <-> 'admin').\n\nSeparate from ``PATCH /users/{id}`` so role is only mutable through an\nexplicitly-admin endpoint - keeps the trust boundary bright.\nIf the target is currently an admin and the new role is not ``admin``,\nrefuse the demotion when it would leave zero admins.",
         "operationId": "update_user_role_users__user_id__role_patch",
         "security": [
           {
@@ -4980,64 +5059,6 @@
   },
   "components": {
     "schemas": {
-      "ABMetricsResponse": {
-        "properties": {
-          "control": {
-            "$ref": "#/components/schemas/ABVariantCTR"
-          },
-          "treatment": {
-            "$ref": "#/components/schemas/ABVariantCTR"
-          }
-        },
-        "type": "object",
-        "required": [
-          "control",
-          "treatment"
-        ],
-        "title": "ABMetricsResponse",
-        "description": "CTR per variant.\n\nKeyed by variant name; the backend guarantees entries for both\n``control`` and ``treatment`` even when one has zero traffic."
-      },
-      "ABVariantCTR": {
-        "properties": {
-          "impressions": {
-            "type": "integer",
-            "title": "Impressions"
-          },
-          "clicks": {
-            "type": "integer",
-            "title": "Clicks"
-          },
-          "ctr": {
-            "type": "number",
-            "title": "Ctr"
-          }
-        },
-        "type": "object",
-        "required": [
-          "impressions",
-          "clicks",
-          "ctr"
-        ],
-        "title": "ABVariantCTR",
-        "description": "Per-variant click-through-rate breakdown."
-      },
-      "ABVariantResponse": {
-        "properties": {
-          "variant": {
-            "type": "string",
-            "enum": [
-              "control",
-              "treatment"
-            ],
-            "title": "Variant"
-          }
-        },
-        "type": "object",
-        "required": [
-          "variant"
-        ],
-        "title": "ABVariantResponse"
-      },
       "AIPromptRequest": {
         "properties": {
           "prompt": {
@@ -5321,6 +5342,28 @@
           "channels"
         ],
         "title": "DiscordServerOption"
+      },
+      "EventAttendeesResponse": {
+        "properties": {
+          "going_count": {
+            "type": "integer",
+            "title": "Going Count"
+          },
+          "names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Names"
+          }
+        },
+        "type": "object",
+        "required": [
+          "going_count",
+          "names"
+        ],
+        "title": "EventAttendeesResponse",
+        "description": "Public who's-going summary: count plus abbreviated display names."
       },
       "EventCreate": {
         "properties": {
@@ -5675,16 +5718,10 @@
             ],
             "title": "Source Image Url"
           },
-          "organization_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Organization Type"
+          "association_affiliated": {
+            "type": "boolean",
+            "title": "Association Affiliated",
+            "default": false
           },
           "school": {
             "anyOf": [
@@ -5852,16 +5889,10 @@
             ],
             "title": "Source Image Url"
           },
-          "organization_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Organization Type"
+          "association_affiliated": {
+            "type": "boolean",
+            "title": "Association Affiliated",
+            "default": false
           },
           "school": {
             "anyOf": [
@@ -6057,16 +6088,10 @@
             ],
             "title": "Organization"
           },
-          "organization_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Organization Type"
+          "association_affiliated": {
+            "type": "boolean",
+            "title": "Association Affiliated",
+            "default": false
           },
           "organization_page": {
             "anyOf": [
@@ -6185,7 +6210,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/OccurrenceCreate"
+                  "$ref": "#/components/schemas/OccurrenceUpdate"
                 },
                 "type": "array",
                 "minItems": 1
@@ -6382,6 +6407,47 @@
         "type": "object",
         "title": "FilterStateResponse"
       },
+      "GoingEventSelection": {
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "occurrence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Occurrence Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "occurrence_ids"
+        ],
+        "title": "GoingEventSelection"
+      },
+      "GoingEventSelectionUpdate": {
+        "properties": {
+          "occurrence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Occurrence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "occurrence_ids"
+        ],
+        "title": "GoingEventSelectionUpdate"
+      },
       "GoingEventStatusResponse": {
         "properties": {
           "status": {
@@ -6392,6 +6458,18 @@
             ],
             "title": "Status"
           },
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "occurrence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Occurrence Ids"
+          },
           "going_count": {
             "type": "integer",
             "title": "Going Count"
@@ -6400,6 +6478,8 @@
         "type": "object",
         "required": [
           "status",
+          "event_id",
+          "occurrence_ids",
           "going_count"
         ],
         "title": "GoingEventStatusResponse",
@@ -6525,10 +6605,8 @@
           "notification_type": {
             "type": "string",
             "enum": [
-              "morning_digest",
-              "weekly_digest",
-              "event_change",
-              "daily_new_events"
+              "morning_email",
+              "event_change"
             ],
             "title": "Notification Type"
           },
@@ -6561,10 +6639,8 @@
           "notification_type": {
             "type": "string",
             "enum": [
-              "morning_digest",
-              "weekly_digest",
-              "event_change",
-              "daily_new_events"
+              "morning_email",
+              "event_change"
             ],
             "title": "Notification Type"
           },
@@ -6674,15 +6750,8 @@
       "OccurrenceResponse": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "integer"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Id"
           },
           "event_id": {
@@ -6742,6 +6811,70 @@
           "created_at"
         ],
         "title": "OccurrenceResponse"
+      },
+      "OccurrenceUpdate": {
+        "properties": {
+          "dtstart_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dtstart Utc"
+          },
+          "dtend_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtend Utc"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration"
+          },
+          "tz": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tz"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dtstart_utc"
+        ],
+        "title": "OccurrenceUpdate",
+        "description": "Occurrence payload for event edits.\n\nAn ID retains an existing occurrence. A missing ID creates a new one."
       },
       "OrganizationClaimCreate": {
         "properties": {
@@ -6947,11 +7080,10 @@
             ],
             "title": "Discord"
           },
-          "organization_type": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Organization Type"
+          "association_affiliated": {
+            "type": "boolean",
+            "title": "Association Affiliated",
+            "default": false
           },
           "logo_url": {
             "anyOf": [
@@ -6976,8 +7108,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "organization_name",
-          "organization_type"
+          "organization_name"
         ],
         "title": "OrganizationCreate"
       },
@@ -7542,9 +7673,10 @@
             ],
             "title": "Discord"
           },
-          "organization_type": {
-            "type": "string",
-            "title": "Organization Type"
+          "association_affiliated": {
+            "type": "boolean",
+            "title": "Association Affiliated",
+            "default": false
           },
           "logo_url": {
             "anyOf": [
@@ -7622,8 +7754,7 @@
         "type": "object",
         "required": [
           "id",
-          "organization_name",
-          "organization_type"
+          "organization_name"
         ],
         "title": "OrganizationResponse"
       },
@@ -7694,17 +7825,16 @@
             ],
             "title": "Discord"
           },
-          "organization_type": {
+          "association_affiliated": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100
+                "type": "boolean"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Organization Type"
+            "title": "Association Affiliated"
           },
           "logo_url": {
             "anyOf": [

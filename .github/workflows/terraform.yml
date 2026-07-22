@@ -1,0 +1,204 @@
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ca-central-1
+  AWS_STATE_REGION: us-west-2
+  TF_IN_AUTOMATION: 'true'
+
+jobs:
+  validate:
+    name: Format, validate, and lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.6'
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Validate isolated roots without state access
+        run: |
+          for root in foundation production; do
+            (
+              cd "infra/terraform/$root"
+              terraform init -backend=false -input=false
+              terraform validate
+            )
+          done
+
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Lint isolated roots
+        run: |
+          for root in foundation production; do
+            (
+              cd "infra/terraform/$root"
+              tflint --init
+              tflint
+            )
+          done
+
+  plan:
+    name: Production Terraform plan
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_TERRAFORM_ROLE_ARN: ${{ vars.AWS_TERRAFORM_ROLE_ARN }}
+      AWS_TERRAFORM_STATE_BUCKET: ${{ vars.AWS_TERRAFORM_STATE_BUCKET }}
+      TF_VAR_state_bucket_name: ${{ vars.AWS_TERRAFORM_STATE_BUCKET }}
+      TF_VAR_route53_zone_id: ${{ vars.AWS_ROUTE53_ZONE_ID }}
+      TF_VAR_runtime_secret_arn: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
+      TF_VAR_frontend_image: ${{ vars.AWS_BOOTSTRAP_FRONTEND_IMAGE }}
+      TF_VAR_backend_image: ${{ vars.AWS_BOOTSTRAP_BACKEND_IMAGE }}
+      TF_VAR_email_from: ${{ vars.AWS_EMAIL_FROM }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.6'
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Plan foundation
+        working-directory: infra/terraform/foundation
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=$AWS_TERRAFORM_STATE_BUCKET" \
+            -backend-config='key=foundation/terraform.tfstate' \
+            -backend-config="region=$AWS_STATE_REGION" \
+            -backend-config='dynamodb_table=wat2do-terraform-state-lock'
+          terraform plan -input=false
+
+      - name: Plan production
+        working-directory: infra/terraform/production
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=$AWS_TERRAFORM_STATE_BUCKET" \
+            -backend-config='key=production/terraform.tfstate' \
+            -backend-config="region=$AWS_STATE_REGION" \
+            -backend-config='dynamodb_table=wat2do-terraform-state-lock'
+          terraform plan -input=false
+
+  apply-foundation:
+    name: Apply foundation
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
+    environment: production
+    concurrency:
+      group: terraform-foundation-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_TERRAFORM_ROLE_ARN: ${{ vars.AWS_TERRAFORM_ROLE_ARN }}
+      AWS_TERRAFORM_STATE_BUCKET: ${{ vars.AWS_TERRAFORM_STATE_BUCKET }}
+      TF_VAR_state_bucket_name: ${{ vars.AWS_TERRAFORM_STATE_BUCKET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.6'
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Apply the reviewed foundation plan
+        working-directory: infra/terraform/foundation
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=$AWS_TERRAFORM_STATE_BUCKET" \
+            -backend-config='key=foundation/terraform.tfstate' \
+            -backend-config="region=$AWS_STATE_REGION" \
+            -backend-config='dynamodb_table=wat2do-terraform-state-lock'
+          terraform plan -input=false -out=tfplan
+          terraform apply -input=false tfplan
+
+  apply-production:
+    name: Apply production infrastructure
+    needs: apply-foundation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_TERRAFORM_ROLE_ARN != '' && vars.AWS_TERRAFORM_STATE_BUCKET != ''
+    environment: production
+    concurrency:
+      group: terraform-production
+      cancel-in-progress: false
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    env:
+      AWS_TERRAFORM_ROLE_ARN: ${{ vars.AWS_TERRAFORM_ROLE_ARN }}
+      AWS_TERRAFORM_STATE_BUCKET: ${{ vars.AWS_TERRAFORM_STATE_BUCKET }}
+      TF_VAR_route53_zone_id: ${{ vars.AWS_ROUTE53_ZONE_ID }}
+      TF_VAR_runtime_secret_arn: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
+      TF_VAR_frontend_image: ${{ vars.AWS_BOOTSTRAP_FRONTEND_IMAGE }}
+      TF_VAR_backend_image: ${{ vars.AWS_BOOTSTRAP_BACKEND_IMAGE }}
+      TF_VAR_email_from: ${{ vars.AWS_EMAIL_FROM }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.6'
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Apply the reviewed production plan
+        working-directory: infra/terraform/production
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=$AWS_TERRAFORM_STATE_BUCKET" \
+            -backend-config='key=production/terraform.tfstate' \
+            -backend-config="region=$AWS_STATE_REGION" \
+            -backend-config='dynamodb_table=wat2do-terraform-state-lock'
+          terraform plan -input=false -out=tfplan
+          terraform apply -input=false tfplan
+
+      - name: Trigger one normal application release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci-cd.yml --ref main

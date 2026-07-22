@@ -5,11 +5,18 @@
 
 import type { Event, EventFormData } from "@/shared/types";
 import type {
+  ApiEventAttendeesResponse,
   ApiEventPublicResponse,
   ApiEventResponse,
   ApiEventStatsResponse,
+  ApiGoingEventSelection,
+  ApiGoingEventSelectionUpdate,
+  ApiGoingEventStatusResponse,
 } from "@/shared/generated";
-import { buildEventPayload } from "@/shared/api/eventPayload";
+import {
+  buildEventPayload,
+  buildEventUpdatePayload,
+} from "@/shared/api/eventPayload";
 import { api } from "@/shared/services/apiClient";
 
 export type LatestAddedEvent = {
@@ -41,40 +48,41 @@ export async function updateEventAPI(
   eventId: number,
   eventData: EventFormData,
 ): Promise<Event> {
-  return api.patch<ApiEventResponse>(`/events/${eventId}`, buildEventPayload(eventData));
+  return api.patch<ApiEventResponse>(
+    `/events/${eventId}`,
+    buildEventUpdatePayload(eventData),
+  );
 }
 
 export async function deleteEventAPI(eventId: number): Promise<void> {
   await api.delete(`/events/${eventId}`);
 }
 
-export type GoingEventStatusResponse = {
-  status: string;
-  going_count: number;
-};
-
 export type EventStats = ApiEventStatsResponse;
 
-export function toggleGoingEventAPI(eventId: number, currentIds: number[]): number[] {
-  return currentIds.includes(eventId)
-    ? currentIds.filter((id) => id !== eventId)
-    : [...currentIds, eventId];
+export type EventAttendees = ApiEventAttendeesResponse;
+
+/** Public who's-going summary (count + abbreviated display names). */
+export async function fetchEventAttendees(eventId: number): Promise<EventAttendees> {
+  return api.get<ApiEventAttendeesResponse>(`/going-events/${eventId}/attendees`);
 }
 
-export async function fetchGoingEventIdsFromBackend(): Promise<number[]> {
-  return api.get<number[]>("/going-events/");
+export async function fetchGoingEvents(): Promise<ApiGoingEventSelection[]> {
+  return api.get<ApiGoingEventSelection[]>("/going-events/");
 }
 
-export async function markGoingOnBackend(
+export async function setGoingEventOccurrences(
   eventId: number,
-): Promise<GoingEventStatusResponse> {
-  return api.put<GoingEventStatusResponse>(`/going-events/${eventId}`);
+  occurrenceIds: string[],
+): Promise<ApiGoingEventStatusResponse> {
+  const body: ApiGoingEventSelectionUpdate = { occurrence_ids: occurrenceIds };
+  return api.put<ApiGoingEventStatusResponse>(`/going-events/${eventId}`, body);
 }
 
-export async function unmarkGoingOnBackend(
+export async function clearGoingEvent(
   eventId: number,
-): Promise<GoingEventStatusResponse> {
-  return api.delete<GoingEventStatusResponse>(`/going-events/${eventId}`);
+): Promise<ApiGoingEventStatusResponse> {
+  return api.delete<ApiGoingEventStatusResponse>(`/going-events/${eventId}`);
 }
 
 export async function fetchEventStatsFromBackend(

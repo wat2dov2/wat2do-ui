@@ -10,6 +10,15 @@ venv/
 .env.local
 .vercel/
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.tfplan
+crash.log
+
 # Node
 node_modules/
 dist/
@@ -38,6 +47,7 @@ verify-out/
 frontend/test-results/
 frontend/playwright-report/
 
-# instagram follow script runtime state (backend/scripts/follow_from_xlsx.py)
+# instagram automation runtime state (backend/scripts/follow_from_xlsx.py, automate_bell_notifications.py)
 session_*.json
 progress_*.json
+debug_dumps/

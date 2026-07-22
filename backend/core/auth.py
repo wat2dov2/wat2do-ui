@@ -147,20 +147,15 @@ def get_optional_user(
 def resolve_db_user(auth_user: AuthUser, *, user_lookup=None) -> "UserResponse":
     """Look up the internal DB user from a Supabase auth user dict.
 
-    Bypasses the user-service cache so that role changes (and, by
-    extension, ownership-vs-admin decisions) take effect immediately on
-    the very next request. Unifying on the DB user means we pay for one
-    fresh read and everyone downstream gets the current role.
+    Unifying on the DB user means we pay for one fresh read and everyone
+    downstream gets the current role.
 
     Raises 404 if the user has not completed signup (no row in ``users``).
     Shared by routers that need the internal user row after auth.
 
-    *user_lookup* can be injected for testing; defaults to
-    ``user_service.get_user_by_supabase_id(bypass_cache=True)``.
+    *user_lookup* can be injected for testing.
     """
-    lookup = user_lookup or (
-        lambda sid: _get_user_service().get_user_by_supabase_id(sid, bypass_cache=True)
-    )
+    lookup = user_lookup or _get_user_service().get_user_by_supabase_id
     db_user = lookup(auth_user["id"])
     if not db_user:
         raise NotFoundError(USER_NOT_FOUND)

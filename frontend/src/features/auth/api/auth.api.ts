@@ -183,6 +183,8 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       clubs.find((club) => club.id === cachedProfile?.organizationId) ?? clubs[0] ?? null;
     const profile: UserProfile = {
       id: data.id,
+      fullName: data.full_name ?? null,
+      avatarUrl: data.avatar_url ?? null,
       faculty: data.faculty ?? "",
       school: data.school ?? "",
       interests: data.interests ?? [],

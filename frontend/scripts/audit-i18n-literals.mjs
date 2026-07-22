@@ -7,6 +7,10 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(scriptDir, "..");
 const srcRoot = path.join(frontendRoot, "src");
 
+const NON_USER_FACING_DIRECTORIES = [
+  path.join(srcRoot, "features", "design-system") + path.sep,
+];
+
 const USER_FACING_ATTRS = new Set([
   "alt",
   "aria-label",
@@ -135,6 +139,10 @@ for (const folder of localesFolders) {
 const globalEnKeys = new Set(getFlattenedKeys(globalEnBundle));
 
 function scanFile(filePath) {
+  if (NON_USER_FACING_DIRECTORIES.some((directory) => filePath.startsWith(directory))) {
+    return;
+  }
+
   const source = fs.readFileSync(filePath, "utf8");
   const isTs = filePath.endsWith(".ts") && !filePath.endsWith(".d.ts");
   const scriptKind = isTs ? ts.ScriptKind.TS : ts.ScriptKind.TSX;

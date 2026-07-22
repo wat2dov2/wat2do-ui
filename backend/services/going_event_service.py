@@ -1,183 +1,170 @@
-"""Going events: persist user RSVP-style interest to Supabase."""
+"""Occurrence-aware Going selections persisted through one atomic RPC."""
 
 import logging
-import uuid
-from collections import Counter
-from datetime import datetime, timezone
+from collections import defaultdict
+from uuid import UUID
 
-from core.cache import TTLCache
+from postgrest.exceptions import APIError
+
 from core.database import get_sb
+from core.errors import (
+    EVENT_NOT_FOUND,
+    GOING_EVENTS_CAP_REACHED,
+    INVALID_EVENT_OCCURRENCE,
+    OCCURRENCE_NOT_SELECTABLE,
+)
+from core.exceptions import NotFoundError, ValidationError
 from core.pagination import fetch_all_pages
-from core.tables import USER_GOING_EVENTS
-from schemas.going_event import GoingEventResponse, UserEventPair
-
-# 30-minute TTL for shared recommendation data (matches recommender config)
-CACHE_TTL_SECONDS = 1800
+from core.product_control import product_control
+from core.tables import USER_GOING_EVENTS, USERS
+from schemas.going_event import (
+    GoingEventSelection,
+    GoingEventStatusResponse,
+    UserEventPair,
+)
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Simple TTL cache for get_all_user_goings (shared across recommendation requests)
-# ---------------------------------------------------------------------------
-_goings_cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
+_RPC_ERRORS = {
+    "event_not_found": (NotFoundError, EVENT_NOT_FOUND),
+    "invalid_event_occurrence": (ValidationError, INVALID_EVENT_OCCURRENCE),
+    "event_cancelled": (ValidationError, OCCURRENCE_NOT_SELECTABLE),
+    "occurrence_not_selectable": (ValidationError, OCCURRENCE_NOT_SELECTABLE),
+    "going_events_cap_reached": (ValidationError, GOING_EVENTS_CAP_REACHED),
+}
 
 
-def get_going_event_ids(user_id: str) -> list[int]:
-    """Return event IDs this user is going to."""
+def get_going_event_selections(user_id: str) -> list[GoingEventSelection]:
+    """Return one grouped selection per event for a user."""
     rows = fetch_all_pages(
-        lambda offset, ps: (
+        lambda offset, page_size: (
             (
                 get_sb()
                 .table(USER_GOING_EVENTS)
-                .select("event_id")
+                .select("event_id,event_date_id")
                 .eq("user_id", user_id)
                 .order("going_at", desc=True)
-                .range(offset, offset + ps - 1)
+                .range(offset, offset + page_size - 1)
                 .execute()
             ).data
             or []
         ),
     )
-    return [row["event_id"] for row in rows]
+    grouped: dict[int, list[UUID]] = defaultdict(list)
+    for row in rows:
+        grouped[int(row["event_id"])].append(UUID(str(row["event_date_id"])))
+    return [
+        GoingEventSelection(event_id=event_id, occurrence_ids=occurrence_ids)
+        for event_id, occurrence_ids in grouped.items()
+    ]
 
 
-def count_going_events(user_id: str) -> int:
-    """Return the total number of events this user is going to.
+def set_going_occurrences(
+    user_id: str,
+    event_id: int,
+    occurrence_ids: list[UUID],
+) -> GoingEventStatusResponse:
+    """Atomically replace a user's complete occurrence selection for an event."""
+    try:
+        response = (
+            get_sb()
+            .rpc(
+                "set_user_going_occurrences",
+                {
+                    "p_user_id": user_id,
+                    "p_event_id": event_id,
+                    "p_occurrence_ids": [str(occurrence_id) for occurrence_id in occurrence_ids],
+                },
+            )
+            .execute()
+        )
+    except APIError as exc:
+        mapped = _RPC_ERRORS.get(exc.message)
+        if mapped is not None:
+            exception_type, detail = mapped
+            raise exception_type(detail) from exc
+        raise
 
-    Used by the going endpoint to enforce ``MAX_GOING_EVENTS_PER_USER``
-    without materialising the full list.
-    """
-    r = (
-        get_sb()
-        .table(USER_GOING_EVENTS)
-        .select("id", count="exact")
-        .eq("user_id", user_id)
-        .limit(1)
-        .execute()
+    if not response.data:
+        raise RuntimeError("Going mutation returned no result")
+    return GoingEventStatusResponse.model_validate(response.data[0])
+
+
+# Cap the public who's-going list; the count still reflects everyone.
+MAX_ATTENDEE_NAMES = product_control.public_attendance.maximum_display_names
+
+
+def _abbreviate_full_name(full_name: str | None) -> str | None:
+    """Reduce "First Middle Last" to "First L." for public display."""
+    if not full_name:
+        return None
+    parts = full_name.split()
+    if not parts:
+        return None
+    if len(parts) == 1:
+        return parts[0]
+    return f"{parts[0]} {parts[-1][0]}."
+
+
+def get_attendee_display_names(event_id: int) -> list[str]:
+    """Return distinct abbreviated display names ordered by first Going time."""
+    rows = fetch_all_pages(
+        lambda offset, page_size: (
+            (
+                get_sb()
+                .table(USER_GOING_EVENTS)
+                .select("user_id")
+                .eq("event_id", event_id)
+                .order("going_at")
+                .range(offset, offset + page_size - 1)
+                .execute()
+            ).data
+            or []
+        ),
     )
-    return r.count or 0
+    user_ids = list(dict.fromkeys(str(row["user_id"]) for row in rows))[:MAX_ATTENDEE_NAMES]
+    if not user_ids:
+        return []
 
-
-def count_going_for_event(event_id: int) -> int:
-    """Return how many users are going to a single event."""
-    r = (
-        get_sb()
-        .table(USER_GOING_EVENTS)
-        .select("id", count="exact")
-        .eq("event_id", event_id)
-        .limit(1)
-        .execute()
-    )
-    return r.count or 0
+    user_rows = (
+        get_sb().table(USERS).select("id,full_name").in_("id", user_ids).execute()
+    ).data or []
+    full_names = {str(row["id"]): row.get("full_name") for row in user_rows}
+    names = (_abbreviate_full_name(full_names.get(user_id)) for user_id in user_ids)
+    return [name for name in names if name]
 
 
 def get_going_counts_for_events(event_ids: list[int]) -> dict[int, int]:
-    """Return going counts keyed by event ID."""
-    if not event_ids:
+    """Return distinct-user Going counts keyed by event ID."""
+    unique_ids = list(dict.fromkeys(event_ids))
+    if not unique_ids:
         return {}
 
-    counts: Counter[int] = Counter()
-    # Chunk IN filters to stay under PostgREST URL limits.
-    chunk_size = 200
-    for i in range(0, len(event_ids), chunk_size):
-        chunk = event_ids[i : i + chunk_size]
-        rows = fetch_all_pages(
-            lambda offset, ps, ids=chunk: (
-                (
-                    get_sb()
-                    .table(USER_GOING_EVENTS)
-                    .select("event_id")
-                    .in_("event_id", ids)
-                    .range(offset, offset + ps - 1)
-                    .execute()
-                ).data
-                or []
-            ),
-        )
-        counts.update(row["event_id"] for row in rows)
-
-    return {event_id: counts[event_id] for event_id in event_ids if counts[event_id] > 0}
-
-
-def _get_going_row(user_id: str, event_id: int) -> GoingEventResponse | None:
-    """Return the existing ``user_going_events`` row for (user_id, event_id)."""
-    r = (
-        get_sb()
-        .table(USER_GOING_EVENTS)
-        .select("*")
-        .eq("user_id", user_id)
-        .eq("event_id", event_id)
-        .limit(1)
-        .execute()
-    )
-    if r.data:
-        return GoingEventResponse.model_validate(r.data[0])
-    return None
-
-
-def mark_going(user_id: str, event_id: int) -> GoingEventResponse:
-    """Mark an event as going for the user, idempotently.
-
-    - If a row already exists for (user_id, event_id), return it as-is.
-    - Otherwise insert a new row with a newly-minted UUID.
-
-    The ``unique(user_id, event_id)`` constraint on the table is the
-    ultimate guarantee of uniqueness.
-    """
-    existing = _get_going_row(user_id, event_id)
-    if existing is not None:
-        return existing
-
-    payload = {
-        "id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "event_id": event_id,
-    }
-    r = get_sb().table(USER_GOING_EVENTS).insert(payload).execute()
-    if r.data:
-        return GoingEventResponse.model_validate(r.data[0])
-    log.warning(
-        "Insert returned no data for mark_going(user_id=%s, event_id=%s), using payload fallback",
-        user_id,
-        event_id,
-    )
-    return GoingEventResponse(**payload, going_at=datetime.now(timezone.utc))
-
-
-def unmark_going(user_id: str, event_id: int) -> bool:
-    """Remove a going mark. Returns True if a row was deleted."""
-    r = (
-        get_sb()
-        .table(USER_GOING_EVENTS)
-        .delete()
-        .eq("user_id", user_id)
-        .eq("event_id", event_id)
-        .execute()
-    )
-    return bool(r.data)
+    counts: dict[int, int] = {}
+    for start in range(0, len(unique_ids), 500):
+        chunk = unique_ids[start : start + 500]
+        rows = get_sb().rpc("get_event_going_counts", {"p_event_ids": chunk}).execute().data or []
+        counts.update({int(row["event_id"]): int(row["going_count"]) for row in rows})
+    return counts
 
 
 def get_all_user_goings() -> list[UserEventPair]:
-    """Return all (user_id, event_id) pairs. Used by collaborative filtering.
-
-    Cached for CACHE_TTL_SECONDS so concurrent recommendation requests
-    share one DB round-trip.
-    """
-
-    def _fetch_all_goings() -> list[UserEventPair]:
-        rows = fetch_all_pages(
-            lambda offset, ps: (
-                (
-                    get_sb()
-                    .table(USER_GOING_EVENTS)
-                    .select("user_id, event_id")
-                    .order("going_at")
-                    .range(offset, offset + ps - 1)
-                    .execute()
-                ).data
-                or []
-            ),
-        )
-        return [UserEventPair.model_validate(row) for row in rows]
-
-    return _goings_cache.get_or_compute("all_user_goings", _fetch_all_goings)  # type: ignore[return-value]
+    """Return distinct (user_id, event_id) inputs for recommendation batches."""
+    rows = fetch_all_pages(
+        lambda offset, page_size: (
+            (
+                get_sb()
+                .table(USER_GOING_EVENTS)
+                .select("user_id,event_id")
+                .order("going_at")
+                .range(offset, offset + page_size - 1)
+                .execute()
+            ).data
+            or []
+        ),
+    )
+    pairs = {(UUID(str(row["user_id"])), int(row["event_id"])) for row in rows}
+    return [
+        UserEventPair(user_id=user_id, event_id=event_id)
+        for user_id, event_id in sorted(pairs, key=lambda pair: (str(pair[0]), pair[1]))
+    ]

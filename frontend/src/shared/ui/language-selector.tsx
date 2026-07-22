@@ -5,37 +5,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select';
-import { cn } from '@/shared/lib/utils';
 import { useLanguage } from '@/shared/hooks/useLanguage';
 import { SUPPORTED_LANGUAGES } from '@/shared/constants/languages';
 
-interface LanguageSelectorProps {
-  className?: string;
-}
-
-/**
- * Language Selector Component
- * Simplified component using useLanguage hook to reduce complexity
- */
-export function LanguageSelector({ className }: LanguageSelectorProps) {
+/** Language picker: a stock small Select listing the supported languages. */
+export function LanguageSelector() {
   const { currentLanguage, currentLanguageCode, changeLanguage } = useLanguage();
 
   return (
     <Select value={currentLanguageCode} onValueChange={changeLanguage}>
-      <SelectTrigger
-        className={cn(
-          "w-fit min-w-0 hover:bg-secondary/80 transition-colors",
-          className
-        )}
-        size="sm"
-      >
+      <SelectTrigger size="sm">
         <SelectValue>
-          <span data-language-label className="text-sm sm:hidden">
-            {currentLanguage.shortLabel}
-          </span>
-          <span data-language-label className="hidden text-sm sm:inline">
-            {currentLanguage.label}
-          </span>
+          <span className="sm:hidden">{currentLanguage.shortLabel}</span>
+          <span className="hidden sm:inline">{currentLanguage.label}</span>
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

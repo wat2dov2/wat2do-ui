@@ -11,9 +11,6 @@
   <a href="https://github.com/tonyqiu123/wat2do-ui/actions">
     <img src="https://img.shields.io/github/actions/workflow/status/tonyqiu123/wat2do-ui/ci-cd.yml?branch=main&style=flat-square" alt="GitHub Actions Status"/>
   </a>
-  <a href="https://vercel.com/ericas-projects-4f2175b1/wat2do-v2">
-    <img src="https://deploy-badge.vercel.app/vercel/wat2do-v2?logo=&name=vercel+frontend&style=flat-square" alt="Frontend Deployment Status"/>
-  </a>
 </p>
 
 <a href="https://wat2do.io" target="_blank">Wat2Do</a> is a web app to help you discover club events at the University of
@@ -53,6 +50,36 @@ cd frontend
 npm install 
 npm run dev
 ```
+
+## Product control box
+
+Non-secret feature and algorithm tuning lives in [`product-control.json`](product-control.json).
+This is the single editable source for event discovery and ISR, frontend cache policy, recommendations, morning-email selection, authentication lifetimes, organization invitations, notification defaults, credits and promotions, interaction behavior and abuse bounds, API rate limits, scraper behavior, email delivery, AI output size, admin pagination, and public attendee previews.
+The backend validates the complete file at startup, rejects unknown keys, and rejects invalid values or conflicting limits, while the frontend imports the same file at build time.
+Environment-specific credentials, infrastructure sizing, database constraints, and UI constants intentionally stay with their owning systems.
+Changes take effect after rebuilding the applications or restarting a scheduled Python job.
+
+## Production deployment
+
+Wat2Do runs as one private AWS ECS Fargate task in `ca-central-1`.
+The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
+CloudFront is the public edge, an Application Load Balancer is the HTTPS origin, and Supabase remains the database, authentication, and object-storage provider.
+The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
+
+Terraform is split into `infra/terraform/foundation` and `infra/terraform/production`.
+Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, ECR repositories, secret containers, and GitHub OIDC roles.
+Production creates the VPC, private Fargate workload, CloudFront, certificates, logging, alarms, and EventBridge Scheduler jobs.
+
+The first foundation apply intentionally starts with local state because the state bucket does not yet exist.
+Temporarily move `infra/terraform/foundation/backend.tf` outside that directory for this one local apply, then restore it before state migration.
+After it creates the bucket, immediately migrate state to S3 using the `foundation/terraform.tfstate` key and the `wat2do-terraform-state-lock` DynamoDB lock table.
+Populate the two Secrets Manager secret values from protected local files, not from Terraform variables or committed `.tfvars` files.
+Before switching registrar nameservers, inventory every current Vercel DNS record and add all non-application records to `foundation.tfvars`.
+
+The first ARM64 frontend and backend images must be pushed to ECR by digest before the initial production apply.
+Once production exists, pushes to `main` use GitHub OIDC to build both images, tag them with the full commit SHA, register one ECS task-definition revision, and update the service.
+Scheduled directory scraping, notifications, and recommendation compute run as EventBridge Scheduler-launched ECS tasks.
+The single-user scrape workflow remains an authenticated GitHub trigger but runs its compute in ECS.
 
 ## 🤝 Support
 

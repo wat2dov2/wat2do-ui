@@ -20,7 +20,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/me", response_model=UserResponse)
 def get_me(auth_user: dict = Depends(get_current_user)):
     return get_or_404(
-        user_service.get_user_by_supabase_id(auth_user["id"], bypass_cache=True),
+        user_service.get_user_by_supabase_id(auth_user["id"]),
         USER_PROFILE_NOT_FOUND,
     )
 
@@ -71,9 +71,6 @@ def update_user_role(
 
     Separate from ``PATCH /users/{id}`` so role is only mutable through an
     explicitly-admin endpoint - keeps the trust boundary bright.
-    ``user_service.set_role`` invalidates the supabase-auth-id cache so the
-    change is immediately visible in subsequent role checks.
-
     If the target is currently an admin and the new role is not ``admin``,
     refuse the demotion when it would leave zero admins.
     """

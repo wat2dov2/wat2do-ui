@@ -20,6 +20,7 @@ function toLocalDateTimeInput(value: string): string {
 
 function eventOccurrencesToFormOccurrences(event: Event): EventFormOccurrence[] {
   return (event.occurrences ?? []).map((occurrence) => ({
+    id: occurrence.id,
     dtstart_local: toLocalDateTimeInput(occurrence.dtstart_utc),
     dtend_local: occurrence.dtend_utc ? toLocalDateTimeInput(occurrence.dtend_utc) : "",
   }));
@@ -79,51 +80,4 @@ export function translateCategory(category: string, t: (key: string) => string):
   const key = CATEGORY_TRANSLATION_KEYS[category];
   if (key) return t(key);
   return category;
-}
-
-type CategoryClasses = { bg: string; text: string; border: string };
-
-/** Default category style when no mapping exists */
-const DEFAULT_CATEGORY_STYLE: CategoryClasses = {
-  bg: "bg-category-default-bg",
-  text: "text-category-default-text",
-  border: "border-category-default-text/25",
-};
-
-function categoryStyle(bg: string, text: string, border: string): CategoryClasses {
-  return { bg, text, border };
-}
-
-/**
- * Get category color classes for styling.
- * Matches EVENT_CATEGORIES (onboarding + create event modal).
- */
-export function getCategoryClasses(category: string): CategoryClasses {
-  const academic = categoryStyle("bg-category-academic-bg", "text-category-academic-text", "border-category-academic-text/25");
-  const career = categoryStyle("bg-category-career-bg", "text-category-career-text", "border-category-career-text/25");
-  const social = categoryStyle("bg-category-social-bg", "text-category-social-text", "border-category-social-text/25");
-  const arts = categoryStyle("bg-category-arts-bg", "text-category-arts-text", "border-category-arts-text/25");
-  const cultural = categoryStyle("bg-category-cultural-bg", "text-category-cultural-text", "border-category-cultural-text/25");
-  const religious = categoryStyle("bg-category-religious-bg", "text-category-religious-text", "border-category-religious-text/25");
-  const technology = categoryStyle("bg-category-technology-bg", "text-category-technology-text", "border-category-technology-text/25");
-  const entrepreneurship = categoryStyle(
-    "bg-category-entrepreneurship-bg",
-    "text-category-entrepreneurship-text",
-    "border-category-entrepreneurship-text/25"
-  );
-  const health = categoryStyle("bg-category-health-bg", "text-category-health-text", "border-category-health-text/25");
-
-  const mapping: Record<string, CategoryClasses> = {
-    "Arts & Culture": arts,
-    Business: entrepreneurship,
-    "Community Service": career,
-    Environment: academic,
-    "Games & Recreation": social,
-    Health: health,
-    "Media & Web": technology,
-    "Politics & Advocacy": cultural,
-    "Religion & Spirituality": religious,
-    Events: categoryStyle("bg-category-events-bg", "text-category-events-text", "border-category-events-text/25"),
-  };
-  return mapping[category] || DEFAULT_CATEGORY_STYLE;
 }

@@ -36,7 +36,7 @@ export function IntegrationCard({
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6">
+    <div className="bg-surface border border-border rounded-xl p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <div
@@ -77,7 +77,7 @@ export function IntegrationCard({
           {integration?.connected ? (
             <>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onMouseDown={onConnect}
                 disabled={disabled}

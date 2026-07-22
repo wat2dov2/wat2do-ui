@@ -48,7 +48,7 @@ export interface SearchComboboxProps<T> {
 }
 
 const VARIANT_TRIGGER_STYLES: Record<SearchComboboxVariant, string> = {
-  nav: "flex h-8 min-w-0 items-center gap-1 overflow-hidden rounded-xl bg-transparent px-3 text-sm text-foreground transition-colors hover:bg-secondary",
+  nav: "flex h-8 min-w-0 items-center gap-1 overflow-hidden rounded-xl bg-transparent px-3 text-sm text-foreground transition-colors hover:bg-secondary-hover",
   field:
     "flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-xl bg-secondary px-3 py-2 text-left text-base text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:bg-input/50 dark:disabled:bg-input/80 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
 };
@@ -235,7 +235,7 @@ export function SearchCombobox<T>({
 
   const triggerClasses = cn(VARIANT_TRIGGER_STYLES[variant], triggerClassName);
   const contentStyles = cn(
-    "p-0 bg-popover border-border",
+    "p-0 bg-surface-elevated border-border",
     VARIANT_CONTENT_STYLES[variant],
     contentClassName,
   );
@@ -323,7 +323,7 @@ export function SearchCombobox<T>({
                     "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-xl text-left transition-colors",
                     selected
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-secondary text-foreground",
+                      : "hover:bg-secondary-hover text-foreground",
                   )}
                 >
                   <Check

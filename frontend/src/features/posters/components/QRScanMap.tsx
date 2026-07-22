@@ -135,7 +135,7 @@ function PosterMarker({
       </div>
 
       {isHovered && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-card border border-border rounded-lg shadow-xl text-xs z-dropdown pointer-events-none min-w-[160px]">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface border border-border rounded-lg shadow-xl text-xs z-dropdown pointer-events-none min-w-[160px]">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
               <MapPin className="size-3 text-primary shrink-0" />
@@ -246,7 +246,7 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
   }
 
   return (
-    <div className="relative w-full rounded-xl border border-border overflow-hidden shadow-lg bg-card" style={{ height }}>
+    <div className="relative w-full rounded-xl border border-border overflow-hidden shadow-lg bg-surface" style={{ height }}>
       <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-card/95 via-card/80 to-transparent p-4 pointer-events-none">
         <div className="flex items-center justify-between pointer-events-auto">
           <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export function QRScanMap({ scans, posters, height = "500px", onMarkerClick }: Q
               </div>
               <span className="text-muted-foreground/50">→</span>
               <div className="flex items-center gap-1">
-                <div className="size-2 rounded-full bg-error" />
+                <div className="size-2 rounded-full bg-destructive" />
                 <span>{t("qrCode.scanIntensityHigh")}</span>
               </div>
             </div>

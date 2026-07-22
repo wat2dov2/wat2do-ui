@@ -152,12 +152,17 @@ def update_event(
     # Reassigning orgs requires management-team membership (or admin), same as create.
     if data.organization_id is not None:
         _authorize_event_organization(data.organization_id, db_user)
-    updated_event = get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
+    update_result = get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
+    updated_event = update_result.event
     # Notify on material diff only (compute_event_diff); never fail the update on notify errors.
     diff = event_service.compute_event_diff(old_event, updated_event)
     if diff:
         try:
-            event_change.enqueue_event_change(event_id, diff)
+            event_change.enqueue_event_change(
+                updated_event,
+                diff,
+                update_result.recipient_ids,
+            )
         except Exception as e:
             log.warning("enqueue_event_change failed event=%s: %s", event_id, e)
     return updated_event

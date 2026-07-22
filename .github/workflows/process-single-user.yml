@@ -25,6 +25,7 @@ on:
 jobs:
   process-post:
     runs-on: ubuntu-latest
+    environment: production
     # Serialize Apify runs across this repo so we don't hit concurrent
     # rate limits when an external dispatcher fires several times in
     # quick succession.
@@ -33,62 +34,71 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
+      id-token: write
     env:
-      ENVIRONMENT: production
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
-      # INTENDED_RECIPIENT_ID is read by jobs/scrape.py to resolve the school.
+      AWS_REGION: ca-central-1
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      ECS_CLUSTER: wat2do-production
+      ECS_SERVICE: wat2do-production-app
+      ECS_JOBS_TASK_FAMILY: wat2do-production-jobs
+      USERNAME: ${{ github.event.client_payload.username || inputs.username }}
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || inputs.intended_recipient_id }}
-      # IGNORE_CUTOFF is converted to --cutoff-days in the run step below.
-      IGNORE_CUTOFF: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+      CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || '1' }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        working-directory: backend
+      - name: Validate job inputs
         run: |
-          pip install --prefer-binary -r requirements.txt
-
-      - name: Run scraper for single user
-        working-directory: backend
-        run: |
-          mkdir -p logs
-          set -o pipefail
-          # Convert IGNORE_CUTOFF to a concrete cutoff-days limit (5 years / 1825 days if true, 1 day if false)
-          if [ "$IGNORE_CUTOFF" = "true" ]; then
-            CUTOFF_DAYS=1825
-          else
-            CUTOFF_DAYS=1
+          test -n "$AWS_DEPLOY_ROLE_ARN"
+          if ! [[ "$USERNAME" =~ ^[A-Za-z0-9._]{1,30}$ ]]; then
+            echo "Invalid Instagram username." >&2
+            exit 1
           fi
-          USERNAME='${{ github.event.client_payload.username || inputs.username }}'
-          python -u jobs/scrape.py \
-            --username "$USERNAME" \
-            --cutoff-days "$CUTOFF_DAYS" \
-            --dry-run false \
-            2>&1 | tee logs/scraping.log
+          if ! [[ "$INTENDED_RECIPIENT_ID" =~ ^[0-9]{1,32}$ ]]; then
+            echo "Invalid intended recipient ID." >&2
+            exit 1
+          fi
+          if ! [[ "$CUTOFF_DAYS" =~ ^(1|1825)$ ]]; then
+            echo "Invalid cutoff days." >&2
+            exit 1
+          fi
 
-      - name: Upload logs as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: single-user-logs-${{ github.run_number }}
-          path: backend/logs/scraping.log
-          if-no-files-found: 'ignore'
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run the private ECS jobs task
+        run: |
+          network_configuration="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)"
+          test "$network_configuration" != "null"
+          run_network_configuration="$(jq -n --argjson awsvpc_configuration "$network_configuration" '{awsvpcConfiguration: $awsvpc_configuration}')"
+          overrides="$(jq -n \
+            --arg username "$USERNAME" \
+            --arg recipient_id "$INTENDED_RECIPIENT_ID" \
+            --arg cutoff_days "$CUTOFF_DAYS" \
+            '{containerOverrides: [{
+              name: "backend-jobs",
+              command: ["python", "jobs/scrape.py", "--username", $username, "--cutoff-days", $cutoff_days, "--dry-run", "false"],
+              environment: [{name: "INTENDED_RECIPIENT_ID", value: $recipient_id}]
+            }]}')"
+          task_arn="$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --task-definition "$ECS_JOBS_TASK_FAMILY" \
+            --launch-type FARGATE \
+            --network-configuration "$run_network_configuration" \
+            --overrides "$overrides" \
+            --query 'tasks[0].taskArn' \
+            --output text)"
+          test -n "$task_arn"
+          test "$task_arn" != "None"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$task_arn"
+          task_json="$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$task_arn" --output json)"
+          echo "$task_json" | jq '{stoppedReason: .tasks[0].stoppedReason, containers: [.tasks[0].containers[] | {name, exitCode, reason}]}'
+          exit_code="$(echo "$task_json" | jq -r '.tasks[0].containers[] | select(.name == "backend-jobs") | .exitCode // empty')"
+          task_id="${task_arn##*/}"
+          echo "CloudWatch log stream: ecs/backend-jobs/$task_id"
+          if [ "$exit_code" != "0" ]; then
+            echo "ECS job failed with exit code ${exit_code:-unknown}." >&2
+            exit 1
+          fi

@@ -91,7 +91,7 @@ export function OrganizationsPage() {
       organization_page: organization.organization_page,
       ig: organization.ig,
       discord: organization.discord,
-      organization_type: organization.organization_type,
+      association_affiliated: organization.association_affiliated,
       logo_url: organization.logo_url,
       school: organization.school,
     });
@@ -111,55 +111,15 @@ export function OrganizationsPage() {
           }
         />
 
-        <div className="flex items-stretch gap-3">
-          <SubmittedSearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSubmit={submitSearchQuery}
-            onClear={clearSearchQuery}
-            placeholder={t("organizations.searchPlaceholder")}
-            submitLabel={t("common.search")}
-            clearLabel={t("organizations.clearSearch")}
-          />
-
-          <div className="flex shrink-0 self-stretch">
-            <Select
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as OrganizationScope)}
-            >
-              <SelectTrigger
-                className="h-full data-[size=default]:h-full"
-                aria-label={activeTabOption.label}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {tabOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-auto self-stretch px-3"
-            onMouseDown={() => {
-              if (!authed) {
-                toast({ description: t("navigation.loginRequiredToSubmit") });
-                return;
-              }
-              setShowAddOrganization(true);
-            }}
-            aria-label={t("organizations.addClub")}
-          >
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">{t("organizations.addClub")}</span>
-          </Button>
-        </div>
+        <SubmittedSearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onSubmit={submitSearchQuery}
+          onClear={clearSearchQuery}
+          placeholder={t("organizations.searchPlaceholder")}
+          submitLabel={t("common.search")}
+          clearLabel={t("organizations.clearSearch")}
+        />
 
         <div className="flex items-center gap-2">
           <div className="relative min-w-0 flex-1">
@@ -175,7 +135,7 @@ export function OrganizationsPage() {
               {allCategories.map((category) => (
                 <Button
                   key={category}
-                  variant={selectedCategories.includes(category) ? "selected" : "secondary"}
+                  variant={selectedCategories.includes(category) ? "primary" : "secondary"}
                   size="sm"
                   onClick={() => toggleCategory(category)}
                   aria-pressed={selectedCategories.includes(category)}
@@ -191,11 +151,46 @@ export function OrganizationsPage() {
             </div>
             <HorizontalScrollFadeEdge visible={showCategoryScrollFade} />
           </div>
+
+          <div className="relative flex shrink-0 items-center gap-2 pb-1">
+            <Select
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as OrganizationScope)}
+            >
+              <SelectTrigger size="sm" aria-label={activeTabOption.label}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {tabOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onMouseDown={() => {
+                if (!authed) {
+                  toast({ description: t("navigation.loginRequiredToSubmit") });
+                  return;
+                }
+                setShowAddOrganization(true);
+              }}
+              aria-label={t("organizations.addClub")}
+            >
+              <Plus className="size-4" />
+              <span>{t("organizations.addClub")}</span>
+            </Button>
+          </div>
         </div>
       </div>
 
       {showSignInPrompt ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl bg-card">
+        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl bg-surface">
           <Bookmark className="size-10 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
             {activeTab === "followed"

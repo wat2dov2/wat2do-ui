@@ -1,6 +1,9 @@
 """User notification preference GET/PATCH."""
 
-from fastapi import APIRouter, Depends, status
+from html import escape
+
+from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import HTMLResponse
 
 from core.auth import get_db_user
 from schemas.notification_preference import (
@@ -8,7 +11,7 @@ from schemas.notification_preference import (
     NotificationPreferencesListResponse,
 )
 from schemas.user import UserResponse
-from services.notifications import preferences
+from services.notifications import preferences, unsubscribe
 
 router = APIRouter(
     prefix="/notification-preferences",
@@ -36,3 +39,34 @@ def update_my_preferences(
     db_user: UserResponse = Depends(get_db_user),
 ) -> None:
     preferences.set_preferences(str(db_user.id), payload.preferences)
+
+
+@router.get("/unsubscribe", response_class=HTMLResponse)
+def confirm_unsubscribe(token: str = Query(...)) -> HTMLResponse:
+    valid = unsubscribe.verify_unsubscribe_token(token) is not None
+    message = (
+        "Confirm that you want to stop the wat2do morning email."
+        if valid
+        else "This unsubscribe link is invalid."
+    )
+    action = (
+        f'<form method="post"><input type="hidden" name="token" '
+        f'value="{escape(token, quote=True)}"><button type="submit">Unsubscribe</button></form>'
+        if valid
+        else ""
+    )
+    return HTMLResponse(
+        "<!doctype html><html><body>"
+        f"<h1>wat2do email preferences</h1><p>{message}</p>{action}"
+        "</body></html>"
+    )
+
+
+@router.post("/unsubscribe", response_class=HTMLResponse)
+def apply_unsubscribe(token: str = Query(...)) -> HTMLResponse:
+    unsubscribe.unsubscribe(token)
+    return HTMLResponse(
+        "<!doctype html><html><body><h1>Email preference updated</h1>"
+        "<p>If the link was valid, the morning email has been turned off.</p>"
+        "</body></html>"
+    )

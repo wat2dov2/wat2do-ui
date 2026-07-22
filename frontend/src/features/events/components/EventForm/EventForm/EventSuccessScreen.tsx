@@ -109,13 +109,13 @@ export function EventSuccessScreen({
           </div>
 
           <div className="flex gap-2 w-full">
-            <Button variant="outline" onMouseDown={handleDone} className="flex-1">
+            <Button variant="secondary" onMouseDown={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
             {onPromote && (
               <Button
                 onMouseDown={onPromote}
-                className="flex-1 bg-primary hover:bg-primary/90"
+                className="flex-1 bg-primary hover:bg-primary-hover"
               >
                 <Megaphone className="size-4 mr-1.5" />
                 {t("events.promote")}

@@ -1,0 +1,291 @@
+"""Validated, non-secret product tuning loaded from ``product-control.json``."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+_CONTROL_PATH = Path(__file__).resolve().parents[2] / "product-control.json"
+_INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
+
+
+class _ControlModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class ScoreBlend(_ControlModel):
+    content: float = Field(ge=0, le=1)
+    collaborative: float = Field(ge=0, le=1)
+    popularity: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def validate_total(self) -> "ScoreBlend":
+        total = self.content + self.collaborative + self.popularity
+        if abs(total - 1.0) > 1e-9:
+            raise ValueError("recommendation blend weights must total 1")
+        return self
+
+
+class RecommendationSnapshotControl(_ControlModel):
+    recommendations_per_user: int = Field(gt=0)
+    candidate_events_per_school: int = Field(gt=0)
+
+
+class RecommendationApiControl(_ControlModel):
+    maximum_results: int = Field(gt=0)
+
+
+class PersonalizationControl(_ControlModel):
+    relevance_weight: float = Field(ge=0, le=1)
+    warm_interactions: int = Field(ge=0)
+    hot_interactions: int = Field(gt=0)
+    hot_blend: ScoreBlend
+    warm_blend: ScoreBlend
+    warm_without_collaborative_blend: ScoreBlend
+    cold_blend: ScoreBlend
+
+    @model_validator(mode="after")
+    def validate_tiers(self) -> "PersonalizationControl":
+        if self.warm_interactions >= self.hot_interactions:
+            raise ValueError("warm_interactions must be lower than hot_interactions")
+        return self
+
+
+class CollaborativeFilteringControl(_ControlModel):
+    minimum_interactions: int = Field(gt=0)
+    neighbor_count: int = Field(gt=0)
+    user_item_blend_weight: float = Field(ge=0, le=1)
+    going_weight: float = Field(gt=0)
+    maximum_user_event_score: float = Field(gt=0)
+
+
+class TemporalTier(_ControlModel):
+    within_hours: int = Field(gt=0)
+    score: float = Field(ge=0, le=1)
+
+
+class ContentScoringControl(_ControlModel):
+    category_match: float = Field(ge=0, le=1)
+    category_without_profile: float = Field(ge=0, le=1)
+    school_match: float = Field(ge=0, le=1)
+    organization_affinity: float = Field(ge=0, le=1)
+    temporal_tiers: tuple[TemporalTier, ...] = Field(min_length=1)
+    temporal_fallback: float = Field(ge=0, le=1)
+    free_event: float = Field(ge=0, le=1)
+    has_food: float = Field(ge=0, le=1)
+    first_year: float = Field(ge=0, le=1)
+    first_year_categories: frozenset[str] = Field(min_length=1)
+    price_normalization_cap: float = Field(gt=0)
+    morning_end_hour: int = Field(ge=1, le=23)
+    afternoon_end_hour: int = Field(ge=1, le=23)
+
+    @model_validator(mode="after")
+    def validate_ordering(self) -> "ContentScoringControl":
+        tier_hours = [tier.within_hours for tier in self.temporal_tiers]
+        if tier_hours != sorted(set(tier_hours)):
+            raise ValueError("temporal_tiers must have unique, ascending within_hours")
+        if self.morning_end_hour >= self.afternoon_end_hour:
+            raise ValueError("morning_end_hour must be lower than afternoon_end_hour")
+        return self
+
+
+class PopularityControl(_ControlModel):
+    half_life_days: float = Field(gt=0)
+    fallback_score: float = Field(ge=0, le=1)
+    candidate_limit: int = Field(gt=0)
+    maximum_user_contribution: float = Field(gt=0)
+
+
+class RecommendationInteractionControl(_ControlModel):
+    lookback_days: int = Field(gt=0)
+    weights: dict[str, float]
+
+    @model_validator(mode="after")
+    def validate_weights(self) -> "RecommendationInteractionControl":
+        if set(self.weights) != _INTERACTION_TYPES:
+            raise ValueError(f"interaction weight keys must be {_INTERACTION_TYPES}")
+        return self
+
+
+class EvaluationControl(_ControlModel):
+    k: int = Field(gt=0)
+    minimum_interactions: int = Field(gt=0)
+    maximum_events: int = Field(ge=0)
+
+
+class RecommendationControl(_ControlModel):
+    snapshot: RecommendationSnapshotControl
+    api: RecommendationApiControl
+    personalization: PersonalizationControl
+    collaborative_filtering: CollaborativeFilteringControl
+    content_scoring: ContentScoringControl
+    popularity: PopularityControl
+    interactions: RecommendationInteractionControl
+    evaluation: EvaluationControl
+
+    @model_validator(mode="after")
+    def validate_limits(self) -> "RecommendationControl":
+        if self.snapshot.recommendations_per_user > self.api.maximum_results:
+            raise ValueError("recommendations_per_user cannot exceed maximum_results")
+        return self
+
+
+class EventDiscoveryControl(_ControlModel):
+    feed_revalidate_seconds: int = Field(gt=0)
+    server_feed_page_size: int = Field(gt=0, le=100)
+
+
+class ClientCacheControl(_ControlModel):
+    default_query_stale_seconds: int = Field(ge=0)
+    default_query_garbage_collection_seconds: int = Field(gt=0)
+    live_event_data_stale_seconds: int = Field(ge=0)
+    profile_stale_seconds: int = Field(ge=0)
+    admin_stale_seconds: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_default_cache(self) -> "ClientCacheControl":
+        if self.default_query_garbage_collection_seconds < self.default_query_stale_seconds:
+            raise ValueError("default query garbage collection cannot be shorter than stale time")
+        return self
+
+
+class InteractionTrackingControl(_ControlModel):
+    flush_debounce_milliseconds: int = Field(ge=0)
+
+
+class AuthenticationControl(_ControlModel):
+    session_cookie_days: int = Field(gt=0)
+    verification_token_minutes: int = Field(gt=0)
+
+
+class OrganizationManagementControl(_ControlModel):
+    invite_expiration_days: int = Field(gt=0)
+
+
+class MorningEmailControl(_ControlModel):
+    local_send_hour: int = Field(ge=0, le=23)
+    new_event_window_hours: int = Field(gt=0)
+    minimum_recommendation_score: float = Field(ge=0, le=1)
+    provider_attempts: int = Field(gt=0, le=10)
+
+
+class NotificationDefaultsControl(_ControlModel):
+    morning_email: bool
+    event_change: bool
+
+
+class PromotionPackageControl(_ControlModel):
+    credits: int = Field(gt=0)
+    days: int = Field(gt=0)
+
+
+class CreditsControl(_ControlModel):
+    new_user_balance: int = Field(ge=0)
+    maximum_admin_add: int = Field(gt=0)
+    default_promotion_package: str = Field(min_length=1)
+    promotion_packages: dict[str, PromotionPackageControl] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_default_package(self) -> "CreditsControl":
+        if self.default_promotion_package not in self.promotion_packages:
+            raise ValueError("default_promotion_package must exist in promotion_packages")
+        return self
+
+
+class InteractionIngestionControl(_ControlModel):
+    default_query_limit: int = Field(gt=0)
+    maximum_batch_size: int = Field(gt=0)
+    maximum_metadata_bytes: int = Field(gt=0)
+    maximum_duplicates_per_window: int = Field(gt=0)
+    deduplication_window_minutes: int = Field(gt=0)
+    maximum_user_interactions_per_window: int = Field(gt=0)
+
+
+class RateLimitControl(_ControlModel):
+    maximum_requests: int = Field(gt=0)
+    window_seconds: int = Field(gt=0)
+
+
+class RateLimitsControl(_ControlModel):
+    default: RateLimitControl
+    authentication: RateLimitControl
+    sensitive_authentication: RateLimitControl
+    token_refresh: RateLimitControl
+    anonymous_interactions: RateLimitControl
+    qr_scans: RateLimitControl
+    reports: RateLimitControl
+    submissions: RateLimitControl
+    calendar_feed: RateLimitControl
+    maximum_going_events_per_user: int = Field(gt=0)
+    maximum_saved_organizations_per_user: int = Field(gt=0)
+
+
+class ScrapingControl(_ControlModel):
+    apify_timeout_seconds: int = Field(gt=0)
+    poll_interval_seconds: int = Field(gt=0)
+    single_user_recent_post_minutes: int = Field(gt=0)
+    same_organization_title_threshold: float = Field(ge=0, le=1)
+    title_similarity_threshold: float = Field(ge=0, le=1)
+    location_similarity_threshold: float = Field(ge=0, le=1)
+    description_similarity_threshold: float = Field(ge=0, le=1)
+    maximum_candidates: int = Field(gt=0)
+    maximum_cross_organization_candidates: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_candidate_limits(self) -> "ScrapingControl":
+        if self.maximum_cross_organization_candidates > self.maximum_candidates:
+            raise ValueError(
+                "maximum_cross_organization_candidates cannot exceed maximum_candidates"
+            )
+        return self
+
+
+class AiGenerationControl(_ControlModel):
+    maximum_output_tokens: int = Field(gt=0)
+
+
+class PublicAttendanceControl(_ControlModel):
+    maximum_display_names: int = Field(gt=0)
+
+
+class EmailDeliveryControl(_ControlModel):
+    provider_timeout_seconds: float = Field(gt=0)
+
+
+class AdminControl(_ControlModel):
+    items_per_page: int = Field(gt=0)
+
+
+class ProductControl(_ControlModel):
+    event_discovery: EventDiscoveryControl
+    client_cache: ClientCacheControl
+    interaction_tracking: InteractionTrackingControl
+    authentication: AuthenticationControl
+    organization_management: OrganizationManagementControl
+    recommendations: RecommendationControl
+    morning_email: MorningEmailControl
+    notification_defaults: NotificationDefaultsControl
+    credits: CreditsControl
+    interaction_ingestion: InteractionIngestionControl
+    rate_limits: RateLimitsControl
+    scraping: ScrapingControl
+    ai_generation: AiGenerationControl
+    email_delivery: EmailDeliveryControl
+    admin: AdminControl
+    public_attendance: PublicAttendanceControl
+
+
+def load_product_control(path: Path = _CONTROL_PATH) -> ProductControl:
+    """Load and validate the complete control box, rejecting unknown keys."""
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Product control file not found: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Product control file is invalid JSON: {path}: {exc}") from exc
+    return ProductControl.model_validate(raw)
+
+
+product_control = load_product_control()

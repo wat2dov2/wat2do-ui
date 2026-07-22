@@ -1,0 +1,210 @@
+{
+  "event_discovery": {
+    "feed_revalidate_seconds": 3600,
+    "server_feed_page_size": 100
+  },
+  "client_cache": {
+    "default_query_stale_seconds": 300,
+    "default_query_garbage_collection_seconds": 1800,
+    "live_event_data_stale_seconds": 60,
+    "profile_stale_seconds": 60,
+    "admin_stale_seconds": 60
+  },
+  "interaction_tracking": {
+    "flush_debounce_milliseconds": 1000
+  },
+  "authentication": {
+    "session_cookie_days": 30,
+    "verification_token_minutes": 15
+  },
+  "organization_management": {
+    "invite_expiration_days": 7
+  },
+  "recommendations": {
+    "snapshot": {
+      "recommendations_per_user": 20,
+      "candidate_events_per_school": 1000
+    },
+    "api": {
+      "maximum_results": 50
+    },
+    "personalization": {
+      "relevance_weight": 0.7,
+      "warm_interactions": 3,
+      "hot_interactions": 10,
+      "hot_blend": {
+        "content": 0.3,
+        "collaborative": 0.5,
+        "popularity": 0.2
+      },
+      "warm_blend": {
+        "content": 0.5,
+        "collaborative": 0.2,
+        "popularity": 0.3
+      },
+      "warm_without_collaborative_blend": {
+        "content": 0.7,
+        "collaborative": 0.0,
+        "popularity": 0.3
+      },
+      "cold_blend": {
+        "content": 0.0,
+        "collaborative": 0.0,
+        "popularity": 1.0
+      }
+    },
+    "collaborative_filtering": {
+      "minimum_interactions": 3,
+      "neighbor_count": 20,
+      "user_item_blend_weight": 0.5,
+      "going_weight": 5.0,
+      "maximum_user_event_score": 15.0
+    },
+    "content_scoring": {
+      "category_match": 0.4,
+      "category_without_profile": 0.2,
+      "school_match": 0.15,
+      "organization_affinity": 0.15,
+      "temporal_tiers": [
+        {
+          "within_hours": 24,
+          "score": 0.15
+        },
+        {
+          "within_hours": 72,
+          "score": 0.12
+        },
+        {
+          "within_hours": 168,
+          "score": 0.08
+        }
+      ],
+      "temporal_fallback": 0.04,
+      "free_event": 0.05,
+      "has_food": 0.05,
+      "first_year": 0.05,
+      "first_year_categories": [
+        "Arts & Culture",
+        "Games & Recreation",
+        "Media & Web",
+        "Business"
+      ],
+      "price_normalization_cap": 50.0,
+      "morning_end_hour": 12,
+      "afternoon_end_hour": 17
+    },
+    "popularity": {
+      "half_life_days": 7.0,
+      "fallback_score": 0.1,
+      "candidate_limit": 500,
+      "maximum_user_contribution": 15.0
+    },
+    "interactions": {
+      "lookback_days": 90,
+      "weights": {
+        "click": 2.0,
+        "detail_view": 3.0,
+        "going": 5.0,
+        "ungoing": -3.0,
+        "share": 3.0
+      }
+    },
+    "evaluation": {
+      "k": 10,
+      "minimum_interactions": 5,
+      "maximum_events": 2000
+    }
+  },
+  "morning_email": {
+    "local_send_hour": 9,
+    "new_event_window_hours": 24,
+    "minimum_recommendation_score": 0.3,
+    "provider_attempts": 3
+  },
+  "notification_defaults": {
+    "morning_email": true,
+    "event_change": true
+  },
+  "credits": {
+    "new_user_balance": 100,
+    "maximum_admin_add": 10000,
+    "default_promotion_package": "featured",
+    "promotion_packages": {
+      "featured": {
+        "credits": 50,
+        "days": 7
+      }
+    }
+  },
+  "interaction_ingestion": {
+    "default_query_limit": 50,
+    "maximum_batch_size": 50,
+    "maximum_metadata_bytes": 2048,
+    "maximum_duplicates_per_window": 3,
+    "deduplication_window_minutes": 60,
+    "maximum_user_interactions_per_window": 100
+  },
+  "rate_limits": {
+    "default": {
+      "maximum_requests": 10,
+      "window_seconds": 60
+    },
+    "authentication": {
+      "maximum_requests": 10,
+      "window_seconds": 60
+    },
+    "sensitive_authentication": {
+      "maximum_requests": 5,
+      "window_seconds": 60
+    },
+    "token_refresh": {
+      "maximum_requests": 30,
+      "window_seconds": 60
+    },
+    "anonymous_interactions": {
+      "maximum_requests": 60,
+      "window_seconds": 60
+    },
+    "qr_scans": {
+      "maximum_requests": 30,
+      "window_seconds": 60
+    },
+    "reports": {
+      "maximum_requests": 5,
+      "window_seconds": 60
+    },
+    "submissions": {
+      "maximum_requests": 5,
+      "window_seconds": 60
+    },
+    "calendar_feed": {
+      "maximum_requests": 60,
+      "window_seconds": 3600
+    },
+    "maximum_going_events_per_user": 10000,
+    "maximum_saved_organizations_per_user": 10000
+  },
+  "scraping": {
+    "apify_timeout_seconds": 3600,
+    "poll_interval_seconds": 5,
+    "single_user_recent_post_minutes": 30,
+    "same_organization_title_threshold": 0.8,
+    "title_similarity_threshold": 0.7,
+    "location_similarity_threshold": 0.5,
+    "description_similarity_threshold": 0.3,
+    "maximum_candidates": 10,
+    "maximum_cross_organization_candidates": 3
+  },
+  "ai_generation": {
+    "maximum_output_tokens": 500
+  },
+  "email_delivery": {
+    "provider_timeout_seconds": 10
+  },
+  "admin": {
+    "items_per_page": 20
+  },
+  "public_attendance": {
+    "maximum_display_names": 50
+  }
+}

@@ -50,15 +50,12 @@
     "doneButton": "Let's explore",
     "gooseName": "Mr. Goose",
     "doneNextLabel": "Take me to Wat2Do!",
-    "emailDigestTitle": "I want to receive emails of new events",
-    "emailDigestDescription": "Get a 10:30 AM roundup when new events are added for your school.",
     "gooseStep0": "Hey there!",
     "gooseStep1": "Welcome to the Wat2Do family! We're a collective with 1 goal: to create as many memories as possible in our short time in university",
     "gooseStep2": "Everyone here is into something different. What kind of events are you into?",
     "gooseStep3WithSchool": "5 other students have the exact same interests! Now, which of these from {{school}} catch your eye?",
     "gooseStep3Default": "Love it, this is how we find the good stuff. Which of these catch your eye?",
     "gooseStep4": "Gotcha, and which faculty are you in?",
-    "gooseStep5": "Last thing: want the daily scoop when new events land at your school?",
     "year": {
       "yesFirstYear": "Yep, brand new!",
       "noReturning": "Nope, been here"

@@ -1,5 +1,6 @@
 {
   "organizations": {
+    "associationAffiliated": "Affiliated with {{association}}",
     "claimOwnership": "Claim Organization Ownership",
     "claimOwnershipDesc": "Request to become the primary administrator and creator of",
     "executiveRole": "Your Executive Role",

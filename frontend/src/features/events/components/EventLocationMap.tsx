@@ -1,23 +1,28 @@
 import { isVirtualLocation } from "@/features/events/lib/isVirtualLocation";
 
 interface EventLocationMapProps {
-  location: string;
+  location?: string | null;
   school?: string | null;
 }
 
 export function EventLocationMap({ location, school }: EventLocationMapProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  if (!location.trim() || isVirtualLocation(location) || !apiKey) {
+  const physicalLocation =
+    location && location.trim() && !isVirtualLocation(location) ? location : null;
+  const query = physicalLocation
+    ? `${physicalLocation}, ${school ?? ""}`
+    : school?.trim() || null;
+
+  if (!query || !apiKey) {
     return null;
   }
 
-  const query = encodeURIComponent(`${location}, ${school ?? ""}`);
-  const src = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${query}`;
+  const src = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(query)}`;
 
   return (
     <iframe
-      title={location}
+      title={physicalLocation ?? query}
       src={src}
       height={256}
       loading="lazy"

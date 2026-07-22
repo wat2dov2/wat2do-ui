@@ -13,9 +13,9 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
+from uuid import UUID
 
 from schemas.event import EventResponse
-from schemas.event_date import OccurrenceResponse
 from services.scraper import event_writer
 from services.scraper import pipeline as pipeline_module
 from services.scraper.event_writer import write_event
@@ -241,24 +241,13 @@ def _install_overwrite_stubs(monkeypatch, *, old: EventResponse, updated: EventR
 
     monkeypatch.setattr(event_writer.event_service, "get_event", _get_event)
     monkeypatch.setattr(event_writer, "enqueue_event_change", lambda *a, **k: 1)
+    update = MagicMock(return_value=[])
     monkeypatch.setattr(
-        event_writer.event_date_service,
-        "replace_occurrences",
-        lambda eid, occs: [
-            OccurrenceResponse.model_validate(
-                {
-                    "id": 1,
-                    "event_id": eid,
-                    "dtstart_utc": _FUTURE,
-                    "dtend_utc": None,
-                    "duration": None,
-                    "tz": "America/Toronto",
-                    "created_at": datetime.now(timezone.utc),
-                }
-            )
-        ],
+        event_writer.event_service,
+        "update_event_and_occurrences",
+        update,
     )
-    return calls
+    return update
 
 
 def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatch):
@@ -306,7 +295,7 @@ def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatc
             "added_at": datetime.now(timezone.utc),
             "occurrences": [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 42,
                     "dtstart_utc": _FUTURE,
                     "dtend_utc": None,
@@ -318,8 +307,7 @@ def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatc
         }
     )
     updated = EventResponse.model_validate({**old.model_dump(), "cancelled": True})
-    _install_overwrite_stubs(monkeypatch, old=old, updated=updated)
-    fake_sb.queue_responses([[{"id": 42}]])
+    update = _install_overwrite_stubs(monkeypatch, old=old, updated=updated)
 
     outcome = write_event(
         reconciled[0],
@@ -327,7 +315,7 @@ def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatc
         source_url="https://instagram.com/p/NEW",
     )
     assert outcome == "updated"
-    payload = fake_sb.update.call_args_list[0][0][0]
+    payload = update.call_args.args[1]
     assert payload["cancelled"] is True
 
 
@@ -357,7 +345,7 @@ def test_pass2_update_json_overwrites_location(fake_sb, patch_sb, monkeypatch):
             "added_at": datetime.now(timezone.utc),
             "occurrences": [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 42,
                     "dtstart_utc": _FUTURE,
                     "dtend_utc": None,
@@ -369,8 +357,7 @@ def test_pass2_update_json_overwrites_location(fake_sb, patch_sb, monkeypatch):
         }
     )
     updated = EventResponse.model_validate({**old.model_dump(), "location": "DC 1302"})
-    _install_overwrite_stubs(monkeypatch, old=old, updated=updated)
-    fake_sb.queue_responses([[{"id": 42}]])
+    update = _install_overwrite_stubs(monkeypatch, old=old, updated=updated)
 
     outcome = write_event(
         reconciled[0],
@@ -378,7 +365,7 @@ def test_pass2_update_json_overwrites_location(fake_sb, patch_sb, monkeypatch):
         source_url="https://instagram.com/p/NEW",
     )
     assert outcome == "updated"
-    payload = fake_sb.update.call_args_list[0][0][0]
+    payload = update.call_args.args[1]
     assert payload["location"] == "DC 1302"
     assert payload["cancelled"] is False
 
@@ -405,7 +392,7 @@ def test_pass2_insert_json_creates_row(fake_sb, patch_sb, monkeypatch):
             [{"id": 7}],
             [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 7,
                     "dtstart_utc": _FUTURE_ISO,
                     "dtend_utc": None,
@@ -473,7 +460,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
         lambda **_kw: ResolvedOrganization(
             organization_id=7,
             organization_name="UW Tea Organization",
-            organization_type="Independent",
+            association_affiliated=False,
             ig_handle="uwteaorganization",
         ),
     )
@@ -491,7 +478,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
             "added_at": datetime.now(timezone.utc),
             "occurrences": [
                 {
-                    "id": 1,
+                    "id": UUID(int=1),
                     "event_id": 42,
                     "dtstart_utc": _FUTURE,
                     "dtend_utc": None,
@@ -503,7 +490,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
         }
     )
     updated = EventResponse.model_validate({**old.model_dump(), "cancelled": True})
-    _install_overwrite_stubs(monkeypatch, old=old, updated=updated)
+    update = _install_overwrite_stubs(monkeypatch, old=old, updated=updated)
 
     occ_now = datetime.now(timezone.utc).isoformat()
     inserts: list[object] = []
@@ -582,15 +569,8 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
     assert result.events_extracted == 1
     assert result.events_updated == 1
     assert result.events_saved == 1
-    assert fake_sb.update.call_count >= 1
-    # Find the events-table update (not workflow_run finish).
-    event_updates = [
-        c[0][0]
-        for c in fake_sb.update.call_args_list
-        if isinstance(c[0][0], dict) and "cancelled" in c[0][0]
-    ]
-    assert event_updates
-    assert event_updates[0]["cancelled"] is True
+    update.assert_called_once()
+    assert update.call_args.args[1]["cancelled"] is True
 
 
 def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch_sb):
@@ -613,7 +593,7 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
         lambda **_kw: ResolvedOrganization(
             organization_id=7,
             organization_name="UW Tea Organization",
-            organization_type="Independent",
+            association_affiliated=False,
             ig_handle="uwteaorganization",
         ),
     )
@@ -651,7 +631,7 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
                 return MagicMock(
                     data=[
                         {
-                            "id": i,
+                            "id": UUID(int=i + 1),
                             "event_id": row["event_id"],
                             "dtstart_utc": row["dtstart_utc"],
                             "dtend_utc": row.get("dtend_utc"),

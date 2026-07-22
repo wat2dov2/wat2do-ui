@@ -11,10 +11,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import (
-    NOTIFICATION_TYPE_DAILY_NEW_EVENTS,
     NOTIFICATION_TYPE_EVENT_CHANGE,
-    NOTIFICATION_TYPE_MORNING_DIGEST,
-    NOTIFICATION_TYPE_WEEKLY_DIGEST,
+    NOTIFICATION_TYPE_MORNING_EMAIL,
 )
 
 # Literal alias - canonical set of valid notification_type values.
@@ -22,10 +20,8 @@ from core.constants import (
 # same change. Pydantic enforces this at the API boundary; the DB
 # column stays plain text so adding a type is a code change only.
 NotificationType = Literal[
-    NOTIFICATION_TYPE_MORNING_DIGEST,
-    NOTIFICATION_TYPE_WEEKLY_DIGEST,
+    NOTIFICATION_TYPE_MORNING_EMAIL,
     NOTIFICATION_TYPE_EVENT_CHANGE,
-    NOTIFICATION_TYPE_DAILY_NEW_EVENTS,
 ]
 
 

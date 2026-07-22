@@ -12,6 +12,7 @@ function normalizeOccurrences(
   const occurrences = raw
     .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
     .map((item) => ({
+      id: typeof item.id === "string" ? item.id : undefined,
       dtstart_local: typeof item.dtstart_local === "string" ? item.dtstart_local : "",
       dtend_local: typeof item.dtend_local === "string" ? item.dtend_local : "",
     }))

@@ -18,7 +18,6 @@ from core.constants import (
     MAX_EVENT_HANDLE_LENGTH,
     MAX_EVENT_LOCATION_LENGTH,
     MAX_EVENT_ORGANIZATION_LENGTH,
-    MAX_EVENT_ORGANIZATION_TYPE_LENGTH,
     MAX_EVENT_SCHOOL_LENGTH,
     MAX_EVENT_TITLE_LENGTH,
     MAX_ORGANIZATION_NAME_LENGTH,
@@ -26,7 +25,7 @@ from core.constants import (
 from core.database import get_sb
 from core.tables import EVENTS, ORGANIZATIONS
 from schemas.event import normalize_category
-from schemas.event_date import OccurrenceCreate
+from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
 from services import event_date_service, event_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.notifications.event_change import enqueue_event_change
@@ -36,7 +35,8 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-_SCRAPED_ORGANIZATION_TYPE = "Independent"
+# Scraped organizations are never association-affiliated until an admin marks them.
+_SCRAPED_ASSOCIATION_AFFILIATED = False
 
 
 def write_event(
@@ -88,7 +88,7 @@ def write_event(
         ig_handle=effective_ig,
         organization_name=resolved_org.organization_name,
     )
-    organization_type = resolved_org.organization_type
+    association_affiliated = resolved_org.association_affiliated
     category = normalize_category(event.get("category")) if event.get("category") else None
 
     future_occurrences = _coerce_future_occurrences(
@@ -115,9 +115,7 @@ def write_event(
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
         "organization_id": resolved_org.organization_id,
-        "organization_type": (
-            organization_type[:MAX_EVENT_ORGANIZATION_TYPE_LENGTH] if organization_type else None
-        ),
+        "association_affiliated": association_affiliated,
         "school": (event.get("school") or "")[:MAX_EVENT_SCHOOL_LENGTH] or None,
         "category": category,
         "organization": organization_name[:MAX_EVENT_ORGANIZATION_LENGTH],
@@ -222,8 +220,15 @@ def _overwrite_event(
         existing_id,
         title,
     )
-    get_sb().table(EVENTS).update(merged).eq("id", existing_id).execute()
-    event_date_service.replace_occurrences(existing_id, future_occurrences)
+    stable_occurrences = _preserve_exact_occurrence_ids(
+        old_event.occurrences,
+        future_occurrences,
+    )
+    recipient_ids = event_service.update_event_and_occurrences(
+        existing_id,
+        merged,
+        stable_occurrences,
+    )
     event_feed_revalidation_service.revalidate_school(merged.get("school"))
 
     updated = event_service.get_event(existing_id)
@@ -231,7 +236,7 @@ def _overwrite_event(
         diff = event_service.compute_event_diff(old_event, updated)
         if diff:
             try:
-                enqueue_event_change(existing_id, diff)
+                enqueue_event_change(updated, diff, recipient_ids)
             except Exception as e:
                 log.warning(
                     "enqueue_event_change failed for scraped overwrite id=%s: %s",
@@ -239,6 +244,45 @@ def _overwrite_event(
                     e,
                 )
     return "updated"
+
+
+def _preserve_exact_occurrence_ids(
+    existing: list[OccurrenceResponse],
+    incoming: list[OccurrenceCreate],
+) -> list[OccurrenceUpdate]:
+    """Retain IDs only for exact occurrence signatures.
+
+    Positional matching can transfer a user's selection to a different showing.
+    Unmatched inputs intentionally receive new IDs in the transaction.
+    """
+    ids_by_signature: dict[tuple, list] = {}
+    for existing_occurrence in existing:
+        signature = _occurrence_signature(existing_occurrence)
+        ids_by_signature.setdefault(signature, []).append(existing_occurrence.id)
+
+    updates: list[OccurrenceUpdate] = []
+    for incoming_occurrence in incoming:
+        matching_ids = ids_by_signature.get(
+            _occurrence_signature(incoming_occurrence),
+            [],
+        )
+        occurrence_id = matching_ids.pop(0) if matching_ids else None
+        updates.append(
+            OccurrenceUpdate(
+                id=occurrence_id,
+                **incoming_occurrence.model_dump(),
+            )
+        )
+    return updates
+
+
+def _occurrence_signature(occurrence) -> tuple:
+    return (
+        occurrence.dtstart_utc,
+        occurrence.dtend_utc,
+        occurrence.duration,
+        occurrence.tz,
+    )
 
 
 def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
@@ -249,8 +293,8 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
         merged["ig_handle"] = old_event.ig_handle
     if merged.get("organization_id") is None and old_event.organization_id is not None:
         merged["organization_id"] = old_event.organization_id
-    if merged.get("organization_type") is None and old_event.organization_type:
-        merged["organization_type"] = old_event.organization_type
+    if merged.get("association_affiliated") is None:
+        merged["association_affiliated"] = old_event.association_affiliated
     if not merged.get("source_url") and old_event.source_url:
         merged["source_url"] = old_event.source_url
     if not merged.get("source_image_url") and old_event.source_image_url:
@@ -263,7 +307,7 @@ def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
     rows = (
         get_sb()
         .table(ORGANIZATIONS)
-        .select("id,organization_name,organization_type")
+        .select("id,organization_name,association_affiliated")
         .eq("ig", ig_handle)
         .limit(1)
         .execute()
@@ -302,7 +346,7 @@ def _ensure_organization_by_ig(
                 "organization_name": organization_name,
                 "ig": cleaned,
                 "school": school_slug,
-                "organization_type": _SCRAPED_ORGANIZATION_TYPE,
+                "association_affiliated": _SCRAPED_ASSOCIATION_AFFILIATED,
             }
         )
         .execute()

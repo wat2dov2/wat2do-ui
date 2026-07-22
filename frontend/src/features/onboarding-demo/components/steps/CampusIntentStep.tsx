@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { PreviewStyleEventCard } from "@/features/auth/components/PreviewStyleEventCard";
-import { getCategoryClasses } from "@/shared/utils/event";
-import { cn } from "@/shared/lib/utils";
+import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
 import { DemoSplitLayout } from "../DemoSplitLayout";
 import { OnboardingDemoPill, OnboardingDemoPillGroup } from "../OnboardingDemoPill";
 import { INTEREST_OPTIONS } from "../../constants";
@@ -54,22 +53,9 @@ export function CampusIntentStep({ flow }: CampusIntentStepProps) {
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {flow.state.interests.map((interest) => {
-                const catClasses = getCategoryClasses(interest);
-                return (
-                  <span
-                    key={interest}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-medium border",
-                      catClasses.bg,
-                      catClasses.text,
-                      catClasses.border
-                    )}
-                  >
-                    {interest}
-                  </span>
-                );
-              })}
+              {flow.state.interests.map((interest) => (
+                <OrganizationTypeBadge key={interest} type={interest} className="rounded-full" />
+              ))}
             </div>
           )}
         </div>

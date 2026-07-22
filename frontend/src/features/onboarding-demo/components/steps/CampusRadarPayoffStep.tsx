@@ -66,8 +66,8 @@ export function CampusRadarPayoffStep({ flow }: CampusRadarPayoffStepProps) {
 
         <Button
           type="button"
-          variant="outline"
-          className="border-white/30 text-white hover:bg-white/10"
+          variant="secondary"
+          className="border-white/30 text-white hover:bg-surface-hover"
           onClick={() => flow.goToStep("event_match")}
         >
           {t("onboardingDemo.actions.editPicks")}

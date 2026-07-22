@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.auth import get_admin_user, get_current_user, get_db_user
 from core.constants import (
-    MAX_EVENT_ORGANIZATION_TYPE_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
     ROLE_ADMIN,
@@ -77,9 +76,7 @@ def _authorize_and_exec(organization_id: int, db_user: UserResponse, action):
 
 @router.get("/", response_model=PaginatedResponse[OrganizationResponse])
 def list_organizations(
-    organization_type: str | None = Query(
-        default=None, max_length=MAX_EVENT_ORGANIZATION_TYPE_LENGTH
-    ),
+    association_affiliated: bool | None = Query(default=None),
     school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
     search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
     categories: list[str] | None = Query(default=None),
@@ -91,7 +88,7 @@ def list_organizations(
     items, total = organization_service.list_organizations(
         skip=pagination.offset,
         limit=pagination.page_size,
-        organization_type=organization_type,
+        association_affiliated=association_affiliated,
         school=school,
         search=search,
         categories=categories,

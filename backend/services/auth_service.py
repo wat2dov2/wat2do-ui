@@ -21,6 +21,7 @@ from core.exceptions import (
     ServiceError,
 )
 from core.logging import logger
+from core.product_control import product_control
 from core.tables import USERS, VERIFICATION_TOKENS
 from schemas.auth import (
     TokenResponse,
@@ -169,7 +170,10 @@ class AuthService:
 
         from datetime import datetime, timedelta, timezone
 
-        expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+        expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(minutes=product_control.authentication.verification_token_minutes)
+        ).isoformat()
 
         hashed_token = link_res.properties.hashed_token
         otp_hash = hashlib.sha256(link_res.properties.email_otp.encode("utf-8")).hexdigest()
