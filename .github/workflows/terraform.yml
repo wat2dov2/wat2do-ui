@@ -162,7 +162,6 @@ jobs:
       group: terraform-production
       cancel-in-progress: false
     permissions:
-      actions: write
       contents: read
       id-token: write
     env:
@@ -197,8 +196,3 @@ jobs:
             -backend-config='dynamodb_table=wat2do-terraform-state-lock'
           terraform plan -input=false -out=tfplan
           terraform apply -input=false tfplan
-
-      - name: Trigger one normal application release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci-cd.yml --ref main
