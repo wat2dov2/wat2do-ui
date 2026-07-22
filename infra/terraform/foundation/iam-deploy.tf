@@ -7,12 +7,13 @@ data "aws_iam_policy_document" "github_deploy" {
   }
 
   statement {
-    sid    = "PushWat2doImages"
+    sid    = "ManageWat2doImages"
     effect = "Allow"
     actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:BatchGetImage",
       "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
       "ecr:InitiateLayerUpload",
       "ecr:PutImage",
       "ecr:UploadLayerPart",
