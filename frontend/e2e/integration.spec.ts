@@ -979,6 +979,14 @@ test.describe("Navigation", () => {
     expect(rootHtml.includes("next-devtools")).toBe(schoolHtml.includes("next-devtools"));
   });
 
+  test("alternate school route loads without an event feed error", async ({ page }) => {
+    await page.goto(`${BASE}/school/utoronto`, { waitUntil: "domcontentloaded" });
+
+    await expect(page.getByRole("button", { name: "University of Toronto" })).toBeVisible();
+    await expect(page.getByText("Failed to load events. Please try again.")).toHaveCount(0);
+    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+  });
+
   test("events page first paint uses app chrome, not an empty shell", async ({ page }) => {
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
 
