@@ -631,6 +631,58 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
+  test("shows the default category badge when event details have no category", async ({ page }) => {
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
+    await page.route(url => apiPath(url) === "/meta/constants", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          event_categories: ["Arts & Culture"],
+          organization_categories: ["Arts & Culture"],
+          interests: ["Arts & Culture"],
+          interest_to_categories: { "Arts & Culture": ["Arts & Culture"] },
+          report_statuses: ["pending", "resolved", "dismissed"],
+        }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/events/1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: 1,
+          organization_id: 1,
+          title: "Tech Career Fair",
+          description: "Full detail loaded",
+          location: "SLC",
+          occurrences: [{ id: 1, event_id: 1, dtstart_utc: startsAt, dtend_utc: null }],
+          price: 0,
+          food: [],
+          registration: false,
+          source_image_url: null,
+          association_affiliated: false,
+          school: "uwaterloo",
+          source_url: null,
+          category: null,
+          organization: "UW Tech Club",
+          ig_handle: null,
+          cancelled: false,
+          added_at: now.toISOString(),
+        }),
+      });
+    });
+
+    await page.goto(`${BASE}/?eventId=1`);
+
+    const drawer = page.getByRole("dialog", { name: "Tech Career Fair" });
+    await expect(drawer.getByText("Full detail loaded", { exact: true })).toBeVisible();
+    await expect(
+      drawer.locator('[data-slot="drawer-header"]').getByText("Arts & Culture", { exact: true }),
+    ).toBeVisible();
+  });
+
   test("omits zero stats and abbreviates card weekdays", async ({ page }) => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);
