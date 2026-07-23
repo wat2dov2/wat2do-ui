@@ -7,6 +7,7 @@ const repositoryRoot = path.dirname(fileURLToPath(new URL("../product-control.js
 const apiCollectionPaths = [
   "credits",
   "events",
+  "instagram-publishing/batches",
   "organizations",
   "promotions",
   "qr",

@@ -859,6 +859,16 @@ test.describe("Events Page", () => {
     const events = feed.items;
     expect(events.every((e: { category: string }) => e.category === "Career")).toBeTruthy();
   });
+
+  test("Instagram publishing collection stays on the app API origin", async ({ request }) => {
+    const res = await request.get(
+      `${APP_API}/instagram-publishing/batches/?page=1&page_size=100`,
+      { maxRedirects: 0 },
+    );
+
+    expect(res.status()).toBe(401);
+    expect(res.headers().location).toBeUndefined();
+  });
 });
 
 // ── Workflow 3: Organizations Page ────────────────────────────────────
