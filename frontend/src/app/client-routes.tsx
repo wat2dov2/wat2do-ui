@@ -219,7 +219,7 @@ export function EventDetailsPageRoute({ eventId }: { eventId: number }) {
 
 export function SubmitEventPageRoute() {
   return (
-    <AppPage requiresAuth>
+    <AppPage>
       <SubmitEventPage />
     </AppPage>
   );

@@ -955,7 +955,7 @@ test.describe("Auth-protected API endpoints", () => {
 });
 
 test.describe("Standalone submission pages", () => {
-  test("stale session redirects event submission to login instead of loading forever", async ({
+  test("stale session can still access event submission as anonymous", async ({
     page,
   }) => {
     await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
@@ -974,8 +974,17 @@ test.describe("Standalone submission pages", () => {
 
     await page.goto(`${BASE}/events/submit`);
 
-    await expect(page).toHaveURL(`${BASE}/login`, { timeout: 10_000 });
-    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page).toHaveURL(`${BASE}/events/submit`);
+    await expect(
+      page.getByRole("heading", {
+        name: "Submit Event for University of Waterloo",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Upload Event Flyer",
+      }),
+    ).toBeVisible();
   });
 
   test("UTM hostname owns event and organization submission context", async ({
@@ -1097,12 +1106,21 @@ test.describe("Navigation", () => {
     expect(rootHtml.includes("next-devtools")).toBe(schoolHtml.includes("next-devtools"));
   });
 
-  test("alternate school route loads without an event feed error", async ({ page }) => {
-    await page.goto(`${BASE}/school/utoronto`, { waitUntil: "domcontentloaded" });
+  test("default and alternate school routes load without event feed errors", async ({ page }) => {
+    const routes = [
+      { url: BASE, schoolName: "University of Waterloo" },
+      { url: `${BASE}/school/utoronto`, schoolName: "University of Toronto" },
+    ];
 
-    await expect(page.getByRole("button", { name: "University of Toronto" })).toBeVisible();
-    await expect(page.getByText("Failed to load events. Please try again.")).toHaveCount(0);
-    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+    for (const { url, schoolName } of routes) {
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+
+      await expect(
+        page.getByRole("banner").getByRole("button", { name: schoolName }),
+      ).toBeVisible();
+      await expect(page.getByText("Failed to load events. Please try again.")).toHaveCount(0);
+      await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+    }
   });
 
   test("events page first paint uses app chrome, not an empty shell", async ({ page }) => {
