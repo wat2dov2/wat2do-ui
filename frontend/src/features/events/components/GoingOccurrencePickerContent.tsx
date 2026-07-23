@@ -1,7 +1,21 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Event } from "@/shared/types";
+import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/shared/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 
 type EventOccurrence = NonNullable<Event["occurrences"]>[number];
 
@@ -21,69 +35,69 @@ export function GoingOccurrencePickerContent({
   onCancel,
 }: GoingOccurrencePickerContentProps) {
   const { t, i18n } = useTranslation();
-  const [draftIds, setDraftIds] = useState(() => new Set(selectedIds));
+  const selectId = useId();
+  const [draftId, setDraftId] = useState(
+    () =>
+      selectedIds.find((selectedId) =>
+        occurrences.some((occurrence) => occurrence.id === selectedId),
+      ) ??
+      occurrences[0]?.id ??
+      "",
+  );
   const [saveFailed, setSaveFailed] = useState(false);
 
-  const toggleOccurrence = (occurrenceId: string) => {
-    setDraftIds((current) => {
-      const next = new Set(current);
-      if (next.has(occurrenceId)) {
-        next.delete(occurrenceId);
-      } else {
-        next.add(occurrenceId);
-      }
-      return next;
-    });
-  };
-
   const confirm = async () => {
+    if (!draftId) return;
     setSaveFailed(false);
     try {
-      await onConfirm(
-        occurrences
-          .map((occurrence) => occurrence.id)
-          .filter((occurrenceId) => draftIds.has(occurrenceId)),
-      );
+      await onConfirm([draftId]);
     } catch {
       setSaveFailed(true);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        {occurrences.map((occurrence) => {
-          const date = new Date(occurrence.dtstart_utc);
-          const label = new Intl.DateTimeFormat(i18n.language, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          }).format(date);
-          return (
-            <label
-              key={occurrence.id}
-              className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-3"
-            >
-              <input
-                type="checkbox"
-                checked={draftIds.has(occurrence.id)}
-                onChange={() => toggleOccurrence(occurrence.id)}
-                disabled={isPending}
-                className="size-4 accent-primary"
-              />
-              <span className="text-sm font-medium text-foreground">{label}</span>
-            </label>
-          );
-        })}
-      </div>
-      {saveFailed && (
-        <p role="alert" className="text-sm text-destructive">
-          {t("events.goingEvents.saveFailed")}
-        </p>
-      )}
-      <div className="flex gap-2">
+    <Stack gap={4}>
+      <Field>
+        <FieldLabel htmlFor={selectId}>
+          {t("events.goingEvents.chooseOccurrences")}
+        </FieldLabel>
+        <FieldDescription>
+          {t("events.goingEvents.chooseOccurrencesDescription")}
+        </FieldDescription>
+        <Select
+          value={draftId}
+          onValueChange={setDraftId}
+          disabled={isPending || occurrences.length === 0}
+        >
+          <SelectTrigger id={selectId} className="w-full">
+            <SelectValue
+              placeholder={t("events.goingEvents.chooseOccurrences")}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {occurrences.map((occurrence) => {
+              const date = new Date(occurrence.dtstart_utc);
+              const label = new Intl.DateTimeFormat(i18n.language, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              }).format(date);
+              return (
+                <SelectItem key={occurrence.id} value={occurrence.id}>
+                  {label}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </Field>
+      <FieldError>
+        {saveFailed ? t("events.goingEvents.saveFailed") : null}
+      </FieldError>
+      <Stack direction="horizontal" gap={2}>
         <Button
           type="button"
           variant="secondary"
@@ -96,12 +110,12 @@ export function GoingOccurrencePickerContent({
         <Button
           type="button"
           onClick={() => void confirm()}
-          disabled={isPending}
+          disabled={isPending || !draftId}
           className="flex-1"
         >
           {isPending ? t("common.saving") : t("common.confirm")}
         </Button>
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }

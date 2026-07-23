@@ -82,9 +82,9 @@
     "goingEvents": {
       "markFailed": "Couldn't mark this event as going",
       "unmarkFailed": "Couldn't unmark this event as going",
-      "saveFailed": "Couldn't save your selected times",
-      "chooseOccurrences": "Which times are you going?",
-      "chooseOccurrencesDescription": "Choose every occurrence you plan to attend."
+      "saveFailed": "Couldn't save your selected time",
+      "chooseOccurrences": "Which time are you going?",
+      "chooseOccurrencesDescription": "Choose the occurrence you plan to attend."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",

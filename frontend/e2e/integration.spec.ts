@@ -683,6 +683,98 @@ test.describe("Events Page", () => {
     ).toBeVisible();
   });
 
+  test("uses the Select primitive to register for one occurrence", async ({ page }) => {
+    await seedAuthenticatedSession(page);
+
+    const firstOccurrenceId = "11111111-1111-4111-8111-111111111111";
+    const secondOccurrenceId = "22222222-2222-4222-8222-222222222222";
+    const firstStartsAt = "2030-08-10T18:00:00Z";
+    const secondStartsAt = "2030-08-17T18:00:00Z";
+    let submittedOccurrenceIds: string[] | null = null;
+
+    await page.route(url => apiPath(url) === "/events/1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: 1,
+          organization_id: 1,
+          title: "Recurring Workshop",
+          description: "Choose one workshop date",
+          location: "SLC",
+          occurrences: [
+            {
+              id: firstOccurrenceId,
+              event_id: 1,
+              dtstart_utc: firstStartsAt,
+              dtend_utc: null,
+            },
+            {
+              id: secondOccurrenceId,
+              event_id: 1,
+              dtstart_utc: secondStartsAt,
+              dtend_utc: null,
+            },
+          ],
+          price: 0,
+          food: [],
+          registration: true,
+          source_image_url: null,
+          association_affiliated: false,
+          school: "uwaterloo",
+          source_url: null,
+          category: "Career",
+          organization: "UW Tech Club",
+          ig_handle: null,
+          cancelled: false,
+          added_at: new Date().toISOString(),
+        }),
+      });
+    });
+    await page.route(url => apiPath(url) === "/going-events/1", async (route) => {
+      const body = route.request().postDataJSON() as {
+        occurrence_ids: string[];
+      };
+      submittedOccurrenceIds = body.occurrence_ids;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "going",
+          event_id: 1,
+          occurrence_ids: body.occurrence_ids,
+          going_count: 1,
+        }),
+      });
+    });
+
+    await page.goto(`${BASE}/?eventId=1`);
+
+    const drawer = page.getByRole("dialog", { name: "Recurring Workshop" });
+    await drawer.getByRole("button", { name: "Register", exact: true }).click();
+
+    const occurrenceSelect = drawer.getByRole("combobox", {
+      name: "Which time are you going?",
+    });
+    await expect(occurrenceSelect).toBeVisible();
+    await expect(occurrenceSelect).toHaveAttribute("data-slot", "select-trigger");
+    await expect(drawer.locator('input[type="checkbox"]')).toHaveCount(0);
+
+    const secondLabel = new Intl.DateTimeFormat("en", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(secondStartsAt));
+
+    await occurrenceSelect.click();
+    await page.getByRole("option", { name: secondLabel }).click();
+    await drawer.getByRole("button", { name: "Confirm", exact: true }).click();
+
+    await expect.poll(() => submittedOccurrenceIds).toEqual([secondOccurrenceId]);
+  });
+
   test("omits zero stats and abbreviates card weekdays", async ({ page }) => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);

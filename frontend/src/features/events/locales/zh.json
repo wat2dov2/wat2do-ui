@@ -83,8 +83,8 @@
       "markFailed": "无法标记此活动为参加",
       "unmarkFailed": "无法取消参加此活动",
       "saveFailed": "无法保存您选择的时间",
-      "chooseOccurrences": "您要参加哪些时间？",
-      "chooseOccurrencesDescription": "请选择您计划参加的所有场次。"
+      "chooseOccurrences": "您要参加哪个时间？",
+      "chooseOccurrencesDescription": "请选择您计划参加的场次。"
     },
     "calendar": {
       "googleCalendar": "谷歌日历",
