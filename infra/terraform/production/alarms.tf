@@ -89,26 +89,6 @@ resource "aws_cloudwatch_metric_alarm" "task_memory" {
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "scheduler_target_errors" {
-  for_each = aws_scheduler_schedule.jobs
-
-  alarm_name          = "wat2do-production-${each.key}-scheduler-target-errors"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
-  metric_name         = "TargetErrorCount"
-  namespace           = "AWS/Scheduler"
-  period              = 300
-  statistic           = "Sum"
-  threshold           = 0
-  treat_missing_data  = "notBreaching"
-  alarm_actions       = var.alarm_sns_topic_arn == null ? [] : [var.alarm_sns_topic_arn]
-
-  dimensions = {
-    ScheduleGroup = aws_scheduler_schedule_group.jobs.name
-    ScheduleName  = each.value.name
-  }
-}
-
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "wat2do-production"
   dashboard_body = jsonencode({
@@ -144,20 +124,6 @@ resource "aws_cloudwatch_dashboard" "main" {
             [".", "HTTPCode_Target_5XX_Count", ".", "."],
             [".", "UnHealthyHostCount", ".", ".", "TargetGroup", aws_lb_target_group.frontend.arn_suffix],
             [".", "TargetResponseTime", ".", ".", { stat = "Average" }],
-          ]
-        }
-      },
-      {
-        type   = "metric"
-        width  = 24
-        height = 6
-        properties = {
-          region = var.aws_region
-          title  = "Scheduled task target errors"
-          stat   = "Sum"
-          period = 300
-          metrics = [
-            for schedule in aws_scheduler_schedule.jobs : ["AWS/Scheduler", "TargetErrorCount", "ScheduleGroup", aws_scheduler_schedule_group.jobs.name, "ScheduleName", schedule.name]
           ]
         }
       },

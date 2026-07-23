@@ -68,7 +68,7 @@ The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-
 
 Terraform is split into `infra/terraform/foundation` and `infra/terraform/production`.
 Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, ECR repositories, secret containers, and GitHub OIDC roles.
-Production creates the VPC, private Fargate workload, CloudFront, certificates, logging, alarms, and EventBridge Scheduler jobs.
+Production creates the VPC, private Fargate workload, CloudFront, certificates, logging, and alarms.
 
 The first foundation apply intentionally starts with local state because the state bucket does not yet exist.
 Temporarily move `infra/terraform/foundation/backend.tf` outside that directory for this one local apply, then restore it before state migration.
@@ -78,7 +78,7 @@ Before switching registrar nameservers, inventory every current Vercel DNS recor
 
 The first ARM64 frontend and backend images must be pushed to ECR by digest before the initial production apply.
 Once production exists, pushes to `main` use GitHub OIDC to build both images, tag them with the full commit SHA, register one ECS task-definition revision, and update the service.
-Scheduled directory scraping, notifications, and recommendation compute run as EventBridge Scheduler-launched ECS tasks.
+Scheduled directory scraping, notifications, and recommendation compute run on GitHub-hosted runners.
 The single-user scrape workflow remains an authenticated GitHub trigger but runs its compute in ECS.
 
 ## 🤝 Support

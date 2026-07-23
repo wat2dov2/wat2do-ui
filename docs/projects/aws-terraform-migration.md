@@ -13,7 +13,9 @@ Run the Next.js frontend and FastAPI backend together in one Amazon ECS Fargate 
 
 Build both application containers in GitHub Actions, push immutable images to Amazon ECR, and deploy one coherent ECS task-definition revision for each successful commit to `main`.
 
-Move recurring backend compute from GitHub-hosted runners to EventBridge Scheduler and one-off ECS tasks.
+Keep recurring backend compute on GitHub-hosted runners.
+
+Run only the single-user scrape as a one-off ECS task.
 
 Move authoritative DNS for `wat2do.io` from Vercel DNS to Route 53.
 
@@ -49,7 +51,8 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 - Use Secrets Manager for runtime secret values.
 - Do not store secret values in Terraform state.
 - Use CloudWatch for application logs and basic service alarms.
-- Replace scheduled GitHub-hosted application compute with EventBridge Scheduler and ECS tasks.
+- Keep scheduled directory scraping, notifications, and recommendation compute on GitHub-hosted runners.
+- Use a one-off ECS task only for the single-user scrape.
 - Delete the nightly redeployment workflow.
 - Delete Railway and Vercel deployment logic when AWS production is working.
 - Do not retain compatibility branches that deploy the same application to multiple providers.
@@ -186,7 +189,6 @@ infra/
       load-balancer.tf
       ecs-task.tf
       ecs-service.tf
-      scheduler.tf
       cloudfront.tf
       dns.tf
       alarms.tf
@@ -300,6 +302,7 @@ The deployment role needs only:
 - ECR authorization-token access.
 - ECR image upload and pull actions for the two wat2do repositories so each pushed image can be smoke-tested before deployment.
 - Read access to the frontend-build secret.
+- Read access to the runtime secret for recurring GitHub-hosted jobs.
 - ECS task-definition read and registration actions.
 - ECS service update and describe actions for the wat2do cluster and service.
 - `iam:PassRole` for the exact ECS execution and task roles.
@@ -372,7 +375,7 @@ Route `0.0.0.0/0` through the NAT gateway.
 
 Associate both private subnets with the private route table.
 
-The ECS service and scheduled ECS tasks run only in private subnets.
+The ECS service and one-off ECS jobs task run only in private subnets.
 
 Do not assign public IP addresses to ECS tasks.
 
@@ -691,18 +694,7 @@ The initial application task does not need broad AWS API access because applicat
 
 Grant no S3, DynamoDB, ECS, IAM, or Secrets Manager read permissions to application code unless a verified runtime call requires them.
 
-### 14.3 Scheduler role
-
-Create one EventBridge Scheduler execution role.
-
-Grant:
-
-- `ecs:RunTask` for the exact jobs task-definition family.
-- `iam:PassRole` for the exact ECS execution and jobs task roles.
-
-Restrict runs to the wat2do cluster.
-
-### 14.4 Job task role
+### 14.3 Job task role
 
 Create one jobs task role.
 
@@ -868,7 +860,6 @@ Create alarms for:
 - Application Load Balancer target 5xx responses above a small threshold.
 - Frontend container CPU above 85 percent for a sustained window.
 - Task memory above 85 percent for a sustained window.
-- EventBridge scheduled task invocation failures.
 
 Create the alarms even if no notification endpoint is configured initially.
 
@@ -887,11 +878,10 @@ Create one small CloudWatch dashboard containing:
 - Target response time.
 - HTTP 4xx and 5xx counts.
 - Unhealthy target count.
-- Scheduled-task failure count.
 
 ## 18. Scheduled and triggered jobs
 
-### 18.1 Shared jobs task definition
+### 18.1 One-off jobs task definition
 
 Create one ARM64 Fargate jobs task definition using the backend image.
 
@@ -906,13 +896,13 @@ Send logs to `/wat2do/production/jobs`.
 
 Do not run Uvicorn in the jobs task.
 
-Every invocation overrides the container command.
+The single-user scrape invocation overrides the container command.
 
 ### 18.2 Daily directory scrape
 
-Replace `.github/workflows/daily-directory-scrape.yml` execution with EventBridge Scheduler.
+Keep `.github/workflows/daily-directory-scrape.yml` on a GitHub-hosted runner.
 
-Use the existing schedule unless implementation discovers that its documented time and cron expression disagree.
+Run it daily at 08:00 UTC and retain manual dispatch with max-pages and dry-run inputs.
 
 Run:
 
@@ -920,11 +910,13 @@ Run:
 python jobs/scrape_directories.py
 ```
 
-Apply a maximum runtime and configure failed invocation handling.
+Use workflow concurrency, a maximum runtime, and an always-uploaded log artifact.
+
+Authenticate through GitHub OIDC and read the existing runtime secret from Secrets Manager.
 
 ### 18.3 Notification dispatcher
 
-Replace `.github/workflows/daily-new-events-email.yml` execution with EventBridge Scheduler.
+Keep the notification dispatcher on a GitHub-hosted runner.
 
 Run hourly at the same UTC minute as the current workflow.
 
@@ -940,7 +932,7 @@ Do not create one schedule per school.
 
 ### 18.4 Recommendation computation
 
-Replace `.github/workflows/nightly-recs.yml` execution with EventBridge Scheduler.
+Keep `.github/workflows/nightly-recs.yml` on a GitHub-hosted runner.
 
 Run:
 
@@ -1152,11 +1144,12 @@ Expected modified files:
 
 ### 21.3 Deleted files
 
-Expected deletion:
+Expected deletions:
 
 - `.github/workflows/nightly-redeploy.yml`
+- `infra/terraform/production/scheduler.tf`
 
-Other workflow files should be deleted only when their behavior is fully represented by Terraform-managed schedules or a single ECS-trigger workflow.
+Other workflow files should be deleted only when their behavior is fully represented by another active workflow or the single-user ECS trigger.
 
 ### 21.4 Files expected to remain behaviorally unchanged
 
@@ -1253,17 +1246,18 @@ Done when:
 
 ### 22.5 Job migration
 
-1. Add the jobs task definition.
-2. Add EventBridge schedules.
+1. Keep one GitHub-hosted schedule for each recurring application job.
+2. Add the one-off jobs task definition.
 3. Convert the single-user workflow to `ecs:RunTask`.
-4. Disable and then delete duplicate GitHub-hosted job execution.
+4. Remove the EventBridge directory schedule and its supporting resources.
 
 Done when:
 
-- Each recurring job has exactly one scheduler.
-- Job compute executes on Fargate.
-- Job logs appear in CloudWatch.
-- A failed task produces a failed invocation or workflow.
+- Each recurring job has exactly one GitHub Actions schedule.
+- Recurring job logs are available as workflow logs and artifacts.
+- Single-user scrape compute executes on Fargate.
+- Single-user scrape logs appear in CloudWatch.
+- A failed job produces a failed workflow.
 
 ### 22.6 Final cleanup
 
@@ -1276,7 +1270,7 @@ Done when:
 Done when:
 
 - Supabase is the only retained core hosting dependency outside AWS.
-- GitHub is used for source control and CI/CD orchestration, not recurring application compute.
+- GitHub is used for source control, CI/CD orchestration, and recurring application compute.
 - The repository has one obvious production deployment path.
 
 ## 23. Verification plan
@@ -1358,21 +1352,22 @@ Verify directly on `https://wat2do.io`:
 
 ### 23.5 Scheduled job verification
 
-Manually invoke each scheduled ECS task once:
+Manually dispatch each recurring GitHub workflow once:
 
 - Directory scrape.
 - Notification dispatcher in a mode that cannot send unintended duplicate mail.
 - Recommendation computation.
-- Single-user scrape with a known test input.
 
 Verify:
 
-- The task starts in a private subnet.
-- The task obtains its secrets.
+- The workflow obtains its secrets without printing them.
 - The command exits successfully.
-- Logs appear in the jobs log group.
-- The task stops after completion.
-- The scheduler records failures correctly.
+- Logs remain available through the workflow or its artifacts.
+- A failed command fails the workflow.
+
+Manually dispatch the single-user scrape with a known test input.
+
+Verify that its ECS task starts in a private subnet, obtains its secrets, exits successfully, and writes to the jobs log group.
 
 ## 24. Failure handling during implementation
 
@@ -1434,7 +1429,7 @@ The project is complete only when all of the following are true:
 - Frontend and backend images are immutable and commit-addressed.
 - ECR lifecycle policies own image cleanup.
 - A push to `main` runs checks and deploys one coherent application revision.
-- Recurring backend compute runs through EventBridge Scheduler and ECS.
+- Recurring backend compute runs on GitHub-hosted runners.
 - Single-user scrape compute runs on ECS.
 - CloudWatch contains frontend, backend, and jobs logs.
 - Basic service alarms exist.

@@ -43,20 +43,3 @@ resource "aws_iam_role" "jobs_task" {
   name               = "wat2do-production-jobs-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_execution_assume_role.json
 }
-
-data "aws_iam_policy_document" "scheduler_assume_role" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["scheduler.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "scheduler" {
-  name               = "wat2do-production-scheduler"
-  assume_role_policy = data.aws_iam_policy_document.scheduler_assume_role.json
-}
