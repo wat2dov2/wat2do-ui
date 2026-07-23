@@ -6,8 +6,8 @@ resource "aws_ecs_service" "application" {
   enable_ecs_managed_tags            = true
   enable_execute_command             = false
   health_check_grace_period_seconds  = 90
-  deployment_minimum_healthy_percent = 0
-  deployment_maximum_percent         = 100
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
 
   capacity_provider_strategy {
     capacity_provider = "FARGATE"
