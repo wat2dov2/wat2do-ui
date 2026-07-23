@@ -1,0 +1,96 @@
+name: Daily Directory Scrape
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      max_pages:
+        description: 'Max pages to crawl per directory'
+        required: true
+        type: string
+        default: '5'
+      dry_run:
+        description: 'Dry run (crawl and parse, but no database writes)'
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: daily-directory-scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ca-central-1
+      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
+      ENVIRONMENT: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify AWS configuration
+        run: |
+          test -n "$AWS_DEPLOY_ROLE_ARN"
+          test -n "$AWS_RUNTIME_SECRET_ARN"
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Read scraper configuration
+        run: |
+          secret_json="$(aws secretsmanager get-secret-value \
+            --secret-id "$AWS_RUNTIME_SECRET_ARN" \
+            --query SecretString \
+            --output text)"
+          for secret_key in SUPABASE_URL SUPABASE_KEY SUPABASE_SECRET_KEY OPENAI_API_KEY; do
+            secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
+            echo "::add-mask::$secret_value"
+            echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
+          done
+          unset secret_json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install --prefer-binary -r requirements.txt
+
+      - name: Run scraper
+        working-directory: backend
+        env:
+          MAX_PAGES: ${{ inputs.max_pages || '5' }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+        run: |
+          mkdir -p logs
+          args=(--max-pages "$MAX_PAGES")
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          set -o pipefail
+          python -u jobs/scrape_directories.py "${args[@]}" \
+            2>&1 | tee logs/directory_scraping.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: directory-scrape-logs-${{ github.run_number }}
+          path: backend/logs/directory_scraping.log
+          if-no-files-found: ignore

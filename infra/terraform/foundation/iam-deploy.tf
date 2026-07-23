@@ -32,6 +32,13 @@ data "aws_iam_policy_document" "github_deploy" {
   }
 
   statement {
+    sid       = "ReadRuntimeSecret"
+    effect    = "Allow"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_secretsmanager_secret.runtime.arn]
+  }
+
+  statement {
     sid    = "DeployWat2doEcsTasks"
     effect = "Allow"
     actions = [
