@@ -1,7 +1,6 @@
 import { EventSuccessScreen } from "@/features/events/components/EventForm/EventForm/EventSuccessScreen";
 
 interface SubmitSuccessStepProps {
-  isOpen: boolean;
   onClose: () => void;
   onPromote?: () => void;
   isEditMode: boolean;
@@ -9,7 +8,6 @@ interface SubmitSuccessStepProps {
 }
 
 export function SubmitSuccessStep({
-  isOpen,
   onClose,
   onPromote,
   isEditMode,
@@ -17,7 +15,6 @@ export function SubmitSuccessStep({
 }: SubmitSuccessStepProps) {
   return (
     <EventSuccessScreen
-      isOpen={isOpen}
       onClose={onClose}
       onPromote={onPromote}
       isEditMode={isEditMode}

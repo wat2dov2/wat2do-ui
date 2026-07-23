@@ -392,6 +392,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instagram-publishing/batches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Publish Batches */
+        get: operations["list_instagram_publish_batches_instagram_publishing_batches__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Instagram Publish Batch */
+        get: operations["get_instagram_publish_batch_instagram_publishing_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Instagram Publish Batch */
+        patch: operations["update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch"];
+        trace?: never;
+    };
+    "/instagram-publishing/batches/{batch_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Instagram Batch */
+        post: operations["publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interactions/batch": {
         parameters: {
             query?: never;
@@ -1827,6 +1879,139 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InstagramPublishBatchPublish */
+        InstagramPublishBatchPublish: {
+            /** Version */
+            version: number;
+        };
+        /** InstagramPublishBatchResponse */
+        InstagramPublishBatchResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Account Key */
+            account_key: string;
+            /** Instagram User Id */
+            instagram_user_id: string;
+            /** School */
+            school: string;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed";
+            /** Caption */
+            caption: string;
+            /** Cover Image Url */
+            cover_image_url?: string | null;
+            /** Ai Model */
+            ai_model?: string | null;
+            /** Version */
+            version: number;
+            /** Error Message */
+            error_message?: string | null;
+            /** Meta Cover Container Id */
+            meta_cover_container_id?: string | null;
+            /** Meta Carousel Container Id */
+            meta_carousel_container_id?: string | null;
+            /** Meta Media Id */
+            meta_media_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Published At */
+            published_at?: string | null;
+            /** Items */
+            items: components["schemas"]["InstagramPublishItemResponse"][];
+        };
+        /** InstagramPublishBatchUpdate */
+        InstagramPublishBatchUpdate: {
+            /** Version */
+            version: number;
+            /** Caption */
+            caption: string;
+            /** Item Ids */
+            item_ids: string[];
+        };
+        /** InstagramPublishItemResponse */
+        InstagramPublishItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Account Key */
+            account_key: string;
+            /** Event Id */
+            event_id: number;
+            /** Position */
+            position: number | null;
+            /** Included */
+            included: boolean;
+            /** Event Snapshot */
+            event_snapshot: {
+                [key: string]: unknown;
+            };
+            /** Visual Score */
+            visual_score: number;
+            /** Excitement Score */
+            excitement_score: number;
+            /** Audience Score */
+            audience_score: number;
+            /** Timing Score */
+            timing_score: number;
+            /** Overall Score */
+            overall_score: number;
+            /** Ai Reason */
+            ai_reason: string;
+            /** Cover Candidate */
+            cover_candidate: boolean;
+            /** Asset Url */
+            asset_url: string;
+            /** Meta Container Id */
+            meta_container_id?: string | null;
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * InteractionBatch
          * @description Batch of interactions submitted from a single browser session.
@@ -2369,6 +2554,19 @@ export interface components {
             logo_url?: string | null;
             /** School */
             school?: string | null;
+        };
+        /** PaginatedResponse[InstagramPublishBatchResponse] */
+        PaginatedResponse_InstagramPublishBatchResponse_: {
+            /** Items */
+            items: components["schemas"]["InstagramPublishBatchResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
         };
         /** PaginatedResponse[OrganizationResponse] */
         PaginatedResponse_OrganizationResponse_: {
@@ -3634,6 +3832,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GoingEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_instagram_publish_batches_instagram_publishing_batches__get: {
+        parameters: {
+            query?: {
+                status?: ("generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed") | null;
+                local_date?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_InstagramPublishBatchResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_instagram_publish_batch_instagram_publishing_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstagramPublishBatchUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstagramPublishBatchPublish"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
                 };
             };
             /** @description Validation Error */

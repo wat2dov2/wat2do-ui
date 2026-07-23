@@ -2,18 +2,13 @@ import { useMemo } from "react";
 import { Check, Sparkles, Megaphone } from "@/shared/ui/doodle-icons";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-} from "@/shared/ui/drawer";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { toast } from "@/shared/hooks/use-toast";
+import { Section } from "@/shared/layout";
 
 interface EventSuccessScreenProps {
-  isOpen: boolean;
   onClose: () => void;
   onPromote?: () => void;
   isEditMode: boolean;
@@ -21,7 +16,6 @@ interface EventSuccessScreenProps {
 }
 
 export function EventSuccessScreen({
-  isOpen,
   onClose,
   onPromote,
   isEditMode,
@@ -59,22 +53,14 @@ export function EventSuccessScreen({
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="p-4">
-        <DrawerTitle className="sr-only">
-          {isSubmissionOnly
-            ? t("events.submissionReceivedTitle")
-            : isEditMode
-              ? t("events.eventUpdatedTitle")
-              : t("events.eventCreatedTitle")}
-        </DrawerTitle>
-        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-y-4 py-4 text-center">
+    <Section variant="surface" className="mx-auto w-full max-w-md">
+      <div className="flex flex-col items-center gap-y-4 py-4 text-center">
           <div className="relative">
             <div className="size-16 rounded-full bg-success flex items-center justify-center">
-              <Check className="size-8 text-white" strokeWidth={3} />
+              <Check className="size-8 text-primary-foreground" strokeWidth={3} />
             </div>
             <div className="absolute -top-1 -right-1 size-6 bg-warning rounded-full flex items-center justify-center">
-              <Sparkles className="size-3 text-white" />
+              <Sparkles className="size-3 text-primary-foreground" />
             </div>
           </div>
 
@@ -122,8 +108,7 @@ export function EventSuccessScreen({
               </Button>
             )}
           </div>
-        </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </Section>
   );
 }

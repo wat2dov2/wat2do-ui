@@ -954,9 +954,127 @@ test.describe("Auth-protected API endpoints", () => {
   });
 });
 
+test.describe("Standalone submission pages", () => {
+  test("stale session redirects event submission to login instead of loading forever", async ({
+    page,
+  }) => {
+    await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Session expired" }),
+      });
+    });
+    await page.addInitScript(
+      ({ emailKey, email }) => {
+        window.localStorage.setItem(emailKey, JSON.stringify(email));
+      },
+      { emailKey: STORAGE_KEYS.USER_EMAIL, email: TEST_EMAIL },
+    );
+
+    await page.goto(`${BASE}/events/submit`);
+
+    await expect(page).toHaveURL(`${BASE}/login`, { timeout: 10_000 });
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+  });
+
+  test("UTM hostname owns event and organization submission context", async ({
+    page,
+  }) => {
+    await seedAuthenticatedSession(page);
+    let requestedOrganizationSchool: string | null = null;
+
+    await page.route(url => apiPath(url) === "/organizations", async (route) => {
+      requestedOrganizationSchool = new URL(
+        route.request().url(),
+      ).searchParams.get("school");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [
+            {
+              ...MOCK_ORGANIZATIONS[0],
+              id: 91,
+              organization_name: "UTM Campus Club",
+              school: "utm",
+            },
+          ],
+          total: 1,
+          page: 1,
+          page_size: 20,
+          total_pages: 1,
+        }),
+      });
+    });
+    await page.route(
+      url => apiPath(url) === "/ai/parse-event-image",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            organization_id: null,
+            title: "UTM Test Event",
+            description: "",
+            occurrences: [
+              {
+                dtstart_local: "2026-08-10T18:00",
+                dtend_local: "2026-08-10T20:00",
+              },
+            ],
+            location: "Innovation Complex",
+            category: "Technology",
+            price: 0,
+            food: [],
+            registration: false,
+            source_image_url: "/wat2do-logo.png",
+          }),
+        });
+      },
+    );
+
+    const utmBase = "http://utm.localhost:3000";
+    await page.goto(`${utmBase}/events/submit`);
+
+    await expect(
+      page.getByRole("heading", {
+        name: "Submit Event for University of Toronto Mississauga",
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "utm-event.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("event-image"),
+    });
+
+    await expect
+      .poll(() => requestedOrganizationSchool)
+      .toBe("utm");
+    await page.locator("#field-organization_id").click();
+    await expect(page.getByText("UTM Campus Club")).toBeVisible();
+
+    await page.goto(`${utmBase}/organizations/new`);
+    await expect(
+      page.getByRole("heading", {
+        name: "Add an Organization for University of Toronto Mississauga",
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator("#club-school")).toHaveCount(0);
+  });
+});
+
 // ── Workflow 6: Navigation ────────────────────────────────────────────
 
 test.describe("Navigation", () => {
+  test("Instagram admin route is present in the Next build", async ({ request }) => {
+    const response = await request.get(`${BASE}/admin/instagram`);
+    expect(response.status()).toBe(200);
+  });
+
   test("main pages load without errors", async ({ page }) => {
     const routes = ["/", "/school/uwaterloo", "/login", "/onboarding", "/organizations", "/contact", "/settings"];
     for (const route of routes) {

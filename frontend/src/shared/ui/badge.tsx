@@ -22,7 +22,7 @@ const badgeVariants = cva(
         soon:
           "border-0 bg-warning text-warning-foreground",
         new:
-          "border-0 bg-primary text-primary-foreground hover:bg-primary-hover",
+          "border-badge-new bg-badge-new text-primary-foreground",
       },
       size: {
         sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",

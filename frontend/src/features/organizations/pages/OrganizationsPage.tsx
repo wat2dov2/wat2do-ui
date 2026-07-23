@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -8,8 +8,6 @@ import {
   Search,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
-import { AddOrganizationModal } from "@/features/organizations/components/AddOrganizationModal";
-import { OrganizationDetailsModal } from "@/features/organizations/components/OrganizationDetailsModal";
 import {
   OrganizationList,
   OrganizationListEmptyState,
@@ -24,20 +22,22 @@ import {
 import { useOrganizationsPage } from "@/features/organizations/hooks/useOrganizationsPage";
 import { translateCategory } from "@/shared/utils/event";
 import { useAuthState } from "@/features/auth";
-import { fetchProfileAPI } from "@/features/auth/api/auth.api";
 import { useHorizontalScrollFade } from "@/shared/hooks";
 import { HorizontalScrollFadeEdge } from "@/shared/ui/horizontal-scroll-fade-edge";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
-import type { Organization } from "@/shared/types";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
-import { createOrganizationAPI } from "@/features/organizations/api/organizations.api";
 import { toast } from "@/shared/hooks/use-toast";
+import {
+  organizationPagePath,
+  ROUTES,
+} from "@/shared/constants/routes";
 
 type OrganizationScope = "all" | "followed" | "claimed";
 
 export function OrganizationsPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { isAuthenticated: authed } = useAuthState();
 
   const {
@@ -54,14 +54,11 @@ export function OrganizationsPage() {
     hasMore,
     loadMore,
     totalItems,
-    refreshOrganizations,
     activeTab,
     setActiveTab,
   } = useOrganizationsPage();
 
   const savedOrganizationIds = useSavedOrganizationsStore(useShallow((state) => state.savedOrganizationIds));
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
-  const [showAddOrganization, setShowAddOrganization] = useState(false);
   const tabOptions = [
     { value: "all" as const, label: t("organizations.allClubs") },
     { value: "followed" as const, label: t("organizations.followedClubs") },
@@ -83,21 +80,6 @@ export function OrganizationsPage() {
   const showSignInPrompt = (activeTab === "followed" || activeTab === "claimed") && !authed;
   const showResults = !showSignInPrompt && (isLoading || organizations.length > 0);
   const showEmptyState = !showSignInPrompt && !isLoading && organizations.length === 0;
-
-  const handleCreateOrganization = async (organization: Organization) => {
-    await createOrganizationAPI({
-      organization_name: organization.organization_name,
-      categories: organization.categories,
-      organization_page: organization.organization_page,
-      ig: organization.ig,
-      discord: organization.discord,
-      association_affiliated: organization.association_affiliated,
-      logo_url: organization.logo_url,
-      school: organization.school,
-    });
-    await fetchProfileAPI();
-    refreshOrganizations();
-  };
 
   return (
     <div className="space-y-2">
@@ -178,7 +160,7 @@ export function OrganizationsPage() {
                   toast({ description: t("navigation.loginRequiredToSubmit") });
                   return;
                 }
-                setShowAddOrganization(true);
+                router.push(ROUTES.ORGANIZATION_CREATE);
               }}
               aria-label={t("organizations.addClub")}
             >
@@ -218,7 +200,9 @@ export function OrganizationsPage() {
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
           onLoadMore={loadMore}
-          onOrganizationClick={setSelectedOrganization}
+          onOrganizationClick={(organization) =>
+            router.push(organizationPagePath(organization.id))
+          }
           onCategoryClick={toggleCategory}
         />
       ) : null}
@@ -251,17 +235,6 @@ export function OrganizationsPage() {
         />
       )}
 
-      <OrganizationDetailsModal
-        organization={selectedOrganization}
-        isOpen={selectedOrganization !== null}
-        onClose={() => setSelectedOrganization(null)}
-      />
-
-      <AddOrganizationModal
-        isOpen={showAddOrganization && authed}
-        onClose={() => setShowAddOrganization(false)}
-        onSave={handleCreateOrganization}
-      />
     </div>
   );
 }

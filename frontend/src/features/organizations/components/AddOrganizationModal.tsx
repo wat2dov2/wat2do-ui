@@ -1,12 +1,10 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, X } from "@/shared/ui/doodle-icons";
+import { X } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
@@ -22,23 +20,24 @@ import {
 } from "@/shared/ui/select";
 import {
   Field,
-  FieldGroup,
-  FieldLabel,
   FieldError,
-  FieldLegend,
-  FieldSeparator,
-  FieldSet,
+  FieldLabel,
 } from "@/shared/ui/field";
-import type { Organization } from "@/shared/types";
-import { toOrganizationType } from "@/shared/data/organizationTypes";
+import {
+  FormActions,
+  FormGrid,
+  FormLayout,
+  FormSection,
+} from "@/shared/layout";
+import { MultiSelect } from "@/shared/ui/multi-select";
+import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { toast } from "@/shared/hooks/use-toast";
 import { useForm } from "@/shared/hooks/useForm";
-import { useModalState } from "@/shared/hooks/useModalState";
-import { MultiSelect } from "@/shared/ui/multi-select";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
-import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { getOrganizationCategories } from "@/shared/data/organizationCategories";
+import { toOrganizationType } from "@/shared/data/organizationTypes";
 import { translateCategory } from "@/shared/utils/event";
+import type { Organization } from "@/shared/types";
 
 interface OrganizationFormData {
   organization_name: string;
@@ -50,49 +49,64 @@ interface OrganizationFormData {
   school: string;
 }
 
-interface AddOrganizationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (organization: Organization) => void | Promise<void>;
+type SaveOrganization = (
+  organization: Organization,
+) => Organization | void | Promise<Organization | void>;
+
+interface OrganizationFormProps {
+  onSave: SaveOrganization;
+  onCancel: () => void;
+  onSaved?: (organization: Organization) => void;
   initialData?: Organization;
-  onBack?: () => void;
+  defaultSchool?: string;
+  allowSchoolSelection?: boolean;
+  active?: boolean;
+  showHeading?: boolean;
 }
 
-export function AddOrganizationModal({
-  isOpen,
-  onClose,
+export function OrganizationForm({
   onSave,
+  onCancel,
+  onSaved,
   initialData,
-  onBack,
-}: AddOrganizationModalProps) {
+  defaultSchool = DEFAULT_SCHOOL,
+  allowSchoolSelection = true,
+  active = true,
+  showHeading = true,
+}: OrganizationFormProps) {
   const { t } = useTranslation();
-  const isEditMode = !!initialData;
+  const isEditMode = initialData != null;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Memoize getDefaults to prevent infinite loops
-  const getDefaults = useCallback(() => ({
-    organization_name: "",
-    categories: [],
-    organization_page: "",
-    ig: "",
-    discord: "",
-    association_affiliated: false,
-    school: DEFAULT_SCHOOL,
-  }), []);
+  const getDefaults = useCallback(
+    () => ({
+      organization_name: "",
+      categories: [],
+      organization_page: "",
+      ig: "",
+      discord: "",
+      association_affiliated: false,
+      school: defaultSchool,
+    }),
+    [defaultSchool],
+  );
 
-  // Memoize validate to prevent infinite loops
-  const validate = useCallback((data: OrganizationFormData, touched: Record<string, boolean>) => {
-    const newErrors: Record<string, string> = {};
-    if (touched.organization_name && !data.organization_name.trim()) {
-      newErrors.organization_name = t("forms.organizationNameRequired");
-    }
-    if (touched.categories && data.categories.length === 0) {
-      newErrors.categories = t("forms.categoryRequired");
-    }
-    if (touched.school && !data.school) {
-      newErrors.school = t("forms.schoolRequired");
-    }
-    return newErrors;
-  }, [t]);
+  const validate = useCallback(
+    (data: OrganizationFormData, touched: Record<string, boolean>) => {
+      const errors: Record<string, string> = {};
+      if (touched.organization_name && !data.organization_name.trim()) {
+        errors.organization_name = t("forms.organizationNameRequired");
+      }
+      if (touched.categories && data.categories.length === 0) {
+        errors.categories = t("forms.categoryRequired");
+      }
+      if (touched.school && !data.school) {
+        errors.school = t("forms.schoolRequired");
+      }
+      return errors;
+    },
+    [t],
+  );
 
   const form = useForm<OrganizationFormData>({
     initialData: initialData
@@ -102,20 +116,16 @@ export function AddOrganizationModal({
           organization_page: initialData.organization_page,
           ig: initialData.ig || "",
           discord: initialData.discord || "",
-          association_affiliated: Boolean(initialData.association_affiliated),
-          school: initialData.school || DEFAULT_SCHOOL,
+          association_affiliated: Boolean(
+            initialData.association_affiliated,
+          ),
+          school: initialData.school || defaultSchool,
         }
       : undefined,
     isEditMode,
-    isOpen,
+    isOpen: active,
     getDefaults,
     validate,
-  });
-
-  const modalState = useModalState({
-    onClose,
-    resetOnClose: true,
-    resetFn: form.reset,
   });
 
   const toggleCategory = useCallback(
@@ -129,13 +139,8 @@ export function AddOrganizationModal({
     [form],
   );
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const handleSubmit = async () => {
-    Object.keys(form.formData).forEach((key) => {
-      form.handleBlur(key);
-    });
-
+    Object.keys(form.formData).forEach(form.handleBlur);
     if (!form.isValid) return;
 
     const organization: Organization = {
@@ -153,22 +158,222 @@ export function AddOrganizationModal({
 
     setIsSubmitting(true);
     try {
-      await Promise.resolve(onSave(organization));
+      const savedOrganization =
+        (await Promise.resolve(onSave(organization))) || organization;
       toast({
-        title: isEditMode ? t("organizations.clubUpdated") : t("organizations.clubCreated"),
+        title: isEditMode
+          ? t("organizations.clubUpdated")
+          : t("organizations.clubCreated"),
         description: isEditMode
-          ? t("organizations.clubUpdatedMessage", { name: organization.organization_name })
-          : t("organizations.clubCreatedMessage", { name: organization.organization_name }),
+          ? t("organizations.clubUpdatedMessage", {
+              name: savedOrganization.organization_name,
+            })
+          : t("organizations.clubCreatedMessage", {
+              name: savedOrganization.organization_name,
+            }),
         variant: "success",
       });
-      onClose();
+      onSaved?.(savedOrganization);
+    } catch (error) {
+      console.error("Failed to save organization:", error);
+      toast({
+        title: t("common.error"),
+        description: t("organizations.saveFailed"),
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={modalState.handleOpenChange}>
+    <FormLayout
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleSubmit();
+      }}
+    >
+      {showHeading ? (
+        <h2 className="text-xl font-semibold text-foreground">
+          {isEditMode
+            ? t("organizations.editClub")
+            : t("organizations.addClub")}
+        </h2>
+      ) : null}
+
+      <FormSection title={t("organizations.organizationDetails")}>
+        <FormGrid>
+          <Field>
+            <FieldLabel htmlFor="club-name">
+              {t("forms.organizationName")}
+            </FieldLabel>
+            <Input
+              id="club-name"
+              value={form.formData.organization_name}
+              onChange={(event) =>
+                form.updateField("organization_name", event.target.value)
+              }
+              onBlur={() => form.handleBlur("organization_name")}
+              placeholder={t("forms.organizationNamePlaceholder")}
+              aria-invalid={Boolean(form.errors.organization_name)}
+            />
+            {form.errors.organization_name ? (
+              <FieldError>{form.errors.organization_name}</FieldError>
+            ) : null}
+          </Field>
+
+          {allowSchoolSelection ? (
+            <Field>
+              <FieldLabel htmlFor="club-school">
+                {t("schools.school")}
+              </FieldLabel>
+              <SchoolCombobox
+                id="club-school"
+                value={form.formData.school}
+                onChange={(value) => form.updateField("school", value)}
+                variant="field"
+                placeholder={t("schools.selectSchool")}
+              />
+              {form.errors.school ? (
+                <FieldError>{form.errors.school}</FieldError>
+              ) : null}
+            </Field>
+          ) : null}
+        </FormGrid>
+
+        <Field>
+          <FieldLabel>{t("forms.categories")}</FieldLabel>
+          <MultiSelect
+            options={getOrganizationCategories()}
+            selected={form.formData.categories}
+            onToggle={toggleCategory}
+            className="justify-start"
+            getLabel={(category) => translateCategory(category, t)}
+          />
+          {form.touched.categories && form.errors.categories ? (
+            <FieldError>{form.errors.categories}</FieldError>
+          ) : null}
+        </Field>
+      </FormSection>
+
+      <FormSection
+        title={t("forms.optionalDetails")}
+        description={t("organizations.optionalDetailsDescription")}
+      >
+        <FormGrid>
+          <Field>
+            <FieldLabel htmlFor="club-affiliation">
+              {t("forms.associationAffiliation")}
+            </FieldLabel>
+            <Select
+              value={String(form.formData.association_affiliated)}
+              onValueChange={(value) =>
+                form.updateField(
+                  "association_affiliated",
+                  value === "true",
+                )
+              }
+            >
+              <SelectTrigger id="club-affiliation" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">
+                  {t("forms.associationAffiliated")}
+                </SelectItem>
+                <SelectItem value="false">
+                  {t("forms.associationIndependent")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="club-page">
+              {t("forms.organizationPageUrl")}
+            </FieldLabel>
+            <Input
+              id="club-page"
+              value={form.formData.organization_page}
+              onChange={(event) =>
+                form.updateField("organization_page", event.target.value)
+              }
+              placeholder={t("forms.organizationPageUrlPlaceholder")}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="instagram-handle">
+              {t("forms.instagramHandle")}
+            </FieldLabel>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                @
+              </span>
+              <Input
+                id="instagram-handle"
+                value={form.formData.ig}
+                onChange={(event) =>
+                  form.updateField("ig", event.target.value)
+                }
+                placeholder={t("modals.signIn.username")}
+                className="pl-7"
+              />
+            </div>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="discord-link">
+              {t("forms.discordLink")}
+            </FieldLabel>
+            <Input
+              id="discord-link"
+              value={form.formData.discord}
+              onChange={(event) =>
+                form.updateField("discord", event.target.value)
+              }
+              placeholder={t("forms.discordPlaceholder")}
+            />
+          </Field>
+        </FormGrid>
+      </FormSection>
+
+      <FormActions>
+        <Button variant="secondary" type="button" onClick={onCancel}>
+          {t("common.cancel")}
+        </Button>
+        <LoadingButton
+          type="submit"
+          isLoading={isSubmitting}
+          loadingText={t("common.pleaseWait")}
+        >
+          {isEditMode
+            ? t("organizations.updateClub")
+            : t("organizations.addClub")}
+        </LoadingButton>
+      </FormActions>
+    </FormLayout>
+  );
+}
+
+interface AddOrganizationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: SaveOrganization;
+  initialData?: Organization;
+}
+
+export function AddOrganizationModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialData,
+}: AddOrganizationModalProps) {
+  const { t } = useTranslation();
+  const isEditMode = initialData != null;
+
+  return (
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="overflow-hidden p-0" aria-describedby={undefined}>
         <DrawerClose asChild>
           <button
@@ -179,192 +384,21 @@ export function AddOrganizationModal({
             <X className="size-4" />
           </button>
         </DrawerClose>
+        <DrawerHeader className="sr-only">
+          <DrawerTitle>
+            {isEditMode
+              ? t("organizations.editClub")
+              : t("organizations.addClub")}
+          </DrawerTitle>
+        </DrawerHeader>
         <div className="max-h-[92dvh] overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
-          <form className="space-y-6">
-            <DrawerHeader className="p-0 pr-11 text-left">
-              <div
-                className={`flex min-h-9 gap-2 ${isEditMode ? "items-start" : "items-center"}`}
-              >
-                {onBack && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon-sm"
-                    onMouseDown={onBack}
-                    aria-label={t("common.back")}
-                  >
-                    <ArrowLeft className="size-4" />
-                  </Button>
-                )}
-                <div className="min-w-0">
-                  <DrawerTitle className="text-lg font-semibold leading-none text-foreground sm:text-xl">
-                    {isEditMode ? t("organizations.editClub") : t("organizations.addClub")}
-                  </DrawerTitle>
-                  {isEditMode && (
-                    <DrawerDescription className="mt-1.5 text-sm text-muted-foreground">
-                      {t("organizations.editClubDescription")}
-                    </DrawerDescription>
-                  )}
-                </div>
-              </div>
-            </DrawerHeader>
-            <FieldGroup>
-              <FieldSet>
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="club-name" className="text-sm font-medium text-foreground">
-                      {t("forms.organizationName")} <span className="text-destructive">*</span>
-                    </FieldLabel>
-                    <Input
-                      id="club-name"
-                      type="text"
-                      value={form.formData.organization_name}
-                      onChange={(e) => form.updateField("organization_name", e.target.value)}
-                      onBlur={() => form.handleBlur("organization_name")}
-                      placeholder={t("forms.organizationNamePlaceholder")}
-                      className={form.errors.organization_name ? "border-destructive" : ""}
-                    />
-                    {form.errors.organization_name && (
-                      <FieldError className="text-xs">{form.errors.organization_name}</FieldError>
-                    )}
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="club-school" className="text-sm font-medium text-foreground">
-                      {t("schools.school")} <span className="text-destructive">*</span>
-                    </FieldLabel>
-                    <SchoolCombobox
-                      id="club-school"
-                      value={form.formData.school || ""}
-                      onChange={(value) => form.updateField("school", value)}
-                      variant="field"
-                      placeholder={t("schools.selectSchool")}
-                    />
-                    {form.errors.school && (
-                      <FieldError className="text-xs">{form.errors.school}</FieldError>
-                    )}
-                  </Field>
-
-                  <Field>
-                    <FieldLabel className="text-sm font-medium text-foreground">
-                      {t("forms.categories")} <span className="text-destructive">*</span>
-                    </FieldLabel>
-                    <MultiSelect
-                      options={getOrganizationCategories()}
-                      selected={form.formData.categories}
-                      onToggle={toggleCategory}
-                      className="justify-start"
-                      getLabel={(category) => translateCategory(category, t)}
-                    />
-                    {form.touched.categories && form.errors.categories && (
-                      <FieldError className="text-xs">{form.errors.categories}</FieldError>
-                    )}
-                  </Field>
-                </FieldGroup>
-              </FieldSet>
-
-            <FieldSeparator />
-
-            <FieldSet>
-              <FieldLegend>{t("forms.optionalDetails")}</FieldLegend>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="club-affiliation" className="text-sm font-medium text-foreground">
-                    {t("forms.associationAffiliation")}
-                  </FieldLabel>
-                  <Select
-                    value={String(form.formData.association_affiliated)}
-                    onValueChange={(value) => form.updateField("association_affiliated", value === "true")}
-                  >
-                    <SelectTrigger id="club-affiliation" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">{t("forms.associationAffiliated")}</SelectItem>
-                      <SelectItem value="false">{t("forms.associationIndependent")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="club-page" className="text-sm font-medium text-foreground">
-                    {t("forms.organizationPageUrl")}
-                  </FieldLabel>
-                  <Input
-                    id="club-page"
-                    type="text"
-                    value={form.formData.organization_page}
-                    onChange={(e) => form.updateField("organization_page", e.target.value)}
-                    placeholder={t("forms.organizationPageUrlPlaceholder")}
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="instagram-handle" className="text-sm font-medium text-foreground">
-                    {t("forms.instagramHandle")}
-                  </FieldLabel>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      @
-                    </span>
-                    <Input
-                      id="instagram-handle"
-                      type="text"
-                      value={form.formData.ig}
-                      onChange={(e) => form.updateField("ig", e.target.value)}
-                      placeholder={t("modals.signIn.username")}
-                      className="pl-7"
-                    />
-                  </div>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="discord-link" className="text-sm font-medium text-foreground">
-                    {t("forms.discordLink")}
-                  </FieldLabel>
-                  <Input
-                    id="discord-link"
-                    type="text"
-                    value={form.formData.discord}
-                    onChange={(e) => form.updateField("discord", e.target.value)}
-                    placeholder={t("forms.discordPlaceholder")}
-                  />
-                </Field>
-              </FieldGroup>
-            </FieldSet>
-
-            <Field orientation="horizontal">
-              <DrawerClose asChild>
-                <Button variant="secondary" type="button">
-                  {t("common.cancel")}
-                </Button>
-              </DrawerClose>
-              <LoadingButton
-                type="button"
-                onMouseDown={handleSubmit}
-                isLoading={isSubmitting}
-                loadingText={t("common.pleaseWait") || "Please wait..."}
-              >
-                {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
-              </LoadingButton>
-            </Field>
-            </FieldGroup>
-          </form>
-
-          <DrawerFooter className="sr-only">
-            <DrawerClose asChild>
-              <Button variant="secondary">
-                {t("common.cancel")}
-              </Button>
-            </DrawerClose>
-            <LoadingButton
-              onMouseDown={handleSubmit}
-              isLoading={isSubmitting}
-              loadingText={t("common.pleaseWait") || "Please wait..."}
-            >
-              {isEditMode ? t("organizations.updateClub") : t("organizations.addClub")}
-            </LoadingButton>
-          </DrawerFooter>
+          <OrganizationForm
+            onSave={onSave}
+            onCancel={onClose}
+            onSaved={onClose}
+            initialData={initialData}
+            active={isOpen}
+          />
         </div>
       </DrawerContent>
     </Drawer>

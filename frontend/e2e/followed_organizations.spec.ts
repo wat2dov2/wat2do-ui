@@ -130,6 +130,19 @@ async function seedAuthenticatedSession(page: Parameters<typeof test>[0]["page"]
     });
   });
 
+  await page.route(
+    url => /^\/organizations\/\d+$/.test(apiPath(url) ?? ""),
+    async (route) => {
+      const organizationId = Number(apiPath(new URL(route.request().url()))?.split("/").pop());
+      const organization = MOCK_ORGANIZATIONS.find((item) => item.id === organizationId);
+      await route.fulfill({
+        status: organization ? 200 : 404,
+        contentType: "application/json",
+        body: JSON.stringify(organization ?? { detail: "Not found" }),
+      });
+    },
+  );
+
   // Mock GET/PUT/DELETE /saved-organizations/
   await page.route(url => apiPath(url)?.startsWith("/saved-organizations") === true, async (route) => {
     const requestUrl = new URL(route.request().url());
@@ -301,16 +314,15 @@ test.describe("Followed Organizations Flow", () => {
     // Switch back to All Clubs
     await selectOrganizationScope(page, "All");
 
-    // Open detail modal for first club
+    // Open the dedicated details page for the first club.
     await page.getByText("UW Tech Club").click();
+    await expect(page).toHaveURL(`${BASE}/organizations/1`);
 
-    // Find follow button in details modal and click it
-    const firstFollowBtn = page.locator('button[title="Follow organization"]');
+    const firstFollowBtn = page.getByRole("button", { name: "Follow organization" });
     await expect(firstFollowBtn).toBeVisible();
     await firstFollowBtn.click();
 
-    // Close the details modal
-    await page.keyboard.press("Escape");
+    await page.getByRole("link", { name: "Back" }).click();
 
     // Wait a brief moment for optimistic update/backend sync
     await page.waitForTimeout(500);
@@ -322,18 +334,19 @@ test.describe("Followed Organizations Flow", () => {
 
     // Unfollow from the followed tab
     await page.getByText("UW Tech Club").click();
+    await expect(page).toHaveURL(`${BASE}/organizations/1`);
     
-    const unfollowBtn = page.locator('button[title="Followed organization"]');
+    const unfollowBtn = page.getByRole("button", { name: "Followed organization" });
     await expect(unfollowBtn).toBeVisible();
     await unfollowBtn.click();
 
-    // Close the details modal
-    await page.keyboard.press("Escape");
+    await page.getByRole("link", { name: "Back" }).click();
 
     // Wait a brief moment
     await page.waitForTimeout(500);
 
     // Assert empty state is shown again
+    await selectOrganizationScope(page, "Followed");
     await expect(page.getByText("No followed organizations")).toBeVisible();
   });
 });

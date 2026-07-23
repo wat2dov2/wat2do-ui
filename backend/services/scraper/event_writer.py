@@ -121,6 +121,7 @@ def write_event(
         "organization": organization_name[:MAX_EVENT_ORGANIZATION_LENGTH],
         "ig_handle": effective_ig[:MAX_EVENT_HANDLE_LENGTH] if effective_ig else None,
         "cancelled": bool(event.get("cancelled", False)),
+        "ingestion_source": "instagram_scraper",
     }
 
     existing_id = event.get("id")

@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "@/shared/ui/doodle-icons";
-import { DrawerClose } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -68,7 +67,9 @@ interface EventFormStepProps {
     handleAiGenerate: () => Promise<void>;
   };
   isDarkMode: boolean;
+  onCancel: () => void;
   onBack?: () => void;
+  showHeading?: boolean;
 }
 
 export function EventFormStep({
@@ -81,7 +82,9 @@ export function EventFormStep({
   eventForm,
   eventFormAI,
   isDarkMode,
+  onCancel,
   onBack,
+  showHeading = true,
 }: EventFormStepProps) {
   const { t } = useTranslation();
   const profileCompleted = useProfileCompleted();
@@ -147,49 +150,49 @@ export function EventFormStep({
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
           <div className="mb-5 sm:mb-7">
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
-              <div className="flex min-h-9 min-w-0 flex-1 items-center gap-2 pr-10 sm:pr-0">
-                {onBack && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon-sm"
-                    onMouseDown={onBack}
-                    aria-label={t("common.back")}
+            <div className="flex flex-col items-end gap-3 sm:flex-row sm:justify-between sm:gap-4">
+              {showHeading ? (
+                <div className="flex min-h-9 min-w-0 flex-1 items-center gap-2 self-start pr-10 sm:pr-0">
+                  {onBack && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon-sm"
+                      onMouseDown={onBack}
+                      aria-label={t("common.back")}
+                    >
+                      <ArrowLeft className="size-4" />
+                    </Button>
+                  )}
+                  <h2 className="min-w-0 text-lg font-semibold leading-none text-foreground sm:text-xl">
+                    {isEditMode
+                      ? t("events.updateEvent")
+                      : canCreateEvents
+                        ? t("events.createEvent")
+                        : t("events.submitEventForReview")}
+                  </h2>
+                </div>
+              ) : null}
+              <Tabs
+                value={viewMode}
+                onValueChange={handleViewModeTabChange}
+                className="w-fit"
+              >
+                <TabsList variant="default" className="h-9 sm:h-8">
+                  <TabsTrigger
+                    value="visual"
+                    className="px-3 py-1 text-[11px] font-medium"
                   >
-                    <ArrowLeft className="size-4" />
-                  </Button>
-                )}
-                <h2 className="min-w-0 text-lg font-semibold leading-none text-foreground sm:text-xl">
-                  {isEditMode
-                    ? t("events.updateEvent")
-                    : canCreateEvents
-                      ? t("events.createEvent")
-                      : t("events.submitEventForReview")}
-                </h2>
-              </div>
-              <div className="shrink-0">
-                <Tabs
-                  value={viewMode}
-                  onValueChange={handleViewModeTabChange}
-                  className="w-fit"
-                >
-                  <TabsList variant="default" className="h-9 sm:h-8">
-                    <TabsTrigger
-                      value="visual"
-                      className="px-3 py-1 text-[11px] font-medium"
-                    >
-                      {t("settings.appearance.visual")}
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="json"
-                      className="px-3 py-1 text-[11px] font-medium"
-                    >
-                      {t("settings.appearance.json")}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+                    {t("settings.appearance.visual")}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="json"
+                    className="px-3 py-1 text-[11px] font-medium"
+                  >
+                    {t("settings.appearance.json")}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </div>
 
@@ -215,11 +218,9 @@ export function EventFormStep({
               <form>
                 <EventFormFields />
                 <Field orientation="horizontal" className="mt-6">
-                  <DrawerClose asChild>
-                    <Button variant="secondary" type="button">
-                      {t("common.cancel")}
-                    </Button>
-                  </DrawerClose>
+                  <Button variant="secondary" type="button" onClick={onCancel}>
+                    {t("common.cancel")}
+                  </Button>
                   <LoadingButton
                     type="button"
                     onMouseDown={onSubmit}

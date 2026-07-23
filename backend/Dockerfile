@@ -15,7 +15,9 @@ WORKDIR /app
 
 COPY --from=build /wheels /wheels
 COPY backend/requirements.txt .
-RUN apt-get update && apt-get install -y --no-install-recommends coreutils \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    coreutils \
+    fonts-dejavu-core \
     && pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt \
     && rm -rf /wheels \
     && rm -rf /var/lib/apt/lists/* \

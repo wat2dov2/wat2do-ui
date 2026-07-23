@@ -25,6 +25,11 @@ const AdminPostersPage = lazy(() =>
     default: m.AdminPostersPage,
   }))
 );
+const AdminInstagramPage = lazy(() =>
+  import("@/features/admin/pages/AdminInstagramPage").then((m) => ({
+    default: m.AdminInstagramPage,
+  }))
+);
 
 function useAdminNavigation() {
   const router = useRouter();
@@ -85,6 +90,17 @@ export function AdminPostersRoute() {
   return (
     <AdminSuspense>
       <AdminPostersPage />
+    </AdminSuspense>
+  );
+}
+
+export function AdminInstagramRoute() {
+  const router = useRouter();
+  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
+
+  return (
+    <AdminSuspense>
+      <AdminInstagramPage onBack={onBack} />
     </AdminSuspense>
   );
 }

@@ -23,10 +23,8 @@ interface UIState {
   setViewMode: (mode: ViewMode) => void;
   setFilterViewMode: (mode: FilterViewMode) => void;
 
-  showSubmitEvent: boolean;
   showCommandPalette: boolean;
   showFilterDropdown: boolean;
-  setShowSubmitEvent: (show: boolean) => void;
   setShowCommandPalette: (show: boolean) => void;
   setShowFilterDropdown: (show: boolean) => void;
 
@@ -43,10 +41,8 @@ export const useUIStore = create<UIState>()(
       setViewMode: (mode) => set({ viewMode: mode }),
       setFilterViewMode: (mode) => set({ filterViewMode: mode }),
 
-      showSubmitEvent: false,
       showCommandPalette: false,
       showFilterDropdown: false,
-      setShowSubmitEvent: (show) => set({ showSubmitEvent: show }),
       setShowCommandPalette: (show) => set({ showCommandPalette: show }),
       setShowFilterDropdown: (show) => set({ showFilterDropdown: show }),
 
@@ -69,7 +65,6 @@ export const useUIStore = create<UIState>()(
 if (typeof window !== "undefined") {
   window.addEventListener("auth-user-logout", () => {
     useUIStore.setState({
-      showSubmitEvent: false,
       showCommandPalette: false,
       showFilterDropdown: false,
       editingEvent: null,

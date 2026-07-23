@@ -53,8 +53,13 @@ function parseSchoolCandidateFromHostname(hostname: string): string | null {
     .filter(Boolean);
   const isWat2DoHostname =
     labels.length >= 2 && labels[labels.length - 2] === "wat2do" && labels[labels.length - 1] === "io";
+  const isSchoolLocalhost =
+    labels.length === 2 && labels[labels.length - 1] === "localhost";
 
-  if (!isWat2DoHostname || labels.length <= 2) {
+  if (
+    (!isWat2DoHostname && !isSchoolLocalhost) ||
+    (isWat2DoHostname && labels.length <= 2)
+  ) {
     return null;
   }
 

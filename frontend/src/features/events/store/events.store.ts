@@ -16,7 +16,12 @@ import {
 } from "@/features/events/api/events.api";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { isApiError } from "@/shared/services/apiClient";
-import { DEFAULT_SCHOOL, getCurrentSchool, resolveSchool } from "@/shared/constants/schools";
+import {
+  DEFAULT_SCHOOL,
+  getCurrentSchool,
+  getHostnameSchoolStatus,
+  resolveSchool,
+} from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
 import { AUTH_STATE_REFRESH_EVENT, loadUserProfile } from "@/features/auth/api/userRepository";
 
@@ -39,13 +44,22 @@ interface EventsState {
   deleteEvent: (eventId: number) => Promise<void>;
 }
 
-function getInitialSchoolFilter(): string {
+function getRouteSchool(): string | null {
   if (typeof window !== "undefined") {
     const schoolParam = new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim();
     if (schoolParam) return resolveSchool(schoolParam);
+
+    const hostnameSchool = getHostnameSchoolStatus(window.location.hostname);
+    if (hostnameSchool.candidate) {
+      return hostnameSchool.school;
+    }
   }
 
-  return resolveSchool(loadUserProfile()?.school || getCurrentSchool());
+  return null;
+}
+
+function getInitialSchoolFilter(): string {
+  return resolveSchool(getRouteSchool() || loadUserProfile()?.school || getCurrentSchool());
 }
 
 function removeEventFromState(state: EventsState, eventId: number): Partial<EventsState> {
@@ -122,15 +136,13 @@ export const useEventsStore = create<EventsState>((set, get) => ({
 }));
 
 function getAuthLoginSchool(event: globalThis.Event): string {
+  const routeSchool = getRouteSchool();
+  if (routeSchool) return routeSchool;
+
   if ("detail" in event) {
     const detail = (event as CustomEvent<{ school?: string }>).detail;
     const hintedSchool = detail?.school?.trim();
     if (hintedSchool) return resolveSchool(hintedSchool);
-  }
-
-  if (typeof window !== "undefined") {
-    const routeSchool = new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim();
-    if (routeSchool) return resolveSchool(routeSchool);
   }
 
   return resolveSchool(loadUserProfile()?.school || getCurrentSchool());
@@ -145,10 +157,7 @@ function syncSchoolFilterFromLogin(event: globalThis.Event): void {
 }
 
 function syncSchoolFilterFromProfile(): void {
-  const routeSchool =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get(QP.SCHOOL)?.trim()
-      : "";
+  const routeSchool = getRouteSchool();
   const nextSchool = resolveSchool(routeSchool || loadUserProfile()?.school || getCurrentSchool());
   const currentSchool = useEventsStore.getState().schoolFilter;
   if (currentSchool !== nextSchool) {

@@ -104,6 +104,15 @@ export async function getMyOrganizations(): Promise<Organization[]> {
   return rawOrgs.map(normalizeOrganization);
 }
 
+export async function getOrganizationById(
+  organizationId: number,
+): Promise<Organization> {
+  const raw = await api.get<ApiOrganizationResponse>(
+    `/organizations/${organizationId}`,
+  );
+  return normalizeOrganization(raw);
+}
+
 export type OrganizationCreateInput = Pick<
   Organization,
   | "organization_name"

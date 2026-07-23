@@ -12,7 +12,7 @@ export type SubmitEventResult =
 interface UseSubmitEventOptions {
   isEditMode: boolean;
   editEventId?: number;
-  onSubmit: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
+  onSubmit?: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
   onUpdate?: (eventId: number, event: EventFormData) => void | Promise<void>;
   onClose: () => void;
   showPromotion: boolean;
@@ -63,6 +63,9 @@ export function useSubmitEvent({
           onClose();
           return;
         }
+        if (!onSubmit) {
+          throw new Error("Event submission handler is not configured");
+        }
         const result = await onSubmit(dataToSubmit);
         const eventId = result.type === "event" ? result.eventId : null;
         onSubmitted(eventId);
@@ -75,7 +78,7 @@ export function useSubmitEvent({
         // generic message when err is not an ApiError.
         const message = getApiErrorMessage(err, t("events.submitFailed"));
         toast({
-          title: "Submission Failed",
+          title: t("events.submissionFailedTitle"),
           description: message,
           variant: "destructive",
         });

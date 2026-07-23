@@ -3,6 +3,7 @@
 import { AppPage } from "@/app/app-page";
 import {
   AdminEventsRoute,
+  AdminInstagramRoute,
   AdminOrganizationsRoute,
   AdminPanelRoute,
   AdminPostersRoute,
@@ -19,10 +20,13 @@ import { useUserEmail } from "@/features/auth";
 import { ContactPage } from "@/features/contact/pages/ContactPage";
 import { useEventsStore } from "@/features/events";
 import { EventDetailsPageContainer } from "@/features/events/pages/EventDetailsPageContainer";
+import { SubmitEventPage } from "@/features/events/pages/SubmitEventPage";
 import { MarketingPage } from "@/features/marketing/pages/MarketingPage";
 import { DesignSystemPage } from "@/features/design-system";
 import { OnboardingDemoPage } from "@/features/onboarding-demo";
 import { OnboardingPage } from "@/features/onboarding/pages/OnboardingPage";
+import { CreateOrganizationPage } from "@/features/organizations/pages/CreateOrganizationPage";
+import { OrganizationDetailsPage } from "@/features/organizations/pages/OrganizationDetailsPage";
 import { OrganizationsPage } from "@/features/organizations/pages/OrganizationsPage";
 import { InviteLandingPage } from "@/features/organizations/pages/InviteLandingPage";
 import { QRRedirectPage } from "@/features/qrcode/pages/QRRedirectPage";
@@ -86,6 +90,26 @@ export function OrganizationsRoute() {
   );
 }
 
+export function CreateOrganizationRoute() {
+  return (
+    <AppPage requiresAuth>
+      <CreateOrganizationPage />
+    </AppPage>
+  );
+}
+
+export function OrganizationDetailsRoute({
+  organizationId,
+}: {
+  organizationId: number;
+}) {
+  return (
+    <AppPage>
+      <OrganizationDetailsPage organizationId={organizationId} />
+    </AppPage>
+  );
+}
+
 export function InviteRoute() {
   return (
     <AppPage chrome={false}>
@@ -130,6 +154,14 @@ export function AdminPostersPageRoute() {
   return (
     <AppPage requiredRole={ROLE_ADMIN}>
       <AdminPostersRoute />
+    </AppPage>
+  );
+}
+
+export function AdminInstagramPageRoute() {
+  return (
+    <AppPage requiredRole={ROLE_ADMIN}>
+      <AdminInstagramRoute />
     </AppPage>
   );
 }
@@ -181,6 +213,14 @@ export function EventDetailsPageRoute({ eventId }: { eventId: number }) {
   return (
     <AppPage>
       <EventDetailsPageContainer eventId={eventId} />
+    </AppPage>
+  );
+}
+
+export function SubmitEventPageRoute() {
+  return (
+    <AppPage requiresAuth>
+      <SubmitEventPage />
     </AppPage>
   );
 }

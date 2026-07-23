@@ -35,6 +35,14 @@ export type ApiGoingEventSelectionUpdate =
 export type ApiGoingEventStatusResponse =
   components["schemas"]["GoingEventStatusResponse"];
 
+// ── Instagram Publishing ───────────────────────────────────────────
+export type ApiInstagramPublishBatchResponse =
+  components["schemas"]["InstagramPublishBatchResponse"];
+export type ApiInstagramPublishBatchUpdate =
+  components["schemas"]["InstagramPublishBatchUpdate"];
+export type ApiInstagramPublishBatchPublish =
+  components["schemas"]["InstagramPublishBatchPublish"];
+
 // ── Event Submissions ───────────────────────────────────────────────
 // export type ApiSubmissionCreate = components["schemas"]["SubmissionCreate"];
 // export type ApiSubmissionUpdate = components["schemas"]["SubmissionUpdate"];

@@ -1,6 +1,8 @@
 export const queryKeys = {
   organizations: {
     all: ["organizations"] as const,
+    detail: (organizationId: number) =>
+      [...queryKeys.organizations.all, "detail", organizationId] as const,
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.organizations.all, "list", filters] as const,
     allForSchool: (school: string | null | undefined) =>
@@ -32,5 +34,9 @@ export const queryKeys = {
     all: ["notification-preferences"] as const,
     byUser: (userId: string) =>
       [...queryKeys.notificationPreferences.all, userId] as const,
+  },
+  instagramPublishing: {
+    all: ["instagram-publishing"] as const,
+    batches: () => [...queryKeys.instagramPublishing.all, "batches"] as const,
   },
 } as const;

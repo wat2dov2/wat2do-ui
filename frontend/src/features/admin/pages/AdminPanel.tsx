@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode, Building2 } from "@/shared/ui/doodle-icons";
+import { Shield, Calendar, FileText, Megaphone, ArrowRight, Clock, QrCode, Building2, Instagram } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { AdminCard } from "@/shared/ui/AdminCard";
@@ -12,7 +12,13 @@ import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AdminPanelProps {
-  onNavigate: (page: "admin-events" | "admin-organizations" | "admin-posters") => void;
+  onNavigate: (
+    page:
+      | "admin-events"
+      | "admin-organizations"
+      | "admin-posters"
+      | "admin-instagram"
+  ) => void;
 }
 
 type ActivityType = ActivityDisplay["type"];
@@ -64,7 +70,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <AdminCard
           icon={Calendar}
           title={t("navigation.events")}
@@ -82,6 +88,12 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
           title={t("admin.posters")}
           description={t("admin.managePostersDescAlt")}
           onMouseDown={() => onNavigate("admin-posters")}
+        />
+        <AdminCard
+          icon={Instagram}
+          title={t("admin.instagramPublishing.title")}
+          description={t("admin.instagramPublishing.cardDescription")}
+          onMouseDown={() => onNavigate("admin-instagram")}
         />
       </div>
 

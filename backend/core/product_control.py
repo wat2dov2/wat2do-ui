@@ -258,6 +258,19 @@ class AdminControl(_ControlModel):
     items_per_page: int = Field(gt=0)
 
 
+class InstagramPublishingControl(_ControlModel):
+    generation_timezone: str = Field(min_length=1)
+    generation_local_hour: int = Field(ge=0, le=23)
+    fallback_window_hours: int = Field(gt=0)
+    minimum_lead_hours: int = Field(ge=0)
+    maximum_lead_days: int = Field(gt=0)
+    maximum_ai_candidates: int = Field(gt=0, le=100)
+    maximum_event_slides: int = Field(gt=0, le=9)
+    minimum_ai_score: float = Field(ge=0, le=10)
+    meta_poll_attempts: int = Field(gt=0, le=30)
+    meta_poll_interval_seconds: float = Field(gt=0, le=30)
+
+
 class ProductControl(_ControlModel):
     event_discovery: EventDiscoveryControl
     client_cache: ClientCacheControl
@@ -275,6 +288,7 @@ class ProductControl(_ControlModel):
     email_delivery: EmailDeliveryControl
     admin: AdminControl
     public_attendance: PublicAttendanceControl
+    instagram_publishing: InstagramPublishingControl
 
 
 def load_product_control(path: Path = _CONTROL_PATH) -> ProductControl:

@@ -10,6 +10,11 @@ import type {
   Organization,
   SubmissionStatus,
 } from "@/shared/types";
+import type {
+  ApiInstagramPublishBatchPublish,
+  ApiInstagramPublishBatchResponse,
+  ApiInstagramPublishBatchUpdate,
+} from "@/shared/generated";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import {
   createOrganizationAPI,
@@ -133,6 +138,36 @@ export async function updateEventSubmission(
     status,
     rejection_reason: rejectionReason ?? null,
   });
+}
+
+// ── Instagram Publishing API ───────────────────────────────────────
+
+export async function getInstagramPublishBatches(): Promise<
+  ApiInstagramPublishBatchResponse[]
+> {
+  return getPaginatedItems<ApiInstagramPublishBatchResponse>(
+    "/instagram-publishing/batches/",
+  );
+}
+
+export async function updateInstagramPublishBatch(
+  id: string,
+  data: ApiInstagramPublishBatchUpdate,
+): Promise<ApiInstagramPublishBatchResponse> {
+  return api.patch<ApiInstagramPublishBatchResponse>(
+    `/instagram-publishing/batches/${id}`,
+    data,
+  );
+}
+
+export async function publishInstagramBatch(
+  id: string,
+  data: ApiInstagramPublishBatchPublish,
+): Promise<ApiInstagramPublishBatchResponse> {
+  return api.post<ApiInstagramPublishBatchResponse>(
+    `/instagram-publishing/batches/${id}/publish`,
+    data,
+  );
 }
 
 

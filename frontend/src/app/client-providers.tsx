@@ -35,7 +35,15 @@ const DevClickToComponent =
       )
     : null;
 
-const AppReadyContext = createContext(false);
+interface AppReadiness {
+  appReady: boolean;
+  authReady: boolean;
+}
+
+const AppReadyContext = createContext<AppReadiness>({
+  appReady: false,
+  authReady: false,
+});
 
 setOnAfterRefresh(() => {
   fetchProfileAPI().catch((err) =>
@@ -70,11 +78,16 @@ async function bootstrapAuth(): Promise<boolean> {
 }
 
 export function useAppReady() {
-  return useContext(AppReadyContext);
+  return useContext(AppReadyContext).appReady;
+}
+
+export function useAuthReady() {
+  return useContext(AppReadyContext).authReady;
 }
 
 export function ClientProviders({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(() => i18n.hasResourceBundle("en", "translation"));
+  const [ready, setReady] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [queryClient] = useState(() => getQueryClient());
 
   useEffect(() => {
@@ -127,13 +140,18 @@ export function ClientProviders({ children }: { children: ReactNode }) {
 
     document.documentElement.dataset.clientReady = "true";
     void bootstrapConstants();
+    let cancelled = false;
     void bootstrapAuth().then((ok) => {
       if (ok) {
         identifyPostHogUser(getUserId(), getSessionEmail());
       }
+      if (!cancelled) {
+        setAuthReady(true);
+      }
     });
 
     return () => {
+      cancelled = true;
       delete document.documentElement.dataset.clientReady;
     };
   }, [ready]);
@@ -143,7 +161,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       <ErrorBoundary>
         <LazyMotion features={domMax} strict>
           <TooltipProvider delayDuration={0}>
-            <AppReadyContext.Provider value={ready}>
+            <AppReadyContext.Provider value={{ appReady: ready, authReady }}>
               {DevClickToComponent ? (
                 <Suspense fallback={null}>
                   <DevClickToComponent />

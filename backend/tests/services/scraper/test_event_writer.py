@@ -320,6 +320,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     assert len(insert_calls) == 1
     payload = insert_calls[0][0][0]
     assert payload["title"] == "Tea Tasting"
+    assert payload["ingestion_source"] == "instagram_scraper"
     assert "dtstart_utc" not in payload  # dates do NOT belong on the events row anymore
 
     # The event_dates insert should have received THREE rows (one per occurrence).

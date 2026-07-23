@@ -157,6 +157,43 @@
         "missingPlacement": "继续前，请为每个资产设置二维码的放置区域。",
         "loginRequired": "请登录以生成 PDF。"
       }
+    },
+    "instagramPublishing": {
+      "title": "Instagram 发布",
+      "description": "审核、调整并发布每日活动轮播。",
+      "cardDescription": "审核并发布每日活动轮播",
+      "batchDescription": "{{date}} · {{count}} 个活动页面",
+      "cover": "封面",
+      "eventSlides": "活动页面",
+      "removedSlides": "已移除页面",
+      "restore": "恢复 {{title}}",
+      "noEligibleEvents": "此批次未找到符合条件的 Instagram 抓取活动。",
+      "caption": "说明文字",
+      "characterCount": "{{count}} / 2200",
+      "saveDraft": "保存草稿",
+      "publish": "发布到 Instagram",
+      "confirmTitle": "发布此轮播？",
+      "confirmDescription": "这会立即将已批准的轮播发布到 {{account}}。Instagram 帖子无法自动撤回。",
+      "confirmPublish": "立即发布",
+      "score": "AI 评分 {{score}}",
+      "moveEarlier": "将页面前移",
+      "moveLater": "将页面后移",
+      "removeSlide": "移除页面",
+      "saved": "Instagram 草稿已保存",
+      "saveError": "无法保存 Instagram 草稿",
+      "published": "轮播已发布到 Instagram",
+      "publishError": "无法发布 Instagram 轮播",
+      "loadError": "无法加载 Instagram 发布批次。",
+      "retry": "重试",
+      "noBatches": "尚未生成 Instagram 发布批次。",
+      "status": {
+        "generating": "生成中",
+        "ready_for_review": "待审核",
+        "publishing": "发布中",
+        "published": "已发布",
+        "empty": "无符合条件的活动",
+        "failed": "需要处理"
+      }
     }
   }
 }

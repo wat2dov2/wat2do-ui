@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthReady } from "@/app/client-providers";
 import {
   fetchProfileAPI,
   getLastProfileFetchAt,
@@ -25,7 +26,8 @@ const ADMIN_ROLE_FRESHNESS_TTL_MS = 5 * 60 * 1000;
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated: authed, role, hasOrganization, userEmail } = useAuthState();
+  const authReady = useAuthReady();
+  const { isAuthenticated: authed, role, hasOrganization } = useAuthState();
 
   const needsFreshRole = requiredRole === ROLE_ADMIN;
   const [refreshing, setRefreshing] = useState<boolean>(() => {
@@ -35,7 +37,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   });
 
   useEffect(() => {
-    if (!needsFreshRole) return;
+    if (!authReady || !authed || !needsFreshRole) return;
     const stale = Date.now() - getLastProfileFetchAt() > ADMIN_ROLE_FRESHNESS_TTL_MS;
     if (!stale) return;
 
@@ -50,9 +52,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return () => {
       cancelled = true;
     };
-  }, [needsFreshRole]);
+  }, [authReady, authed, needsFreshRole]);
 
-  const redirectTarget = !authed && userEmail === null
+  const redirectTarget = !authReady
+    ? null
+    : !authed
     ? ROUTES.LOGIN
     : requiredRole === ROLE_ADMIN && role !== "admin"
       ? ROUTES.HOME
@@ -66,7 +70,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     }
   }, [redirectTarget, router]);
 
-  if (redirectTarget || !authed || (needsFreshRole && refreshing)) {
+  if (!authReady || redirectTarget || !authed || (needsFreshRole && refreshing)) {
     return <LoadingPage />;
   }
 

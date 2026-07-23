@@ -154,6 +154,14 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
       });
     });
 
+    await page.route(url => apiPath(url) === "/organizations/1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_ORGANIZATION),
+      });
+    });
+
     // Mock general events list
     await page.route(url => apiPath(url) === "/events", async (route) => {
       await route.fulfill({
@@ -259,12 +267,12 @@ test.describe("Organization Membership Join & Admin Approval Flow", () => {
     await page.goto(`${BASE}/organizations`);
     await page.waitForTimeout(1000);
 
-    // Click on Club Card to open details modal
+    // Click on a club card to open its dedicated details page.
     const clubCard = page.getByText("UW Computer Science Club");
     await expect(clubCard).toBeVisible();
     await clubCard.click();
 
-    // Verify modal is open and has "Request to Join" button
+    await expect(page).toHaveURL(`${BASE}/organizations/1`);
     await expect(page.getByRole("heading", { name: "UW Computer Science Club" })).toBeVisible();
     const joinBtn = page.getByRole("button", { name: "Request to Join" });
     await expect(joinBtn).toBeVisible();

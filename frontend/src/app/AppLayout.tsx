@@ -13,8 +13,6 @@ import { FloatingDock } from "@/shared/ui/floating-dock";
 import type { FloatingDockItem } from "@/shared/ui/floating-dock";
 import { BackToTopButton } from "@/shared/ui/back-to-top-button";
 import { useAuthState } from "@/features/auth";
-import { useUIStore } from "@/shared/store/ui.store";
-import { toast } from "@/shared/hooks/use-toast";
 import { ROUTES } from "@/shared/constants/routes";
 
 interface AppLayoutProps {
@@ -25,7 +23,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const pathname = usePathname();
   const { isAuthenticated } = useAuthState();
-  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
   const isActive = (href?: string) => {
     if (!href) return false;
@@ -34,14 +31,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   const isOrganizationPanel = pathname.startsWith(ROUTES.ORGANIZATION_PANEL);
-
-  const handleCreateClick = () => {
-    if (!isAuthenticated) {
-      toast({ description: t("navigation.loginRequiredToSubmit") });
-      return;
-    }
-    setShowSubmitEvent(true);
-  };
 
   const dockItems: FloatingDockItem[] = [
     {
@@ -55,7 +44,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           {
             title: t("navigation.create"),
             icon: <Plus className="size-full" />,
-            onMouseDown: handleCreateClick,
+            href: ROUTES.EVENT_SUBMIT,
+            isActive: isActive(ROUTES.EVENT_SUBMIT),
           },
         ]
       : []),

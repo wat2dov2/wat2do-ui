@@ -65,11 +65,9 @@ export function AdminEventsPage({
   const events = useEventsStore((s) => s.events);
   const deleteEvent = useEventsStore((s) => s.deleteEvent);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
-  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
   const onEditEvent = (event: Event) => {
     setEditingEvent(event);
-    setShowSubmitEvent(true);
   };
 
   const {

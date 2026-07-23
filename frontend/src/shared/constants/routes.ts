@@ -19,9 +19,11 @@ export const ROUTES = {
   ONBOARDING_DEMO: "/onboarding-demo",
   CONTACT: "/contact",
   ORGANIZATIONS: "/organizations",
+  ORGANIZATION_CREATE: "/organizations/new",
   SETTINGS: "/settings",
   MARKETING: "/marketing",
   INVITE: "/invite",
+  EVENT_SUBMIT: "/events/submit",
 
 
   // Admin
@@ -29,6 +31,7 @@ export const ROUTES = {
   ADMIN_EVENTS: "/admin/events",
   ADMIN_ORGANIZATIONS: "/admin/organizations",
   ADMIN_POSTERS: "/admin/posters",
+  ADMIN_INSTAGRAM: "/admin/instagram",
 
   // Organization Panel
   ORGANIZATION_PANEL: "/organization-panel",
@@ -41,6 +44,10 @@ export function schoolPath(school: string): string {
   return `/school/${school}`;
 }
 
+export function organizationPagePath(organizationId: number): string {
+  return `${ROUTES.ORGANIZATIONS}/${organizationId}`;
+}
+
 const APP_NAME = "Wat2Do";
 
 const ROUTE_PAGE_TITLES: Partial<Record<(typeof ROUTES)[keyof typeof ROUTES], string>> = {
@@ -51,12 +58,15 @@ const ROUTE_PAGE_TITLES: Partial<Record<(typeof ROUTES)[keyof typeof ROUTES], st
   [ROUTES.ONBOARDING_DEMO]: "Onboarding Demo",
   [ROUTES.CONTACT]: "Contact",
   [ROUTES.ORGANIZATIONS]: "Organizations",
+  [ROUTES.ORGANIZATION_CREATE]: "Add an Organization",
   [ROUTES.SETTINGS]: "Settings",
   [ROUTES.MARKETING]: "Marketing",
+  [ROUTES.EVENT_SUBMIT]: "Submit an Event",
   [ROUTES.ADMIN]: "Admin",
   [ROUTES.ADMIN_EVENTS]: "Admin Events",
   [ROUTES.ADMIN_ORGANIZATIONS]: "Admin Organizations",
   [ROUTES.ADMIN_POSTERS]: "Admin Posters",
+  [ROUTES.ADMIN_INSTAGRAM]: "Instagram Publishing",
   [ROUTES.ORGANIZATION_PANEL]: "Organization Panel",
   [ROUTES.ORGANIZATION_PANEL_POSTERS]: "Posters",
   [ROUTES.ORGANIZATION_PANEL_INTEGRATIONS]: "Integrations",
@@ -72,6 +82,13 @@ export function getRouteDocumentTitle(pathname: string): string {
 
   if (normalizedPathname.startsWith("/invite/")) {
     return buildDocumentTitle("Organization Invite");
+  }
+
+  if (
+    normalizedPathname !== ROUTES.ORGANIZATION_CREATE &&
+    normalizedPathname.startsWith(`${ROUTES.ORGANIZATIONS}/`)
+  ) {
+    return buildDocumentTitle("Organization");
   }
 
   if (normalizedPathname.startsWith("/qr/")) {
@@ -99,6 +116,7 @@ export const ADMIN_ROUTE_MAP = {
   "admin-events": ROUTES.ADMIN_EVENTS,
   "admin-organizations": ROUTES.ADMIN_ORGANIZATIONS,
   "admin-posters": ROUTES.ADMIN_POSTERS,
+  "admin-instagram": ROUTES.ADMIN_INSTAGRAM,
 } as const;
 
 export type AdminRouteKey = keyof typeof ADMIN_ROUTE_MAP;

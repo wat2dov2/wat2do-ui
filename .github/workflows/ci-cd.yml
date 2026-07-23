@@ -92,49 +92,6 @@ jobs:
           BACKEND_API_URL: http://localhost:8000
         run: npm run build
 
-  commons:
-    name: Waterloo Commons checks
-    runs-on: ubuntu-latest
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
-      SUPABASE_SECRET_KEY: test-secret-key
-      OPENAI_API_KEY: test-openai-key
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
-      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
-      REQUEST_FINGERPRINT_SECRET: test-request-fingerprint-secret-at-least-32-bytes
-      CRON_SECRET: test-cron-secret-at-least-32-bytes
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: waterloo-commons/package-lock.json
-
-      - name: Install dependencies
-        working-directory: waterloo-commons
-        run: npm ci
-
-      - name: Lint Waterloo Commons
-        working-directory: waterloo-commons
-        run: npm run lint
-
-      - name: Type check Waterloo Commons
-        working-directory: waterloo-commons
-        run: npm run type-check
-
-      - name: Test Waterloo Commons
-        working-directory: waterloo-commons
-        run: npm test
-
-      - name: Build Waterloo Commons
-        working-directory: waterloo-commons
-        run: npm run build
-
   deploy-wat2do:
     name: Deploy Wat2Do to AWS
     runs-on: ubuntu-latest

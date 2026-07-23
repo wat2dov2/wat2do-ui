@@ -38,6 +38,20 @@ export interface AuthState {
   role: "user" | "admin";
 }
 
+const SERVER_AUTH_STATE: AuthState = Object.freeze({
+  userEmail: null,
+  userFullName: null,
+  userAvatarUrl: null,
+  isAuthenticated: false,
+  profileCompleted: false,
+  isAdmin: false,
+  hasOrganization: false,
+  clubs: [],
+  organizationId: null,
+  organizationName: null,
+  role: "user",
+});
+
 /**
  * Live snapshot from the auth caches.
  *
@@ -112,7 +126,7 @@ function subscribe(onStoreChange: () => void): () => void {
 
 /** Full auth snapshot - use only when a component reads ≥2 fields. */
 export function useAuthState(): AuthState {
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, () => SERVER_AUTH_STATE);
 }
 
 /** Primitive selector - re-renders only when the email changes. */
@@ -120,7 +134,7 @@ export function useUserEmail(): string | null {
   return useSyncExternalStore(
     subscribe,
     () => getSnapshot().userEmail,
-    () => getSnapshot().userEmail,
+    () => SERVER_AUTH_STATE.userEmail,
   );
 }
 
@@ -129,6 +143,6 @@ export function useProfileCompleted(): boolean {
   return useSyncExternalStore(
     subscribe,
     () => getSnapshot().profileCompleted,
-    () => getSnapshot().profileCompleted,
+    () => SERVER_AUTH_STATE.profileCompleted,
   );
 }

@@ -50,7 +50,6 @@ export function CommandPalette({
   const { t } = useTranslation();
   const router = useRouter();
   const setViewMode = useUIStore((s) => s.setViewMode);
-  const setShowSubmitEvent = useUIStore((s) => s.setShowSubmitEvent);
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onOpenChange} title={t("commands.commandPalette")} description={t("commands.commandPaletteDescription")}>
@@ -120,7 +119,7 @@ export function CommandPalette({
                 onOpenChange(false);
                 return;
               }
-              setShowSubmitEvent(true);
+              router.push(ROUTES.EVENT_SUBMIT);
               onOpenChange(false);
             }}
           >

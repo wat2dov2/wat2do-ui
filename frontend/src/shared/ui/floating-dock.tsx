@@ -190,6 +190,7 @@ function IconContainer({
     return (
       <button
         type="button"
+        aria-label={title}
         onMouseDown={onMouseDown}
         className={cn(hitboxClassName, "cursor-pointer")}
       >
@@ -200,7 +201,7 @@ function IconContainer({
 
   if (href) {
     return (
-      <Link href={href} className={hitboxClassName}>
+      <Link href={href} aria-label={title} className={hitboxClassName}>
         {content}
       </Link>
     );
