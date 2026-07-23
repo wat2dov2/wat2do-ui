@@ -683,7 +683,7 @@ test.describe("Events Page", () => {
     ).toBeVisible();
   });
 
-  test("uses the Select primitive to register for one occurrence", async ({ page }) => {
+  test("uses recurring-event controls above the event drawer", async ({ page }) => {
     await seedAuthenticatedSession(page);
 
     const firstOccurrenceId = "11111111-1111-4111-8111-111111111111";
@@ -751,6 +751,18 @@ test.describe("Events Page", () => {
     await page.goto(`${BASE}/?eventId=1`);
 
     const drawer = page.getByRole("dialog", { name: "Recurring Workshop" });
+    const extraDatesButton = drawer.getByRole("button", { name: "+1 date" });
+    await extraDatesButton.hover();
+
+    const tooltip = page.locator('[data-slot="tooltip-content"]');
+    await expect(tooltip).toBeVisible();
+    const [tooltipZIndex, drawerZIndex] = await Promise.all([
+      tooltip.evaluate((element) => Number.parseInt(getComputedStyle(element).zIndex, 10)),
+      drawer.evaluate((element) => Number.parseInt(getComputedStyle(element).zIndex, 10)),
+    ]);
+    expect(tooltipZIndex).toBeGreaterThan(drawerZIndex);
+
+    await page.mouse.move(0, 0);
     await drawer.getByRole("button", { name: "Register", exact: true }).click();
 
     const occurrenceSelect = drawer.getByRole("combobox", {
