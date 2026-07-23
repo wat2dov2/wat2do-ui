@@ -81,11 +81,11 @@ resource "aws_ecs_task_definition" "application" {
       memoryReservation      = 32
       readonlyRootFilesystem = true
       user                   = "0"
-      command                = ["sh", "-c", "chown 999:999 /app/.next/cache && chmod 0755 /app/.next/cache && cp -a /app/.next/server/app/. /writable-prerender/ && chown -R 999:999 /writable-prerender"]
+      command                = ["sh", "-c", "chown 999:999 /app/frontend/.next/cache && chmod 0755 /app/frontend/.next/cache && cp -a /app/frontend/.next/server/app/. /writable-prerender/ && chown -R 999:999 /writable-prerender"]
       mountPoints = [
         {
           sourceVolume  = "frontend-cache"
-          containerPath = "/app/.next/cache"
+          containerPath = "/app/frontend/.next/cache"
           readOnly      = false
         },
         {
@@ -140,12 +140,12 @@ resource "aws_ecs_task_definition" "application" {
         },
         {
           sourceVolume  = "frontend-cache"
-          containerPath = "/app/.next/cache"
+          containerPath = "/app/frontend/.next/cache"
           readOnly      = false
         },
         {
           sourceVolume  = "frontend-prerender"
-          containerPath = "/app/.next/server/app"
+          containerPath = "/app/frontend/.next/server/app"
           readOnly      = false
         },
       ]
