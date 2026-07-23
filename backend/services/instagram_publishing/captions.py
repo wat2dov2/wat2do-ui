@@ -4,12 +4,20 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from services.school_context import resolve_school_timezone, school_display_name
+from services.school_context import (
+    canonical_school_key,
+    resolve_school_timezone,
+    school_display_name,
+)
+
+_INSTAGRAM_CAPTION_LIMIT = 2200
 
 
 def build_caption(events: list[dict[str, Any]], school: str) -> str:
     """Build a factual caption from canonical event data."""
     timezone = ZoneInfo(resolve_school_timezone(school))
+    school_slug = canonical_school_key(school)
+    school_url = f"https://{school_slug}.wat2do.io"
     lines = [
         f"Fresh events at {school_display_name(school)}, added to Wat2Do in the last 24 hours 👀",
         "",
@@ -29,22 +37,27 @@ def build_caption(events: list[dict[str, Any]], school: str) -> str:
             ]
         )
 
-    lines.extend(
+    body = "\n".join(lines).rstrip()
+    footer = "\n".join(
         [
             "Which one are you going to?",
             "",
             (
                 "For final, up-to-date dates, times, locations, registration details, "
-                "and event changes, visit wat2do.io."
+                f"and event changes, visit {school_url}."
             ),
             "",
-            f"#{school.replace('-', '')} #CampusEvents #Wat2Do",
+            f"#{school_slug.replace('-', '')} #CampusEvents #Wat2Do",
         ]
     )
-    caption = "\n".join(lines)
-    if len(caption) <= 2200:
+    separator = "\n\n"
+    caption = f"{body}{separator}{footer}"
+    if len(caption) <= _INSTAGRAM_CAPTION_LIMIT:
         return caption
-    return f"{caption[:2199].rstrip()}…"
+
+    body_limit = _INSTAGRAM_CAPTION_LIMIT - len(separator) - len(footer) - 1
+    truncated_body = body[:body_limit].rstrip()
+    return f"{truncated_body}…{separator}{footer}"
 
 
 def _parse_datetime(value: str | datetime) -> datetime:

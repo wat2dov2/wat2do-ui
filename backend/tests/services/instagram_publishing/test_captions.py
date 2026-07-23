@@ -12,17 +12,17 @@ def test_build_caption_uses_canonical_handle_time_location_and_cta():
                 "location": "Student Life Centre",
             }
         ],
-        "uwaterloo",
+        "utm",
     )
 
     assert "Midnight Breakfast - @verifiedclub" in caption
     assert "Fri, Jul 24 · 7:30 PM" in caption
     assert "Student Life Centre" in caption
     assert "final, up-to-date" in caption
-    assert "wat2do.io" in caption
+    assert "https://utm.wat2do.io" in caption
 
 
-def test_build_caption_never_exceeds_instagram_limit():
+def test_build_caption_preserves_school_url_within_instagram_limit():
     event = {
         "title": "Long event title " * 20,
         "organization": "Organization " * 20,
@@ -34,3 +34,4 @@ def test_build_caption_never_exceeds_instagram_limit():
     caption = build_caption([event] * 9, "uwaterloo")
 
     assert len(caption) <= 2200
+    assert "https://uwaterloo.wat2do.io" in caption
