@@ -215,7 +215,7 @@ jobs:
           jq --arg frontend_image "$frontend_image" --arg backend_image "$backend_image" '
             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
             | .containerDefinitions |= map(
-              if .name == "frontend" then .image = $frontend_image
+              if (.name == "frontend" or .name == "frontend-cache-init") then .image = $frontend_image
               elif .name == "backend" then .image = $backend_image
               else . end
             )
