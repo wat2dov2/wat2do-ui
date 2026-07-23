@@ -100,7 +100,7 @@ resource "aws_cloudfront_distribution" "main" {
   http_version        = "http2and3"
   comment             = "wat2do production"
   price_class         = "PriceClass_All"
-  aliases             = [var.domain_name, "www.${var.domain_name}"]
+  aliases             = [var.domain_name, "www.${var.domain_name}", "*.${var.domain_name}"]
   wait_for_deployment = true
 
   origin {
