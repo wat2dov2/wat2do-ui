@@ -12,7 +12,9 @@ import {
   getReportedEvents,
   updateEventSubmission,
   getOrganizationClaims,
+  getOrganizationsForReview,
   resolveClaim,
+  resolveOrganizationReview,
   type OrganizationClaim,
 } from "@/features/admin/api/admin.api";
 import {
@@ -21,25 +23,30 @@ import {
   SUBMISSION_REJECTED,
 } from "@/shared/constants/statuses";
 import { controlBox } from "@/shared/config/controlBox";
-import type { EventSubmission } from "@/shared/types";
+import type { EventSubmission, Organization, OrganizationStatus } from "@/shared/types";
 
 interface LoadedAt {
   submissions?: number;
   reports?: number;
   claims?: number;
+  organizationReviews?: number;
 }
 
 interface AdminState {
   submissions: EventSubmission[];
   reportedEventIds: Set<number>;
   claims: OrganizationClaim[];
+  organizationReviews: Organization[];
   loadedAt: LoadedAt;
   submissionsSchool?: string;
   claimsSchool?: string;
+  organizationReviewsSchool?: string;
 
   fetchSubmissions: (school?: string, force?: boolean) => Promise<void>;
   fetchReportedEventIds: (force?: boolean) => Promise<void>;
   fetchClaims: (school?: string, force?: boolean) => Promise<void>;
+  fetchOrganizationReviews: (school?: string, force?: boolean) => Promise<void>;
+  reviewOrganization: (organizationId: number, status: OrganizationStatus) => Promise<void>;
   approveSubmission: (id: string) => Promise<void>;
   rejectSubmission: (id: string, reason: string) => Promise<void>;
   approveClaim: (id: string) => Promise<void>;
@@ -54,9 +61,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   submissions: [],
   reportedEventIds: new Set<number>(),
   claims: [],
+  organizationReviews: [],
   loadedAt: {},
   submissionsSchool: undefined,
   claimsSchool: undefined,
+  organizationReviewsSchool: undefined,
 
   fetchSubmissions: async (school, force = false) => {
     const isSchoolChanged = school !== get().submissionsSchool;
@@ -103,6 +112,35 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }));
     } catch (err) {
       console.error("Failed to fetch claims:", err);
+    }
+  },
+
+  fetchOrganizationReviews: async (school, force = false) => {
+    const isSchoolChanged = school !== get().organizationReviewsSchool;
+    if (!force && !isSchoolChanged && fresh(get().loadedAt.organizationReviews)) return;
+    try {
+      const organizationReviews = await getOrganizationsForReview(undefined, school);
+      set((state) => ({
+        organizationReviews,
+        organizationReviewsSchool: school,
+        loadedAt: { ...state.loadedAt, organizationReviews: Date.now() },
+      }));
+    } catch (err) {
+      console.error("Failed to fetch organizations for review:", err);
+    }
+  },
+
+  reviewOrganization: async (organizationId, status) => {
+    try {
+      await resolveOrganizationReview(organizationId, status);
+      set((state) => ({
+        organizationReviews: state.organizationReviews.map((organization) =>
+          organization.id === organizationId ? { ...organization, status } : organization,
+        ),
+      }));
+    } catch (err) {
+      console.error("Failed to review organization:", err);
+      throw err;
     }
   },
 
@@ -171,9 +209,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       submissions: [],
       reportedEventIds: new Set<number>(),
       claims: [],
+      organizationReviews: [],
       loadedAt: {},
       submissionsSchool: undefined,
       claimsSchool: undefined,
+      organizationReviewsSchool: undefined,
     });
   },
 }));

@@ -20,6 +20,10 @@
   --color-secondary-hover: var(--secondary-hover);
   --color-secondary-active: var(--secondary-active);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-selected: var(--selected);
+  --color-selected-hover: var(--selected-hover);
+  --color-selected-border: var(--selected-border);
+  --color-selected-foreground: var(--selected-foreground);
   --color-muted: var(--muted);
   --color-muted-hover: var(--muted-hover);
   --color-muted-active: var(--muted-active);
@@ -40,6 +44,9 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+
+  --color-image-scrim: var(--image-scrim);
+  --color-image-scrim-foreground: var(--image-scrim-foreground);
 
   /* Brand / decorative colors - resting only, never *-hover */
   --color-blue-400: var(--blue-400);

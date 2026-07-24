@@ -193,6 +193,9 @@
         "empty": "No eligible events",
         "failed": "Needs attention"
       }
-    }
+    },
+    "organizationReviews": "Organization Reviews",
+    "noOrganizationReviews": "No organizations awaiting review",
+    "noOrganizationReviewsDesc": "Newly submitted organizations will appear here for approval."
   }
 }

@@ -61,7 +61,8 @@
     "newlyAddedFilter": {
       "last24Hours": "过去 {{hours}} 小时内添加",
       "sinceLastVisit": "自上次访问后添加",
-      "clear": "清除最新添加筛选"
+      "clear": "清除最新添加筛选",
+      "sinceLastVisitAt": "自上次访问后新增（{{time}}）"
     },
     "clearAllFilters": "清除所有筛选",
     "calendarViewComingSoon": "日历视图即将推出...",
@@ -69,10 +70,7 @@
     "promotedEvents": "热门推广活动",
     "dateSections": {
       "today": "今天",
-      "tomorrow": "明天",
-      "laterThisWeek": "本周晚些时候",
-      "laterThisMonth": "本月晚些时候",
-      "later": "更晚"
+      "tomorrow": "明天"
     },
     "reportDialog": {
       "title": "举报活动",
@@ -88,7 +86,7 @@
       "unmarkFailed": "无法取消参加此活动",
       "saveFailed": "无法保存您选择的时间",
       "chooseOccurrences": "您要参加哪个时间？",
-      "chooseOccurrencesDescription": "请选择您计划参加的场次。"
+      "chooseOccurrencesDescription": "选择您计划参加的所有场次。"
     },
     "calendar": {
       "googleCalendar": "谷歌日历",
@@ -134,6 +132,9 @@
     "moreDatesCount_other": "+{{count}} 个日期",
     "deleteEventTitle": "删除活动",
     "deleteEventConfirm": "您确定要删除“{{title}}”吗？此操作无法撤销。",
-    "similarEvents": "相似活动"
+    "similarEvents": "相似活动",
+    "submitEvent": "提交活动",
+    "backToAllEvents": "返回所有活动",
+    "going": "参加"
   }
 }

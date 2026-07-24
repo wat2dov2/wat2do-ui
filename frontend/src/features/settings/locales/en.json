@@ -4,8 +4,7 @@
     "tabs": {
       "profile": "Profile",
       "notifications": "Notifications",
-      "appearance": "Appearance",
-      "privacy": "Privacy"
+      "appearance": "Appearance"
     },
     "profile": {
       "title": "Profile Information",
@@ -51,16 +50,6 @@
       "json": "JSON",
       "language": "Language",
       "languageDescription": "Choose your preferred language"
-    },
-    "privacy": {
-      "title": "Privacy Settings",
-      "description": "Control your privacy and data sharing preferences",
-      "profileVisibility": "Profile Visibility",
-      "profileVisibilityDesc": "Control who can see your profile information",
-      "public": "Public",
-      "private": "Private",
-      "dataSharing": "Data Sharing",
-      "dataSharingDesc": "Allow anonymous usage data to help improve the platform"
     }
   }
 }

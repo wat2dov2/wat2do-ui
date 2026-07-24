@@ -41,7 +41,7 @@
     "eventCount_other": "{{count}} 个活动",
     "clubCreated": "组织已创建！",
     "clubUpdated": "组织已更新！",
-    "addClub": "添加组织",
+    "addClub": "将我的社团添加到 Wat2Do",
     "addOrganizationForSchool": "为 {{school}} 添加组织",
     "addOrganizationDescription": "此组织将列在 {{school}} 下。",
     "organizationDetails": "组织详情",
@@ -70,8 +70,10 @@
     },
     "filterBy": "查看更多 {{name}} 的活动",
     "visitWebsite": "访问网站",
-    "instagram": "Instagram",
-    "discord": "Discord"
+    "backToAllOrganizations": "返回所有组织",
+    "submittedForReview": "已提交审核。管理员批准后，您的组织将会上线。",
+    "awaitingReview": "该组织正在等待管理员审核。在获得批准之前，它不会公开显示，也无法发布活动。",
+    "reviewRejected": "该组织未获批准。如果您认为这是错误，请联系 Wat2Do 团队。"
   },
   "inviteLanding": {
     "validating": "正在验证邀请链接...",

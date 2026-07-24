@@ -21,11 +21,14 @@ from core.tables import (
     ORGANIZATIONS,
 )
 from schemas.organization import (
+    ORGANIZATION_STATUS_APPROVED,
+    ORGANIZATION_STATUS_PENDING,
     IntegrationPlatform,
     OrganizationCreate,
     OrganizationIntegrationResponse,
     OrganizationMemberResponse,
     OrganizationResponse,
+    OrganizationStatus,
     OrganizationUpdate,
 )
 from services import event_service
@@ -225,8 +228,13 @@ def list_organizations(
     school: str | None = None,
     categories: list[str] | None = None,
     ids: list[int] | None = None,
+    status: str | None = ORGANIZATION_STATUS_APPROVED,
 ) -> tuple[list[OrganizationResponse], int]:
+    """List organizations. Defaults to approved only; pass ``status=None`` for
+    every review state (admin review queues)."""
     q = get_sb().table(ORGANIZATIONS).select("*", count="exact")
+    if status is not None:
+        q = q.eq("status", status)
     if ids is not None:
         if not ids:
             return [], 0
@@ -268,9 +276,15 @@ def list_organizations(
     return items, r.count or len(items)
 
 
-def create_organization(data: OrganizationCreate, *, created_by: str) -> OrganizationResponse:
+def create_organization(
+    data: OrganizationCreate, *, created_by: str, auto_approve: bool = False
+) -> OrganizationResponse:
+    """Create an organization. Non-admin submissions land in the review queue."""
     payload = data.model_dump()
     payload["created_by"] = created_by
+    payload["status"] = (
+        ORGANIZATION_STATUS_APPROVED if auto_approve else ORGANIZATION_STATUS_PENDING
+    )
     r = get_sb().table(ORGANIZATIONS).insert(payload).execute()
     email = _fetch_owner_email(created_by)
     organization = OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
@@ -279,6 +293,26 @@ def create_organization(data: OrganizationCreate, *, created_by: str) -> Organiz
     except Exception as e:
         log.warning("Failed to auto-add creator %s to organization members: %s", created_by, e)
     return organization
+
+
+def set_organization_status(
+    organization_id: int, status: OrganizationStatus
+) -> OrganizationResponse | None:
+    """Admin review decision. Approving publishes the organization and unlocks
+    event creation for its members."""
+    existing = get_organization(organization_id)
+    if existing is None:
+        return None
+
+    r = get_sb().table(ORGANIZATIONS).update({"status": status}).eq("id", organization_id).execute()
+    if not r.data:
+        return None
+
+    email = _fetch_owner_email(r.data[0].get("created_by"))
+    updated = OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
+    if existing.status != updated.status:
+        event_feed_revalidation_service.revalidate_schools([updated.school])
+    return updated
 
 
 def update_organization(

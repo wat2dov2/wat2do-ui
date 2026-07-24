@@ -2,13 +2,14 @@ import { memo, useCallback, useMemo, useState } from "react";
 import type { TFunction } from "i18next";
 import { tracker } from "@/shared/services/trackingService";
 import { useTranslation } from "react-i18next";
-import { ImageOff } from "@/shared/ui/doodle-icons";
+import { Check, ImageOff } from "@/shared/ui/doodle-icons";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 import { Badge } from "@/shared/ui/badge";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { OrganizationBadgeDropdown } from "@/features/organizations";
 import { useEventStatsActions } from "@/features/events/hooks/useEventStats";
+import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { getEventCategory } from "@/shared/utils/event";
 import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
@@ -119,6 +120,7 @@ interface EventCardImageProps {
   eventCategory: string;
   isLive: boolean;
   isNew: boolean;
+  isGoing: boolean;
   badgeHoverProps: EventImageBadgesProps["badgeHoverProps"];
   t: TFunction;
 }
@@ -128,6 +130,7 @@ function EventCardImage({
   eventCategory,
   isLive,
   isNew,
+  isGoing,
   badgeHoverProps,
   t,
 }: EventCardImageProps) {
@@ -155,6 +158,14 @@ function EventCardImage({
           </div>
         )}
       </EventImageCutout>
+      {isGoing && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-image-scrim">
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-image-scrim-foreground">
+            {t("events.going")}
+            <Check className="size-4" />
+          </span>
+        </div>
+      )}
       <EventImageBadges
         event={event}
         eventCategory={eventCategory}
@@ -251,6 +262,11 @@ function EventCardComponent({
 
   const badges = useEventBadges(event);
   const eventCategory = useMemo(() => getEventCategory(event), [event]);
+  const { data: goingSelections } = useGoingEvents();
+  const isGoing = useMemo(
+    () => (goingSelections ?? []).some((selection) => selection.event_id === event.id),
+    [goingSelections, event.id],
+  );
 
   const cardDate = useMemo(
     () => formatCardDate(event, i18n.language || "en-US"),
@@ -322,6 +338,7 @@ function EventCardComponent({
         eventCategory={eventCategory}
         isLive={isLive}
         isNew={isNew}
+        isGoing={isGoing}
         badgeHoverProps={badgeHoverProps}
         t={t}
       />

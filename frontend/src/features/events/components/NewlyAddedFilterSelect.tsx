@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { controlBox } from "@/shared/config/controlBox";
+import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import { FilterClearButton } from "@/shared/ui/filter-clear-button";
 import {
   Select,
@@ -14,6 +15,8 @@ export type NewlyAddedFilterValue = "last24Hours" | "sinceLastVisit";
 interface NewlyAddedFilterSelectProps {
   value: NewlyAddedFilterValue | null;
   showSinceLastVisit: boolean;
+  /** ISO timestamp of the previous visit, used to date the "since last visit" option. */
+  lastVisitAt: string | null;
   onValueChange: (value: NewlyAddedFilterValue) => void;
   onClear: () => void;
 }
@@ -21,6 +24,7 @@ interface NewlyAddedFilterSelectProps {
 export function NewlyAddedFilterSelect({
   value,
   showSinceLastVisit,
+  lastVisitAt,
   onValueChange,
   onClear,
 }: NewlyAddedFilterSelectProps) {
@@ -29,10 +33,12 @@ export function NewlyAddedFilterSelect({
   const last24HoursLabel = t("events.newlyAddedFilter.last24Hours", {
     hours: controlBox.eventDiscovery.newEventWindowHours,
   });
-  const label =
-    value === "sinceLastVisit"
-      ? t("events.newlyAddedFilter.sinceLastVisit")
-      : last24HoursLabel;
+  const sinceLastVisitLabel = lastVisitAt
+    ? t("events.newlyAddedFilter.sinceLastVisitAt", {
+        time: formatRelativeTime(lastVisitAt, t, { alwaysAgo: true }),
+      })
+    : t("events.newlyAddedFilter.sinceLastVisit");
+  const label = value === "sinceLastVisit" ? sinceLastVisitLabel : last24HoursLabel;
 
   return (
     <div className="relative shrink-0">
@@ -55,9 +61,7 @@ export function NewlyAddedFilterSelect({
             {last24HoursLabel}
           </SelectItem>
           {showSinceLastVisit ? (
-            <SelectItem value="sinceLastVisit">
-              {t("events.newlyAddedFilter.sinceLastVisit")}
-            </SelectItem>
+            <SelectItem value="sinceLastVisit">{sinceLastVisitLabel}</SelectItem>
           ) : null}
         </SelectContent>
       </Select>

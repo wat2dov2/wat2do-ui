@@ -13,7 +13,8 @@ import {
   TableCell,
   TableRow,
 } from "@/shared/ui/table";
-import type { Organization, SubmissionStatus } from "@/shared/types";
+import type { Organization, OrganizationStatus, SubmissionStatus } from "@/shared/types";
+import { getSchoolDisplayName } from "@/shared/constants/schools";
 import { AddOrganizationModal } from "@/features/organizations";
 import { useAdminOrganizationsPage } from "@/features/admin/hooks/useAdminOrganizationsPage";
 import {
@@ -77,12 +78,21 @@ export function AdminOrganizationsPage({
     refreshOrganizations,
   } = useAdminOrganizationsPage({ itemsPerPage: ITEMS_PER_PAGE });
 
-  const [activeTab, setActiveTab] = useState<"organizations" | "claims">("organizations");
+  const [activeTab, setActiveTab] = useState<"organizations" | "claims" | "review">(
+    "organizations",
+  );
 
   const allClaims = useAdminStore((s) => s.claims);
   const fetchClaims = useAdminStore((s) => s.fetchClaims);
   const approveClaimAction = useAdminStore((s) => s.approveClaim);
   const rejectClaimAction = useAdminStore((s) => s.rejectClaim);
+  const organizationReviews = useAdminStore((s) => s.organizationReviews);
+  const fetchOrganizationReviews = useAdminStore((s) => s.fetchOrganizationReviews);
+  const reviewOrganization = useAdminStore((s) => s.reviewOrganization);
+  const pendingReviewCount = useMemo(
+    () => organizationReviews.filter((organization) => organization.status === "pending").length,
+    [organizationReviews],
+  );
 
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -136,6 +146,7 @@ export function AdminOrganizationsPage({
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [submittingResolution, setSubmittingResolution] = useState(false);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   const loadClaimsData = useCallback(async () => {
     setLoadingClaims(true);
@@ -148,11 +159,37 @@ export function AdminOrganizationsPage({
     }
   }, [fetchClaims, schoolFilter]);
 
+  const loadOrganizationReviews = useCallback(async () => {
+    setLoadingReviews(true);
+    try {
+      await fetchOrganizationReviews(schoolFilter ?? undefined);
+    } catch (error) {
+      console.error("Failed to load organizations awaiting review:", error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, [fetchOrganizationReviews, schoolFilter]);
+
   useEffect(() => {
     if (activeTab === "claims") {
       void loadClaimsData();
     }
-  }, [activeTab, loadClaimsData]);
+    if (activeTab === "review") {
+      void loadOrganizationReviews();
+    }
+  }, [activeTab, loadClaimsData, loadOrganizationReviews]);
+
+  const handleReviewOrganization = async (
+    organizationId: number,
+    status: OrganizationStatus,
+  ) => {
+    try {
+      await reviewOrganization(organizationId, status);
+      await refreshOrganizations();
+    } catch (error) {
+      console.error("Failed to review organization:", error);
+    }
+  };
 
   const handleDelete = async (organizationId: number) => {
     setIsDeleting(true);
@@ -270,6 +307,22 @@ export function AdminOrganizationsPage({
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab("review")}
+            data-elevation="control"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
+              activeTab === "review"
+                ? "bg-primary/80 text-primary-foreground font-semibold"
+                : "bg-secondary text-muted-foreground hover:bg-muted-hover"
+            }`}
+          >
+            {t("admin.organizationReviews")}
+            {pendingReviewCount > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-foreground/30 text-primary-foreground rounded-full font-bold">
+                {pendingReviewCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {activeTab === "organizations" ? (
@@ -371,7 +424,79 @@ export function AdminOrganizationsPage({
         )}
       </div>
 
-      {activeTab === "organizations" ? (
+      {activeTab === "review" ? (
+        <>
+          {loadingReviews ? (
+            <LoadingPage />
+          ) : organizationReviews.length > 0 ? (
+            <AdminTable
+              headers={[
+                { label: t("forms.organizationName") },
+                { label: t("forms.ownerEmail") },
+                { label: t("admin.organizationType") },
+                { label: t("admin.status") },
+                { label: t("common.actions"), align: "right" },
+              ]}
+            >
+              {organizationReviews.map((organization) => (
+                <TableRow key={organization.id}>
+                  <TableCell>
+                    <div className="font-medium text-sm text-foreground">
+                      {organization.organization_name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {getSchoolDisplayName(organization.school)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">
+                      {organization.owner_email ?? "-"}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">
+                      {organization.organization_type}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <AdminStatusBadge status={organization.status as SubmissionStatus} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
+                      {organization.status !== "approved" && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => void handleReviewOrganization(organization.id, "approved")}
+                          className="text-primary hover:bg-surface-hover border border-transparent"
+                        >
+                          {t("admin.approve")}
+                        </Button>
+                      )}
+                      {organization.status !== "rejected" && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => void handleReviewOrganization(organization.id, "rejected")}
+                          className="text-destructive hover:bg-surface-hover border border-transparent"
+                        >
+                          {t("admin.reject")}
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </AdminTable>
+          ) : (
+            <AdminEmptyState
+              icon={ShieldAlert}
+              title={t("admin.noOrganizationReviews")}
+              description={t("admin.noOrganizationReviewsDesc")}
+            />
+          )}
+        </>
+      ) : activeTab === "organizations" ? (
         <>
           {isLoading ? (
             <LoadingPage />

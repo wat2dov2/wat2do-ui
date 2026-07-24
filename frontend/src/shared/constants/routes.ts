@@ -40,10 +40,6 @@ export const ROUTES = {
   ORGANIZATION_PANEL_MEMBERS: "/organization-panel/members",
 } as const;
 
-export function schoolPath(school: string): string {
-  return `/school/${school}`;
-}
-
 export function organizationPagePath(organizationId: number): string {
   return `${ROUTES.ORGANIZATIONS}/${organizationId}`;
 }
@@ -103,7 +99,6 @@ export const SETTINGS_TABS = {
   PROFILE: "profile",
   NOTIFICATIONS: "notifications",
   APPEARANCE: "appearance",
-  PRIVACY: "privacy",
 } as const;
 
 /** Build a settings URL with a specific tab selected. */

@@ -193,6 +193,9 @@
         "empty": "无符合条件的活动",
         "failed": "需要处理"
       }
-    }
+    },
+    "organizationReviews": "组织审核",
+    "noOrganizationReviews": "没有待审核的组织",
+    "noOrganizationReviewsDesc": "新提交的组织将在此处等待批准。"
   }
 }

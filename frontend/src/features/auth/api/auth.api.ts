@@ -179,8 +179,13 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
     ]);
 
     const cachedProfile = loadUserProfile();
+    // Membership in an organization still awaiting review grants no publishing
+    // rights, so only approved organizations count towards hasOrganization.
+    const approvedClubs = clubs.filter((club) => club.status === "approved");
     const associatedClub =
-      clubs.find((club) => club.id === cachedProfile?.organizationId) ?? clubs[0] ?? null;
+      approvedClubs.find((club) => club.id === cachedProfile?.organizationId) ??
+      approvedClubs[0] ??
+      null;
     const profile: UserProfile = {
       id: data.id,
       fullName: data.full_name ?? null,
@@ -190,8 +195,8 @@ export async function fetchProfileAPI(): Promise<UserProfile | null> {
       interests: data.interests ?? [],
       isFirstYear: data.is_first_year ?? false,
       role: data.role ?? "user",
-      hasOrganization: clubs.length > 0,
-      clubs: clubs.map((club) => ({
+      hasOrganization: approvedClubs.length > 0,
+      clubs: approvedClubs.map((club) => ({
         id: club.id,
         organization_name: club.organization_name,
       })),

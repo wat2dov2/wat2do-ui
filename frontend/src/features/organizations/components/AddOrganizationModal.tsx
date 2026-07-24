@@ -58,7 +58,8 @@ type SaveOrganization = (
 
 interface OrganizationFormProps {
   onSave: SaveOrganization;
-  onCancel: () => void;
+  /** Omit to hide the Cancel action (pages navigate back from their header instead). */
+  onCancel?: () => void;
   onSaved?: (organization: Organization) => void;
   initialData?: Organization;
   defaultSchool?: string;
@@ -146,6 +147,8 @@ export function OrganizationForm({
 
     const organization: Organization = {
       id: initialData?.id || Date.now(),
+      // The backend owns review state; edits never change it.
+      status: initialData?.status ?? "pending",
       organization_name: form.formData.organization_name.trim(),
       categories: form.formData.categories,
       organization_page: form.formData.organization_page.trim(),
@@ -359,9 +362,11 @@ export function OrganizationForm({
       </FormSection>
 
       <FormActions>
-        <Button variant="secondary" type="button" onClick={onCancel}>
-          {t("common.cancel")}
-        </Button>
+        {onCancel ? (
+          <Button variant="secondary" type="button" onClick={onCancel}>
+            {t("common.cancel")}
+          </Button>
+        ) : null}
         <LoadingButton
           type="submit"
           isLoading={isSubmitting}

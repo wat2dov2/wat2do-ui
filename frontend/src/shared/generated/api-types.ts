@@ -544,11 +544,37 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Organizations */
+        /**
+         * List Organizations
+         * @description Public directory. Only approved organizations are listed.
+         */
         get: operations["list_organizations_organizations__get"];
         put?: never;
-        /** Create Organization */
+        /**
+         * Create Organization
+         * @description Anyone signed in may submit an organization; only admins publish directly.
+         */
         post: operations["create_organization_organizations__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Organizations For Review
+         * @description Admin review queue across every review state.
+         */
+        get: operations["list_organizations_for_review_organizations_review_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -656,6 +682,26 @@ export interface paths {
         post?: never;
         /** Disconnect Platform Integration */
         delete: operations["disconnect_platform_integration_organizations__organization_id__integrations__platform__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organization_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review Organization
+         * @description Approve or reject a submitted organization.
+         */
+        post: operations["review_organization_organizations__organization_id__review_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2497,6 +2543,12 @@ export interface components {
             id: number;
             /** Organization Name */
             organization_name: string;
+            /**
+             * Status
+             * @default approved
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
             /** Categories */
             categories?: string[] | null;
             /** Organization Page */
@@ -4212,6 +4264,42 @@ export interface operations {
             };
         };
     };
+    list_organizations_for_review_organizations_review_get: {
+        parameters: {
+            query?: {
+                organization_status?: ("pending" | "approved" | "rejected") | null;
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_OrganizationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_my_organizations_organizations_mine_get: {
         parameters: {
             query?: never;
@@ -4497,6 +4585,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganizationIntegrationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_organization_organizations__organization_id__review_post: {
+        parameters: {
+            query: {
+                organization_status: "pending" | "approved" | "rejected";
+            };
+            header?: never;
+            path: {
+                organization_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationResponse"];
                 };
             };
             /** @description Validation Error */

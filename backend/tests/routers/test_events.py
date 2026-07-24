@@ -614,3 +614,37 @@ def test_get_event_stats_public(client, monkeypatch):
 def test_get_event_stats_requires_school(client):
     response = client.get("/events/stats")
     assert response.status_code == 422
+
+
+def test_create_event_rejected_while_organization_awaits_review(authenticated_client, monkeypatch):
+    """Membership in an unapproved organization must not unlock publishing."""
+    pending_organization = _mock_organization(id=7, school="uwaterloo", status="pending")
+    monkeypatch.setattr(
+        organization_service, "get_organization", MagicMock(return_value=pending_organization)
+    )
+    mock_resolve = MagicMock(return_value=[pending_organization])
+    monkeypatch.setattr(organization_service, "list_organizations_by_owner", mock_resolve)
+    mock_create = MagicMock()
+    monkeypatch.setattr(event_service, "create_event", mock_create)
+
+    resp = authenticated_client.post(
+        "/events/",
+        json={
+            "title": "Test",
+            "location": "Here",
+            "organization_id": 7,
+            "occurrences": [
+                {
+                    "dtstart_utc": "2026-12-01T18:00:00+00:00",
+                    "dtend_utc": "2026-12-01T20:00:00+00:00",
+                    "duration": None,
+                    "tz": "America/Toronto",
+                }
+            ],
+        },
+    )
+
+    assert resp.status_code == 403
+    assert mock_create.call_count == 0
+    # The membership lookup is never reached; approval is checked first.
+    assert mock_resolve.call_count == 0

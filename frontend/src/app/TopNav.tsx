@@ -15,7 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { ROUTES, schoolPath } from "@/shared/constants/routes";
+import { ROUTES } from "@/shared/constants/routes";
+import { getSchoolOrigin } from "@/shared/constants/schools";
 import { cn } from "@/shared/lib/utils";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
@@ -74,9 +75,10 @@ export function TopNav() {
         setSchoolFilter(school);
         return;
       }
-      router.push(schoolPath(school));
+      // Each school lives on its own origin, so switching is a cross-origin navigation.
+      window.location.assign(getSchoolOrigin(school));
     },
-    [router, setSchoolFilter],
+    [setSchoolFilter],
   );
 
   return (

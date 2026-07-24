@@ -4,7 +4,6 @@ import { useShallow } from "zustand/react/shallow";
 import {
   Bookmark,
   Building2,
-  Plus,
   Search,
 } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
@@ -84,14 +83,31 @@ export function OrganizationsPage() {
   return (
     <div className="space-y-2">
       <div className="space-y-3 pb-2">
-        <PageCountHeading
-          count={totalItems}
-          label={
-            totalItems === 1
-              ? t("organizations.organizationLabel")
-              : t("organizations.organizationLabel_other")
-          }
-        />
+        <div className="flex items-start justify-between gap-3">
+          <PageCountHeading
+            count={totalItems}
+            label={
+              totalItems === 1
+                ? t("organizations.organizationLabel")
+                : t("organizations.organizationLabel_other")
+            }
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="shrink-0"
+            onMouseDown={() => {
+              if (!authed) {
+                toast({ description: t("navigation.loginRequiredToSubmit") });
+                return;
+              }
+              router.push(ROUTES.ORGANIZATION_CREATE);
+            }}
+          >
+            {t("organizations.addClub")}
+          </Button>
+        </div>
 
         <SubmittedSearchInput
           value={searchQuery}
@@ -150,23 +166,6 @@ export function OrganizationsPage() {
                 ))}
               </SelectContent>
             </Select>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onMouseDown={() => {
-                if (!authed) {
-                  toast({ description: t("navigation.loginRequiredToSubmit") });
-                  return;
-                }
-                router.push(ROUTES.ORGANIZATION_CREATE);
-              }}
-              aria-label={t("organizations.addClub")}
-            >
-              <Plus className="size-4" />
-              <span>{t("organizations.addClub")}</span>
-            </Button>
           </div>
         </div>
       </div>

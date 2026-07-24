@@ -41,7 +41,7 @@
     "eventCount_other": "{{count}} events",
     "clubCreated": "Organization Created!",
     "clubUpdated": "Organization Updated!",
-    "addClub": "Add Organization",
+    "addClub": "Add my club to Wat2Do",
     "addOrganizationForSchool": "Add an Organization for {{school}}",
     "addOrganizationDescription": "This organization will be listed for {{school}}.",
     "organizationDetails": "Organization details",
@@ -70,8 +70,10 @@
     },
     "filterBy": "See more events by {{name}}",
     "visitWebsite": "Visit Website",
-    "instagram": "Instagram",
-    "discord": "Discord"
+    "backToAllOrganizations": "Back to all organizations",
+    "submittedForReview": "Submitted for review. Your organization goes live once an admin approves it.",
+    "awaitingReview": "This organization is awaiting admin review. It is not listed publicly yet, and events cannot be published until it is approved.",
+    "reviewRejected": "This organization was not approved. Contact the Wat2Do team if you think this is a mistake."
   },
   "inviteLanding": {
     "validating": "Validating invitation link...",

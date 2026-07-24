@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from core.auth import get_admin_user, get_current_user, get_db_user
+from core.auth import get_admin_user, get_current_user, get_db_user, is_admin
 from core.constants import (
     MAX_ORGANIZATION_TYPE_LENGTH,
     MAX_SCHOOL_LENGTH,
@@ -37,6 +37,7 @@ from schemas.organization import (
     OrganizationMemberAdd,
     OrganizationMemberResponse,
     OrganizationResponse,
+    OrganizationStatus,
     OrganizationUpdate,
     PlatformIntegrationOptionsResponse,
 )
@@ -89,6 +90,7 @@ def list_organizations(
     ids: list[int] | None = Query(default=None),
     pagination: PaginationParams = Depends(),
 ):
+    """Public directory. Only approved organizations are listed."""
     if school == "all":
         school = None
     items, total = organization_service.list_organizations(
@@ -99,6 +101,25 @@ def list_organizations(
         search=search,
         categories=categories,
         ids=ids,
+    )
+    return paginated_response(items, total, pagination)
+
+
+@router.get("/review", response_model=PaginatedResponse[OrganizationResponse])
+def list_organizations_for_review(
+    organization_status: OrganizationStatus | None = Query(default=None),
+    school: str | None = Query(default=None, max_length=MAX_SCHOOL_LENGTH),
+    pagination: PaginationParams = Depends(),
+    _: UserResponse = Depends(get_admin_user),
+):
+    """Admin review queue across every review state."""
+    if school == "all":
+        school = None
+    items, total = organization_service.list_organizations(
+        skip=pagination.offset,
+        limit=pagination.page_size,
+        school=school,
+        status=organization_status,
     )
     return paginated_response(items, total, pagination)
 
@@ -204,7 +225,23 @@ def create_organization(
     data: OrganizationCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    return organization_service.create_organization(data, created_by=str(db_user.id))
+    """Anyone signed in may submit an organization; only admins publish directly."""
+    return organization_service.create_organization(
+        data, created_by=str(db_user.id), auto_approve=is_admin(db_user)
+    )
+
+
+@router.post("/{organization_id}/review", response_model=OrganizationResponse)
+def review_organization(
+    organization_id: int,
+    organization_status: OrganizationStatus,
+    _: UserResponse = Depends(get_admin_user),
+):
+    """Approve or reject a submitted organization."""
+    return get_or_404(
+        organization_service.set_organization_status(organization_id, organization_status),
+        ORGANIZATION_NOT_FOUND,
+    )
 
 
 @router.patch("/{organization_id}", response_model=OrganizationResponse)

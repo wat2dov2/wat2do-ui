@@ -1,8 +1,12 @@
 export type ViewMode = "grid" | "calendar" | "map";
 
+/** Admin review state. Only approved organizations are listed publicly. */
+export type OrganizationStatus = "pending" | "approved" | "rejected";
+
 export interface Organization {
   id: number;
   organization_name: string;
+  status: OrganizationStatus;
   categories: string[];
   organization_page: string;
   ig: string | null;

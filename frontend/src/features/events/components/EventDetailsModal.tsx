@@ -1,9 +1,8 @@
-import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { tracker } from "@/shared/services/trackingService";
-import { isEventHappeningNow, wasAddedWithinLast24Hours } from "@/shared/utils/date";
-import { ArrowRight, Check, Flag, Link as LinkIcon, Share2 } from "@/shared/ui/doodle-icons";
+import { ArrowRight } from "@/shared/ui/doodle-icons";
 import {
   Drawer,
   DrawerContent,
@@ -11,16 +10,12 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Separator } from "@/shared/ui/separator";
-import { toast } from "@/shared/hooks/use-toast";
 import { EventDetailsDrawerSkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
 import { EventCard } from "@/features/events/components/EventCard";
 import { EventDetailsBody } from "@/features/events/components/EventDetailsSections";
-import { buildEventShareUrl, eventPagePath } from "@/features/events/lib/eventUrls";
-import { getEventCategory } from "@/shared/utils/event";
-import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
+import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
@@ -28,24 +23,6 @@ import { fetchEventById } from "@/features/events/api/events.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Event } from "@/shared/types";
-
-const EventShareDialog = lazy(() =>
-  import("@/features/events/components/EventShareDialog").then((module) => ({
-    default: module.EventShareDialog,
-  })),
-);
-const EventReportDialog = lazy(() =>
-  import("@/features/events/components/EventReportDialog").then((module) => ({
-    default: module.EventReportDialog,
-  })),
-);
-
-type EventDetailsDialog = "share" | "report";
-
-interface ActiveEventDetailsDialog {
-  type: EventDetailsDialog;
-  event: Event;
-}
 
 interface EventDetailsModalProps {
   eventId?: number | null;
@@ -70,7 +47,6 @@ export function EventDetailsModal({
   const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
   const [overrideEvent, setOverrideEvent] = useState<Event | null>(null);
   const [overrideForEventId, setOverrideForEventId] = useState<number | null>(null);
-  const [activeDialog, setActiveDialog] = useState<ActiveEventDetailsDialog | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const resolvedEventId = eventId ?? event?.id ?? null;
   const listEvent = event;
@@ -130,12 +106,6 @@ export function EventDetailsModal({
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [resolvedEventId]);
 
-  const handleActionDialogOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setActiveDialog(null);
-    }
-  }, []);
-
   const handleDrawerOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
@@ -144,18 +114,6 @@ export function EventDetailsModal({
     },
     [onClose],
   );
-
-  const [linkCopied, setLinkCopied] = useState(false);
-
-  const handleCopyLink = useCallback(async (targetEventId: number) => {
-    try {
-      await navigator.clipboard.writeText(buildEventShareUrl(targetEventId));
-      setLinkCopied(true);
-      window.setTimeout(() => setLinkCopied(false), 1600);
-    } catch {
-      toast({ description: t("events.shareDialog.copyFailed"), variant: "destructive" });
-    }
-  }, [t]);
 
   return (
     <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
@@ -172,68 +130,17 @@ export function EventDetailsModal({
           ) : displayedEvent ? (
             <>
               <DrawerHeader className="text-left">
-                <Stack
-                  direction="horizontal"
-                  justify="between"
-                  align="start"
-                  gap={3}
-                  className="flex-wrap"
-                >
-                  <Stack direction="horizontal" gap={2} className="min-w-0 flex-wrap">
-                    <OrganizationCategoryBadge
-                      type={getEventCategory(displayedEvent)}
-                      className="px-3 py-1.5 text-sm"
-                    />
-                    {isEventHappeningNow(displayedEvent) && (
-                      <Badge variant="live" size="lg">
-                        {t("common.live")}
-                      </Badge>
-                    )}
-                    {wasAddedWithinLast24Hours(displayedEvent) && (
-                      <Badge variant="new" size="lg">
-                        {t("events.new")}
-                      </Badge>
-                    )}
-                  </Stack>
-                  <Stack direction="horizontal" gap={2} className="flex-wrap">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void handleCopyLink(displayedEvent.id)}
+                <Stack direction="horizontal" justify="end" gap={2} className="flex-wrap">
+                  <Button asChild variant="secondary" size="sm">
+                    <a
+                      href={eventPagePath(displayedEvent.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      {linkCopied ? <Check className="size-4" /> : <LinkIcon className="size-4" />}
-                      {linkCopied ? t("events.copied") : t("events.copyLink")}
-                    </Button>
-                    <Button asChild variant="secondary" size="sm">
-                      <a
-                        href={eventPagePath(displayedEvent.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {t("events.eventPage")}
-                        <ArrowRight className="size-4 -rotate-45" />
-                      </a>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setActiveDialog({ type: "share", event: displayedEvent })}
-                    >
-                      <Share2 className="size-4" />
-                      {t("common.share")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setActiveDialog({ type: "report", event: displayedEvent })}
-                    >
-                      <Flag className="size-4" />
-                      {t("common.report")}
-                    </Button>
-                  </Stack>
+                      {t("events.eventPage")}
+                      <ArrowRight className="size-4 -rotate-45" />
+                    </a>
+                  </Button>
                 </Stack>
               </DrawerHeader>
 
@@ -278,25 +185,6 @@ export function EventDetailsModal({
           ) : null}
         </div>
       </DrawerContent>
-      {activeDialog?.type === "share" && (
-        <Suspense fallback={null}>
-          <EventShareDialog
-            event={activeDialog.event}
-            open
-            onOpenChange={handleActionDialogOpenChange}
-          />
-        </Suspense>
-      )}
-      {activeDialog?.type === "report" && (
-        <Suspense fallback={null}>
-          <EventReportDialog
-            eventId={activeDialog.event.id}
-            eventTitle={activeDialog.event.title}
-            open
-            onOpenChange={handleActionDialogOpenChange}
-          />
-        </Suspense>
-      )}
     </Drawer>
   );
 }
