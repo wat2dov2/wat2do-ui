@@ -142,6 +142,11 @@ The primary Wat2Do frontend and backend then deploy together to ECS through GitH
 Waterloo Commons source remains in the repository but has no active hosting deployment.
 A green local run means those check jobs should pass; the AWS deployment requires the repository variables and Secrets Manager values documented in the Terraform roots.
 
+Agent handoff after a successful push:
+- Report the pushed commit and GitHub Actions run URL, then stop.
+- Do not wait for CI or the AWS rollout unless the human explicitly requested deployment monitoring or production verification.
+- Treat GitHub Actions as the owner of the asynchronous deployment and use its failure notification as the signal for follow-up.
+
 ---
 
 ## Quick reference (copy-paste)
@@ -192,4 +197,4 @@ A green local run means those check jobs should pass; the AWS deployment require
 
 ## Verification
 
-Last agent-verified: 2026-06-16
+Last agent-verified: 2026-07-23
