@@ -37,7 +37,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
         "organization_page": None,
         "ig": None,
         "discord": None,
-        "association_affiliated": True,
+        "organization_type": "wusa",
         "logo_url": None,
         "created_by": FAKE_USER["id"],
     }
@@ -61,11 +61,13 @@ def test_create_event_sets_created_by_for_organization_owner(authenticated_clien
     """Approved organization owners can create events for their organization.
 
     The router only authorizes organization ownership and forwards the raw payload;
-    organization/association_affiliated/school are derived from organization_id inside
+    organization/school are derived from organization_id inside
     event_service.create_event (see test_resolve_organization_fields_*).
     """
     created_event = _mock_event(
-        organization_id=7, organization="Verified Organization", association_affiliated=True
+        organization_id=7,
+        organization="Verified Organization",
+        organization_type="wusa",
     )
     mock_create = MagicMock(return_value=created_event)
     mock_get_organization = MagicMock(return_value=_mock_organization(id=7, school="uwaterloo"))

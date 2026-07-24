@@ -35,7 +35,7 @@ export function CreateOrganizationPage() {
       organization_page: organization.organization_page,
       ig: organization.ig,
       discord: organization.discord,
-      association_affiliated: organization.association_affiliated,
+      organization_type: organization.organization_type,
       logo_url: organization.logo_url,
       school,
     });

@@ -460,7 +460,6 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
         lambda **_kw: ResolvedOrganization(
             organization_id=7,
             organization_name="UW Tea Organization",
-            association_affiliated=False,
             ig_handle="uwteaorganization",
         ),
     )
@@ -593,7 +592,6 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
         lambda **_kw: ResolvedOrganization(
             organization_id=7,
             organization_name="UW Tea Organization",
-            association_affiliated=False,
             ig_handle="uwteaorganization",
         ),
     )

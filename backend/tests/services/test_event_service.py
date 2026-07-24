@@ -66,6 +66,12 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
             "title": "Fast Feed Night",
             "location": "SLC",
             "organization": "UW Blueprint",
+            "organizations": {
+                "organization_type": "wusa",
+                "organization_page": None,
+                "ig": None,
+                "discord": None,
+            },
             "added_at": datetime(2026, 5, 30, tzinfo=timezone.utc),
         },
         [occurrence],
@@ -73,6 +79,7 @@ def test_hydrate_event_reuses_validated_occurrences_without_json_dump(monkeypatc
     )
 
     assert event.id == 42
+    assert event.organization_type == "wusa"
     assert event.occurrences[0].dtstart_utc == occurrence.dtstart_utc
 
 
@@ -80,6 +87,7 @@ def test_summary_columns_exclude_computed_response_fields():
     """Computed API fields must not be requested as physical events columns."""
 
     assert "occurrences" not in event_query._SUMMARY_COLUMNS
+    assert "organization_type" not in event_query._SUMMARY_COLUMNS
     assert "click_count" not in event_query._SUMMARY_COLUMNS
 
 
@@ -96,7 +104,7 @@ def _organization(**overrides) -> OrganizationResponse:
         "organization_page": None,
         "ig": None,
         "discord": None,
-        "association_affiliated": True,
+        "organization_type": "wusa",
         "logo_url": None,
         "created_by": "11111111-1111-1111-1111-111111111111",
         "school": "uwaterloo",
@@ -112,7 +120,6 @@ def test_resolve_organization_fields_derives_from_organization(monkeypatch):
 
     assert event_service._resolve_organization_fields(7) == {
         "organization": "UW Tea Organization",
-        "association_affiliated": True,
         "school": "uwaterloo",
     }
 

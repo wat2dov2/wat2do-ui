@@ -5,7 +5,7 @@ import { BadgeMask } from "@/shared/ui/badge-mask";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { EventCardContent } from "@/shared/ui/event-card-content";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
-import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { computeEventBadges } from "@/features/events/hooks/useEventBadges";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
@@ -81,7 +81,7 @@ export function EventFormPreview({ className }: EventFormPreviewProps) {
           
           {formData.category && (
             <BadgeMask variant="top-left">
-              <OrganizationTypeBadge type={formData.category} className="opacity-90" />
+              <OrganizationCategoryBadge type={formData.category} className="opacity-90" />
             </BadgeMask>
           )}
 

@@ -1,3 +1,6 @@
+from unittest.mock import MagicMock
+
+from schemas.organization import OrganizationResponse, OrganizationUpdate
 from services import organization_service
 
 # --- Invitation Service Tests ---
@@ -102,14 +105,14 @@ def test_lookup_organization_by_school_and_name_exact_match(fake_sb, patch_sb):
                 {
                     "id": 3,
                     "organization_name": "UW Tea Organization",
-                    "association_affiliated": False,
+                    "organization_type": "independent",
                     "ig": "uwtea",
                     "school": "uwaterloo",
                 },
                 {
                     "id": 9,
                     "organization_name": "Other Club",
-                    "association_affiliated": False,
+                    "organization_type": "independent",
                     "ig": None,
                     "school": "uwaterloo",
                 },
@@ -132,7 +135,7 @@ def test_lookup_organization_by_school_and_name_miss(fake_sb, patch_sb):
                 {
                     "id": 3,
                     "organization_name": "UW Tea Organization",
-                    "association_affiliated": False,
+                    "organization_type": "independent",
                     "ig": "uwtea",
                     "school": "uwaterloo",
                 }
@@ -154,14 +157,14 @@ def test_lookup_organization_by_school_and_name_picks_lowest_id_on_dupes(fake_sb
                 {
                     "id": 5,
                     "organization_name": "tea   club",
-                    "association_affiliated": False,
+                    "organization_type": "independent",
                     "ig": "b",
                     "school": "uwaterloo",
                 },
                 {
                     "id": 12,
                     "organization_name": "Tea Club",
-                    "association_affiliated": False,
+                    "organization_type": "independent",
                     "ig": "a",
                     "school": "uwaterloo",
                 },
@@ -176,3 +179,49 @@ def test_lookup_organization_by_school_and_name_picks_lowest_id_on_dupes(fake_sb
 def test_lookup_organization_by_school_and_name_empty_inputs():
     assert organization_service.lookup_organization_by_school_and_name("", "Tea") is None
     assert organization_service.lookup_organization_by_school_and_name("uwaterloo", "") is None
+
+
+def test_update_organization_type_revalidates_event_feed(
+    monkeypatch,
+    fake_sb,
+    patch_sb,
+):
+    patch_sb("services.organization_service")
+    existing = OrganizationResponse(
+        id=7,
+        organization_name="UW Tea Organization",
+        organization_type="independent",
+        school="uwaterloo",
+    )
+    monkeypatch.setattr(
+        organization_service,
+        "get_organization",
+        MagicMock(return_value=existing),
+    )
+    revalidate = MagicMock()
+    monkeypatch.setattr(
+        organization_service.event_feed_revalidation_service,
+        "revalidate_schools",
+        revalidate,
+    )
+    fake_sb.queue_responses(
+        [
+            [
+                {
+                    "id": 7,
+                    "organization_name": "UW Tea Organization",
+                    "organization_type": "wusa",
+                    "school": "uwaterloo",
+                }
+            ]
+        ]
+    )
+
+    updated = organization_service.update_organization(
+        7,
+        OrganizationUpdate(organization_type="wusa"),
+    )
+
+    assert updated is not None
+    assert updated.organization_type == "wusa"
+    revalidate.assert_called_once_with(["uwaterloo", "uwaterloo"])

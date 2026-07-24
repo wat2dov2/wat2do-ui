@@ -11,7 +11,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
     defaults = {
         "id": 42,
         "organization_name": "Mock Organization",
-        "association_affiliated": False,
+        "organization_type": "independent",
         "categories": ["Games & Recreation"],
         "created_by": FAKE_USER["id"],
         "school": "uwaterloo",

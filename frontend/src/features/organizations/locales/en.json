@@ -1,6 +1,6 @@
 {
   "organizations": {
-    "associationAffiliated": "Affiliated with {{association}}",
+    "organizationType": "Organization type: {{type}}",
     "claimOwnership": "Claim Organization Ownership",
     "claimOwnershipDesc": "Request to become the primary administrator and creator of",
     "executiveRole": "Your Executive Role",
@@ -45,7 +45,7 @@
     "addOrganizationForSchool": "Add an Organization for {{school}}",
     "addOrganizationDescription": "This organization will be listed for {{school}}.",
     "organizationDetails": "Organization details",
-    "optionalDetailsDescription": "Add links and affiliation details that help students recognize the organization.",
+    "optionalDetailsDescription": "Add links and organization type details that help students recognize the organization.",
     "editClub": "Edit Organization",
     "updateClub": "Update Organization",
     "editClubDescription": "Update the organization information below",

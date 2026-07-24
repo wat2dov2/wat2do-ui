@@ -11,7 +11,7 @@ import { OrganizationBadgeDropdown } from "@/features/organizations";
 import { useEventStatsActions } from "@/features/events/hooks/useEventStats";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { getEventCategory } from "@/shared/utils/event";
-import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import {
   formatCardDate,
   formatCardTime,
@@ -76,7 +76,7 @@ function EventImageBadges({
   return (
     <>
       <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-        <OrganizationTypeBadge type={eventCategory} className="opacity-90" />
+        <OrganizationCategoryBadge type={eventCategory} className="opacity-90" />
       </BadgeMask>
 
       {isLive && (
@@ -99,7 +99,7 @@ function EventImageBadges({
         <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
           <OrganizationBadgeDropdown
             organizationName={event.organization}
-            associationAffiliated={event.association_affiliated}
+            organizationType={event.organization_type}
             school={event.school}
             organizationPage={event.organization_page}
             organizationIg={event.organization_ig}

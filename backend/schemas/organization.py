@@ -4,7 +4,15 @@ from typing import Literal
 from urllib.parse import urlparse
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from core.constants import (
     MAX_INTEGRATION_METADATA_KEY_LENGTH,
@@ -14,9 +22,11 @@ from core.constants import (
     MAX_ORGANIZATION_CATEGORY_COUNT,
     MAX_ORGANIZATION_CATEGORY_LENGTH,
     MAX_ORGANIZATION_NAME_LENGTH,
+    MAX_ORGANIZATION_TYPE_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_URL_LENGTH,
     ORGANIZATION_CATEGORIES,
+    ORGANIZATION_TYPE_INDEPENDENT,
 )
 
 # ---------------------------------------------------------------------------
@@ -55,6 +65,22 @@ _CANONICAL_ORG_CATEGORIES = frozenset(ORGANIZATION_CATEGORIES)
 CategoryStr = Annotated[str, Field(min_length=1, max_length=MAX_ORGANIZATION_CATEGORY_LENGTH)]
 
 
+def normalize_organization_type(value: object) -> object:
+    """Normalize organization-type input before validating its signature slug."""
+    return value.strip().lower() if isinstance(value, str) else value
+
+
+OrganizationTypeValue = Annotated[
+    str,
+    BeforeValidator(normalize_organization_type),
+    StringConstraints(
+        min_length=1,
+        max_length=MAX_ORGANIZATION_TYPE_LENGTH,
+        pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    ),
+]
+
+
 def normalize_organization_category(raw: str) -> str | None:
     """Return the canonical organization category, or None if unrecognized."""
     raw = raw.strip()
@@ -88,7 +114,7 @@ class OrganizationCreate(BaseModel):
     organization_page: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     ig: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    association_affiliated: bool = False
+    organization_type: OrganizationTypeValue = ORGANIZATION_TYPE_INDEPENDENT
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     school: str = Field(default="uwaterloo", min_length=1, max_length=MAX_SCHOOL_LENGTH)
 
@@ -121,7 +147,7 @@ class OrganizationUpdate(BaseModel):
     organization_page: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     ig: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     discord: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    association_affiliated: bool | None = None
+    organization_type: OrganizationTypeValue | None = None
     logo_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     school: str | None = Field(default=None, max_length=MAX_SCHOOL_LENGTH)
 
@@ -161,7 +187,7 @@ class OrganizationResponse(BaseModel):
     organization_page: str | None = None
     ig: str | None = None
     discord: str | None = None
-    association_affiliated: bool = False
+    organization_type: OrganizationTypeValue = ORGANIZATION_TYPE_INDEPENDENT
     logo_url: str | None = None
     created_by: str | None = None
     school: str | None = None

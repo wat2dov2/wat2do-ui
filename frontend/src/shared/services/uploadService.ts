@@ -10,66 +10,72 @@ interface UploadResponse {
   url: string;
 }
 
-async function uploadFile(
-  endpoint: string,
+interface UploadErrorResponse {
+  detail?: string;
+}
+
+function createUploadRequest(
   file: File,
-): Promise<string> {
+  authentication: "session" | "none",
+): RequestInit {
   const form = new FormData();
   form.append("file", file);
 
   const headers: Record<string, string> = {};
-  const token = getAccessToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (authentication === "session") {
+    const token = getAccessToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
   }
 
-  const url = `${API_BASE_URL}${endpoint}`;
-  const res = await fetch(url, {
+  return {
     method: "POST",
     headers,
     body: form,
-  });
-
-  // On 401, attempt token refresh and retry the upload
-  if (res.status === 401) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      const retryForm = new FormData();
-      retryForm.append("file", file);
-
-      const retryHeaders: Record<string, string> = {
-        Authorization: `Bearer ${getAccessToken()}`,
-      };
-      const retryRes = await fetch(url, {
-        method: "POST",
-        headers: retryHeaders,
-        body: retryForm,
-      });
-
-      if (!retryRes.ok) {
-        const body = await retryRes.json().catch((err) => { console.error("Failed to parse upload retry error response:", err); return {}; });
-        throw new Error(body.detail || `Upload failed (${retryRes.status})`);
-      }
-
-      const data: UploadResponse = await retryRes.json();
-      return data.url;
-    }
-
-    handleAuthFailure();
-    throw new Error("Upload failed: session expired");
-  }
-
-  if (!res.ok) {
-    const body = await res.json().catch((err) => { console.error("Failed to parse upload error response:", err); return {}; });
-    throw new Error(body.detail || `Upload failed (${res.status})`);
-  }
-
-  const data: UploadResponse = await res.json();
-  return data.url;
+  };
 }
 
-export async function uploadEventImage(eventId: number, file: File): Promise<string> {
-  return uploadFile(`/uploads/event-image/${eventId}`, file);
+async function getUploadErrorMessage(
+  response: Response,
+  failureLabel: string,
+): Promise<string> {
+  const body: UploadErrorResponse = await response.json().catch((err) => {
+    console.error("Failed to parse file upload error response:", err);
+    return {};
+  });
+  return body.detail || `${failureLabel} failed (${response.status})`;
+}
+
+async function requestFileUpload<T>(
+  endpoint: string,
+  file: File,
+  failureLabel: string,
+  authentication: "session" | "none" = "session",
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  let response = await fetch(url, createUploadRequest(file, authentication));
+
+  if (response.status === 401 && authentication === "session") {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      response = await fetch(url, createUploadRequest(file, authentication));
+    } else {
+      handleAuthFailure();
+      throw new Error(`${failureLabel} failed: session expired`);
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(await getUploadErrorMessage(response, failureLabel));
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function uploadFile(endpoint: string, file: File): Promise<string> {
+  const data = await requestFileUpload<UploadResponse>(endpoint, file, "Upload");
+  return data.url;
 }
 
 export async function uploadEventImageUnsigned(file: File): Promise<string> {
@@ -89,19 +95,10 @@ export async function uploadClaimProof(file: File): Promise<string> {
 }
 
 export async function parseEventImage(file: File): Promise<EventFormData> {
-  const form = new FormData();
-  form.append("file", file);
-
-  const url = `${API_BASE_URL}/ai/parse-event-image`;
-  const res = await fetch(url, {
-    method: "POST",
-    body: form,
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch((err) => { console.error("Failed to parse upload error response:", err); return {}; });
-    throw new Error(body.detail || `AI parsing failed (${res.status})`);
-  }
-
-  return await res.json();
+  return requestFileUpload<EventFormData>(
+    "/ai/parse-event-image",
+    file,
+    "AI parsing",
+    "none",
+  );
 }

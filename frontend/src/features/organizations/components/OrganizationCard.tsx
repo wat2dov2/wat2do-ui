@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSavedOrganizationsStore } from "@/features/organizations/store/savedOrganizations.store";
 import { useProfileCompleted } from "@/features/auth";
-import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { useCardMouseDownActivate, useMobileGridClickActivation, createAdaptivePressHandlers } from "@/shared/hooks";
 import { OrganizationOverflowMenu } from "@/features/organizations/components/OrganizationOverflowMenu";
 import {
@@ -311,7 +311,7 @@ function OrganizationCardComponent({
       {/* 3. The Badge (rendered outside the clipped background, matching Event Card badge style) */}
       {primaryCategory && (
         <div ref={badgeRef} className="absolute top-0 left-0 z-30">
-          <OrganizationTypeBadge type={organization.type ?? primaryCategory}>
+          <OrganizationCategoryBadge type={primaryCategory}>
             {(content) => (
               <button
                 type="button"
@@ -322,7 +322,7 @@ function OrganizationCardComponent({
                 {content}
               </button>
             )}
-          </OrganizationTypeBadge>
+          </OrganizationCategoryBadge>
         </div>
       )}
 

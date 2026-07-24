@@ -14,7 +14,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
     defaults = {
         "id": 1,
         "organization_name": "Test Organization",
-        "association_affiliated": True,
+        "organization_type": "wusa",
         "created_by": FAKE_USER["id"],
     }
     defaults.update(overrides)

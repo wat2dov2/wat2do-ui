@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { usePathname, useRouter } from "next/navigation";
 import { useFilterActions } from "@/features/search";
-import { OrganizationAssociationBadge } from "@/shared/components/OrganizationAssociationBadge";
+import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,11 +10,10 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Badge } from "@/shared/ui/badge";
-import { getStudentAssociation } from "@/shared/constants/schools";
 
 interface OrganizationBadgeDropdownProps {
   organizationName: string;
-  associationAffiliated?: boolean | null;
+  organizationType?: string | null;
   school?: string | null;
   /** Owning organization's link/social fields, embedded on the event response. */
   organizationPage?: string | null;
@@ -29,9 +28,11 @@ interface OrganizationBadgeDropdownProps {
   onClick?: React.MouseEventHandler;
 }
 
+const ORGANIZATION_NAME_CLASS = "min-w-0 max-w-24 truncate font-bold";
+
 export function OrganizationBadgeDropdown({
   organizationName,
-  associationAffiliated,
+  organizationType,
   school,
   organizationPage,
   organizationIg,
@@ -46,8 +47,6 @@ export function OrganizationBadgeDropdown({
   const pathname = usePathname();
   const filterActions = useFilterActions();
   const [isOpen, setIsOpen] = useState(false);
-
-  const showAssociation = Boolean(associationAffiliated) && Boolean(getStudentAssociation(school));
 
   const handleFilterSelect = useCallback(() => {
     setIsOpen(false);
@@ -75,11 +74,11 @@ export function OrganizationBadgeDropdown({
         onClick={onClick}
       >
         <span>
-          <span className="min-w-0 truncate font-bold">
+          <span className={ORGANIZATION_NAME_CLASS}>
             {organizationName || t("events.organization")}
           </span>
-          {organizationName && organizationName !== t("events.organization") && showAssociation && (
-            <OrganizationAssociationBadge school={school} affiliated={associationAffiliated} />
+          {organizationName && organizationName !== t("events.organization") && (
+            <OrganizationTypeIcon school={school} organizationType={organizationType} />
           )}
         </span>
       </Badge>
@@ -102,10 +101,10 @@ export function OrganizationBadgeDropdown({
             onMouseEnter={badgeHoverProps?.onMouseEnter}
             onMouseLeave={badgeHoverProps?.onMouseLeave}
           >
-            <span className="min-w-0 truncate font-bold">
+            <span className={ORGANIZATION_NAME_CLASS}>
               {organizationName}
             </span>
-            {showAssociation && <OrganizationAssociationBadge school={school} affiliated={associationAffiliated} />}
+            <OrganizationTypeIcon school={school} organizationType={organizationType} />
           </button>
         </Badge>
       </DropdownMenuTrigger>

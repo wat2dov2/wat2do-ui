@@ -12,7 +12,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
     defaults = {
         "id": 1,
         "organization_name": "Test Organization",
-        "association_affiliated": True,
+        "organization_type": "wusa",
         "created_by": FAKE_USER["id"],
     }
     defaults.update(overrides)
@@ -22,7 +22,7 @@ def _mock_organization(**overrides) -> OrganizationResponse:
 def test_create_organization_requires_auth(client):
     response = client.post(
         "/organizations/",
-        json={"organization_name": "Test Organization", "association_affiliated": True},
+        json={"organization_name": "Test Organization", "organization_type": "wusa"},
     )
     assert response.status_code == 401
 
@@ -76,7 +76,7 @@ def test_create_organization_sets_current_user_as_owner(authenticated_client, mo
 
     resp = authenticated_client.post(
         "/organizations/",
-        json={"organization_name": "Test Organization", "association_affiliated": True},
+        json={"organization_name": "Test Organization", "organization_type": "wusa"},
     )
     assert resp.status_code == 201
     assert mock_create.call_count == 1
@@ -92,7 +92,7 @@ def test_create_organization_sets_admin_as_owner_by_default(admin_client, monkey
 
     resp = admin_client.post(
         "/organizations/",
-        json={"organization_name": "Test Organization", "association_affiliated": True},
+        json={"organization_name": "Test Organization", "organization_type": "wusa"},
     )
     assert resp.status_code == 201
     assert mock_create.call_count == 1
@@ -109,7 +109,7 @@ def test_create_organization_rejects_client_supplied_owner(admin_client, monkeyp
         "/organizations/",
         json={
             "organization_name": "Test Organization",
-            "association_affiliated": True,
+            "organization_type": "wusa",
             "owner_user_id": FAKE_USER["id"],
         },
     )

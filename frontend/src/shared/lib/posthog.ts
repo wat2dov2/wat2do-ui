@@ -1,7 +1,7 @@
 import posthog from "posthog-js";
 
 /** True once PostHog has been initialized for this page load. */
-export function isPostHogReady(): boolean {
+function isPostHogReady(): boolean {
   return posthog.__loaded === true;
 }
 

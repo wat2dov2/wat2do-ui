@@ -7,7 +7,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { ImageOff } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
-import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { Badge } from "@/shared/ui/badge";
@@ -26,7 +26,7 @@ export interface PreviewEventData {
   badges: Array<{ text: string; bgClass: string; textClass: string }>;
   isLive?: boolean;
   isNew?: boolean;
-  associationAffiliated?: boolean | null;
+  organizationType?: string | null;
   school?: string | null;
 }
 
@@ -89,7 +89,7 @@ export function PreviewStyleEventCard({
         />
 
         <BadgeMask variant="top-left">
-          <OrganizationTypeBadge type={event.category} className="opacity-90" />
+          <OrganizationCategoryBadge type={event.category} className="opacity-90" />
         </BadgeMask>
 
         {event.isLive && (
@@ -112,7 +112,7 @@ export function PreviewStyleEventCard({
           <BadgeMask variant="bottom-left">
             <OrganizationBadgeDropdown
               organizationName={event.org}
-              associationAffiliated={event.associationAffiliated}
+              organizationType={event.organizationType}
               school={event.school}
               disabled={true}
             />

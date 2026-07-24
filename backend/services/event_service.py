@@ -72,8 +72,8 @@ def _to_utc(dt: datetime | None) -> datetime:
 def _resolve_organization_fields(organization_id: int) -> dict[str, str | None]:
     """Derive the event's denormalized fields from its owning organization.
 
-    The organization is the single source of truth for an event's display name,
-    type, and school - callers never set these directly, so both the
+    The organization is the single source of truth for an event's display name
+    and school - callers never set these directly, so both the
     direct-create path and the submission-approval path stay in agreement.
     """
     from services import organization_service  # local import avoids an import cycle
@@ -83,7 +83,6 @@ def _resolve_organization_fields(organization_id: int) -> dict[str, str | None]:
         raise NotFoundError(ORGANIZATION_NOT_FOUND)
     return {
         "organization": organization.organization_name,
-        "association_affiliated": organization.association_affiliated,
         "school": organization.school,
     }
 
@@ -144,7 +143,13 @@ def get_organization_event_stats(
 
 @supabase_retry
 def get_event(event_id: int) -> EventResponse | None:
-    r = get_sb().table(EVENTS).select("*").eq("id", event_id).execute()
+    r = (
+        get_sb()
+        .table(EVENTS)
+        .select(f"*,{event_query.ORGANIZATION_EMBED}")
+        .eq("id", event_id)
+        .execute()
+    )
     if not r.data or len(r.data) == 0:
         return None
     occurrences = event_date_service.list_for_event(event_id)
@@ -279,9 +284,11 @@ def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
         get_sb().table(EVENTS).delete().eq("id", new_id).execute()
         raise
 
-    occ_rows = event_date_service.list_for_event(new_id)
     event_feed_revalidation_service.revalidate_school(new_row.get("school"))
-    return event_query.hydrate_event(new_row, occ_rows, EventResponse)
+    created = get_event(new_id)
+    if created is None:
+        raise APIError("Failed to read created event")
+    return created
 
 
 def has_ended(event: EventResponse, *, now: datetime | None = None) -> bool:

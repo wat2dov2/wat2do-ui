@@ -35,7 +35,10 @@ import { toast } from "@/shared/hooks/use-toast";
 import { useForm } from "@/shared/hooks/useForm";
 import { DEFAULT_SCHOOL } from "@/shared/constants/schools";
 import { getOrganizationCategories } from "@/shared/data/organizationCategories";
-import { toOrganizationType } from "@/shared/data/organizationTypes";
+import {
+  getSchoolOrganizationType,
+  INDEPENDENT_ORGANIZATION_TYPE,
+} from "@/shared/data/organizationTypeAssets";
 import { translateCategory } from "@/shared/utils/event";
 import type { Organization } from "@/shared/types";
 
@@ -45,7 +48,7 @@ interface OrganizationFormData {
   organization_page: string;
   ig: string;
   discord: string;
-  association_affiliated: boolean;
+  organization_type: string;
   school: string;
 }
 
@@ -85,7 +88,7 @@ export function OrganizationForm({
       organization_page: "",
       ig: "",
       discord: "",
-      association_affiliated: false,
+      organization_type: INDEPENDENT_ORGANIZATION_TYPE,
       school: defaultSchool,
     }),
     [defaultSchool],
@@ -116,9 +119,7 @@ export function OrganizationForm({
           organization_page: initialData.organization_page,
           ig: initialData.ig || "",
           discord: initialData.discord || "",
-          association_affiliated: Boolean(
-            initialData.association_affiliated,
-          ),
+          organization_type: initialData.organization_type,
           school: initialData.school || defaultSchool,
         }
       : undefined,
@@ -147,11 +148,10 @@ export function OrganizationForm({
       id: initialData?.id || Date.now(),
       organization_name: form.formData.organization_name.trim(),
       categories: form.formData.categories,
-      type: toOrganizationType(form.formData.categories[0]),
       organization_page: form.formData.organization_page.trim(),
       ig: form.formData.ig.trim() || null,
       discord: form.formData.discord.trim() || null,
-      association_affiliated: form.formData.association_affiliated,
+      organization_type: form.formData.organization_type,
       created_by: initialData?.created_by || null,
       school: form.formData.school,
     };
@@ -185,6 +185,25 @@ export function OrganizationForm({
       setIsSubmitting(false);
     }
   };
+
+  const handleSchoolChange = (school: string) => {
+    const currentMappedType = getSchoolOrganizationType(form.formData.school);
+    const nextMappedType = getSchoolOrganizationType(school);
+    const wasUsingMappedType =
+      currentMappedType === form.formData.organization_type;
+
+    form.updateField("school", school);
+    if (wasUsingMappedType) {
+      form.updateField(
+        "organization_type",
+        nextMappedType ?? INDEPENDENT_ORGANIZATION_TYPE,
+      );
+    }
+  };
+
+  const mappedOrganizationType = getSchoolOrganizationType(
+    form.formData.school,
+  );
 
   return (
     <FormLayout
@@ -230,7 +249,7 @@ export function OrganizationForm({
               <SchoolCombobox
                 id="club-school"
                 value={form.formData.school}
-                onChange={(value) => form.updateField("school", value)}
+                onChange={handleSchoolChange}
                 variant="field"
                 placeholder={t("schools.selectSchool")}
               />
@@ -262,27 +281,28 @@ export function OrganizationForm({
       >
         <FormGrid>
           <Field>
-            <FieldLabel htmlFor="club-affiliation">
-              {t("forms.associationAffiliation")}
+            <FieldLabel htmlFor="club-organization-type">
+              {t("forms.organizationType")}
             </FieldLabel>
             <Select
-              value={String(form.formData.association_affiliated)}
+              value={form.formData.organization_type}
               onValueChange={(value) =>
-                form.updateField(
-                  "association_affiliated",
-                  value === "true",
-                )
+                form.updateField("organization_type", value)
               }
             >
-              <SelectTrigger id="club-affiliation" className="w-full">
+              <SelectTrigger id="club-organization-type" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="true">
-                  {t("forms.associationAffiliated")}
-                </SelectItem>
-                <SelectItem value="false">
-                  {t("forms.associationIndependent")}
+                {mappedOrganizationType ? (
+                  <SelectItem value={mappedOrganizationType}>
+                    {t("forms.organizationTypeMapped", {
+                      type: mappedOrganizationType.toUpperCase(),
+                    })}
+                  </SelectItem>
+                ) : null}
+                <SelectItem value={INDEPENDENT_ORGANIZATION_TYPE}>
+                  {t("forms.organizationTypeIndependent")}
                 </SelectItem>
               </SelectContent>
             </Select>

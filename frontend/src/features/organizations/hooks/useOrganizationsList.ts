@@ -13,7 +13,7 @@ interface UseOrganizationsListOptions {
   school?: string;
   search?: string;
   categories?: string[];
-  associationAffiliated?: boolean;
+  organizationType?: string;
   ids?: number[];
   isAuthenticated?: boolean;
   activeTab?: "all" | "followed" | "claimed";
@@ -37,7 +37,7 @@ function useOrganizationsListFilters(options: UseOrganizationsListOptions) {
     school,
     search,
     categories,
-    associationAffiliated,
+    organizationType,
     ids,
     isAuthenticated,
     activeTab = "all",
@@ -50,7 +50,7 @@ function useOrganizationsListFilters(options: UseOrganizationsListOptions) {
       school,
       search,
       categories,
-      associationAffiliated,
+      organizationType,
       ids,
       isAuthenticated,
       activeTab,
@@ -61,7 +61,7 @@ function useOrganizationsListFilters(options: UseOrganizationsListOptions) {
       school,
       search,
       categories,
-      associationAffiliated,
+      organizationType,
       ids,
       isAuthenticated,
       activeTab,
@@ -120,7 +120,7 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
         school: filters.school,
         search: filters.search,
         categories: filters.categories,
-        associationAffiliated: filters.associationAffiliated,
+        organizationType: filters.organizationType,
         ids:
           filters.activeTab === "followed" || filters.activeTab === "claimed"
             ? filters.ids
@@ -141,7 +141,7 @@ export function useOrganizationsList(options: UseOrganizationsListOptions) {
         school: filters.school,
         search: filters.search,
         categories: filters.categories,
-        associationAffiliated: filters.associationAffiliated,
+        organizationType: filters.organizationType,
         ids:
           filters.activeTab === "followed" || filters.activeTab === "claimed"
             ? filters.ids

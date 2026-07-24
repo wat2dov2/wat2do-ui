@@ -3,7 +3,7 @@ export type OrganizationsListFilters = {
   school?: string;
   search?: string;
   categories?: string[];
-  associationAffiliated?: boolean;
+  organizationType?: string;
   ids?: number[];
   isAuthenticated?: boolean;
   activeTab?: "all" | "followed" | "claimed";
@@ -16,7 +16,7 @@ export function stableOrganizationsFilters(filters: OrganizationsListFilters): R
     school,
     search,
     categories,
-    associationAffiliated,
+    organizationType,
     ids,
     isAuthenticated,
     activeTab = "all",
@@ -28,7 +28,7 @@ export function stableOrganizationsFilters(filters: OrganizationsListFilters): R
     school: school || "",
     search: search || "",
     categories: (categories || []).join(","),
-    associationAffiliated: associationAffiliated ?? "",
+    organizationType: organizationType ?? "",
     ...((activeTab === "followed" || activeTab === "claimed")
       ? {
           ids: (ids || []).join(","),

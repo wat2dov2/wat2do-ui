@@ -1879,19 +1879,22 @@
         "operationId": "list_organizations_organizations__get",
         "parameters": [
           {
-            "name": "association_affiliated",
+            "name": "organization_type",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "boolean"
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Association Affiliated"
+              "title": "Organization Type"
             }
           },
           {
@@ -5982,10 +5985,19 @@
             ],
             "title": "Source Image Url"
           },
-          "association_affiliated": {
-            "type": "boolean",
-            "title": "Association Affiliated",
-            "default": false
+          "organization_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Type"
           },
           "school": {
             "anyOf": [
@@ -6153,10 +6165,19 @@
             ],
             "title": "Source Image Url"
           },
-          "association_affiliated": {
-            "type": "boolean",
-            "title": "Association Affiliated",
-            "default": false
+          "organization_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Type"
           },
           "school": {
             "anyOf": [
@@ -6352,10 +6373,19 @@
             ],
             "title": "Organization"
           },
-          "association_affiliated": {
-            "type": "boolean",
-            "title": "Association Affiliated",
-            "default": false
+          "organization_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Type"
           },
           "organization_page": {
             "anyOf": [
@@ -6430,7 +6460,7 @@
           "added_at"
         ],
         "title": "EventSummaryResponse",
-        "description": "Lightweight payload for list/card views - omits large text fields\n(description) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\nThe owning organization's link/social fields (``organization_page``,\n``organization_ig``, ``organization_discord``) are embedded read-time from\nthe ``organizations`` row via the ``events.organization_id`` FK so the event\ncard's org badge can render its links without a second fetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
+        "description": "Lightweight payload for list/card views - omits large text fields\n(description) that are only needed in detail views.\nKeeps the payload ~60-70 % smaller than EventResponse for typical events.\n\nThe owning organization's type/link/social fields (``organization_type``,\n``organization_page``, ``organization_ig``, ``organization_discord``) are\nembedded read-time from the ``organizations`` row via the\n``events.organization_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
       },
       "EventUpdate": {
         "properties": {
@@ -7688,10 +7718,13 @@
             ],
             "title": "Discord"
           },
-          "association_affiliated": {
-            "type": "boolean",
-            "title": "Association Affiliated",
-            "default": false
+          "organization_type": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "title": "Organization Type",
+            "default": "independent"
           },
           "logo_url": {
             "anyOf": [
@@ -8281,10 +8314,13 @@
             ],
             "title": "Discord"
           },
-          "association_affiliated": {
-            "type": "boolean",
-            "title": "Association Affiliated",
-            "default": false
+          "organization_type": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "title": "Organization Type",
+            "default": "independent"
           },
           "logo_url": {
             "anyOf": [
@@ -8433,16 +8469,19 @@
             ],
             "title": "Discord"
           },
-          "association_affiliated": {
+          "organization_type": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Association Affiliated"
+            "title": "Organization Type"
           },
           "logo_url": {
             "anyOf": [

@@ -27,7 +27,7 @@ interface EventViewOnlyFields {
   organization_id?: ApiEventResponse["organization_id"];
   description?: ApiEventResponse["description"];
   source_url?: ApiEventResponse["source_url"];
-  association_affiliated?: ApiEventResponse["association_affiliated"];
+  organization_type?: ApiEventResponse["organization_type"];
   ig_handle?: ApiEventResponse["ig_handle"];
   created_by?: ApiEventResponse["created_by"];
   /** Org link/social fields are embedded only on the list summary shape. */
@@ -46,7 +46,7 @@ export interface EventFormOccurrence {
 
 // Event creation/edit form data (matches EventFormData from SubmitEventModal).
 // The owning organization (organization_id) is the single source of truth for the event's
-// organization/association_affiliated/school - those are derived server-side, never entered.
+// organization/school - those are derived server-side, never entered.
 export interface EventFormData {
   organization_id: number | null;
   title: string;

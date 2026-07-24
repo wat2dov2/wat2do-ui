@@ -49,9 +49,10 @@ HIGH_QUALITY_IG_SOURCES = frozenset({"found", "confirmed", "profile_page"})
 # hosted schools table are skipped with a warning so the sheet can contain
 # schools that have not launched yet.
 
-# The sheet carries no student-association column, so imports never touch
-# `association_affiliated`; new rows fall back to the column default (false)
-# and admins flip it. Managing it here would clobber affiliated orgs on re-import.
+# The sheet carries no organization-type column, so imports never touch
+# `organization_type`; new rows use the database default (`independent`) and
+# admins set a school-specific type. Managing it here would clobber that choice
+# on re-import.
 
 ORGANIZATION_NAME_MAX = 500
 

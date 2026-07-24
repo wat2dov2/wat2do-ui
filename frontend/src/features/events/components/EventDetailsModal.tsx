@@ -20,7 +20,7 @@ import { EventCard } from "@/features/events/components/EventCard";
 import { EventDetailsBody } from "@/features/events/components/EventDetailsSections";
 import { buildEventShareUrl, eventPagePath } from "@/features/events/lib/eventUrls";
 import { getEventCategory } from "@/shared/utils/event";
-import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
@@ -180,7 +180,7 @@ export function EventDetailsModal({
                   className="flex-wrap"
                 >
                   <Stack direction="horizontal" gap={2} className="min-w-0 flex-wrap">
-                    <OrganizationTypeBadge
+                    <OrganizationCategoryBadge
                       type={getEventCategory(displayedEvent)}
                       className="px-3 py-1.5 text-sm"
                     />

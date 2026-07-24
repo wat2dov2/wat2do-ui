@@ -19,6 +19,7 @@ from core.constants import (
 )
 from core.pagination import PaginatedResponse
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
+from schemas.organization import OrganizationTypeValue
 
 _log = logging.getLogger(__name__)
 
@@ -158,7 +159,7 @@ class EventUpdate(BaseModel):
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     source_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     category: str | None = Field(default=None, max_length=MAX_EVENT_CATEGORY_LENGTH)
-    # Reassigning the organization re-derives organization/association_affiliated/school server-side.
+    # Reassigning the organization re-derives organization/school server-side.
     organization_id: int | None = Field(default=None, ge=1)
     ig_handle: str | None = Field(default=None, max_length=MAX_EVENT_HANDLE_LENGTH)
     cancelled: bool | None = None
@@ -206,10 +207,11 @@ class EventSummaryResponse(BaseModel):
     (description) that are only needed in detail views.
     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
 
-    The owning organization's link/social fields (``organization_page``,
-    ``organization_ig``, ``organization_discord``) are embedded read-time from
-    the ``organizations`` row via the ``events.organization_id`` FK so the event
-    card's org badge can render its links without a second fetch.
+    The owning organization's type/link/social fields (``organization_type``,
+    ``organization_page``, ``organization_ig``, ``organization_discord``) are
+    embedded read-time from the ``organizations`` row via the
+    ``events.organization_id`` FK so the event card can render without a second
+    fetch.
 
     ``created_by`` is intentionally omitted - this response is returned on
     public GET /events/ and would otherwise leak the creator's Supabase
@@ -226,7 +228,7 @@ class EventSummaryResponse(BaseModel):
     source_image_url: str | None = None
     category: str | None = None
     organization: str | None = None
-    association_affiliated: bool = False
+    organization_type: OrganizationTypeValue | None = None
     organization_page: str | None = None
     organization_ig: str | None = None
     organization_discord: str | None = None
@@ -273,7 +275,7 @@ class EventResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    association_affiliated: bool = False
+    organization_type: OrganizationTypeValue | None = None
     school: str | None = None
     source_url: str | None = None
     category: str | None = None
@@ -301,7 +303,7 @@ class EventPublicResponse(BaseModel):
     food: list[str] | None = None
     registration: bool = False
     source_image_url: str | None = None
-    association_affiliated: bool = False
+    organization_type: OrganizationTypeValue | None = None
     school: str | None = None
     source_url: str | None = None
     category: str | None = None

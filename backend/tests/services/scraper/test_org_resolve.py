@@ -11,7 +11,6 @@ def test_resolve_by_ig_uses_ensure(monkeypatch):
         lambda handle, school=None, preferred_name=None: {
             "id": 7,
             "organization_name": "UW Tea Organization",
-            "association_affiliated": False,
         },
     )
 
@@ -24,7 +23,6 @@ def test_resolve_by_ig_uses_ensure(monkeypatch):
     assert result == ResolvedOrganization(
         organization_id=7,
         organization_name="UW Tea Organization",
-        association_affiliated=False,
         ig_handle="uwtea",
     )
 
@@ -36,7 +34,6 @@ def test_resolve_by_school_and_name_no_stub(monkeypatch):
         lambda school, name: {
             "id": 3,
             "organization_name": "UW Tea Organization",
-            "association_affiliated": False,
             "ig": "uwtea",
             "school": school,
         },

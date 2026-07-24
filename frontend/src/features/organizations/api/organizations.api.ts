@@ -4,13 +4,12 @@
  */
 
 import type { Organization } from "@/shared/types";
-import { toOrganizationType } from "@/shared/data/organizationTypes";
 import type { ApiOrganizationResponse } from "@/shared/generated";
 import { api, getPaginatedItems } from "@/shared/services/apiClient";
 import {
   filterOrganizationsBySearch,
   filterOrganizationsByCategory,
-  filterOrganizationsByAffiliation,
+  filterOrganizationsByType,
 } from "@/features/organizations/api/organizationService";
 
 
@@ -20,9 +19,6 @@ function normalizeOrganization(raw: ApiOrganizationResponse): Organization {
   return {
     ...raw,
     categories,
-    // Normalized primary-category slug: the key into `organizationTypes`.
-    // Derived once here so no component has to map category strings itself.
-    type: toOrganizationType(categories[0]),
     organization_page: raw.organization_page ?? "",
     ig: raw.ig ?? null,
     discord: raw.discord ?? null,
@@ -59,7 +55,7 @@ export async function getOrganizationsPaginated(options: {
   school?: string;
   search?: string;
   categories?: string[];
-  associationAffiliated?: boolean;
+  organizationType?: string;
   ids?: number[];
 }): Promise<PaginatedOrganizationsResponse> {
   const params = new URLSearchParams();
@@ -71,8 +67,8 @@ export async function getOrganizationsPaginated(options: {
   if (options.search) {
     params.set("search", options.search);
   }
-  if (options.associationAffiliated !== undefined) {
-    params.set("association_affiliated", String(options.associationAffiliated));
+  if (options.organizationType) {
+    params.set("organization_type", options.organizationType);
   }
   if (options.categories && options.categories.length > 0) {
     options.categories.forEach((cat) => params.append("categories", cat));
@@ -120,7 +116,7 @@ export type OrganizationCreateInput = Pick<
   | "organization_page"
   | "ig"
   | "discord"
-  | "association_affiliated"
+  | "organization_type"
   | "logo_url"
   | "school"
 >;
@@ -148,13 +144,13 @@ export async function deleteOrganizationAPI(organizationId: number): Promise<voi
 
 export function filterOrganizations(
   organizations: Organization[],
-  options: { categories?: string[]; associationAffiliated?: boolean; searchQuery?: string },
+  options: { categories?: string[]; organizationType?: string; searchQuery?: string },
 ): Organization[] {
   let filtered = organizations;
   if (options.searchQuery) filtered = filterOrganizationsBySearch(filtered, options.searchQuery);
   if (options.categories?.length) filtered = filterOrganizationsByCategory(filtered, options.categories);
-  if (options.associationAffiliated !== undefined)
-    filtered = filterOrganizationsByAffiliation(filtered, options.associationAffiliated);
+  if (options.organizationType)
+    filtered = filterOrganizationsByType(filtered, options.organizationType);
   return filtered;
 }
 

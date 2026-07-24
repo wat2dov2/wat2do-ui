@@ -12,13 +12,25 @@ type OrganizationModalState =
   | { mode: "edit"; organization: Organization }
   | null;
 
+interface OrganizationTypeFilter {
+  school: string | undefined;
+  value: string;
+}
+
 export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganizationsPageOptions = {}) {
   const [searchQuery, setSearchQueryState] = useState("");
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
-  const [associationAffiliated, setAssociationAffiliatedState] = useState<boolean | undefined>(undefined);
+  const [organizationTypeFilter, setOrganizationTypeFilter] =
+    useState<OrganizationTypeFilter | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [organizationModal, setOrganizationModal] = useState<OrganizationModalState>(null);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const organizationTypeSchool =
+    schoolFilter && schoolFilter !== "all" ? schoolFilter : undefined;
+  const organizationType =
+    organizationTypeFilter?.school === organizationTypeSchool
+      ? organizationTypeFilter.value
+      : undefined;
 
   const showAddModal = organizationModal !== null;
   const editingOrganization = organizationModal?.mode === "edit" ? organizationModal.organization : null;
@@ -35,7 +47,7 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     limit: itemsPerPage,
     school: schoolFilter ?? undefined,
     search: submittedSearchQuery,
-    associationAffiliated,
+    organizationType,
   });
 
   const setSearchQuery = useCallback((query: string) => {
@@ -53,14 +65,16 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     setCurrentPage(1);
   }, [setCurrentPage]);
 
-  const setAssociationAffiliated = useCallback((value: boolean | undefined) => {
-    setAssociationAffiliatedState(value);
+  const setOrganizationType = useCallback((value: string | undefined) => {
+    setOrganizationTypeFilter(
+      value ? { school: organizationTypeSchool, value } : null,
+    );
     setCurrentPage(1);
-  }, [setCurrentPage]);
+  }, [organizationTypeSchool, setCurrentPage]);
 
   return {
     searchQuery,
-    associationAffiliated,
+    organizationType,
     deleteConfirmId,
     showAddModal,
     editingOrganization,
@@ -72,7 +86,7 @@ export function useAdminOrganizationsPage({ itemsPerPage = 20 }: UseAdminOrganiz
     setSearchQuery,
     submitSearchQuery,
     clearSearchQuery,
-    setAssociationAffiliated,
+    setOrganizationType,
     setDeleteConfirmId,
     openAddModal: () => setOrganizationModal({ mode: "add" }),
     openEditModal: (org: Organization) => setOrganizationModal({ mode: "edit", organization: org }),

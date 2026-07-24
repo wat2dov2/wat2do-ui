@@ -29,6 +29,7 @@ from schemas.organization import (
     OrganizationUpdate,
 )
 from services import event_service
+from services.event_feed_revalidation import event_feed_revalidation_service
 
 
 def _normalize_organization_name(name: str | None) -> str:
@@ -50,7 +51,7 @@ def lookup_organization_by_school_and_name(school: str, name: str) -> dict | Non
     rows = (
         get_sb()
         .table(ORGANIZATIONS)
-        .select("id,organization_name,association_affiliated,ig,school")
+        .select("id,organization_name,organization_type,ig,school")
         .eq("school", school_slug)
         .order("id", desc=False)
         .execute()
@@ -219,7 +220,7 @@ def get_organization(organization_id: int) -> OrganizationResponse | None:
 def list_organizations(
     skip: int = 0,
     limit: int = DEFAULT_LIST_LIMIT,
-    association_affiliated: bool | None = None,
+    organization_type: str | None = None,
     search: str | None = None,
     school: str | None = None,
     categories: list[str] | None = None,
@@ -230,8 +231,8 @@ def list_organizations(
         if not ids:
             return [], 0
         q = q.in_("id", ids)
-    if association_affiliated is not None:
-        q = q.eq("association_affiliated", association_affiliated)
+    if organization_type is not None:
+        q = q.eq("organization_type", organization_type)
     if school:
         q = q.eq("school", school)
     if search:
@@ -292,7 +293,10 @@ def update_organization(
     r = get_sb().table(ORGANIZATIONS).update(payload).eq("id", organization_id).execute()
     if r.data:
         email = _fetch_owner_email(r.data[0].get("created_by"))
-        return OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
+        updated = OrganizationResponse.model_validate({**r.data[0], "owner_email": email})
+        if updated.organization_type != existing.organization_type:
+            event_feed_revalidation_service.revalidate_schools([existing.school, updated.school])
+        return updated
     return None
 
 

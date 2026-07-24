@@ -38,7 +38,7 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { FormGrid, Stack } from "@/shared/layout";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
-import { OrganizationAssociationBadge } from "@/shared/components/OrganizationAssociationBadge";
+import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
@@ -90,12 +90,15 @@ function EventSectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Organization name with its student-association badge when affiliated. */
+/** Organization name with its mapped organization-type icon. */
 function EventHostName({ event }: { event: Event }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span>{event.organization}</span>
-      <OrganizationAssociationBadge school={event.school} affiliated={event.association_affiliated} />
+      <OrganizationTypeIcon
+        school={event.school}
+        organizationType={event.organization_type}
+      />
     </span>
   );
 }

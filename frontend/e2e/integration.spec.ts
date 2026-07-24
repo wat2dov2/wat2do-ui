@@ -12,7 +12,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 1,
     organization_name: "UW Tech Club",
-    association_affiliated: false,
+    organization_type: "independent",
     organization_page: "https://example.com/tech",
     description: "A test organization",
     school: "uwaterloo",
@@ -24,7 +24,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 2,
     organization_name: "UW Board Games Club",
-    association_affiliated: false,
+    organization_type: "independent",
     organization_page: "https://example.com/board-games",
     description: "Board games organization",
     school: "uwaterloo",
@@ -36,7 +36,7 @@ const MOCK_ORGANIZATIONS = [
   {
     id: 3,
     organization_name: "UW Computer Science Club",
-    association_affiliated: false,
+    organization_type: "independent",
     organization_page: "https://csclub.uwaterloo.ca",
     description: "Computer science organization",
     school: "uwaterloo",
@@ -159,6 +159,7 @@ test.beforeEach(async ({ page }) => {
             source_image_url: null,
             category: "Career",
             organization: "UW Tech Club",
+            organization_type: "wusa",
             school: "uwaterloo",
             added_at: now.toISOString(),
           },
@@ -585,6 +586,52 @@ test.describe("Organization Integrations", () => {
 // ── Workflow 2: Home / Events Page ────────────────────────────────────
 
 test.describe("Events Page", () => {
+  test("renders the organization type icon from the event feed signature", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 900 });
+    const assetResponse = page.waitForResponse(
+      response =>
+        response.url().endsWith("/icons/organization-types/utsc-scsu.svg") &&
+        response.status() === 200,
+    );
+    await page.goto("http://utsc.localhost:3000/school/utsc");
+
+    await expect(
+      page.getByRole("heading", { name: "UTSC Eats SCSU Logo Preview" }),
+    ).toBeVisible();
+
+    const icon = page.getByRole("img", {
+      name: "Organization type: SCSU",
+    }).first();
+    await expect(icon).toBeVisible();
+    await expect
+      .poll(() => icon.evaluate(element => getComputedStyle(element).maskImage))
+      .toContain("/icons/organization-types/utsc-scsu.svg");
+
+    const eventGrid = page.locator('[role="list"] section > div.grid').first();
+    await expect
+      .poll(() =>
+        eventGrid.evaluate(
+          element => getComputedStyle(element).gridTemplateColumns.split(" ").length,
+        ),
+      )
+      .toBe(6);
+
+    const organizationName = page
+      .getByText("UTSC Eats Campus Group", { exact: true })
+      .first();
+    await expect
+      .poll(() =>
+        organizationName.evaluate(element => ({
+          maxWidth: getComputedStyle(element).maxWidth,
+          isOverflowing: element.scrollWidth > element.clientWidth,
+        })),
+      )
+      .toEqual({ maxWidth: "96px", isOverflowing: true });
+    await assetResponse;
+  });
+
   test("loads and displays events", async ({ page }) => {
     await page.goto(BASE);
     await page.waitForTimeout(3000);
@@ -663,7 +710,7 @@ test.describe("Events Page", () => {
           food: [],
           registration: false,
           source_image_url: null,
-          association_affiliated: false,
+          organization_type: "independent",
           school: "uwaterloo",
           source_url: null,
           category: null,
@@ -721,7 +768,7 @@ test.describe("Events Page", () => {
           food: [],
           registration: true,
           source_image_url: null,
-          association_affiliated: false,
+          organization_type: "independent",
           school: "uwaterloo",
           source_url: null,
           category: "Career",
@@ -1176,7 +1223,7 @@ test.describe("Organizations Page", () => {
     const organizations = await res.json();
     expect(organizations.items.length).toBeGreaterThan(0);
     expect(organizations.items[0]).toHaveProperty("organization_name");
-    expect(organizations.items[0]).toHaveProperty("association_affiliated");
+    expect(organizations.items[0]).toHaveProperty("organization_type");
   });
 
   test("app API proxy preserves the organization paginated contract", async ({ request }) => {
@@ -1185,9 +1232,9 @@ test.describe("Organizations Page", () => {
     expect(organizations.total).toBeGreaterThanOrEqual(organizations.items.length);
     expect(
       organizations.items.every(
-        (organization: { organization_name?: string; association_affiliated?: boolean }) =>
+        (organization: { organization_name?: string; organization_type?: string }) =>
           typeof organization.organization_name === "string" &&
-          typeof organization.association_affiliated === "boolean",
+          typeof organization.organization_type === "string",
       ),
     ).toBeTruthy();
   });
@@ -1232,7 +1279,11 @@ test.describe("Auth-protected API endpoints", () => {
 
   test("POST /organizations/ requires authentication", async ({ request }) => {
     const res = await request.post(`${APP_API}/organizations/`, {
-      data: { organization_name: "Test", association_affiliated: false, categories: ["Technology"] },
+      data: {
+        organization_name: "Test",
+        organization_type: "independent",
+        categories: ["Technology"],
+      },
     });
     expect([401, 403]).toContain(res.status());
   });

@@ -152,7 +152,6 @@ def test_ensure_organization_by_ig_returns_existing_without_insert(fake_sb, patc
                 {
                     "id": 9,
                     "organization_name": "UW Tea Organization",
-                    "association_affiliated": False,
                 }
             ]
         ]
@@ -167,7 +166,6 @@ def test_ensure_organization_by_ig_returns_existing_without_insert(fake_sb, patc
     assert result == {
         "id": 9,
         "organization_name": "UW Tea Organization",
-        "association_affiliated": False,
     }
     assert fake_sb.insert.call_count == 0
 
@@ -181,7 +179,6 @@ def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb):
                 {
                     "id": 42,
                     "organization_name": "UW Tea Organization",
-                    "association_affiliated": False,
                 }
             ],
         ]
@@ -199,7 +196,6 @@ def test_ensure_organization_by_ig_creates_stub_when_missing(fake_sb, patch_sb):
         "organization_name": "UW Tea Organization",
         "ig": "uwteaorganization",
         "school": "uwaterloo",
-        "association_affiliated": False,
     }
 
 
@@ -224,7 +220,6 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
                 {
                     "id": 5,
                     "organization_name": "UW Tea Organization",
-                    "association_affiliated": False,
                 }
             ],  # organization insert
             [{"id": 7}],  # events insert
@@ -255,7 +250,7 @@ def test_write_event_links_auto_created_organization(fake_sb, patch_sb, monkeypa
     assert dict_inserts[0]["ig"] == "uwteaorganization"
     assert dict_inserts[1]["organization_id"] == 5
     assert dict_inserts[1]["organization"] == "UW Tea Organization"
-    assert dict_inserts[1]["association_affiliated"] is False
+    assert "organization_type" not in dict_inserts[1]
 
 
 def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, monkeypatch):
@@ -545,7 +540,6 @@ def test_write_event_refuses_cross_org_overwrite(fake_sb, patch_sb, monkeypatch)
         resolved_org=ResolvedOrganization(
             organization_id=99,
             organization_name="Other Club",
-            association_affiliated=False,
             ig_handle=None,
         ),
     )
@@ -565,7 +559,6 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
     base = {
         "id": 42,
         "organization_id": 7,
-        "association_affiliated": False,
         "title": "Tea Tasting",
         "location": "SLC 1000",
         "organization": "UW Tea Organization",
@@ -610,7 +603,6 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
         resolved_org=ResolvedOrganization(
             organization_id=7,
             organization_name="UW Tea Organization",
-            association_affiliated=False,
             ig_handle=None,
         ),
     )
@@ -619,6 +611,6 @@ def test_write_event_preserves_ig_and_org_on_null_incoming(fake_sb, patch_sb, mo
     update_payload = update.call_args.args[1]
     assert update_payload["ig_handle"] == "uwteaorganization"
     assert update_payload["organization_id"] == 7
-    assert update_payload["association_affiliated"] is False
+    assert "organization_type" not in update_payload
     assert update_payload["source_url"] == "https://instagram.com/p/OLD"
     assert update_payload["source_image_url"] == "https://cdn/old.jpg"

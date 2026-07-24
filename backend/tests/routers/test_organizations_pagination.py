@@ -10,7 +10,7 @@ def _mock_org(id: int, name: str) -> OrganizationResponse:
     return OrganizationResponse(
         id=id,
         organization_name=name,
-        association_affiliated=True,
+        organization_type="wusa",
         categories=["tech", "social"],
         created_by="some-uuid",
         school="uwaterloo",
@@ -34,7 +34,7 @@ def test_list_organizations_paginated(client, monkeypatch):
     mock_list.assert_called_once_with(
         skip=2,
         limit=2,
-        association_affiliated=None,
+        organization_type=None,
         school=None,
         search=None,
         categories=None,
@@ -48,7 +48,7 @@ def test_list_organizations_filters(client, monkeypatch):
     monkeypatch.setattr(organization_service, "list_organizations", mock_list)
 
     response = client.get(
-        "/organizations/?association_affiliated=false&school=uwaterloo&search=club&categories=tech&categories=social&ids=1&ids=2"
+        "/organizations/?organization_type=independent&school=uwaterloo&search=club&categories=tech&categories=social&ids=1&ids=2"
     )
     assert response.status_code == 200
     data = response.json()
@@ -57,7 +57,7 @@ def test_list_organizations_filters(client, monkeypatch):
     mock_list.assert_called_once_with(
         skip=0,
         limit=50,
-        association_affiliated=False,
+        organization_type="independent",
         school="uwaterloo",
         search="club",
         categories=["tech", "social"],

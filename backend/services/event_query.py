@@ -35,9 +35,10 @@ T = TypeVar("T", bound=BaseModel)
 # Columns the summary response needs from the events table. Computed fields are
 # filled after fetch and must not be sent to PostgREST as real column names.
 # The organization link/social fields are hydrated from the embedded
-# ``organizations`` row (see ``_ORGANIZATION_EMBED``), not real events columns.
+# ``organizations`` row (see ``ORGANIZATION_EMBED``), not real events columns.
 _SUMMARY_COMPUTED_FIELDS = {
     "occurrences",
+    "organization_type",
     "organization_page",
     "organization_ig",
     "organization_discord",
@@ -47,7 +48,7 @@ _SUMMARY_COLUMNS = ",".join(
 )
 # Read-time embed of the owning organization's link/social fields via the
 # ``events.organization_id`` FK, flattened onto the event in ``hydrate_event``.
-_ORGANIZATION_EMBED = "organizations(organization_page,ig,discord)"
+ORGANIZATION_EMBED = "organizations(organization_type,organization_page,ig,discord)"
 _LIGHTWEIGHT_DATE_COLUMNS = "id,event_id,dtstart_utc,events!inner(id)"
 _LIGHTWEIGHT_DATE_SCAN_CHUNK_SIZE = 250
 
@@ -78,13 +79,14 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     feed so the shape never drifts between them.
 
     When the row carries an embedded ``organizations`` object (from
-    ``_ORGANIZATION_EMBED``), its link/social fields are flattened onto the
+    ``ORGANIZATION_EMBED``), its type/link/social fields are flattened onto the
     event so the card badge can render them without a second fetch. Rows without
     the embed (e.g. the single-event ``select("*")`` path) are left unchanged.
     """
     org = row.pop("organizations", None)
     org_fields = (
         {
+            "organization_type": org.get("organization_type"),
             "organization_page": org.get("organization_page"),
             "organization_ig": org.get("ig"),
             "organization_discord": org.get("discord"),
@@ -154,7 +156,7 @@ def load_events_in_window(
         rows = (
             get_sb()
             .table(EVENTS)
-            .select(f"{columns},{_ORGANIZATION_EMBED}")
+            .select(f"{columns},{ORGANIZATION_EMBED}")
             .in_("id", chunk)
             .execute()
             .data
@@ -232,7 +234,7 @@ def load_events_page(
     q = (
         get_sb()
         .table(EVENT_DATES)
-        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{_ORGANIZATION_EMBED})")
+        .select(f"event_id,dtstart_utc,dtend_utc,tz,events!inner({columns},{ORGANIZATION_EMBED})")
     )
     if start_utc is not None:
         q = q.gte("dtstart_utc", start_utc.isoformat())
@@ -365,7 +367,7 @@ def _load_lightweight_date_page(
     event_rows = (
         get_sb()
         .table(EVENTS)
-        .select(f"{columns},{_ORGANIZATION_EMBED}")
+        .select(f"{columns},{ORGANIZATION_EMBED}")
         .in_("id", page_ids)
         .execute()
         .data

@@ -1592,11 +1592,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
-            /**
-             * Association Affiliated
-             * @default false
-             */
-            association_affiliated: boolean;
+            /** Organization Type */
+            organization_type?: string | null;
             /** School */
             school?: string | null;
             /** Source Url */
@@ -1654,11 +1651,8 @@ export interface components {
             registration: boolean;
             /** Source Image Url */
             source_image_url?: string | null;
-            /**
-             * Association Affiliated
-             * @default false
-             */
-            association_affiliated: boolean;
+            /** Organization Type */
+            organization_type?: string | null;
             /** School */
             school?: string | null;
             /** Source Url */
@@ -1704,10 +1698,11 @@ export interface components {
          *     (description) that are only needed in detail views.
          *     Keeps the payload ~60-70 % smaller than EventResponse for typical events.
          *
-         *     The owning organization's link/social fields (``organization_page``,
-         *     ``organization_ig``, ``organization_discord``) are embedded read-time from
-         *     the ``organizations`` row via the ``events.organization_id`` FK so the event
-         *     card's org badge can render its links without a second fetch.
+         *     The owning organization's type/link/social fields (``organization_type``,
+         *     ``organization_page``, ``organization_ig``, ``organization_discord``) are
+         *     embedded read-time from the ``organizations`` row via the
+         *     ``events.organization_id`` FK so the event card can render without a second
+         *     fetch.
          *
          *     ``created_by`` is intentionally omitted - this response is returned on
          *     public GET /events/ and would otherwise leak the creator's Supabase
@@ -1737,11 +1732,8 @@ export interface components {
             category?: string | null;
             /** Organization */
             organization?: string | null;
-            /**
-             * Association Affiliated
-             * @default false
-             */
-            association_affiliated: boolean;
+            /** Organization Type */
+            organization_type?: string | null;
             /** Organization Page */
             organization_page?: string | null;
             /** Organization Ig */
@@ -2240,10 +2232,10 @@ export interface components {
             /** Discord */
             discord?: string | null;
             /**
-             * Association Affiliated
-             * @default false
+             * Organization Type
+             * @default independent
              */
-            association_affiliated: boolean;
+            organization_type: string;
             /** Logo Url */
             logo_url?: string | null;
             /**
@@ -2514,10 +2506,10 @@ export interface components {
             /** Discord */
             discord?: string | null;
             /**
-             * Association Affiliated
-             * @default false
+             * Organization Type
+             * @default independent
              */
-            association_affiliated: boolean;
+            organization_type: string;
             /** Logo Url */
             logo_url?: string | null;
             /** Created By */
@@ -2548,8 +2540,8 @@ export interface components {
             ig?: string | null;
             /** Discord */
             discord?: string | null;
-            /** Association Affiliated */
-            association_affiliated?: boolean | null;
+            /** Organization Type */
+            organization_type?: string | null;
             /** Logo Url */
             logo_url?: string | null;
             /** School */
@@ -4151,7 +4143,7 @@ export interface operations {
     list_organizations_organizations__get: {
         parameters: {
             query?: {
-                association_affiliated?: boolean | null;
+                organization_type?: string | null;
                 school?: string | null;
                 search?: string | null;
                 categories?: string[] | null;

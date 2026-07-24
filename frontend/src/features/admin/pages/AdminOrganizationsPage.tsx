@@ -38,9 +38,13 @@ import { Textarea } from "@/shared/ui/textarea";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
 import { OrganizationCategoryBadges } from "@/features/organizations/components/OrganizationCategoryBadges";
 import { useEventsStore } from "@/features/events";
+import {
+  getOrganizationTypeFilterOptions,
+  INDEPENDENT_ORGANIZATION_TYPE,
+} from "@/shared/data/organizationTypeAssets";
 
 const ITEMS_PER_PAGE = ADMIN_ITEMS_PER_PAGE;
-const ALL_AFFILIATIONS_VALUE = "__all_affiliations__";
+const ALL_ORGANIZATION_TYPES_VALUE = "__all_organization_types__";
 
 interface AdminOrganizationsPageProps {
   onBack: () => void;
@@ -52,7 +56,7 @@ export function AdminOrganizationsPage({
   const { t } = useTranslation();
   const {
     searchQuery,
-    associationAffiliated,
+    organizationType,
     deleteConfirmId,
     showAddModal,
     editingOrganization,
@@ -64,7 +68,7 @@ export function AdminOrganizationsPage({
     setSearchQuery,
     submitSearchQuery,
     clearSearchQuery,
-    setAssociationAffiliated,
+    setOrganizationType,
     setDeleteConfirmId,
     openAddModal,
     openEditModal,
@@ -83,6 +87,13 @@ export function AdminOrganizationsPage({
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
+  const organizationTypeOptions = useMemo(
+    () =>
+      getOrganizationTypeFilterOptions(
+        schoolFilter && schoolFilter !== "all" ? schoolFilter : undefined,
+      ),
+    [schoolFilter],
+  );
 
   const [claimSearchQuery, setClaimSearchQuery] = useState("");
   const [claimStatusFilter, setClaimStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
@@ -274,22 +285,27 @@ export function AdminOrganizationsPage({
                 clearLabel={t("organizations.clearSearch")}
               />
               <Select
-                value={associationAffiliated === undefined ? ALL_AFFILIATIONS_VALUE : String(associationAffiliated)}
+                value={organizationType ?? ALL_ORGANIZATION_TYPES_VALUE}
                 onValueChange={(value) =>
-                  setAssociationAffiliated(
-                    value === ALL_AFFILIATIONS_VALUE ? undefined : value === "true",
+                  setOrganizationType(
+                    value === ALL_ORGANIZATION_TYPES_VALUE ? undefined : value,
                   )
                 }
               >
                 <SelectTrigger className="h-11 w-[180px]">
-                  <SelectValue placeholder={t("admin.allAffiliations")} />
+                  <SelectValue placeholder={t("admin.allOrganizationTypes")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ALL_AFFILIATIONS_VALUE}>
-                    {t("admin.allAffiliations")}
+                  <SelectItem value={ALL_ORGANIZATION_TYPES_VALUE}>
+                    {t("admin.allOrganizationTypes")}
                   </SelectItem>
-                  <SelectItem value="true">{t("admin.associationAffiliated")}</SelectItem>
-                  <SelectItem value="false">{t("admin.associationIndependent")}</SelectItem>
+                  {organizationTypeOptions.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type === INDEPENDENT_ORGANIZATION_TYPE
+                        ? t("admin.organizationTypeIndependent")
+                        : type.toUpperCase()}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -364,7 +380,7 @@ export function AdminOrganizationsPage({
               headers={[
                 { label: t("forms.organizationName") },
                 { label: t("forms.categories") },
-                { label: t("admin.affiliation") },
+                { label: t("admin.organizationType") },
                 { label: t("forms.ownerEmail") },
                 { label: t("admin.instagram") },
                 { label: t("admin.discord") },
@@ -391,9 +407,9 @@ export function AdminOrganizationsPage({
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {org.association_affiliated
-                        ? t("admin.associationAffiliated")
-                        : t("admin.associationIndependent")}
+                      {org.organization_type === INDEPENDENT_ORGANIZATION_TYPE
+                        ? t("admin.organizationTypeIndependent")
+                        : org.organization_type.toUpperCase()}
                     </div>
                   </TableCell>
                   <TableCell>

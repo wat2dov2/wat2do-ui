@@ -1,6 +1,6 @@
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
-import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
 
 interface OrganizationCategoryBadgesProps {
   categories: readonly string[];
@@ -23,7 +23,7 @@ export function OrganizationCategoryBadges({
   return (
     <div className={cn("flex min-w-0 flex-wrap items-center gap-1.5", className)}>
       {visibleCategories.map((category) => (
-        <OrganizationTypeBadge key={category} type={category} className={badgeClassName} />
+        <OrganizationCategoryBadge key={category} type={category} className={badgeClassName} />
       ))}
       {overflowCount > 0 && (
         <Badge

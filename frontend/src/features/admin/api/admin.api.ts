@@ -88,7 +88,7 @@ export async function adminCreateOrganization(club: Organization): Promise<Organ
     organization_page: club.organization_page,
     ig: club.ig,
     discord: club.discord,
-    association_affiliated: club.association_affiliated,
+    organization_type: club.organization_type,
     logo_url: club.logo_url,
     school: club.school,
   });
@@ -101,7 +101,7 @@ export async function adminUpdateOrganization(club: Organization): Promise<Organ
     organization_page: club.organization_page,
     ig: club.ig,
     discord: club.discord,
-    association_affiliated: club.association_affiliated,
+    organization_type: club.organization_type,
     logo_url: club.logo_url,
     school: club.school,
   });

@@ -1,13 +1,10 @@
 import { Section, Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
-import { OrganizationAssociationBadge } from "@/shared/components/OrganizationAssociationBadge";
-import {
-  SCHOOLS_WITH_ASSOCIATIONS,
-  getSchoolDisplayName,
-  getStudentAssociation,
-} from "@/shared/constants/schools";
-import { OrganizationTypeBadge } from "@/shared/components/OrganizationTypeBadge";
-import { ORGANIZATION_TYPE_SLUGS } from "@/shared/data/organizationTypes";
+import { OrganizationTypeIcon } from "@/shared/components/OrganizationTypeIcon";
+import { getSchoolDisplayName } from "@/shared/constants/schools";
+import { OrganizationCategoryBadge } from "@/shared/components/OrganizationCategoryBadge";
+import { ORGANIZATION_CATEGORY_STYLE_SLUGS } from "@/shared/data/organizationCategoryStyles";
+import { ORGANIZATION_TYPE_SIGNATURES } from "@/shared/data/organizationTypeAssets";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 const BADGE_VARIANTS = [
@@ -50,31 +47,37 @@ export function BadgesSection() {
 
         <ShowcaseBlock label="Organization categories (fixed registry: colour + icon + label per slug)">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {[...ORGANIZATION_TYPE_SLUGS, "not-a-category"].map((slug) => (
-              <OrganizationTypeBadge key={slug} type={slug} />
+            {[...ORGANIZATION_CATEGORY_STYLE_SLUGS, "not-a-category"].map((slug) => (
+              <OrganizationCategoryBadge key={slug} type={slug} />
             ))}
           </div>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Student association wordmarks (one per school, inherit currentColor)">
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-            {SCHOOLS_WITH_ASSOCIATIONS.map((school) => (
-              <div key={school} className="flex items-center gap-2">
-                <OrganizationAssociationBadge school={school} affiliated />
+            {ORGANIZATION_TYPE_SIGNATURES.map((signature) => {
+              const [school, organizationType] = signature.split(":");
+              return (
+              <div key={signature} className="flex items-center gap-2">
+                <OrganizationTypeIcon
+                  school={school}
+                  organizationType={organizationType}
+                />
                 <span className="truncate text-xs text-muted-foreground">
-                  {getStudentAssociation(school)?.shortName} - {getSchoolDisplayName(school)}
+                  {organizationType.toUpperCase()} - {getSchoolDisplayName(school)}
                 </span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Association badge renders nothing when unaffiliated or school has none">
           <Stack direction="horizontal" gap={2} align="center" className="text-xs text-muted-foreground">
-            <span>affiliated=false:</span>
-            <OrganizationAssociationBadge school="uwaterloo" affiliated={false} />
+            <span>independent:</span>
+            <OrganizationTypeIcon school="uwaterloo" organizationType="independent" />
             <span>| unknown school:</span>
-            <OrganizationAssociationBadge school="not-a-school" affiliated />
+            <OrganizationTypeIcon school="not-a-school" organizationType="wusa" />
             <span>| (both empty)</span>
           </Stack>
         </ShowcaseBlock>

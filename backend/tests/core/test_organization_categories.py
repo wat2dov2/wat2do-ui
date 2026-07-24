@@ -20,14 +20,31 @@ class TestOrganizationCreateCategoryValidation:
         with pytest.raises(ValueError, match="categories must be from"):
             OrganizationCreate(
                 organization_name="Test Org",
-                association_affiliated=True,
+                organization_type="wusa",
                 categories=["NotACategory"],
             )
 
     def test_accepts_canonical_categories(self):
         organization = OrganizationCreate(
             organization_name="Test Org",
-            association_affiliated=True,
+            organization_type="wusa",
             categories=[ORGANIZATION_CATEGORIES[0]],
         )
         assert organization.categories == [ORGANIZATION_CATEGORIES[0]]
+
+
+def test_organization_type_normalizes_to_signature_slug():
+    organization = OrganizationCreate(
+        organization_name="Test Org",
+        organization_type="  WUSA  ",
+    )
+
+    assert organization.organization_type == "wusa"
+
+
+def test_organization_type_rejects_non_slug_values():
+    with pytest.raises(ValueError):
+        OrganizationCreate(
+            organization_name="Test Org",
+            organization_type="Waterloo Association",
+        )

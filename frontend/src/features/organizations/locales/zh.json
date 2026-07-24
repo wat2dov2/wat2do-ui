@@ -1,6 +1,6 @@
 {
   "organizations": {
-    "associationAffiliated": "隶属于 {{association}}",
+    "organizationType": "组织类型：{{type}}",
     "claimOwnership": "认领组织所有权",
     "claimOwnershipDesc": "请求成为该组织的主要管理员和创建者：",
     "executiveRole": "您的执行职位",
@@ -45,7 +45,7 @@
     "addOrganizationForSchool": "为 {{school}} 添加组织",
     "addOrganizationDescription": "此组织将列在 {{school}} 下。",
     "organizationDetails": "组织详情",
-    "optionalDetailsDescription": "添加链接和隶属信息，帮助学生识别该组织。",
+    "optionalDetailsDescription": "添加链接和组织类型信息，帮助学生识别该组织。",
     "editClub": "编辑组织",
     "updateClub": "更新组织",
     "editClubDescription": "更新下方的组织信息",

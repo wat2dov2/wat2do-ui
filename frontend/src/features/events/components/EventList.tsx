@@ -46,6 +46,9 @@ interface EventCardsGridProps {
   onEventClick?: (event: Event) => void;
 }
 
+const EVENT_CARD_GRID_CLASS =
+  "grid grid-cols-2 gap-2 sm:gap-2.5 min-[480px]:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]";
+
 function EventCardListItem({
   children,
 }: EventCardListItemProps) {
@@ -62,7 +65,7 @@ function EventCardsGrid({
   onEventClick,
 }: EventCardsGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+    <div className={EVENT_CARD_GRID_CLASS}>
       {events.map((event) => (
         <EventCardListItem key={event.id}>
           <EventCard
@@ -146,7 +149,7 @@ export function EventList({
       <div className="space-y-5">
         <section className="space-y-2.5">
           <Skeleton className="h-5 w-28 rounded-lg" />
-          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className={EVENT_CARD_GRID_CLASS}>
             {Array.from({ length: 12 }).map((_, i) => (
               <EventCardSkeleton key={i} />
             ))}

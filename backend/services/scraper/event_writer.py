@@ -35,9 +35,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-# Scraped organizations are never association-affiliated until an admin marks them.
-_SCRAPED_ASSOCIATION_AFFILIATED = False
-
 
 def write_event(
     event: dict,
@@ -88,7 +85,6 @@ def write_event(
         ig_handle=effective_ig,
         organization_name=resolved_org.organization_name,
     )
-    association_affiliated = resolved_org.association_affiliated
     category = normalize_category(event.get("category")) if event.get("category") else None
 
     future_occurrences = _coerce_future_occurrences(
@@ -115,7 +111,6 @@ def write_event(
         "source_image_url": (event.get("source_image_url") or None),
         "source_url": source_url or None,
         "organization_id": resolved_org.organization_id,
-        "association_affiliated": association_affiliated,
         "school": (event.get("school") or "")[:MAX_EVENT_SCHOOL_LENGTH] or None,
         "category": category,
         "organization": organization_name[:MAX_EVENT_ORGANIZATION_LENGTH],
@@ -294,8 +289,6 @@ def _merge_overwrite_payload(incoming: dict, old_event) -> dict:
         merged["ig_handle"] = old_event.ig_handle
     if merged.get("organization_id") is None and old_event.organization_id is not None:
         merged["organization_id"] = old_event.organization_id
-    if merged.get("association_affiliated") is None:
-        merged["association_affiliated"] = old_event.association_affiliated
     if not merged.get("source_url") and old_event.source_url:
         merged["source_url"] = old_event.source_url
     if not merged.get("source_image_url") and old_event.source_image_url:
@@ -308,7 +301,7 @@ def _lookup_organization_by_ig(ig_handle: str) -> dict | None:
     rows = (
         get_sb()
         .table(ORGANIZATIONS)
-        .select("id,organization_name,association_affiliated")
+        .select("id,organization_name")
         .eq("ig", ig_handle)
         .limit(1)
         .execute()
@@ -347,7 +340,6 @@ def _ensure_organization_by_ig(
                 "organization_name": organization_name,
                 "ig": cleaned,
                 "school": school_slug,
-                "association_affiliated": _SCRAPED_ASSOCIATION_AFFILIATED,
             }
         )
         .execute()
