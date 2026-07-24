@@ -943,6 +943,39 @@ test.describe("Events Page", () => {
     await expect(clearNewlyAddedFilter).toHaveCount(0);
   });
 
+  test("anchors bottom badge mask fillets to the image edge", async ({ page }) => {
+    await page.goto(BASE);
+
+    const newBadges = page.getByText("NEW", { exact: true });
+    await expect.poll(() => newBadges.count()).toBeGreaterThan(0);
+    const newBadge = newBadges.first();
+    const geometry = await newBadge.evaluate((element) => {
+      const card = element.closest("article[data-event-card]");
+      const mask = card?.querySelector("mask");
+      const imageHeight = mask?.ownerSVGElement?.viewBox.baseVal.height ?? 0;
+      const bottomFillets = Array.from(
+        mask?.querySelectorAll(":scope > g") ?? [],
+      )
+        .map((group) => ({
+          rectY: Number(group.querySelector(":scope > rect")?.getAttribute("y")),
+          filletYs: Array.from(group.querySelectorAll(":scope > svg")).map(
+            (fillet) => Number(fillet.getAttribute("y")),
+          ),
+        }))
+        .filter(({ rectY }) => rectY > 0)
+        .map(({ filletYs }) => filletYs);
+
+      return { imageHeight, bottomFillets };
+    });
+
+    expect(geometry.imageHeight).toBeGreaterThan(0);
+    expect(geometry.bottomFillets).toHaveLength(2);
+    for (const filletYs of geometry.bottomFillets) {
+      expect(filletYs).toHaveLength(2);
+      expect(Math.max(...filletYs)).toBe(geometry.imageHeight - 8);
+    }
+  });
+
   test("offers events added since the last visit only when signed in", async ({
     page,
   }) => {

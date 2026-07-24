@@ -124,12 +124,12 @@ function cornerPieces(cutout: MeasuredCutout, w: number, h: number) {
     case "bottom-left":
       return {
         rect: { x: -r, y: h - nh, width: nw + r, height: nh + r, rx: r },
-        fillets: [{ x: nw, y: h - nh }, { x: 0, y: h - nh - FILLET }],
+        fillets: [{ x: nw, y: h - FILLET }, { x: 0, y: h - nh - FILLET }],
       };
     case "bottom-right":
       return {
         rect: { x: w - nw, y: h - nh, width: nw + r, height: nh + r, rx: r },
-        fillets: [{ x: w - nw - FILLET, y: h - nh }, { x: w - FILLET, y: h - nh - FILLET }],
+        fillets: [{ x: w - nw - FILLET, y: h - FILLET }, { x: w - FILLET, y: h - nh - FILLET }],
       };
   }
 }
