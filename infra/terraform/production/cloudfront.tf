@@ -2,6 +2,26 @@ data "aws_cloudfront_cache_policy" "caching_disabled" {
   name = "Managed-CachingDisabled"
 }
 
+// Each school is served from its own subdomain, and the app resolves that school
+// from X-Forwarded-Host. CloudFront replaces the viewer Host with the origin
+// domain, so this function preserves the school subdomain the viewer asked for.
+resource "aws_cloudfront_function" "forward_viewer_host" {
+  name    = "wat2do-production-forward-viewer-host"
+  runtime = "cloudfront-js-2.0"
+  comment = "Preserve the viewer host so per-school subdomains reach the origin."
+  publish = true
+
+  code = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      if (request.headers.host) {
+        request.headers['x-forwarded-host'] = { value: request.headers.host.value };
+      }
+      return request;
+    }
+  EOT
+}
+
 resource "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
   name    = "wat2do-production-all-viewer-except-host"
   comment = "Forward dynamic requests without forwarding the viewer Host header."
@@ -107,11 +127,6 @@ resource "aws_cloudfront_distribution" "main" {
     domain_name = "origin.${var.domain_name}"
     origin_id   = "wat2do-production-alb"
 
-    custom_header {
-      name  = "X-Forwarded-Host"
-      value = var.domain_name
-    }
-
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -128,6 +143,11 @@ resource "aws_cloudfront_distribution" "main" {
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
     origin_request_policy_id = aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     compress                 = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.forward_viewer_host.arn
+    }
   }
 
   ordered_cache_behavior {
