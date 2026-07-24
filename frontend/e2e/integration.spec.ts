@@ -1450,8 +1450,18 @@ test.describe("Standalone submission pages", () => {
     await expect
       .poll(() => requestedOrganizationSchool)
       .toBe("utm");
-    await page.locator("#field-organization_id").click();
-    await expect(page.getByText("UTM Campus Club")).toBeVisible();
+    const organizationInput = page.getByRole("textbox", {
+      name: "Organization",
+    });
+    await expect(organizationInput).toBeVisible();
+    await organizationInput.fill("UTM Campus Club");
+    await expect(organizationInput).toHaveValue("UTM Campus Club");
+    await expect(
+      page.getByText("UTM Campus Club", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Organization" }),
+    ).toHaveCount(0);
 
     await page.goto(`${utmBase}/organizations/new`);
     await expect(

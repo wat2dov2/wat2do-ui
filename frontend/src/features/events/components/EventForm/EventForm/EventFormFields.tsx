@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import { MapPin, DollarSign, Utensils, Plus, Trash2 } from "@/shared/ui/doodle-icons";
 import {
   Field,
-  FieldError,
   FieldGroup,
   FieldLabel,
   FieldLegend,
@@ -16,7 +15,7 @@ import { translateCategory } from "@/shared/utils/event";
 import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
-import { OrganizationCombobox } from "@/features/events/components/OrganizationCombobox";
+import { OrganizationInput } from "@/features/events/components/OrganizationInput";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 
 export function EventFormFields() {
@@ -56,26 +55,16 @@ export function EventFormFields() {
             touched={touched.title}
           />
 
-          <Field>
-            <FieldLabel
-              htmlFor="field-organization_id"
-              className="text-sm font-medium text-foreground flex items-center gap-1.5"
-            >
-              {t("events.organization")}
-              <span className="text-destructive">*</span>
-            </FieldLabel>
-            <OrganizationCombobox
-              id="field-organization_id"
-              value={formData.organization_id}
-              organizations={organizations}
-              onChange={(organizationId) => updateField("organization_id", organizationId)}
-              onBlur={() => handleBlur("organization_id")}
-              hasError={Boolean(touched.organization_id && errors.organization_id)}
-            />
-            {touched.organization_id && errors.organization_id && (
-              <FieldError className="text-xs">{errors.organization_id}</FieldError>
-            )}
-          </Field>
+          <OrganizationInput
+            value={formData.organization_id}
+            organizations={organizations}
+            onChange={(organizationId) =>
+              updateField("organization_id", organizationId)
+            }
+            onBlur={() => handleBlur("organization_id")}
+            error={errors.organization_id}
+            touched={touched.organization_id}
+          />
 
           <Field>
             <div className="flex items-center justify-between gap-3">
