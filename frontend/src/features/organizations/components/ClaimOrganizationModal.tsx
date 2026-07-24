@@ -21,6 +21,7 @@ import {
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { uploadClaimProof } from "@/shared/services/uploadService";
 import { toast } from "@/shared/hooks/use-toast";
+import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "@/shared/constants/uploads";
 import type { Organization } from "@/shared/types";
 import { api } from "@/shared/services/apiClient";
 
@@ -61,9 +62,8 @@ export function ClaimOrganizationModal({ isOpen, onClose, organization }: ClaimO
       return;
     }
 
-    const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
-    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-      setUploadError("Image is too large. Max 5MB allowed.");
+    if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
+      setUploadError(t("qrCode.imageSizeError"));
       return;
     }
 

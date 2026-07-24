@@ -4,13 +4,20 @@ import pkgutil
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.formparsers import MultiPartParser
 
 import routers as routers_package
 from core.config import settings
+from core.constants import MAX_IMAGE_SIZE_BYTES
 from core.error_handlers import register_error_handlers
 from core.security_headers import SecurityHeadersMiddleware
 
 log = logging.getLogger(__name__)
+
+# Keep accepted image uploads in memory through the validated 5 MB limit.
+# Production uses a read-only root filesystem, so rolling over at Starlette's
+# 1 MB default would fail before our storage validation can run.
+MultiPartParser.spool_max_size = MAX_IMAGE_SIZE_BYTES
 
 app = FastAPI(
     title="wat2do API",

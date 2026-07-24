@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Event, FilterState } from "@/shared/types";
 import { useForm } from "@/shared/hooks/useForm";
 import { getUniqueEvents } from "@/shared/utils/event";
-import { MAX_UPLOAD_SIZE_BYTES } from "@/features/posters/constants";
+import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "@/shared/constants/uploads";
 import { isSafeUrl } from "@/shared/utils/url";
 
 type DestinationType = "event" | "events-list" | "custom-url";
@@ -58,7 +58,7 @@ export function useCreateQRCodeForm(events: Event[]) {
       return;
     }
 
-    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+    if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
       setErrors((prev) => ({ ...prev, image: t("qrCode.imageSizeError") }));
       return;
     }

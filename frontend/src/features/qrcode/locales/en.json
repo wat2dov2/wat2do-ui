@@ -24,7 +24,7 @@
     "posterCreatedMessage": "Poster \"{{name}}\" has been created successfully.",
     "posterPreview": "Poster Preview",
     "imageFileError": "Please select an image file",
-    "imageSizeError": "Image must be less than 5MB",
+    "imageSizeError": "Image must be 5MB or smaller",
     "imageReadError": "Failed to read image file",
     "nameRequired": "Name is required",
     "posterImageRequired": "Poster image is required",

@@ -19,6 +19,7 @@ import {
   type SubmitEventResult,
 } from "@/features/events/hooks/useSubmitEvent";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
+import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "@/shared/constants/uploads";
 import {
   EventFormStep,
   type ViewMode,
@@ -111,6 +112,18 @@ export function SubmitEventFlow({
 
   const handleImageFileParse = useCallback(
     async (file: File) => {
+      if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        toast({
+          title: t("events.flyerParseFailed"),
+          description: t("qrCode.imageSizeError"),
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsParsingImage(true);
       try {
         const parsedData = await parseEventImage(file);

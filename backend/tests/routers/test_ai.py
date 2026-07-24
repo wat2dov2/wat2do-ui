@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+from core.constants import MAX_IMAGE_SIZE_BYTES
 from core.exceptions import ValidationError
 from core.rate_limit import (
     ai_generate_event_rate_limiter,
@@ -273,6 +274,31 @@ def test_parse_event_image_anonymous(client, monkeypatch):
 
     assert resp.status_code == 200
     assert resp.json()["source_image_url"] == "https://example.com/public-flyer.png"
+
+
+def test_parse_event_image_accepts_five_megabyte_file_without_disk_rollover(
+    client,
+    monkeypatch,
+):
+    ai_parse_event_image_rate_limiter._requests.clear()
+    _mock_empty_image_parse(monkeypatch)
+    monkeypatch.setattr(
+        "tempfile.TemporaryFile",
+        MagicMock(side_effect=OSError("temporary directory is not writable")),
+    )
+
+    resp = client.post(
+        "/ai/parse-event-image",
+        files={
+            "file": (
+                "five-megabyte-flyer.jpg",
+                b"x" * MAX_IMAGE_SIZE_BYTES,
+                "image/jpeg",
+            )
+        },
+    )
+
+    assert resp.status_code == 200
 
 
 def test_parse_event_image_anonymous_rate_limit(client, monkeypatch):

@@ -24,7 +24,7 @@
     "posterCreatedMessage": "海报“{{name}}”已成功创建。",
     "posterPreview": "海报预览",
     "imageFileError": "请选择图片文件",
-    "imageSizeError": "图片大小必须小于 5MB",
+    "imageSizeError": "图片大小必须为 5MB 或更小",
     "imageReadError": "读取图片文件失败",
     "nameRequired": "名称为必填项",
     "posterImageRequired": "海报图片为必填项",

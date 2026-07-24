@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
+import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "../src/shared/constants/uploads";
 
 const BASE = "http://127.0.0.1:3000";
 const APP_API = `${BASE}/api`;
@@ -1105,9 +1106,11 @@ test.describe("Standalone submission pages", () => {
     page,
   }) => {
     let parseAuthorization: string | null = null;
+    let parseRequestCount = 0;
     await page.route(
       url => apiPath(url) === "/ai/parse-event-image",
       async (route) => {
+        parseRequestCount += 1;
         parseAuthorization =
           route.request().headers()["authorization"] ?? null;
         await route.fulfill({
@@ -1136,6 +1139,16 @@ test.describe("Standalone submission pages", () => {
 
     await page.goto(`${BASE}/events/submit`);
     await page.locator('input[type="file"]').setInputFiles({
+      name: "oversized-event.png",
+      mimeType: "image/png",
+      buffer: Buffer.alloc(MAX_IMAGE_UPLOAD_SIZE_BYTES + 1),
+    });
+    await expect(
+      page.getByText("Image must be 5MB or smaller"),
+    ).toBeVisible();
+    expect(parseRequestCount).toBe(0);
+
+    await page.locator('input[type="file"]').setInputFiles({
       name: "public-event.png",
       mimeType: "image/png",
       buffer: Buffer.from("event-image"),
@@ -1145,6 +1158,7 @@ test.describe("Standalone submission pages", () => {
       "Public Flyer Event",
     );
     expect(parseAuthorization).toBeNull();
+    expect(parseRequestCount).toBe(1);
   });
 
   test("UTM hostname owns event and organization submission context", async ({
