@@ -85,7 +85,36 @@ Run `tflint` in each root when it is installed locally or rely on the Terraform 
 
 ---
 
-## 5. Commit
+## 5. Database migrations
+
+**The production Supabase project is `vgfwgjwahedyieaknkcd`.**
+It is *displayed* as `test` in the Supabase dashboard, which is a trap: the project named `waterloo-commons` is a different product.
+Never select the production database by name.
+Confirm the ref against the deployed configuration before running anything destructive:
+
+```bash
+aws secretsmanager get-secret-value --region ca-central-1 \
+  --secret-id wat2do/production/runtime --query SecretString --output text \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['SUPABASE_URL'])"
+```
+
+Check what a push would apply before it runs:
+
+```bash
+(cd backend && supabase migration list --linked)
+```
+
+Schema must land **before** the code that reads it.
+The deploy job applies migrations automatically ahead of the ECS rollout, using the `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` secrets plus the `SUPABASE_PROJECT_REF` variable.
+When those are unset, a push that adds migration files fails the deploy rather than shipping code against a database that lacks the column.
+
+Prefer additive migrations (`ADD COLUMN ... DEFAULT`, new tables, new indexes).
+An additive migration is safe to apply while the previous build is still serving traffic, because unknown columns are ignored by the response models.
+A destructive migration is not, and needs a two-step rollout.
+
+---
+
+## 6. Commit
 
 Only commit when the user asked you to, or when your task explicitly includes landing on `main`.
 
@@ -102,13 +131,14 @@ Follow the repo's existing commit message style (`git log -5`).
 
 ---
 
-## 6. Push
+## 7. Push
 
 ```bash
 git push origin main
 ```
 
 After push, CI/CD runs the backend and frontend checks.
+The deploy job then applies pending database migrations, rolls out ECS, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
 The primary Wat2Do frontend and backend then deploy together to ECS through GitHub OIDC, ECR, and immutable task-definition images.
 A green local run means those check jobs should pass; the AWS deployment requires the repository variables and Secrets Manager values documented in the Terraform roots.
 

@@ -83,7 +83,7 @@ export function OrganizationsPage() {
   return (
     <div className="space-y-2">
       <div className="space-y-3 pb-2">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <PageCountHeading
             count={totalItems}
             label={

@@ -41,7 +41,7 @@
     "eventCount_other": "{{count}} 个活动",
     "clubCreated": "组织已创建！",
     "clubUpdated": "组织已更新！",
-    "addClub": "将我的社团添加到 Wat2Do",
+    "addClub": "添加社团",
     "addOrganizationForSchool": "为 {{school}} 添加组织",
     "addOrganizationDescription": "此组织将列在 {{school}} 下。",
     "organizationDetails": "组织详情",

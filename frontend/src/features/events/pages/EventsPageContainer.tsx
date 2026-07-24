@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState, useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/shared/hooks/use-toast";
 import { EventList } from "../components/EventList";
 import { EventCount } from "../components/EventCount";
 import { SearchBar, MoreFiltersButton, FilterDropdown } from "@/features/search";
@@ -38,6 +39,7 @@ export function EventsPageContainer() {
   const { isDarkMode } = useDarkMode();
   const { profileCompleted, userEmail } = useAuthState();
   const { t } = useTranslation();
+  const router = useRouter();
   const [searchParams] = useMutableSearchParams();
 
   const {
@@ -139,6 +141,15 @@ export function EventsPageContainer() {
     [filters, profileCompleted],
   );
 
+  // Submitting an event requires an account, so gate before navigating.
+  const handleSubmitEventClick = useCallback(() => {
+    if (!profileCompleted) {
+      toast({ description: t("navigation.loginRequiredToSubmit") });
+      return;
+    }
+    router.push(ROUTES.EVENT_SUBMIT);
+  }, [profileCompleted, router, t]);
+
   const {
     scrollRef: filterScrollRef,
     scrollEndRef: filterScrollEndRef,
@@ -154,14 +165,20 @@ export function EventsPageContainer() {
     <>
       <div className="space-y-2">
         <div className="space-y-3 pb-2">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <EventCount
               count={totalEvents}
               latestAddedEvent={latestAddedEvent}
               onLatestAddedEventSearch={handleLatestAddedEventSearch}
             />
-            <Button asChild variant="secondary" size="sm" className="shrink-0">
-              <Link href={ROUTES.EVENT_SUBMIT}>{t("events.submitEvent")}</Link>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="shrink-0"
+              onMouseDown={handleSubmitEventClick}
+            >
+              {t("events.submitEvent")}
             </Button>
           </div>
           <SearchBar

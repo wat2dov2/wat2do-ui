@@ -133,7 +133,7 @@
     "deleteEventTitle": "删除活动",
     "deleteEventConfirm": "您确定要删除“{{title}}”吗？此操作无法撤销。",
     "similarEvents": "相似活动",
-    "submitEvent": "提交活动",
+    "submitEvent": "添加活动",
     "backToAllEvents": "返回所有活动",
     "going": "参加"
   }

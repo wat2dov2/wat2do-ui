@@ -41,7 +41,7 @@
     "eventCount_other": "{{count}} events",
     "clubCreated": "Organization Created!",
     "clubUpdated": "Organization Updated!",
-    "addClub": "Add my club to Wat2Do",
+    "addClub": "Add a club",
     "addOrganizationForSchool": "Add an Organization for {{school}}",
     "addOrganizationDescription": "This organization will be listed for {{school}}.",
     "organizationDetails": "Organization details",
