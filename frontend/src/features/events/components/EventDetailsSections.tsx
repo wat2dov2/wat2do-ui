@@ -500,7 +500,31 @@ function EventContactHostSection({ event }: { event: Event }) {
  * Event status badges plus the copy-link / share / report actions. Shared by the
  * drawer and the /events/[id] page so both expose the same set one way.
  */
-function EventActionsSection({ event }: { event: Event }) {
+/**
+ * Category, live, and new badges. `size="xl"` matches the height of a small
+ * Button so badges and actions sit on one line together.
+ */
+export function EventStatusBadges({ event }: { event: Event }) {
+  const { t } = useTranslation();
+  return (
+    <Stack direction="horizontal" gap={2} wrap>
+      <OrganizationCategoryBadge type={getEventCategory(event)} size="xl" />
+      {isEventHappeningNow(event) && (
+        <Badge variant="live" size="xl">
+          {t("common.live")}
+        </Badge>
+      )}
+      {wasAddedWithinLast24Hours(event) && (
+        <Badge variant="new" size="xl">
+          {t("events.new")}
+        </Badge>
+      )}
+    </Stack>
+  );
+}
+
+/** Copy link, share, and report, owning their own dialogs. */
+export function EventActions({ event }: { event: Event }) {
   const { t } = useTranslation();
   const [linkCopied, setLinkCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -517,26 +541,19 @@ function EventActionsSection({ event }: { event: Event }) {
   }, [event.id, t]);
 
   return (
-    <Stack gap={3}>
-      <Stack direction="horizontal" gap={2} className="flex-wrap">
-        <OrganizationCategoryBadge type={getEventCategory(event)} />
-        {isEventHappeningNow(event) && <Badge variant="live">{t("common.live")}</Badge>}
-        {wasAddedWithinLast24Hours(event) && <Badge variant="new">{t("events.new")}</Badge>}
-      </Stack>
-      <Stack direction="horizontal" gap={2} className="flex-wrap">
-        <Button type="button" variant="secondary" size="sm" onClick={() => void handleCopyLink()}>
-          {linkCopied ? <Check className="size-4" /> : <LinkIcon className="size-4" />}
-          {linkCopied ? t("events.copied") : t("events.copyLink")}
-        </Button>
-        <Button type="button" variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
-          <Share2 className="size-4" />
-          {t("common.share")}
-        </Button>
-        <Button type="button" variant="secondary" size="sm" onClick={() => setReportOpen(true)}>
-          <Flag className="size-4" />
-          {t("common.report")}
-        </Button>
-      </Stack>
+    <Stack direction="horizontal" gap={2} wrap>
+      <Button type="button" variant="secondary" size="sm" onClick={() => void handleCopyLink()}>
+        {linkCopied ? <Check className="size-4" /> : <LinkIcon className="size-4" />}
+        {linkCopied ? t("events.copied") : t("events.copyLink")}
+      </Button>
+      <Button type="button" variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
+        <Share2 className="size-4" />
+        {t("common.share")}
+      </Button>
+      <Button type="button" variant="secondary" size="sm" onClick={() => setReportOpen(true)}>
+        <Flag className="size-4" />
+        {t("common.report")}
+      </Button>
       {shareOpen && (
         <Suspense fallback={null}>
           <EventShareDialog event={event} open={shareOpen} onOpenChange={setShareOpen} />
@@ -565,11 +582,14 @@ export function EventDetailsBody({
   event,
   school,
   renderTitle,
+  showActions = true,
 }: {
   event: Event;
   school: string | null | undefined;
   /** Override the title element (the drawer supplies its DrawerTitle). */
   renderTitle?: (title: string) => React.ReactNode;
+  /** Set false when the surface renders badges and actions in its own header. */
+  showActions?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -614,7 +634,12 @@ export function EventDetailsBody({
 
         <EventMapSection event={event} school={school} />
 
-        <EventActionsSection event={event} />
+        {showActions ? (
+          <Stack gap={3}>
+            <EventStatusBadges event={event} />
+            <EventActions event={event} />
+          </Stack>
+        ) : null}
       </Stack>
     </div>
   );

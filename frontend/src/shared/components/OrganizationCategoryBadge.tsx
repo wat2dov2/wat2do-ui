@@ -1,16 +1,27 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
-import { cn } from "@/shared/lib/utils";
+import { Badge } from "@/shared/ui/badge";
 import {
   getOrganizationCategoryConfig,
   organizationCategoryInk,
 } from "@/shared/data/organizationCategoryStyles";
+
+type BadgeSize = NonNullable<ComponentProps<typeof Badge>["size"]>;
+
+/** Icon scales with the badge so the chip stays balanced at every size. */
+const ICON_SIZE: Record<BadgeSize, number> = {
+  sm: 10,
+  md: 14,
+  lg: 16,
+  xl: 18,
+};
 
 interface OrganizationCategoryBadgeProps {
   /** Category slug or label; anything unrecognized falls back to the neutral config. */
   type: string | null | undefined;
   /** Wraps the badge, e.g. to make it a button. Receives the rendered content. */
   children?: (content: ReactNode) => ReactNode;
+  size?: BadgeSize;
   className?: string;
 }
 
@@ -18,27 +29,35 @@ interface OrganizationCategoryBadgeProps {
  * Category chip for organizations: registry icon, colour, and label.
  *
  * All three come from `organizationCategoryStyles` keyed by the same slug, so the card
- * never maps a category to a colour or an SVG filename itself.
+ * never maps a category to a colour or an SVG filename itself. Sizing comes from the
+ * Badge primitive, so this chip lines up with the other badges wherever it is used.
  */
 export function OrganizationCategoryBadge({
   type,
   children,
+  size = "md",
   className,
 }: OrganizationCategoryBadgeProps) {
   const config = getOrganizationCategoryConfig(type);
+  const iconSize = ICON_SIZE[size];
 
   const content = (
-    <span
-      className={cn(
-        "inline-flex max-w-full items-center gap-1.5 rounded-xl px-2.5 py-1",
-        "text-[11px] font-bold leading-none",
-        className,
-      )}
+    <Badge
+      variant="category"
+      size={size}
+      className={className}
       style={{ backgroundColor: config.color, color: organizationCategoryInk }}
     >
-      <img src={config.icon} alt="" aria-hidden="true" width={14} height={14} className="shrink-0" />
+      <img
+        src={config.icon}
+        alt=""
+        aria-hidden="true"
+        width={iconSize}
+        height={iconSize}
+        className="shrink-0"
+      />
       <span className="truncate">{config.label}</span>
-    </span>
+    </Badge>
   );
 
   return <>{children ? children(content) : content}</>;

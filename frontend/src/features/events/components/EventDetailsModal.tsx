@@ -14,7 +14,11 @@ import { Button } from "@/shared/ui/button";
 import { Separator } from "@/shared/ui/separator";
 import { EventDetailsDrawerSkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
 import { EventCard } from "@/features/events/components/EventCard";
-import { EventDetailsBody } from "@/features/events/components/EventDetailsSections";
+import {
+  EventActions,
+  EventDetailsBody,
+  EventStatusBadges,
+} from "@/features/events/components/EventDetailsSections";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -130,17 +134,27 @@ export function EventDetailsModal({
           ) : displayedEvent ? (
             <>
               <DrawerHeader className="text-left">
-                <Stack direction="horizontal" justify="end" gap={2} className="flex-wrap">
-                  <Button asChild variant="secondary" size="sm">
-                    <a
-                      href={eventPagePath(displayedEvent.id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t("events.eventPage")}
-                      <ArrowRight className="size-4 -rotate-45" />
-                    </a>
-                  </Button>
+                <Stack
+                  direction="horizontal"
+                  justify="between"
+                  align="center"
+                  gap={3}
+                  wrap
+                >
+                  <EventStatusBadges event={displayedEvent} />
+                  <Stack direction="horizontal" gap={2} wrap>
+                    <Button asChild variant="secondary" size="sm">
+                      <a
+                        href={eventPagePath(displayedEvent.id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t("events.eventPage")}
+                        <ArrowRight className="size-4 -rotate-45" />
+                      </a>
+                    </Button>
+                    <EventActions event={displayedEvent} />
+                  </Stack>
                 </Stack>
               </DrawerHeader>
 
@@ -154,6 +168,7 @@ export function EventDetailsModal({
                 <EventDetailsBody
                   event={displayedEvent}
                   school={schoolFilter}
+                  showActions={false}
                   renderTitle={(title) => (
                     <DrawerTitle className="text-left text-2xl font-bold leading-tight sm:text-3xl">
                       {title}
@@ -162,18 +177,21 @@ export function EventDetailsModal({
                 />
 
                 {!hideSimilarEvents && similarEvents.length > 0 && (
-                  <Section title={t("events.similarEvents")}>
-                    <FormGrid columns={2} className="md:grid-cols-4">
-                      {similarEvents.map((similarEvent) => (
-                        <EventCard
-                          key={similarEvent.id}
-                          event={similarEvent}
-                          stats={eventStats?.[String(similarEvent.id)]}
-                          onEventClick={handleSimilarEventClick}
-                        />
-                      ))}
-                    </FormGrid>
-                  </Section>
+                  <>
+                    <Separator />
+                    <Section title={t("events.similarEvents")}>
+                      <FormGrid columns={2} className="md:grid-cols-4">
+                        {similarEvents.map((similarEvent) => (
+                          <EventCard
+                            key={similarEvent.id}
+                            event={similarEvent}
+                            stats={eventStats?.[String(similarEvent.id)]}
+                            onEventClick={handleSimilarEventClick}
+                          />
+                        ))}
+                      </FormGrid>
+                    </Section>
+                  </>
                 )}
               </DrawerBody>
             </>

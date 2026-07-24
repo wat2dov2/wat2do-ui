@@ -23,6 +23,8 @@ const badgeVariants = cva(
           "border-0 bg-warning text-warning-foreground",
         new:
           "border-badge-new bg-badge-new",
+        category:
+          "border-transparent gap-1.5 max-w-full leading-none",
       },
       size: {
         sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",

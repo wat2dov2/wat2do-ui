@@ -46,6 +46,8 @@ type StackOwnProps = {
   gap?: StackGap
   align?: StackAlign
   justify?: StackJustify
+  /** Let children flow onto additional lines instead of overflowing. */
+  wrap?: boolean
 }
 
 type StackProps = StackOwnProps &
@@ -57,6 +59,7 @@ function Stack({
   gap = 4,
   align,
   justify,
+  wrap = false,
   className,
   ...props
 }: StackProps) {
@@ -69,6 +72,7 @@ function Stack({
         gapClasses[gap],
         align && alignClasses[align],
         justify && justifyClasses[justify],
+        wrap && "flex-wrap",
         className
       )}
       {...props}

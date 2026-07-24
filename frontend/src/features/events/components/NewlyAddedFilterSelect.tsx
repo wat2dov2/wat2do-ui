@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { controlBox } from "@/shared/config/controlBox";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
+import { Button } from "@/shared/ui/button";
 import { FilterClearButton } from "@/shared/ui/filter-clear-button";
 import {
   Select,
@@ -39,6 +40,23 @@ export function NewlyAddedFilterSelect({
       })
     : t("events.newlyAddedFilter.sinceLastVisit");
   const label = value === "sinceLastVisit" ? sinceLastVisitLabel : last24HoursLabel;
+
+  // "Since last visit" only exists for signed-in users. Without it there is
+  // nothing to choose between, so the filter is a plain toggle instead of a
+  // dropdown holding a single option.
+  if (!showSinceLastVisit) {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant={active ? "primary" : "secondary"}
+        aria-pressed={active}
+        onClick={() => (active ? onClear() : onValueChange("last24Hours"))}
+      >
+        {last24HoursLabel}
+      </Button>
+    );
+  }
 
   return (
     <div className="relative shrink-0">
